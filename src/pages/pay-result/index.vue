@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { request } from '@/utils/request'
+import request from '@/utils/request'
 
 const status = ref('success')
 const failReason = ref('')

@@ -75,8 +75,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { request } from '@/utils/request'
-import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
 interface SystemMessage {
   id: number

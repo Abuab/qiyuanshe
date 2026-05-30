@@ -22,7 +22,7 @@ RUN npm run build
 FROM node:18-alpine AS production
 
 # 安装 dumb-init 用于优雅地处理进程信号
-RUN npm install -g dumb-init
+RUN apk add --no-cache dumb-init
 
 # 设置工作目录
 WORKDIR /app

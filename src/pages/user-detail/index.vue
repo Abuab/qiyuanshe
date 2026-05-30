@@ -229,7 +229,7 @@
         :matchmaker="selectedMatchmaker"
         @update:show="showMatchmaker = $event"
         @close="showMatchmaker = false"
-        @more="showMatchmakerList"
+        @more="openMatchmakerList"
       />
 
       <matchmaker-list-popup
@@ -249,9 +249,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { request } from '@/utils/request'
-import { useUserStore } from '@/stores/user'
-import { useSystemStore } from '@/stores/system'
+import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 
@@ -336,17 +336,19 @@ const fetchUserDetail = async () => {
 
     userData.value = res.user || res
 
-    if (userData.value.birthYear) {
-      userData.value.zodiac = getZodiac(userData.value.birthYear)
-      userData.value.constellation = getConstellation(userData.value.birthYear)
-    }
+    if (userData.value) {
+      if (userData.value.birthYear) {
+        userData.value.zodiac = getZodiac(userData.value.birthYear)
+        userData.value.constellation = getConstellation(userData.value.birthYear)
+      }
 
-    if (userData.value.selfIntro && userData.value.selfIntro.length > 150) {
-      introTooLong.value = true
-    }
+      if (userData.value.selfIntro && userData.value.selfIntro.length > 150) {
+        introTooLong.value = true
+      }
 
-    if (userData.value.mateRequirement && userData.value.mateRequirement.length > 150) {
-      requirementTooLong.value = true
+      if (userData.value.mateRequirement && userData.value.mateRequirement.length > 150) {
+        requirementTooLong.value = true
+      }
     }
   } catch (e) {
     console.error('fetch user detail error', e)
@@ -392,7 +394,7 @@ const onPhotoChange = (e: any) => {
 const previewPhoto = (index: number) => {
   if (!userData.value?.photos) return
 
-  const urls = userData.value.photos.map((p) => p.url || p as string)
+  const urls = userData.value.photos.map((p) => p.url)
   uni.previewImage({
     current: index,
     urls,
@@ -410,7 +412,7 @@ const closeSharePanel = () => {
 const shareToFriend = async () => {
   closeSharePanel()
 
-  const shareTitle = systemStore.config?.shareTitle || `${userData.value?.nickname} - 期待与你相遇`
+  const shareTitle = systemStore.shareTitle || `${userData.value?.nickname} - 期待与你相遇`
 
   uni.showToast({
     title: '即将分享',
@@ -494,7 +496,7 @@ const showMatchmakerPopup = () => {
   }
 }
 
-const showMatchmakerList = () => {
+const openMatchmakerList = () => {
   showMatchmaker.value = false
   showMatchmakerList.value = true
 }

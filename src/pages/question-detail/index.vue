@@ -92,8 +92,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { request } from '@/utils/request'
-import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
 interface Answer {
   id: number
@@ -123,6 +123,7 @@ const page = ref(1)
 const limit = 20
 const loading = ref(false)
 const noMore = ref(false)
+const refreshing = ref(false)
 
 onMounted(() => {
   const pages = getCurrentPages()

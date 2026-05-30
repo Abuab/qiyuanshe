@@ -114,8 +114,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { request } from '@/utils/request'
-import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
 interface VipPackage {
   level: number

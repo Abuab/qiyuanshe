@@ -63,8 +63,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { request } from '@/utils/request'
-import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
 
 interface PosterTemplate {
   id: number
@@ -143,7 +143,7 @@ const generatePoster = async (template: PosterTemplate) => {
 
     const userData = await fetchUserData()
 
-    const ctx = uni.createCanvasContext(canvasId)
+    const ctx = uni.createCanvasContext(canvasId) as any
     ctx.width = canvasWidth
     ctx.height = canvasHeight
 

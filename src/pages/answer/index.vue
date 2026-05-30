@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { request } from '@/utils/request'
+import request from '@/utils/request'
 
 const questionId = ref(0)
 const questionTitle = ref('')

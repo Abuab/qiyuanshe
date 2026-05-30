@@ -70,7 +70,7 @@
             <text class="item-time">{{ formatTime(item.createdAt) }}</text>
           </view>
 
-          <view class="item-content" @tap="previewContent(item)">
+          <view class="item-content" @tap="openPreview(item)">
             <view v-if="item.type === 'photo'" class="photo-preview">
               <image :src="item.content" mode="aspectFill" />
             </view>
@@ -139,13 +139,13 @@
       <view class="preview-modal" @tap.stop>
         <image
           v-if="previewType === 'photo'"
-          :src="previewContent"
+          :src="previewContentData"
           mode="widthFix"
           class="preview-image"
           @tap="closePreviewModal"
         />
         <view v-else class="preview-text">
-          <text>{{ previewContent }}</text>
+          <text>{{ previewContentData }}</text>
         </view>
       </view>
     </view>
@@ -154,7 +154,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { request } from '@/utils/request'
+import request from '@/utils/request'
 
 interface AuditItem {
   id: number
@@ -188,7 +188,7 @@ const currentRejectItem = ref<AuditItem | null>(null)
 
 const showPreviewModal = ref(false)
 const previewType = ref('')
-const previewContent = ref('')
+const previewContentData = ref('')
 
 const typeOptions = [
   { label: '全部类型', value: '' },
@@ -296,9 +296,9 @@ const formatTime = (timeStr: string) => {
   return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
-const previewContent = (item: AuditItem) => {
+const openPreview = (item: AuditItem) => {
   previewType.value = item.type
-  previewContent.value = item.content
+  previewContentData.value = item.content
   showPreviewModal.value = true
 }
 
