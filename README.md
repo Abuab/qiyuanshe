@@ -49,7 +49,7 @@
 ## 项目结构
 
 ```
-lingtong-match/
+qiyuanshe/
 ├── admin/                    # 管理后台前端
 │   ├── src/
 │   │   ├── api/             # API 接口定义
@@ -121,8 +121,8 @@ lingtong-match/
 #### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-repo/lingtong-match.git
-cd lingtong-match
+git clone https://github.com/your-repo/qiyuanshe.git
+cd qiyuanshe
 ```
 
 #### 2. 配置环境变量
