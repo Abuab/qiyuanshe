@@ -1,0 +1,53 @@
+{
+  "name": "栖缘社",
+  "appid": "__UNI__XXXXXXXX",
+  "description": "栖缘社 - 缘分匹配小程序",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "networkTimeout": {
+    "request": 15000,
+    "connectSocket": 15000,
+    "uploadFile": 15000,
+    "downloadFile": 15000
+  },
+  "debug": false,
+  "uniStatistics": {
+    "enable": false
+  },
+  "mp-weixin": {
+    "appid": "",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true,
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于匹配附近的缘分"
+      },
+      "scope.writePhotosAlbum": {
+        "desc": "保存海报到相册需要此权限"
+      },
+      "scope.camera": {
+        "desc": "使用摄像头拍摄头像需要此权限"
+      }
+    },
+    "requiredPrivateInfos": [
+      "chooseAddress",
+      "getLocation"
+    ]
+  },
+  "h5": {
+    "devServer": {
+      "port": 8080,
+      "disableHostCheck": true
+    },
+    "router": {
+      "mode": "hash"
+    },
+    "title": "栖缘社"
+  }
+}

@@ -1,0 +1,530 @@
+<template>
+  <view class="index-page">
+    <view class="header">
+      <view class="header-content">
+        <text class="brand-title">栖缘社</text>
+        <view class="header-capsule"></view>
+      </view>
+    </view>
+
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      :refresher-enabled="true"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore"
+    >
+      <view class="quick-entry-section">
+        <view
+          v-for="entry in quickEntries"
+          :key="entry.id"
+          class="quick-entry-item"
+          @tap="handleQuickEntry(entry)"
+        >
+          <view class="quick-entry-icon" :style="{ backgroundColor: entry.bgColor }">
+            <image class="entry-icon" :src="entry.icon" mode="aspectFit"></image>
+          </view>
+          <text class="quick-entry-text">{{ entry.name }}</text>
+        </view>
+      </view>
+
+      <view class="hot-questions-section">
+        <view class="section-header">
+          <text class="section-title">热门问答</text>
+          <text class="section-more" @tap="goToQuestions">更多></text>
+        </view>
+
+        <scroll-view class="questions-scroll" scroll-x>
+          <view
+            v-for="question in hotQuestions"
+            :key="question.id"
+            class="question-card"
+            @tap="goToQuestionDetail(question.id)"
+          >
+            <text class="question-title">{{ question.title }}</text>
+            <view class="question-avatars">
+              <image
+                v-for="(avatar, index) in question.avatarList.slice(0, 3)"
+                :key="index"
+                class="question-avatar"
+                :src="avatar"
+                mode="aspectFill"
+              ></image>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
+      <view class="filter-section">
+        <view class="filter-tabs">
+          <view
+            v-for="tab in filterTabs"
+            :key="tab.value"
+            class="filter-tab"
+            :class="{ active: currentFilter === tab.value }"
+            @tap="switchFilter(tab.value)"
+          >
+            <text class="tab-label">{{ tab.label }}</text>
+            <view v-if="currentFilter === tab.value" class="tab-underline"></view>
+          </view>
+        </view>
+
+        <view class="filter-btn" @tap="goToFilter">
+          <text class="filter-btn-text">筛选</text>
+        </view>
+      </view>
+
+      <view class="user-list-section">
+        <user-card
+          v-for="user in userList"
+          :key="user.id"
+          :user="user"
+          @click="goToUserDetail(user)"
+        />
+
+        <view v-if="loadingMore" class="loading-more">
+          <text class="loading-text">加载中...</text>
+        </view>
+
+        <view v-if="noMoreData && userList.length > 0" class="no-more-data">
+          <text class="no-more-text">没有更多了</text>
+        </view>
+
+        <view v-if="userList.length === 0 && !loadingMore" class="empty-list">
+          <text class="empty-text">暂无匹配用户</text>
+        </view>
+      </view>
+
+      <view class="bottom-safe-area"></view>
+    </scroll-view>
+
+    <tab-bar />
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
+import { get } from '@/utils/request'
+import { showToast } from '@/utils/common'
+import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
+import TabBar from '@/components/tab-bar/tab-bar.vue'
+
+interface QuickEntry {
+  id: number
+  name: string
+  icon: string
+  bgColor: string
+}
+
+interface HotQuestion {
+  id: number
+  title: string
+  avatarList: string[]
+}
+
+interface FilterTab {
+  label: string
+  value: string
+}
+
+const quickEntries: QuickEntry[] = [
+  { id: 1, name: '红娘评语', icon: '/static/matchmaker.png', bgColor: '#FFF0F5' },
+  { id: 2, name: '最新活动', icon: '/static/activity.png', bgColor: '#E6F7FF' },
+  { id: 3, name: '相亲圈子', icon: '/static/circle.png', bgColor: '#F9F0FF' },
+  { id: 4, name: '我们脱单了', icon: '/static/heart.png', bgColor: '#FFF7E6' },
+]
+
+const filterTabs: FilterTab[] = [
+  { label: '活跃', value: 'active' },
+  { label: '精选', value: 'featured' },
+  { label: '实名', value: 'verified' },
+  { label: '最新', value: 'newest' },
+]
+
+const hotQuestions = ref<HotQuestion[]>([
+  {
+    id: 1,
+    title: '你理想中的婚姻生活是什么样的？',
+    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
+  },
+  {
+    id: 2,
+    title: '相亲时最看重对方的什么条件？',
+    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png'],
+  },
+  {
+    id: 3,
+    title: '结婚后要不要和父母一起住？',
+    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
+  },
+])
+
+const currentFilter = ref('active')
+const userList = ref<UserCardData[]>([])
+const isRefreshing = ref(false)
+const loadingMore = ref(false)
+const noMoreData = ref(false)
+const currentPage = ref(1)
+const pageSize = 10
+
+const loadUserList = async (reset = false) => {
+  if (reset) {
+    currentPage.value = 1
+    noMoreData.value = false
+  }
+
+  if (noMoreData.value || loadingMore.value) return
+
+  loadingMore.value = true
+
+  try {
+    const result = await get<{ list: UserCardData[]; total: number }>('/user/list', {
+      page: currentPage.value,
+      pageSize,
+      filter: currentFilter.value,
+    })
+
+    if (result && result.list) {
+      if (reset) {
+        userList.value = result.list
+      } else {
+        userList.value = [...userList.value, ...result.list]
+      }
+
+      if (result.list.length < pageSize) {
+        noMoreData.value = true
+      } else {
+        currentPage.value++
+      }
+    } else {
+      noMoreData.value = true
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+    showToast('加载失败，请重试', 'none')
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+const onRefresh = async () => {
+  isRefreshing.value = true
+  await loadUserList(true)
+  isRefreshing.value = false
+}
+
+const onLoadMore = () => {
+  if (!noMoreData.value && !loadingMore.value) {
+    loadUserList()
+  }
+}
+
+const switchFilter = (value: string) => {
+  if (currentFilter.value === value) return
+  currentFilter.value = value
+  loadUserList(true)
+}
+
+const handleQuickEntry = (entry: QuickEntry) => {
+  showToast('功能开发中', 'none')
+}
+
+const goToQuestions = () => {
+  uni.switchTab({
+    url: '/pages/questions/index',
+  })
+}
+
+const goToQuestionDetail = (id: number) => {
+  uni.navigateTo({
+    url: `/pages/question-detail/index?id=${id}`,
+  })
+}
+
+const goToFilter = () => {
+  uni.navigateTo({
+    url: '/pages/filter/index',
+  })
+}
+
+const goToUserDetail = (user: UserCardData) => {
+  uni.navigateTo({
+    url: `/pages/user-detail/index?id=${user.id}`,
+  })
+}
+
+const loadMockData = () => {
+  userList.value = [
+    {
+      id: 1,
+      nickname: '小红',
+      avatar: '/static/default-avatar.png',
+      age: 28,
+      height: 165,
+      education: '本科',
+      occupation: '教师',
+      incomeRange: '10-15万',
+      housingStatus: '有房',
+      isRealName: true,
+      photos: ['/static/default-avatar.png', '/static/default-avatar.png'],
+    },
+    {
+      id: 2,
+      nickname: '小丽',
+      avatar: '/static/default-avatar.png',
+      age: 26,
+      height: 160,
+      education: '硕士',
+      occupation: '医生',
+      incomeRange: '15-20万',
+      housingStatus: '有房',
+      isRealName: false,
+      photos: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
+    },
+    {
+      id: 3,
+      nickname: '小芳',
+      avatar: '/static/default-avatar.png',
+      age: 30,
+      height: 168,
+      education: '本科',
+      occupation: '会计',
+      incomeRange: '8-12万',
+      housingStatus: '租房',
+      isRealName: true,
+      photos: [],
+    },
+  ]
+}
+
+onMounted(() => {
+  loadMockData()
+})
+</script>
+
+<style lang="scss" scoped>
+.index-page {
+  min-height: 100vh;
+  background-color: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
+  padding-top: var(--status-bar-height);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 32rpx;
+}
+
+.brand-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #FF6B9D;
+}
+
+.header-capsule {
+  width: 168rpx;
+  height: 56rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 28rpx;
+}
+
+.content-scroll {
+  flex: 1;
+  margin-top: calc(var(--status-bar-height) + 96rpx);
+  margin-bottom: 120rpx;
+}
+
+.quick-entry-section {
+  display: flex;
+  justify-content: space-around;
+  padding: 32rpx 24rpx;
+  background-color: #fff;
+  margin-bottom: 20rpx;
+}
+
+.quick-entry-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.quick-entry-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16rpx;
+}
+
+.entry-icon {
+  width: 56rpx;
+  height: 56rpx;
+}
+
+.quick-entry-text {
+  font-size: 24rpx;
+  color: var(--text);
+}
+
+.hot-questions-section {
+  background-color: #fff;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: var(--text);
+}
+
+.section-more {
+  font-size: 26rpx;
+  color: #FF6B9D;
+}
+
+.questions-scroll {
+  white-space: nowrap;
+  height: 180rpx;
+}
+
+.question-card {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 420rpx;
+  height: 160rpx;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #FFF5F7 0%, #FFF0F5 100%);
+  border-radius: 16rpx;
+  margin-right: 20rpx;
+}
+
+.question-title {
+  font-size: 28rpx;
+  color: var(--text);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.question-avatars {
+  display: flex;
+  margin-top: 16rpx;
+}
+
+.question-avatar {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  margin-left: -16rpx;
+
+  &:first-child {
+    margin-left: 0;
+  }
+}
+
+.filter-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  background-color: #fff;
+  margin-bottom: 20rpx;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 40rpx;
+}
+
+.filter-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tab-label {
+  font-size: 28rpx;
+  color: #666;
+
+  .active & {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #FF6B9D;
+  }
+}
+
+.tab-underline {
+  position: absolute;
+  bottom: -8rpx;
+  width: 40rpx;
+  height: 6rpx;
+  background-color: #FF6B9D;
+  border-radius: 3rpx;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  padding: 12rpx 24rpx;
+  background-color: #FFF5F7;
+  border-radius: 24rpx;
+}
+
+.filter-btn-text {
+  font-size: 24rpx;
+  color: #FF6B9D;
+}
+
+.user-list-section {
+  padding: 0 24rpx;
+}
+
+.loading-more,
+.no-more-data,
+.empty-list {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx 0;
+}
+
+.loading-text,
+.no-more-text,
+.empty-text {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
+
+.bottom-safe-area {
+  height: 40rpx;
+}
+</style>

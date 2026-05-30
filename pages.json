@@ -1,0 +1,154 @@
+{
+  "pages": [
+    {
+      "path": "pages/splash/index",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "栖缘社",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/questions/index",
+      "style": {
+        "navigationBarTitleText": "问答",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/user-detail/index",
+      "style": {
+        "navigationBarTitleText": "个人主页",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/filter/index",
+      "style": {
+        "navigationBarTitleText": "筛选",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/question-detail/index",
+      "style": {
+        "navigationBarTitleText": "问答详情",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/answer/index",
+      "style": {
+        "navigationBarTitleText": "回答",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/poster/index",
+      "style": {
+        "navigationBarTitleText": "生成海报",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/chat/index",
+      "style": {
+        "navigationBarTitleText": "聊天",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/message-list/index",
+      "style": {
+        "navigationBarTitleText": "消息列表",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/vip/index",
+      "style": {
+        "navigationBarTitleText": "开通会员",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/pay-result/index",
+      "style": {
+        "navigationBarTitleText": "支付结果",
+        "navigationStyle": "custom"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "栖缘社",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FFF5F7"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#FF6B9D",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabbar/tab-home-default.png",
+        "selectedIconPath": "static/tabbar/tab-home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/questions/index",
+        "iconPath": "static/tabbar/tab-dynamic-default.png",
+        "selectedIconPath": "static/tabbar/tab-dynamic-active.png",
+        "text": "动态"
+      },
+      {
+        "pagePath": "pages/vip/index",
+        "iconPath": "static/tabbar/tab-vip-default.png",
+        "selectedIconPath": "static/tabbar/tab-vip-active.png",
+        "text": "会员"
+      },
+      {
+        "pagePath": "pages/message-list/index",
+        "iconPath": "static/tabbar/tab-message-default.png",
+        "selectedIconPath": "static/tabbar/tab-message-active.png",
+        "text": "消息"
+      },
+      {
+        "pagePath": "pages/my/index",
+        "iconPath": "static/tabbar/tab-my-default.png",
+        "selectedIconPath": "static/tabbar/tab-my-active.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  }
+}

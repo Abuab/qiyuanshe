@@ -1,0 +1,114 @@
+import request from './request'
+import type { ApiResponse } from './request'
+
+export interface User {
+  id: number
+  nickname: string
+  avatar?: string
+  gender: number
+  age?: number
+  education?: string
+  occupation?: string
+  height?: number
+  weight?: number
+  phone?: string
+  status: number
+  isVip: number
+  vipLevel?: number
+  vipExpireTime?: string
+  realNameAuth?: number
+  educationAuth?: number
+  createdAt: string
+  updatedAt: string
+  lastLoginAt?: string
+}
+
+export interface UserPhoto {
+  id: number
+  userId: number
+  photoUrl: string
+  isMain: number
+  sortOrder: number
+  auditStatus: number
+  createdAt: string
+}
+
+export interface UserFilter {
+  page?: number
+  limit?: number
+  keyword?: string
+  gender?: number
+  status?: number
+  isVip?: number
+  vipLevel?: number
+  startDate?: string
+  endDate?: string
+  sort?: string
+  order?: string
+}
+
+export interface UserListResponse {
+  list: User[]
+  page: number
+  limit: number
+  total: number
+}
+
+export interface UpdateVipDto {
+  level: number
+  days: number
+}
+
+export const adminUsers = {
+  list(params: UserFilter): Promise<ApiResponse<UserListResponse>> {
+    return request.get('/admin/users', { params })
+  },
+
+  detail(id: number): Promise<ApiResponse<User>> {
+    return request.get(`/admin/users/${id}`)
+  },
+
+  create(data: Partial<User>): Promise<ApiResponse> {
+    return request.post('/admin/users', data)
+  },
+
+  update(id: number, data: Partial<User>): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}`, data)
+  },
+
+  updateStatus(id: number, status: number): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}/status`, { status })
+  },
+
+  updateVip(id: number, data: UpdateVipDto): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}/vip`, data)
+  },
+
+  batchUpdateStatus(ids: number[], status: number): Promise<ApiResponse> {
+    return request.put('/admin/users/batch-status', { ids, status })
+  },
+
+  delete(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}`)
+  },
+
+  batchDelete(ids: number[]): Promise<ApiResponse> {
+    return request.post('/admin/users/batch-delete', { ids })
+  },
+
+  export(params: UserFilter): Promise<ApiResponse<User[]>> {
+    return request.get('/admin/users/export', { params })
+  },
+
+  resetPassword(id: number): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/reset-password`)
+  },
+
+  sendNotification(id: number, content: string): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/notify`, { content })
+  },
+
+  getPhotos(id: number): Promise<ApiResponse<UserPhoto[]>> {
+    return request.get(`/admin/users/${id}/photos`)
+  },
+}
