@@ -6,18 +6,25 @@ export interface User {
   nickname: string
   avatar?: string
   gender: number
+  birthYear?: number
   age?: number
   education?: string
   occupation?: string
   height?: number
   weight?: number
   phone?: string
-  status: number
+  incomeRange?: string
+  housingStatus?: string
+  maritalStatus?: string
+  hometown?: string
+  residence?: string
+  selfIntro?: string
+  mateRequirement?: string
+  isRealName: number
   isVip: number
   vipLevel?: number
   vipExpireTime?: string
-  realNameAuth?: number
-  educationAuth?: number
+  status: number
   createdAt: string
   updatedAt: string
   lastLoginAt?: string
@@ -45,6 +52,12 @@ export interface UserFilter {
   endDate?: string
   sort?: string
   order?: string
+  minAge?: number
+  maxAge?: number
+  maritalStatus?: string
+  incomeRange?: string
+  housingStatus?: string
+  education?: string
 }
 
 export interface UserListResponse {

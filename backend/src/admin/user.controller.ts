@@ -26,6 +26,12 @@ interface UserFilter {
   endDate?: string
   sort?: string
   order?: string
+  minAge?: number
+  maxAge?: number
+  maritalStatus?: string
+  incomeRange?: string
+  housingStatus?: string
+  education?: string
 }
 
 @Controller('admin/users')
@@ -105,6 +111,14 @@ export class AdminUserController {
       gender?: number
       avatar?: string
       birthYear?: number
+      education?: string
+      incomeRange?: string
+      housingStatus?: string
+      maritalStatus?: string
+      height?: number
+      occupation?: string
+      hometown?: string
+      residence?: string
       status?: number
     },
   ) {

@@ -17,6 +17,12 @@ interface UserFilter {
   endDate?: string
   sort?: string
   order?: string
+  minAge?: number
+  maxAge?: number
+  maritalStatus?: string
+  incomeRange?: string
+  housingStatus?: string
+  education?: string
 }
 
 @Injectable()
@@ -60,6 +66,34 @@ export class AdminUserService {
 
     if (filter.vipLevel !== undefined) {
       queryBuilder.andWhere('user.vipLevel = :vipLevel', { vipLevel: filter.vipLevel })
+    }
+
+    if (filter.minAge !== undefined || filter.maxAge !== undefined) {
+      const currentYear = new Date().getFullYear()
+      if (filter.minAge !== undefined) {
+        const maxBirthYear = currentYear - filter.minAge
+        queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
+      }
+      if (filter.maxAge !== undefined) {
+        const minBirthYear = currentYear - filter.maxAge
+        queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
+      }
+    }
+
+    if (filter.maritalStatus) {
+      queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: filter.maritalStatus })
+    }
+
+    if (filter.incomeRange) {
+      queryBuilder.andWhere('user.incomeRange = :incomeRange', { incomeRange: filter.incomeRange })
+    }
+
+    if (filter.housingStatus) {
+      queryBuilder.andWhere('user.housingStatus = :housingStatus', { housingStatus: filter.housingStatus })
+    }
+
+    if (filter.education) {
+      queryBuilder.andWhere('user.education = :education', { education: filter.education })
     }
 
     if (filter.startDate) {
@@ -146,6 +180,14 @@ export class AdminUserService {
     gender?: number
     avatar?: string
     birthYear?: number
+    education?: string
+    incomeRange?: string
+    housingStatus?: string
+    maritalStatus?: string
+    height?: number
+    occupation?: string
+    hometown?: string
+    residence?: string
     status?: number
   }) {
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
@@ -157,7 +199,17 @@ export class AdminUserService {
       gender: data.gender || 0,
       avatar: data.avatar || '',
       birthYear: data.birthYear || null,
+      education: data.education || null,
+      incomeRange: data.incomeRange || null,
+      housingStatus: data.housingStatus || null,
+      maritalStatus: data.maritalStatus || null,
+      height: data.height || null,
+      occupation: data.occupation || null,
+      hometown: data.hometown || null,
+      residence: data.residence || null,
       status: data.status !== undefined ? data.status : 1,
+      isVip: 0,
+      vipLevel: 0,
     })
 
     return this.userRepository.save(user)

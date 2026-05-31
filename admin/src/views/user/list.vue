@@ -3,6 +3,10 @@
     <div class="page-header">
       <h2 class="page-title">用户列表</h2>
       <div class="header-actions">
+        <el-button type="primary" @click="handleCreate">
+          <el-icon><Plus /></el-icon>
+          添加用户
+        </el-button>
         <el-button type="success" @click="handleExport" :loading="exportLoading">
           <el-icon><Download /></el-icon>
           导出Excel
@@ -29,6 +33,11 @@
               <el-option label="女" :value="2" />
             </el-select>
           </el-form-item>
+          <el-form-item label="年龄">
+            <el-input-number v-model="filterForm.minAge" :min="18" :max="100" placeholder="最小" style="width: 90px" />
+            <span class="range-separator">—</span>
+            <el-input-number v-model="filterForm.maxAge" :min="18" :max="100" placeholder="最大" style="width: 90px" />
+          </el-form-item>
           <el-form-item label="会员等级">
             <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
               <el-option label="全部" :value="undefined" />
@@ -44,6 +53,40 @@
               <el-option label="正常" :value="1" />
               <el-option label="禁用" :value="0" />
               <el-option label="待审核" :value="2" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="婚况">
+            <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
+              <el-option label="全部" :value="undefined" />
+              <el-option label="未婚" value="未婚" />
+              <el-option label="离异" value="离异" />
+              <el-option label="丧偶" value="丧偶" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="月收入">
+            <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
+              <el-option label="全部" :value="undefined" />
+              <el-option label="5k以下" value="5k以下" />
+              <el-option label="5k-10k" value="5k-10k" />
+              <el-option label="10k-20k" value="10k-20k" />
+              <el-option label="20k-50k" value="20k-50k" />
+              <el-option label="50k以上" value="50k以上" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="住房">
+            <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
+              <el-option label="全部" :value="undefined" />
+              <el-option label="有房" value="有房" />
+              <el-option label="无房" value="无房" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="学历">
+            <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
+              <el-option label="全部" :value="undefined" />
+              <el-option label="大专" value="大专" />
+              <el-option label="本科" value="本科" />
+              <el-option label="硕士" value="硕士" />
+              <el-option label="博士" value="博士" />
             </el-select>
           </el-form-item>
           <el-form-item label="注册时间">
@@ -210,6 +253,83 @@
         <el-button type="primary" @click="handleNotifySubmit">发送</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="createDialogVisible" title="添加用户" width="700px">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px">
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="phone">
+          <el-input v-model="createForm.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+        </el-form-item>
+        <el-form-item label="性别" prop="gender">
+          <el-radio-group v-model="createForm.gender">
+            <el-radio :label="1">男</el-radio>
+            <el-radio :label="2">女</el-radio>
+            <el-radio :label="0">未知</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="出生年份">
+          <el-input-number v-model="createForm.birthYear" :min="1950" :max="2010" />
+        </el-form-item>
+        <el-form-item label="学历">
+          <el-select v-model="createForm.education" placeholder="请选择学历" clearable style="width: 100%">
+            <el-option label="高中" value="高中" />
+            <el-option label="大专" value="大专" />
+            <el-option label="本科" value="本科" />
+            <el-option label="硕士" value="硕士" />
+            <el-option label="博士" value="博士" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="月收入">
+          <el-select v-model="createForm.incomeRange" placeholder="请选择月收入" clearable style="width: 100%">
+            <el-option label="5k以下" value="5k以下" />
+            <el-option label="5k-10k" value="5k-10k" />
+            <el-option label="10k-20k" value="10k-20k" />
+            <el-option label="20k-50k" value="20k-50k" />
+            <el-option label="50k以上" value="50k以上" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="住房情况">
+          <el-select v-model="createForm.housingStatus" placeholder="请选择住房情况" clearable style="width: 100%">
+            <el-option label="有房" value="有房" />
+            <el-option label="无房" value="无房" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="婚况">
+          <el-select v-model="createForm.maritalStatus" placeholder="请选择婚况" clearable style="width: 100%">
+            <el-option label="未婚" value="未婚" />
+            <el-option label="离异" value="离异" />
+            <el-option label="丧偶" value="丧偶" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="身高(cm)">
+          <el-input-number v-model="createForm.height" :min="100" :max="250" />
+        </el-form-item>
+        <el-form-item label="职业">
+          <el-input v-model="createForm.occupation" placeholder="请输入职业" />
+        </el-form-item>
+        <el-form-item label="家乡">
+          <el-input v-model="createForm.hometown" placeholder="请输入家乡" />
+        </el-form-item>
+        <el-form-item label="居住地">
+          <el-input v-model="createForm.residence" placeholder="请输入居住地" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-radio-group v-model="createForm.status">
+            <el-radio :label="1">正常</el-radio>
+            <el-radio :label="0">禁用</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleCreateSubmit" :loading="createLoading">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -217,7 +337,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download } from '@element-plus/icons-vue'
+import { Search, Download, Plus } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import type { User, UserFilter } from '../../api/user'
 
@@ -234,6 +354,12 @@ const filterForm = reactive<UserFilter>({
   gender: undefined,
   vipLevel: undefined,
   status: undefined,
+  minAge: undefined,
+  maxAge: undefined,
+  maritalStatus: undefined,
+  incomeRange: undefined,
+  housingStatus: undefined,
+  education: undefined,
   startDate: undefined,
   endDate: undefined,
   sort: 'createdAt',
@@ -251,6 +377,7 @@ const pagination = reactive({
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
+const createDialogVisible = ref(false)
 const currentUser = ref<User | null>(null)
 
 const vipForm = reactive({
@@ -261,6 +388,32 @@ const vipForm = reactive({
 const notifyForm = reactive({
   content: '',
 })
+
+const createFormRef = ref()
+const createLoading = ref(false)
+const createForm = reactive({
+  nickname: '',
+  phone: '',
+  password: '',
+  gender: 0,
+  birthYear: undefined,
+  education: undefined,
+  incomeRange: undefined,
+  housingStatus: undefined,
+  maritalStatus: undefined,
+  height: undefined,
+  occupation: '',
+  hometown: '',
+  residence: '',
+  status: 1,
+})
+
+const createRules = {
+  nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
+  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
+}
 
 onMounted(() => {
   fetchData()
@@ -297,12 +450,54 @@ function handleSearch() {
   fetchData()
 }
 
+function handleCreate() {
+  Object.assign(createForm, {
+    nickname: '',
+    phone: '',
+    password: '',
+    gender: 0,
+    birthYear: undefined,
+    education: undefined,
+    incomeRange: undefined,
+    housingStatus: undefined,
+    maritalStatus: undefined,
+    height: undefined,
+    occupation: '',
+    hometown: '',
+    residence: '',
+    status: 1,
+  })
+  createDialogVisible.value = true
+}
+
+async function handleCreateSubmit() {
+  await createFormRef.value?.validate()
+  createLoading.value = true
+  try {
+    await adminUsers.create(createForm as any)
+    ElMessage.success('用户创建成功')
+    createDialogVisible.value = false
+    fetchData()
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('创建失败')
+  } finally {
+    createLoading.value = false
+  }
+}
+
 function handleReset() {
   Object.assign(filterForm, {
     keyword: '',
     gender: undefined,
     vipLevel: undefined,
     status: undefined,
+    minAge: undefined,
+    maxAge: undefined,
+    maritalStatus: undefined,
+    incomeRange: undefined,
+    housingStatus: undefined,
+    education: undefined,
   })
   dateRange.value = []
   pagination.page = 1
@@ -482,6 +677,11 @@ function formatDate(dateStr: string) {
     font-weight: bold;
     margin: 0;
   }
+
+  .header-actions {
+    display: flex;
+    gap: 10px;
+  }
 }
 
 .card {
@@ -534,5 +734,10 @@ function formatDate(dateStr: string) {
 
 .ml-10 {
   margin-left: 10px;
+}
+
+.range-separator {
+  margin: 0 5px;
+  color: #999;
 }
 </style>
