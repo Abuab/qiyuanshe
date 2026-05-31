@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖（包括开发依赖，用于编译 TypeScript）
-RUN npm ci
+RUN npm install
 
 # 复制源代码
 COPY . .
