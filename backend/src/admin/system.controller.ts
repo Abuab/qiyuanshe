@@ -1,15 +1,7 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
-import { AdminSystemService } from './system.service'
+import { AdminSystemService, SystemConfigs } from './system.service'
 import { Result } from '../common/result'
-
-interface SystemConfigs {
-  basic?: Record<string, any>
-  share?: Record<string, any>
-  vip?: Record<string, any>
-  payment?: Record<string, any>
-  audit?: Record<string, any>
-}
 
 @Controller('admin/system')
 @UseGuards(AdminJwtAuthGuard)

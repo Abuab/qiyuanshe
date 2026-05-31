@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
 
-interface SystemConfigs {
+export interface SystemConfigs {
   basic?: Record<string, any>
   share?: Record<string, any>
   vip?: Record<string, any>
