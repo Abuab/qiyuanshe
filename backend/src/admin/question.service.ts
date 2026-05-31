@@ -34,10 +34,6 @@ export class AdminQuestionService {
       })
     }
 
-    if (filter.type !== undefined) {
-      queryBuilder.andWhere('question.type = :type', { type: filter.type })
-    }
-
     if (filter.status !== undefined) {
       queryBuilder.andWhere('question.status = :status', { status: filter.status })
     }
@@ -61,12 +57,23 @@ export class AdminQuestionService {
   }
 
   async create(data: Partial<HotQuestion>) {
-    const question = this.questionRepository.create(data)
+    const question = this.questionRepository.create({
+      ...data,
+      status: data.status ?? data.isActive ?? 1,
+      isActive: data.isActive ?? data.status ?? 1,
+    })
     return this.questionRepository.save(question)
   }
 
   async update(id: number, data: Partial<HotQuestion>) {
-    await this.questionRepository.update(id, data)
+    const updateData: any = { ...data }
+    if (data.status !== undefined) {
+      updateData.isActive = data.status
+    }
+    if (data.isActive !== undefined) {
+      updateData.status = data.isActive
+    }
+    await this.questionRepository.update(id, updateData)
   }
 
   async delete(id: number) {

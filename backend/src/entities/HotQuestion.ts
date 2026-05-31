@@ -22,6 +22,9 @@ export class HotQuestion {
   @Column({ type: 'tinyint', default: 1 })
   isActive: number
 
+  @Column({ type: 'tinyint', default: 1 })
+  status: number
+
   @Column({ type: 'int', default: 0 })
   sortOrder: number
 

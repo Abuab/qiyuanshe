@@ -55,8 +55,6 @@ export const adminMatchmaker = {
   },
 
   upload(data: FormData): Promise<ApiResponse<{ url: string }>> {
-    return request.post('/admin/upload', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    return request.post('/admin/upload', data)
   },
 }

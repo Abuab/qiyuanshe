@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
-import { extname } from 'path'
+import { extname, join } from 'path'
+import { existsSync, mkdirSync } from 'fs'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { Result } from '../common/result'
 
@@ -22,6 +23,18 @@ interface UploadedFile {
   size: number
 }
 
+const ensureDirectoryExists = (dir: string) => {
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+  }
+}
+
+const uploadsDir = join(process.cwd(), 'uploads')
+const certDir = join(uploadsDir, 'cert')
+
+ensureDirectoryExists(uploadsDir)
+ensureDirectoryExists(certDir)
+
 @Controller('admin/upload')
 @UseGuards(AdminJwtAuthGuard)
 export class UploadController {
@@ -29,7 +42,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads',
+        destination: uploadsDir,
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
           cb(null, `upload-${uniqueSuffix}${extname(file.originalname)}`)
@@ -37,6 +50,13 @@ export class UploadController {
       }),
       limits: {
         fileSize: 1024 * 1024 * 5,
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true)
+        } else {
+          cb(new Error('只允许上传图片文件'), false)
+        }
       },
     }),
   )
@@ -51,7 +71,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/cert',
+        destination: certDir,
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
           cb(null, `cert-${uniqueSuffix}${extname(file.originalname)}`)
@@ -59,6 +79,13 @@ export class UploadController {
       }),
       limits: {
         fileSize: 1024 * 1024 * 5,
+      },
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+          cb(null, true)
+        } else {
+          cb(new Error('只允许上传图片文件'), false)
+        }
       },
     }),
   )
