@@ -37,12 +37,15 @@ RUN mkdir -p /var/log/nginx && \
     chown -R nginx:nginx /usr/share/nginx/html && \
     chown -R nginx:nginx /var/log/nginx
 
+# 安装 curl（用于健康检查）
+RUN apk add --no-cache curl
+
 # 暴露端口
 EXPOSE 80
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/index.html || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:80/index.html || exit 1
 
 # 启动 nginx
 CMD ["nginx", "-g", "daemon off;"]

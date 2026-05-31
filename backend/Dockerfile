@@ -21,8 +21,8 @@ RUN npm run build
 # 生产阶段镜像
 FROM node:18-alpine AS production
 
-# 安装 dumb-init 用于优雅地处理进程信号
-RUN apk add --no-cache dumb-init
+# 安装 dumb-init 和 curl（用于健康检查）
+RUN apk add --no-cache dumb-init curl
 
 # 设置工作目录
 WORKDIR /app
@@ -47,8 +47,8 @@ USER nestjs
 EXPOSE 3000
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:3000/health || exit 1
 
 # 使用 dumb-init 启动应用
 CMD ["dumb-init", "node", "dist/main.js"]
