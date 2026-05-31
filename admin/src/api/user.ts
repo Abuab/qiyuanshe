@@ -60,6 +60,7 @@ export interface UserFilter {
   maritalStatus?: string
   incomeRange?: string
   housingStatus?: string
+  carStatus?: string
   education?: string
 }
 

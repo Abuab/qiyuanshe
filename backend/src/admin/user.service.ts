@@ -22,6 +22,7 @@ interface UserFilter {
   maritalStatus?: string
   incomeRange?: string
   housingStatus?: string
+  carStatus?: string
   education?: string
 }
 
@@ -90,6 +91,10 @@ export class AdminUserService {
 
     if (filter.housingStatus) {
       queryBuilder.andWhere('user.housingStatus = :housingStatus', { housingStatus: filter.housingStatus })
+    }
+
+    if (filter.carStatus) {
+      queryBuilder.andWhere('user.carStatus = :carStatus', { carStatus: filter.carStatus })
     }
 
     if (filter.education) {
@@ -217,5 +222,9 @@ export class AdminUserService {
     })
 
     return this.userRepository.save(user)
+  }
+
+  async updateUser(id: number, data: Partial<User>) {
+    await this.userRepository.update(id, data)
   }
 }

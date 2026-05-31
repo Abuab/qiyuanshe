@@ -31,6 +31,7 @@ interface UserFilter {
   maritalStatus?: string
   incomeRange?: string
   housingStatus?: string
+  carStatus?: string
   education?: string
 }
 
@@ -125,5 +126,14 @@ export class AdminUserController {
   ) {
     const user = await this.userService.createUser(body)
     return Result.success(user, '用户创建成功')
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+  ) {
+    await this.userService.updateUser(id, body)
+    return Result.success(null, '用户更新成功')
   }
 }

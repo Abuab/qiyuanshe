@@ -17,6 +17,28 @@ export class AdminMatchmakerService {
     private readonly matchmakerRepository: Repository<Matchmaker>,
   ) {}
 
+  private transformToResponse(matchmaker: Matchmaker) {
+    return {
+      ...matchmaker,
+      status: matchmaker.isActive,
+      qrcode: matchmaker.qrCode,
+    }
+  }
+
+  private transformFromInput(data: any) {
+    const result: any = {}
+    if (data.name !== undefined) result.name = data.name
+    if (data.avatar !== undefined) result.avatar = data.avatar
+    if (data.title !== undefined) result.title = data.title
+    if (data.wechat !== undefined) result.wechat = data.wechat
+    if (data.phone !== undefined) result.phone = data.phone
+    if (data.qrcode !== undefined) result.qrCode = data.qrcode
+    if (data.description !== undefined) result.description = data.description
+    if (data.status !== undefined) result.isActive = data.status
+    if (data.sortOrder !== undefined) result.sortOrder = data.sortOrder
+    return result
+  }
+
   async list(filter: MatchmakerFilter) {
     const page = filter.page || 1
     const limit = filter.limit || 20
@@ -31,7 +53,7 @@ export class AdminMatchmakerService {
     }
 
     if (filter.status !== undefined) {
-      queryBuilder.andWhere('matchmaker.status = :status', { status: filter.status })
+      queryBuilder.andWhere('matchmaker.isActive = :status', { status: filter.status })
     }
 
     queryBuilder.orderBy('matchmaker.sortOrder', 'ASC').addOrderBy('matchmaker.createdAt', 'DESC')
@@ -41,7 +63,7 @@ export class AdminMatchmakerService {
     const [matchmakers, total] = await queryBuilder.getManyAndCount()
 
     return {
-      list: matchmakers,
+      list: matchmakers.map(m => this.transformToResponse(m)),
       page,
       limit,
       total,
@@ -49,16 +71,22 @@ export class AdminMatchmakerService {
   }
 
   async detail(id: number) {
-    return this.matchmakerRepository.findOne({ where: { id } })
+    const matchmaker = await this.matchmakerRepository.findOne({ where: { id } })
+    if (matchmaker) {
+      return this.transformToResponse(matchmaker)
+    }
+    return null
   }
 
-  async create(data: Partial<Matchmaker>) {
-    const matchmaker = this.matchmakerRepository.create(data)
+  async create(data: any) {
+    const transformedData = this.transformFromInput(data)
+    const matchmaker = this.matchmakerRepository.create(transformedData)
     return this.matchmakerRepository.save(matchmaker)
   }
 
-  async update(id: number, data: Partial<Matchmaker>) {
-    await this.matchmakerRepository.update(id, data)
+  async update(id: number, data: any) {
+    const transformedData = this.transformFromInput(data)
+    await this.matchmakerRepository.update(id, transformedData)
   }
 
   async delete(id: number) {

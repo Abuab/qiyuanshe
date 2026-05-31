@@ -74,13 +74,20 @@
             </el-select>
           </el-form-item>
           <el-form-item label="住房">
-            <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="有房" value="有房" />
-              <el-option label="无房" value="无房" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="学历">
+          <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
+            <el-option label="全部" :value="undefined" />
+            <el-option label="有房" value="有房" />
+            <el-option label="无房" value="无房" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="车辆">
+          <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
+            <el-option label="全部" :value="undefined" />
+            <el-option label="有车" value="有车" />
+            <el-option label="无车" value="无车" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="学历">
             <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
               <el-option label="全部" :value="undefined" />
               <el-option label="大专" value="大专" />
@@ -171,6 +178,13 @@
         <el-table-column prop="createdAt" label="注册时间" width="160" sortable="custom">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="carStatus" label="车辆" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.carStatus === '有车'" type="success" size="small">有车</el-tag>
+            <el-tag v-else-if="row.carStatus === '无车'" type="info" size="small">无车</el-tag>
+            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100" sortable="custom">
@@ -299,6 +313,12 @@
             <el-option label="无房" value="无房" />
           </el-select>
         </el-form-item>
+        <el-form-item label="车辆情况">
+          <el-select v-model="createForm.carStatus" placeholder="请选择车辆情况" clearable style="width: 100%">
+            <el-option label="有车" value="有车" />
+            <el-option label="无车" value="无车" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="婚况">
           <el-select v-model="createForm.maritalStatus" placeholder="请选择婚况" clearable style="width: 100%">
             <el-option label="未婚" value="未婚" />
@@ -400,6 +420,7 @@ const createForm = reactive({
   education: undefined,
   incomeRange: undefined,
   housingStatus: undefined,
+  carStatus: undefined,
   maritalStatus: undefined,
   height: undefined,
   occupation: '',
@@ -460,6 +481,7 @@ function handleCreate() {
     education: undefined,
     incomeRange: undefined,
     housingStatus: undefined,
+    carStatus: undefined,
     maritalStatus: undefined,
     height: undefined,
     occupation: '',
@@ -497,6 +519,7 @@ function handleReset() {
     maritalStatus: undefined,
     incomeRange: undefined,
     housingStatus: undefined,
+    carStatus: undefined,
     education: undefined,
   })
   dateRange.value = []
