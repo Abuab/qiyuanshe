@@ -6,6 +6,7 @@ export * from './audit'
 export * from './system'
 export * from './matchmaker'
 export * from './question'
+export * from './activity'
 
 export interface ApiResponse<T = any> {
   success: boolean

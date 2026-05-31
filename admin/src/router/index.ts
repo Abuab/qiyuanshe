@@ -80,6 +80,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/system/config.vue'),
         meta: { title: '系统配置', requiresAuth: true },
       },
+      {
+        path: '/activity/list',
+        name: 'ActivityList',
+        component: () => import('../views/activity/list.vue'),
+        meta: { title: '活动列表', requiresAuth: true },
+      },
+      {
+        path: '/activity/edit/:id?',
+        name: 'ActivityEdit',
+        component: () => import('../views/activity/edit.vue'),
+        meta: { title: '活动编辑', requiresAuth: true },
+      },
+      {
+        path: '/activity/signups/:id',
+        name: 'ActivitySignups',
+        component: () => import('../views/activity/signups.vue'),
+        meta: { title: '报名管理', requiresAuth: true },
+      },
     ],
   },
 ]

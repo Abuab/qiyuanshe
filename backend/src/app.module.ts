@@ -27,6 +27,7 @@ import { PaymentModule } from './payment/payment.module'
 import { ChatModule } from './chat/chat.module'
 import { AuditModule } from './audit/audit.module'
 import { SystemModule } from './system/system.module'
+import { ActivityModule } from './activity/activity.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 
@@ -67,6 +68,7 @@ import { AdminModule } from './admin/admin.module'
     AuditModule,
     AdminModule,
     SystemModule,
+    ActivityModule,
   ],
   controllers: [HealthController],
   exports: [TypeOrmModule, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule],

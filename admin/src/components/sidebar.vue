@@ -60,6 +60,14 @@
         <el-menu-item index="/payment/stats">营收统计</el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu index="/activity">
+        <template #title>
+          <el-icon><Calendar /></el-icon>
+          <span>活动管理</span>
+        </template>
+        <el-menu-item index="/activity/list">活动列表</el-menu-item>
+      </el-sub-menu>
+
       <el-sub-menu index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
@@ -105,6 +113,7 @@ import {
   CircleCheck,
   Tickets,
   Setting,
+  Calendar,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

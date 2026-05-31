@@ -320,4 +320,48 @@ INSERT INTO `hot_questions` (`title`, `content`, `isActive`, `sortOrder`) VALUES
 INSERT INTO `users` (`openid`, `nickname`, `avatar`, `phone`, `gender`, `status`, `isVip`, `isRealName`, `createdAt`) VALUES
 ('admin_default_openid', '系统管理员', 'https://example.com/admin.png', '13800000000', 1, 1, 0, 1, NOW());
 
+-- =============================================
+-- 活动表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `activities` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(200) NOT NULL COMMENT '活动标题',
+  `subtitle` VARCHAR(500) NULL COMMENT '副标题/简介',
+  `coverImage` VARCHAR(500) NOT NULL COMMENT '顶部海报大图URL',
+  `content` TEXT NULL COMMENT '活动详情（富文本HTML）',
+  `activityType` VARCHAR(20) NOT NULL DEFAULT 'latest' COMMENT 'latest-最新活动 online-线上互选 cp-一周CP',
+  `signUpEndTime` DATETIME NULL COMMENT '报名截止时间',
+  `startTime` DATETIME NOT NULL COMMENT '活动开始时间',
+  `endTime` DATETIME NOT NULL COMMENT '活动结束时间',
+  `location` VARCHAR(200) NULL COMMENT '活动地点',
+  `maxParticipants` INT NOT NULL DEFAULT 0 COMMENT '人数上限（0不限）',
+  `currentParticipants` INT NOT NULL DEFAULT 0,
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0草稿 1进行中 2已结束 3已取消',
+  `isActive` TINYINT NOT NULL DEFAULT 1 COMMENT '是否上架',
+  `sortOrder` INT NOT NULL DEFAULT 0,
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_type` (`activityType`),
+  KEY `idx_status` (`status`),
+  KEY `idx_isActive` (`isActive`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动表';
+
+-- =============================================
+-- 活动报名表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `activity_signups` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `activityId` BIGINT UNSIGNED NOT NULL,
+  `userId` BIGINT UNSIGNED NOT NULL,
+  `realName` VARCHAR(50) NULL,
+  `phone` VARCHAR(20) NULL,
+  `remark` VARCHAR(200) NULL,
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0待确认 1已确认 2已取消',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_activity_user` (`activityId`, `userId`),
+  KEY `idx_activityId` (`activityId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动报名表';
+
 -- 注意：管理员密码需要在后台设置或通过加密方式存储
