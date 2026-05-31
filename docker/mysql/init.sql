@@ -14,8 +14,12 @@ CREATE DATABASE IF NOT EXISTS `lingtong_match`
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
--- 创建数据库用户（如果不存在）
-CREATE USER IF NOT EXISTS 'lingtong'@'%' IDENTIFIED BY 'lingtong_pass_2024';
+-- 创建数据库用户（使用环境变量设置密码）
+SET @user_password = IFNULL('${MYSQL_PASSWORD}', 'lingtong_pass_2024');
+SET @create_user_sql = CONCAT('CREATE USER IF NOT EXISTS ''lingtong''@''%'' IDENTIFIED BY ''', @user_password, '''');
+PREPARE stmt FROM @create_user_sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 授权用户访问数据库
 GRANT ALL PRIVILEGES ON `lingtong_match`.* TO 'lingtong'@'%';
