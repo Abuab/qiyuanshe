@@ -569,7 +569,7 @@ async function handleToggleStatus(row: User) {
       `确认${action}`,
       { type: 'warning' }
     )
-    await adminUsers.update(row.id, { status: row.status === 1 ? 0 : 1 } as any)
+    await adminUsers.updateStatus(row.id, row.status === 1 ? 0 : 1)
     ElMessage.success(`${action}成功`)
     fetchData()
   } catch (error) {
@@ -612,8 +612,15 @@ async function handleNotifySubmit() {
     ElMessage.warning('请输入通知内容')
     return
   }
-  ElMessage.success('通知已发送')
-  notifyDialogVisible.value = false
+  if (!currentUser.value) return
+  try {
+    await adminUsers.sendNotification(currentUser.value.id, notifyForm.content)
+    ElMessage.success('通知已发送')
+    notifyDialogVisible.value = false
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('发送通知失败')
+  }
 }
 
 async function handleBatchDisable() {
