@@ -14,6 +14,15 @@ CREATE DATABASE IF NOT EXISTS `lingtong_match`
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_unicode_ci;
 
+-- 创建数据库用户（如果不存在）
+CREATE USER IF NOT EXISTS 'lingtong'@'%' IDENTIFIED BY 'lingtong_pass_2024';
+
+-- 授权用户访问数据库
+GRANT ALL PRIVILEGES ON `lingtong_match`.* TO 'lingtong'@'%';
+
+-- 刷新权限
+FLUSH PRIVILEGES;
+
 USE `lingtong_match`;
 
 -- =============================================
