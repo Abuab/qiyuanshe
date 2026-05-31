@@ -37,8 +37,10 @@ instance.interceptors.response.use(
     const isWrapped = data.code !== undefined && data.data !== undefined
     const result = isWrapped ? data.data : data
 
-    if (result.success === false || result.code === 401) {
-      if (result.code === 401 || data.code === 401) {
+    // 检查是否失败（code 不为 200 或 success 为 false）
+    const isError = (data.code !== undefined && data.code !== 200) || result.success === false
+    if (isError) {
+      if (data.code === 401 || result.code === 401) {
         handleUnauthorized()
         return Promise.reject(new Error(result.message || data.message || '未授权'))
       }
@@ -47,8 +49,11 @@ instance.interceptors.response.use(
       return Promise.reject(new Error(result.message || data.message))
     }
 
-    // 返回数据部分，保持向后兼容
-    return isWrapped ? { ...data, ...result } : data
+    // 返回完整响应数据，并添加 success 字段便于前端使用
+    if (isWrapped) {
+      return { ...data, success: true, ...result }
+    }
+    return { ...data, success: true }
   },
   (error) => {
     if (error.response) {

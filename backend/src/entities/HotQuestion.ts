@@ -13,7 +13,7 @@ export class HotQuestion {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number
 
-  @Column({ type: 'varchar', length: 200 })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   title: string
 
   @Column({ type: 'text', nullable: true })
