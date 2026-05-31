@@ -22,3 +22,20 @@ export class CaptchaFallbackController {
     return { svg, key }
   }
 }
+
+@Controller('api')
+export class CaptchaApiController {
+  constructor(private readonly captchaService: CaptchaService) {}
+
+  @Get('captcha')
+  async getCaptchaApi() {
+    const { svg, key } = this.captchaService.generateCaptcha()
+    return { svg, key }
+  }
+
+  @Get('admin/captcha')
+  async getCaptchaApiAdmin() {
+    const { svg, key } = this.captchaService.generateCaptcha()
+    return { svg, key }
+  }
+}
