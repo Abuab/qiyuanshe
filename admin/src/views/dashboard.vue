@@ -376,14 +376,14 @@ function updateUserChart(data: any[] = []) {
 function updateGenderChart(data: any[] = []) {
   if (!genderChart) return
 
-  const colors = {
+  const colors: Record<string, string> = {
     '男性': '#409EFF',
     '女性': '#F56C6C',
     '未知': '#909399',
   }
 
   const chartData = data.length > 0 
-    ? data.map(item => ({
+    ? data.map((item: { name: string; value: number }) => ({
         ...item,
         itemStyle: { color: colors[item.name] || '#909399' },
       }))
@@ -434,7 +434,7 @@ function updateGenderChart(data: any[] = []) {
 function updateAgeChart(data: any[] = []) {
   if (!ageChart) return
 
-  const colors = {
+  const colors: Record<string, string> = {
     '18-25岁': '#409EFF',
     '26-35岁': '#67C23A',
     '36-45岁': '#E6A23C',
@@ -442,7 +442,7 @@ function updateAgeChart(data: any[] = []) {
   }
 
   const chartData = data.length > 0
-    ? data.map(item => ({
+    ? data.map((item: { name: string; value: number }) => ({
         ...item,
         itemStyle: { color: colors[item.name] || '#909399' },
       }))
