@@ -66,18 +66,18 @@ export const adminPayment = {
 
 export const adminOrders = {
   list(params: OrderFilter): Promise<ApiResponse<OrderListResponse>> {
-    return request.get('/admin/orders', { params })
+    return request.get('/admin/payment/orders', { params })
   },
 
   detail(id: number): Promise<ApiResponse<Order>> {
-    return request.get(`/admin/orders/${id}`)
+    return request.get(`/admin/payment/orders/${id}`)
   },
 
   detailByOrderNo(orderNo: string): Promise<ApiResponse<Order>> {
-    return request.get(`/admin/orders/no/${orderNo}`)
+    return request.get(`/admin/payment/orders/${orderNo}`)
   },
 
   export(params: OrderFilter): Promise<ApiResponse<string>> {
-    return request.get('/admin/orders/export', { params })
+    return request.get('/admin/payment/orders', { params })
   },
 }

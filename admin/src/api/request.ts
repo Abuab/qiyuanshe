@@ -28,41 +28,49 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => {
     const { data } = response
+    
+    // 兼容后端包装的响应格式 { code, message, data: {...} }
+    const isWrapped = data.code !== undefined && data.data !== undefined
+    const result = isWrapped ? data.data : data
 
-    if (data.success === false) {
-      if (data.code === 401) {
+    if (result.success === false || result.code === 401) {
+      if (result.code === 401 || data.code === 401) {
         handleUnauthorized()
-        return Promise.reject(new Error(data.message || '未授权'))
+        return Promise.reject(new Error(result.message || data.message || '未授权'))
       }
 
-      ElMessage.error(data.message || '请求失败')
-      return Promise.reject(new Error(data.message))
+      ElMessage.error(result.message || data.message || '请求失败')
+      return Promise.reject(new Error(result.message || data.message))
     }
 
-    return data
+    // 返回数据部分，保持向后兼容
+    return isWrapped ? { ...data, ...result } : data
   },
   (error) => {
     if (error.response) {
       const { status, data } = error.response
+      
+      // 兼容后端包装的响应格式
+      const responseData = data.data || data
 
       switch (status) {
         case 401:
           handleUnauthorized()
           break
         case 403:
-          ElMessage.error(data.message || '没有权限')
+          ElMessage.error(responseData.message || '没有权限')
           break
         case 404:
-          ElMessage.error(data.message || '资源不存在')
+          ElMessage.error(responseData.message || '资源不存在')
           break
         case 500:
-          ElMessage.error(data.message || '服务器错误')
+          ElMessage.error(responseData.message || '服务器错误')
           break
         case 422:
-          ElMessage.error(data.message || '参数验证失败')
+          ElMessage.error(responseData.message || '参数验证失败')
           break
         default:
-          ElMessage.error(data.message || '网络错误')
+          ElMessage.error(responseData.message || '网络错误')
       }
     } else if (error.request) {
       ElMessage.error('网络连接失败，请检查网络')
