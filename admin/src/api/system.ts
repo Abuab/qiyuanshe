@@ -11,33 +11,33 @@ export interface SystemConfigs {
 
 export const system = {
   getConfigs(): Promise<ApiResponse<SystemConfigs>> {
-    return request.get('/system/configs')
+    return request.get('/admin/system/configs')
   },
 
   saveConfigs(configs: SystemConfigs): Promise<ApiResponse> {
-    return request.put('/system/configs', configs)
+    return request.put('/admin/system/configs', configs)
   },
 
   getConfig(key: string): Promise<ApiResponse<string>> {
-    return request.get(`/system/config/${key}`)
+    return request.get(`/admin/system/config/${key}`)
   },
 }
 
 export const adminSystem = {
   saveConfigs(configs: SystemConfigs): Promise<ApiResponse> {
-    return request.put('/system/configs', configs)
+    return request.put('/admin/system/configs', configs)
   },
 
   updateConfig(key: string, value: string): Promise<ApiResponse> {
-    return request.put(`/system/config/${key}`, { value })
+    return request.put(`/admin/system/config/${key}`, { value })
   },
 
   batchUpdateConfigs(configs: Record<string, string>): Promise<ApiResponse> {
-    return request.put('/system/configs', { configs })
+    return request.put('/admin/system/configs', { configs })
   },
 
   getConfigByKey(key: string): Promise<ApiResponse<string>> {
-    return request.get(`/system/config/${key}`)
+    return request.get(`/admin/system/config/${key}`)
   },
 
   upload(data: FormData): Promise<ApiResponse<{ url: string }>> {

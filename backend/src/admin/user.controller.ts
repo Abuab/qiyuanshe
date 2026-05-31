@@ -95,4 +95,20 @@ export class AdminUserController {
     await this.userService.batchUpdateStatus(body.ids, body.status)
     return Result.success(null, '批量状态更新成功')
   }
+
+  @Post()
+  async create(
+    @Body() body: {
+      nickname: string
+      phone: string
+      password?: string
+      gender?: number
+      avatar?: string
+      birthday?: string
+      status?: number
+    },
+  ) {
+    const user = await this.userService.createUser(body)
+    return Result.success(user, '用户创建成功')
+  }
 }

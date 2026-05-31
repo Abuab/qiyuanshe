@@ -23,16 +23,16 @@ export const adminDashboard = {
     return request.get('/admin/dashboard/stats', { params })
   },
 
-  getUserTrend(params: { timeRange: string; type: string }): Promise<ApiResponse<UserTrend[]>> {
+  getUserTrend(params: { timeRange: string }): Promise<ApiResponse<UserTrend[]>> {
     return request.get('/admin/dashboard/user-trend', { params })
   },
 
   getGenderDistribution(): Promise<ApiResponse<any[]>> {
-    return request.get('/admin/dashboard/gender-dist')
+    return request.get('/admin/dashboard/gender-distribution')
   },
 
   getAgeDistribution(): Promise<ApiResponse<any[]>> {
-    return request.get('/admin/dashboard/age-dist')
+    return request.get('/admin/dashboard/age-distribution')
   },
 
   getRevenueTrend(params: { timeRange: string }): Promise<ApiResponse<any[]>> {

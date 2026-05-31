@@ -138,4 +138,30 @@ export class AdminUserService {
   async batchUpdateStatus(ids: number[], status: number) {
     await this.userRepository.update(ids, { status })
   }
+
+  async createUser(data: {
+    nickname: string
+    phone: string
+    password?: string
+    gender?: number
+    avatar?: string
+    birthday?: string
+    status?: number
+  }) {
+    const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
+    
+    const user = this.userRepository.create({
+      nickname: data.nickname,
+      phone: data.phone,
+      password: hashedPassword,
+      gender: data.gender || 0,
+      avatar: data.avatar || '',
+      birthday: data.birthday || null,
+      status: data.status !== undefined ? data.status : 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    return this.userRepository.save(user)
+  }
 }

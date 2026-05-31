@@ -17,6 +17,7 @@ import { AdminDashboardService } from './dashboard.service'
 import { CaptchaController, CaptchaFallbackController, CaptchaApiController } from './captcha.controller'
 import { CaptchaService } from './captcha.service'
 import { AdminLoginController, AdminLoginApiController } from './login.controller'
+import { UploadController } from './upload.controller'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -56,6 +57,7 @@ import { AuditLog } from '../entities/AuditLog'
     CaptchaApiController,
     AdminLoginController,
     AdminLoginApiController,
+    UploadController,
   ],
   providers: [
     AdminUserService,

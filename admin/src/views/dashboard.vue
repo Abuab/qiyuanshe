@@ -245,10 +245,15 @@ onUnmounted(() => {
 
 async function fetchDashboardData() {
   try {
-    const [dashboardRes, usersRes, ordersRes] = await Promise.all([
+    const [dashboardRes, usersRes, ordersRes, userTrendRes, genderRes, ageRes, revenueRes, funnelRes] = await Promise.all([
       adminDashboard.getStats({ timeRange: timeRange.value }),
       adminUsers.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
       adminOrders.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
+      adminDashboard.getUserTrend({ timeRange: timeRange.value }),
+      adminDashboard.getGenderDistribution(),
+      adminDashboard.getAgeDistribution(),
+      adminDashboard.getRevenueTrend({ timeRange: timeRange.value }),
+      adminDashboard.getFunnelData(),
     ])
 
     if (dashboardRes.success) {
@@ -264,7 +269,13 @@ async function fetchDashboardData() {
     }
 
     await nextTick()
-    updateCharts()
+    updateCharts(
+      userTrendRes.success ? userTrendRes.data : [],
+      genderRes.success ? genderRes.data : [],
+      ageRes.success ? ageRes.data : [],
+      revenueRes.success ? revenueRes.data : [],
+      funnelRes.success ? funnelRes.data : []
+    )
   } catch (error) {
     console.error('Fetch dashboard data error:', error)
     ElMessage.error('获取数据失败')
@@ -289,16 +300,27 @@ function initCharts() {
   }
 }
 
-function updateCharts() {
-  updateUserChart()
-  updateGenderChart()
-  updateAgeChart()
-  updateRevenueChart()
-  updateFunnelChart()
+function updateCharts(
+  userTrendData: any[] = [],
+  genderData: any[] = [],
+  ageData: any[] = [],
+  revenueData: any[] = [],
+  funnelData: any[] = []
+) {
+  updateUserChart(userTrendData)
+  updateGenderChart(genderData)
+  updateAgeChart(ageData)
+  updateRevenueChart(revenueData)
+  updateFunnelChart(funnelData)
 }
 
-function updateUserChart() {
+function updateUserChart(data: any[] = []) {
   if (!userChart) return
+
+  const dates = data.map(item => item.date)
+  const totalData = data.map(item => item.total)
+  const maleData = data.map(item => item.male)
+  const femaleData = data.map(item => item.female)
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -318,7 +340,7 @@ function updateUserChart() {
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: dates.length > 0 ? dates : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
     },
     yAxis: {
       type: 'value',
@@ -328,21 +350,21 @@ function updateUserChart() {
         name: '总新增',
         type: 'line',
         smooth: true,
-        data: [120, 132, 101, 134, 90, 230, 210],
+        data: totalData.length > 0 ? totalData : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#409EFF' },
       },
       {
         name: '男性',
         type: 'line',
         smooth: true,
-        data: [60, 72, 51, 74, 40, 120, 110],
+        data: maleData.length > 0 ? maleData : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#67C23A' },
       },
       {
         name: '女性',
         type: 'line',
         smooth: true,
-        data: [60, 60, 50, 60, 50, 110, 100],
+        data: femaleData.length > 0 ? femaleData : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#F56C6C' },
       },
     ],
@@ -351,8 +373,25 @@ function updateUserChart() {
   userChart.setOption(option)
 }
 
-function updateGenderChart() {
+function updateGenderChart(data: any[] = []) {
   if (!genderChart) return
+
+  const colors = {
+    '男性': '#409EFF',
+    '女性': '#F56C6C',
+    '未知': '#909399',
+  }
+
+  const chartData = data.length > 0 
+    ? data.map(item => ({
+        ...item,
+        itemStyle: { color: colors[item.name] || '#909399' },
+      }))
+    : [
+        { value: 0, name: '男性', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '女性', itemStyle: { color: '#F56C6C' } },
+        { value: 0, name: '未知', itemStyle: { color: '#909399' } },
+      ]
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -384,11 +423,7 @@ function updateGenderChart() {
             fontWeight: 'bold',
           },
         },
-        data: [
-          { value: 1048, name: '男性', itemStyle: { color: '#409EFF' } },
-          { value: 735, name: '女性', itemStyle: { color: '#F56C6C' } },
-          { value: 280, name: '未知', itemStyle: { color: '#909399' } },
-        ],
+        data: chartData,
       },
     ],
   }
@@ -396,8 +431,27 @@ function updateGenderChart() {
   genderChart.setOption(option)
 }
 
-function updateAgeChart() {
+function updateAgeChart(data: any[] = []) {
   if (!ageChart) return
+
+  const colors = {
+    '18-25岁': '#409EFF',
+    '26-35岁': '#67C23A',
+    '36-45岁': '#E6A23C',
+    '45岁以上': '#F56C6C',
+  }
+
+  const chartData = data.length > 0
+    ? data.map(item => ({
+        ...item,
+        itemStyle: { color: colors[item.name] || '#909399' },
+      }))
+    : [
+        { value: 0, name: '18-25岁', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '26-35岁', itemStyle: { color: '#67C23A' } },
+        { value: 0, name: '36-45岁', itemStyle: { color: '#E6A23C' } },
+        { value: 0, name: '45岁以上', itemStyle: { color: '#F56C6C' } },
+      ]
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -429,12 +483,7 @@ function updateAgeChart() {
             fontWeight: 'bold',
           },
         },
-        data: [
-          { value: 350, name: '18-25岁', itemStyle: { color: '#409EFF' } },
-          { value: 450, name: '26-35岁', itemStyle: { color: '#67C23A' } },
-          { value: 300, name: '36-45岁', itemStyle: { color: '#E6A23C' } },
-          { value: 200, name: '45岁以上', itemStyle: { color: '#F56C6C' } },
-        ],
+        data: chartData,
       },
     ],
   }
@@ -442,8 +491,12 @@ function updateAgeChart() {
   ageChart.setOption(option)
 }
 
-function updateRevenueChart() {
+function updateRevenueChart(data: any[] = []) {
   if (!revenueChart) return
+
+  const dates = data.map(item => item.date)
+  const amountData = data.map(item => item.amount)
+  const cumulativeData = data.map(item => item.cumulative)
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -463,7 +516,7 @@ function updateRevenueChart() {
     },
     xAxis: {
       type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: dates.length > 0 ? dates : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
     },
     yAxis: [
       {
@@ -487,7 +540,7 @@ function updateRevenueChart() {
       {
         name: '日营收',
         type: 'bar',
-        data: [1200, 1832, 1901, 2340, 2900, 3300, 3200],
+        data: amountData.length > 0 ? amountData : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#409EFF' },
       },
       {
@@ -495,7 +548,7 @@ function updateRevenueChart() {
         type: 'line',
         yAxisIndex: 1,
         smooth: true,
-        data: [1200, 3032, 4933, 7273, 10173, 13473, 16673],
+        data: cumulativeData.length > 0 ? cumulativeData : [0, 0, 0, 0, 0, 0, 0],
         itemStyle: { color: '#F56C6C' },
       },
     ],
@@ -504,8 +557,22 @@ function updateRevenueChart() {
   revenueChart.setOption(option)
 }
 
-function updateFunnelChart() {
+function updateFunnelChart(data: any[] = []) {
   if (!funnelChart) return
+
+  const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C']
+
+  const chartData = data.length > 0
+    ? data.map((item, index) => ({
+        ...item,
+        itemStyle: { color: colors[index % colors.length] },
+      }))
+    : [
+        { value: 0, name: '访问用户', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '注册用户', itemStyle: { color: '#67C23A' } },
+        { value: 0, name: '完善资料', itemStyle: { color: '#E6A23C' } },
+        { value: 0, name: '开通VIP', itemStyle: { color: '#F56C6C' } },
+      ]
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -539,12 +606,7 @@ function updateFunnelChart() {
             fontSize: 16,
           },
         },
-        data: [
-          { value: 10000, name: '访问用户', itemStyle: { color: '#409EFF' } },
-          { value: 8000, name: '注册用户', itemStyle: { color: '#67C23A' } },
-          { value: 4000, name: '完善资料', itemStyle: { color: '#E6A23C' } },
-          { value: 1000, name: '开通VIP', itemStyle: { color: '#F56C6C' } },
-        ],
+        data: chartData,
       },
     ],
   }
