@@ -275,12 +275,17 @@ async function handleToggleStatus() {
       { type: 'warning' }
     )
 
-    await adminUsers.updateStatus(userInfo.value.id, userInfo.value.status === 1 ? 0 : 1)
-    ElMessage.success(`${action}成功`)
-    fetchUserDetail()
-  } catch (error) {
+    const res = await adminUsers.updateStatus(userInfo.value.id, userInfo.value.status === 1 ? 0 : 1)
+    if (res.success) {
+      ElMessage.success(`${action}成功`)
+      fetchUserDetail()
+    } else {
+      ElMessage.error(res.message || `${action}失败`)
+    }
+  } catch (error: any) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error(error.message || `${action}失败`)
     }
   }
 }
@@ -295,11 +300,16 @@ async function handleResetPassword() {
       { type: 'warning' }
     )
 
-    await adminUsers.resetPassword(userInfo.value.id)
-    ElMessage.success('密码重置成功')
-  } catch (error) {
+    const res = await adminUsers.resetPassword(userInfo.value.id)
+    if (res.success) {
+      ElMessage.success('密码重置成功')
+    } else {
+      ElMessage.error(res.message || '密码重置失败')
+    }
+  } catch (error: any) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error(error.message || '密码重置失败')
     }
   }
 }
@@ -315,15 +325,20 @@ async function handleVipSubmit() {
   if (!userInfo.value) return
 
   try {
-    await adminUsers.updateVip(userInfo.value.id, {
+    const res = await adminUsers.updateVip(userInfo.value.id, {
       level: vipForm.level,
       days: vipForm.days,
     })
-    ElMessage.success('VIP设置成功')
-    vipDialogVisible.value = false
-    fetchUserDetail()
-  } catch (error) {
+    if (res.success) {
+      ElMessage.success('VIP设置成功')
+      vipDialogVisible.value = false
+      fetchUserDetail()
+    } else {
+      ElMessage.error(res.message || 'VIP设置失败')
+    }
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || 'VIP设置失败')
   }
 }
 
@@ -340,11 +355,16 @@ async function handleNotifySubmit() {
   }
 
   try {
-    await adminUsers.sendNotification(userInfo.value.id, notifyForm.content)
-    ElMessage.success('通知已发送')
-    notifyDialogVisible.value = false
-  } catch (error) {
+    const res = await adminUsers.sendNotification(userInfo.value.id, notifyForm.content)
+    if (res.success) {
+      ElMessage.success('通知已发送')
+      notifyDialogVisible.value = false
+    } else {
+      ElMessage.error(res.message || '发送通知失败')
+    }
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || '发送通知失败')
   }
 }
 

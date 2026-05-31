@@ -569,12 +569,17 @@ async function handleToggleStatus(row: User) {
       `确认${action}`,
       { type: 'warning' }
     )
-    await adminUsers.updateStatus(row.id, row.status === 1 ? 0 : 1)
-    ElMessage.success(`${action}成功`)
-    fetchData()
-  } catch (error) {
+    const res = await adminUsers.updateStatus(row.id, row.status === 1 ? 0 : 1)
+    if (res.success) {
+      ElMessage.success(`${action}成功`)
+      fetchData()
+    } else {
+      ElMessage.error(res.message || `${action}失败`)
+    }
+  } catch (error: any) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error(error.message || `${action}失败`)
     }
   }
 }
@@ -589,15 +594,20 @@ function handleSetVip(row: User) {
 async function handleVipSubmit() {
   if (!currentUser.value) return
   try {
-    await adminUsers.updateVip(currentUser.value.id, {
+    const res = await adminUsers.updateVip(currentUser.value.id, {
       level: vipForm.level,
       days: vipForm.days,
     } as any)
-    ElMessage.success('VIP设置成功')
-    vipDialogVisible.value = false
-    fetchData()
-  } catch (error) {
+    if (res.success) {
+      ElMessage.success('VIP设置成功')
+      vipDialogVisible.value = false
+      fetchData()
+    } else {
+      ElMessage.error(res.message || 'VIP设置失败')
+    }
+  } catch (error: any) {
     console.error(error)
+    ElMessage.error(error.message || 'VIP设置失败')
   }
 }
 
