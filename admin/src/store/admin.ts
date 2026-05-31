@@ -44,7 +44,8 @@ export const useAdminStore = defineStore('admin', () => {
         body: JSON.stringify({ username, password, captcha, captchaKey }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
+      const data = result.data || result
 
       if (data.success) {
         token.value = data.token
