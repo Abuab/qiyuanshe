@@ -48,6 +48,9 @@ export class UserService {
     gender?: number,
     currentUserId?: number,
   ): Promise<PaginatedResult<UserListItem>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 10))
+    
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .where('user.status = :status', { status: 1 })
@@ -78,12 +81,12 @@ export class UserService {
     }
 
     const total = await queryBuilder.getCount()
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
+    const totalPages = Math.ceil(total / pageSize)
+    const offset = (pageNum - 1) * pageSize
 
     const users = await queryBuilder
       .skip(offset)
-      .take(limit)
+      .take(pageSize)
       .getMany()
 
     const followedUserIds: number[] = []
@@ -118,8 +121,8 @@ export class UserService {
     return {
       list,
       total,
-      page,
-      pageSize: limit,
+      page: pageNum,
+      pageSize,
       totalPages,
     }
   }
@@ -129,6 +132,9 @@ export class UserService {
     currentUserId?: number,
   ): Promise<PaginatedResult<UserListItem>> {
     const { page = 1, limit = 10 } = dto
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 10))
+    
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .where('user.status = :status', { status: 1 })
@@ -191,10 +197,10 @@ export class UserService {
     queryBuilder.orderBy('user.lastLoginAt', 'DESC')
 
     const total = await queryBuilder.getCount()
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
+    const totalPages = Math.ceil(total / pageSize)
+    const offset = (pageNum - 1) * pageSize
 
-    const users = await queryBuilder.skip(offset).take(limit).getMany()
+    const users = await queryBuilder.skip(offset).take(pageSize).getMany()
 
     const followedUserIds: number[] = []
     if (currentUserId) {
@@ -228,8 +234,8 @@ export class UserService {
     return {
       list,
       total,
-      page,
-      pageSize: limit,
+      page: pageNum,
+      pageSize,
       totalPages,
     }
   }
@@ -353,17 +359,20 @@ export class UserService {
     page: number = 1,
     limit: number = 20,
   ): Promise<PaginatedResult<UserListItem>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+    
     const total = await this.followRepository.count({
       where: { targetUserId: userId },
     })
 
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
+    const totalPages = Math.ceil(total / pageSize)
+    const offset = (pageNum - 1) * pageSize
 
     const follows = await this.followRepository.find({
       where: { targetUserId: userId },
       skip: offset,
-      take: limit,
+      take: pageSize,
       order: { createdAt: 'DESC' },
     })
 
@@ -373,8 +382,8 @@ export class UserService {
       return {
         list: [],
         total,
-        page,
-        pageSize: limit,
+        page: pageNum,
+        pageSize,
         totalPages,
       }
     }
@@ -406,8 +415,8 @@ export class UserService {
     return {
       list,
       total,
-      page,
-      pageSize: limit,
+      page: pageNum,
+      pageSize,
       totalPages,
     }
   }
@@ -417,17 +426,20 @@ export class UserService {
     page: number = 1,
     limit: number = 20,
   ): Promise<PaginatedResult<UserListItem>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+    
     const total = await this.followRepository.count({
       where: { userId },
     })
 
-    const totalPages = Math.ceil(total / limit)
-    const offset = (page - 1) * limit
+    const totalPages = Math.ceil(total / pageSize)
+    const offset = (pageNum - 1) * pageSize
 
     const follows = await this.followRepository.find({
       where: { userId },
       skip: offset,
-      take: limit,
+      take: pageSize,
       order: { createdAt: 'DESC' },
     })
 
@@ -437,8 +449,8 @@ export class UserService {
       return {
         list: [],
         total,
-        page,
-        pageSize: limit,
+        page: pageNum,
+        pageSize,
         totalPages,
       }
     }
@@ -470,8 +482,8 @@ export class UserService {
     return {
       list,
       total,
-      page,
-      pageSize: limit,
+      page: pageNum,
+      pageSize,
       totalPages,
     }
   }

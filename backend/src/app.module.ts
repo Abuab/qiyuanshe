@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ServeStaticModule } from '@nestjs/serve-static'
+import { ConfigModule } from '@nestjs/config'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
 import {
@@ -32,6 +33,11 @@ import { AdminModule } from './admin/admin.module'
 @Global()
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      load: [databaseConfig],
+    }),
     TypeOrmModule.forRoot(databaseConfig()),
     TypeOrmModule.forFeature([
       User,
