@@ -136,7 +136,8 @@ onMounted(() => {
 async function refreshCaptcha() {
   try {
     const response = await fetch('/api/admin/captcha')
-    const data = await response.json()
+    const result = await response.json()
+    const data = result.data || result
     captchaSvg.value = data.svg
     captchaKey.value = data.key
   } catch (error) {
