@@ -205,17 +205,21 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
+    let res
     if (isEdit.value) {
-      await adminMatchmaker.update(Number(route.params.id), formData)
-      ElMessage.success('更新成功')
+      res = await adminMatchmaker.update(Number(route.params.id), formData)
     } else {
-      await adminMatchmaker.create(formData)
-      ElMessage.success('添加成功')
+      res = await adminMatchmaker.create(formData)
     }
-    router.push('/matchmaker/list')
-  } catch (error) {
+    if (res.success) {
+      ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+      router.push('/matchmaker/list')
+    } else {
+      ElMessage.error(res.message || (isEdit.value ? '更新失败' : '添加失败'))
+    }
+  } catch (error: any) {
     console.error(error)
-    ElMessage.error(isEdit.value ? '更新失败' : '添加失败')
+    ElMessage.error(error.message || (isEdit.value ? '更新失败' : '添加失败'))
   } finally {
     submitting.value = false
   }
@@ -235,7 +239,7 @@ async function handleAvatarChange(event: Event) {
 
   try {
     const url = await uploadFile(file)
-    formData.avatar = url
+    formData.avatar = url + '?t=' + Date.now()
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error(error)
@@ -249,7 +253,7 @@ async function handleQrcodeChange(event: Event) {
 
   try {
     const url = await uploadFile(file)
-    formData.qrcode = url
+    formData.qrcode = url + '?t=' + Date.now()
     ElMessage.success('二维码上传成功')
   } catch (error) {
     console.error(error)

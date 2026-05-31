@@ -64,10 +64,4 @@ export class AdminMatchmakerController {
     await this.matchmakerService.updateSort(id, sortOrder)
     return Result.success(null, '排序更新成功')
   }
-
-  @Post('upload')
-  async upload(@Body() body: { file: string }) {
-    // File upload handled by middleware
-    return Result.success({ url: body.file })
-  }
 }
