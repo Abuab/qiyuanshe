@@ -36,12 +36,12 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
-  async function login(username: string, password: string, captcha: string, rememberMe: boolean) {
+  async function login(username: string, password: string, captcha: string, rememberMe: boolean, captchaKey?: string) {
     try {
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, captcha }),
+        body: JSON.stringify({ username, password, captcha, captchaKey }),
       })
 
       const data = await response.json()

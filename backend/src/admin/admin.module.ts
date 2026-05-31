@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+import { JwtModule } from '@nestjs/jwt'
 import { JwtAuthGuard } from '../auth/guards'
 import { AdminUserController } from './user.controller'
 import { AdminUserService } from './user.service'
@@ -13,6 +14,9 @@ import { AdminPaymentController } from './payment.controller'
 import { AdminPaymentService } from './payment.service'
 import { AdminDashboardController } from './dashboard.controller'
 import { AdminDashboardService } from './dashboard.service'
+import { CaptchaController } from './captcha.controller'
+import { CaptchaService } from './captcha.service'
+import { AdminLoginController } from './login.controller'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Matchmaker } from '../entities/Matchmaker'
@@ -32,6 +36,10 @@ import { AuditLog } from '../entities/AuditLog'
       VipOrder,
       AuditLog,
     ]),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
+      signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
+    }),
   ],
   controllers: [
     AdminUserController,
@@ -40,6 +48,8 @@ import { AuditLog } from '../entities/AuditLog'
     AdminAuditController,
     AdminPaymentController,
     AdminDashboardController,
+    CaptchaController,
+    AdminLoginController,
   ],
   providers: [
     AdminUserService,
@@ -48,6 +58,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminAuditService,
     AdminPaymentService,
     AdminDashboardService,
+    CaptchaService,
   ],
   exports: [
     AdminUserService,
@@ -56,6 +67,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminAuditService,
     AdminPaymentService,
     AdminDashboardService,
+    CaptchaService,
   ],
 })
 export class AdminModule {}

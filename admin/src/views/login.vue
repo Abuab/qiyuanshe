@@ -49,11 +49,10 @@
               class="captcha-input"
               @keyup.enter="handleLogin"
             />
-            <img
-              :src="captchaUrl"
+            <div
               class="captcha-image"
               @click="refreshCaptcha"
-              alt="验证码"
+              v-html="captchaSvg"
             />
           </div>
         </el-form-item>
@@ -100,7 +99,8 @@ const adminStore = useAdminStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const showPassword = ref(false)
-const captchaUrl = ref('')
+const captchaSvg = ref('')
+const captchaKey = ref('')
 
 const form = reactive<LoginForm>({
   username: '',
@@ -133,8 +133,15 @@ onMounted(() => {
   }
 })
 
-function refreshCaptcha() {
-  captchaUrl.value = `/api/admin/captcha?t=${Date.now()}`
+async function refreshCaptcha() {
+  try {
+    const response = await fetch('/api/admin/captcha')
+    const data = await response.json()
+    captchaSvg.value = data.svg
+    captchaKey.value = data.key
+  } catch (error) {
+    console.error('Failed to fetch captcha:', error)
+  }
 }
 
 async function handleLogin() {
@@ -149,9 +156,10 @@ async function handleLogin() {
   loading.value = true
 
   try {
-    await adminStore.login(form.username, form.password, form.captcha, form.rememberMe)
+    await adminStore.login(form.username, form.password, form.captcha, form.rememberMe, captchaKey.value)
   } catch (error) {
     ElMessage.error('登录失败，请检查账号密码')
+    refreshCaptcha()
   } finally {
     loading.value = false
   }
