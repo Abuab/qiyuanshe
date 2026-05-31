@@ -65,13 +65,13 @@
             </template>
             <div class="auth-list">
               <div class="auth-item">
-                <el-icon :color="userInfo?.realNameAuth === 1 ? '#67c23a' : '#909399'">
-                  <CircleCheck v-if="userInfo?.realNameAuth === 1" />
+                <el-icon :color="(userInfo?.realNameAuth === 1 || userInfo?.isRealName === 1) ? '#67c23a' : '#909399'">
+                  <CircleCheck v-if="userInfo?.realNameAuth === 1 || userInfo?.isRealName === 1" />
                   <CircleClose v-else />
                 </el-icon>
                 <span>实名认证</span>
-                <el-tag :type="userInfo?.realNameAuth === 1 ? 'success' : 'info'" size="small">
-                  {{ userInfo?.realNameAuth === 1 ? '已认证' : '未认证' }}
+                <el-tag :type="(userInfo?.realNameAuth === 1 || userInfo?.isRealName === 1) ? 'success' : 'info'" size="small">
+                  {{ userInfo?.realNameAuth === 1 || userInfo?.isRealName === 1 ? '已认证' : '未认证' }}
                 </el-tag>
               </div>
               <div class="auth-item">

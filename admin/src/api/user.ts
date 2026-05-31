@@ -21,6 +21,8 @@ export interface User {
   selfIntro?: string
   mateRequirement?: string
   isRealName: number
+  realNameAuth?: number
+  educationAuth?: number
   isVip: number
   vipLevel?: number
   vipExpireTime?: string
