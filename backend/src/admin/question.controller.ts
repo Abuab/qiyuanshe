@@ -10,7 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards'
+import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminQuestionService } from './question.service'
 import { Result } from '../common/result'
 
@@ -23,7 +23,7 @@ interface QuestionFilter {
 }
 
 @Controller('admin/questions')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtAuthGuard)
 export class AdminQuestionController {
   constructor(private readonly questionService: AdminQuestionService) {}
 

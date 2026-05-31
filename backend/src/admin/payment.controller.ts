@@ -8,7 +8,7 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards'
+import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminPaymentService } from './payment.service'
 import { Result } from '../common/result'
 
@@ -24,7 +24,7 @@ interface OrderFilter {
 }
 
 @Controller('admin/payment')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtAuthGuard)
 export class AdminPaymentController {
   constructor(private readonly paymentService: AdminPaymentService) {}
 

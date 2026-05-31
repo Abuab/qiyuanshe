@@ -1,10 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards'
+import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminDashboardService } from './dashboard.service'
 import { Result } from '../common/result'
 
 @Controller('admin/dashboard')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtAuthGuard)
 export class AdminDashboardController {
   constructor(private readonly dashboardService: AdminDashboardService) {}
 

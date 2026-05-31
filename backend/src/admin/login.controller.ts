@@ -42,7 +42,7 @@ export class AdminLoginController {
       return { success: false, message: '用户名或密码错误' }
     }
 
-    const payload = { sub: 1, username: 'admin', role: 'admin' }
+    const payload = { sub: 1, username: 'admin', role: 'admin', type: 'admin' }
     const token = this.jwtService.sign(payload)
 
     const user = {
@@ -92,7 +92,7 @@ export class AdminLoginApiController {
       return { success: false, message: '用户名或密码错误' }
     }
 
-    const payload = { sub: 1, username: 'admin', role: 'admin' }
+    const payload = { sub: 1, username: 'admin', role: 'admin', type: 'admin' }
     const token = this.jwtService.sign(payload)
 
     const user = {

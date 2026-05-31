@@ -10,7 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards'
+import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminMatchmakerService } from './matchmaker.service'
 import { Result } from '../common/result'
 
@@ -22,7 +22,7 @@ interface MatchmakerFilter {
 }
 
 @Controller('admin/matchmakers')
-@UseGuards(JwtAuthGuard)
+@UseGuards(AdminJwtAuthGuard)
 export class AdminMatchmakerController {
   constructor(private readonly matchmakerService: AdminMatchmakerService) {}
 
