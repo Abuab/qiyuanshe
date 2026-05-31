@@ -41,14 +41,10 @@ export const adminSystem = {
   },
 
   upload(data: FormData): Promise<ApiResponse<{ url: string }>> {
-    return request.post('/admin/upload', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    return request.post('/admin/upload', data)
   },
 
   uploadCert(data: FormData): Promise<ApiResponse<{ path: string }>> {
-    return request.post('/admin/upload/cert', data, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    })
+    return request.post('/admin/upload/cert', data)
   },
 }

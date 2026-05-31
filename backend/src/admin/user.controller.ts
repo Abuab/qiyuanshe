@@ -114,6 +114,7 @@ export class AdminUserController {
       education?: string
       incomeRange?: string
       housingStatus?: string
+      carStatus?: string
       maritalStatus?: string
       height?: number
       occupation?: string

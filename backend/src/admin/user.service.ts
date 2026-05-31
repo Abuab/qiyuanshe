@@ -183,6 +183,7 @@ export class AdminUserService {
     education?: string
     incomeRange?: string
     housingStatus?: string
+    carStatus?: string
     maritalStatus?: string
     height?: number
     occupation?: string
@@ -202,6 +203,7 @@ export class AdminUserService {
       education: data.education || null,
       incomeRange: data.incomeRange || null,
       housingStatus: data.housingStatus || null,
+      carStatus: data.carStatus || null,
       maritalStatus: data.maritalStatus || null,
       height: data.height || null,
       occupation: data.occupation || null,
@@ -210,6 +212,8 @@ export class AdminUserService {
       status: data.status !== undefined ? data.status : 1,
       isVip: 0,
       vipLevel: 0,
+      openid: null,
+      unionId: null,
     })
 
     return this.userRepository.save(user)

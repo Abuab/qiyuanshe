@@ -18,6 +18,8 @@ import { CaptchaController, CaptchaFallbackController, CaptchaApiController } fr
 import { CaptchaService } from './captcha.service'
 import { AdminLoginController, AdminLoginApiController } from './login.controller'
 import { UploadController } from './upload.controller'
+import { AdminSystemController } from './system.controller'
+import { AdminSystemService } from './system.service'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -27,6 +29,7 @@ import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { VipOrder } from '../entities/VipOrder'
 import { AuditLog } from '../entities/AuditLog'
+import { SystemConfig } from '../entities/SystemConfig'
 
 @Module({
   imports: [
@@ -38,6 +41,7 @@ import { AuditLog } from '../entities/AuditLog'
       QuestionAnswer,
       VipOrder,
       AuditLog,
+      SystemConfig,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -58,6 +62,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminLoginController,
     AdminLoginApiController,
     UploadController,
+    AdminSystemController,
   ],
   providers: [
     AdminUserService,
@@ -67,6 +72,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminPaymentService,
     AdminDashboardService,
     CaptchaService,
+    AdminSystemService,
     AdminJwtStrategy,
     AdminJwtAuthGuard,
   ],
@@ -78,6 +84,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminPaymentService,
     AdminDashboardService,
     CaptchaService,
+    AdminSystemService,
   ],
 })
 export class AdminModule {}

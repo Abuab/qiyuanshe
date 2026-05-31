@@ -15,6 +15,7 @@ export interface User {
   phone?: string
   incomeRange?: string
   housingStatus?: string
+  carStatus?: string
   maritalStatus?: string
   hometown?: string
   residence?: string

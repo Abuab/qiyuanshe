@@ -23,7 +23,7 @@ export class User {
   unionId: string
 
   @Index({ unique: true })
-  @Column({ type: 'varchar', length: 128 })
+  @Column({ type: 'varchar', length: 128, nullable: true })
   openid: string
 
   @Column({ type: 'varchar', length: 50, default: '' })
@@ -64,6 +64,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   housingStatus: string
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  carStatus: string
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   maritalStatus: string
