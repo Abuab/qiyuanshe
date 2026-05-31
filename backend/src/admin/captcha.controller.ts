@@ -11,3 +11,14 @@ export class CaptchaController {
     return { svg, key }
   }
 }
+
+@Controller()
+export class CaptchaFallbackController {
+  constructor(private readonly captchaService: CaptchaService) {}
+
+  @Get('captcha')
+  async getCaptchaFallback() {
+    const { svg, key } = this.captchaService.generateCaptcha()
+    return { svg, key }
+  }
+}

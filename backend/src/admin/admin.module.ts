@@ -14,7 +14,7 @@ import { AdminPaymentController } from './payment.controller'
 import { AdminPaymentService } from './payment.service'
 import { AdminDashboardController } from './dashboard.controller'
 import { AdminDashboardService } from './dashboard.service'
-import { CaptchaController } from './captcha.controller'
+import { CaptchaController, CaptchaFallbackController } from './captcha.controller'
 import { CaptchaService } from './captcha.service'
 import { AdminLoginController } from './login.controller'
 import { User } from '../entities/User'
@@ -49,6 +49,7 @@ import { AuditLog } from '../entities/AuditLog'
     AdminPaymentController,
     AdminDashboardController,
     CaptchaController,
+    CaptchaFallbackController,
     AdminLoginController,
   ],
   providers: [
