@@ -4,13 +4,23 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
-  Body,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname } from 'path'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { Result } from '../common/result'
+
+interface UploadedFile {
+  fieldname: string
+  originalname: string
+  encoding: string
+  mimetype: string
+  destination: string
+  filename: string
+  path: string
+  size: number
+}
 
 @Controller('admin/upload')
 @UseGuards(AdminJwtAuthGuard)
@@ -30,7 +40,7 @@ export class UploadController {
       },
     }),
   )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: UploadedFile) {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
@@ -52,7 +62,7 @@ export class UploadController {
       },
     }),
   )
-  async uploadCert(@UploadedFile() file: Express.Multer.File) {
+  async uploadCert(@UploadedFile() file: UploadedFile) {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }

@@ -40,7 +40,7 @@ export class AdminDashboardService {
       this.userRepository.count({ where: { isVip: 1 } }),
       this.orderRepository.count(),
       this.getTodayRevenue(),
-      this.auditLogRepository.count({ where: { status: 0 } }),
+      this.auditLogRepository.count(),
       this.matchmakerRepository.count({ where: { isActive: 1 } }),
       this.questionRepository.count({ where: { isActive: 1 } }),
       this.getYesterdayNewUsers(),
@@ -131,8 +131,8 @@ export class AdminDashboardService {
     const nowYear = now.getFullYear()
 
     const users = await this.userRepository.find({
-      select: ['birthday'],
-      where: { birthday: Raw(alias => `${alias} IS NOT NULL`) },
+      select: ['birthYear'],
+      where: { birthYear: Raw(alias => `${alias} IS NOT NULL`) },
     })
 
     const ageGroups = {
@@ -143,9 +143,8 @@ export class AdminDashboardService {
     }
 
     users.forEach(user => {
-      if (user.birthday) {
-        const birthYear = new Date(user.birthday).getFullYear()
-        const age = nowYear - birthYear
+      if (user.birthYear) {
+        const age = nowYear - user.birthYear
         if (age >= 18 && age <= 25) ageGroups['18-25岁']++
         else if (age >= 26 && age <= 35) ageGroups['26-35岁']++
         else if (age >= 36 && age <= 45) ageGroups['36-45岁']++

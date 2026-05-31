@@ -104,7 +104,7 @@ export class AdminUserController {
       password?: string
       gender?: number
       avatar?: string
-      birthday?: string
+      birthYear?: number
       status?: number
     },
   ) {

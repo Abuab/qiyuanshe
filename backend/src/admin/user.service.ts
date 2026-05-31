@@ -145,7 +145,7 @@ export class AdminUserService {
     password?: string
     gender?: number
     avatar?: string
-    birthday?: string
+    birthYear?: number
     status?: number
   }) {
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
@@ -156,10 +156,8 @@ export class AdminUserService {
       password: hashedPassword,
       gender: data.gender || 0,
       avatar: data.avatar || '',
-      birthday: data.birthday || null,
+      birthYear: data.birthYear || null,
       status: data.status !== undefined ? data.status : 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
     })
 
     return this.userRepository.save(user)
