@@ -1,5 +1,3 @@
-version: '3.8'
-
 # 栖缘社 Docker Compose 部署配置
 
 services:
