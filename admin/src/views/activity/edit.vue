@@ -425,7 +425,7 @@ async function handleFileChange(event: Event) {
   try {
     ElMessage.info('正在上传海报...')
     const url = await uploadFile(file)
-    formData.coverImage = url + '?t=' + Date.now()
+    formData.coverImage = url
     ElMessage.success('海报上传成功')
   } catch (error) {
     console.error(error)

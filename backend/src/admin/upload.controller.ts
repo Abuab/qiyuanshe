@@ -29,7 +29,8 @@ const ensureDirectoryExists = (dir: string) => {
   }
 }
 
-const uploadsDir = join(process.cwd(), 'uploads')
+// 使用与 main.ts 一致的路径，避免 PM2 启动时路径不一致
+const uploadsDir = join(__dirname, '..', 'uploads')
 const certDir = join(uploadsDir, 'cert')
 
 ensureDirectoryExists(uploadsDir)
@@ -67,11 +68,10 @@ export class UploadController {
     // 返回相对路径，前端通过代理访问
     // 如果配置了API_BASE_URL环境变量，则返回完整URL
     const baseUrl = process.env.API_BASE_URL || ''
-    if (baseUrl) {
-      return Result.success({ url: `${baseUrl}/uploads/${file.filename}` })
-    }
-    // 默认返回相对路径，前端代理会转发到后端
-    return Result.success({ url: `/uploads/${file.filename}` })
+    const url = baseUrl
+      ? `${baseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
+      : `/uploads/${file.filename}`
+    return Result.success({ url })
   }
 
   @Post('cert')

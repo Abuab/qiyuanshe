@@ -246,7 +246,7 @@ async function handleAvatarChange(event: Event) {
 
   try {
     const url = await uploadFile(file)
-    formData.avatar = url + '?t=' + Date.now()
+    formData.avatar = url
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error(error)
@@ -260,7 +260,7 @@ async function handleQrcodeChange(event: Event) {
 
   try {
     const url = await uploadFile(file)
-    formData.qrcode = url + '?t=' + Date.now()
+    formData.qrcode = url
     ElMessage.success('二维码上传成功')
   } catch (error) {
     console.error(error)
