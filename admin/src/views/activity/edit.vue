@@ -276,7 +276,20 @@ const editorConfig: Partial<IEditorConfig> = {
       parseImageSrc(src: string) {
         return src
       }
-    }
+    },
+    uploadVideo: {
+      async customUpload(file: File, insertFn: any) {
+        try {
+          ElMessage.info('正在上传视频...')
+          const url = await uploadFile(file)
+          insertFn(url, '', url, '')
+          ElMessage.success('视频插入成功')
+        } catch (error) {
+          console.error(error)
+          ElMessage.error('视频上传失败')
+        }
+      },
+    },
   },
 }
 

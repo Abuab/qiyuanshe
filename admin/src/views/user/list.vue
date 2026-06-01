@@ -17,87 +17,95 @@
     <div class="card">
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm" class="filter-form">
-          <el-form-item label="关键词">
-            <el-input
-              v-model="filterForm.keyword"
-              placeholder="昵称/ID/手机号"
-              clearable
-              :prefix-icon="Search"
-              style="width: 180px"
-            />
-          </el-form-item>
-          <el-form-item label="性别">
-            <el-select v-model="filterForm.gender" placeholder="全部" clearable style="width: 100px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="男" :value="1" />
-              <el-option label="女" :value="2" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="年龄">
-            <el-input-number v-model="filterForm.minAge" :min="18" :max="100" placeholder="最小" style="width: 90px" />
-            <span class="range-separator">—</span>
-            <el-input-number v-model="filterForm.maxAge" :min="18" :max="100" placeholder="最大" style="width: 90px" />
-          </el-form-item>
-          <el-form-item label="会员等级">
-            <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="普通" :value="0" />
-              <el-option label="黄金" :value="1" />
-              <el-option label="钻石" :value="2" />
-              <el-option label="至尊" :value="3" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="filterForm.status" placeholder="全部" clearable style="width: 120px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="正常" :value="1" />
-              <el-option label="禁用" :value="0" />
-              <el-option label="待审核" :value="2" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="婚况">
-            <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="未婚" value="未婚" />
-              <el-option label="离异" value="离异" />
-              <el-option label="丧偶" value="丧偶" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="月收入">
-            <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="5k以下" value="5k以下" />
-              <el-option label="5k-10k" value="5k-10k" />
-              <el-option label="10k-20k" value="10k-20k" />
-              <el-option label="20k-50k" value="20k-50k" />
-              <el-option label="50k以上" value="50k以上" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="住房">
-          <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
-            <el-option label="全部" :value="undefined" />
-            <el-option label="有房" value="有房" />
-            <el-option label="无房" value="无房" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="车辆">
-          <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
-            <el-option label="全部" :value="undefined" />
-            <el-option label="有车" value="有车" />
-            <el-option label="无车" value="无车" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="学历">
-            <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
-              <el-option label="全部" :value="undefined" />
-              <el-option label="大专" value="大专" />
-              <el-option label="本科" value="本科" />
-              <el-option label="硕士" value="硕士" />
-              <el-option label="博士" value="博士" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="注册时间">
-            <el-date-picker
+          <!-- 第一行：基础筛选 -->
+          <div class="filter-row">
+            <el-form-item label="关键词">
+              <el-input
+                v-model="filterForm.keyword"
+                placeholder="昵称/ID/手机号"
+                clearable
+                :prefix-icon="Search"
+                style="width: 180px"
+              />
+            </el-form-item>
+            <el-form-item label="性别">
+              <el-select v-model="filterForm.gender" placeholder="全部" clearable style="width: 100px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="男" :value="1" />
+                <el-option label="女" :value="2" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="年龄">
+              <el-input-number v-model="filterForm.minAge" :min="18" :max="100" placeholder="最小" style="width: 90px" />
+              <span class="range-separator">—</span>
+              <el-input-number v-model="filterForm.maxAge" :min="18" :max="100" placeholder="最大" style="width: 90px" />
+            </el-form-item>
+            <el-form-item label="会员等级">
+              <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="普通" :value="0" />
+                <el-option label="黄金" :value="1" />
+                <el-option label="钻石" :value="2" />
+                <el-option label="至尊" :value="3" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+              <el-select v-model="filterForm.status" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="正常" :value="1" />
+                <el-option label="禁用" :value="0" />
+                <el-option label="待审核" :value="2" />
+              </el-select>
+            </el-form-item>
+          </div>
+          <!-- 第二行：详细筛选 -->
+          <div class="filter-row">
+            <el-form-item label="婚况">
+              <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="未婚" value="未婚" />
+                <el-option label="离异" value="离异" />
+                <el-option label="丧偶" value="丧偶" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="月收入">
+              <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="5k以下" value="5k以下" />
+                <el-option label="5k-10k" value="5k-10k" />
+                <el-option label="10k-20k" value="10k-20k" />
+                <el-option label="20k-50k" value="20k-50k" />
+                <el-option label="50k以上" value="50k以上" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="住房">
+              <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="有房" value="有房" />
+                <el-option label="无房" value="无房" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="车辆">
+              <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="有车" value="有车" />
+                <el-option label="无车" value="无车" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="学历">
+              <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="大专" value="大专" />
+                <el-option label="本科" value="本科" />
+                <el-option label="硕士" value="硕士" />
+                <el-option label="博士" value="博士" />
+              </el-select>
+            </el-form-item>
+          </div>
+          <!-- 第三行：时间和操作 -->
+          <div class="filter-row">
+            <el-form-item label="注册时间">
+              <el-date-picker
               v-model="dateRange"
               type="daterange"
               range-separator="至"
@@ -779,5 +787,17 @@ function formatDate(dateStr: string) {
 .range-separator {
   margin: 0 5px;
   color: #999;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 </style>
