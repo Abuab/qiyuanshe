@@ -135,8 +135,15 @@ async function handleSubmit() {
       const res = await adminQuestion.update(Number(route.params.id), formData)
       if (res.success) {
         ElMessage.success('更新成功')
-        // 重新获取数据确保状态同步
-        await fetchData()
+        // 如果有返回数据，直接更新formData
+        if (res.data) {
+          Object.assign(formData, res.data)
+        } else {
+          // 否则重新获取数据确保状态同步
+          await fetchData()
+        }
+        // 保存成功后返回列表页
+        router.push('/question/list')
       } else {
         ElMessage.error(res.message || '更新失败')
       }
