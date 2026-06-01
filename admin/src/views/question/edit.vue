@@ -132,13 +132,23 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value) {
-      await adminQuestion.update(Number(route.params.id), formData)
-      ElMessage.success('更新成功')
+      const res = await adminQuestion.update(Number(route.params.id), formData)
+      if (res.success) {
+        ElMessage.success('更新成功')
+        // 重新获取数据确保状态同步
+        await fetchData()
+      } else {
+        ElMessage.error(res.message || '更新失败')
+      }
     } else {
-      await adminQuestion.create(formData)
-      ElMessage.success('添加成功')
+      const res = await adminQuestion.create(formData)
+      if (res.success) {
+        ElMessage.success('添加成功')
+        router.push('/question/list')
+      } else {
+        ElMessage.error(res.message || '添加失败')
+      }
     }
-    router.push('/question/list')
   } catch (error) {
     console.error(error)
     ElMessage.error(isEdit.value ? '更新失败' : '添加失败')

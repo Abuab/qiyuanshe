@@ -53,8 +53,8 @@ export class AdminQuestionController {
 
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
-    await this.questionService.update(id, data)
-    return Result.success(null, '更新成功')
+    const result = await this.questionService.update(id, data)
+    return Result.success(result, '更新成功')
   }
 
   @Delete(':id')

@@ -74,6 +74,8 @@ export class AdminQuestionService {
       updateData.status = data.isActive
     }
     await this.questionRepository.update(id, updateData)
+    // 返回更新后的数据
+    return this.questionRepository.findOne({ where: { id } })
   }
 
   async delete(id: number) {
