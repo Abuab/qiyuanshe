@@ -113,7 +113,21 @@
         </el-form-item>
 
         <el-form-item label="活动详情" prop="content">
-          <div ref="editorRef" class="editor-container"></div>
+          <div class="editor-wrapper">
+            <Toolbar
+              :editor="editorRef"
+              :defaultConfig="toolbarConfig"
+              mode="default"
+              class="editor-toolbar"
+            />
+            <Editor
+              v-model="formData.content"
+              :defaultConfig="editorConfig"
+              mode="default"
+              class="editor-content"
+              @onCreated="handleCreated"
+            />
+          </div>
         </el-form-item>
 
         <el-form-item label="排序" prop="sortOrder">
@@ -142,12 +156,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount, computed, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Picture } from '@element-plus/icons-vue'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { adminActivity } from '../../api'
 import type { FormInstance, FormRules } from 'element-plus'
+import '@wangeditor/editor/dist/css/style.css'
 
 const router = useRouter()
 const route = useRoute()
@@ -157,8 +174,65 @@ const loading = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const fileInputRef = ref<HTMLInputElement>()
-const editorRef = ref<HTMLDivElement>()
-let editor: any = null
+
+// 编辑器相关
+const editorRef = shallowRef<IDomEditor>()
+
+const toolbarConfig: Partial<IToolbarConfig> = {
+  toolbarKeys: [
+    'headerSelect',
+    '|',
+    'bold',
+    'italic',
+    'underline',
+    'through',
+    'color',
+    'bgColor',
+    '|',
+    'fontSize',
+    'fontFamily',
+    'lineHeight',
+    '|',
+    'bulletedList',
+    'numberedList',
+    'todo',
+    'justifyLeft',
+    'justifyCenter',
+    'justifyRight',
+    '|',
+    'insertLink',
+    'uploadImage',
+    'insertVideo',
+    'insertTable',
+    'divider',
+    '|',
+    'undo',
+    'redo',
+    'clearStyle',
+  ],
+}
+
+const editorConfig: Partial<IEditorConfig> = {
+  placeholder: '请输入活动详情，支持图文混排...',
+  MENU_CONF: {
+    uploadImage: {
+      async customUpload(file: File, insertFn: any) {
+        try {
+          const url = await uploadFile(file)
+          insertFn(url, file.name, url)
+          ElMessage.success('图片插入成功')
+        } catch (error) {
+          console.error(error)
+          ElMessage.error('图片上传失败')
+        }
+      },
+    },
+  },
+}
+
+const handleCreated = (editor: IDomEditor) => {
+  editorRef.value = editor
+}
 
 const formData = reactive({
   title: '',
@@ -211,48 +285,14 @@ onMounted(() => {
   if (isEdit.value) {
     fetchData()
   }
-  initEditor()
 })
 
 onBeforeUnmount(() => {
+  const editor = editorRef.value
   if (editor) {
     editor.destroy()
-    editor = null
   }
 })
-
-async function initEditor() {
-  await nextTick()
-  if (!editorRef.value) return
-
-  try {
-    const E = await import('@wangeditor/editor')
-    editor = E.createEditor({
-      selector: editorRef.value,
-      html: formData.content,
-      config: {
-        placeholder: '请输入活动详情...',
-        onChange(editor: any) {
-          formData.content = editor.getHtml()
-        },
-        MENU_CONF: {
-          uploadImage: {
-            async customUpload(file: File, insertFn: any) {
-              try {
-                const url = await uploadFile(file)
-                insertFn(url, '', url)
-              } catch (error) {
-                ElMessage.error('图片上传失败')
-              }
-            },
-          },
-        },
-      },
-    })
-  } catch (error) {
-    console.error('富文本编辑器初始化失败:', error)
-  }
-}
 
 async function fetchData() {
   loading.value = true
@@ -261,9 +301,6 @@ async function fetchData() {
     const res = await adminActivity.detail(id)
     if (res.success && res.data) {
       Object.assign(formData, res.data)
-      if (editor) {
-        editor.setHtml(formData.content || '')
-      }
     }
   } catch (error) {
     console.error(error)
@@ -294,10 +331,6 @@ async function handleSubmit() {
   submitting.value = true
   try {
     const submitData = { ...formData }
-    if (editor) {
-      submitData.content = editor.getHtml()
-    }
-
     let res
     if (isEdit.value) {
       res = await adminActivity.update(Number(route.params.id), submitData)
@@ -373,7 +406,7 @@ async function uploadFile(file: File): Promise<string> {
 }
 
 .activity-form {
-  max-width: 800px;
+  max-width: 900px;
 }
 
 .upload-wrapper {
@@ -420,10 +453,20 @@ async function uploadFile(file: File): Promise<string> {
   font-size: 13px;
 }
 
-.editor-container {
-  border: 1px solid #ccc;
-  z-index: 100;
-  min-height: 300px;
+// 编辑器样式
+.editor-wrapper {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+
+  .editor-toolbar {
+    border-bottom: 1px solid #dcdfe6;
+  }
+
+  .editor-content {
+    min-height: 400px;
+    max-height: 600px;
+  }
 }
 
 .save-btn {
