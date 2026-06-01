@@ -31,7 +31,13 @@
 
         <el-form-item label="头像" prop="avatar">
           <div class="upload-wrapper">
-            <el-avatar v-if="formData.avatar" :size="100" :src="formData.avatar" />
+            <el-avatar
+              v-if="formData.avatar"
+              :size="100"
+              :src="formData.avatar"
+              fit="cover"
+              @error="() => ElMessage.error('头像加载失败')"
+            />
             <el-avatar v-else :size="100">
               <el-icon :size="40"><User /></el-icon>
             </el-avatar>
@@ -58,6 +64,7 @@
               :src="formData.qrcode"
               fit="contain"
               class="qrcode-preview"
+              @error="() => ElMessage.error('二维码加载失败')"
             />
             <div v-else class="qrcode-placeholder">
               <el-icon :size="40"><Picture /></el-icon>

@@ -40,6 +40,7 @@
               :src="formData.coverImage"
               fit="cover"
               class="cover-preview"
+              @error="() => ElMessage.error('海报加载失败')"
             />
             <div v-else class="cover-placeholder">
               <el-icon :size="40"><Picture /></el-icon>

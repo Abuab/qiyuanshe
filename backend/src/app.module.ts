@@ -54,10 +54,9 @@ import { AdminModule } from './admin/admin.module'
       AuditLog,
       Follow,
     ]),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads',
-    }),
+    // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
+    // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
+    // 统一使用 main.ts 中的配置
     AuthModule,
     UserModule,
     MatchmakerModule,
