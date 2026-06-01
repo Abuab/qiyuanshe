@@ -107,6 +107,8 @@ async function fetchData() {
     const res = await adminQuestion.detail(id)
     if (res.success && res.data) {
       Object.assign(formData, res.data)
+      formData.status = Number(formData.status) || 0
+      formData.sortOrder = Number(formData.sortOrder) || 0
     }
   } catch (error) {
     console.error(error)
@@ -132,17 +134,14 @@ async function handleSubmit() {
   submitting.value = true
   try {
     if (isEdit.value) {
-      const res = await adminQuestion.update(Number(route.params.id), formData)
+      const submitData = {
+        ...formData,
+        status: Number(formData.status) || 0,
+        sortOrder: Number(formData.sortOrder) || 0,
+      }
+      const res = await adminQuestion.update(Number(route.params.id), submitData)
       if (res.success) {
         ElMessage.success('更新成功')
-        // 如果有返回数据，直接更新formData
-        if (res.data) {
-          Object.assign(formData, res.data)
-        } else {
-          // 否则重新获取数据确保状态同步
-          await fetchData()
-        }
-        // 保存成功后返回列表页
         router.push('/question/list')
       } else {
         ElMessage.error(res.message || '更新失败')
