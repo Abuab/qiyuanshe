@@ -28,8 +28,8 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter())
   app.useGlobalInterceptors(new TransformInterceptor())
 
-  // 确保 uploads 目录存在
-  const uploadsDir = join(__dirname, '..', 'uploads')
+  // 确保 uploads 目录存在（使用固定路径，避免编译后 __dirname 不一致）
+  const uploadsDir = '/app/uploads'
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true })
   }

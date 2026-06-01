@@ -29,8 +29,8 @@ const ensureDirectoryExists = (dir: string) => {
   }
 }
 
-// 使用与 main.ts 一致的路径，避免 PM2 启动时路径不一致
-const uploadsDir = join(__dirname, '..', 'uploads')
+// 使用固定路径，与 main.ts 保持一致，避免编译后 __dirname 不一致
+const uploadsDir = '/app/uploads'
 const certDir = join(uploadsDir, 'cert')
 
 ensureDirectoryExists(uploadsDir)
