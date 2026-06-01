@@ -233,10 +233,8 @@ export class AuthService {
   }
 
   private sanitizeUser(user: User, includePhone = false): Partial<User> {
-    const sanitized = {
+    const sanitized: any = {
       id: user.id,
-      openid: user.openid,
-      unionId: user.unionId,
       nickname: user.nickname,
       avatar: user.avatar,
       gender: user.gender,
@@ -262,7 +260,11 @@ export class AuthService {
     }
 
     if (includePhone) {
-      sanitized['phone'] = user.phone
+      sanitized.phone = user.phone
+    }
+
+    if (user['photos']) {
+      sanitized.photos = user['photos']
     }
 
     return sanitized

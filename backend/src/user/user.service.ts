@@ -282,8 +282,6 @@ export class UserService {
     return {
       user: {
         id: user.id,
-        openid: user.openid,
-        unionId: user.unionId,
         nickname: user.nickname,
         avatar: user.avatar,
         gender: user.gender,

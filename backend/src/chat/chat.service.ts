@@ -109,45 +109,28 @@ export class ChatService {
     const subQuery = this.messageRepository
       .createQueryBuilder('msg')
       .select('MAX(msg.id)', 'lastMessageId')
-      .where('(msg.fromUserId = :userId AND msg.toUserId = other.id) OR (msg.fromUserId = other.id AND msg.toUserId = :userId)')
-      .setParameter('userId', userId)
-      .groupBy('other.id')
+      .where('(msg.fromUserId = :userId OR msg.toUserId = :userId)', { userId })
+      .groupBy('CASE WHEN msg.fromUserId = :userId THEN msg.toUserId ELSE msg.fromUserId END')
 
-    const lastMessageSubquery = this.messageRepository
+    const conversations = await this.messageRepository
       .createQueryBuilder('msg')
-      .select('MAX(msg.id)', 'maxId')
-      .where('(msg.fromUserId = :userId AND msg.toUserId = other.id) OR (msg.fromUserId = other.id AND msg.toUserId = :userId)')
-      .setParameter('userId', userId)
-
-    const conversations = await this.userRepository
-      .createQueryBuilder('other')
       .innerJoin(
-        '(' + subQuery.andWhere('other.id = other.id').groupBy('other.id').getQuery() + ')',
+        '(' + subQuery.getQuery() + ')',
         'last_msg',
-        'last_msg.lastMessageId IS NOT NULL',
+        'msg.id = last_msg.lastMessageId',
       )
-      .innerJoin(
-        ChatMessage,
-        'msg',
-        '(msg.fromUserId = :userId AND msg.toUserId = other.id AND msg.id = last_msg."lastMessageId") OR (msg.fromUserId = other.id AND msg.toUserId = :userId AND msg.id = last_msg."lastMessageId")',
-        { userId },
-      )
+      .setParameters(subQuery.getParameters())
+      .leftJoin('msg.fromUser', 'fromUser')
+      .leftJoin('msg.toUser', 'toUser')
       .select([
-        'other.id as "userId"',
-        'other.nickname as nickname',
-        'other.avatar as avatar',
+        'msg.id as id',
         'msg.content as "lastMessage"',
         'msg.createdAt as "createdAt"',
+        '(CASE WHEN msg.fromUserId = :userId THEN msg.toUserId ELSE msg.fromUserId END) as "userId"',
+        '(CASE WHEN msg.fromUserId = :userId THEN toUser.nickname ELSE fromUser.nickname END) as nickname',
+        '(CASE WHEN msg.fromUserId = :userId THEN toUser.avatar ELSE fromUser.avatar END) as avatar',
       ])
-      .where(
-        `other.id IN (
-          SELECT DISTINCT CASE WHEN msg1.fromUserId = :userId THEN msg1.toUserId ELSE msg1.fromUserId END
-          FROM chat_messages msg1
-          WHERE msg1.fromUserId = :userId OR msg1.toUserId = :userId
-        )`,
-        { userId },
-      )
-      .andWhere('other.id != :userId', { userId })
+      .setParameter('userId', userId)
       .orderBy('msg.createdAt', 'DESC')
       .offset(skip)
       .limit(limit)

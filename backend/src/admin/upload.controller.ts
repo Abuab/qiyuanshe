@@ -23,14 +23,23 @@ interface UploadedFile {
   size: number
 }
 
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+]
+
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+
 const ensureDirectoryExists = (dir: string) => {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
 }
 
-// 使用固定路径，与 main.ts 保持一致，避免编译后 __dirname 不一致
-const uploadsDir = '/app/uploads'
+const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
 const certDir = join(uploadsDir, 'cert')
 
 ensureDirectoryExists(uploadsDir)
@@ -53,10 +62,11 @@ export class UploadController {
         fileSize: 1024 * 1024 * 5,
       },
       fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
+        const ext = extname(file.originalname).toLowerCase()
+        if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
           cb(null, true)
         } else {
-          cb(new Error('只允许上传图片文件'), false)
+          cb(new Error('只允许上传图片文件 (jpg, png, gif, webp, bmp)'), false)
         }
       },
     }),
@@ -65,8 +75,6 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    // 返回相对路径，前端通过代理访问
-    // 如果配置了API_BASE_URL环境变量，则返回完整URL
     const baseUrl = process.env.API_BASE_URL || ''
     const url = baseUrl
       ? `${baseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
@@ -88,10 +96,11 @@ export class UploadController {
         fileSize: 1024 * 1024 * 5,
       },
       fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
+        const ext = extname(file.originalname).toLowerCase()
+        if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
           cb(null, true)
         } else {
-          cb(new Error('只允许上传图片文件'), false)
+          cb(new Error('只允许上传图片文件 (jpg, png, gif, webp, bmp)'), false)
         }
       },
     }),

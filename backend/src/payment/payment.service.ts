@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
 import { User } from '../entities/User'
 import { AuditLog } from '../entities/AuditLog'
@@ -43,6 +43,7 @@ export class PaymentService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    private readonly dataSource: DataSource,
   ) {
     this.mchId = process.env.WX_MCH_ID || ''
     this.apiKey = process.env.WX_API_KEY || ''
@@ -144,76 +145,110 @@ export class PaymentService {
   }
 
   async processNotify(data: any): Promise<string> {
-    const { return_code, return_msg, transaction_id, out_trade_no, total_fee } = data
+    const { return_code, return_msg, transaction_id, out_trade_no, total_fee, sign } = data
 
     if (return_code !== 'SUCCESS') {
-      return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[签名失败]]></return_msg></xml>'
+      return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[支付失败]]></return_msg></xml>'
     }
 
-    const order = await this.orderRepository.findOne({
-      where: { orderNo: out_trade_no },
-    })
-
-    if (!order) {
-      return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[订单不存在]]></return_msg></xml>'
+    const isValid = await this.verifyNotifySign(data)
+    if (!isValid) {
+      return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[签名验证失败]]></return_msg></xml>'
     }
 
-    if (order.status === 1) {
-      return '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>'
-    }
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
 
-    if (parseInt(total_fee) !== Math.round(order.amount * 100)) {
-      return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[金额不匹配]]></return_msg></xml>'
-    }
+    try {
+      const order = await queryRunner.manager.findOne(VipOrder, {
+        where: { orderNo: out_trade_no },
+      })
 
-    await this.orderRepository.update(
-      { orderNo: out_trade_no },
-      {
-        status: 1,
-        paidAt: new Date(),
-      }
-    )
-
-    const pkg = this.getPackage(order.vipLevel)
-    let expireTime = new Date()
-    expireTime.setMonth(expireTime.getMonth() + pkg.months)
-
-    const user = await this.userRepository.findOne({
-      where: { id: order.userId },
-    })
-
-    if (user) {
-      if (user.vipExpireTime && user.vipExpireTime > new Date()) {
-        const newExpireTime = new Date(user.vipExpireTime)
-        newExpireTime.setMonth(newExpireTime.getMonth() + pkg.months)
-        expireTime = newExpireTime
+      if (!order) {
+        await queryRunner.rollbackTransaction()
+        return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[订单不存在]]></return_msg></xml>'
       }
 
-      await this.userRepository.update(
-        { id: order.userId },
+      if (order.status === 1) {
+        await queryRunner.commitTransaction()
+        return '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>'
+      }
+
+      if (parseInt(total_fee) !== Math.round(order.amount * 100)) {
+        await queryRunner.rollbackTransaction()
+        return '<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[金额不匹配]]></return_msg></xml>'
+      }
+
+      await queryRunner.manager.update(
+        VipOrder,
+        { orderNo: out_trade_no },
         {
-          vipLevel: order.vipLevel,
-          vipExpireTime: expireTime,
-          isVip: 1,
+          status: 1,
+          paidAt: new Date(),
         }
       )
+
+      const pkg = this.getPackage(order.vipLevel)
+      let expireTime = new Date()
+      expireTime.setMonth(expireTime.getMonth() + pkg.months)
+
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: order.userId },
+      })
+
+      if (user) {
+        if (user.vipExpireTime && user.vipExpireTime > new Date()) {
+          const newExpireTime = new Date(user.vipExpireTime)
+          newExpireTime.setMonth(newExpireTime.getMonth() + pkg.months)
+          expireTime = newExpireTime
+        }
+
+        await queryRunner.manager.update(
+          User,
+          { id: order.userId },
+          {
+            vipLevel: order.vipLevel,
+            vipExpireTime: expireTime,
+            isVip: 1,
+          }
+        )
+      }
+
+      const log = this.auditLogRepository.create({
+        action: 'VIP_PURCHASE',
+        targetType: 'vip_order',
+        targetId: order.id,
+        reason: JSON.stringify({
+          orderNo: out_trade_no,
+          transactionId: transaction_id,
+          vipLevel: order.vipLevel,
+          amount: order.amount,
+        }),
+      })
+
+      await queryRunner.manager.save(log)
+
+      await queryRunner.commitTransaction()
+
+      return '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>'
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      throw error
+    } finally {
+      await queryRunner.release()
     }
+  }
 
-    const log = this.auditLogRepository.create({
-      action: 'VIP_PURCHASE',
-      targetType: 'vip_order',
-      targetId: order.id,
-      reason: JSON.stringify({
-        orderNo: out_trade_no,
-        transactionId: transaction_id,
-        vipLevel: order.vipLevel,
-        amount: order.amount,
-      }),
-    })
+  private async verifyNotifySign(data: any): Promise<boolean> {
+    if (!data || !data.sign) return false
 
-    await this.auditLogRepository.save(log)
+    const receivedSign = data.sign
+    const signParams = { ...data }
+    delete signParams.sign
 
-    return '<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>'
+    const calculatedSign = await this.generateSignature(signParams)
+    return receivedSign === calculatedSign
   }
 
   async getOrders(userId: number, page: number = 1, limit: number = 20) {

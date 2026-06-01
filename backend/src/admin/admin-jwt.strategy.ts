@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { jwtConfig } from '../config/jwt'
+import { adminJwtConfig } from '../config/jwt'
 
 export interface AdminJwtPayload {
   sub: number
   username: string
   role: string
-  type?: 'admin'
+  type: string
 }
 
 @Injectable()
@@ -16,19 +16,24 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtConfig.secret,
+      secretOrKey: adminJwtConfig.secret,
     })
   }
 
   async validate(payload: AdminJwtPayload) {
-    // 简化的admin验证，只检查payload结构
-    if (payload.sub && payload.username && payload.role === 'admin') {
-      return {
-        id: payload.sub,
-        username: payload.username,
-        role: payload.role,
-      }
+    if (payload.type !== 'admin' || payload.role !== 'admin') {
+      throw new UnauthorizedException('无效的管理员令牌')
     }
-    return null
+
+    if (!payload.sub || !payload.username) {
+      throw new UnauthorizedException('无效的管理员令牌')
+    }
+
+    return {
+      id: payload.sub,
+      username: payload.username,
+      role: payload.role,
+      isAdmin: 1,
+    }
   }
 }

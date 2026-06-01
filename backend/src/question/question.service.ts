@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
@@ -32,6 +32,7 @@ export class QuestionService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(AnswerLike)
     private readonly answerLikeRepository: Repository<AnswerLike>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getQuestions(page: number = 1, limit: number = 20): Promise<QuestionListResult> {
@@ -131,50 +132,60 @@ export class QuestionService {
   }
 
   async likeAnswer(answerId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
-    const answer = await this.answerRepository.findOne({
-      where: { id: answerId },
-    })
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
 
-    if (!answer) {
-      throw new NotFoundException('回答不存在')
-    }
-
-    const existingLike = await this.answerLikeRepository.findOne({
-      where: {
-        answerId,
-        userId,
-      },
-    })
-
-    let liked = false
-
-    if (existingLike) {
-      await this.answerLikeRepository.remove(existingLike)
-      await this.answerRepository.update(
-        { id: answerId },
-        { likeCount: answer.likeCount - 1 }
-      )
-      liked = false
-    } else {
-      const newLike = this.answerLikeRepository.create({
-        answerId,
-        userId,
+    try {
+      const answer = await queryRunner.manager.findOne(QuestionAnswer, {
+        where: { id: answerId },
+        lock: { mode: 'pessimistic_write' },
       })
-      await this.answerLikeRepository.save(newLike)
-      await this.answerRepository.update(
-        { id: answerId },
-        { likeCount: answer.likeCount + 1 }
-      )
-      liked = true
-    }
 
-    const updatedAnswer = await this.answerRepository.findOne({
-      where: { id: answerId },
-    })
+      if (!answer) {
+        throw new NotFoundException('回答不存在')
+      }
 
-    return {
-      liked,
-      likeCount: updatedAnswer?.likeCount || 0,
+      const existingLike = await queryRunner.manager.findOne(AnswerLike, {
+        where: { answerId, userId },
+      })
+
+      let liked = false
+
+      if (existingLike) {
+        await queryRunner.manager.remove(existingLike)
+        await queryRunner.manager.update(
+          QuestionAnswer,
+          { id: answerId },
+          { likeCount: () => 'likeCount - 1' },
+        )
+        liked = false
+      } else {
+        const newLike = this.answerLikeRepository.create({ answerId, userId })
+        await queryRunner.manager.save(newLike)
+        await queryRunner.manager.update(
+          QuestionAnswer,
+          { id: answerId },
+          { likeCount: () => 'likeCount + 1' },
+        )
+        liked = true
+      }
+
+      await queryRunner.commitTransaction()
+
+      const updatedAnswer = await this.answerRepository.findOne({
+        where: { id: answerId },
+      })
+
+      return {
+        liked,
+        likeCount: updatedAnswer?.likeCount || 0,
+      }
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      throw error
+    } finally {
+      await queryRunner.release()
     }
   }
 }

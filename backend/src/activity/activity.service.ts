@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { Activity } from '../entities/Activity'
 import { ActivitySignup } from '../entities/ActivitySignup'
 import { User } from '../entities/User'
@@ -23,6 +23,7 @@ export class ActivityService {
     private readonly signupRepository: Repository<ActivitySignup>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // 小程序端 - 获取活动列表
@@ -75,43 +76,62 @@ export class ActivityService {
 
   // 小程序端 - 报名
   async signup(activityId: number, userId: number, data: { realName?: string; phone?: string; remark?: string }) {
-    const activity = await this.activityRepository.findOne({ where: { id: activityId } })
-    if (!activity) {
-      throw new NotFoundException('活动不存在')
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    try {
+      const activity = await queryRunner.manager.findOne(Activity, {
+        where: { id: activityId },
+        lock: { mode: 'pessimistic_write' },
+      })
+
+      if (!activity) {
+        throw new NotFoundException('活动不存在')
+      }
+
+      if (activity.status !== 1) {
+        throw new BadRequestException('活动不在进行中')
+      }
+
+      if (activity.maxParticipants > 0 && activity.currentParticipants >= activity.maxParticipants) {
+        throw new BadRequestException('活动已满员')
+      }
+
+      const existingSignup = await queryRunner.manager.findOne(ActivitySignup, {
+        where: { activityId, userId },
+      })
+      if (existingSignup) {
+        throw new BadRequestException('您已报名该活动')
+      }
+
+      const signup = this.signupRepository.create({
+        activityId,
+        userId,
+        realName: data.realName,
+        phone: data.phone,
+        remark: data.remark,
+        status: 0,
+      })
+
+      await queryRunner.manager.save(signup)
+
+      await queryRunner.manager.increment(
+        Activity,
+        { id: activityId },
+        'currentParticipants',
+        1,
+      )
+
+      await queryRunner.commitTransaction()
+
+      return signup
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      throw error
+    } finally {
+      await queryRunner.release()
     }
-
-    if (activity.status !== 1) {
-      throw new BadRequestException('活动不在进行中')
-    }
-
-    if (activity.maxParticipants > 0 && activity.currentParticipants >= activity.maxParticipants) {
-      throw new BadRequestException('活动已满员')
-    }
-
-    // 检查是否已报名
-    const existingSignup = await this.signupRepository.findOne({
-      where: { activityId, userId },
-    })
-    if (existingSignup) {
-      throw new BadRequestException('您已报名该活动')
-    }
-
-    // 创建报名记录
-    const signup = this.signupRepository.create({
-      activityId,
-      userId,
-      realName: data.realName,
-      phone: data.phone,
-      remark: data.remark,
-      status: 0,
-    })
-
-    await this.signupRepository.save(signup)
-
-    // 更新当前报名人数
-    await this.activityRepository.increment({ id: activityId }, 'currentParticipants', 1)
-
-    return signup
   }
 
   // 小程序端 - 获取已报名用户头像列表

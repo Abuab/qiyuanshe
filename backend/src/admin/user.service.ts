@@ -136,7 +136,10 @@ export class AdminUserService {
   }
 
   async detail(id: number) {
-    return this.userRepository.findOne({ where: { id } })
+    const user = await this.userRepository.findOne({ where: { id } })
+    if (!user) return null
+    const { password, ...safeUser } = user
+    return safeUser
   }
 
   async updateStatus(id: number, status: number) {
@@ -153,7 +156,7 @@ export class AdminUserService {
     await this.userRepository.update(id, {
       isVip: level > 0 ? 1 : 0,
       vipLevel: level,
-      vipExpireTime: level > 0 ? expireTime.toISOString() : null,
+      vipExpireTime: level > 0 ? expireTime : null,
     })
   }
 
@@ -225,6 +228,20 @@ export class AdminUserService {
   }
 
   async updateUser(id: number, data: Partial<User>) {
-    await this.userRepository.update(id, data)
+    const allowedFields = [
+      'nickname', 'avatar', 'gender', 'birthYear', 'height', 'weight',
+      'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
+      'maritalStatus', 'hometown', 'residence', 'selfIntro', 'mateRequirement',
+      'isRealName', 'status', 'phone',
+    ]
+
+    const safeData: any = {}
+    for (const key of allowedFields) {
+      if (data[key] !== undefined) {
+        safeData[key] = data[key]
+      }
+    }
+
+    await this.userRepository.update(id, safeData)
   }
 }

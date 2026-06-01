@@ -13,7 +13,7 @@ export class AdminGuard implements CanActivate {
       throw new ForbiddenException('未登录')
     }
 
-    if (user.role !== 'admin' && user.isAdmin !== 1) {
+    if (user.isAdmin !== 1) {
       throw new ForbiddenException('需要管理员权限')
     }
 
