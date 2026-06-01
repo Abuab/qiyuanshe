@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common'
 import { CaptchaService } from './captcha.service'
 
-@Controller('api/admin')
+@Controller('admin')
 export class CaptchaController {
   constructor(private readonly captchaService: CaptchaService) {}
 
