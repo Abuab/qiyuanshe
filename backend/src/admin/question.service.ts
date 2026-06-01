@@ -77,6 +77,9 @@ export class AdminQuestionService {
   }
 
   async delete(id: number) {
+    // 先删除关联的回答
+    await this.answerRepository.delete({ questionId: id })
+    // 再删除问题
     await this.questionRepository.delete(id)
   }
 

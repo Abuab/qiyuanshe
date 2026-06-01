@@ -128,6 +128,13 @@ export class AdminActivityController {
     const result = await this.activityService.getSignupList(id, +page, +limit)
     return Result.success(result)
   }
+
+  // 后台 - 报名统计
+  @Get(':id/signups/stats')
+  async getSignupStats(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.activityService.getSignupStats(id)
+    return Result.success(result)
+  }
 }
 
 @Controller('admin/signups')

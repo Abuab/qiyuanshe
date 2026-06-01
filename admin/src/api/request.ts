@@ -32,21 +32,26 @@ instance.interceptors.request.use(
 instance.interceptors.response.use(
   (response) => {
     const { data } = response
-    
+
+    // 处理 data 为 null 的情况
+    if (data === null || data === undefined) {
+      return { success: true, data: null }
+    }
+
     // 兼容后端包装的响应格式 { code, message, data: {...} }
     const isWrapped = data.code !== undefined && data.data !== undefined
     const result = isWrapped ? data.data : data
 
     // 检查是否失败（code 不为 200 或 success 为 false）
-    const isError = (data.code !== undefined && data.code !== 200) || result.success === false
+    const isError = (data.code !== undefined && data.code !== 200) || result?.success === false
     if (isError) {
-      if (data.code === 401 || result.code === 401) {
+      if (data.code === 401 || result?.code === 401) {
         handleUnauthorized()
-        return Promise.reject(new Error(result.message || data.message || '未授权'))
+        return Promise.reject(new Error(result?.message || data.message || '未授权'))
       }
 
-      ElMessage.error(result.message || data.message || '请求失败')
-      return Promise.reject(new Error(result.message || data.message))
+      ElMessage.error(result?.message || data.message || '请求失败')
+      return Promise.reject(new Error(result?.message || data.message))
     }
 
     // 返回完整响应数据，并添加 success 字段便于前端使用

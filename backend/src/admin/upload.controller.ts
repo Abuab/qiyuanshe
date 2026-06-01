@@ -64,7 +64,9 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    return Result.success({ url: `/uploads/${file.filename}` })
+    // 返回完整URL，避免前端拼接问题
+    const baseUrl = process.env.API_BASE_URL || ''
+    return Result.success({ url: `${baseUrl}/uploads/${file.filename}` })
   }
 
   @Post('cert')
