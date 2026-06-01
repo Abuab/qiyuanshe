@@ -234,10 +234,16 @@ function handleEdit(row: Activity) {
 
 async function handleToggleActive(row: Activity, val: number) {
   try {
-    const res = await adminActivity.updateStatus(row.id, val === 1 ? 1 : 3)
+    // 上架时status=1(进行中)，下架时status=3(已取消)
+    const newStatus = val === 1 ? 1 : 3
+    const res = await adminActivity.updateStatus(row.id, newStatus)
     if (res.success) {
+      // 立即更新本地状态，避免switch不刷新
+      row.status = newStatus
+      row.isActive = val
       ElMessage.success(val === 1 ? '上架成功' : '下架成功')
-      fetchData()
+      // 可选：重新获取数据确保同步
+      // fetchData()
     } else {
       ElMessage.error(res.message || '操作失败')
     }

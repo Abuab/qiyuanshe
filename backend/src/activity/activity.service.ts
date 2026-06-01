@@ -168,6 +168,15 @@ export class ActivityService {
     }
   }
 
+  // 后台管理 - 获取活动详情
+  async getAdminDetail(id: number) {
+    const activity = await this.activityRepository.findOne({ where: { id } })
+    if (!activity) {
+      throw new NotFoundException('活动不存在')
+    }
+    return activity
+  }
+
   // 后台管理 - 创建活动
   async create(data: CreateActivityDto) {
     const activity = this.activityRepository.create({
@@ -195,7 +204,9 @@ export class ActivityService {
       throw new NotFoundException('活动不存在')
     }
 
-    await this.activityRepository.update(id, { status } as any)
+    // status=1(进行中)时isActive=1，其他状态isActive=0
+    const isActive = status === 1 ? 1 : 0
+    await this.activityRepository.update(id, { status, isActive } as any)
     return { success: true }
   }
 

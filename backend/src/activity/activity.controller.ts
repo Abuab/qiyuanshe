@@ -84,6 +84,13 @@ export class AdminActivityController {
     return Result.success(result)
   }
 
+  // 后台 - 活动详情
+  @Get(':id')
+  async detail(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.activityService.getAdminDetail(id)
+    return Result.success(result)
+  }
+
   // 后台 - 创建活动
   @Post()
   async create(@Body() data: CreateActivityDto) {
