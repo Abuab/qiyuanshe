@@ -21,8 +21,8 @@ RUN npm run build
 # 生产阶段镜像
 FROM node:18-alpine AS production
 
-# 安装 dumb-init 和 curl（用于健康检查）
-RUN apk add --no-cache dumb-init curl
+# 安装 dumb-init、curl（用于健康检查）和字体包（svg-captcha 需要）
+RUN apk add --no-cache dumb-init curl fontconfig ttf-dejavu
 
 # 设置工作目录
 WORKDIR /app

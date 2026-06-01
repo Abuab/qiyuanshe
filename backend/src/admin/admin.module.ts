@@ -14,7 +14,7 @@ import { AdminPaymentController } from './payment.controller'
 import { AdminPaymentService } from './payment.service'
 import { AdminDashboardController } from './dashboard.controller'
 import { AdminDashboardService } from './dashboard.service'
-import { CaptchaController, CaptchaFallbackController, CaptchaApiController } from './captcha.controller'
+import { CaptchaController } from './captcha.controller'
 import { CaptchaService } from './captcha.service'
 import { AdminLoginController, AdminLoginApiController } from './login.controller'
 import { UploadController } from './upload.controller'
@@ -57,8 +57,6 @@ import { SystemConfig } from '../entities/SystemConfig'
     AdminPaymentController,
     AdminDashboardController,
     CaptchaController,
-    CaptchaFallbackController,
-    CaptchaApiController,
     AdminLoginController,
     AdminLoginApiController,
     UploadController,
