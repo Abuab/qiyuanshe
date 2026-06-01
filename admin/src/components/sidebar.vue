@@ -79,7 +79,7 @@
 
     <div class="sidebar-footer">
       <div class="admin-info" v-if="!isCollapsed">
-        <el-avatar :size="32" src={userInfo?.avatar} />
+        <el-avatar :size="32" :src="userInfo?.avatar" />
         <div class="info-text">
           <div class="nickname">{{ userInfo?.nickname || '管理员' }}</div>
           <div class="role">{{ userInfo?.role === 'admin' ? '超级管理员' : '普通管理员' }}</div>
