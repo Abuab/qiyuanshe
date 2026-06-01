@@ -39,6 +39,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const result = Result.error(message, code || status)
 
+    response.header('Access-Control-Allow-Origin', '*')
+    response.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
+    response.header('Access-Control-Allow-Credentials', 'true')
     response.status(status).json(result)
   }
 }
