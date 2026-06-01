@@ -98,6 +98,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/activity/signups.vue'),
         meta: { title: '报名管理', requiresAuth: true },
       },
+      {
+        path: '/profile',
+        name: 'AdminProfile',
+        component: () => import('../views/profile/index.vue'),
+        meta: { title: '个人中心', requiresAuth: true },
+      },
     ],
   },
 ]
