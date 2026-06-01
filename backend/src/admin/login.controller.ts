@@ -11,7 +11,7 @@ interface LoginDto {
 }
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '123456'
 const MAX_LOGIN_ATTEMPTS = 5
 const LOGIN_BLOCK_DURATION_MS = 15 * 60 * 1000
 
