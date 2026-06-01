@@ -89,6 +89,9 @@ services:
       # JWT 配置
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # Admin JWT 配置（必须与 JWT_SECRET 不同）
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-admin-jwt-secret-key-2024-different-from-user}
+      ADMIN_JWT_EXPIRES_IN: ${ADMIN_JWT_EXPIRES_IN:-24h}
       # 微信配置
       WECHAT_APPID: ${WECHAT_APPID:-}
       WECHAT_SECRET: ${WECHAT_SECRET:-}
