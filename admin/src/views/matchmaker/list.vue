@@ -167,8 +167,9 @@ async function handleMoveUp(row: Matchmaker) {
   const prev = tableData.value[index - 1]
 
   try {
-    await adminMatchmaker.sort(current.id, prev.sortOrder || 0)
-    await adminMatchmaker.sort(prev.id, current.sortOrder || 0)
+    // 采用递减方式确保排序有效：当前项设为 prev.sortOrder - 1
+    const newSortOrder = (prev.sortOrder || 0) - 1
+    await adminMatchmaker.sort(current.id, newSortOrder)
     ElMessage.success('排序已更新')
     fetchData()
   } catch (error) {
@@ -185,8 +186,9 @@ async function handleMoveDown(row: Matchmaker) {
   const next = tableData.value[index + 1]
 
   try {
-    await adminMatchmaker.sort(current.id, next.sortOrder || 0)
-    await adminMatchmaker.sort(next.id, current.sortOrder || 0)
+    // 采用递增方式确保排序有效：当前项设为 next.sortOrder + 1
+    const newSortOrder = (next.sortOrder || 0) + 1
+    await adminMatchmaker.sort(current.id, newSortOrder)
     ElMessage.success('排序已更新')
     fetchData()
   } catch (error) {

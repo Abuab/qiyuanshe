@@ -27,8 +27,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter())
   app.useGlobalInterceptors(new TransformInterceptor())
 
-  app.setGlobalPrefix('api')
-
+  // 注册静态资源（必须在 setGlobalPrefix 之前，避免被加上 /api 前缀）
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     prefix: '/uploads',
   })
@@ -36,6 +35,8 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'static'), {
     prefix: '/static',
   })
+
+  app.setGlobalPrefix('api')
 
   const port = process.env.PORT || 3000
   await app.listen(port)

@@ -64,9 +64,14 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    // 返回完整URL，避免前端拼接问题
+    // 返回相对路径，前端通过代理访问
+    // 如果配置了API_BASE_URL环境变量，则返回完整URL
     const baseUrl = process.env.API_BASE_URL || ''
-    return Result.success({ url: `${baseUrl}/uploads/${file.filename}` })
+    if (baseUrl) {
+      return Result.success({ url: `${baseUrl}/uploads/${file.filename}` })
+    }
+    // 默认返回相对路径，前端代理会转发到后端
+    return Result.success({ url: `/uploads/${file.filename}` })
   }
 
   @Post('cert')
