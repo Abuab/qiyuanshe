@@ -189,6 +189,13 @@
             <span>{{ row.incomeRange || '-' }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="carStatus" label="车辆" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.carStatus === '有车'" type="success" size="small">有车</el-tag>
+            <el-tag v-else-if="row.carStatus === '无车'" type="info" size="small">无车</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="housingStatus" label="住房" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.housingStatus === '有房'" type="success" size="small">有房</el-tag>
@@ -212,13 +219,6 @@
         <el-table-column prop="createdAt" label="注册时间" width="160" sortable="custom">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="carStatus" label="车辆" width="80">
-          <template #default="{ row }">
-            <el-tag v-if="row.carStatus === '有车'" type="success" size="small">有车</el-tag>
-            <el-tag v-else-if="row.carStatus === '无车'" type="info" size="small">无车</el-tag>
-            <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100" sortable="custom">
