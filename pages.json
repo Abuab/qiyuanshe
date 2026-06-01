@@ -99,6 +99,22 @@
         "navigationBarTitleText": "支付结果",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/activity-list/index",
+      "style": {
+        "navigationBarTitleText": "活动",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/activity-detail/index",
+      "style": {
+        "navigationBarTitleText": "活动详情",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
     }
   ],
   "globalStyle": {

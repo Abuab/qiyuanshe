@@ -227,7 +227,13 @@ const switchFilter = (value: string) => {
 }
 
 const handleQuickEntry = (entry: QuickEntry) => {
-  showToast('功能开发中', 'none')
+  if (entry.name === '最新活动') {
+    uni.navigateTo({
+      url: '/pages/activity-list/index',
+    })
+  } else {
+    showToast('功能开发中', 'none')
+  }
 }
 
 const goToQuestions = () => {
