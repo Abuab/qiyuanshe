@@ -166,7 +166,7 @@
             <span v-else class="text-info">未知</span>
           </template>
         </el-table-column>
-        <el-table-column prop="age" label="年龄" width="80" sortable="custom">
+        <el-table-column prop="age" label="年龄" width="90" sortable="custom">
           <template #default="{ row }">
             {{ row.age || '-' }}
           </template>
@@ -174,6 +174,31 @@
         <el-table-column prop="phone" label="手机号" width="120">
           <template #default="{ row }">
             {{ row.phone || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="maritalStatus" label="婚况" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.maritalStatus === '未婚'" type="success" size="small">未婚</el-tag>
+            <el-tag v-else-if="row.maritalStatus === '离异'" type="warning" size="small">离异</el-tag>
+            <el-tag v-else-if="row.maritalStatus === '丧偶'" type="info" size="small">丧偶</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="incomeRange" label="月收入" width="100">
+          <template #default="{ row }">
+            <span>{{ row.incomeRange || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="housingStatus" label="住房" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="row.housingStatus === '有房'" type="success" size="small">有房</el-tag>
+            <el-tag v-else-if="row.housingStatus === '无房'" type="info" size="small">无房</el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="education" label="学历" width="80">
+          <template #default="{ row }">
+            <span>{{ row.education || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="vipLevel" label="会员等级" width="100" sortable="custom">
