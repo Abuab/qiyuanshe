@@ -13,11 +13,11 @@ async function bootstrap() {
 
   const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
-    : ['http://localhost:3000']
+    : ['*']
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      if (allowedOrigins.includes('*') || !origin || allowedOrigins.includes(origin)) {
         callback(null, true)
       } else {
         callback(new Error('Not allowed by CORS'))
