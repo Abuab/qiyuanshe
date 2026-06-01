@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
@@ -100,15 +100,27 @@ onMounted(() => {
   }
 })
 
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      Object.assign(formData, defaultFormData)
+      fetchData()
+    }
+  },
+)
+
 async function fetchData() {
   loading.value = true
   try {
     const id = Number(route.params.id)
     const res = await adminQuestion.detail(id)
     if (res.success && res.data) {
-      Object.assign(formData, res.data)
-      formData.status = Number(formData.status) || 0
-      formData.sortOrder = Number(formData.sortOrder) || 0
+      const data = res.data as any
+      formData.title = data.title || ''
+      formData.content = data.content || ''
+      formData.status = Number(data.status) || 0
+      formData.sortOrder = Number(data.sortOrder) || 0
     }
   } catch (error) {
     console.error(error)
