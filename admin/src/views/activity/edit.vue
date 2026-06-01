@@ -5,33 +5,126 @@
       <h2 class="page-title">{{ isEdit ? '编辑活动' : '添加活动' }}</h2>
     </div>
 
-    <div class="card">
+    <!-- 基本信息区域 -->
+    <el-card class="form-card">
+      <template #header>
+        <div class="card-header">
+          <span>基本信息</span>
+        </div>
+      </template>
       <el-form
         ref="formRef"
         :model="formData"
         :rules="formRules"
-        label-width="120px"
+        label-width="100px"
         class="activity-form"
       >
-        <el-form-item label="活动标题" prop="title">
-          <el-input
-            v-model="formData.title"
-            placeholder="请输入活动标题"
-            maxlength="200"
-            show-word-limit
-            style="width: 500px"
-          />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="活动标题" prop="title">
+              <el-input
+                v-model="formData.title"
+                placeholder="请输入活动标题"
+                maxlength="200"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="副标题" prop="subtitle">
+              <el-input
+                v-model="formData.subtitle"
+                placeholder="请输入副标题/简介"
+                maxlength="500"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-form-item label="副标题" prop="subtitle">
-          <el-input
-            v-model="formData.subtitle"
-            placeholder="请输入副标题/简介"
-            maxlength="500"
-            show-word-limit
-            style="width: 500px"
-          />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="活动类型" prop="activityType">
+              <el-radio-group v-model="formData.activityType">
+                <el-radio label="latest">最新活动</el-radio>
+                <el-radio label="online">线上互选</el-radio>
+                <el-radio label="cp">一周CP</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="活动地点" prop="location">
+              <el-input
+                v-model="formData.location"
+                placeholder="请输入活动地点"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="开始时间" prop="startTime">
+              <el-date-picker
+                v-model="formData.startTime"
+                type="datetime"
+                placeholder="选择开始时间"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="结束时间" prop="endTime">
+              <el-date-picker
+                v-model="formData.endTime"
+                type="datetime"
+                placeholder="选择结束时间"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="报名截止" prop="signUpEndTime">
+              <el-date-picker
+                v-model="formData.signUpEndTime"
+                type="datetime"
+                placeholder="选择报名截止时间"
+                format="YYYY-MM-DD HH:mm"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="人数上限" prop="maxParticipants">
+              <el-input-number v-model="formData.maxParticipants" :min="0" :max="9999" style="width: 100%" />
+              <span class="form-tip">0 表示不限人数</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="排序" prop="sortOrder">
+              <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" style="width: 100%" />
+              <span class="form-tip">数字越小越靠前</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="formData.status">
+                <el-radio :label="0">草稿</el-radio>
+                <el-radio :label="1">进行中</el-radio>
+                <el-radio :label="2">已结束</el-radio>
+                <el-radio :label="3">已取消</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
         <el-form-item label="顶部海报" prop="coverImage">
           <div class="upload-wrapper">
@@ -47,10 +140,10 @@
               <span>暂无海报</span>
             </div>
             <div class="upload-actions">
-              <el-button type="primary" size="small" @click="triggerUpload">
-                上传海报
+              <el-button type="primary" @click="triggerUpload">
+                <el-icon><Upload /></el-icon>上传海报
               </el-button>
-              <p class="upload-tip">建议宽度750px，支持 JPG、PNG 格式</p>
+              <p class="upload-tip">建议尺寸：750x400px，支持 JPG、PNG 格式</p>
             </div>
             <input
               ref="fileInputRef"
@@ -61,97 +154,40 @@
             />
           </div>
         </el-form-item>
-
-        <el-form-item label="活动类型" prop="activityType">
-          <el-radio-group v-model="formData.activityType">
-            <el-radio label="latest">最新活动</el-radio>
-            <el-radio label="online">线上互选</el-radio>
-            <el-radio label="cp">一周CP</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item label="报名截止" prop="signUpEndTime">
-          <el-date-picker
-            v-model="formData.signUpEndTime"
-            type="datetime"
-            placeholder="选择报名截止时间"
-            format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-
-        <el-form-item label="开始时间" prop="startTime">
-          <el-date-picker
-            v-model="formData.startTime"
-            type="datetime"
-            placeholder="选择活动开始时间"
-            format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-
-        <el-form-item label="结束时间" prop="endTime">
-          <el-date-picker
-            v-model="formData.endTime"
-            type="datetime"
-            placeholder="选择活动结束时间"
-            format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DD HH:mm:ss"
-          />
-        </el-form-item>
-
-        <el-form-item label="活动地点" prop="location">
-          <el-input
-            v-model="formData.location"
-            placeholder="请输入活动地点"
-            style="width: 300px"
-          />
-        </el-form-item>
-
-        <el-form-item label="人数上限" prop="maxParticipants">
-          <el-input-number v-model="formData.maxParticipants" :min="0" :max="9999" />
-          <span class="form-tip">0 表示不限人数</span>
-        </el-form-item>
-
-        <el-form-item label="活动详情" prop="content">
-          <div class="editor-wrapper">
-            <Toolbar
-              :editor="editorRef"
-              :defaultConfig="toolbarConfig"
-              mode="default"
-              class="editor-toolbar"
-            />
-            <Editor
-              v-model="formData.content"
-              :defaultConfig="editorConfig"
-              mode="default"
-              class="editor-content"
-              @onCreated="handleCreated"
-            />
-          </div>
-        </el-form-item>
-
-        <el-form-item label="排序" prop="sortOrder">
-          <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" />
-          <span class="form-tip">数字越小越靠前</span>
-        </el-form-item>
-
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="formData.status">
-            <el-radio :label="0">草稿</el-radio>
-            <el-radio :label="1">进行中</el-radio>
-            <el-radio :label="2">已结束</el-radio>
-            <el-radio :label="3">已取消</el-radio>
-          </el-radio-group>
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" @click="handleSubmit" :loading="submitting" class="save-btn">
-            保存
-          </el-button>
-          <el-button @click="handleBack">返回</el-button>
-        </el-form-item>
       </el-form>
+    </el-card>
+
+    <!-- 活动详情编辑器区域 -->
+    <el-card class="editor-card">
+      <template #header>
+        <div class="card-header">
+          <span>活动详情</span>
+          <span class="header-tip">支持图文混排，可插入图片、链接、表格等</span>
+        </div>
+      </template>
+      <div class="rich-editor-wrapper">
+        <Toolbar
+          :editor="editorRef"
+          :defaultConfig="toolbarConfig"
+          mode="default"
+          class="editor-toolbar"
+        />
+        <Editor
+          v-model="formData.content"
+          :defaultConfig="editorConfig"
+          mode="default"
+          class="editor-content"
+          @onCreated="handleCreated"
+        />
+      </div>
+    </el-card>
+
+    <!-- 操作按钮 -->
+    <div class="action-bar">
+      <el-button type="primary" size="large" @click="handleSubmit" :loading="submitting" class="save-btn">
+        <el-icon><Check /></el-icon>保存活动
+      </el-button>
+      <el-button size="large" @click="handleBack">返回列表</el-button>
     </div>
   </div>
 </template>
@@ -160,7 +196,7 @@
 import { ref, reactive, onMounted, onBeforeUnmount, computed, shallowRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Picture } from '@element-plus/icons-vue'
+import { ArrowLeft, Picture, Upload, Check } from '@element-plus/icons-vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { adminActivity } from '../../api'
@@ -179,48 +215,56 @@ const fileInputRef = ref<HTMLInputElement>()
 // 编辑器相关
 const editorRef = shallowRef<IDomEditor>()
 
+// 工具栏配置 - 类似微信公众号编辑器
 const toolbarConfig: Partial<IToolbarConfig> = {
   toolbarKeys: [
+    // 标题
     'headerSelect',
     '|',
+    // 格式
     'bold',
     'italic',
     'underline',
     'through',
+    '|',
+    // 颜色
     'color',
     'bgColor',
     '|',
-    'fontSize',
-    'fontFamily',
-    'lineHeight',
-    '|',
-    'bulletedList',
-    'numberedList',
-    'todo',
+    // 对齐
     'justifyLeft',
     'justifyCenter',
     'justifyRight',
     '|',
+    // 列表
+    'bulletedList',
+    'numberedList',
+    '|',
+    // 插入
     'insertLink',
     'uploadImage',
     'insertVideo',
     'insertTable',
     'divider',
     '|',
+    // 操作
     'undo',
     'redo',
     'clearStyle',
   ],
 }
 
+// 编辑器配置
 const editorConfig: Partial<IEditorConfig> = {
-  placeholder: '请输入活动详情，支持图文混排...',
+  placeholder: '请输入活动详情，支持图文混排...\n\n建议：\n1. 使用标题区分不同板块\n2. 插入图片让内容更生动\n3. 适当使用列表让信息更清晰',
+  scroll: true,
   MENU_CONF: {
     uploadImage: {
       async customUpload(file: File, insertFn: any) {
         try {
+          ElMessage.info('正在上传图片...')
           const url = await uploadFile(file)
-          insertFn(url, file.name, url)
+          insertFn(url, file.name || '图片', url)
           ElMessage.success('图片插入成功')
         } catch (error) {
           console.error(error)
@@ -228,6 +272,11 @@ const editorConfig: Partial<IEditorConfig> = {
         }
       },
     },
+    insertImage: {
+      parseImageSrc(src: string) {
+        return src
+      }
+    }
   },
 }
 
@@ -339,14 +388,14 @@ async function handleSubmit() {
       res = await adminActivity.create(submitData)
     }
     if (res.success) {
-      ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+      ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
       router.push('/activity/list')
     } else {
-      ElMessage.error(res.message || (isEdit.value ? '更新失败' : '创建失败'))
+      ElMessage.error(res.message || (isEdit.value ? '更新失败' : '添加失败'))
     }
   } catch (error: any) {
     console.error(error)
-    ElMessage.error(error.message || (isEdit.value ? '更新失败' : '创建失败'))
+    ElMessage.error(error.message || (isEdit.value ? '更新失败' : '添加失败'))
   } finally {
     submitting.value = false
   }
@@ -361,6 +410,7 @@ async function handleFileChange(event: Event) {
   if (!file) return
 
   try {
+    ElMessage.info('正在上传海报...')
     const url = await uploadFile(file)
     formData.coverImage = url + '?t=' + Date.now()
     ElMessage.success('海报上传成功')
@@ -385,6 +435,8 @@ async function uploadFile(file: File): Promise<string> {
 <style lang="scss" scoped>
 .activity-edit {
   padding: 20px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
 }
 
 .page-header {
@@ -400,83 +452,240 @@ async function uploadFile(file: File): Promise<string> {
   }
 }
 
-.card {
-  background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
+.form-card {
+  margin-bottom: 20px;
+
+  .card-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #303133;
+  }
+}
+
+.editor-card {
+  margin-bottom: 20px;
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: bold;
+    color: #303133;
+
+    .header-tip {
+      font-size: 13px;
+      font-weight: normal;
+      color: #909399;
+    }
+  }
 }
 
 .activity-form {
-  max-width: 900px;
+  :deep(.el-form-item__label) {
+    font-weight: 500;
+  }
 }
 
 .upload-wrapper {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-}
+  gap: 20px;
 
-.cover-preview {
-  width: 200px;
-  height: 120px;
-  border-radius: 8px;
-  border: 1px solid #dcdfe6;
-}
+  .cover-preview {
+    width: 300px;
+    height: 160px;
+    border-radius: 8px;
+    border: 1px solid #dcdfe6;
+  }
 
-.cover-placeholder {
-  width: 200px;
-  height: 120px;
-  border-radius: 8px;
-  border: 1px dashed #dcdfe6;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
-  background-color: #f5f7fa;
-}
+  .cover-placeholder {
+    width: 300px;
+    height: 160px;
+    border-radius: 8px;
+    border: 2px dashed #dcdfe6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #909399;
+    background-color: #f5f7fa;
+  }
 
-.upload-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+  .upload-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 
-.upload-tip {
-  font-size: 12px;
-  color: #909399;
-  margin: 0;
+    .upload-tip {
+      font-size: 12px;
+      color: #909399;
+      margin: 0;
+    }
+  }
 }
 
 .form-tip {
   margin-left: 12px;
   color: #909399;
-  font-size: 13px;
+  font-size: 12px;
 }
 
-// 编辑器样式
-.editor-wrapper {
-  border: 1px solid #dcdfe6;
+// 富文本编辑器样式 - 类似微信公众号编辑器
+.rich-editor-wrapper {
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
   overflow: hidden;
+  background-color: #fff;
 
   .editor-toolbar {
-    border-bottom: 1px solid #dcdfe6;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #fafafa;
   }
 
   .editor-content {
-    min-height: 400px;
-    max-height: 600px;
+    min-height: 500px;
+    max-height: 800px;
+    overflow-y: auto;
+
+    // 自定义编辑区域样式
+    :deep(.w-e-text-container) {
+      background-color: #fff;
+
+      .w-e-text {
+        padding: 20px;
+        font-size: 16px;
+        line-height: 1.8;
+        color: #333;
+
+        // 标题样式
+        h1 {
+          font-size: 24px;
+          font-weight: bold;
+          margin: 24px 0 16px;
+          color: #000;
+        }
+
+        h2 {
+          font-size: 20px;
+          font-weight: bold;
+          margin: 20px 0 14px;
+          color: #111;
+        }
+
+        h3 {
+          font-size: 18px;
+          font-weight: bold;
+          margin: 18px 0 12px;
+          color: #222;
+        }
+
+        h4 {
+          font-size: 16px;
+          font-weight: bold;
+          margin: 16px 0 10px;
+          color: #333;
+        }
+
+        h5 {
+          font-size: 15px;
+          font-weight: bold;
+          margin: 14px 0 8px;
+          color: #444;
+        }
+
+        // 段落样式
+        p {
+          margin: 12px 0;
+          min-height: 1.8em;
+        }
+
+        // 图片样式
+        img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 4px;
+          margin: 16px 0;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        // 链接样式
+        a {
+          color: #576b95;
+          text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+
+        // 列表样式
+        ul, ol {
+          margin: 12px 0;
+          padding-left: 24px;
+        }
+
+        li {
+          margin: 6px 0;
+        }
+
+        // 引用样式
+        blockquote {
+          border-left: 4px solid #576b95;
+          padding: 12px 16px;
+          margin: 16px 0;
+          background-color: #f7f7f7;
+          color: #666;
+          font-style: italic;
+        }
+
+        // 表格样式
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 16px 0;
+
+          th, td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: left;
+          }
+
+          th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+          }
+        }
+
+        // 分割线样式
+        hr {
+          border: none;
+          border-top: 1px solid #e0e0e0;
+          margin: 24px 0;
+        }
+      }
+    }
   }
 }
 
-.save-btn {
-  background-color: #FF6B9D;
-  border-color: #FF6B9D;
+.action-bar {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 
-  &:hover {
-    background-color: #ff5a8f;
-    border-color: #ff5a8f;
+  .save-btn {
+    background-color: #FF6B9D;
+    border-color: #FF6B9D;
+    padding: 0 40px;
+
+    &:hover {
+      background-color: #ff5a8f;
+      border-color: #ff5a8f;
+    }
   }
 }
 </style>
