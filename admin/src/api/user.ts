@@ -31,6 +31,7 @@ export interface User {
   createdAt: string
   updatedAt: string
   lastLoginAt?: string
+  tags?: string[]
 }
 
 export interface UserPhoto {
@@ -62,6 +63,7 @@ export interface UserFilter {
   housingStatus?: string
   carStatus?: string
   education?: string
+  tags?: string[]
 }
 
 export interface UserListResponse {

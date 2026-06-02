@@ -24,6 +24,7 @@ interface UserFilter {
   housingStatus?: string
   carStatus?: string
   education?: string
+  tags?: string[]
 }
 
 @Injectable()
@@ -103,6 +104,12 @@ export class AdminUserService {
 
     if (filter.education) {
       queryBuilder.andWhere('user.education = :education', { education: filter.education })
+    }
+
+    if (filter.tags && filter.tags.length > 0) {
+      filter.tags.forEach((tag, index) => {
+        queryBuilder.andWhere(`JSON_CONTAINS(user.tags, :tag${index})`, { [`tag${index}`]: JSON.stringify(tag) })
+      })
     }
 
     if (filter.startDate) {
@@ -248,7 +255,7 @@ export class AdminUserService {
       'nickname', 'avatar', 'gender', 'birthYear', 'height', 'weight',
       'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
       'maritalStatus', 'hometown', 'residence', 'selfIntro', 'mateRequirement',
-      'isRealName', 'status', 'phone',
+      'isRealName', 'status', 'phone', 'tags',
     ]
 
     const safeData: any = {}

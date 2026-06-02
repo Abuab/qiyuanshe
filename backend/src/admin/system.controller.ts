@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common'
+import { Controller, Get, Put, Body, Param, UseGuards } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminSystemService, SystemConfigs } from './system.service'
 import { Result } from '../common/result'
@@ -21,14 +21,26 @@ export class AdminSystemController {
   }
 
   @Get('config/:key')
-  async getConfig(@Body('key') key: string) {
+  async getConfig(@Param('key') key: string) {
     const value = await this.systemService.getConfig(key)
     return Result.success(value)
   }
 
   @Put('config/:key')
-  async updateConfig(@Body('key') key: string, @Body('value') value: string) {
+  async updateConfig(@Param('key') key: string, @Body('value') value: string) {
     await this.systemService.updateConfig(key, value)
+    return Result.success(null, '更新成功')
+  }
+
+  @Get('dict/:key')
+  async getDict(@Param('key') key: string) {
+    const value = await this.systemService.getConfig('dict_' + key)
+    return Result.success(value ? JSON.parse(value) : [])
+  }
+
+  @Put('dict/:key')
+  async updateDict(@Param('key') key: string, @Body() body: { value: string[] }) {
+    await this.systemService.updateConfig('dict_' + key, JSON.stringify(body.value || []))
     return Result.success(null, '更新成功')
   }
 }

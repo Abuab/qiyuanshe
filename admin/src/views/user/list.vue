@@ -72,6 +72,18 @@
               </el-select>
             </el-form-item>
           </div>
+          <!-- 标签筛选 -->
+          <div class="filter-row">
+            <el-form-item label="用户标签">
+              <el-select v-model="filterForm.tags" multiple placeholder="全部" clearable style="width: 320px">
+                <el-option label="优质用户" value="优质用户" />
+                <el-option label="意向用户" value="意向用户" />
+                <el-option label="线下客户" value="线下客户" />
+                <el-option label="高活跃" value="高活跃" />
+                <el-option label="待跟进" value="待跟进" />
+              </el-select>
+            </el-form-item>
+          </div>
           <!-- 第二行：详细筛选 -->
           <div class="filter-row">
             <el-form-item label="婚况">
@@ -249,6 +261,11 @@
             <el-tag v-if="row.status === 1" type="success" size="small">正常</el-tag>
             <el-tag v-else-if="row.status === 2" type="warning" size="small">待审核</el-tag>
             <el-tag v-else type="danger" size="small">禁用</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="标签" width="140">
+          <template #default="{ row }">
+            <el-tag v-for="tag in row.tags" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
@@ -440,6 +457,7 @@ const filterForm = reactive<UserFilter>({
   education: undefined,
   startDate: undefined,
   endDate: undefined,
+  tags: [],
   sort: 'createdAt',
   order: 'desc',
 })
@@ -579,6 +597,7 @@ function handleReset() {
     housingStatus: undefined,
     carStatus: undefined,
     education: undefined,
+    tags: [],
   })
   dateRange.value = []
   pagination.page = 1
