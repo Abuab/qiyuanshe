@@ -158,8 +158,8 @@ async function handleLogin() {
 
   try {
     await adminStore.login(form.username, form.password, form.captcha, form.rememberMe, captchaKey.value)
-  } catch (error) {
-    ElMessage.error('登录失败，请检查账号密码')
+  } catch (error: any) {
+    ElMessage.error(error.message || '网络错误，请稍后重试')
     refreshCaptcha()
   } finally {
     loading.value = false

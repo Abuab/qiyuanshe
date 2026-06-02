@@ -192,24 +192,27 @@ const handleSubmit = async () => {
 
     if (res.payParams) {
       uni.requestPayment({
-        provider: 'wxpay',
-        timeStamp: res.payParams.timeStamp,
-        nonceStr: res.payParams.nonceStr,
-        package: res.payParams.package,
-        signType: res.payParams.signType,
-        paySign: res.payParams.paySign,
-        success: () => {
-          uni.redirectTo({
-            url: `/pages/pay-result/index?orderNo=${res.orderNo}&status=success`,
-          })
-        },
-        fail: (err) => {
-          console.error('payment failed', err)
-          uni.redirectTo({
-            url: `/pages/pay-result/index?orderNo=${res.orderNo}&status=fail&reason=${encodeURIComponent('用户取消支付')}`,
-          })
-        },
-      })
+      provider: 'wxpay',
+      timeStamp: res.payParams.timeStamp,
+      nonceStr: res.payParams.nonceStr,
+      package: res.payParams.package,
+      signType: res.payParams.signType,
+      paySign: res.payParams.paySign,
+      success: () => {
+        uni.redirectTo({
+          url: `/pages/pay-result/index?orderNo=${res.orderNo}&status=success`,
+        })
+      },
+      fail: (err) => {
+        console.error('payment failed', err)
+        uni.redirectTo({
+          url: `/pages/pay-result/index?orderNo=${res.orderNo}&status=fail&reason=${encodeURIComponent('用户取消支付')}`,
+        })
+      },
+      complete: () => {
+        uni.hideLoading()
+      },
+    })
     } else {
       uni.showToast({ title: '创建订单失败', icon: 'none' })
     }

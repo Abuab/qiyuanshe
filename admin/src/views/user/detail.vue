@@ -173,7 +173,7 @@
       </el-form>
       <template #footer>
         <el-button @click="vipDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleVipSubmit">确定</el-button>
+        <el-button type="primary" @click="handleVipSubmit" :loading="vipSubmitting">确定</el-button>
       </template>
     </el-dialog>
 
@@ -192,7 +192,7 @@
       </el-form>
       <template #footer>
         <el-button @click="notifyDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleNotifySubmit">发送</el-button>
+        <el-button type="primary" @click="handleNotifySubmit" :loading="notifySubmitting">发送</el-button>
       </template>
     </el-dialog>
   </div>
@@ -221,7 +221,9 @@ const userInfo = ref<UserType | null>(null)
 const photos = ref<UserPhoto[]>([])
 
 const vipDialogVisible = ref(false)
+const vipSubmitting = ref(false)
 const notifyDialogVisible = ref(false)
+const notifySubmitting = ref(false)
 
 const vipForm = reactive({
   level: 0,
@@ -324,6 +326,7 @@ function handleSetVip() {
 async function handleVipSubmit() {
   if (!userInfo.value) return
 
+  vipSubmitting.value = true
   try {
     const res = await adminUsers.updateVip(userInfo.value.id, {
       level: vipForm.level,
@@ -339,6 +342,8 @@ async function handleVipSubmit() {
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || 'VIP设置失败')
+  } finally {
+    vipSubmitting.value = false
   }
 }
 
@@ -354,6 +359,7 @@ async function handleNotifySubmit() {
     return
   }
 
+  notifySubmitting.value = true
   try {
     const res = await adminUsers.sendNotification(userInfo.value.id, notifyForm.content)
     if (res.success) {
@@ -365,6 +371,8 @@ async function handleNotifySubmit() {
   } catch (error: any) {
     console.error(error)
     ElMessage.error(error.message || '发送通知失败')
+  } finally {
+    notifySubmitting.value = false
   }
 }
 

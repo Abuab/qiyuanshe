@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
@@ -36,6 +36,7 @@ const userStore = useUserStore()
 
 const splashText = ref('正在为您寻找心仪的对象...')
 const showProtocol = ref(false)
+let navigationTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   await systemStore.loadSystemConfig()
@@ -45,6 +46,13 @@ onMounted(async () => {
     showProtocol.value = true
   } else {
     startMainNavigation()
+  }
+})
+
+onUnmounted(() => {
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+    navigationTimer = null
   }
 })
 
@@ -59,7 +67,7 @@ const handleProtocolClose = () => {
 }
 
 const startMainNavigation = () => {
-  setTimeout(() => {
+  navigationTimer = setTimeout(() => {
     const isLoggedIn = userStore.isLoggedIn
 
     if (isLoggedIn) {

@@ -151,6 +151,10 @@ async function handleAvatarChange(event: Event) {
   } catch (error) {
     console.error(error)
     ElMessage.error('头像上传失败')
+  } finally {
+    if (avatarInputRef.value) {
+      avatarInputRef.value.value = ''
+    }
   }
 }
 
@@ -187,7 +191,7 @@ async function handleSubmit() {
     }
 
     // 调用API更新用户信息
-    const res = await adminSystem.updateConfig('admin_profile', JSON.stringify(updateData))
+    const res = await adminSystem.updateProfile(updateData)
 
     if (res.success) {
       // 更新本地存储的用户信息

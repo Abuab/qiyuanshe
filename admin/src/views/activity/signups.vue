@@ -79,7 +79,8 @@
           :total="total"
           :page-sizes="[20, 50, 100]"
           layout="total, sizes, prev, pager, next"
-          @change="fetchData"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
         />
       </div>
     </div>
@@ -193,6 +194,15 @@ async function handleCancel(row: ActivitySignup) {
     console.error(error)
     ElMessage.error(error.message || '取消失败')
   }
+}
+
+function handleSizeChange() {
+  page.value = 1
+  fetchData()
+}
+
+function handleCurrentChange() {
+  fetchData()
 }
 
 onMounted(() => {

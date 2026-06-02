@@ -82,7 +82,7 @@
       <p>确定要删除红娘 <strong>{{ currentMatchmaker?.name }}</strong> 吗？此操作不可逆。</p>
       <template #footer>
         <el-button @click="deleteDialogVisible = false">取消</el-button>
-        <el-button type="danger" @click="confirmDelete">删除</el-button>
+        <el-button type="danger" @click="confirmDelete" :loading="deleteLoading">删除</el-button>
       </template>
     </el-dialog>
   </div>
@@ -101,6 +101,7 @@ const router = useRouter()
 const loading = ref(false)
 const tableData = ref<Matchmaker[]>([])
 const deleteDialogVisible = ref(false)
+const deleteLoading = ref(false)
 const currentMatchmaker = ref<Matchmaker | null>(null)
 
 onMounted(() => {
@@ -138,6 +139,7 @@ function handleDelete(row: Matchmaker) {
 async function confirmDelete() {
   if (!currentMatchmaker.value) return
 
+  deleteLoading.value = true
   try {
     await adminMatchmaker.delete(currentMatchmaker.value.id)
     ElMessage.success('删除成功')
@@ -146,6 +148,8 @@ async function confirmDelete() {
   } catch (error) {
     console.error(error)
     ElMessage.error('删除失败')
+  } finally {
+    deleteLoading.value = false
   }
 }
 

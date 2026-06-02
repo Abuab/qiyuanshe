@@ -116,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -149,6 +149,8 @@ const keyboardHeight = ref(0)
 const showVipLimit = ref(false)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
+let pollTimer: ReturnType<typeof setInterval> | null = null
+const POLL_INTERVAL = 3000
 
 const canSend = computed(() => {
   return inputContent.value.trim().length > 0
@@ -174,6 +176,11 @@ onMounted(() => {
 
   fetchMessages()
   markAsRead()
+  startPolling()
+})
+
+onUnmounted(() => {
+  stopPolling()
 })
 
 const fetchMessages = async (isLoadMore = false) => {
@@ -470,6 +477,43 @@ const goToVip = () => {
 
 const closeVipLimit = () => {
   showVipLimit.value = false
+}
+
+const startPolling = () => {
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await request({
+        url: '/chat/messages/poll',
+        method: 'GET',
+        data: {
+          userId: toUserId.value,
+          afterId: messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0,
+        },
+      })
+
+      const newMessages = res.list || []
+      if (newMessages.length > 0) {
+        const existingIds = new Set(messages.value.map(m => m.id))
+        const uniqueNewMessages = newMessages.filter((m: ChatMessage) => !existingIds.has(m.id))
+        if (uniqueNewMessages.length > 0) {
+          messages.value.push(...uniqueNewMessages)
+          nextTick(() => {
+            scrollToBottom()
+          })
+        }
+      }
+    } catch (e) {
+      // 轮询失败静默处理
+    }
+  }, POLL_INTERVAL)
+}
+
+const stopPolling = () => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 }
 
 const handleBack = () => {

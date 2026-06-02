@@ -40,6 +40,10 @@ export const adminSystem = {
     return request.get(`/admin/system/config/${key}`)
   },
 
+  updateProfile(data: { nickname?: string; avatar?: string; password?: string }): Promise<ApiResponse> {
+    return request.put('/admin/profile', data)
+  },
+
   upload(data: FormData): Promise<ApiResponse<{ url: string }>> {
     return request.post('/admin/upload', data)
   },

@@ -263,7 +263,7 @@ const handleSkip = () => {
 
 const handleLoginSuccess = () => {
   const pages = getCurrentPages()
-  const prevPage = pages[pages.length - 2]
+  const prevPage = pages.length > 1 ? pages[pages.length - 2] : null
 
   if (prevPage) {
     uni.navigateBack()

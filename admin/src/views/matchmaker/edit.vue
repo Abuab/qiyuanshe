@@ -251,6 +251,10 @@ async function handleAvatarChange(event: Event) {
   } catch (error) {
     console.error(error)
     ElMessage.error('头像上传失败')
+  } finally {
+    if (avatarInputRef.value) {
+      avatarInputRef.value.value = ''
+    }
   }
 }
 
@@ -265,6 +269,10 @@ async function handleQrcodeChange(event: Event) {
   } catch (error) {
     console.error(error)
     ElMessage.error('二维码上传失败')
+  } finally {
+    if (qrcodeInputRef.value) {
+      qrcodeInputRef.value.value = ''
+    }
   }
 }
 

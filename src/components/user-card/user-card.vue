@@ -3,8 +3,9 @@
     <view class="card-left">
       <image
         class="avatar"
-        :src="user.avatar || '/static/default-avatar.png'"
+        :src="failedAvatars.has(user.avatar || '') ? '/static/default-avatar.png' : (user.avatar || '/static/default-avatar.png')"
         mode="aspectFill"
+        @error="onAvatarError(user.avatar || '')"
       ></image>
     </view>
 
@@ -31,8 +32,9 @@
           v-for="(photo, index) in displayPhotos"
           :key="index"
           class="photo-thumb"
-          :src="photo"
+          :src="failedAvatars.has(photo) ? '/static/default-avatar.png' : photo"
           mode="aspectFill"
+          @error="onAvatarError(photo)"
         ></image>
       </view>
     </view>
@@ -40,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 export interface UserCardData {
   id: number
@@ -68,6 +70,14 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'click', user: UserCardData): void
 }>()
+
+const failedAvatars = ref(new Set<string>())
+
+const onAvatarError = (url: string) => {
+  if (url) {
+    failedAvatars.value = new Set([...failedAvatars.value, url])
+  }
+}
 
 const displayPhotos = computed(() => {
   if (!props.user.photos || props.user.photos.length === 0) return []

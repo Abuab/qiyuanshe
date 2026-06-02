@@ -75,6 +75,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -108,6 +109,10 @@ const page = ref(1)
 
 onMounted(() => {
   fetchConversations()
+})
+
+onShow(() => {
+  fetchConversations(true)
 })
 
 const fetchConversations = async (isRefresh = false) => {

@@ -430,6 +430,10 @@ async function handleFileChange(event: Event) {
   } catch (error) {
     console.error(error)
     ElMessage.error('海报上传失败')
+  } finally {
+    if (fileInputRef.value) {
+      fileInputRef.value.value = ''
+    }
   }
 }
 

@@ -713,14 +713,43 @@ async function handleExport() {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
     }
-    await adminUsers.export(params)
-    ElMessage.success('导出成功')
+    const res = await adminUsers.export(params)
+    if (res.success && res.data) {
+      if (typeof res.data === 'string') {
+        window.open(res.data, '_blank')
+      } else if (Array.isArray(res.data)) {
+        const csvContent = generateCsv(res.data)
+        downloadFile(csvContent, '用户列表.csv', 'text/csv;charset=utf-8')
+      }
+      ElMessage.success('导出成功')
+    } else {
+      ElMessage.error('导出失败')
+    }
   } catch (error) {
     console.error(error)
     ElMessage.error('导出失败')
   } finally {
     exportLoading.value = false
   }
+}
+
+function generateCsv(data: any[]): string {
+  if (!data.length) return ''
+  const headers = Object.keys(data[0])
+  const rows = data.map(row => headers.map(h => `"${(row[h] ?? '').toString().replace(/"/g, '""')}"`).join(','))
+  return '\uFEFF' + [headers.join(','), ...rows].join('\n')
+}
+
+function downloadFile(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 function formatDate(dateStr: string) {

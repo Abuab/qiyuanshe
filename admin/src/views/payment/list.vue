@@ -167,7 +167,7 @@
       </el-form>
       <template #footer>
         <el-button @click="refundDialogVisible = false">取消</el-button>
-        <el-button type="danger" @click="confirmRefund">确认退款</el-button>
+        <el-button type="danger" @click="confirmRefund" :loading="refundLoading">确认退款</el-button>
       </template>
     </el-dialog>
   </div>
@@ -184,6 +184,7 @@ const tableData = ref<Order[]>([])
 const dateRange = ref<[string, string] | null>(null)
 const detailDialogVisible = ref(false)
 const refundDialogVisible = ref(false)
+const refundLoading = ref(false)
 const currentOrder = ref<Order | null>(null)
 
 const filterForm = reactive({
@@ -246,6 +247,7 @@ function handleReset() {
 }
 
 function handleSizeChange() {
+  pagination.page = 1
   fetchData()
 }
 
@@ -267,6 +269,7 @@ function handleRefund(row: Order) {
 async function confirmRefund() {
   if (!currentOrder.value) return
 
+  refundLoading.value = true
   try {
     await ElMessageBox.confirm(
       '确定要退款该订单吗？退款将原路返回。',
@@ -282,6 +285,8 @@ async function confirmRefund() {
     if (error !== 'cancel') {
       console.error(error)
     }
+  } finally {
+    refundLoading.value = false
   }
 }
 

@@ -307,6 +307,21 @@ const loadMockData = () => {
 onMounted(() => {
   loadMockData()
 })
+
+const onShareAppMessage = () => {
+  return {
+    title: '栖缘社 - 遇见对的TA',
+    path: '/pages/index/index',
+    imageUrl: '/static/share-image.png',
+  }
+}
+
+const onShareTimeline = () => {
+  return {
+    title: '栖缘社 - 遇见对的TA',
+    imageUrl: '/static/share-image.png',
+  }
+}
 </script>
 
 <style lang="scss" scoped>

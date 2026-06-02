@@ -36,6 +36,13 @@
       </view>
     </view>
 
+    <canvas
+      canvas-id="poster-canvas"
+      id="poster-canvas"
+      class="poster-canvas"
+      :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+    ></canvas>
+
     <view v-if="showLoading" class="loading-overlay">
       <view class="loading-content">
         <view class="loading-spinner"></view>
@@ -453,6 +460,12 @@ const savePoster = async () => {
 .poster-page {
   min-height: 100vh;
   background-color: #f5f5f5;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: 0;
 }
 
 .nav-bar {

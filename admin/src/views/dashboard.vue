@@ -245,7 +245,7 @@ onUnmounted(() => {
 
 async function fetchDashboardData() {
   try {
-    const [dashboardRes, usersRes, ordersRes, userTrendRes, genderRes, ageRes, revenueRes, funnelRes] = await Promise.all([
+    const results = await Promise.allSettled([
       adminDashboard.getStats({ timeRange: timeRange.value }),
       adminUsers.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
       adminOrders.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
@@ -256,25 +256,27 @@ async function fetchDashboardData() {
       adminDashboard.getFunnelData(),
     ])
 
-    if (dashboardRes.success) {
-      Object.assign(stats, dashboardRes.data)
+    const [dashboardRes, usersRes, ordersRes, userTrendRes, genderRes, ageRes, revenueRes, funnelRes] = results
+
+    if (dashboardRes.status === 'fulfilled' && dashboardRes.value.success) {
+      Object.assign(stats, dashboardRes.value.data)
     }
 
-    if (usersRes.success) {
-      latestUsers.value = usersRes.list || []
+    if (usersRes.status === 'fulfilled' && usersRes.value.success) {
+      latestUsers.value = usersRes.value.list || []
     }
 
-    if (ordersRes.success) {
-      latestOrders.value = ordersRes.list || []
+    if (ordersRes.status === 'fulfilled' && ordersRes.value.success) {
+      latestOrders.value = ordersRes.value.list || []
     }
 
     await nextTick()
     updateCharts(
-      userTrendRes.success ? userTrendRes.data : [],
-      genderRes.success ? genderRes.data : [],
-      ageRes.success ? ageRes.data : [],
-      revenueRes.success ? revenueRes.data : [],
-      funnelRes.success ? funnelRes.data : []
+      userTrendRes.status === 'fulfilled' && userTrendRes.value.success ? userTrendRes.value.data : [],
+      genderRes.status === 'fulfilled' && genderRes.value.success ? genderRes.value.data : [],
+      ageRes.status === 'fulfilled' && ageRes.value.success ? ageRes.value.data : [],
+      revenueRes.status === 'fulfilled' && revenueRes.value.success ? revenueRes.value.data : [],
+      funnelRes.status === 'fulfilled' && funnelRes.value.success ? funnelRes.value.data : []
     )
   } catch (error) {
     console.error('Fetch dashboard data error:', error)

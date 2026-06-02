@@ -42,7 +42,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { ArrowDown, User, Lock, SwitchButton } from '@element-plus/icons-vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -66,15 +66,8 @@ function handleCommand(command: string) {
 }
 
 function showPasswordDialog() {
-  ElMessageBox.prompt('请输入新密码', '修改密码', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    inputType: 'password',
-  })
-    .then(({ value }) => {
-      console.log('New password:', value)
-    })
-    .catch(() => {})
+  router.push({ name: 'AdminProfile' })
+  ElMessage.info('请在个人中心页面修改密码')
 }
 
 function handleLogout() {

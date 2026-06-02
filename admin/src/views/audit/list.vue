@@ -132,7 +132,7 @@
       </el-form>
       <template #footer>
         <el-button @click="rejectDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmReject">确定</el-button>
+        <el-button type="primary" @click="confirmReject" :loading="rejectLoading">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -162,6 +162,7 @@ const pagination = reactive({
 })
 
 const rejectDialogVisible = ref(false)
+const rejectLoading = ref(false)
 const rejectForm = reactive({
   reason: '',
 })
@@ -230,6 +231,7 @@ function handleSelectionChange(rows: AuditItem[]) {
 }
 
 function handleSizeChange() {
+  pagination.page = 1
   fetchData()
 }
 
@@ -263,6 +265,7 @@ async function confirmReject() {
     return
   }
 
+  rejectLoading.value = true
   try {
     await adminAudit.reject(currentRejectItem.value.id, rejectForm.reason)
     ElMessage.success('已拒绝')
@@ -272,6 +275,8 @@ async function confirmReject() {
   } catch (error) {
     console.error(error)
     ElMessage.error('操作失败')
+  } finally {
+    rejectLoading.value = false
   }
 }
 

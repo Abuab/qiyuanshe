@@ -37,6 +37,9 @@ const request = <T = any>(options: RequestOptions): Promise<T> => {
         const response = res as UniApp.RequestSuccessCallbackResult
 
         if (response.statusCode === 401) {
+          uni.removeStorageSync('token')
+          uni.removeStorageSync('userInfo')
+          uni.removeStorageSync('refreshToken')
           uni.showToast({
             title: '请先登录',
             icon: 'none',

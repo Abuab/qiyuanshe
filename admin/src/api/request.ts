@@ -12,13 +12,14 @@ const instance = axios.create({
   },
 })
 
+let isUnauthorizedHandling = false
+
 instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('admin_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
-    // 如果是FormData，不要设置Content-Type，让浏览器自动处理
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
@@ -33,19 +34,16 @@ instance.interceptors.response.use(
   (response) => {
     const { data } = response
 
-    // 处理 data 为 null 的情况
     if (data === null || data === undefined) {
       return { success: true, data: null }
     }
 
-    // 兼容后端包装的响应格式 { code, message, data: {...} }
     const isWrapped = data.code !== undefined && data.data !== undefined
     const result = isWrapped ? data.data : data
 
-    // 检查是否失败（code 不为 200 或 success 为 false）
-    const isError = (data.code !== undefined && data.code !== 200) || result?.success === false
+    const isError = (data.code !== undefined && data.code !== 200) || (result && typeof result === 'object' && !Array.isArray(result) && result.success === false)
     if (isError) {
-      if (data.code === 401 || result?.code === 401) {
+      if (data.code === 401 || (result && typeof result === 'object' && !Array.isArray(result) && result.code === 401)) {
         handleUnauthorized()
         return Promise.reject(new Error(result?.message || data.message || '未授权'))
       }
@@ -54,7 +52,6 @@ instance.interceptors.response.use(
       return Promise.reject(new Error(result?.message || data.message))
     }
 
-    // 返回完整响应数据，并添加 success 字段便于前端使用
     if (isWrapped) {
       return { ...data, success: true, ...result }
     }
@@ -63,8 +60,7 @@ instance.interceptors.response.use(
   (error) => {
     if (error.response) {
       const { status, data } = error.response
-      
-      // 兼容后端包装的响应格式
+
       const responseData = data.data || data
 
       switch (status) {
@@ -97,8 +93,16 @@ instance.interceptors.response.use(
 )
 
 function handleUnauthorized() {
+  if (isUnauthorizedHandling) return
+  isUnauthorizedHandling = true
+
   localStorage.removeItem('admin_token')
   localStorage.removeItem('admin_user')
+
+  import('../store/admin').then(({ useAdminStore }) => {
+    const store = useAdminStore()
+    store.$patch({ token: '', userInfo: null, permissions: [] })
+  })
 
   ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
     confirmButtonText: '确定',
@@ -109,6 +113,9 @@ function handleUnauthorized() {
       router.push({ name: 'Login' })
     })
     .catch(() => {})
+    .finally(() => {
+      isUnauthorizedHandling = false
+    })
 }
 
 export default instance

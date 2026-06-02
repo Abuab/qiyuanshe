@@ -83,6 +83,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import request from '@/utils/request'
 
 interface Activity {
   id: number
@@ -137,8 +138,8 @@ async function fetchActivities(reset = false) {
   loadingMore.value = !reset
 
   try {
-    const result = await uni.request({
-      url: `https://api.lingtong.com/activities`,
+    const result = await request({
+      url: '/activities',
       method: 'GET',
       data: {
         type: currentTab.value,
@@ -147,9 +148,9 @@ async function fetchActivities(reset = false) {
       },
     })
 
-    const res = result.data as any
-    if (res.code === 200 && res.data) {
-      const list = res.data.list || []
+    const res = result as any
+    if (res && res.list) {
+      const list = res.list || []
       if (reset) {
         activityList.value = list
       } else {

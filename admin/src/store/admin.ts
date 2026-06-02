@@ -37,38 +37,35 @@ export const useAdminStore = defineStore('admin', () => {
   }
 
   async function login(username: string, password: string, captcha: string, rememberMe: boolean, captchaKey?: string) {
-    try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, captcha, captchaKey }),
-      })
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, captcha, captchaKey }),
+    })
 
-      const result = await response.json()
-      const data = result.data || result
+    const result = await response.json()
+    const data = result.data || result
 
-      if (data.success) {
-        token.value = data.token
-        userInfo.value = data.user
-        permissions.value = data.permissions || []
+    if (data.success) {
+      token.value = data.token
+      userInfo.value = data.user
+      permissions.value = data.permissions || []
 
-        localStorage.setItem('admin_token', data.token)
-        localStorage.setItem('admin_user', JSON.stringify(data.user))
+      localStorage.setItem('admin_token', data.token)
+      localStorage.setItem('admin_user', JSON.stringify(data.user))
 
-        if (rememberMe) {
-          localStorage.setItem('admin_remember', 'true')
-        }
-
-        ElMessage.success('登录成功')
-
-        const redirect = router.currentRoute.value.query.redirect as string
-        router.push(redirect || '/dashboard')
-      } else {
-        ElMessage.error(data.message || '登录失败')
+      if (rememberMe) {
+        localStorage.setItem('admin_remember', 'true')
       }
-    } catch (error) {
-      console.error('Login error:', error)
-      ElMessage.error('网络错误，请稍后重试')
+
+      ElMessage.success('登录成功')
+
+      const redirect = router.currentRoute.value.query.redirect as string
+      router.push(redirect || '/dashboard')
+    } else {
+      const errorMsg = data.message || '登录失败'
+      ElMessage.error(errorMsg)
+      throw new Error(errorMsg)
     }
   }
 

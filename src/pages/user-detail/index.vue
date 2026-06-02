@@ -326,6 +326,15 @@ onMounted(() => {
   fetchMatchmakerList()
 })
 
+const onShareAppMessage = () => {
+  if (!userData.value) return {}
+  return {
+    title: `${userData.value.nickname}的个人主页 - 栖缘社`,
+    path: `/pages/user-detail/index?id=${userData.value.id}`,
+    imageUrl: userData.value.avatar || '/static/default-avatar.png',
+  }
+}
+
 const fetchUserDetail = async () => {
   try {
     loading.value = true
