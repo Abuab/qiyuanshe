@@ -37,6 +37,7 @@ interface UserFilter {
   housingStatus?: string
   carStatus?: string
   education?: string
+  occupation?: string
 }
 
 @Controller('admin/users')

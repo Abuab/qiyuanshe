@@ -141,6 +141,17 @@
                 />
               </el-select>
             </el-form-item>
+            <el-form-item label="职业">
+              <el-select v-model="filterForm.occupation" placeholder="全部" clearable style="width: 140px">
+                <el-option label="全部" :value="undefined" />
+                <el-option
+                  v-for="item in dictData.occupation"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
+              </el-select>
+            </el-form-item>
           </div>
           <!-- 第三行：时间和操作 -->
           <div class="filter-row">
@@ -444,7 +455,14 @@
           <el-input-number v-model="createForm.height" :min="100" :max="250" />
         </el-form-item>
         <el-form-item label="职业">
-          <el-input v-model="createForm.occupation" placeholder="请输入职业" />
+          <el-select v-model="createForm.occupation" placeholder="请选择职业" clearable style="width: 100%">
+            <el-option
+              v-for="item in dictData.occupation"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="家乡">
           <el-input v-model="createForm.hometown" placeholder="请输入家乡" />
@@ -511,7 +529,9 @@ const filterForm = reactive<UserFilter>({
   maritalStatus: undefined,
   incomeRange: undefined,
   housingStatus: undefined,
+  carStatus: undefined,
   education: undefined,
+  occupation: undefined,
   startDate: undefined,
   endDate: undefined,
   tags: [],

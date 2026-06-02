@@ -25,6 +25,7 @@ interface UserFilter {
   housingStatus?: string
   carStatus?: string
   education?: string
+  occupation?: string
   tags?: string[]
 }
 
@@ -105,6 +106,10 @@ export class AdminUserService {
 
     if (filter.education) {
       queryBuilder.andWhere('user.education = :education', { education: filter.education })
+    }
+
+    if (filter.occupation) {
+      queryBuilder.andWhere('user.occupation = :occupation', { occupation: filter.occupation })
     }
 
     if (filter.tags && filter.tags.length > 0) {

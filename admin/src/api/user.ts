@@ -64,6 +64,7 @@ export interface UserFilter {
   housingStatus?: string
   carStatus?: string
   education?: string
+  occupation?: string
   tags?: string[]
 }
 
