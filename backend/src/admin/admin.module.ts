@@ -25,6 +25,8 @@ import { AdminProfileService } from './profile.service'
 import { MfaController } from './mfa.controller'
 import { MfaService } from './mfa.service'
 import { ForgotPasswordController } from './forgot-password.controller'
+import { AdminNoticeController } from './notice.controller'
+import { Notice } from '../entities/Notice'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -47,6 +49,7 @@ import { SystemConfig } from '../entities/SystemConfig'
       VipOrder,
       AuditLog,
       SystemConfig,
+      Notice,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -68,6 +71,7 @@ import { SystemConfig } from '../entities/SystemConfig'
     AdminProfileController,
     MfaController,
     ForgotPasswordController,
+    AdminNoticeController,
   ],
   providers: [
     AdminUserService,

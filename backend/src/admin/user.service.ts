@@ -142,8 +142,12 @@ export class AdminUserService {
   async detail(id: number) {
     const user = await this.userRepository.findOne({ where: { id, isDeleted: 0 } })
     if (!user) return null
+    const photos = await this.userPhotoRepository.find({
+      where: { userId: id },
+      order: { sortOrder: 'ASC' },
+    })
     const { password, ...safeUser } = user
-    return safeUser
+    return { ...safeUser, photos, age: user.birthYear ? new Date().getFullYear() - user.birthYear : null }
   }
 
   async updateStatus(id: number, status: number) {
