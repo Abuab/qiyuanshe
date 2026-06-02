@@ -131,14 +131,14 @@ export class AdminLoginController {
     const dbUserPreCheck = await this.userRepository.findOne({ where: { id: 1 } })
     let passwordValid = false
 
-    if (password === ADMIN_PASSWORD) {
-      passwordValid = true
-    } else if (dbUserPreCheck?.password) {
+    if (dbUserPreCheck?.password) {
       try {
         passwordValid = await bcrypt.compare(password, dbUserPreCheck.password)
       } catch {
         passwordValid = false
       }
+    } else if (password === ADMIN_PASSWORD) {
+      passwordValid = true
     }
 
     if (!passwordValid) {
