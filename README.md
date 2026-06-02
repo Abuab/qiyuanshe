@@ -593,11 +593,81 @@ docker compose up -d --build
 - [Docker 官方文档](https://docs.docker.com/)
 - [Let's Encrypt 证书申请](https://certbot.eff.org/)
 
+## 应急操作指南
+
+### 1. 忘记密码
+
+如果管理员忘记密码，无法登录后台，可通过以下步骤重置：
+
+**步骤 1：进入后端容器生成 bcrypt 密码**
+
+```bash
+docker exec -it lingtong_api sh
+node -e "const bcrypt = require('bcrypt'); bcrypt.hash('你的新密码', 10).then(h => console.log(h));"
+```
+
+复制输出的 hash 值（格式如 `$2b$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`）。
+
+**步骤 2：进入 MySQL 更新密码**
+
+```bash
+docker exec -it lingtong_mysql mysql -u root -p -e "USE qiyuanshe; UPDATE admin_user SET password='上面复制的hash值' WHERE username='admin';"
+```
+
+> **注意**：将 `-p` 后的密码替换为你的 MySQL root 密码。
+
+**步骤 3：使用新密码登录**
+
+刷新登录页，使用新密码登录即可。
+
+---
+
+### 2. 忘记 MFA / 验证器丢失
+
+如果管理员绑定了 MFA 但丢失验证器或验证码一直错误，可通过以下步骤禁用 MFA：
+
+**步骤 1：数据库直接禁用 MFA**
+
+```bash
+docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE qiyuanshe; UPDATE admin_user SET is_mfa_enabled = false, mfa_type = 'none', mfa_secret = NULL WHERE id = 1;"
+```
+
+> **注意**：
+> - 将 `your_password` 替换为你的 MySQL root 密码
+> - 将 `id = 1` 替换为实际的管理员 ID（如果不确定，先执行 `SELECT id, username FROM admin_user;` 查看）
+
+**步骤 2：重新登录**
+
+禁用 MFA 后，刷新登录页，直接输入用户名密码即可登录，不再要求 MFA 验证码。
+
+**步骤 3：重新绑定 MFA（可选）**
+
+登录后进入「个人中心 → 安全设置」，重新生成二维码并绑定新的验证器。
+
+---
+
+### 3. 常见问题
+
+**Q: 执行 SQL 后仍然要求 MFA？**
+
+请确认：
+- SQL 执行成功（没有报错）
+- 刷新的是登录页（不是浏览器缓存的旧页面）
+- 如果使用了 CDN 或 Nginx 缓存，尝试 `Ctrl+F5` 或 `Cmd+Shift+R` 强制刷新
+
+**Q: 如何查看管理员 ID？**
+
+```bash
+docker exec -it lingtong_mysql mysql -u root -p -e "USE qiyuanshe; SELECT id, username, is_mfa_enabled FROM admin_user;"
+```
+
+---
+
 ## License
 
 MIT License
 
 ---
 
-*文档版本: v2.0*
-*最后更新: 2026-05-31*
+*文档版本: v2.1*
+*最后更新: 2026-06-02*
