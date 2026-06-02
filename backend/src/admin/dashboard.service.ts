@@ -69,22 +69,30 @@ export class AdminDashboardService {
   async getUserTrend(timeRange: string = 'week') {
     const now = new Date()
     let startDate: Date
+    let dateFormat: 'hour' | 'day' | 'month' = 'day'
 
     switch (timeRange) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        dateFormat = 'hour'
         break
       case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
+        startDate.setHours(0, 0, 0, 0)
+        dateFormat = 'day'
         break
       case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        startDate = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000)
+        startDate.setHours(0, 0, 0, 0)
+        dateFormat = 'day'
         break
       case 'year':
-        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000)
+        startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+        dateFormat = 'month'
         break
       default:
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)
+        startDate.setHours(0, 0, 0, 0)
     }
 
     const users = await this.userRepository.find({
@@ -99,7 +107,16 @@ export class AdminDashboardService {
     const result: Record<string, { total: number; male: number; female: number }> = {}
 
     users.forEach(user => {
-      const dateKey = user.createdAt.toISOString().split('T')[0]
+      let dateKey: string
+      if (dateFormat === 'hour') {
+        const d = new Date(user.createdAt)
+        dateKey = d.toISOString().slice(0, 13) + ':00'
+      } else if (dateFormat === 'month') {
+        const d = new Date(user.createdAt)
+        dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      } else {
+        dateKey = user.createdAt.toISOString().split('T')[0]
+      }
       if (!result[dateKey]) {
         result[dateKey] = { total: 0, male: 0, female: 0 }
       }
@@ -108,10 +125,34 @@ export class AdminDashboardService {
       else if (user.gender === 2) result[dateKey].female++
     })
 
-    return Object.entries(result).map(([date, data]) => ({
-      date,
-      ...data,
-    }))
+    // Fill in missing dates with zeros
+    const filled: { date: string; total: number; male: number; female: number }[] = []
+    const cursor = new Date(startDate)
+
+    if (dateFormat === 'hour') {
+      const endHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours())
+      while (cursor <= endHour) {
+        const key = cursor.toISOString().slice(0, 13) + ':00'
+        filled.push({ date: key, ...(result[key] || { total: 0, male: 0, female: 0 }) })
+        cursor.setHours(cursor.getHours() + 1)
+      }
+    } else if (dateFormat === 'month') {
+      const endMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      while (cursor <= endMonth) {
+        const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`
+        filled.push({ date: key, ...(result[key] || { total: 0, male: 0, female: 0 }) })
+        cursor.setMonth(cursor.getMonth() + 1)
+      }
+    } else {
+      const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      while (cursor <= endDay) {
+        const key = cursor.toISOString().split('T')[0]
+        filled.push({ date: key, ...(result[key] || { total: 0, male: 0, female: 0 }) })
+        cursor.setDate(cursor.getDate() + 1)
+      }
+    }
+
+    return filled
   }
 
   async getGenderDistribution() {

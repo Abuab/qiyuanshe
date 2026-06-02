@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import StatsCard from '../components/stats-card.vue'
 import { ElMessage } from 'element-plus'
@@ -215,6 +215,7 @@ const stats = reactive<Stats>({
 })
 const latestUsers = ref<any[]>([])
 const latestOrders = ref<any[]>([])
+const cachedUserTrendData = ref<any[]>([])
 
 let userChart: echarts.ECharts | null = null
 let genderChart: echarts.ECharts | null = null
@@ -270,9 +271,12 @@ async function fetchDashboardData() {
       latestOrders.value = ordersRes.value.list || []
     }
 
+    const userTrendData: any[] = userTrendRes.status === 'fulfilled' && userTrendRes.value.success ? userTrendRes.value.data || [] : []
+    cachedUserTrendData.value = userTrendData
+
     await nextTick()
     updateCharts(
-      userTrendRes.status === 'fulfilled' && userTrendRes.value.success ? userTrendRes.value.data : [],
+      userTrendData,
       genderRes.status === 'fulfilled' && genderRes.value.success ? genderRes.value.data : [],
       ageRes.status === 'fulfilled' && ageRes.value.success ? ageRes.value.data : [],
       revenueRes.status === 'fulfilled' && revenueRes.value.success ? revenueRes.value.data : [],
@@ -316,13 +320,51 @@ function updateCharts(
   updateFunnelChart(funnelData)
 }
 
-function updateUserChart(data: any[] = []) {
+function updateUserChart(rawData: any[] = []) {
   if (!userChart) return
 
-  const dates = data.map(item => item.date)
-  const totalData = data.map(item => item.total)
-  const maleData = data.map(item => item.male)
-  const femaleData = data.map(item => item.female)
+  // Sort by date ascending
+  const data = [...rawData].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  // Aggregate to weekly if userChartType is 'weekly' and we have daily data
+  let chartData: { date: string; total: number; male: number; female: number }[]
+  if (userChartType.value === 'weekly' && data.length > 7) {
+    const weeklyMap: Record<string, { total: number; male: number; female: number }> = {}
+    data.forEach((item: UserTrend) => {
+      const d = new Date(item.date)
+      const dayOfWeek = d.getDay()
+      const monday = new Date(d)
+      monday.setDate(d.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+      const weekKey = monday.toISOString().split('T')[0]
+      if (!weeklyMap[weekKey]) weeklyMap[weekKey] = { total: 0, male: 0, female: 0 }
+      weeklyMap[weekKey].total += item.total
+      weeklyMap[weekKey].male += item.male
+      weeklyMap[weekKey].female += item.female
+    })
+    chartData = Object.entries(weeklyMap)
+      .map(([date, v]) => ({ date: '周 ' + date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+  } else {
+    chartData = data
+  }
+
+  const dates = chartData.map(item => item.date)
+  const totalData = chartData.map(item => item.total)
+  const maleData = chartData.map(item => item.male)
+  const femaleData = chartData.map(item => item.female)
+
+  // Format display labels: shorten long date strings
+  const displayDates = dates.map(d => {
+    // If date is like '2026-05-20', show '05/20'
+    if (/^\d{4}-\d{2}-\d{2}/.test(d)) {
+      return d.slice(5)
+    }
+    // If hour format like '2026-05-20T10:00', show '10时'
+    if (d.includes('T')) {
+      return d.slice(11, 13) + '时'
+    }
+    return d
+  })
 
   const option: echarts.EChartsOption = {
     tooltip: {
@@ -335,17 +377,22 @@ function updateUserChart(data: any[] = []) {
     grid: {
       left: '3%',
       right: '4%',
-      bottom: '12%',
+      bottom: '15%',
       top: '3%',
       containLabel: true,
     },
     xAxis: {
       type: 'category',
       boundaryGap: false,
-      data: dates.length > 0 ? dates : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: dates.length > 0 ? displayDates : ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      axisLabel: {
+        rotate: dates.length > 10 ? 45 : 0,
+        interval: dates.length > 30 ? Math.floor(dates.length / 6) : 'auto',
+      },
     },
     yAxis: {
       type: 'value',
+      minInterval: 1,
     },
     series: [
       {
@@ -627,6 +674,13 @@ function handleResize() {
 function handleTimeRangeChange() {
   fetchDashboardData()
 }
+
+// Re-render user chart when daily/weekly toggle changes
+watch(userChartType, () => {
+  if (cachedUserTrendData.value.length > 0) {
+    updateUserChart(cachedUserTrendData.value)
+  }
+})
 
 function formatDate(dateStr: string) {
   if (!dateStr) return '-'
