@@ -29,6 +29,10 @@ import { AdminNoticeController } from './notice.controller'
 import { Notice } from '../entities/Notice'
 import { Report } from '../entities/Report'
 import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
+import { UserNotification } from '../entities/UserNotification'
+import { MatchmakerReview } from '../entities/MatchmakerReview'
+import { MatchRecord } from '../entities/MatchRecord'
+import { UserBlock } from '../entities/UserBlock'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -42,6 +46,8 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { AdminReportController } from './report.controller'
 import { AdminAccountService } from './admin-account.service'
 import { RoleGuard } from './role.guard'
+import { UserProfileService } from './user-profile.service'
+import { UserProfileController } from './user-profile.controller'
 
 @Module({
   imports: [
@@ -57,6 +63,10 @@ import { RoleGuard } from './role.guard'
       Notice,
       Report,
       AdminUserEntity,
+      UserNotification,
+      MatchmakerReview,
+      MatchRecord,
+      UserBlock,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -80,6 +90,7 @@ import { RoleGuard } from './role.guard'
     ForgotPasswordController,
     AdminNoticeController,
     AdminReportController,
+    UserProfileController,
   ],
   providers: [
     AdminUserService,
@@ -96,6 +107,7 @@ import { RoleGuard } from './role.guard'
     AdminJwtAuthGuard,
     AdminAccountService,
     RoleGuard,
+    UserProfileService,
   ],
   exports: [
     AdminUserService,

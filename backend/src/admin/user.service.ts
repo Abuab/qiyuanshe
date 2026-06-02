@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Like, In } from 'typeorm'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
+import { UserNotification } from '../entities/UserNotification'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {

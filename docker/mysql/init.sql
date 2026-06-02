@@ -442,3 +442,65 @@ INSERT IGNORE INTO `system_configs` (`configKey`, `configValue`, `description`) 
 ('dict_carStatus', '["已购车","未购车","计划购车"]', '车辆状态字典'),
 ('dict_occupation', '["公务员/事业单位","国企员工","私企员工","外企员工","自主创业","自由职业","学生","其他"]', '职业字典'),
 ('dict_incomeRange', '["5K以下","5K-10K","10K-15K","15K-20K","20K-30K","30K-50K","50K以上"]', '收入范围字典');
+
+-- =============================================
+-- 用户通知表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `user_notifications` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` BIGINT NOT NULL COMMENT '用户ID',
+  `title` VARCHAR(200) NOT NULL COMMENT '通知标题',
+  `content` TEXT NOT NULL COMMENT '通知内容',
+  `senderType` VARCHAR(50) DEFAULT 'admin' COMMENT '发送者类型',
+  `senderId` INT NULL COMMENT '发送者ID',
+  `isRead` TINYINT DEFAULT 0 COMMENT '0未读 1已读',
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_isRead` (`isRead`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户通知表';
+
+-- =============================================
+-- 用户拉黑表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `user_blocks` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `blockerId` BIGINT NOT NULL COMMENT '拉黑者ID',
+  `blockedUserId` BIGINT NOT NULL COMMENT '被拉黑者ID',
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_blocker_blocked` (`blockerId`, `blockedUserId`),
+  KEY `idx_blockedUserId` (`blockedUserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户拉黑表';
+
+-- =============================================
+-- 匹配记录表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `match_records` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` BIGINT NOT NULL COMMENT '用户ID',
+  `matchedUserId` BIGINT NOT NULL COMMENT '匹配对象ID',
+  `matchmakerId` INT NULL COMMENT '红娘ID',
+  `status` VARCHAR(20) DEFAULT 'pending' COMMENT 'pending待定/in_progress进行中/success成功/failed失败',
+  `remark` TEXT NULL COMMENT '备注',
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_matchedUserId` (`matchedUserId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='匹配记录表';
+
+-- =============================================
+-- 红娘评价表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `matchmaker_reviews` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `userId` INT NOT NULL COMMENT '被评价用户',
+  `matchmakerId` INT NOT NULL COMMENT '评价红娘',
+  `content` TEXT NULL COMMENT '评价内容',
+  `difficulty` VARCHAR(20) NULL COMMENT '是否好牵线：好搞定/不好搞定/一般',
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_userId` (`userId`),
+  KEY `idx_matchmakerId` (`matchmakerId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='红娘评价表';
