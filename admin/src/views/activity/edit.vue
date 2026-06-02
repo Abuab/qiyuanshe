@@ -129,11 +129,11 @@
         <el-form-item label="顶部海报" prop="coverImage">
           <div class="upload-wrapper">
             <el-image
-              v-if="formData.coverImage"
+              v-if="formData.coverImage && !coverImageError"
               :src="formData.coverImage"
               fit="cover"
               class="cover-preview"
-              @error="() => ElMessage.error('海报加载失败')"
+              @error="handleCoverImageError"
             />
             <div v-else class="cover-placeholder">
               <el-icon :size="40"><Picture /></el-icon>
@@ -211,6 +211,7 @@ const loading = ref(false)
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const fileInputRef = ref<HTMLInputElement>()
+const coverImageError = ref(false)
 
 // 编辑器相关
 const editorRef = shallowRef<IDomEditor>()
@@ -363,6 +364,7 @@ async function fetchData() {
     const id = Number(route.params.id)
     const res = await adminActivity.detail(id)
     if (res.success && res.data) {
+      coverImageError.value = false
       Object.assign(formData, res.data)
     }
   } catch (error) {
@@ -418,6 +420,13 @@ function triggerUpload() {
   fileInputRef.value?.click()
 }
 
+function handleCoverImageError() {
+  if (!coverImageError.value) {
+    coverImageError.value = true
+    ElMessage.warning('海报加载失败，请重新上传')
+  }
+}
+
 async function handleFileChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (!file) return
@@ -426,6 +435,7 @@ async function handleFileChange(event: Event) {
     ElMessage.info('正在上传海报...')
     const url = await uploadFile(file)
     formData.coverImage = url
+    coverImageError.value = false
     ElMessage.success('海报上传成功')
   } catch (error) {
     console.error(error)
