@@ -1,5 +1,7 @@
 import { Controller, Get, Put, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Report } from '../entities/Report'
@@ -7,7 +9,8 @@ import { User } from '../entities/User'
 import { Result } from '../common/result'
 
 @Controller('admin/reports')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminReportController {
   constructor(
     @InjectRepository(Report) private repo: Repository<Report>,

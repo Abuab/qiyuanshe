@@ -35,7 +35,7 @@
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-button type="primary" class="add-btn" @click="handleAdd">
+      <el-button v-if="!isReadonly" type="primary" class="add-btn" @click="handleAdd">
         <el-icon><Plus /></el-icon>添加活动
       </el-button>
     </div>
@@ -86,7 +86,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="80" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
             <el-switch
@@ -119,14 +119,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { useAdminStore } from '../../store/admin'
 import { adminActivity } from '../../api'
 import type { Activity } from '../../api/activity'
 
 const router = useRouter()
+const adminStore = useAdminStore()
+const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
 const loading = ref(false)
 const activityList = ref<Activity[]>([])
 const total = ref(0)

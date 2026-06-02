@@ -21,7 +21,7 @@ export class AdminQuestionService {
     private readonly answerRepository: Repository<QuestionAnswer>,
   ) {}
 
-  async list(filter: QuestionFilter) {
+  async list(filter: QuestionFilter, user?: { role?: string; id?: number }) {
     const page = filter.page || 1
     const limit = filter.limit || 20
     const skip = (page - 1) * limit
@@ -36,6 +36,11 @@ export class AdminQuestionService {
 
     if (filter.status !== undefined) {
       queryBuilder.andWhere('question.status = :status', { status: filter.status })
+    }
+
+    // 红娘只能看自己创建的问答
+    if (user && user.role === 'matchmaker') {
+      queryBuilder.andWhere('question.creatorId = :creatorId', { creatorId: user.id })
     }
 
     queryBuilder.orderBy('question.sortOrder', 'ASC').addOrderBy('question.createdAt', 'DESC')
@@ -56,9 +61,10 @@ export class AdminQuestionService {
     return this.questionRepository.findOne({ where: { id } })
   }
 
-  async create(data: Partial<HotQuestion>) {
+  async create(data: Partial<HotQuestion>, creatorId?: number) {
     const question = this.questionRepository.create({
       ...data,
+      creatorId: creatorId || null,
       status: data.status ?? data.isActive ?? 1,
       isActive: data.isActive ?? data.status ?? 1,
     })

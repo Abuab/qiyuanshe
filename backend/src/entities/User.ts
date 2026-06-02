@@ -101,6 +101,9 @@ export class User {
   @Column({ type: 'tinyint', default: 0 })
   isDeleted: number
 
+  @Column({ type: 'text', nullable: true })
+  adminRemark: string
+
   @Column({ type: 'simple-json', nullable: true })
   tags: string[]
 

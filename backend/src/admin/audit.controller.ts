@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminAuditService } from './audit.service'
 import { Result } from '../common/result'
 
@@ -22,7 +24,8 @@ interface AuditFilter {
 }
 
 @Controller('admin/audit')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'operator')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminAuditController {
   constructor(private readonly auditService: AdminAuditService) {}
 

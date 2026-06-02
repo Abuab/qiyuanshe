@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminPaymentService } from './payment.service'
 import { Result } from '../common/result'
 
@@ -24,7 +26,8 @@ interface OrderFilter {
 }
 
 @Controller('admin/payment')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'operator')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminPaymentController {
   constructor(private readonly paymentService: AdminPaymentService) {}
 

@@ -10,6 +10,7 @@ export * from './activity'
 export { mfaApi } from './system'
 export * from './notice'
 export * from './report'
+export * from './admin-user'
 
 export interface ApiResponse<T = any> {
   success: boolean

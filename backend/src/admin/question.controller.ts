@@ -9,8 +9,11 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  Request,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminQuestionService } from './question.service'
 import { Result } from '../common/result'
 
@@ -23,13 +26,14 @@ interface QuestionFilter {
 }
 
 @Controller('admin/questions')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'matchmaker', 'operator')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminQuestionController {
   constructor(private readonly questionService: AdminQuestionService) {}
 
   @Get()
-  async list(@Query() filter: QuestionFilter) {
-    const result = await this.questionService.list(filter)
+  async list(@Query() filter: QuestionFilter, @Request() req: any) {
+    const result = await this.questionService.list(filter, req.user)
     return Result.success(result)
   }
 
@@ -46,8 +50,8 @@ export class AdminQuestionController {
   }
 
   @Post()
-  async create(@Body() data: any) {
-    await this.questionService.create(data)
+  async create(@Body() data: any, @Request() req: any) {
+    await this.questionService.create(data, req.user?.id)
     return Result.success(null, '添加成功')
   }
 

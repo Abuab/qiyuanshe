@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
-import { User } from '../entities/User'
+import { AdminUser } from '../entities/AdminUser'
 
 export interface UpdateAdminProfileDto {
   nickname?: string
@@ -13,12 +13,12 @@ export interface UpdateAdminProfileDto {
 @Injectable()
 export class AdminProfileService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectRepository(AdminUser)
+    private readonly adminRepo: Repository<AdminUser>,
   ) {}
 
   async updateProfile(adminId: number, dto: UpdateAdminProfileDto) {
-    const admin = await this.userRepository.findOne({ where: { id: adminId } })
+    const admin = await this.adminRepo.findOne({ where: { id: adminId } })
 
     if (!admin) {
       throw new NotFoundException('管理员不存在')
@@ -28,25 +28,21 @@ export class AdminProfileService {
       admin.nickname = dto.nickname
     }
 
-    if (dto.avatar !== undefined) {
-      admin.avatar = dto.avatar
-    }
-
     if (dto.password) {
       admin.password = await bcrypt.hash(dto.password, 10)
     }
 
-    await this.userRepository.save(admin)
+    await this.adminRepo.save(admin)
 
     return this.sanitizeAdmin(admin)
   }
 
-  private sanitizeAdmin(admin: User) {
+  private sanitizeAdmin(admin: AdminUser) {
     return {
       id: admin.id,
       nickname: admin.nickname,
-      username: 'admin',
-      avatar: admin.avatar || '',
+      username: admin.username,
+      avatar: '',
     }
   }
 }

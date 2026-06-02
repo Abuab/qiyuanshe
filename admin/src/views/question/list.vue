@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2 class="page-title">问答列表</h2>
       <div class="header-actions">
-        <el-button type="primary" @click="handleCreate">
+        <el-button v-if="!isReadonly" type="primary" @click="handleCreate">
           <el-icon><Plus /></el-icon>
           添加问题
         </el-button>
@@ -63,7 +63,7 @@
             <span class="answer-count">{{ row.answerCount || 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
@@ -83,14 +83,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import { useAdminStore } from '../../store/admin'
 import { adminQuestion } from '../../api'
 import type { Question, Answer } from '../../api/question'
 
 const router = useRouter()
+const adminStore = useAdminStore()
+const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
 
 const loading = ref(false)
 const tableData = ref<Question[]>([])

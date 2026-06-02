@@ -11,13 +11,16 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Notice } from '../entities/Notice'
 import { Result } from '../common/result'
 
 @Controller('admin/notices')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminNoticeController {
   constructor(
     @InjectRepository(Notice)

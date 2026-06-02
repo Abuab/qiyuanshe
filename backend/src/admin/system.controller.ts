@@ -1,10 +1,13 @@
 import { Controller, Get, Put, Body, Param, UseGuards } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminSystemService, SystemConfigs } from './system.service'
 import { Result } from '../common/result'
 
 @Controller('admin/system')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSystemController {
   constructor(private readonly systemService: AdminSystemService) {}
 

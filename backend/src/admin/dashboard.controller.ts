@@ -1,10 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminDashboardService } from './dashboard.service'
 import { Result } from '../common/result'
 
 @Controller('admin/dashboard')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminDashboardController {
   constructor(private readonly dashboardService: AdminDashboardService) {}
 

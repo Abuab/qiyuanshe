@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as speakeasy from 'speakeasy'
 import * as QRCode from 'qrcode'
-import { User } from '../entities/User'
+import { AdminUser } from '../entities/AdminUser'
 import { RedisService } from '../common/redis.service'
 
 @Injectable()
 export class MfaService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(AdminUser)
+    private readonly adminRepo: Repository<AdminUser>,
     private readonly redisService: RedisService,
   ) {}
 
@@ -77,10 +77,9 @@ export class MfaService {
 
     console.log('[MFA Verify] SUCCESS')
 
-    await this.userRepo.update(adminId, {
+    await this.adminRepo.update(adminId, {
       mfaSecret: tempSecret,
       isMfaEnabled: true,
-      mfaType: 'totp',
     })
 
     await this.redisService.del(`mfa:temp:${adminId}`)
@@ -89,7 +88,7 @@ export class MfaService {
   }
 
   async disableMfa(adminId: number, code: string) {
-    const admin = await this.userRepo.findOne({ where: { id: adminId } })
+    const admin = await this.adminRepo.findOne({ where: { id: adminId } })
     if (!admin || !admin.isMfaEnabled) {
       throw new Error('未启用双因素认证')
     }
@@ -108,17 +107,16 @@ export class MfaService {
       throw new Error('验证码错误')
     }
 
-    await this.userRepo.update(adminId, {
+    await this.adminRepo.update(adminId, {
       mfaSecret: null,
       isMfaEnabled: false,
-      mfaType: 'none',
     })
 
     return { success: true }
   }
 
   async verifyLoginMfa(adminId: number, code: string): Promise<boolean> {
-    const admin = await this.userRepo.findOne({ where: { id: adminId } })
+    const admin = await this.adminRepo.findOne({ where: { id: adminId } })
     if (!admin || !admin.isMfaEnabled) {
       return true
     }

@@ -32,6 +32,7 @@ export interface User {
   updatedAt: string
   lastLoginAt?: string
   tags?: string[]
+  adminRemark?: string
 }
 
 export interface UserPhoto {

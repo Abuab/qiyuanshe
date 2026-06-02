@@ -11,6 +11,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { RoleGuard } from './role.guard'
+import { Roles } from './roles.decorator'
 import { AdminMatchmakerService } from './matchmaker.service'
 import { Result } from '../common/result'
 
@@ -22,7 +24,8 @@ interface MatchmakerFilter {
 }
 
 @Controller('admin/matchmakers')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'matchmaker')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminMatchmakerController {
   constructor(private readonly matchmakerService: AdminMatchmakerService) {}
 

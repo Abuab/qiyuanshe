@@ -31,6 +31,9 @@ export class HotQuestion {
   @Column({ type: 'int', default: 0 })
   answerCount: number
 
+  @Column({ type: 'int', nullable: true })
+  creatorId: number
+
   @CreateDateColumn()
   createdAt: Date
 

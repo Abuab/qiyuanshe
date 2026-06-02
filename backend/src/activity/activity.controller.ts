@@ -13,6 +13,8 @@ import {
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { RoleGuard } from '../admin/role.guard'
+import { Roles } from '../admin/roles.decorator'
 import { ActivityService } from './activity.service'
 import { CreateActivityDto, UpdateActivityDto } from './dto'
 import { Result } from '../common/result'
@@ -61,7 +63,8 @@ export class ActivityController {
 }
 
 @Controller('admin/activities')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'matchmaker', 'operator')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
@@ -73,6 +76,7 @@ export class AdminActivityController {
     @Query('status') status?: string,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
+    @Request() req?: any,
   ) {
     const result = await this.activityService.getAdminList({
       keyword,
@@ -80,7 +84,7 @@ export class AdminActivityController {
       status: status !== undefined ? +status : undefined,
       page: +page,
       limit: +limit,
-    })
+    }, req?.user)
     return Result.success(result)
   }
 
@@ -93,8 +97,8 @@ export class AdminActivityController {
 
   // 后台 - 创建活动
   @Post()
-  async create(@Body() data: CreateActivityDto) {
-    const result = await this.activityService.create(data)
+  async create(@Body() data: CreateActivityDto, @Request() req: any) {
+    const result = await this.activityService.create(data, req.user?.id)
     return Result.success(result, '创建成功')
   }
 
@@ -145,7 +149,8 @@ export class AdminActivityController {
 }
 
 @Controller('admin/signups')
-@UseGuards(AdminJwtAuthGuard)
+@Roles('super_admin', 'matchmaker', 'operator')
+@UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSignupController {
   constructor(private readonly activityService: ActivityService) {}
 

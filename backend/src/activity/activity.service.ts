@@ -149,7 +149,7 @@ export class ActivityService {
   }
 
   // 后台管理 - 获取活动列表
-  async getAdminList(filter: ActivityFilter) {
+  async getAdminList(filter: ActivityFilter, user?: { role?: string; id?: number }) {
     const page = filter.page || 1
     const limit = filter.limit || 10
     const skip = (page - 1) * limit
@@ -170,6 +170,11 @@ export class ActivityService {
 
     if (filter.status !== undefined) {
       queryBuilder.andWhere('activity.status = :status', { status: filter.status })
+    }
+
+    // 红娘只能看自己创建的活动
+    if (user && user.role === 'matchmaker') {
+      queryBuilder.andWhere('activity.creatorId = :creatorId', { creatorId: user.id })
     }
 
     queryBuilder
@@ -198,9 +203,10 @@ export class ActivityService {
   }
 
   // 后台管理 - 创建活动
-  async create(data: CreateActivityDto) {
+  async create(data: CreateActivityDto, creatorId?: number) {
     const activity = this.activityRepository.create({
       ...data,
+      creatorId: creatorId || null,
       currentParticipants: 0,
     } as any)
     return this.activityRepository.save(activity)

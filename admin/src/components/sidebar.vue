@@ -27,7 +27,7 @@
         <el-menu-item index="/user/list">用户列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/matchmaker">
+      <el-sub-menu v-if="isSuperAdmin" index="/matchmaker">
         <template #title>
           <el-icon><UserFilled /></el-icon>
           <span>红娘管理</span>
@@ -35,7 +35,7 @@
         <el-menu-item index="/matchmaker/list">红娘列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/question">
+      <el-sub-menu v-if="canManageQuestion" index="/question">
         <template #title>
           <el-icon><QuestionFilled /></el-icon>
           <span>问答管理</span>
@@ -43,7 +43,15 @@
         <el-menu-item index="/question/list">问答列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/audit">
+      <el-menu-item
+        v-if="userInfo?.role === 'super_admin'"
+        index="/admin-user"
+      >
+        <el-icon><Avatar /></el-icon>
+        <template #title>子账号管理</template>
+      </el-menu-item>
+
+      <el-sub-menu v-if="canManageAudit" index="/audit">
         <template #title>
           <el-icon><CircleCheck /></el-icon>
           <span>审核管理</span>
@@ -51,12 +59,12 @@
         <el-menu-item index="/audit/list">待审核列表</el-menu-item>
       </el-sub-menu>
 
-      <el-menu-item index="/report">
+      <el-menu-item v-if="isSuperAdmin" index="/report">
         <el-icon><Warning /></el-icon>
         <template #title>举报管理</template>
       </el-menu-item>
 
-      <el-sub-menu index="/payment">
+      <el-sub-menu v-if="canManagePayment" index="/payment">
         <template #title>
           <el-icon><Tickets /></el-icon>
           <span>订单管理</span>
@@ -65,7 +73,7 @@
         <el-menu-item index="/payment/stats">营收统计</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/activity">
+      <el-sub-menu v-if="canManageActivity" index="/activity">
         <template #title>
           <el-icon><Calendar /></el-icon>
           <span>活动管理</span>
@@ -73,7 +81,7 @@
         <el-menu-item index="/activity/list">活动列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu index="/system">
+      <el-sub-menu v-if="isSuperAdmin" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
           <span>系统配置</span>
@@ -89,7 +97,7 @@
         <el-avatar :size="32" :src="userInfo?.avatar" />
         <div class="info-text">
           <div class="nickname">{{ userInfo?.nickname || '管理员' }}</div>
-          <div class="role">{{ userInfo?.role === 'admin' ? '超级管理员' : '普通管理员' }}</div>
+          <div class="role">{{ getRoleLabel(userInfo?.role) }}</div>
         </div>
       </div>
       <el-button
@@ -122,6 +130,7 @@ import {
   Setting,
   Calendar,
   Warning,
+  Avatar,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -131,6 +140,23 @@ const adminStore = useAdminStore()
 const isCollapsed = computed(() => adminStore.isCollapsed)
 const userInfo = computed(() => adminStore.userInfo)
 const activeMenu = computed(() => route.path)
+
+const isSuperAdmin = computed(() => userInfo.value?.role === 'super_admin')
+const canManageAudit = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
+const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
+const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator')
+const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator')
+
+function getRoleLabel(role?: string) {
+  const map: Record<string, string> = {
+    super_admin: '超级管理员',
+    matchmaker: '红娘',
+    operator: '运营',
+    readonly: '只读',
+    admin: '超级管理员',
+  }
+  return map[role || ''] || '管理员'
+}
 
 function toggleSidebar() {
   adminStore.toggleSidebar()

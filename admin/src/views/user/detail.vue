@@ -79,6 +79,16 @@
             <div class="text-content">{{ user.mateRequirement || '暂无择偶要求' }}</div>
           </el-tab-pane>
 
+          <el-tab-pane label="管理员备注" name="remark">
+            <el-input
+              v-model="adminRemark"
+              type="textarea"
+              :rows="6"
+              placeholder="记录用户额外信息，如：离异带一个女孩、红娘跟进记录等"
+            />
+            <el-button type="primary" style="margin-top: 12px" :loading="remarkSaving" @click="saveRemark">保存备注</el-button>
+          </el-tab-pane>
+
           <el-tab-pane label="照片墙" name="photos">
             <div v-if="user.photos && user.photos.length > 0" class="photo-grid">
               <el-image
@@ -166,6 +176,8 @@ const defaultAvatar = '/static/default-avatar.png'
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
+const adminRemark = ref('')
+const remarkSaving = ref(false)
 
 const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ content: '' })
@@ -181,11 +193,29 @@ async function fetchDetail() {
     const res = await adminUsers.detail(id)
     if (res.success && res.data) {
       user.value = res.data as UserDetail
+      adminRemark.value = (res.data as any).adminRemark || ''
     }
   } catch (error) {
     console.error(error)
   } finally {
     loading.value = false
+  }
+}
+
+async function saveRemark() {
+  if (!user.value) return
+  remarkSaving.value = true
+  try {
+    const res = await adminUsers.update(user.value.id, { adminRemark: adminRemark.value })
+    if (res.success) {
+      ElMessage.success('备注保存成功')
+    } else {
+      ElMessage.error(res.message || '保存失败')
+    }
+  } catch (e: any) {
+    ElMessage.error(e.message || '保存失败')
+  } finally {
+    remarkSaving.value = false
   }
 }
 

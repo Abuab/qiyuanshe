@@ -28,6 +28,7 @@ import { ForgotPasswordController } from './forgot-password.controller'
 import { AdminNoticeController } from './notice.controller'
 import { Notice } from '../entities/Notice'
 import { Report } from '../entities/Report'
+import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -39,6 +40,8 @@ import { VipOrder } from '../entities/VipOrder'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { AdminReportController } from './report.controller'
+import { AdminAccountService } from './admin-account.service'
+import { RoleGuard } from './role.guard'
 
 @Module({
   imports: [
@@ -53,6 +56,7 @@ import { AdminReportController } from './report.controller'
       SystemConfig,
       Notice,
       Report,
+      AdminUserEntity,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -90,6 +94,8 @@ import { AdminReportController } from './report.controller'
     MfaService,
     AdminJwtStrategy,
     AdminJwtAuthGuard,
+    AdminAccountService,
+    RoleGuard,
   ],
   exports: [
     AdminUserService,
@@ -100,6 +106,8 @@ import { AdminReportController } from './report.controller'
     AdminDashboardService,
     CaptchaService,
     AdminSystemService,
+    AdminAccountService,
+    RoleGuard,
   ],
 })
 export class AdminModule {}

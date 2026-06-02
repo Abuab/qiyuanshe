@@ -53,6 +53,9 @@ export class Activity {
   @Column({ type: 'int', default: 0, name: 'sortOrder' })
   sortOrder: number
 
+  @Column({ type: 'int', nullable: true, name: 'creatorId' })
+  creatorId: number
+
   @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date
 
