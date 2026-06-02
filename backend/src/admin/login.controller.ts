@@ -2,6 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
+import * as bcrypt from 'bcrypt'
 import { CaptchaService } from './captcha.service'
 import { MfaService } from './mfa.service'
 import { adminJwtConfig } from '../config/jwt'
@@ -117,7 +118,30 @@ export class AdminLoginController {
       return { success: false, message: '验证码错误' }
     }
 
-    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    if (username !== ADMIN_USERNAME) {
+      attemptRecord.count++
+      if (attemptRecord.count >= MAX_LOGIN_ATTEMPTS) {
+        attemptRecord.blockUntil = Date.now() + LOGIN_BLOCK_DURATION_MS
+        attemptRecord.count = 0
+      }
+      this.loginAttempts.set(username, attemptRecord)
+      return { success: false, message: '用户名或密码错误' }
+    }
+
+    const dbUserPreCheck = await this.userRepository.findOne({ where: { id: 1 } })
+    let passwordValid = false
+
+    if (password === ADMIN_PASSWORD) {
+      passwordValid = true
+    } else if (dbUserPreCheck?.password) {
+      try {
+        passwordValid = await bcrypt.compare(password, dbUserPreCheck.password)
+      } catch {
+        passwordValid = false
+      }
+    }
+
+    if (!passwordValid) {
       attemptRecord.count++
       if (attemptRecord.count >= MAX_LOGIN_ATTEMPTS) {
         attemptRecord.blockUntil = Date.now() + LOGIN_BLOCK_DURATION_MS

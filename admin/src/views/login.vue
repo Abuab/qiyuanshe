@@ -106,11 +106,8 @@
           </el-form-item>
         </el-form>
       </div>
-
-      <div class="login-footer">
-        <p>默认账号: admin / 123456</p>
-      </div>
     </div>
+
   </div>
 </template>
 
@@ -323,17 +320,6 @@ async function handleMfaSubmit() {
 .back-button {
   width: 100%;
   color: #999;
-}
-
-.login-footer {
-  text-align: center;
-  margin-top: 24px;
-
-  p {
-    font-size: 12px;
-    color: #999;
-    margin: 0;
-  }
 }
 
 .mfa-step {
