@@ -16,7 +16,7 @@ import { AdminDashboardController } from './dashboard.controller'
 import { AdminDashboardService } from './dashboard.service'
 import { CaptchaController } from './captcha.controller'
 import { CaptchaService } from './captcha.service'
-import { AdminLoginController, AdminLoginApiController } from './login.controller'
+import { AdminLoginController } from './login.controller'
 import { UploadController } from './upload.controller'
 import { AdminSystemController } from './system.controller'
 import { AdminSystemService } from './system.service'
@@ -58,7 +58,6 @@ import { SystemConfig } from '../entities/SystemConfig'
     AdminDashboardController,
     CaptchaController,
     AdminLoginController,
-    AdminLoginApiController,
     UploadController,
     AdminSystemController,
   ],

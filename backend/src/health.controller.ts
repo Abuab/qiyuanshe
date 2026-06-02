@@ -1,13 +1,22 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, OnModuleDestroy } from '@nestjs/common'
 import { Result } from './common/result'
 import { DataSource } from 'typeorm'
 import Redis from 'ioredis'
+import { redisConfig } from './config/redis'
 
 @Controller('health')
-export class HealthController {
+export class HealthController implements OnModuleDestroy {
+  private sharedRedis: Redis | null = null
+
   constructor(private readonly dataSource: DataSource) {}
 
-  private redis: Redis
+  private getRedis(): Redis {
+    if (!this.sharedRedis) {
+      this.sharedRedis = new Redis(redisConfig())
+      this.sharedRedis.on('error', () => {})
+    }
+    return this.sharedRedis
+  }
 
   @Get()
   async check() {
@@ -22,16 +31,9 @@ export class HealthController {
     }
 
     try {
-      this.redis = new Redis({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT, 10) || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
-        db: parseInt(process.env.REDIS_DB, 10) || 0,
-        lazyConnect: true,
-      })
-      await this.redis.ping()
-      redisOk = true
-      await this.redis.quit()
+      const redis = this.getRedis()
+      const result = await redis.ping()
+      redisOk = result === 'PONG'
     } catch (error) {
       console.error('Redis health check failed:', error)
     }
@@ -44,5 +46,16 @@ export class HealthController {
       },
       timestamp: new Date().toISOString(),
     })
+  }
+
+  async onModuleDestroy() {
+    if (this.sharedRedis) {
+      try {
+        await this.sharedRedis.quit()
+      } catch (e) {
+        // ignore
+      }
+      this.sharedRedis = null
+    }
   }
 }

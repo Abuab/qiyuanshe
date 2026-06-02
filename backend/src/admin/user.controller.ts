@@ -9,6 +9,8 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { AdminUserService } from './user.service'
@@ -83,6 +85,7 @@ export class AdminUserController {
   }
 
   @Post(':id/notify')
+  @HttpCode(HttpStatus.OK)
   async sendNotification(
     @Param('id', ParseIntPipe) id: number,
     @Body('content') content: string,

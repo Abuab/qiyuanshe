@@ -36,9 +36,23 @@
               </el-select>
             </el-form-item>
             <el-form-item label="年龄">
-              <el-input-number v-model="filterForm.minAge" :min="18" :max="100" placeholder="最小" style="width: 90px" />
+              <el-input-number
+                v-model="filterForm.minAge"
+                :min="18"
+                :max="100"
+                placeholder="最小"
+                controls-position="right"
+                style="width: 120px"
+              />
               <span class="range-separator">—</span>
-              <el-input-number v-model="filterForm.maxAge" :min="18" :max="100" placeholder="最大" style="width: 90px" />
+              <el-input-number
+                v-model="filterForm.maxAge"
+                :min="18"
+                :max="100"
+                placeholder="最大"
+                controls-position="right"
+                style="width: 120px"
+              />
             </el-form-item>
             <el-form-item label="会员等级">
               <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
@@ -208,12 +222,20 @@
             <span>{{ row.education || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="vipLevel" label="会员等级" width="100" sortable="custom">
+        <el-table-column prop="vipLevel" label="会员等级" width="120" sortable="custom">
           <template #default="{ row }">
-            <el-tag v-if="row.vipLevel === 0 || !row.isVip" type="info" size="small">普通</el-tag>
-            <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">黄金</el-tag>
-            <el-tag v-else-if="row.vipLevel === 2" type="primary" size="small">钻石</el-tag>
-            <el-tag v-else-if="row.vipLevel === 3" effect="dark" size="small">至尊</el-tag>
+            <div class="vip-cell">
+              <el-tag v-if="row.vipLevel === 0 || !row.isVip" type="info" size="small">普通</el-tag>
+              <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">黄金</el-tag>
+              <el-tag v-else-if="row.vipLevel === 2" type="primary" size="small">钻石</el-tag>
+              <el-tag v-else-if="row.vipLevel === 3" effect="dark" size="small">至尊</el-tag>
+              <div v-if="row.vipLevel > 0" class="vip-expire">
+                <template v-if="row.vipExpireTime">
+                  {{ formatVipExpire(row.vipExpireTime) }}
+                </template>
+                <template v-else>已过期</template>
+              </div>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="注册时间" width="160" sortable="custom">
@@ -659,7 +681,7 @@ async function handleNotifySubmit() {
   if (!currentUser.value) return
   try {
     await adminUsers.sendNotification(currentUser.value.id, notifyForm.content)
-    ElMessage.success('通知已发送')
+    ElMessage.success('通知已记录，推送服务待接入')
     notifyDialogVisible.value = false
   } catch (error) {
     console.error(error)
@@ -762,6 +784,13 @@ function formatDate(dateStr: string) {
     minute: '2-digit',
   })
 }
+
+function formatVipExpire(dateStr: string) {
+  if (!dateStr) return '已过期'
+  const expireDate = new Date(dateStr)
+  if (expireDate <= new Date()) return '已过期'
+  return `到期: ${expireDate.toLocaleDateString('zh-CN')}`
+}
 </script>
 
 <style lang="scss" scoped>
@@ -827,6 +856,17 @@ function formatDate(dateStr: string) {
     margin-top: 8px;
     font-weight: 500;
   }
+}
+
+.vip-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.vip-expire {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 
 .pagination-wrapper {
