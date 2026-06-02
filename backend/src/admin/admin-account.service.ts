@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
@@ -43,6 +43,10 @@ export class AdminAccountService {
       throw new NotFoundException('子账号不存在')
     }
 
+    if (user.role === 'super_admin') {
+      throw new ForbiddenException('无权操作超级管理员账号')
+    }
+
     if (data.username && data.username !== user.username) {
       const existing = await this.repo.findOne({ where: { username: data.username } })
       if (existing) {
@@ -58,6 +62,13 @@ export class AdminAccountService {
   }
 
   async delete(id: number) {
+    const user = await this.repo.findOne({ where: { id } })
+    if (!user) {
+      throw new NotFoundException('子账号不存在')
+    }
+    if (user.role === 'super_admin') {
+      throw new ForbiddenException('禁止删除超级管理员账号')
+    }
     await this.repo.delete(id)
   }
 }

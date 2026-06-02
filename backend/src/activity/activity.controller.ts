@@ -63,7 +63,7 @@ export class ActivityController {
 }
 
 @Controller('admin/activities')
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminActivityController {
   constructor(private readonly activityService: ActivityService) {}
@@ -149,7 +149,7 @@ export class AdminActivityController {
 }
 
 @Controller('admin/signups')
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSignupController {
   constructor(private readonly activityService: ActivityService) {}

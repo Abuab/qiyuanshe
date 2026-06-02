@@ -26,7 +26,7 @@ interface OrderFilter {
 }
 
 @Controller('admin/payment')
-@Roles('super_admin', 'operator')
+@Roles('super_admin', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminPaymentController {
   constructor(private readonly paymentService: AdminPaymentService) {}

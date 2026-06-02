@@ -24,7 +24,7 @@ interface MatchmakerFilter {
 }
 
 @Controller('admin/matchmakers')
-@Roles('super_admin', 'matchmaker')
+@Roles('super_admin', 'matchmaker', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminMatchmakerController {
   constructor(private readonly matchmakerService: AdminMatchmakerService) {}

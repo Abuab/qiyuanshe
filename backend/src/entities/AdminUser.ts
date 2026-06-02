@@ -42,6 +42,9 @@ export class AdminUser {
   @Column({ type: 'boolean', default: false })
   isMfaEnabled: boolean
 
+  @Column({ type: 'varchar', length: 500, default: '' })
+  avatar: string
+
   @CreateDateColumn()
   createdAt: Date
 

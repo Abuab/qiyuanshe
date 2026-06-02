@@ -144,8 +144,8 @@ const activeMenu = computed(() => route.path)
 const isSuperAdmin = computed(() => userInfo.value?.role === 'super_admin')
 const canManageAudit = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
 const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
-const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator')
-const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator')
+const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
+const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 
 function getRoleLabel(role?: string) {
   const map: Record<string, string> = {

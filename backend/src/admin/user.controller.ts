@@ -52,8 +52,9 @@ export class AdminUserController {
   }
 
   @Get('export')
-  async export(@Query() filter: UserFilter) {
-    const data = await this.userService.export(filter)
+  async export(@Query() filter: any) {
+    const ids = filter.ids ? filter.ids.split(',').map(Number) : []
+    const data = await this.userService.export({ ...filter, ids })
     return Result.success(data)
   }
 

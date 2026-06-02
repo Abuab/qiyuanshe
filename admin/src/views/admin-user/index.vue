@@ -42,16 +42,19 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="warning" link @click="handleResetPwd(row)">重置密码</el-button>
-            <el-popconfirm
-              title="确定要删除该子账号吗？"
-              @confirm="handleDelete(row.id)"
-            >
-              <template #reference>
-                <el-button type="danger" link>删除</el-button>
-              </template>
-            </el-popconfirm>
+            <template v-if="row.role !== 'super_admin'">
+              <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+              <el-button type="warning" link @click="handleResetPwd(row)">重置密码</el-button>
+              <el-popconfirm
+                title="确定要删除该子账号吗？"
+                @confirm="handleDelete(row.id)"
+              >
+                <template #reference>
+                  <el-button type="danger" link>删除</el-button>
+                </template>
+              </el-popconfirm>
+            </template>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
       </el-table>

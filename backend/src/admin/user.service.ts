@@ -141,9 +141,43 @@ export class AdminUserService {
     }
   }
 
-  async export(filter: UserFilter) {
-    const users = await this.list({ ...filter, page: 1, limit: 10000 })
-    return users.list
+  async export(filter: UserFilter & { ids?: number[] }) {
+    const queryBuilder = this.userRepository.createQueryBuilder('user')
+    queryBuilder.where('user.id != :adminId', { adminId: 1 })
+    queryBuilder.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+
+    if (filter.ids && filter.ids.length > 0) {
+      queryBuilder.andWhere('user.id IN (:...ids)', { ids: filter.ids })
+    }
+
+    if (filter.keyword) {
+      queryBuilder.andWhere(
+        '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone)',
+        { keyword: `%${filter.keyword}%`, id: parseInt(filter.keyword) || 0, phone: `%${filter.keyword}%` },
+      )
+    }
+    if (filter.education) {
+      queryBuilder.andWhere('user.education = :education', { education: filter.education })
+    }
+
+    const users = await queryBuilder.orderBy('user.createdAt', 'DESC').getMany()
+
+    return users.map(u => ({
+      ID: u.id,
+      昵称: u.nickname,
+      手机号: u.phone,
+      性别: u.gender === 1 ? '男' : u.gender === 2 ? '女' : '未知',
+      年龄: u.birthYear ? new Date().getFullYear() - u.birthYear : '-',
+      学历: u.education || '-',
+      婚况: u.maritalStatus || '-',
+      月收入: u.incomeRange || '-',
+      住房: u.housingStatus || '-',
+      车辆: u.carStatus || '-',
+      职业: u.occupation || '-',
+      会员等级: u.vipLevel === 1 ? '黄金' : u.vipLevel === 2 ? '钻石' : u.vipLevel === 3 ? '至尊' : '普通',
+      状态: u.status === 1 ? '正常' : u.status === 0 ? '禁用' : '待审核',
+      注册时间: u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN') : '-',
+    }))
   }
 
   async detail(id: number) {

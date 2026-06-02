@@ -3,7 +3,7 @@
     <div class="page-header">
       <h2 class="page-title">用户列表</h2>
       <div class="header-actions">
-        <el-button type="primary" @click="handleCreate">
+        <el-button v-if="!isReadonly" type="primary" @click="handleCreate">
           <el-icon><Plus /></el-icon>
           添加用户
         </el-button>
@@ -89,42 +89,56 @@
             <el-form-item label="婚况">
               <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
-                <el-option label="未婚" value="未婚" />
-                <el-option label="离异" value="离异" />
-                <el-option label="丧偶" value="丧偶" />
+                <el-option
+                  v-for="item in dictData.maritalStatus"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="月收入">
               <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
                 <el-option label="全部" :value="undefined" />
-                <el-option label="5k以下" value="5k以下" />
-                <el-option label="5k-10k" value="5k-10k" />
-                <el-option label="10k-20k" value="10k-20k" />
-                <el-option label="20k-50k" value="20k-50k" />
-                <el-option label="50k以上" value="50k以上" />
+                <el-option
+                  v-for="item in dictData.incomeRange"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="住房">
               <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
-                <el-option label="有房" value="有房" />
-                <el-option label="无房" value="无房" />
+                <el-option
+                  v-for="item in dictData.housingStatus"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="车辆">
               <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
-                <el-option label="有车" value="有车" />
-                <el-option label="无车" value="无车" />
+                <el-option
+                  v-for="item in dictData.carStatus"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="学历">
               <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
-                <el-option label="大专" value="大专" />
-                <el-option label="本科" value="本科" />
-                <el-option label="硕士" value="硕士" />
-                <el-option label="博士" value="博士" />
+                <el-option
+                  v-for="item in dictData.education"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </el-form-item>
           </div>
@@ -149,7 +163,7 @@
         </el-form>
       </div>
 
-      <div class="batch-actions" v-if="selectedRows.length > 0">
+      <div class="batch-actions" v-if="selectedRows.length > 0 && !isReadonly">
         <el-checkbox v-model="selectAll" @change="handleSelectAll">全选</el-checkbox>
         <span class="selected-count">已选择 {{ selectedRows.length }} 项</span>
         <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
@@ -166,7 +180,7 @@
         row-key="id"
         stripe
       >
-        <el-table-column type="selection" width="55" />
+        <el-table-column v-if="!isReadonly" type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" sortable="custom" />
         <el-table-column prop="avatar" label="头像" width="80">
           <template #default="{ row }">
@@ -268,7 +282,7 @@
             <el-tag v-for="tag in row.tags" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="240" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
             <el-button
@@ -366,39 +380,52 @@
         </el-form-item>
         <el-form-item label="学历">
           <el-select v-model="createForm.education" placeholder="请选择学历" clearable style="width: 100%">
-            <el-option label="高中" value="高中" />
-            <el-option label="大专" value="大专" />
-            <el-option label="本科" value="本科" />
-            <el-option label="硕士" value="硕士" />
-            <el-option label="博士" value="博士" />
+            <el-option
+              v-for="item in dictData.education"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="月收入">
           <el-select v-model="createForm.incomeRange" placeholder="请选择月收入" clearable style="width: 100%">
-            <el-option label="5k以下" value="5k以下" />
-            <el-option label="5k-10k" value="5k-10k" />
-            <el-option label="10k-20k" value="10k-20k" />
-            <el-option label="20k-50k" value="20k-50k" />
-            <el-option label="50k以上" value="50k以上" />
+            <el-option
+              v-for="item in dictData.incomeRange"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="住房情况">
           <el-select v-model="createForm.housingStatus" placeholder="请选择住房情况" clearable style="width: 100%">
-            <el-option label="有房" value="有房" />
-            <el-option label="无房" value="无房" />
+            <el-option
+              v-for="item in dictData.housingStatus"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="车辆情况">
           <el-select v-model="createForm.carStatus" placeholder="请选择车辆情况" clearable style="width: 100%">
-            <el-option label="有车" value="有车" />
-            <el-option label="无车" value="无车" />
+            <el-option
+              v-for="item in dictData.carStatus"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="婚况">
           <el-select v-model="createForm.maritalStatus" placeholder="请选择婚况" clearable style="width: 100%">
-            <el-option label="未婚" value="未婚" />
-            <el-option label="离异" value="离异" />
-            <el-option label="丧偶" value="丧偶" />
+            <el-option
+              v-for="item in dictData.maritalStatus"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="身高(cm)">
@@ -434,15 +461,34 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
+import { useAdminStore } from '../../store/admin'
+import { system } from '../../api/system'
 import type { User, UserFilter } from '../../api/user'
 
 const router = useRouter()
+const adminStore = useAdminStore()
+const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
 const loading = ref(false)
 const exportLoading = ref(false)
 const tableData = ref<User[]>([])
 const selectedRows = ref<User[]>([])
 const tableRef = ref()
 const defaultAvatar = '/static/default-avatar.png'
+
+// 字典数据
+const dictData = reactive<Record<string, string[]>>({})
+const dictKeys = ['education', 'maritalStatus', 'incomeRange', 'housingStatus', 'carStatus', 'occupation']
+
+async function loadDicts() {
+  for (const key of dictKeys) {
+    try {
+      const res = await system.getDict(key)
+      if (res.success) {
+        dictData[key] = res.data || []
+      }
+    } catch { dictData[key] = [] }
+  }
+}
 
 const filterForm = reactive<UserFilter>({
   keyword: '',
@@ -513,6 +559,7 @@ const createRules = {
 }
 
 onMounted(() => {
+  loadDicts()
   fetchData()
 })
 
@@ -783,19 +830,19 @@ const handleBatchDelete = async () => {
 async function handleExport() {
   exportLoading.value = true
   try {
-    const params = { ...filterForm }
+    const params: any = { ...filterForm }
     if (dateRange.value && dateRange.value.length === 2) {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
     }
+    if (selectedRows.value.length > 0) {
+      params.ids = selectedRows.value.map(r => r.id)
+    }
     const res = await adminUsers.export(params)
     if (res.success && res.data) {
-      if (typeof res.data === 'string') {
-        window.open(res.data, '_blank')
-      } else if (Array.isArray(res.data)) {
-        const csvContent = generateCsv(res.data)
-        downloadFile(csvContent, '用户列表.csv', 'text/csv;charset=utf-8')
-      }
+      const data = Array.isArray(res.data) ? res.data : []
+      const csvContent = generateCsv(data)
+      downloadFile(csvContent, '用户列表.csv', 'text/csv;charset=utf-8')
       ElMessage.success('导出成功')
     } else {
       ElMessage.error('导出失败')

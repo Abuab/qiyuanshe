@@ -117,7 +117,7 @@ export class AdminLoginController {
       username: adminUser.username,
       nickname: adminUser.nickname || adminUser.username,
       role: adminUser.role,
-      avatar: '',
+      avatar: adminUser.avatar || '',
       mfaEnabled: adminUser.isMfaEnabled || false,
       mfaType: 'none',
     }
@@ -167,7 +167,7 @@ export class AdminLoginController {
       username: adminUser.username,
       nickname: adminUser.nickname || adminUser.username,
       role: adminUser.role,
-      avatar: '',
+      avatar: adminUser.avatar || '',
       mfaEnabled: adminUser.isMfaEnabled || false,
       mfaType: 'none',
     }

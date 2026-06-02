@@ -28,6 +28,10 @@ export class AdminProfileService {
       admin.nickname = dto.nickname
     }
 
+    if (dto.avatar !== undefined) {
+      admin.avatar = dto.avatar
+    }
+
     if (dto.password) {
       admin.password = await bcrypt.hash(dto.password, 10)
     }
@@ -42,7 +46,8 @@ export class AdminProfileService {
       id: admin.id,
       nickname: admin.nickname,
       username: admin.username,
-      avatar: '',
+      avatar: admin.avatar || '',
+      role: admin.role,
     }
   }
 }

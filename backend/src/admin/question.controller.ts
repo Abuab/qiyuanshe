@@ -26,7 +26,7 @@ interface QuestionFilter {
 }
 
 @Controller('admin/questions')
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminQuestionController {
   constructor(private readonly questionService: AdminQuestionService) {}

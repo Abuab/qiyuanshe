@@ -36,6 +36,8 @@ export class AdminSystemController {
   }
 
   @Get('dict/:key')
+  @Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async getDict(@Param('key') key: string) {
     const value = await this.systemService.getConfig('dict_' + key)
     return Result.success(value ? JSON.parse(value) : [])

@@ -116,8 +116,13 @@ export const adminUsers = {
     return request.post('/admin/users/batch-delete', { ids })
   },
 
-  export(params: UserFilter): Promise<ApiResponse<User[]>> {
-    return request.get('/admin/users/export', { params })
+  export(params: UserFilter & { ids?: number[] }): Promise<ApiResponse<User[]>> {
+    const queryParams: any = { ...params }
+    if (params.ids && params.ids.length > 0) {
+      queryParams.ids = params.ids.join(',')
+    }
+    delete queryParams.ids
+    return request.get('/admin/users/export', { params: queryParams })
   },
 
   resetPassword(id: number): Promise<ApiResponse> {
