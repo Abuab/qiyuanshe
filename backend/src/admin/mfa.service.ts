@@ -20,17 +20,25 @@ export class MfaService {
       length: 20,
     })
 
+    console.log('[MFA Setup] adminId:', adminId)
+    console.log('[MFA Setup] secret.base32:', secret.base32)
+    console.log('[MFA Setup] secret.base32 length:', secret.base32.length)
+    console.log('[MFA Setup] server time:', new Date().toISOString())
+    console.log('[MFA Setup] server timestamp:', Math.floor(Date.now() / 1000))
+
+    const otpauthUrl = speakeasy.otpauthURL({
+      secret: secret.base32,
+      label: `qiyuanshe-admin-${adminId}`,
+      issuer: 'qiyuanshe',
+    })
+
+    console.log('[MFA Setup] otpauth_url:', otpauthUrl)
+
     await this.redisService.set(
       `mfa:temp:${adminId}`,
       secret.base32,
       300,
     )
-
-    const otpauthUrl = speakeasy.otpauthURL({
-      secret: secret.base32,
-      label: `qiyuanshe-admin-${adminId}`,
-      issuer: '栖缘社管理后台',
-    })
 
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl)
 
@@ -39,20 +47,46 @@ export class MfaService {
 
   async enableTotp(adminId: number, code: string) {
     const tempSecret = await this.redisService.get(`mfa:temp:${adminId}`)
+
+    console.log('[MFA Verify] adminId:', adminId)
+    console.log('[MFA Verify] tempSecret from Redis:', tempSecret)
+    console.log('[MFA Verify] tempSecret length:', tempSecret?.length)
+    console.log('[MFA Verify] input code:', code)
+    console.log('[MFA Verify] code type:', typeof code)
+    console.log('[MFA Verify] server timestamp:', Math.floor(Date.now() / 1000))
+    console.log('[MFA Verify] server time:', new Date().toISOString())
+
     if (!tempSecret) {
+      console.log('[MFA Verify] FAIL: tempSecret not found in Redis (expired)')
       throw new Error('绑定已过期，请重新发起设置')
     }
 
-    const verified = speakeasy.totp.verify({
+    const token = String(code).trim()
+    console.log('[MFA Verify] sanitized token:', token)
+
+    const delta = speakeasy.totp.verifyDelta({
       secret: tempSecret,
       encoding: 'base32',
-      token: code,
-      window: 1,
+      token,
+      window: 10,
     })
 
-    if (!verified) {
+    console.log('[MFA Verify] verifyDelta result:', delta)
+
+    if (delta === undefined || delta === null) {
+      console.log('[MFA Verify] FAIL: code does not match. Suggested tokens:')
+      for (let i = -2; i <= 2; i++) {
+        const t = speakeasy.totp({
+          secret: tempSecret,
+          encoding: 'base32',
+          time: Math.floor(Date.now() / 1000) + i * 30,
+        })
+        console.log(`[MFA Verify]   offset ${i}: ${t}`)
+      }
       throw new Error('验证码错误或已过期')
     }
+
+    console.log('[MFA Verify] SUCCESS: delta =', delta, 'time steps')
 
     await this.userRepo.update(adminId, {
       mfaSecret: tempSecret,
@@ -81,7 +115,7 @@ export class MfaService {
       throw new Error('验证码已过期，请重新发送')
     }
 
-    if (savedCode !== code) {
+    if (savedCode !== String(code).trim()) {
       throw new Error('验证码错误')
     }
 
@@ -122,22 +156,52 @@ export class MfaService {
       return true
     }
 
+    console.log('[MFA Login] adminId:', adminId)
+    console.log('[MFA Login] mfaType:', admin.mfaType)
+    console.log('[MFA Login] mfaSecret from DB:', admin.mfaSecret)
+    console.log('[MFA Login] input code:', code)
+    console.log('[MFA Login] server time:', new Date().toISOString())
+    console.log('[MFA Login] server timestamp:', Math.floor(Date.now() / 1000))
+
     return this.verifyCode(admin, code)
   }
 
   private async verifyCode(admin: User, code: string): Promise<boolean> {
+    const token = String(code).trim()
+
     if (admin.mfaType === 'totp') {
-      return speakeasy.totp.verify({
+      console.log('[MFA VerifyCode] totp secret from DB:', admin.mfaSecret)
+      console.log('[MFA VerifyCode] sanitized token:', token)
+
+      const delta = speakeasy.totp.verifyDelta({
         secret: admin.mfaSecret!,
         encoding: 'base32',
-        token: code,
-        window: 1,
+        token,
+        window: 10,
       })
+
+      console.log('[MFA VerifyCode] verifyDelta result:', delta)
+
+      if (delta === undefined || delta === null) {
+        console.log('[MFA VerifyCode] FAIL: no match. Suggested tokens:')
+        for (let i = -2; i <= 2; i++) {
+          const t = speakeasy.totp({
+            secret: admin.mfaSecret!,
+            encoding: 'base32',
+            time: Math.floor(Date.now() / 1000) + i * 30,
+          })
+          console.log(`[MFA VerifyCode]   offset ${i}: ${t}`)
+        }
+        return false
+      }
+
+      console.log('[MFA VerifyCode] SUCCESS: delta =', delta)
+      return true
     }
 
     if (admin.mfaType === 'sms') {
       const savedCode = await this.redisService.get(`mfa:sms:${admin.id}`)
-      if (savedCode && savedCode === code) {
+      if (savedCode && savedCode === token) {
         await this.redisService.del(`mfa:sms:${admin.id}`)
         return true
       }
