@@ -23,7 +23,7 @@
           <template #default="{ row }">
             <div class="answer-list" v-if="row.answers && row.answers.length > 0">
               <div class="answer-item" v-for="answer in row.answers" :key="answer.id">
-                <el-image :src="answer.userAvatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%" class="answer-avatar">
+                <el-image :src="answer.userAvatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%" class="answer-avatar" @click="goUserDetail(answer.userId)">
                   <template #error>
                     <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
                       <el-icon :size="20"><User /></el-icon>
@@ -32,7 +32,7 @@
                 </el-image>
                 <div class="answer-content">
                   <div class="answer-header">
-                    <span class="answer-nickname">{{ answer.userNickname }}</span>
+                    <span class="answer-nickname clickable" @click="goUserDetail(answer.userId)">{{ answer.userNickname }}</span>
                     <span class="answer-time">{{ formatDate(answer.createdAt) }}</span>
                   </div>
                   <div class="answer-text">{{ answer.content }}</div>
@@ -41,7 +41,7 @@
                   <el-tag :type="getAnswerStatusType(answer.status)" size="small">
                     {{ getAnswerStatusName(answer.status) }}
                   </el-tag>
-                  <el-button type="danger" link size="small" @click="handleDeleteAnswer(row.id, answer.id)">
+                  <el-button v-if="!isReadonly" type="danger" link size="small" @click="handleDeleteAnswer(row.id, answer.id)">
                     删除
                   </el-button>
                 </div>
@@ -99,7 +99,7 @@
         <div v-else class="answer-dialog-list">
           <div class="answer-dialog-item" v-for="answer in currentAnswers" :key="answer.id">
             <div class="answer-dialog-header">
-              <el-image :src="answer.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
+              <el-image :src="answer.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%" class="clickable-image" @click="goUserDetail(answer.userId)">
                 <template #error>
                   <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
                     <el-icon :size="16"><User /></el-icon>
@@ -107,7 +107,7 @@
                 </template>
               </el-image>
               <div class="answer-dialog-meta">
-                <span class="answer-dialog-nickname">{{ answer.userNickname }}</span>
+                <span class="answer-dialog-nickname clickable-text" @click="goUserDetail(answer.userId)">{{ answer.userNickname }}</span>
                 <span class="answer-dialog-time">{{ formatDate(answer.createdAt) }}</span>
               </div>
               <el-tag :type="getAnswerStatusType(answer.status)" size="small">
@@ -130,7 +130,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, User } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminQuestion } from '../../api'
 import type { Question, Answer } from '../../api/question'
@@ -176,6 +176,10 @@ function handleCreate() {
 
 function handleDetail(row: Question) {
   router.push(`/question/detail/${row.id}`)
+}
+
+function goUserDetail(userId: number) {
+  router.push(`/user/detail/${userId}`)
 }
 
 function handleEdit(row: Question) {
@@ -397,6 +401,7 @@ async function handleDeleteAnswerInList(answer: Answer) {
 
     .answer-avatar {
       flex-shrink: 0;
+      cursor: pointer;
     }
 
     .answer-content {
@@ -433,5 +438,20 @@ async function handleDeleteAnswerInList(answer: Answer) {
       flex-shrink: 0;
     }
   }
+}
+
+.clickable {
+  cursor: pointer;
+  &:hover { color: #409eff; }
+}
+
+.clickable-image {
+  cursor: pointer;
+  &:hover { opacity: 0.8; }
+}
+
+.clickable-text {
+  cursor: pointer;
+  &:hover { color: #409eff; text-decoration: underline; }
 }
 </style>
