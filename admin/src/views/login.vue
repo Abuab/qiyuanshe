@@ -73,6 +73,10 @@
             {{ loading ? '登录中...' : '登 录' }}
           </el-button>
         </el-form-item>
+
+        <div class="login-options">
+          <el-button link @click="showResetDialog = true">忘记密码？</el-button>
+        </div>
       </el-form>
 
       <div v-else class="mfa-step">
@@ -108,12 +112,31 @@
       </div>
     </div>
 
+    <el-dialog v-model="showResetDialog" title="重置密码" width="420px">
+      <el-form :model="resetForm" label-position="top">
+        <el-form-item label="用户名">
+          <el-input v-model="resetForm.username" placeholder="请输入用户名" />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="resetForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+        </el-form-item>
+        <el-form-item label="重置密钥">
+          <el-input v-model="resetForm.adminKey" type="password" placeholder="请联系运维获取" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showResetDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleResetPassword" :loading="resetLoading">确认重置</el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useAdminStore } from '../store/admin'
+import { adminSystem } from '../api'
 import { User, Lock, CircleCheck, View, Hide } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
@@ -137,6 +160,14 @@ const mfaType = ref('')
 const tempToken = ref('')
 const mfaCode = ref('')
 const mfaLoading = ref(false)
+
+const showResetDialog = ref(false)
+const resetLoading = ref(false)
+const resetForm = reactive({
+  username: 'admin',
+  newPassword: '',
+  adminKey: '',
+})
 
 const form = reactive<LoginForm>({
   username: '',
@@ -225,6 +256,38 @@ async function handleMfaSubmit() {
     ElMessage.error(error.message || '验证失败')
   } finally {
     mfaLoading.value = false
+  }
+}
+
+async function handleResetPassword() {
+  if (!resetForm.newPassword) {
+    ElMessage.warning('请输入新密码')
+    return
+  }
+  if (resetForm.newPassword.length < 6) {
+    ElMessage.warning('新密码至少6位')
+    return
+  }
+  if (!resetForm.adminKey) {
+    ElMessage.warning('请输入重置密钥')
+    return
+  }
+
+  resetLoading.value = true
+  try {
+    const res = await adminSystem.resetPassword(resetForm)
+    if (res.success) {
+      ElMessage.success('密码已重置，请用新密码登录')
+      showResetDialog.value = false
+      resetForm.newPassword = ''
+      resetForm.adminKey = ''
+    } else {
+      ElMessage.error(res.message || '重置失败')
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '请求失败')
+  } finally {
+    resetLoading.value = false
   }
 }
 </script>
@@ -320,6 +383,12 @@ async function handleMfaSubmit() {
 .back-button {
   width: 100%;
   color: #999;
+}
+
+.login-options {
+  text-align: right;
+  margin-top: -10px;
+  margin-bottom: 10px;
 }
 
 .mfa-step {

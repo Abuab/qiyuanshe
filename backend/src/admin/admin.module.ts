@@ -24,6 +24,7 @@ import { AdminProfileController } from './profile.controller'
 import { AdminProfileService } from './profile.service'
 import { MfaController } from './mfa.controller'
 import { MfaService } from './mfa.service'
+import { ForgotPasswordController } from './forgot-password.controller'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -66,6 +67,7 @@ import { SystemConfig } from '../entities/SystemConfig'
     AdminSystemController,
     AdminProfileController,
     MfaController,
+    ForgotPasswordController,
   ],
   providers: [
     AdminUserService,
