@@ -59,7 +59,13 @@
         <el-table-column label="用户" width="150">
           <template #default="{ row }">
             <div class="user-info">
-              <el-avatar :size="32" :src="row.userAvatar" />
+              <el-image :src="row.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
+                <template #error>
+                  <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:50%">
+                    <el-icon :size="16"><User /></el-icon>
+                  </div>
+                </template>
+              </el-image>
               <span>{{ row.userNickname || '-' }}</span>
             </div>
           </template>
@@ -176,6 +182,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { User } from '@element-plus/icons-vue'
 import { adminPayment } from '../../api'
 import type { Order } from '../../api/payment'
 

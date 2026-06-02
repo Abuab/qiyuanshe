@@ -66,7 +66,7 @@
         <el-table-column prop="sortOrder" label="排序" width="100" sortable />
         <el-table-column prop="answerCount" label="回答数" width="100">
           <template #default="{ row }">
-            <span class="answer-count">{{ row.answerCount || 0 }}</span>
+            <span class="answer-count" @click="handleViewAnswers(row)">{{ row.answerCount || 0 }}</span>
           </template>
         </el-table-column>
         <el-table-column v-if="!isReadonly" label="操作" width="150" fixed="right">
@@ -84,6 +84,39 @@
         <el-button @click="deleteDialogVisible = false">取消</el-button>
         <el-button type="danger" @click="confirmDelete">删除</el-button>
       </template>
+    </el-dialog>
+
+    <el-dialog v-model="answersVisible" :title="'回答列表 - ' + (currentQuestionTitle || '')" width="700px">
+      <div v-loading="answersLoading">
+        <div v-if="currentAnswers.length === 0" style="text-align: center; padding: 40px; color: #999;">
+          暂无回答
+        </div>
+        <div v-else class="answer-dialog-list">
+          <div class="answer-dialog-item" v-for="answer in currentAnswers" :key="answer.id">
+            <div class="answer-dialog-header">
+              <el-image :src="answer.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
+                <template #error>
+                  <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                    <el-icon :size="16"><User /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+              <div class="answer-dialog-meta">
+                <span class="answer-dialog-nickname">{{ answer.userNickname }}</span>
+                <span class="answer-dialog-time">{{ formatDate(answer.createdAt) }}</span>
+              </div>
+              <el-tag :type="getAnswerStatusType(answer.status)" size="small">
+                {{ getAnswerStatusName(answer.status) }}
+              </el-tag>
+            </div>
+            <div class="answer-dialog-content">{{ answer.content }}</div>
+            <div class="answer-dialog-footer">
+              <span>点赞 {{ answer.likeCount || 0 }}</span>
+              <el-button v-if="!isReadonly" type="danger" link size="small" @click="handleDeleteAnswerInList(answer)">删除</el-button>
+            </div>
+          </div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -106,6 +139,12 @@ const tableData = ref<Question[]>([])
 const expandedRows = ref<number[]>([])
 const deleteDialogVisible = ref(false)
 const currentQuestionId = ref<number | null>(null)
+
+const answersVisible = ref(false)
+const answersLoading = ref(false)
+const currentAnswers = ref<Answer[]>([])
+const currentQuestionTitle = ref('')
+const currentQuestionIdForAnswers = ref<number | null>(null)
 
 onMounted(() => {
   fetchData()
@@ -207,6 +246,43 @@ function getAnswerStatusType(status: number) {
   }
   return map[status] || 'info'
 }
+
+async function handleViewAnswers(row: Question) {
+  currentQuestionIdForAnswers.value = row.id
+  currentQuestionTitle.value = row.title
+  answersVisible.value = true
+  answersLoading.value = true
+  try {
+    const res = await adminQuestion.getAnswers(row.id)
+    if (res.success && res.data) {
+      currentAnswers.value = res.data.list || res.data || []
+    }
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('获取回答列表失败')
+  } finally {
+    answersLoading.value = false
+  }
+}
+
+async function handleDeleteAnswerInList(answer: Answer) {
+  try {
+    await ElMessageBox.confirm('确定要删除该回答吗？', '删除确认', { type: 'warning' })
+    await adminQuestion.deleteAnswer(answer.id)
+    ElMessage.success('删除成功')
+    if (currentQuestionIdForAnswers.value) {
+      const res = await adminQuestion.getAnswers(currentQuestionIdForAnswers.value)
+      if (res.success && res.data) {
+        currentAnswers.value = res.data.list || res.data || []
+      }
+    }
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(error)
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -245,6 +321,46 @@ function getAnswerStatusType(status: number) {
 .answer-count {
   font-weight: bold;
   color: #409eff;
+}
+
+.answer-count {
+  font-weight: bold;
+  color: #409eff;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+
+.answer-dialog-list {
+  .answer-dialog-item {
+    padding: 16px;
+    border-bottom: 1px solid #ebeef5;
+    &:last-child { border-bottom: none; }
+  }
+  .answer-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .answer-dialog-meta {
+    flex: 1;
+    .answer-dialog-nickname { font-weight: bold; color: #303133; margin-right: 12px; }
+    .answer-dialog-time { font-size: 12px; color: #909399; }
+  }
+  .answer-dialog-content {
+    margin-left: 42px;
+    color: #606266;
+    line-height: 1.6;
+    padding: 8px 0;
+  }
+  .answer-dialog-footer {
+    margin-left: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #909399;
+  }
 }
 
 .answer-list {

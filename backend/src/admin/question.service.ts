@@ -96,10 +96,25 @@ export class AdminQuestionService {
   }
 
   async getAnswers(questionId: number) {
-    return this.answerRepository.find({
+    const answers = await this.answerRepository.find({
       where: { questionId },
       order: { createdAt: 'DESC' },
+      relations: ['user'],
     })
+    return {
+      list: answers.map(a => ({
+        id: a.id,
+        questionId: a.questionId,
+        userId: a.userId,
+        content: a.content,
+        photos: a.photos,
+        likeCount: a.likeCount,
+        status: a.status,
+        createdAt: a.createdAt,
+        userAvatar: a.user?.avatar || '',
+        userNickname: a.user?.nickname || '用户' + a.userId,
+      })),
+    }
   }
 
   async deleteAnswer(answerId: number) {

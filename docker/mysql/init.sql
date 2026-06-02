@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `unionId` VARCHAR(128) NULL COMMENT '微信UnionID',
   `openid` VARCHAR(128) NOT NULL COMMENT '微信OpenID',
+  `password` VARCHAR(128) NULL COMMENT '密码',
   `nickname` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '昵称',
   `avatar` VARCHAR(500) NOT NULL DEFAULT '' COMMENT '头像URL',
   `phone` VARCHAR(20) NULL COMMENT '手机号',
@@ -47,6 +48,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `occupation` VARCHAR(50) NULL COMMENT '职业',
   `incomeRange` VARCHAR(50) NULL COMMENT '收入范围',
   `housingStatus` VARCHAR(20) NULL COMMENT '住房情况',
+  `carStatus` VARCHAR(20) NULL COMMENT '车辆情况',
   `maritalStatus` VARCHAR(20) NULL COMMENT '婚姻状况',
   `hometown` VARCHAR(100) NULL COMMENT '籍贯',
   `residence` VARCHAR(100) NULL COMMENT '居住地',
@@ -57,6 +59,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `vipLevel` TINYINT NOT NULL DEFAULT 0 COMMENT 'VIP等级: 0-无, 1-黄金, 2-钻石, 3-至尊',
   `vipExpireTime` DATETIME NULL COMMENT 'VIP过期时间',
   `status` TINYINT NOT NULL DEFAULT 2 COMMENT '状态: 0-禁用, 1-正常, 2-待审核',
+  `isDeleted` TINYINT NOT NULL DEFAULT 0 COMMENT '软删除: 0-正常, 1-已删除',
+  `tags` JSON NULL COMMENT '用户标签',
+  `adminRemark` TEXT NULL COMMENT '管理员备注',
   `lastLoginAt` DATETIME NULL COMMENT '最后登录时间',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -126,6 +131,7 @@ CREATE TABLE IF NOT EXISTS `matchmakers` (
 -- =============================================
 CREATE TABLE IF NOT EXISTS `hot_questions` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '问题ID',
+  `creator_id` INT NULL COMMENT '创建人ID',
   `title` VARCHAR(200) NOT NULL COMMENT '问题标题',
   `content` TEXT NULL COMMENT '问题描述',
   `isActive` TINYINT NOT NULL DEFAULT 1 COMMENT '是否启用: 0-禁用, 1-启用',
@@ -325,6 +331,7 @@ INSERT INTO `users` (`openid`, `nickname`, `avatar`, `phone`, `gender`, `status`
 -- =============================================
 CREATE TABLE IF NOT EXISTS `activities` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `creator_id` INT NULL COMMENT '创建人ID',
   `title` VARCHAR(200) NOT NULL COMMENT '活动标题',
   `subtitle` VARCHAR(500) NULL COMMENT '副标题/简介',
   `coverImage` VARCHAR(500) NOT NULL COMMENT '顶部海报大图URL',
@@ -365,3 +372,73 @@ CREATE TABLE IF NOT EXISTS `activity_signups` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动报名表';
 
 -- 注意：管理员密码需要在后台设置或通过加密方式存储
+
+-- =============================================
+-- 管理员用户表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `admin_users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(50) NOT NULL UNIQUE,
+  `password` VARCHAR(128) NOT NULL,
+  `nickname` VARCHAR(50) DEFAULT '',
+  `role` ENUM('super_admin','matchmaker','operator','readonly') DEFAULT 'readonly',
+  `status` TINYINT DEFAULT 1,
+  `mfa_secret` VARCHAR(64),
+  `is_mfa_enabled` TINYINT DEFAULT 0,
+  `avatar` VARCHAR(500) DEFAULT '',
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`),
+  KEY `idx_role` (`role`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员用户表';
+
+-- =============================================
+-- 举报表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `reports` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `reporterId` BIGINT NOT NULL COMMENT '举报人ID',
+  `targetId` BIGINT NOT NULL COMMENT '被举报对象ID',
+  `type` ENUM('user','content','photo') NOT NULL COMMENT '举报类型',
+  `reason` ENUM('harassment','fraud','fake_info','abuse','other') NOT NULL COMMENT '举报原因',
+  `description` TEXT NULL COMMENT '举报描述',
+  `evidence` VARCHAR(500) NULL COMMENT '证据图片URL',
+  `status` TINYINT DEFAULT 0 COMMENT '0待处理 1已处理 2已驳回',
+  `result` VARCHAR(20) NULL COMMENT '处理结果',
+  `remark` TEXT NULL COMMENT '处理备注',
+  `handlerId` INT NULL COMMENT '处理人ID',
+  `createdAt` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_reporterId` (`reporterId`),
+  KEY `idx_targetId` (`targetId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='举报表';
+
+-- =============================================
+-- 举报假数据（演示用）
+-- =============================================
+INSERT INTO `reports` (`reporterId`, `targetId`, `type`, `reason`, `description`, `status`, `createdAt`) VALUES
+(2, 3, 'user', 'fake_info', '该用户资料与实际情况严重不符，年龄和照片都有造假嫌疑', 0, NOW() - INTERVAL 2 DAY),
+(3, 5, 'content', 'harassment', '该用户多次在私信中发送骚扰信息，内容低俗不堪', 0, NOW() - INTERVAL 3 DAY),
+(4, 6, 'photo', 'fraud', '该用户使用的照片为网络图片，涉嫌盗用他人照片进行诈骗', 0, NOW() - INTERVAL 1 DAY),
+(5, 2, 'user', 'abuse', '该用户在问答区对我进行人身攻击和辱骂', 0, NOW() - INTERVAL 5 DAY),
+(6, 4, 'content', 'other', '发布的动态内容涉嫌传播虚假信息', 1, NOW() - INTERVAL 10 DAY),
+(3, 7, 'user', 'fake_info', '职业和收入信息造假，实际身份与描述不符', 1, NOW() - INTERVAL 7 DAY),
+(7, 2, 'content', 'harassment', '私聊频繁发送不堪信息，已拉黑仍继续骚扰', 0, NOW() - INTERVAL 12 HOUR),
+(2, 8, 'photo', 'other', '头像照片含有违规内容，不符合平台规范', 0, NOW() - INTERVAL 4 DAY),
+(4, 3, 'user', 'fraud', '诱导线下见面并要求转账，涉嫌婚恋诈骗', 2, NOW() - INTERVAL 15 DAY),
+(8, 5, 'content', 'abuse', '在评论中使用侮辱性语言攻击他人', 2, NOW() - INTERVAL 20 DAY);
+
+-- =============================================
+-- 数据字典预置数据
+-- =============================================
+INSERT IGNORE INTO `system_configs` (`configKey`, `configValue`, `description`) VALUES
+('dict_education', '["高中","大专","本科","硕士","博士","职中"]', '学历字典'),
+('dict_maritalStatus', '["未婚","离异未育","离异带孩","丧偶","已婚"]', '婚况字典'),
+('dict_housingStatus', '["已购房（无贷款）","已购房（有贷款）","租房","与父母同住","单位宿舍","其他"]', '住房状态字典'),
+('dict_carStatus', '["已购车","未购车","计划购车"]', '车辆状态字典'),
+('dict_occupation', '["公务员/事业单位","国企员工","私企员工","外企员工","自主创业","自由职业","学生","其他"]', '职业字典'),
+('dict_incomeRange', '["5K以下","5K-10K","10K-15K","15K-20K","20K-30K","30K-50K","50K以上"]', '收入范围字典');

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm'
+import { Repository, Raw } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
 import { User } from '../entities/User'
 
@@ -65,8 +65,24 @@ export class AdminPaymentService {
 
     const [orders, total] = await queryBuilder.getManyAndCount()
 
+    const list = orders.map(order => ({
+      id: order.id,
+      orderNo: order.orderNo,
+      userId: order.userId,
+      vipLevel: order.vipLevel,
+      amount: Number(order.amount) || 0,
+      payType: order.payType,
+      status: order.status,
+      paidAt: order.paidAt,
+      expireTime: order.expireTime,
+      createdAt: order.createdAt,
+      userNickname: order.user?.nickname || '-',
+      userAvatar: order.user?.avatar || '',
+      userPhone: order.user?.phone || '',
+    }))
+
     return {
-      list: orders,
+      list,
       page,
       limit,
       total,
@@ -89,50 +105,96 @@ export class AdminPaymentService {
 
   async getStats(params: { timeRange?: string; startDate?: string; endDate?: string }) {
     const { timeRange, startDate, endDate } = params
+    const now = new Date()
+    let dateStart: Date
 
-    let dateCondition: any = {}
-    if (timeRange === 'today') {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      dateCondition = MoreThanOrEqual(today)
-    } else if (timeRange === 'week') {
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      dateCondition = MoreThanOrEqual(weekAgo)
-    } else if (timeRange === 'month') {
-      const monthAgo = new Date()
-      monthAgo.setMonth(monthAgo.getMonth() - 1)
-      dateCondition = MoreThanOrEqual(monthAgo)
-    } else if (startDate && endDate) {
-      dateCondition = Between(startDate, endDate)
+    switch (timeRange) {
+      case 'today':
+        dateStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+        break
+      case 'week':
+        dateStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        break
+      case 'month':
+        dateStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        break
+      default:
+        if (startDate) {
+          dateStart = new Date(startDate)
+        } else {
+          dateStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        }
+    }
+    const dateEnd = endDate ? new Date(endDate) : now
+
+    const dateCondition = {
+      createdAt: Raw(alias => `${alias} >= :start AND ${alias} <= :end`, {
+        start: dateStart,
+        end: dateEnd,
+      }),
     }
 
-    const whereCondition: any = { status: 1 }
-    if (dateCondition) {
-      whereCondition.createdAt = dateCondition
-    }
-
-    const paidOrders = await this.orderRepository.find({ where: whereCondition })
+    // 已支付订单
+    const paidOrders = await this.orderRepository.find({
+      where: { status: 1, ...dateCondition },
+    })
+    // 已退款订单
     const refundedOrders = await this.orderRepository.find({
-      where: { status: 2, ...(dateCondition ? { createdAt: dateCondition } : {}) },
+      where: { status: 2, ...dateCondition },
     })
 
-    const totalRevenue = paidOrders.reduce((sum, order) => sum + order.amount, 0)
-    const refundAmount = refundedOrders.reduce((sum, order) => sum + order.amount, 0)
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0)
+    const refundAmount = refundedOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0)
     const orderCount = paidOrders.length
     const averageAmount = orderCount > 0 ? totalRevenue / orderCount : 0
 
+    // 每日营收明细
+    const dailyStatsMap: Record<string, { orderCount: number; revenue: number; refund: number }> = {}
+    paidOrders.forEach(o => {
+      const date = new Date(o.createdAt).toISOString().split('T')[0]
+      if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
+      dailyStatsMap[date].orderCount++
+      dailyStatsMap[date].revenue += Number(o.amount) || 0
+    })
+    refundedOrders.forEach(o => {
+      const date = new Date(o.createdAt).toISOString().split('T')[0]
+      if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
+      dailyStatsMap[date].refund += Number(o.amount) || 0
+    })
+
+    const dailyStats = Object.entries(dailyStatsMap)
+      .map(([date, data]) => ({ date, ...data, revenue: parseFloat(data.revenue.toFixed(2)), refund: parseFloat(data.refund.toFixed(2)) }))
+      .sort((a, b) => a.date.localeCompare(b.date))
+
+    // 营收趋势
+    const trendData = dailyStats.map(d => ({ date: d.date, revenue: d.revenue }))
+
+    // 支付方式分布
+    const paymentMethodMap: Record<string, number> = {}
+    paidOrders.forEach(o => {
+      const key = o.payType || 'unknown'
+      paymentMethodMap[key] = (paymentMethodMap[key] || 0) + 1
+    })
+
+    // 套餐销量
+    const packageMap: Record<string, number> = {}
+    paidOrders.forEach(o => {
+      const levelName = ['普通', '黄金', '钻石', '至尊'][o.vipLevel || 0] || '未知'
+      packageMap[levelName] = (packageMap[levelName] || 0) + 1
+    })
+    const packageData = Object.entries(packageMap).map(([name, count]) => ({ name, count }))
+
     return {
       stats: {
-        totalRevenue,
+        totalRevenue: parseFloat(totalRevenue.toFixed(2)),
         orderCount,
-        averageAmount,
-        refundAmount,
+        averageAmount: parseFloat(averageAmount.toFixed(2)),
+        refundAmount: parseFloat(refundAmount.toFixed(2)),
       },
-      dailyStats: [],
-      trendData: [],
-      paymentMethodData: {},
-      packageData: [],
+      dailyStats,
+      trendData,
+      paymentMethodData: paymentMethodMap,
+      packageData,
     }
   }
 }

@@ -60,42 +60,28 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="type" label="类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="getTypeTagType(row.type)" size="small">
-              {{ getTypeName(row.type) }}
+            <el-tag :type="getTypeTagType(row.targetType || row.type)" size="small">
+              {{ getTypeName(row.targetType || row.type) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="content" label="内容预览" min-width="200">
           <template #default="{ row }">
             <div class="content-preview">
-              <el-image
-                v-if="row.type === 'photo' && row.content"
-                :src="row.content"
-                fit="cover"
-                class="preview-image"
-              />
-              <span v-else>{{ row.content || '-' }}</span>
+              <span>{{ row.reason || row.action || '-' }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="submitter" label="提交人" width="120">
           <template #default="{ row }">
             <div class="submitter">
-              <el-avatar :size="24" :src="row.submitterAvatar" />
-              <span>{{ row.submitterNickname || row.submitter || '-' }}</span>
+              <span>{{ row.targetId ? 'ID:' + row.targetId : '-' }}</span>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="提交时间" width="160">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="aiResult" label="AI审核结果" width="120">
-          <template #default="{ row }">
-            <el-tag v-if="row.aiResult === 'pass'" type="success" size="small">通过</el-tag>
-            <el-tag v-else-if="row.aiResult === 'reject'" type="danger" size="small">拒绝</el-tag>
-            <el-tag v-else type="info" size="small">待人工</el-tag>
           </template>
         </el-table-column>
         <el-table-column v-if="activeTab === 'pending'" label="操作" width="150" fixed="right">

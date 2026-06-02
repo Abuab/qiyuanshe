@@ -38,7 +38,7 @@ export class AdminDashboardService {
       this.userRepository.count({ where: { isDeleted: 0, id: Not(1) } }),
       this.getTodayNewUsers(),
       this.userRepository.count({ where: { isVip: 1, isDeleted: 0, id: Not(1) } }),
-      this.orderRepository.count(),
+      this.orderRepository.count({ where: { status: 1 } }),
       this.getTodayRevenue(),
       this.auditLogRepository.count(),
       this.matchmakerRepository.count({ where: { isActive: 1 } }),
@@ -194,14 +194,14 @@ export class AdminDashboardService {
       if (!result[dateKey]) {
         result[dateKey] = 0
       }
-      result[dateKey] += order.amount
+      result[dateKey] += Number(order.amount) || 0
     })
 
     return Object.entries(result).map(([date, amount]) => {
-      cumulative += amount
+      cumulative += Number(amount) || 0
       return {
         date,
-        amount: parseFloat(amount.toFixed(2)),
+        amount: parseFloat((Number(amount) || 0).toFixed(2)),
         cumulative: parseFloat(cumulative.toFixed(2)),
       }
     })
@@ -264,7 +264,7 @@ export class AdminDashboardService {
       },
     })
 
-    return orders.reduce((sum, order) => sum + order.amount, 0)
+    return orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0)
   }
 
   private async getYesterdayRevenue(): Promise<number> {
@@ -281,6 +281,6 @@ export class AdminDashboardService {
       },
     })
 
-    return orders.reduce((sum, order) => sum + order.amount, 0)
+    return orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0)
   }
 }
