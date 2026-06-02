@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AuditLog } from '../entities/AuditLog'
 import { UserPhoto } from '../entities/UserPhoto'
+import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 
 interface AuditFilter {
@@ -21,6 +22,8 @@ export class AdminAuditService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserPhoto)
     private readonly userPhotoRepository: Repository<UserPhoto>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepository: Repository<QuestionAnswer>,
   ) {}
@@ -31,6 +34,7 @@ export class AdminAuditService {
     const skip = (page - 1) * limit
 
     const queryBuilder = this.auditLogRepository.createQueryBuilder('audit')
+      .leftJoinAndSelect('audit.submitter', 'submitter')
 
     if (filter.type) {
       queryBuilder.where('audit.targetType = :type', { type: filter.type })
@@ -58,10 +62,38 @@ export class AdminAuditService {
     const [items, total] = await queryBuilder.getManyAndCount()
 
     return {
-      list: items,
+      list: items.map(item => this.transformToResponse(item)),
       page,
       limit,
       total,
+    }
+  }
+
+  private transformToResponse(audit: AuditLog) {
+    const typeLabels: Record<string, string> = {
+      user: '资料修改',
+      photo: '照片上传',
+      answer: '回答审核',
+    }
+    return {
+      ...audit,
+      typeLabel: typeLabels[audit.targetType] || audit.targetType,
+      submitter: audit.submitter ? {
+        id: audit.submitter.id,
+        nickname: audit.submitter.nickname,
+        avatar: audit.submitter.avatar,
+      } : null,
+      // Parse before/after from content if it's JSON
+      beforeAfter: this.parseContentDiff(audit.content),
+    }
+  }
+
+  private parseContentDiff(content?: string) {
+    if (!content) return null
+    try {
+      return JSON.parse(content)
+    } catch {
+      return null
     }
   }
 
@@ -79,6 +111,49 @@ export class AdminAuditService {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 1 })
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 1 })
+    } else if (audit.targetType === 'user' && audit.targetId) {
+      // Sync user profile changes from audit content
+      await this.applyUserProfileChanges(audit)
+    }
+  }
+
+  private async applyUserProfileChanges(audit: AuditLog) {
+    if (!audit.content) return
+
+    try {
+      const diff = JSON.parse(audit.content)
+      const updatedFields: any = {}
+
+      const fieldMap: Record<string, string> = {
+        nickname: 'nickname',
+        avatar: 'avatar',
+        gender: 'gender',
+        birthYear: 'birthYear',
+        height: 'height',
+        weight: 'weight',
+        education: 'education',
+        occupation: 'occupation',
+        incomeRange: 'incomeRange',
+        housingStatus: 'housingStatus',
+        carStatus: 'carStatus',
+        maritalStatus: 'maritalStatus',
+        hometown: 'hometown',
+        residence: 'residence',
+        selfIntro: 'selfIntro',
+        mateRequirement: 'mateRequirement',
+      }
+
+      for (const [key, field] of Object.entries(fieldMap)) {
+        if (diff[key]) {
+          updatedFields[field] = diff[key]
+        }
+      }
+
+      if (Object.keys(updatedFields).length > 0) {
+        await this.userRepository.update(audit.targetId, updatedFields)
+      }
+    } catch {
+      // If content is not valid JSON, skip user profile update
     }
   }
 
@@ -101,6 +176,7 @@ export class AdminAuditService {
   async getHistory(type: string, targetId: number) {
     return this.auditLogRepository.find({
       where: { targetType: type, targetId },
+      relations: ['submitter'],
       order: { createdAt: 'DESC' },
     })
   }

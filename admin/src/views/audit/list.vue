@@ -19,11 +19,11 @@
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm">
           <el-form-item label="类型">
-            <el-select v-model="filterForm.type" placeholder="全部" clearable style="width: 120px">
+            <el-select v-model="filterForm.type" placeholder="全部" clearable style="width: 130px">
               <el-option label="全部" :value="undefined" />
-              <el-option label="用户" value="user" />
-              <el-option label="照片" value="photo" />
-              <el-option label="回答" value="answer" />
+              <el-option label="资料修改" value="user" />
+              <el-option label="照片上传" value="photo" />
+              <el-option label="回答审核" value="answer" />
             </el-select>
           </el-form-item>
           <el-form-item label="时间范围">
@@ -44,8 +44,8 @@
         </el-form>
 
         <div class="batch-actions" v-if="activeTab === 'pending' && selectedRows.length > 0">
-          <el-button type="success" @click="handleBatchApprove">批量通过</el-button>
-          <el-button type="danger" @click="handleBatchReject">批量拒绝</el-button>
+          <el-button type="success" @click="handleBatchApprove">批量通过 ({{ selectedRows.length }})</el-button>
+          <el-button type="danger" @click="handleBatchReject">批量拒绝 ({{ selectedRows.length }})</el-button>
         </div>
       </div>
 
@@ -58,25 +58,75 @@
       >
         <el-table-column v-if="activeTab === 'pending'" type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column label="类型" width="110">
           <template #default="{ row }">
-            <el-tag :type="getTypeTagType(row.targetType || row.type)" size="small">
-              {{ getTypeName(row.targetType || row.type) }}
+            <el-tag :type="getTypeTagType(row.targetType)" size="small">
+              {{ row.typeLabel || getTypeName(row.targetType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="content" label="内容预览" min-width="200">
+        <el-table-column label="提交人" width="160">
+          <template #default="{ row }">
+            <div class="submitter" v-if="row.submitter">
+              <el-image
+                :src="row.submitter.avatar"
+                fit="cover"
+                style="width: 36px; height: 36px; border-radius: 50%; cursor: pointer"
+                @click="goUserDetail(row.submitter.id)"
+              >
+                <template #error>
+                  <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                    <el-icon :size="18"><User /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+              <span class="submitter-nickname" @click="goUserDetail(row.submitter.id)">{{ row.submitter.nickname }}</span>
+            </div>
+            <span v-else class="text-muted">系统提交</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="内容预览" min-width="250">
           <template #default="{ row }">
             <div class="content-preview">
-              <span>{{ row.reason || row.action || '-' }}</span>
+              <!-- Photo type: show thumbnail -->
+              <template v-if="row.targetType === 'photo' && row.content">
+                <el-image
+                  :src="tryParseImageUrl(row.content)"
+                  fit="cover"
+                  class="preview-image"
+                  :preview-src-list="[tryParseImageUrl(row.content)]"
+                  preview-teleported
+                  style="width: 50px; height: 50px"
+                >
+                  <template #error>
+                    <div style="width: 50px; height: 50px; background: #f5f5f5; display: flex; align-items: center; justify-content: center">
+                      <el-icon :size="24"><Picture /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
+              </template>
+              <!-- User type: show diff if available -->
+              <template v-else-if="row.targetType === 'user' && row.beforeAfter">
+                <span class="diff-text">{{ formatDiff(row.beforeAfter) }}</span>
+              </template>
+              <!-- Default: show reason or content -->
+              <span v-else>{{ row.reason || row.content || '-' }}</span>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="submitter" label="提交人" width="120">
+        <el-table-column label="AI 审核" width="130">
           <template #default="{ row }">
-            <div class="submitter">
-              <span>{{ row.targetId ? 'ID:' + row.targetId : '-' }}</span>
-            </div>
+            <template v-if="row.aiResult">
+              <el-tag
+                :type="getAiTagType(row)"
+                size="small"
+                effect="plain"
+              >
+                {{ row.aiResult }}
+              </el-tag>
+              <div v-if="row.aiScore" class="ai-score">置信度: {{ (row.aiScore * 100).toFixed(0) }}%</div>
+            </template>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="提交时间" width="160">
@@ -84,10 +134,15 @@
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column v-if="activeTab === 'pending'" label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="success" link @click="handleApprove(row)">通过</el-button>
-            <el-button type="danger" link @click="handleReject(row)">拒绝</el-button>
+            <template v-if="activeTab === 'pending'">
+              <el-button type="success" link @click="handleApprove(row)">通过</el-button>
+              <el-button type="danger" link @click="handleReject(row)">拒绝</el-button>
+            </template>
+            <template v-else>
+              <el-button type="primary" link @click="handleViewDetail(row)">查看详情</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -125,11 +180,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Picture } from '@element-plus/icons-vue'
 import { adminAudit } from '../../api'
 import type { AuditItem } from '../../api/audit'
 
+const router = useRouter()
 const loading = ref(false)
 const activeTab = ref('pending')
 const tableData = ref<AuditItem[]>([])
@@ -149,9 +207,7 @@ const pagination = reactive({
 
 const rejectDialogVisible = ref(false)
 const rejectLoading = ref(false)
-const rejectForm = reactive({
-  reason: '',
-})
+const rejectForm = reactive({ reason: '' })
 const currentRejectItem = ref<AuditItem | null>(null)
 
 onMounted(() => {
@@ -225,11 +281,15 @@ function handlePageChange() {
   fetchData()
 }
 
+function goUserDetail(userId: number) {
+  router.push(`/user/detail/${userId}`)
+}
+
 async function handleApprove(row: AuditItem) {
   try {
-    await ElMessageBox.confirm('确定要通过该审核吗？', '确认通过', { type: 'success' })
+    await ElMessageBox.confirm('确定要通过该审核吗？通过后将自动更新用户资料。', '确认通过', { type: 'success' })
     await adminAudit.approve(row.id)
-    ElMessage.success('审核已通过')
+    ElMessage.success('审核已通过，用户资料已更新')
     fetchData()
     fetchPendingCount()
   } catch (error) {
@@ -310,6 +370,55 @@ async function handleBatchReject() {
   }
 }
 
+function handleViewDetail(row: AuditItem) {
+  if (row.submitter) {
+    router.push(`/user/detail/${row.submitter.id}`)
+  } else {
+    ElMessage.info('无关联用户')
+  }
+}
+
+function tryParseImageUrl(content?: string): string {
+  if (!content) return ''
+  try {
+    const parsed = JSON.parse(content)
+    return parsed.url || parsed.imageUrl || parsed.photoUrl || content
+  } catch {
+    return content
+  }
+}
+
+function formatDiff(beforeAfter: any): string {
+  if (!beforeAfter) return '-'
+  const parts: string[] = []
+  const labelMap: Record<string, string> = {
+    nickname: '昵称',
+    selfIntro: '简介',
+    education: '学历',
+    incomeRange: '收入',
+    housingStatus: '住房',
+    carStatus: '车辆',
+    maritalStatus: '婚况',
+    height: '身高',
+    weight: '体重',
+    occupation: '职业',
+  }
+  for (const [key, label] of Object.entries(labelMap)) {
+    if (beforeAfter[key] !== undefined) {
+      parts.push(`${label}: ${beforeAfter[key]}`)
+    }
+  }
+  return parts.length > 0 ? parts.slice(0, 3).join(' | ') : (beforeAfter.toString?.() || '-')
+}
+
+function getAiTagType(row: AuditItem) {
+  if (!row.aiResult) return 'info'
+  const lower = row.aiResult.toLowerCase()
+  if (lower.includes('网图') || lower.includes('风险') || lower.includes('异常')) return 'danger'
+  if (lower.includes('完整') || lower.includes('正常') || lower.includes('可靠')) return 'success'
+  return 'warning'
+}
+
 function formatDate(dateStr: string) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString('zh-CN', {
@@ -323,9 +432,9 @@ function formatDate(dateStr: string) {
 
 function getTypeName(type: string) {
   const map: Record<string, string> = {
-    user: '用户',
-    photo: '照片',
-    answer: '回答',
+    user: '资料修改',
+    photo: '照片上传',
+    answer: '回答审核',
   }
   return map[type] || type
 }
@@ -379,9 +488,14 @@ function getTypeTagType(type: string) {
   gap: 8px;
 
   .preview-image {
-    width: 50px;
-    height: 50px;
     border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .diff-text {
+    color: #303133;
+    font-size: 13px;
+    line-height: 1.5;
   }
 }
 
@@ -389,6 +503,25 @@ function getTypeTagType(type: string) {
   display: flex;
   align-items: center;
   gap: 8px;
+
+  .submitter-nickname {
+    cursor: pointer;
+    color: #303133;
+    &:hover {
+      color: #409eff;
+    }
+  }
+}
+
+.text-muted {
+  color: #909399;
+  font-size: 13px;
+}
+
+.ai-score {
+  font-size: 11px;
+  color: #909399;
+  margin-top: 2px;
 }
 
 .pagination-wrapper {

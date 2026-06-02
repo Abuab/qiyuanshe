@@ -209,10 +209,16 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
   `action` VARCHAR(20) NOT NULL COMMENT '操作: pending, approve, reject',
   `reason` TEXT NULL COMMENT '原因',
   `adminId` BIGINT NULL COMMENT '管理员ID',
+  `adminNote` TEXT NULL COMMENT '管理员备注',
+  `submitterId` BIGINT NULL COMMENT '提交人ID（关联users表）',
+  `content` TEXT NULL COMMENT '审核内容（JSON格式，包含修改前后数据）',
+  `aiResult` VARCHAR(255) NULL COMMENT 'AI审核结果建议',
+  `aiScore` DECIMAL(3,2) NULL COMMENT 'AI审核置信度',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `idx_targetType_targetId` (`targetType`, `targetId`),
-  KEY `idx_action` (`action`)
+  KEY `idx_action` (`action`),
+  KEY `idx_submitterId` (`submitterId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='审核日志表';
 
 -- =============================================

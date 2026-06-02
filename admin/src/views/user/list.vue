@@ -200,7 +200,7 @@
                 <el-image :src="row.avatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%">
                   <template #error>
                     <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
-                      <el-icon :size="20"><User /></el-icon>
+                      <el-icon :size="20"><UserIcon /></el-icon>
                     </div>
                   </template>
                 </el-image>
@@ -209,7 +209,7 @@
                 <el-image :src="row.avatar" fit="cover" style="width: 120px; height: 120px; border-radius: 50%">
                   <template #error>
                     <div style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
-                      <el-icon :size="60"><User /></el-icon>
+                      <el-icon :size="60"><UserIcon /></el-icon>
                     </div>
                   </template>
                 </el-image>
@@ -298,6 +298,34 @@
             <el-tag v-if="row.status === 1" type="success" size="small">正常</el-tag>
             <el-tag v-else-if="row.status === 2" type="warning" size="small">待审核</el-tag>
             <el-tag v-else type="danger" size="small">禁用</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="资料审核" width="110">
+          <template #default="{ row }">
+            <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.profileAuditStatus || row.profileAuditStatus === 'unsubmitted'">
+              <el-tag
+                :type="getAuditTagType(row.profileAuditStatus)"
+                size="small"
+                :style="row.profileAuditStatus && row.profileAuditStatus !== 'unsubmitted' ? 'cursor:pointer' : ''"
+                @click="goAudit(row, 'user')"
+              >
+                {{ getAuditStatusLabel(row.profileAuditStatus) }}
+              </el-tag>
+            </el-tooltip>
+          </template>
+        </el-table-column>
+        <el-table-column label="照片审核" width="110">
+          <template #default="{ row }">
+            <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.photoAuditStatus || row.photoAuditStatus === 'unsubmitted'">
+              <el-tag
+                :type="getAuditTagType(row.photoAuditStatus)"
+                size="small"
+                :style="row.photoAuditStatus && row.photoAuditStatus !== 'unsubmitted' ? 'cursor:pointer' : ''"
+                @click="goAudit(row, 'photo')"
+              >
+                {{ getAuditStatusLabel(row.photoAuditStatus) }}
+              </el-tag>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column label="标签" width="140">
@@ -489,7 +517,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download, Plus } from '@element-plus/icons-vue'
+import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import { useAdminStore } from '../../store/admin'
 import { system } from '../../api/system'
@@ -903,6 +931,31 @@ function downloadFile(content: string, filename: string, mimeType: string) {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+}
+
+// Audit status helper functions
+function getAuditStatusLabel(status?: string) {
+  const map: Record<string, string> = {
+    PENDING: '待审核',
+    APPROVE: '已通过',
+    REJECT: '已拒绝',
+    unsubmitted: '未提交',
+  }
+  return map[status || ''] || '未提交'
+}
+
+function getAuditTagType(status?: string) {
+  const map: Record<string, string> = {
+    PENDING: 'warning',
+    APPROVE: 'success',
+    REJECT: 'danger',
+    unsubmitted: 'info',
+  }
+  return (map[status || ''] || 'info') as 'warning' | 'success' | 'danger' | 'info'
+}
+
+function goAudit(_row: User, auditType: string) {
+  router.push({ path: '/audit/list', query: { type: auditType } })
 }
 
 function formatDate(dateStr: string) {

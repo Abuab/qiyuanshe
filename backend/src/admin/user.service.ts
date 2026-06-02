@@ -4,6 +4,7 @@ import { Repository, Like, In } from 'typeorm'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
+import { AuditLog } from '../entities/AuditLog'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -36,6 +37,8 @@ export class AdminUserService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserPhoto)
     private readonly userPhotoRepository: Repository<UserPhoto>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepository: Repository<AuditLog>,
   ) {}
 
   async list(filter: UserFilter) {
@@ -135,15 +138,46 @@ export class AdminUserService {
       queryBuilder.orderBy('user.createdAt', 'DESC')
     }
 
+    // Add audit status subqueries
+    queryBuilder
+      .addSelect(subQuery => 
+        subQuery
+          .select('a.action', 'profileAuditAction')
+          .from(AuditLog, 'a')
+          .where('a.targetType = :userType', { userType: 'user' })
+          .andWhere('a.targetId = user.id')
+          .orderBy('a.createdAt', 'DESC')
+          .limit(1),
+        'profileAuditStatus'
+      )
+      .addSelect(subQuery =>
+        subQuery
+          .select('a.action', 'photoAuditAction')
+          .from(AuditLog, 'a')
+          .where('a.targetType = :photoType', { photoType: 'photo' })
+          .andWhere('a.targetId = user.id')
+          .orderBy('a.createdAt', 'DESC')
+          .limit(1),
+        'photoAuditStatus'
+      )
+
     queryBuilder.skip(skip).take(limit)
 
-    const [users, total] = await queryBuilder.getManyAndCount()
+    const { entities, raw } = await queryBuilder.getRawAndEntities()
+
+    // Merge audit status from raw subqueries
+    const users = entities.map((user, index) => ({
+      ...user,
+      age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
+      profileAuditStatus: raw[index]?.profileAuditStatus || 'unsubmitted',
+      photoAuditStatus: raw[index]?.photoAuditStatus || 'unsubmitted',
+    }))
 
     return {
       list: users,
       page,
       limit,
-      total,
+      total: await queryBuilder.getCount(),
     }
   }
 

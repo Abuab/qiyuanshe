@@ -33,6 +33,8 @@ export interface User {
   lastLoginAt?: string
   tags?: string[]
   adminRemark?: string
+  profileAuditStatus?: string
+  photoAuditStatus?: string
 }
 
 export interface UserPhoto {

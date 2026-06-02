@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   Index,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm'
+import { User } from './User'
 
 @Entity('audit_logs')
 export class AuditLog {
@@ -30,6 +33,22 @@ export class AuditLog {
 
   @Column({ type: 'text', nullable: true })
   adminNote: string
+
+  @Column({ type: 'int', nullable: true })
+  submitterId: number
+
+  @Column({ type: 'text', nullable: true })
+  content: string
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  aiResult: string
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, nullable: true })
+  aiScore: number
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'submitterId' })
+  submitter: User
 
   @CreateDateColumn()
   createdAt: Date

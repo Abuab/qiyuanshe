@@ -3,22 +3,24 @@ import type { ApiResponse } from './request'
 
 export interface AuditItem {
   id: number
-  type: 'user' | 'photo' | 'answer'
+  targetType: 'user' | 'photo' | 'answer'
   targetId: number
-  userId: number
-  content?: string
-  extraData?: any
-  aiResult: string
-  aiSuggestion: string
-  status: number
+  action: string
   reason?: string
   adminId?: number
   adminNote?: string
+  content?: string
+  aiResult?: string
+  aiScore?: number
+  submitterId?: number
+  submitter?: {
+    id: number
+    nickname: string
+    avatar: string
+  } | null
+  typeLabel?: string
+  beforeAfter?: any
   createdAt: string
-  updatedAt: string
-  submitter?: string
-  submitterAvatar?: string
-  submitterNickname?: string
 }
 
 export interface AuditFilter {
