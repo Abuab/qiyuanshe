@@ -77,29 +77,16 @@
 
       <div v-else class="mfa-step">
         <h3 class="mfa-title">双因素认证</h3>
-        <p class="mfa-desc">
-          <template v-if="mfaType === 'totp'">请打开 Microsoft Authenticator 查看 6 位验证码</template>
-          <template v-if="mfaType === 'sms'">验证码已发送至手机尾号 {{ phoneMask }}</template>
-        </p>
+        <p class="mfa-desc">请打开验证器应用（Microsoft / Google Authenticator）查看 6 位验证码</p>
         <el-form @submit.prevent="handleMfaSubmit">
           <el-form-item>
             <el-input
               v-model="mfaCode"
               maxlength="6"
-              placeholder="请输入6位验证码"
+              placeholder="6位验证码"
               size="large"
               @keyup.enter="handleMfaSubmit"
-            >
-              <template v-if="mfaType === 'sms'" #append>
-                <el-button
-                  :disabled="countdown > 0"
-                  :loading="sendingSms"
-                  @click="resendSms"
-                >
-                  {{ countdown > 0 ? countdown + 's' : '重发' }}
-                </el-button>
-              </template>
-            </el-input>
+            />
           </el-form-item>
           <el-form-item>
             <el-button
@@ -128,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useAdminStore } from '../store/admin'
 import { User, Lock, CircleCheck, View, Hide } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -150,13 +137,9 @@ const captchaKey = ref('')
 
 const needMfa = ref(false)
 const mfaType = ref('')
-const phoneMask = ref('')
 const tempToken = ref('')
 const mfaCode = ref('')
 const mfaLoading = ref(false)
-const countdown = ref(0)
-const sendingSms = ref(false)
-let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const form = reactive<LoginForm>({
   username: '',
@@ -189,12 +172,6 @@ onMounted(() => {
   }
 })
 
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-  }
-})
-
 async function refreshCaptcha() {
   try {
     const response = await fetch('/api/admin/captcha')
@@ -223,7 +200,6 @@ async function handleLogin() {
     if (result.needMfa) {
       needMfa.value = true
       mfaType.value = result.mfaType || ''
-      phoneMask.value = result.phoneMask || ''
       tempToken.value = result.tempToken || ''
     }
   } catch (error: any) {
@@ -237,11 +213,6 @@ async function handleLogin() {
 function handleBackToLogin() {
   needMfa.value = false
   mfaCode.value = ''
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-  countdown.value = 0
 }
 
 async function handleMfaSubmit() {
@@ -257,38 +228,6 @@ async function handleMfaSubmit() {
     ElMessage.error(error.message || '验证失败')
   } finally {
     mfaLoading.value = false
-  }
-}
-
-async function resendSms() {
-  sendingSms.value = true
-  try {
-    const response = await fetch('/api/admin/mfa/sms/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${tempToken.value}`,
-      },
-      body: JSON.stringify({ phone: '' }),
-    })
-    const result = await response.json()
-    if (result.success || result.code === 200) {
-      ElMessage.success('验证码已重新发送')
-      countdown.value = 60
-      countdownTimer = setInterval(() => {
-        countdown.value--
-        if (countdown.value <= 0) {
-          if (countdownTimer) {
-            clearInterval(countdownTimer)
-            countdownTimer = null
-          }
-        }
-      }, 1000)
-    }
-  } catch {
-    ElMessage.error('重发失败')
-  } finally {
-    sendingSms.value = false
   }
 }
 </script>
@@ -415,10 +354,6 @@ async function resendSms() {
 
   :deep(.el-form-item) {
     margin-bottom: 20px;
-  }
-
-  :deep(.el-input-group__append) {
-    padding: 0;
   }
 }
 </style>

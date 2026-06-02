@@ -56,7 +56,5 @@ export const adminSystem = {
 export const mfaApi = {
   setupTotp: (): Promise<ApiResponse<{ qrCodeUrl: string; secret: string }>> => request.post('/admin/mfa/setup'),
   verifyTotp: (code: string): Promise<ApiResponse> => request.post('/admin/mfa/verify-totp', { code }),
-  sendSms: (phone: string): Promise<ApiResponse> => request.post('/admin/mfa/sms/send', { phone }),
-  verifySms: (phone: string, code: string): Promise<ApiResponse> => request.post('/admin/mfa/verify-sms', { phone, code }),
   disableMfa: (code: string): Promise<ApiResponse> => request.post('/admin/mfa/disable', { code }),
 }

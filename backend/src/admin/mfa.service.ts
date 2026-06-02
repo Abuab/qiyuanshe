@@ -88,45 +88,23 @@ export class MfaService {
     return { success: true }
   }
 
-  async sendSmsCode(adminId: number, phone: string) {
-    const code = String(Math.floor(100000 + Math.random() * 900000))
-
-    await this.redisService.set(`mfa:sms:${adminId}`, code, 300)
-
-    console.log(`[MFA SMS] 管理员 ${adminId} 手机 ${phone} 验证码: ${code}`)
-
-    return { success: true, message: '验证码已发送（查看后端日志获取）' }
-  }
-
-  async enableSms(adminId: number, phone: string, code: string) {
-    const savedCode = await this.redisService.get(`mfa:sms:${adminId}`)
-    if (!savedCode) {
-      throw new Error('验证码已过期，请重新发送')
-    }
-
-    if (savedCode !== String(code).trim()) {
-      throw new Error('验证码错误')
-    }
-
-    await this.userRepo.update(adminId, {
-      phone,
-      isMfaEnabled: true,
-      mfaType: 'sms',
-    })
-
-    await this.redisService.del(`mfa:sms:${adminId}`)
-
-    return { success: true }
-  }
-
   async disableMfa(adminId: number, code: string) {
     const admin = await this.userRepo.findOne({ where: { id: adminId } })
     if (!admin || !admin.isMfaEnabled) {
       throw new Error('未启用双因素认证')
     }
 
-    const valid = await this.verifyCode(admin, code)
-    if (!valid) {
+    const token = String(code).trim()
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaSecret!,
+      encoding: 'base32',
+      token,
+      window: 5,
+    })
+
+    console.log('[MFA Disable] result:', verified)
+
+    if (!verified) {
       throw new Error('验证码错误')
     }
 
@@ -146,54 +124,31 @@ export class MfaService {
     }
 
     console.log('[MFA Login] adminId:', adminId)
-    console.log('[MFA Login] mfaType:', admin.mfaType)
     console.log('[MFA Login] input code:', code)
 
-    return this.verifyCode(admin, code)
-  }
-
-  private async verifyCode(admin: User, code: string): Promise<boolean> {
     const token = String(code).trim()
 
-    if (admin.mfaType === 'totp') {
-      console.log('[MFA VerifyCode] secret from DB:', admin.mfaSecret)
-      console.log('[MFA VerifyCode] token:', token)
+    const verified = speakeasy.totp.verify({
+      secret: admin.mfaSecret!,
+      encoding: 'base32',
+      token,
+      window: 5,
+    })
 
-      const verified = speakeasy.totp.verify({
-        secret: admin.mfaSecret!,
-        encoding: 'base32',
-        token,
-        window: 5,
-      })
+    console.log('[MFA Login] result:', verified)
 
-      console.log('[MFA VerifyCode] result:', verified)
-
-      if (!verified) {
-        console.log('[MFA VerifyCode] FAIL: no match. Server tokens:')
-        for (let i = -2; i <= 2; i++) {
-          const t = speakeasy.totp({
-            secret: admin.mfaSecret!,
-            encoding: 'base32',
-            time: Math.floor(Date.now() / 1000) + i * 30,
-          })
-          console.log(`[MFA VerifyCode]   offset ${i}: ${t}`)
-        }
-        return false
+    if (!verified) {
+      console.log('[MFA Login] FAIL: no match. Server tokens:')
+      for (let i = -2; i <= 2; i++) {
+        const t = speakeasy.totp({
+          secret: admin.mfaSecret!,
+          encoding: 'base32',
+          time: Math.floor(Date.now() / 1000) + i * 30,
+        })
+        console.log(`[MFA Login]   offset ${i}: ${t}`)
       }
-
-      console.log('[MFA VerifyCode] SUCCESS')
-      return true
     }
 
-    if (admin.mfaType === 'sms') {
-      const savedCode = await this.redisService.get(`mfa:sms:${admin.id}`)
-      if (savedCode && savedCode === token) {
-        await this.redisService.del(`mfa:sms:${admin.id}`)
-        return true
-      }
-      return false
-    }
-
-    return false
+    return verified
   }
 }
