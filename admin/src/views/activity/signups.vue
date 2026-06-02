@@ -55,6 +55,7 @@
             <el-button
               v-if="row.status === 0"
               type="success"
+              link
               size="small"
               @click="handleConfirm(row)"
             >
@@ -63,6 +64,7 @@
             <el-button
               v-if="row.status !== 2"
               type="danger"
+              link
               size="small"
               @click="handleCancel(row)"
             >
