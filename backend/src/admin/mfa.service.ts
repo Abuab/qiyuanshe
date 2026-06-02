@@ -16,33 +16,25 @@ export class MfaService {
 
   async setupTotp(adminId: number) {
     const secret = speakeasy.generateSecret({
-      name: 'qiyuanshe-admin',
+      name: 'Qiyuanshe',
       length: 20,
     })
 
+    const cleanBase32 = secret.base32.toUpperCase().replace(/=/g, '')
+
+    const otpauthUrl = `otpauth://totp/Qiyuanshe%3Aadmin-${adminId}?secret=${cleanBase32}&issuer=Qiyuanshe`
+
     console.log('[MFA Setup] adminId:', adminId)
-    console.log('[MFA Setup] secret.base32:', secret.base32)
-    console.log('[MFA Setup] secret.base32 length:', secret.base32.length)
+    console.log('[MFA Setup] raw base32:', secret.base32)
+    console.log('[MFA Setup] cleanBase32:', cleanBase32)
+    console.log('[MFA Setup] otpauthUrl:', otpauthUrl)
     console.log('[MFA Setup] server time:', new Date().toISOString())
-    console.log('[MFA Setup] server timestamp:', Math.floor(Date.now() / 1000))
 
-    const otpauthUrl = speakeasy.otpauthURL({
-      secret: secret.base32,
-      label: `qiyuanshe-admin-${adminId}`,
-      issuer: 'qiyuanshe',
-    })
-
-    console.log('[MFA Setup] otpauth_url:', otpauthUrl)
-
-    await this.redisService.set(
-      `mfa:temp:${adminId}`,
-      secret.base32,
-      300,
-    )
+    await this.redisService.set(`mfa:temp:${adminId}`, cleanBase32, 300)
 
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl)
 
-    return { qrCodeUrl, secret: secret.base32 }
+    return { qrCodeUrl, secret: cleanBase32 }
   }
 
   async enableTotp(adminId: number, code: string) {
@@ -50,10 +42,7 @@ export class MfaService {
 
     console.log('[MFA Verify] adminId:', adminId)
     console.log('[MFA Verify] tempSecret from Redis:', tempSecret)
-    console.log('[MFA Verify] tempSecret length:', tempSecret?.length)
     console.log('[MFA Verify] input code:', code)
-    console.log('[MFA Verify] code type:', typeof code)
-    console.log('[MFA Verify] server timestamp:', Math.floor(Date.now() / 1000))
     console.log('[MFA Verify] server time:', new Date().toISOString())
 
     if (!tempSecret) {
@@ -64,17 +53,17 @@ export class MfaService {
     const token = String(code).trim()
     console.log('[MFA Verify] sanitized token:', token)
 
-    const delta = speakeasy.totp.verifyDelta({
+    const verified = speakeasy.totp.verify({
       secret: tempSecret,
       encoding: 'base32',
       token,
-      window: 10,
+      window: 5,
     })
 
-    console.log('[MFA Verify] verifyDelta result:', delta)
+    console.log('[MFA Verify] result:', verified)
 
-    if (delta === undefined || delta === null) {
-      console.log('[MFA Verify] FAIL: code does not match. Suggested tokens:')
+    if (!verified) {
+      console.log('[MFA Verify] FAIL: code does not match. Server tokens:')
       for (let i = -2; i <= 2; i++) {
         const t = speakeasy.totp({
           secret: tempSecret,
@@ -86,7 +75,7 @@ export class MfaService {
       throw new Error('验证码错误或已过期')
     }
 
-    console.log('[MFA Verify] SUCCESS: delta =', delta, 'time steps')
+    console.log('[MFA Verify] SUCCESS')
 
     await this.userRepo.update(adminId, {
       mfaSecret: tempSecret,
@@ -158,10 +147,7 @@ export class MfaService {
 
     console.log('[MFA Login] adminId:', adminId)
     console.log('[MFA Login] mfaType:', admin.mfaType)
-    console.log('[MFA Login] mfaSecret from DB:', admin.mfaSecret)
     console.log('[MFA Login] input code:', code)
-    console.log('[MFA Login] server time:', new Date().toISOString())
-    console.log('[MFA Login] server timestamp:', Math.floor(Date.now() / 1000))
 
     return this.verifyCode(admin, code)
   }
@@ -170,20 +156,20 @@ export class MfaService {
     const token = String(code).trim()
 
     if (admin.mfaType === 'totp') {
-      console.log('[MFA VerifyCode] totp secret from DB:', admin.mfaSecret)
-      console.log('[MFA VerifyCode] sanitized token:', token)
+      console.log('[MFA VerifyCode] secret from DB:', admin.mfaSecret)
+      console.log('[MFA VerifyCode] token:', token)
 
-      const delta = speakeasy.totp.verifyDelta({
+      const verified = speakeasy.totp.verify({
         secret: admin.mfaSecret!,
         encoding: 'base32',
         token,
-        window: 10,
+        window: 5,
       })
 
-      console.log('[MFA VerifyCode] verifyDelta result:', delta)
+      console.log('[MFA VerifyCode] result:', verified)
 
-      if (delta === undefined || delta === null) {
-        console.log('[MFA VerifyCode] FAIL: no match. Suggested tokens:')
+      if (!verified) {
+        console.log('[MFA VerifyCode] FAIL: no match. Server tokens:')
         for (let i = -2; i <= 2; i++) {
           const t = speakeasy.totp({
             secret: admin.mfaSecret!,
@@ -195,7 +181,7 @@ export class MfaService {
         return false
       }
 
-      console.log('[MFA VerifyCode] SUCCESS: delta =', delta)
+      console.log('[MFA VerifyCode] SUCCESS')
       return true
     }
 
