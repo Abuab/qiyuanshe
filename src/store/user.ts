@@ -16,6 +16,7 @@ interface UserInfo {
   bio?: string
   photos?: string[]
   isVip?: boolean
+  isRealName?: boolean
   vipExpireTime?: string
   createTime?: string
 }

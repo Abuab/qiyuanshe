@@ -3,9 +3,9 @@
     <view class="card-left">
       <image
         class="avatar"
-        :src="failedAvatars.has(user.avatar || '') ? '/static/default-avatar.png' : (user.avatar || '/static/default-avatar.png')"
+        :src="avatarUrl"
         mode="aspectFill"
-        @error="onAvatarError(user.avatar || '')"
+        @error="onAvatarError"
       ></image>
     </view>
 
@@ -32,9 +32,9 @@
           v-for="(photo, index) in displayPhotos"
           :key="index"
           class="photo-thumb"
-          :src="failedAvatars.has(photo) ? '/static/default-avatar.png' : photo"
+          :src="photoFailedMap[photo] ? '/static/default-avatar.png' : photo"
           mode="aspectFill"
-          @error="onAvatarError(photo)"
+          @error="onPhotoError(photo)"
         ></image>
       </view>
     </view>
@@ -71,11 +71,21 @@ const emit = defineEmits<{
   (e: 'click', user: UserCardData): void
 }>()
 
-const failedAvatars = ref(new Set<string>())
+const avatarError = ref(false)
+const photoFailedMap = ref<Record<string, true>>({})
 
-const onAvatarError = (url: string) => {
-  if (url) {
-    failedAvatars.value = new Set([...failedAvatars.value, url])
+const avatarUrl = computed(() => {
+  if (avatarError.value) return '/static/default-avatar.png'
+  return props.user.avatar || '/static/default-avatar.png'
+})
+
+const onAvatarError = () => {
+  avatarError.value = true
+}
+
+const onPhotoError = (photoUrl: string) => {
+  if (photoUrl) {
+    photoFailedMap.value = { ...photoFailedMap.value, [photoUrl]: true }
   }
 }
 

@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import request from '@/utils/request'
+import request, { getBaseUrl } from '@/utils/request'
 
 const questionId = ref(0)
 const questionTitle = ref('')
@@ -116,7 +116,7 @@ const chooseImage = async () => {
 const uploadImage = (filePath: string): Promise<{ url: string }> => {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: `${uni.$baseUrl}/upload`,
+      url: `${getBaseUrl()}/upload`,
       filePath,
       name: 'file',
       success: (res) => {

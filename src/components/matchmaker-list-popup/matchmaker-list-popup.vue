@@ -17,7 +17,7 @@
           @tap="handleSelect(item)"
         >
           <view class="item-content">
-            <image class="avatar" :src="item.avatar" mode="aspectFill" />
+            <image class="avatar" :src="getAvatarUrl(item.avatar)" mode="aspectFill" @error="onAvatarError(item.avatar)" />
             <view class="info">
               <view class="name">{{ item.name }}</view>
               <view class="title">{{ item.title }}</view>
@@ -38,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { MatchmakerData } from '../matchmaker-popup/matchmaker-popup.vue'
 
 interface Props {
@@ -57,6 +57,18 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const visible = ref(false)
+const failedAvatars = ref<Record<string, true>>({})
+
+const getAvatarUrl = (avatar: string) => {
+  if (failedAvatars.value[avatar]) return '/static/default-avatar.png'
+  return avatar || '/static/default-avatar.png'
+}
+
+const onAvatarError = (avatar: string) => {
+  if (avatar) {
+    failedAvatars.value = { ...failedAvatars.value, [avatar]: true }
+  }
+}
 
 watch(
   () => props.show,

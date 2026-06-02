@@ -192,6 +192,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import request from '@/utils/request'
 
 interface Activity {
   id: number
@@ -262,15 +263,17 @@ function getHourText(hour: number) {
 
 async function fetchActivityDetail(id: number) {
   try {
-    const result = await uni.request({
-      url: `https://api.lingtong.com/activities/${id}`,
+    const result: any = await request({
+      url: `/activities/${id}`,
       method: 'GET',
     })
 
-    const res = result.data as any
-    if (res.code === 200 && res.data) {
-      activity.value = res.data
-      signupAvatars.value = res.data.signupAvatars || []
+    if (result && result.code === 200 && result.data) {
+      activity.value = result.data
+      signupAvatars.value = result.data.signupAvatars || []
+    } else {
+      activity.value = result
+      signupAvatars.value = result.signupAvatars || []
     }
   } catch (error) {
     console.error('获取活动详情失败:', error)
@@ -315,18 +318,13 @@ async function submitSignup() {
   }
 
   try {
-    const token = uni.getStorageSync('token')
-    const result = await uni.request({
-      url: `https://api.lingtong.com/activities/${activity.value?.id}/signup`,
+    const result: any = await request({
+      url: `/activities/${activity.value?.id}/signup`,
       method: 'POST',
-      header: {
-        'Authorization': `Bearer ${token}`,
-      },
       data: signupForm.value,
     })
 
-    const res = result.data as any
-    if (res.code === 200) {
+    if (result && result.code === 200) {
       uni.showToast({ title: '报名成功', icon: 'success' })
       closeSignupPopup()
       // 刷新页面数据
@@ -334,7 +332,7 @@ async function submitSignup() {
         fetchActivityDetail(activity.value.id)
       }
     } else {
-      uni.showToast({ title: res.msg || '报名失败', icon: 'none' })
+      uni.showToast({ title: '报名失败', icon: 'none' })
     }
   } catch (error) {
     console.error('报名失败:', error)
@@ -354,6 +352,15 @@ onMounted(() => {
     fetchActivityDetail(Number(id))
   }
 })
+
+const onShareAppMessage = () => {
+  if (!activity.value) return {}
+  return {
+    title: `${activity.value.title} - 栖缘社活动`,
+    path: `/pages/activity-detail/index?id=${activity.value.id}`,
+    imageUrl: activity.value.coverImage || '/static/heart.png',
+  }
+}
 </script>
 
 <style lang="scss" scoped>

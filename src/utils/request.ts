@@ -4,6 +4,8 @@ const BASE_URL = 'https://api.lingtong.com'
 const TIMEOUT = 15000
 const MAX_RETRIES = 1
 
+export const getBaseUrl = () => BASE_URL
+
 interface RequestOptions {
   url: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'

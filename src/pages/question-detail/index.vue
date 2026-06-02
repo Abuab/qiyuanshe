@@ -250,6 +250,13 @@ const goToAnswer = () => {
     url: `/pages/answer/index?questionId=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
   })
 }
+
+const onShareAppMessage = () => {
+  return {
+    title: questionTitle.value || '问答详情 - 栖缘社',
+    path: `/pages/question-detail/index?id=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
+  }
+}
 </script>
 
 <style lang="scss" scoped>

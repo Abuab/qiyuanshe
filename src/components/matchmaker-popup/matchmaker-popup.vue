@@ -10,7 +10,7 @@
 
       <view class="matchmaker-info">
         <view class="avatar-wrapper">
-          <image class="avatar" :src="matchmaker.avatar" mode="aspectFill" />
+          <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="onAvatarError" />
         </view>
 
         <view class="name">{{ matchmaker.name }}</view>
@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 export interface MatchmakerData {
   id: number
@@ -75,6 +75,16 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const visible = ref(false)
+const avatarError = ref(false)
+
+const avatarUrl = computed(() => {
+  if (avatarError.value) return '/static/default-avatar.png'
+  return props.matchmaker.avatar || '/static/default-avatar.png'
+})
+
+const onAvatarError = () => {
+  avatarError.value = true
+}
 
 watch(
   () => props.show,

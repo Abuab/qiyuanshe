@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
+import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 
 onLaunch(() => {
@@ -14,6 +14,14 @@ onShow(() => {
 
 onHide(() => {
   console.log('App Hide')
+})
+
+onError((err: string) => {
+  console.error('App onError:', err)
+})
+
+onUnhandledRejection((res: { reason: string }) => {
+  console.error('App onUnhandledRejection:', res?.reason || res)
 })
 </script>
 

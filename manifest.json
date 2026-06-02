@@ -16,7 +16,7 @@
     "enable": false
   },
   "mp-weixin": {
-    "appid": "",
+    "appid": "wx_your_appid_here",
     "setting": {
       "urlCheck": false,
       "es6": true,

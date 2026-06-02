@@ -117,7 +117,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import request from '@/utils/request'
+import request, { getBaseUrl } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
 interface ChatMessage {
@@ -307,7 +307,7 @@ const chooseImage = async () => {
 
         const uploadRes = await new Promise<any>((resolve, reject) => {
           uni.uploadFile({
-            url: `${uni.$baseUrl}/upload`,
+            url: `${getBaseUrl()}/upload`,
             filePath: tempFilePath,
             name: 'file',
             success: (res) => {
