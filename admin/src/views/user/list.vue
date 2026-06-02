@@ -142,6 +142,7 @@
         <span class="selected-count">已选择 {{ selectedRows.length }} 项</span>
         <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
         <el-button type="success" size="small" @click="handleBatchEnable">批量启用</el-button>
+        <el-button type="danger" size="small" @click="handleBatchDelete">批量删除</el-button>
       </div>
 
       <el-table
@@ -250,7 +251,7 @@
             <el-tag v-else type="danger" size="small">禁用</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
             <el-button
@@ -261,6 +262,7 @@
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button type="success" link @click="handleSetVip(row)">设为VIP</el-button>
+            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -724,6 +726,38 @@ async function handleBatchEnable() {
     if (error !== 'cancel') {
       console.error(error)
     }
+  }
+}
+
+const handleDelete = async (row: User) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除用户 "${row.nickname}"？数据仍保留，仅后台不显示。`,
+      '确认删除',
+      { type: 'warning' }
+    )
+    await adminUsers.delete(row.id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch (e: any) {
+    if (e !== 'cancel') console.error(e)
+  }
+}
+
+const handleBatchDelete = async () => {
+  if (selectedRows.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `确定删除 ${selectedRows.value.length} 个用户？`,
+      '确认批量删除',
+      { type: 'warning' }
+    )
+    await adminUsers.batchDelete(selectedRows.value.map(r => r.id))
+    ElMessage.success('批量删除成功')
+    selectedRows.value = []
+    fetchData()
+  } catch (e: any) {
+    if (e !== 'cancel') console.error(e)
   }
 }
 

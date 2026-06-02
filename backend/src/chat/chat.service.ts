@@ -29,7 +29,7 @@ export class ChatService {
     }
 
     const targetUser = await this.userRepository.findOne({
-      where: { id: toUserId },
+      where: { id: toUserId, isDeleted: 0 },
     })
 
     if (!targetUser) {
@@ -71,7 +71,7 @@ export class ChatService {
     const { userId: toUserId, page, limit } = dto
 
     const targetUser = await this.userRepository.findOne({
-      where: { id: toUserId },
+      where: { id: toUserId, isDeleted: 0 },
     })
 
     if (!targetUser) {
@@ -169,6 +169,7 @@ export class ChatService {
         { userId },
       )
       .andWhere('other.id != :userId', { userId })
+      .andWhere('other.isDeleted = :isDeleted', { isDeleted: 0 })
       .getCount()
 
     return { list: result, total }
@@ -211,7 +212,7 @@ export class ChatService {
 
   private async checkUserVipStatus(userId: number): Promise<boolean> {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, isDeleted: 0 },
     })
 
     if (!user) return false

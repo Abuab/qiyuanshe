@@ -98,6 +98,9 @@ export class User {
   @Column({ type: 'tinyint', default: 2 })
   status: number
 
+  @Column({ type: 'tinyint', default: 0 })
+  isDeleted: number
+
   @Column({ type: 'varchar', length: 128, nullable: true })
   password: string
 

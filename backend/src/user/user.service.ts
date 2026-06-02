@@ -54,6 +54,8 @@ export class UserService {
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .where('user.status = :status', { status: 1 })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+      .andWhere('user.id != :adminId', { adminId: 1 })
 
     if (gender !== undefined) {
       queryBuilder.andWhere('user.gender = :gender', { gender })
@@ -138,6 +140,8 @@ export class UserService {
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
       .where('user.status = :status', { status: 1 })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+      .andWhere('user.id != :adminId', { adminId: 1 })
 
     if (dto.gender !== undefined) {
       queryBuilder.andWhere('user.gender = :gender', { gender: dto.gender })
@@ -247,7 +251,7 @@ export class UserService {
     user: Partial<User> & { photos: any[]; isFollowed: boolean; isSelf: boolean }
   }> {
     const user = await this.userRepository.findOne({
-      where: { id, status: 1 },
+      where: { id, status: 1, isDeleted: 0 },
       relations: ['photos'],
     })
 
@@ -317,7 +321,7 @@ export class UserService {
     }
 
     const targetUser = await this.userRepository.findOne({
-      where: { id: targetUserId, status: 1 },
+      where: { id: targetUserId, status: 1, isDeleted: 0 },
     })
 
     if (!targetUser) {
@@ -387,7 +391,7 @@ export class UserService {
     }
 
     const users = await this.userRepository.find({
-      where: { id: In(followerIds), status: 1 },
+      where: { id: In(followerIds), status: 1, isDeleted: 0 },
     })
 
     const userIds = users.map((u) => u.id)
@@ -454,7 +458,7 @@ export class UserService {
     }
 
     const users = await this.userRepository.find({
-      where: { id: In(followingIds), status: 1 },
+      where: { id: In(followingIds), status: 1, isDeleted: 0 },
     })
 
     const userIds = users.map((u) => u.id)

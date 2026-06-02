@@ -42,8 +42,12 @@ export class AdminUserService {
 
     const queryBuilder = this.userRepository.createQueryBuilder('user')
 
+    queryBuilder.where('user.id != :adminId', { adminId: 1 })
+
+    queryBuilder.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+
     if (filter.keyword) {
-      queryBuilder.where(
+      queryBuilder.andWhere(
         '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone)',
         {
           keyword: `%${filter.keyword}%`,
@@ -136,7 +140,7 @@ export class AdminUserService {
   }
 
   async detail(id: number) {
-    const user = await this.userRepository.findOne({ where: { id } })
+    const user = await this.userRepository.findOne({ where: { id, isDeleted: 0 } })
     if (!user) return null
     const { password, ...safeUser } = user
     return safeUser
@@ -179,6 +183,14 @@ export class AdminUserService {
 
   async batchUpdateStatus(ids: number[], status: number) {
     await this.userRepository.update(ids, { status })
+  }
+
+  async softDelete(id: number) {
+    await this.userRepository.update(id, { isDeleted: 1 })
+  }
+
+  async batchSoftDelete(ids: number[]) {
+    await this.userRepository.update(ids, { isDeleted: 1 })
   }
 
   async createUser(data: {

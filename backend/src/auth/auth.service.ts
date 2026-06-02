@@ -46,7 +46,7 @@ export class AuthService {
     }
 
     let user = await this.userRepository.findOne({
-      where: { openid: session.openid },
+      where: { openid: session.openid, isDeleted: 0 },
     })
 
     if (!user) {
@@ -82,7 +82,7 @@ export class AuthService {
     }
 
     let user = await this.userRepository.findOne({
-      where: { phone: phoneData.purePhoneNumber },
+      where: { phone: phoneData.purePhoneNumber, isDeleted: 0 },
     })
 
     if (!user) {
@@ -114,7 +114,7 @@ export class AuthService {
       }
 
       const user = await this.userRepository.findOne({
-        where: { id: payload.sub },
+        where: { id: payload.sub, isDeleted: 0 },
       })
 
       if (!user || user.status !== 1) {
@@ -132,7 +132,7 @@ export class AuthService {
 
   async validateUserById(userId: number): Promise<Partial<User>> {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, isDeleted: 0 },
     })
 
     if (!user || user.status !== 1) {
@@ -144,7 +144,7 @@ export class AuthService {
 
   async getProfile(userId: number): Promise<Partial<User>> {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, isDeleted: 0 },
       relations: ['photos'],
     })
 
@@ -157,7 +157,7 @@ export class AuthService {
 
   async updateProfile(userId: number, dto: UpdateProfileDto): Promise<Partial<User>> {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, isDeleted: 0 },
     })
 
     if (!user) {

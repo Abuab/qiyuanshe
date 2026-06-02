@@ -106,6 +106,18 @@ export class AdminUserController {
     return Result.success(null, '批量状态更新成功')
   }
 
+  @Delete(':id')
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.softDelete(id)
+    return Result.success(null, '用户已删除')
+  }
+
+  @Post('batch-delete')
+  async batchDelete(@Body() body: { ids: number[] }) {
+    await this.userService.batchSoftDelete(body.ids)
+    return Result.success(null, '批量删除成功')
+  }
+
   @Post()
   async create(
     @Body() body: {
