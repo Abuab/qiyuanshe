@@ -38,8 +38,12 @@ export class AdminQuestionController {
   }
 
   @Get('answers')
-  async getAnswers(@Query('questionId', ParseIntPipe) questionId: number) {
-    const answers = await this.questionService.getAnswers(questionId)
+  async getAnswers(
+    @Query('questionId', ParseIntPipe) questionId: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const answers = await this.questionService.getAnswers(questionId, page, limit)
     return Result.success(answers)
   }
 

@@ -95,11 +95,16 @@ export class AdminQuestionService {
     await this.questionRepository.update(id, { sortOrder })
   }
 
-  async getAnswers(questionId: number) {
-    const answers = await this.answerRepository.find({
+  async getAnswers(questionId: number, page?: number, limit?: number) {
+    const take = limit || 20
+    const skip = page ? (page - 1) * take : 0
+
+    const [answers, total] = await this.answerRepository.findAndCount({
       where: { questionId },
       order: { createdAt: 'DESC' },
       relations: ['user'],
+      skip,
+      take,
     })
     return {
       list: answers.map(a => ({
@@ -114,6 +119,9 @@ export class AdminQuestionService {
         userAvatar: a.user?.avatar || '',
         userNickname: a.user?.nickname || '用户' + a.userId,
       })),
+      total,
+      page: page || 1,
+      limit: take,
     }
   }
 

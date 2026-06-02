@@ -57,6 +57,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '问答编辑', requiresAuth: true },
       },
       {
+        path: '/question/detail/:id',
+        name: 'QuestionDetail',
+        component: () => import('../views/question/detail.vue'),
+        meta: { title: '问答详情', requiresAuth: true },
+      },
+      {
         path: '/audit/list',
         name: 'AuditList',
         component: () => import('../views/audit/list.vue'),

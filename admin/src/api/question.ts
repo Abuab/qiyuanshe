@@ -10,6 +10,7 @@ export interface Question {
   answerCount: number
   status: number
   createdAt: string
+  updatedAt?: string
   answers?: Answer[]
 }
 
@@ -81,8 +82,8 @@ export const adminQuestion = {
     return request.put(`/admin/questions/${id}/sort`, { sortOrder })
   },
 
-  getAnswers(questionId: number): Promise<ApiResponse<AnswerListResponse>> {
-    return request.get('/admin/questions/answers', { params: { questionId } })
+  getAnswers(questionId: number, page?: number, limit?: number): Promise<ApiResponse<AnswerListResponse>> {
+    return request.get('/admin/questions/answers', { params: { questionId, page, limit } })
   },
 
   deleteAnswer(answerId: number): Promise<ApiResponse> {

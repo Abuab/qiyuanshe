@@ -51,7 +51,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="title" label="问题标题" min-width="200" />
+        <el-table-column prop="title" label="问题标题" min-width="200">
+          <template #default="{ row }">
+            <span class="question-title" @click="handleDetail(row)">{{ row.title }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="content" label="内容摘要" min-width="200">
           <template #default="{ row }">
             <span class="content-preview">{{ row.content }}</span>
@@ -69,8 +73,9 @@
             <span class="answer-count" @click="handleViewAnswers(row)">{{ row.answerCount || 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isReadonly" label="操作" width="150" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="200" fixed="right">
           <template #default="{ row }">
+            <el-button type="primary" link @click="handleDetail(row)">详情</el-button>
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
@@ -167,6 +172,10 @@ async function fetchData() {
 
 function handleCreate() {
   router.push('/question/edit')
+}
+
+function handleDetail(row: Question) {
+  router.push(`/question/detail/${row.id}`)
 }
 
 function handleEdit(row: Question) {
@@ -307,6 +316,12 @@ async function handleDeleteAnswerInList(answer: Answer) {
   background-color: #fff;
   border-radius: 8px;
   padding: 20px;
+}
+
+.question-title {
+  color: #409eff;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
 }
 
 .content-preview {
