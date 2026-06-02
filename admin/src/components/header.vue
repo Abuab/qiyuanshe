@@ -12,7 +12,7 @@
     <div class="header-right">
       <el-dropdown @command="handleCommand" trigger="click">
         <div class="user-dropdown">
-          <el-avatar :size="36" :src="userInfo?.avatar" />
+          <Avatar :src="userInfo?.avatar" :type="userInfo?.role === 'matchmaker' ? 'matchmaker' : 'user'" :size="36" />
           <span class="username">{{ userInfo?.nickname || '管理员' }}</span>
           <el-icon><ArrowDown /></el-icon>
         </div>
@@ -41,6 +41,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
+import Avatar from './Avatar.vue'
 import { ArrowDown, User, Lock, SwitchButton } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 

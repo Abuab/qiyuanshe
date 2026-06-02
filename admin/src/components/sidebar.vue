@@ -47,7 +47,7 @@
         v-if="userInfo?.role === 'super_admin'"
         index="/admin-user"
       >
-        <el-icon><Avatar /></el-icon>
+        <el-icon><AvatarIcon /></el-icon>
         <template #title>子账号管理</template>
       </el-menu-item>
 
@@ -94,13 +94,7 @@
 
     <div class="sidebar-footer">
       <div class="admin-info" v-if="!isCollapsed">
-        <el-image :src="userInfo?.avatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
-          <template #error>
-            <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
-              <el-icon :size="16"><User /></el-icon>
-            </div>
-          </template>
-        </el-image>
+        <Avatar :src="userInfo?.avatar" :type="userInfo?.role === 'matchmaker' ? 'matchmaker' : 'user'" :size="36" />
         <div class="info-text">
           <div class="nickname">{{ userInfo?.nickname || '管理员' }}</div>
           <div class="role">{{ getRoleLabel(userInfo?.role) }}</div>
@@ -126,6 +120,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
+import Avatar from './Avatar.vue'
 import {
   DataAnalysis,
   User,
@@ -136,7 +131,7 @@ import {
   Setting,
   Calendar,
   Warning,
-  Avatar,
+  Avatar as AvatarIcon,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

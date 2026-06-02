@@ -31,16 +31,7 @@
 
         <el-form-item label="头像" prop="avatar">
           <div class="upload-wrapper">
-            <el-avatar
-              v-if="formData.avatar && !avatarError"
-              :size="100"
-              :src="formData.avatar"
-              fit="cover"
-              @error="handleAvatarError"
-            />
-            <el-avatar v-else :size="100">
-              <el-icon :size="40"><User /></el-icon>
-            </el-avatar>
+            <Avatar :src="formData.avatar" type="matchmaker" :size="100" :key="avatarKey" />
             <div class="upload-actions">
               <el-button type="primary" size="small" @click="triggerUpload('avatar')">
                 上传头像
@@ -128,8 +119,9 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
+import { ArrowLeft, Picture } from '@element-plus/icons-vue'
 import { adminMatchmaker } from '../../api'
+import Avatar from '../../components/Avatar.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Matchmaker } from '../../api/matchmaker'
 
@@ -154,7 +146,7 @@ const formRef = ref<FormInstance>()
 const avatarInputRef = ref<HTMLInputElement>()
 const qrcodeInputRef = ref<HTMLInputElement>()
 const qrcodeError = ref(false)
-const avatarError = ref(false)
+const avatarKey = ref(0)
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -189,7 +181,7 @@ async function fetchData() {
     const id = Number(route.params.id)
     const res = await adminMatchmaker.detail(id)
     if (res.success && res.data) {
-      avatarError.value = false
+      avatarKey.value++
       qrcodeError.value = false
       Object.assign(formData, res.data)
     }
@@ -244,13 +236,6 @@ function triggerUpload(type: 'avatar' | 'qrcode') {
   }
 }
 
-function handleAvatarError() {
-  if (!avatarError.value) {
-    avatarError.value = true
-    ElMessage.warning('头像加载失败，请重新上传')
-  }
-}
-
 function handleQrcodeError() {
   if (!qrcodeError.value) {
     qrcodeError.value = true
@@ -265,7 +250,7 @@ async function handleAvatarChange(event: Event) {
   try {
     const url = await uploadFile(file)
     formData.avatar = url
-    avatarError.value = false
+    avatarKey.value++
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error(error)

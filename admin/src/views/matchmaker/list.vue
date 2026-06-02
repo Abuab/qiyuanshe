@@ -21,13 +21,7 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="头像" width="100">
           <template #default="{ row }">
-            <el-image :src="row.avatar" fit="cover" style="width: 60px; height: 60px; border-radius: 50%">
-              <template #error>
-                <div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
-                  <el-icon :size="28"><User /></el-icon>
-                </div>
-              </template>
-            </el-image>
+            <Avatar :src="row.avatar" type="matchmaker" :size="60" />
           </template>
         </el-table-column>
         <el-table-column prop="name" label="姓名" min-width="120" />
@@ -98,8 +92,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Top, Bottom, User } from '@element-plus/icons-vue'
+import { Plus, Top, Bottom } from '@element-plus/icons-vue'
 import { adminMatchmaker } from '../../api'
+import Avatar from '../../components/Avatar.vue'
 import type { Matchmaker } from '../../api/matchmaker'
 
 const router = useRouter()
