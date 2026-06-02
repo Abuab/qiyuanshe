@@ -18,11 +18,16 @@ app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
 
-// 全局图片加载失败兜底
+// 全局图片加载失败兜底（防止循环触发）
+const fallbackAppliedKey = '__fallback_applied__'
 const handleImageError = (e: Event) => {
-  const target = e.target as HTMLImageElement
+  const target = e.target as HTMLImageElement & { [fallbackAppliedKey]?: boolean }
   if (target && target.tagName === 'IMG') {
+    // 已经兜底过，不再处理，防止循环
+    if (target[fallbackAppliedKey]) return
+    // 已经是兜底图，不重复替换
     if (target.src.includes('default-avatar.svg')) return
+    target[fallbackAppliedKey] = true
     target.src = '/default-avatar.svg'
   }
 }

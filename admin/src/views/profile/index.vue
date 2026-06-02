@@ -11,18 +11,7 @@
             <span>头像设置</span>
           </template>
           <div class="avatar-section">
-            <el-image
-              :src="formData.avatar"
-              fit="cover"
-              style="width: 120px; height: 120px; border-radius: 50%"
-              class="profile-avatar"
-            >
-              <template #error>
-                <div style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
-                  <el-icon :size="48"><User /></el-icon>
-                </div>
-              </template>
-            </el-image>
+            <Avatar :src="formData.avatar || null" type="user" :size="120" :key="avatarKey" />
             <el-button type="primary" @click="triggerAvatarUpload" class="upload-btn">
               <el-icon><Upload /></el-icon>更换头像
             </el-button>
@@ -170,11 +159,13 @@ import { ElMessage } from 'element-plus'
 import { Upload, Check } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem, mfaApi } from '../../api'
+import Avatar from '../../components/Avatar.vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const adminStore = useAdminStore()
 const formRef = ref<FormInstance>()
 const avatarInputRef = ref<HTMLInputElement>()
+const avatarKey = ref(0)
 const submitting = ref(false)
 
 const formData = reactive({
@@ -218,6 +209,7 @@ onMounted(() => {
     formData.nickname = userInfo.nickname || ''
     formData.username = userInfo.username || ''
     formData.avatar = userInfo.avatar || ''
+    avatarKey.value++
     mfaEnabled.value = userInfo.mfaEnabled || false
     currentMfaType.value = userInfo.mfaType || 'none'
   }
@@ -235,6 +227,7 @@ async function handleAvatarChange(event: Event) {
     ElMessage.info('正在上传头像...')
     const url = await uploadFile(file)
     formData.avatar = url + '?t=' + Date.now()
+    avatarKey.value++
     ElMessage.success('头像上传成功')
   } catch (error) {
     console.error(error)
