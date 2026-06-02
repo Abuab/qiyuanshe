@@ -286,7 +286,7 @@ async function confirmProcess() {
   }
 }
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr?: string) {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString('zh-CN', {
     year: 'numeric',
