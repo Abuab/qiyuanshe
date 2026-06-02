@@ -38,7 +38,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   suffix: '',
   icon: 'DataLine',
-  color: '#FF6B9D',
+  color: '#409EFF',
   change: undefined,
   prefix: '',
 })

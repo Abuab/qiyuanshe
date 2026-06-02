@@ -332,13 +332,13 @@ onMounted(() => {
   align-items: flex-start;
 
   .add-btn {
-    background-color: #FF6B9D;
-    border-color: #FF6B9D;
+    background-color: #409EFF;
+    border-color: #409EFF;
     color: #fff;
 
     &:hover {
-      background-color: #ff5a8f;
-      border-color: #ff5a8f;
+      background-color: #66B1FF;
+      border-color: #66B1FF;
     }
   }
 }

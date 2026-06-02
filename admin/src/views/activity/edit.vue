@@ -695,13 +695,13 @@ async function uploadFile(file: File): Promise<string> {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 
   .save-btn {
-    background-color: #FF6B9D;
-    border-color: #FF6B9D;
+    background-color: #409EFF;
+    border-color: #409EFF;
     padding: 0 40px;
 
     &:hover {
-      background-color: #ff5a8f;
-      border-color: #ff5a8f;
+      background-color: #66B1FF;
+      border-color: #66B1FF;
     }
   }
 }

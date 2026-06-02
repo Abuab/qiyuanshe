@@ -21,16 +21,16 @@ body {
 }
 
 a {
-  color: #FF6B9D;
+  color: #409EFF;
   text-decoration: none;
 
   &:hover {
-    color: #FF5B8D;
+    color: #66B1FF;
   }
 }
 
 .text-primary {
-  color: #FF6B9D;
+  color: #409EFF;
 }
 
 .text-success {
@@ -50,7 +50,7 @@ a {
 }
 
 .bg-primary {
-  background-color: #FF6B9D;
+  background-color: #409EFF;
 }
 
 .bg-success {
@@ -226,18 +226,18 @@ a {
 
 .el-button {
   &.el-button--primary {
-    background-color: #FF6B9D;
-    border-color: #FF6B9D;
+    background-color: #409EFF;
+    border-color: #409EFF;
 
     &:hover,
     &:focus {
-      background-color: #FF5B8D;
-      border-color: #FF5B8D;
+      background-color: #66B1FF;
+      border-color: #66B1FF;
     }
 
     &:active {
-      background-color: #FF4B7D;
-      border-color: #FF4B7D;
+      background-color: #3A8EE6;
+      border-color: #3A8EE6;
     }
 
     &.is-disabled {
@@ -251,7 +251,7 @@ a {
 .el-input {
   .el-input__wrapper {
     &.is-focus {
-      box-shadow: 0 0 0 1px #FF6B9D inset;
+      box-shadow: 0 0 0 1px #409EFF inset;
     }
   }
 }
@@ -259,7 +259,7 @@ a {
 .el-select {
   .el-input.is-focus {
     .el-input__wrapper {
-      box-shadow: 0 0 0 1px #FF6B9D inset !important;
+      box-shadow: 0 0 0 1px #409EFF inset !important;
     }
   }
 }
