@@ -1,7 +1,10 @@
 import { Controller, Post, Body } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
 import { CaptchaService } from './captcha.service'
 import { adminJwtConfig } from '../config/jwt'
+import { User } from '../entities/User'
 
 interface LoginDto {
   username: string
@@ -22,6 +25,8 @@ export class AdminLoginController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly captchaService: CaptchaService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   @Post('login')
@@ -29,7 +34,7 @@ export class AdminLoginController {
     return this.doLogin(dto)
   }
 
-  private doLogin(dto: LoginDto) {
+  private async doLogin(dto: LoginDto) {
     const { username, password, captcha, captchaKey } = dto
 
     if (!captcha) {
@@ -69,12 +74,14 @@ export class AdminLoginController {
       expiresIn: adminJwtConfig.expiresIn,
     })
 
+    const dbUser = await this.userRepository.findOne({ where: { id: 1 } })
+
     const user = {
       id: 1,
       username: 'admin',
-      nickname: '管理员',
+      nickname: dbUser?.nickname || '管理员',
       role: 'admin',
-      avatar: '',
+      avatar: dbUser?.avatar || '',
     }
 
     const permissions = ['user:list', 'user:edit', 'matchmaker:list', 'matchmaker:edit', 'question:list', 'question:edit', 'audit:list', 'audit:edit', 'payment:list', 'dashboard']

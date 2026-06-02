@@ -88,7 +88,7 @@
         <el-table-column prop="sortOrder" label="排序" width="80" />
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="primary" link size="small" @click="handleEdit(row)">编辑</el-button>
             <el-switch
               v-model="row.isActive"
               :active-value="1"
@@ -96,9 +96,9 @@
               size="small"
               @change="(val: number) => handleToggleActive(row, val)"
             />
-            <el-button type="info" size="small" @click="handleEnd(row)" :disabled="row.status !== 1">结束</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-            <el-button type="success" size="small" @click="handleViewSignups(row)">报名</el-button>
+            <el-button type="warning" link size="small" @click="handleEnd(row)" :disabled="row.status !== 1">结束</el-button>
+            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+            <el-button type="success" link size="small" @click="handleViewSignups(row)">报名</el-button>
           </template>
         </el-table-column>
       </el-table>
