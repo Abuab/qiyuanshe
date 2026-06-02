@@ -9,6 +9,8 @@ export interface AdminUser {
   nickname: string
   role: string
   avatar?: string
+  mfaEnabled?: boolean
+  mfaType?: string
 }
 
 export const useAdminStore = defineStore('admin', () => {

@@ -280,6 +280,8 @@ onMounted(() => {
     formData.nickname = userInfo.nickname || ''
     formData.username = userInfo.username || ''
     formData.avatar = userInfo.avatar || ''
+    mfaEnabled.value = userInfo.mfaEnabled || false
+    currentMfaType.value = userInfo.mfaType || 'none'
   }
 })
 
@@ -393,6 +395,7 @@ async function handleVerifyTotp() {
       ElMessage.success('TOTP 绑定成功')
       mfaEnabled.value = true
       currentMfaType.value = 'totp'
+      adminStore.updateUserInfo({ mfaEnabled: true, mfaType: 'totp' })
       qrCodeUrl.value = ''
       totpCode.value = ''
     } else {
@@ -448,6 +451,7 @@ async function handleVerifySms() {
       ElMessage.success('短信验证已启用')
       mfaEnabled.value = true
       currentMfaType.value = 'sms'
+      adminStore.updateUserInfo({ mfaEnabled: true, mfaType: 'sms' })
       smsSent.value = false
       smsCode.value = ''
     } else {
@@ -472,6 +476,7 @@ async function handleDisableMfa() {
       ElMessage.success('双因素认证已禁用')
       mfaEnabled.value = false
       currentMfaType.value = 'none'
+      adminStore.updateUserInfo({ mfaEnabled: false, mfaType: 'none' })
       disableCode.value = ''
     } else {
       ElMessage.error(res.message || '禁用失败')

@@ -86,6 +86,8 @@ export class AdminLoginController {
       nickname: dbUser.nickname || '管理员',
       role: 'admin',
       avatar: dbUser.avatar || '',
+      mfaEnabled: dbUser.isMfaEnabled || false,
+      mfaType: dbUser.mfaType || 'none',
     }
 
     const permissions = ['user:list', 'user:edit', 'matchmaker:list', 'matchmaker:edit', 'question:list', 'question:edit', 'audit:list', 'audit:edit', 'payment:list', 'dashboard']
@@ -161,6 +163,8 @@ export class AdminLoginController {
       nickname: dbUser?.nickname || '管理员',
       role: 'admin',
       avatar: dbUser?.avatar || '',
+      mfaEnabled: dbUser?.isMfaEnabled || false,
+      mfaType: dbUser?.mfaType || 'none',
     }
 
     const permissions = ['user:list', 'user:edit', 'matchmaker:list', 'matchmaker:edit', 'question:list', 'question:edit', 'audit:list', 'audit:edit', 'payment:list', 'dashboard']
