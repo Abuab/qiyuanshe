@@ -23,7 +23,13 @@
           <template #default="{ row }">
             <div class="answer-list" v-if="row.answers && row.answers.length > 0">
               <div class="answer-item" v-for="answer in row.answers" :key="answer.id">
-                <el-avatar :size="40" :src="answer.userAvatar" class="answer-avatar" />
+                <el-image :src="answer.userAvatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%" class="answer-avatar">
+                  <template #error>
+                    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                      <el-icon :size="20"><User /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
                 <div class="answer-content">
                   <div class="answer-header">
                     <span class="answer-nickname">{{ answer.userNickname }}</span>

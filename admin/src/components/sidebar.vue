@@ -94,7 +94,13 @@
 
     <div class="sidebar-footer">
       <div class="admin-info" v-if="!isCollapsed">
-        <el-avatar :size="32" :src="userInfo?.avatar" />
+        <el-image :src="userInfo?.avatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
+          <template #error>
+            <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+              <el-icon :size="16"><User /></el-icon>
+            </div>
+          </template>
+        </el-image>
         <div class="info-text">
           <div class="nickname">{{ userInfo?.nickname || '管理员' }}</div>
           <div class="role">{{ getRoleLabel(userInfo?.role) }}</div>

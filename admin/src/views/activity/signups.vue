@@ -29,9 +29,13 @@
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="头像" width="80">
           <template #default="{ row }">
-            <el-avatar :size="40" :src="row.userAvatar">
-              <el-icon><User /></el-icon>
-            </el-avatar>
+            <el-image :src="row.userAvatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%">
+              <template #error>
+                <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                  <el-icon :size="20"><User /></el-icon>
+                </div>
+              </template>
+            </el-image>
           </template>
         </el-table-column>
         <el-table-column prop="nickname" label="昵称" width="150" />

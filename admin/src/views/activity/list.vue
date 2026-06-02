@@ -50,7 +50,13 @@
               fit="cover"
               style="width: 60px; height: 60px; border-radius: 4px"
               :preview-src-list="[row.coverImage]"
-            />
+            >
+              <template #error>
+                <div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 4px">
+                  <el-icon :size="24"><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
           </template>
         </el-table-column>
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
@@ -122,7 +128,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Picture } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminActivity } from '../../api'
 import type { Activity } from '../../api/activity'

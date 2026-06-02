@@ -10,7 +10,13 @@
       <!-- 顶部信息卡片 -->
       <el-card class="header-card">
         <div class="user-header">
-          <el-avatar :size="100" :src="user.avatar || defaultAvatar" />
+          <el-image :src="user.avatar" fit="cover" style="width: 100px; height: 100px; border-radius: 50%">
+            <template #error>
+              <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                <el-icon :size="48"><User /></el-icon>
+              </div>
+            </template>
+          </el-image>
           <div class="header-info">
             <h2 class="user-name">{{ user.nickname }}</h2>
             <div class="user-tags">
@@ -99,7 +105,13 @@
                 :initial-index="user.photos.indexOf(photo)"
                 fit="cover"
                 class="photo-item"
-              />
+              >
+                <template #error>
+                  <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 8px">
+                    <el-icon :size="32"><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
             </div>
             <el-empty v-else description="暂无照片" />
           </el-tab-pane>

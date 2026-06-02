@@ -186,10 +186,22 @@
           <template #default="{ row }">
             <el-popover placement="right" :width="200" trigger="hover">
               <template #reference>
-                <el-avatar :size="40" :src="row.avatar || defaultAvatar" />
+                <el-image :src="row.avatar" fit="cover" style="width: 40px; height: 40px; border-radius: 50%">
+                  <template #error>
+                    <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                      <el-icon :size="20"><User /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
               </template>
               <div class="avatar-preview">
-                <el-avatar :size="120" :src="row.avatar || defaultAvatar" />
+                <el-image :src="row.avatar" fit="cover" style="width: 120px; height: 120px; border-radius: 50%">
+                  <template #error>
+                    <div style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                      <el-icon :size="60"><User /></el-icon>
+                    </div>
+                  </template>
+                </el-image>
                 <p>{{ row.nickname }}</p>
               </div>
             </el-popover>
@@ -473,7 +485,6 @@ const exportLoading = ref(false)
 const tableData = ref<User[]>([])
 const selectedRows = ref<User[]>([])
 const tableRef = ref()
-const defaultAvatar = '/static/default-avatar.png'
 
 // 字典数据
 const dictData = reactive<Record<string, string[]>>({})

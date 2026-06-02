@@ -11,12 +11,18 @@
             <span>头像设置</span>
           </template>
           <div class="avatar-section">
-            <el-avatar
-              :size="120"
+            <el-image
               :src="formData.avatar"
+              fit="cover"
+              style="width: 120px; height: 120px; border-radius: 50%"
               class="profile-avatar"
-              @error="() => ElMessage.error('头像加载失败')"
-            />
+            >
+              <template #error>
+                <div style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                  <el-icon :size="48"><User /></el-icon>
+                </div>
+              </template>
+            </el-image>
             <el-button type="primary" @click="triggerAvatarUpload" class="upload-btn">
               <el-icon><Upload /></el-icon>更换头像
             </el-button>
