@@ -30,6 +30,7 @@ import { SystemModule } from './system/system.module'
 import { ActivityModule } from './activity/activity.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
+import { RedisService } from './common/redis.service'
 
 @Global()
 @Module({
@@ -70,6 +71,7 @@ import { AdminModule } from './admin/admin.module'
     ActivityModule,
   ],
   controllers: [HealthController],
-  exports: [TypeOrmModule, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule],
+  providers: [RedisService],
+  exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule],
 })
 export class AppModule {}

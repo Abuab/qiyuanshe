@@ -22,6 +22,8 @@ import { AdminSystemController } from './system.controller'
 import { AdminSystemService } from './system.service'
 import { AdminProfileController } from './profile.controller'
 import { AdminProfileService } from './profile.service'
+import { MfaController } from './mfa.controller'
+import { MfaService } from './mfa.service'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { User } from '../entities/User'
@@ -63,6 +65,7 @@ import { SystemConfig } from '../entities/SystemConfig'
     UploadController,
     AdminSystemController,
     AdminProfileController,
+    MfaController,
   ],
   providers: [
     AdminUserService,
@@ -74,6 +77,7 @@ import { SystemConfig } from '../entities/SystemConfig'
     CaptchaService,
     AdminSystemService,
     AdminProfileService,
+    MfaService,
     AdminJwtStrategy,
     AdminJwtAuthGuard,
   ],

@@ -7,6 +7,7 @@
       </div>
 
       <el-form
+        v-if="!needMfa"
         ref="formRef"
         :model="form"
         :rules="rules"
@@ -74,6 +75,51 @@
         </el-form-item>
       </el-form>
 
+      <div v-else class="mfa-step">
+        <h3 class="mfa-title">双因素认证</h3>
+        <p class="mfa-desc">
+          <template v-if="mfaType === 'totp'">请打开 Microsoft Authenticator 查看 6 位验证码</template>
+          <template v-if="mfaType === 'sms'">验证码已发送至手机尾号 {{ phoneMask }}</template>
+        </p>
+        <el-form @submit.prevent="handleMfaSubmit">
+          <el-form-item>
+            <el-input
+              v-model="mfaCode"
+              maxlength="6"
+              placeholder="请输入6位验证码"
+              size="large"
+              @keyup.enter="handleMfaSubmit"
+            >
+              <template v-if="mfaType === 'sms'" #append>
+                <el-button
+                  :disabled="countdown > 0"
+                  :loading="sendingSms"
+                  @click="resendSms"
+                >
+                  {{ countdown > 0 ? countdown + 's' : '重发' }}
+                </el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button
+              type="primary"
+              size="large"
+              :loading="mfaLoading"
+              class="login-button"
+              @click="handleMfaSubmit"
+            >
+              {{ mfaLoading ? '验证中...' : '验证并登录' }}
+            </el-button>
+          </el-form-item>
+          <el-form-item>
+            <el-button link class="back-button" @click="handleBackToLogin">
+              返回登录
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
       <div class="login-footer">
         <p>默认账号: admin / 123456</p>
       </div>
@@ -82,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useAdminStore } from '../store/admin'
 import { User, Lock, CircleCheck, View, Hide } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -101,6 +147,16 @@ const loading = ref(false)
 const showPassword = ref(false)
 const captchaSvg = ref('')
 const captchaKey = ref('')
+
+const needMfa = ref(false)
+const mfaType = ref('')
+const phoneMask = ref('')
+const tempToken = ref('')
+const mfaCode = ref('')
+const mfaLoading = ref(false)
+const countdown = ref(0)
+const sendingSms = ref(false)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
 
 const form = reactive<LoginForm>({
   username: '',
@@ -133,6 +189,12 @@ onMounted(() => {
   }
 })
 
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+  }
+})
+
 async function refreshCaptcha() {
   try {
     const response = await fetch('/api/admin/captcha')
@@ -157,12 +219,76 @@ async function handleLogin() {
   loading.value = true
 
   try {
-    await adminStore.login(form.username, form.password, form.captcha, form.rememberMe, captchaKey.value)
+    const result = await adminStore.login(form.username, form.password, form.captcha, form.rememberMe, captchaKey.value)
+    if (result.needMfa) {
+      needMfa.value = true
+      mfaType.value = result.mfaType || ''
+      phoneMask.value = result.phoneMask || ''
+      tempToken.value = result.tempToken || ''
+    }
   } catch (error: any) {
     ElMessage.error(error.message || '网络错误，请稍后重试')
     refreshCaptcha()
   } finally {
     loading.value = false
+  }
+}
+
+function handleBackToLogin() {
+  needMfa.value = false
+  mfaCode.value = ''
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+  countdown.value = 0
+}
+
+async function handleMfaSubmit() {
+  if (!mfaCode.value) {
+    ElMessage.warning('请输入验证码')
+    return
+  }
+
+  mfaLoading.value = true
+  try {
+    await adminStore.mfaLoginVerify(tempToken.value, mfaCode.value)
+  } catch (error: any) {
+    ElMessage.error(error.message || '验证失败')
+  } finally {
+    mfaLoading.value = false
+  }
+}
+
+async function resendSms() {
+  sendingSms.value = true
+  try {
+    const response = await fetch('/api/admin/mfa/sms/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tempToken.value}`,
+      },
+      body: JSON.stringify({ phone: '' }),
+    })
+    const result = await response.json()
+    if (result.success || result.code === 200) {
+      ElMessage.success('验证码已重新发送')
+      countdown.value = 60
+      countdownTimer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          if (countdownTimer) {
+            clearInterval(countdownTimer)
+            countdownTimer = null
+          }
+        }
+      }, 1000)
+    }
+  } catch {
+    ElMessage.error('重发失败')
+  } finally {
+    sendingSms.value = false
   }
 }
 </script>
@@ -177,7 +303,7 @@ async function handleLogin() {
 }
 
 .login-card {
-  width: 400px;
+  width: 420px;
   background-color: #fff;
   border-radius: 16px;
   padding: 40px;
@@ -255,6 +381,11 @@ async function handleLogin() {
   }
 }
 
+.back-button {
+  width: 100%;
+  color: #999;
+}
+
 .login-footer {
   text-align: center;
   margin-top: 24px;
@@ -263,6 +394,31 @@ async function handleLogin() {
     font-size: 12px;
     color: #999;
     margin: 0;
+  }
+}
+
+.mfa-step {
+  text-align: center;
+
+  .mfa-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 12px;
+  }
+
+  .mfa-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 24px;
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 20px;
+  }
+
+  :deep(.el-input-group__append) {
+    padding: 0;
   }
 }
 </style>

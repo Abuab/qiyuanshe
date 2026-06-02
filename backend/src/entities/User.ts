@@ -104,6 +104,15 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   lastLoginAt: Date
 
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  mfaSecret: string
+
+  @Column({ type: 'boolean', default: false })
+  isMfaEnabled: boolean
+
+  @Column({ type: 'varchar', length: 10, default: 'none' })
+  mfaType: string
+
   @CreateDateColumn()
   createdAt: Date
 

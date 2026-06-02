@@ -47,6 +47,15 @@ export const useAdminStore = defineStore('admin', () => {
     const data = result.data || result
 
     if (data.success) {
+      if (data.needMfa) {
+        return {
+          needMfa: true,
+          mfaType: data.mfaType,
+          phoneMask: data.phoneMask,
+          tempToken: data.tempToken,
+        } as MfaRequired
+      }
+
       token.value = data.token
       userInfo.value = data.user
       permissions.value = data.permissions || []
@@ -62,8 +71,39 @@ export const useAdminStore = defineStore('admin', () => {
 
       const redirect = router.currentRoute.value.query.redirect as string
       router.push(redirect || '/dashboard')
+
+      return { needMfa: false } as MfaRequired
     } else {
       const errorMsg = data.message || '登录失败'
+      ElMessage.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+  }
+
+  async function mfaLoginVerify(tempToken: string, code: string) {
+    const response = await fetch('/api/admin/mfa/login-verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken, code }),
+    })
+
+    const result = await response.json()
+    const data = result.data || result
+
+    if (data.success) {
+      token.value = data.token
+      userInfo.value = data.user
+      permissions.value = data.permissions || []
+
+      localStorage.setItem('admin_token', data.token)
+      localStorage.setItem('admin_user', JSON.stringify(data.user))
+
+      ElMessage.success('登录成功')
+
+      const redirect = router.currentRoute.value.query.redirect as string
+      router.push(redirect || '/dashboard')
+    } else {
+      const errorMsg = data.message || '验证失败'
       ElMessage.error(errorMsg)
       throw new Error(errorMsg)
     }
@@ -105,9 +145,17 @@ export const useAdminStore = defineStore('admin', () => {
     isLoggedIn,
     initApp,
     login,
+    mfaLoginVerify,
     logout,
     toggleSidebar,
     hasPermission,
     updateUserInfo,
   }
 })
+
+export interface MfaRequired {
+  needMfa: boolean
+  mfaType?: string
+  phoneMask?: string
+  tempToken?: string
+}

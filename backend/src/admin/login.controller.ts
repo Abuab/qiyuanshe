@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
 import { CaptchaService } from './captcha.service'
+import { MfaService } from './mfa.service'
 import { adminJwtConfig } from '../config/jwt'
 import { User } from '../entities/User'
 
@@ -11,6 +12,11 @@ interface LoginDto {
   password: string
   captcha: string
   captchaKey?: string
+}
+
+interface MfaLoginVerifyDto {
+  tempToken: string
+  code: string
 }
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
@@ -25,6 +31,7 @@ export class AdminLoginController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly captchaService: CaptchaService,
+    private readonly mfaService: MfaService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -32,6 +39,58 @@ export class AdminLoginController {
   @Post('login')
   async login(@Body() dto: LoginDto) {
     return this.doLogin(dto)
+  }
+
+  @Post('mfa/login-verify')
+  async mfaLoginVerify(@Body() dto: MfaLoginVerifyDto) {
+    return this.doMfaLoginVerify(dto)
+  }
+
+  private async doMfaLoginVerify(dto: MfaLoginVerifyDto) {
+    const { tempToken, code } = dto
+
+    let payload: any
+    try {
+      payload = this.jwtService.verify(tempToken, {
+        secret: process.env.JWT_MFA_SECRET || adminJwtConfig.secret,
+      })
+    } catch {
+      return { success: false, message: '临时令牌已过期，请重新登录' }
+    }
+
+    if (payload.type !== 'mfa_temp') {
+      return { success: false, message: '无效的令牌类型' }
+    }
+
+    const valid = await this.mfaService.verifyLoginMfa(payload.userId, code)
+    if (!valid) {
+      return { success: false, message: '验证码错误' }
+    }
+
+    const dbUser = await this.userRepository.findOne({ where: { id: payload.userId } })
+    if (!dbUser) {
+      return { success: false, message: '用户不存在' }
+    }
+
+    const token = this.jwtService.sign(
+      { sub: payload.userId, username: 'admin', role: 'admin', type: 'admin' },
+      {
+        secret: adminJwtConfig.secret,
+        expiresIn: adminJwtConfig.expiresIn,
+      },
+    )
+
+    const user = {
+      id: payload.userId,
+      username: 'admin',
+      nickname: dbUser.nickname || '管理员',
+      role: 'admin',
+      avatar: dbUser.avatar || '',
+    }
+
+    const permissions = ['user:list', 'user:edit', 'matchmaker:list', 'matchmaker:edit', 'question:list', 'question:edit', 'audit:list', 'audit:edit', 'payment:list', 'dashboard']
+
+    return { success: true, token, user, permissions }
   }
 
   private async doLogin(dto: LoginDto) {
@@ -51,7 +110,7 @@ export class AdminLoginController {
     }
 
     const isValid = this.captchaService.verifyCaptcha(captchaKey, captcha)
-    
+
     if (!isValid) {
       return { success: false, message: '验证码错误' }
     }
@@ -68,16 +127,36 @@ export class AdminLoginController {
 
     this.loginAttempts.delete(username)
 
-    const payload = { sub: 1, username: 'admin', role: 'admin', type: 'admin' }
-    const token = this.jwtService.sign(payload, {
-      secret: adminJwtConfig.secret,
-      expiresIn: adminJwtConfig.expiresIn,
-    })
+    const adminId = 1
+    const dbUser = await this.userRepository.findOne({ where: { id: adminId } })
 
-    const dbUser = await this.userRepository.findOne({ where: { id: 1 } })
+    if (dbUser?.isMfaEnabled) {
+      const tempToken = this.jwtService.sign(
+        { userId: adminId, type: 'mfa_temp' },
+        {
+          secret: process.env.JWT_MFA_SECRET || adminJwtConfig.secret,
+          expiresIn: '5m',
+        },
+      )
+      return {
+        success: true,
+        needMfa: true,
+        mfaType: dbUser.mfaType,
+        phoneMask: dbUser.phone ? `****${dbUser.phone.slice(-4)}` : '',
+        tempToken,
+      }
+    }
+
+    const token = this.jwtService.sign(
+      { sub: adminId, username: 'admin', role: 'admin', type: 'admin' },
+      {
+        secret: adminJwtConfig.secret,
+        expiresIn: adminJwtConfig.expiresIn,
+      },
+    )
 
     const user = {
-      id: 1,
+      id: adminId,
       username: 'admin',
       nickname: dbUser?.nickname || '管理员',
       role: 'admin',
@@ -89,4 +168,3 @@ export class AdminLoginController {
     return { success: true, token, user, permissions }
   }
 }
-
