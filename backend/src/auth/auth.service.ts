@@ -45,6 +45,14 @@ export class AuthService {
       throw new UnauthorizedException('微信登录失败，无效的code')
     }
 
+    // 先查该openid是否存在（包括已删除的），如果已删除则禁止登录
+    const existingUser = await this.userRepository.findOne({
+      where: { openid: session.openid },
+    })
+    if (existingUser && existingUser.isDeleted === 1) {
+      throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
+    }
+
     let user = await this.userRepository.findOne({
       where: { openid: session.openid, isDeleted: 0 },
     })
@@ -79,6 +87,14 @@ export class AuthService {
 
     if (!phoneData || !phoneData.purePhoneNumber) {
       throw new UnauthorizedException('手机号解密失败')
+    }
+
+    // 先查该手机号是否存在（包括已删除的），如果已删除则禁止登录
+    const existingUser = await this.userRepository.findOne({
+      where: { phone: phoneData.purePhoneNumber },
+    })
+    if (existingUser && existingUser.isDeleted === 1) {
+      throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
     }
 
     let user = await this.userRepository.findOne({

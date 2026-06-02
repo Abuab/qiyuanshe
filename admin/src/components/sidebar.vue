@@ -51,6 +51,11 @@
         <el-menu-item index="/audit/list">待审核列表</el-menu-item>
       </el-sub-menu>
 
+      <el-menu-item index="/report">
+        <el-icon><Warning /></el-icon>
+        <template #title>举报管理</template>
+      </el-menu-item>
+
       <el-sub-menu index="/payment">
         <template #title>
           <el-icon><Tickets /></el-icon>
@@ -116,6 +121,7 @@ import {
   Tickets,
   Setting,
   Calendar,
+  Warning,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

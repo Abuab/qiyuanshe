@@ -10,13 +10,20 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { UserService } from './user.service'
 import { FilterUsersDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
+import { Report, ReportType, ReportReason } from '../entities/Report'
+import { Result } from '../common/result'
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    @InjectRepository(Report) private reportRepo: Repository<Report>,
+  ) {}
 
   @Get('recommend')
   async findRecommend(
@@ -84,5 +91,23 @@ export class UserController {
     @Query('limit') limit: number = 20,
   ) {
     return this.userService.getFollowing(userId, page, limit)
+  }
+
+  @Post('reports')
+  @UseGuards(JwtAuthGuard)
+  async createReport(
+    @Body() body: { targetId: number; type: string; reason: string; description?: string; evidence?: string },
+    @Request() req: any,
+  ) {
+    const report = this.reportRepo.create({
+      reporterId: req.user.userId,
+      targetId: body.targetId,
+      type: body.type as ReportType,
+      reason: body.reason as ReportReason,
+      description: body.description,
+      evidence: body.evidence,
+    })
+    await this.reportRepo.save(report)
+    return Result.success(null, '举报已提交')
   }
 }

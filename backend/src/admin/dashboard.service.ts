@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Raw } from 'typeorm'
+import { Repository, Raw, Not } from 'typeorm'
 import { User } from '../entities/User'
 import { VipOrder } from '../entities/VipOrder'
 import { Matchmaker } from '../entities/Matchmaker'
@@ -35,9 +35,9 @@ export class AdminDashboardService {
       yesterdayUsers,
       yesterdayRevenue,
     ] = await Promise.all([
-      this.userRepository.count(),
+      this.userRepository.count({ where: { isDeleted: 0, id: Not(1) } }),
       this.getTodayNewUsers(),
-      this.userRepository.count({ where: { isVip: 1 } }),
+      this.userRepository.count({ where: { isVip: 1, isDeleted: 0, id: Not(1) } }),
       this.orderRepository.count(),
       this.getTodayRevenue(),
       this.auditLogRepository.count(),
@@ -90,6 +90,8 @@ export class AdminDashboardService {
     const users = await this.userRepository.find({
       where: {
         createdAt: Raw(alias => `${alias} >= :startDate`, { startDate }),
+        isDeleted: 0,
+        id: Not(1),
       },
       select: ['createdAt', 'gender'],
     })
@@ -114,9 +116,9 @@ export class AdminDashboardService {
 
   async getGenderDistribution() {
     const [maleCount, femaleCount, unknownCount] = await Promise.all([
-      this.userRepository.count({ where: { gender: 1 } }),
-      this.userRepository.count({ where: { gender: 2 } }),
-      this.userRepository.count({ where: { gender: 0 } }),
+      this.userRepository.count({ where: { gender: 1, isDeleted: 0, id: Not(1) } }),
+      this.userRepository.count({ where: { gender: 2, isDeleted: 0, id: Not(1) } }),
+      this.userRepository.count({ where: { gender: 0, isDeleted: 0, id: Not(1) } }),
     ])
 
     return [
@@ -132,7 +134,7 @@ export class AdminDashboardService {
 
     const users = await this.userRepository.find({
       select: ['birthYear'],
-      where: { birthYear: Raw(alias => `${alias} IS NOT NULL`) },
+      where: { birthYear: Raw(alias => `${alias} IS NOT NULL`), isDeleted: 0, id: Not(1) },
     })
 
     const ageGroups = {
@@ -207,9 +209,11 @@ export class AdminDashboardService {
 
   async getFunnelData() {
     const [totalUsers, completedProfile, vipUsers] = await Promise.all([
-      this.userRepository.count(),
-      this.userRepository.count({ where: { avatar: Raw(alias => `${alias} IS NOT NULL AND ${alias} != ''`) } }),
-      this.userRepository.count({ where: { isVip: 1 } }),
+      this.userRepository.count({ where: { isDeleted: 0, id: Not(1) } }),
+      this.userRepository.count({
+        where: { avatar: Raw(alias => `${alias} IS NOT NULL AND ${alias} != ''`), isDeleted: 0, id: Not(1) },
+      }),
+      this.userRepository.count({ where: { isVip: 1, isDeleted: 0, id: Not(1) } }),
     ])
 
     return [
@@ -227,6 +231,8 @@ export class AdminDashboardService {
     return this.userRepository.count({
       where: {
         createdAt: Raw(alias => `${alias} >= :today`, { today }),
+        isDeleted: 0,
+        id: Not(1),
       },
     })
   }
@@ -241,6 +247,8 @@ export class AdminDashboardService {
     return this.userRepository.count({
       where: {
         createdAt: Raw(alias => `${alias} >= :yesterday AND ${alias} < :today`, { yesterday, today }),
+        isDeleted: 0,
+        id: Not(1),
       },
     })
   }

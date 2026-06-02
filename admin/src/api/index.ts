@@ -8,6 +8,8 @@ export * from './matchmaker'
 export * from './question'
 export * from './activity'
 export { mfaApi } from './system'
+export * from './notice'
+export * from './report'
 
 export interface ApiResponse<T = any> {
   success: boolean

@@ -1,0 +1,56 @@
+import { Controller, Get, Put, Param, Body, Query, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { AdminJwtAuthGuard } from './admin-jwt.guard'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { Report } from '../entities/Report'
+import { User } from '../entities/User'
+import { Result } from '../common/result'
+
+@Controller('admin/reports')
+@UseGuards(AdminJwtAuthGuard)
+export class AdminReportController {
+  constructor(
+    @InjectRepository(Report) private repo: Repository<Report>,
+    @InjectRepository(User) private userRepo: Repository<User>,
+  ) {}
+
+  @Get()
+  async list(@Query() q: any) {
+    const page = parseInt(q.page) || 1
+    const limit = parseInt(q.limit) || 20
+    const skip = (page - 1) * limit
+    const qb = this.repo.createQueryBuilder('report')
+    if (q.status !== undefined && q.status !== '') qb.andWhere('report.status = :status', { status: q.status })
+    if (q.type) qb.andWhere('report.type = :type', { type: q.type })
+    if (q.reason) qb.andWhere('report.reason = :reason', { reason: q.reason })
+    qb.orderBy('report.createdAt', 'DESC').skip(skip).take(limit)
+    const [list, total] = await qb.getManyAndCount()
+    return Result.success({ list, total, page, limit })
+  }
+
+  @Get(':id')
+  async detail(@Param('id', ParseIntPipe) id: number) {
+    return Result.success(await this.repo.findOne({ where: { id } }))
+  }
+
+  @Put(':id')
+  async process(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: number; result?: string; remark?: string },
+  ) {
+    await this.repo.update(id, {
+      status: body.status,
+      result: body.result,
+      remark: body.remark,
+    })
+
+    if (body.result === 'disable') {
+      const report = await this.repo.findOne({ where: { id } })
+      if (report) {
+        await this.userRepo.update(report.targetId, { status: 2 })
+      }
+    }
+
+    return Result.success(null, '处理成功')
+  }
+}
