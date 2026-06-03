@@ -181,25 +181,37 @@ defineExpose({
 .btn-agree {
   width: 100%;
   height: 88rpx;
-  line-height: 88rpx;
-  background-color: var(--primary);
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB0 100%);
   color: #fff;
   font-size: 32rpx;
   border-radius: 44rpx;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    border: none;
+  }
 
   &:active {
-    background-color: var(--primary-light);
+    opacity: 0.9;
   }
 }
 
 .btn-disagree {
   width: 100%;
   height: 88rpx;
-  line-height: 88rpx;
   background-color: transparent;
   color: var(--text-secondary);
   font-size: 28rpx;
   border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::after {
+    border: none;
+  }
 }
 </style>
