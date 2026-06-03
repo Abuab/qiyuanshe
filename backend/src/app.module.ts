@@ -35,6 +35,7 @@ import { ChatModule } from './chat/chat.module'
 import { AuditModule } from './audit/audit.module'
 import { SystemModule } from './system/system.module'
 import { ActivityModule } from './activity/activity.module'
+import { UploadModule } from './upload/upload.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { RedisService } from './common/redis.service'
@@ -83,6 +84,7 @@ import { RedisService } from './common/redis.service'
     AdminModule,
     SystemModule,
     ActivityModule,
+    UploadModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],

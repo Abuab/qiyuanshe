@@ -84,17 +84,22 @@ const request = <T = any>(options: RequestOptions): Promise<T> => {
           return
         }
 
-        const result = response.data as ResponseData
+        const result = response.data as any
 
-        if (result.code === 0 || result.code === 200) {
-          resolve(result.data as T)
+        // 兼容多种后端响应格式
+        // NestJS Result.success(): { code: 200, data: ... }
+        // 业务层直接返回: { code: 0, data: ... }
+        // 不带code但有success: { success: true, data: ... }
+        const success = result.code === 0 || result.code === 200 || result.success === true
+        if (success) {
+          resolve((result.data !== undefined ? result.data : result) as T)
         } else {
           uni.showToast({
-            title: result.msg || '请求失败',
+            title: result.msg || result.message || '请求失败',
             icon: 'none',
             duration: 2000
           })
-          reject(new Error(result.msg || 'Request Failed'))
+          reject(new Error(result.msg || result.message || 'Request Failed'))
         }
       },
       fail: (err: any) => {

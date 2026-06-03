@@ -278,11 +278,8 @@ async function fetchActivityDetail(id: number) {
 }
 
 function handleShare() {
-  if (!activity.value) return
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ['shareAppMessage', 'shareTimeline'],
-  })
+  // 微信小程序通过右上角菜单分享，此处仅提示
+  uni.showToast({ title: '请点击右上角分享', icon: 'none' })
 }
 
 function showMatchmakerPopup() {
@@ -314,21 +311,17 @@ async function submitSignup() {
   }
 
   try {
-    const result: any = await request({
+    await request({
       url: `/activities/${activity.value?.id}/signup`,
       method: 'POST',
       data: signupForm.value,
     })
 
-    if (result && result.code === 200) {
-      uni.showToast({ title: '报名成功', icon: 'success' })
-      closeSignupPopup()
-      // 刷新页面数据
-      if (activity.value) {
-        fetchActivityDetail(activity.value.id)
-      }
-    } else {
-      uni.showToast({ title: '报名失败', icon: 'none' })
+    uni.showToast({ title: '报名成功', icon: 'success' })
+    closeSignupPopup()
+    // 刷新页面数据
+    if (activity.value) {
+      fetchActivityDetail(activity.value.id)
     }
   } catch (error) {
     console.error('报名失败:', error)

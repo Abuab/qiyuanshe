@@ -104,8 +104,9 @@ onMounted(() => {
   updateCurrentTab()
   loadUnreadCount()
 
-  const systemInfo = uni.getSystemInfoSync()
-  safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
+  // 使用新版 API 获取安全区域信息
+  const windowInfo = uni.getWindowInfo()
+  safeAreaBottom.value = windowInfo.safeAreaInsets?.bottom || 0
 })
 
 onShow(() => {

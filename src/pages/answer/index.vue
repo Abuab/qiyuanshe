@@ -62,6 +62,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import request, { getBaseUrl } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -71,6 +72,15 @@ const answerContent = ref('')
 const selectedPhotos = ref<string[]>([])
 const uploadedPhotoUrls = ref<string[]>([])
 const submitting = ref(false)
+
+onLoad((options: any) => {
+  if (options.questionId) {
+    questionId.value = parseInt(options.questionId)
+  }
+  if (options.title) {
+    questionTitle.value = decodeURIComponent(options.title)
+  }
+})
 
 const wordCount = computed(() => {
   return answerContent.value.length
@@ -123,7 +133,9 @@ const uploadImage = (filePath: string): Promise<{ url: string }> => {
       success: (res) => {
         try {
           const data = JSON.parse(res.data)
-          if (data.success) {
+          if (data.code === 200 && data.data?.url) {
+            resolve({ url: data.data.url })
+          } else if (data.url) {
             resolve({ url: data.url })
           } else {
             reject(new Error('Upload failed'))
@@ -190,19 +202,6 @@ const handleSubmit = async () => {
 
 const handleBack = () => {
   safeNavigateBack()
-}
-</script>
-
-<script lang="ts">
-export default {
-  onLoad(options: any) {
-    if (options.questionId) {
-      (this as any).questionId = parseInt(options.questionId)
-    }
-    if (options.title) {
-      (this as any).questionTitle = decodeURIComponent(options.title)
-    }
-  },
 }
 </script>
 
