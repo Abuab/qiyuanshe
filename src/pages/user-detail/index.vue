@@ -250,6 +250,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -344,9 +345,20 @@ const fetchUserDetail = async () => {
       method: 'GET',
     })
 
-    userData.value = res.user || res
+    const rawUser = res.user || res
 
-    if (userData.value) {
+    if (rawUser) {
+      // 处理图片URL：相对路径拼完整URL
+      rawUser.avatar = getFullImageUrl(rawUser.avatar) || '/static/default-avatar.png'
+      if (rawUser.photos) {
+        rawUser.photos = rawUser.photos.map((p: any) => ({
+          ...p,
+          url: getFullImageUrl(typeof p === 'string' ? p : p.url),
+        }))
+      }
+
+      userData.value = rawUser as UserDetailData
+
       if (userData.value.birthYear) {
         userData.value.zodiac = getZodiac(userData.value.birthYear)
         userData.value.constellation = getConstellation(userData.value.birthYear)

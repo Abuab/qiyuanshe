@@ -33,8 +33,13 @@ export class UserController {
     @Query('gender') gender?: number,
     @Request() req?: any,
   ) {
-    const currentUserId = req?.user?.userId
-    return this.userService.findRecommend(tab, page, limit, gender, currentUserId)
+    try {
+      const currentUserId = req?.user?.userId
+      return this.userService.findRecommend(tab, page, limit, gender, currentUserId)
+    } catch (error: any) {
+      console.error('findRecommend controller error:', error?.message || error)
+      return Result.serverError('推荐数据加载失败，请稍后重试: ' + (error?.message || ''))
+    }
   }
 
   @Post('filter')

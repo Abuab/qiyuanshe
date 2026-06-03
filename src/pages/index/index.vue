@@ -201,9 +201,13 @@ const loadUserList = async (reset = false) => {
     } else {
       noMoreData.value = true
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('加载用户列表失败:', error)
-    showToast('加载失败，请重试', 'none')
+    if (error.message === 'Server Error') {
+      showToast('服务器繁忙，请稍后重试', 'none')
+    } else {
+      showToast('加载失败，请下拉重试', 'none')
+    }
   } finally {
     loadingMore.value = false
   }
@@ -261,52 +265,8 @@ const goToUserDetail = (user: UserCardData) => {
   })
 }
 
-const loadMockData = () => {
-  userList.value = [
-    {
-      id: 1,
-      nickname: '小红',
-      avatar: '/static/default-avatar.png',
-      age: 28,
-      height: 165,
-      education: '本科',
-      occupation: '教师',
-      incomeRange: '10-15万',
-      housingStatus: '有房',
-      isRealName: true,
-      photos: ['/static/default-avatar.png', '/static/default-avatar.png'],
-    },
-    {
-      id: 2,
-      nickname: '小丽',
-      avatar: '/static/default-avatar.png',
-      age: 26,
-      height: 160,
-      education: '硕士',
-      occupation: '医生',
-      incomeRange: '15-20万',
-      housingStatus: '有房',
-      isRealName: false,
-      photos: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
-    },
-    {
-      id: 3,
-      nickname: '小芳',
-      avatar: '/static/default-avatar.png',
-      age: 30,
-      height: 168,
-      education: '本科',
-      occupation: '会计',
-      incomeRange: '8-12万',
-      housingStatus: '租房',
-      isRealName: true,
-      photos: [],
-    },
-  ]
-}
-
 onMounted(() => {
-  loadMockData()
+  loadUserList(true)
 })
 
 const onShareAppMessage = () => {

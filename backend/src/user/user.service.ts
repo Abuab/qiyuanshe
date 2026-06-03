@@ -48,6 +48,7 @@ export class UserService {
     gender?: number,
     currentUserId?: number,
   ): Promise<PaginatedResult<UserListItem>> {
+    try {
     const pageNum = Math.max(1, parseInt(page as any) || 1)
     const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 10))
     
@@ -68,9 +69,9 @@ export class UserService {
       case 'featured':
         queryBuilder
           .orderBy('user.isVip', 'DESC')
-          .addOrderBy('user.avatar', 'DESC')
           .addOrderBy('user.lastLoginAt', 'DESC')
         break
+      case 'verified':
       case 'realname':
         queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: 1 })
         queryBuilder.orderBy('user.lastLoginAt', 'DESC')
@@ -126,6 +127,10 @@ export class UserService {
       page: pageNum,
       pageSize,
       totalPages,
+    }
+    } catch (error) {
+      console.error('findRecommend error:', error)
+      throw error
     }
   }
 
