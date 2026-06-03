@@ -7,48 +7,47 @@
       </view>
 
       <scroll-view class="protocol-content" scroll-y>
-        <text class="protocol-text">
-          欢迎使用产品及相关服务。
+        <view class="protocol-text">
+          <view class="p">欢迎使用产品及相关服务。</view>
+          <view class="p">您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。</view>
 
-          您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。
+          <view class="section-title">【用户协议】</view>
 
-          【用户协议】
+          <view class="h3">一、服务说明</view>
+          <view class="p">栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。</view>
 
-          一、服务说明
-          栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。
+          <view class="h3">二、用户注册</view>
+          <view class="p">1. 您需要提供真实的个人信息进行注册</view>
+          <view class="p">2. 您必须年满18周岁方可使用本服务</view>
+          <view class="p">3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负</view>
 
-          二、用户注册
-          1. 您需要提供真实的个人信息进行注册
-          2. 您必须年满18周岁方可使用本服务
-          3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负
+          <view class="h3">三、用户行为</view>
+          <view class="p">1. 不得发布虚假信息、诈骗信息</view>
+          <view class="p">2. 不得骚扰、辱骂其他用户</view>
+          <view class="p">3. 不得发布违法、违规内容</view>
+          <view class="p">4. 不得利用本平台进行商业营销</view>
 
-          三、用户行为
-          1. 不得发布虚假信息、诈骗信息
-          2. 不得骚扰、辱骂其他用户
-          3. 不得发布违法、违规内容
-          4. 不得利用本平台进行商业营销
+          <view class="h3">四、隐私保护</view>
+          <view class="p">我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。</view>
 
-          四、隐私保护
-          我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。
+          <view class="section-title">【隐私政策】</view>
 
-          【隐私政策】
+          <view class="h3">一、信息收集</view>
+          <view class="p">1. 我们会收集您主动提供的信息（手机号、头像等）</view>
+          <view class="p">2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）</view>
+          <view class="p">3. 我们会获取您的地理位置信息用于匹配功能</view>
 
-          一、信息收集
-          1. 我们会收集您主动提供的信息（手机号、头像等）
-          2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）
-          3. 我们会获取您的地理位置信息用于匹配功能
+          <view class="h3">二、信息使用</view>
+          <view class="p">1. 用于提供和改进我们的服务</view>
+          <view class="p">2. 用于向您推送个性化内容</view>
+          <view class="p">3. 用于账号安全保护</view>
 
-          二、信息使用
-          1. 用于提供和改进我们的服务
-          2. 用于向您推送个性化内容
-          3. 用于账号安全保护
+          <view class="h3">三、信息共享</view>
+          <view class="p">未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。</view>
 
-          三、信息共享
-          未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。
-
-          四、信息安全
-          我们采用行业标准的安全措施保护您的个人信息。
-        </text>
+          <view class="h3">四、信息安全</view>
+          <view class="p">我们采用行业标准的安全措施保护您的个人信息。</view>
+        </view>
       </scroll-view>
 
       <view class="protocol-buttons">
@@ -169,6 +168,25 @@ defineExpose({
   font-size: 26rpx;
   color: var(--text);
   line-height: 1.8;
+
+  .p {
+    margin-bottom: 16rpx;
+    text-align: justify;
+  }
+
+  .section-title {
+    font-size: 30rpx;
+    font-weight: bold;
+    margin: 32rpx 0 20rpx;
+    color: var(--text);
+  }
+
+  .h3 {
+    font-size: 28rpx;
+    font-weight: bold;
+    margin: 24rpx 0 12rpx;
+    color: var(--text);
+  }
 }
 
 .protocol-buttons {
