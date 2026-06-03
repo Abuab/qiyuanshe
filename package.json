@@ -17,9 +17,9 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-4020920240930001",
     "@dcloudio/uni-ui": "^1.5.6",
     "dayjs": "^1.11.10",
+    "html2canvas": "^1.4.1",
     "pinia": "^2.1.7",
     "qrcode": "^1.5.3",
-    "html2canvas": "^1.4.1",
     "vue": "^3.4.21"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@vue/runtime-core": "^3.4.21",
     "sass": "^1.72.0",
     "typescript": "^5.4.2",
-    "vite": "5.2.8",
+    "vite": "^5.0.0",
     "vue-tsc": "^2.0.7"
   }
 }

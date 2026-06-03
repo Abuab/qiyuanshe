@@ -16,8 +16,8 @@
       :scroll-top="scrollTop"
       :scroll-into-view="scrollIntoView"
       @scrolltoupper="loadMore"
-      : refresher-enabled="true"
-      : refresher-triggered="loadingMore"
+      :refresher-enabled="true"
+      :refresher-triggered="loadingMore"
       @refresherrefresh="onRefresh"
     >
       <view v-if="loading" class="loading-tip">
