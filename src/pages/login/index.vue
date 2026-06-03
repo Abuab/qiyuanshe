@@ -148,12 +148,18 @@ const checkLogin = () => {
   if (userStore.isLoggedIn) {
     handleLoginSuccess()
   } else {
-    showProtocol.value = true
+    // 检查是否已同意协议
+    const protocolAgreed = uni.getStorageSync('protocolAgreed')
+    if (!protocolAgreed) {
+      showProtocol.value = true
+    }
   }
 }
 
 const handleAgree = async () => {
   showProtocol.value = false
+  // 记录用户已同意协议
+  uni.setStorageSync('protocolAgreed', true)
   await performWechatLogin()
 }
 

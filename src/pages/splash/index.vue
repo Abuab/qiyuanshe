@@ -58,6 +58,8 @@ onUnmounted(() => {
 
 const handleProtocolAgree = () => {
   showProtocol.value = false
+  // 记录用户已同意协议
+  uni.setStorageSync('protocolAgreed', true)
   startMainNavigation()
 }
 
