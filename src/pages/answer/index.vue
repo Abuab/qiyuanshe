@@ -63,8 +63,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import request, { getBaseUrl } from '@/utils/request'
-import { getToken } from '@/utils/auth'
+import request from '@/utils/request'
+import { uploadImage } from '@/utils/upload'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const questionId = ref(0)
@@ -125,47 +125,6 @@ const chooseImage = async () => {
     fail: (e) => {
       console.error('choose image error', e)
     },
-  })
-}
-
-const uploadImage = (filePath: string): Promise<{ url: string }> => {
-  return new Promise((resolve, reject) => {
-    const token = getToken()
-    const header: Record<string, string> = {}
-    if (token) {
-      header['Authorization'] = `Bearer ${token}`
-    }
-
-    uni.uploadFile({
-      url: `${getBaseUrl()}/upload`,
-      filePath,
-      name: 'file',
-      header,
-      timeout: 30000,
-      success: (res) => {
-        try {
-          const data = JSON.parse(res.data)
-          // 兼容多种后端响应格式
-          if (res.statusCode === 401) {
-            reject(new Error('Unauthorized'))
-            return
-          }
-          if (data.code === 200 && data.data?.url) {
-            resolve({ url: data.data.url })
-          } else if (data.url) {
-            resolve({ url: data.url })
-          } else {
-            reject(new Error(data.msg || data.message || 'Upload failed'))
-          }
-        } catch {
-          reject(new Error('Parse error'))
-        }
-      },
-      fail: (err) => {
-        console.error('Upload error:', err)
-        reject(new Error('Network Error'))
-      },
-    })
   })
 }
 

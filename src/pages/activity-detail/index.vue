@@ -193,6 +193,7 @@
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import request from '@/utils/request'
+import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface Activity {
@@ -297,6 +298,15 @@ function closeSignupPopup() {
 }
 
 async function submitSignup() {
+  // 未登录时先跳转登录页
+  if (!checkLogin()) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1000)
+    return
+  }
+
   if (!signupForm.value.realName.trim()) {
     uni.showToast({ title: '请输入姓名', icon: 'none' })
     return
@@ -310,11 +320,13 @@ async function submitSignup() {
     return
   }
 
+  uni.showLoading({ title: '提交报名...' })
+
   try {
     await request({
       url: `/activities/${activity.value?.id}/signup`,
       method: 'POST',
-      data: signupForm.value,
+      data: signupForm.value as Record<string, unknown>,
     })
 
     uni.showToast({ title: '报名成功', icon: 'success' })
@@ -323,12 +335,14 @@ async function submitSignup() {
     if (activity.value) {
       fetchActivityDetail(activity.value.id)
     }
-  } catch (error: any) {
-    console.error('报名失败:', error)
-    const errorMsg = error.message === 'Unauthorized'
-      ? '请先登录'
-      : (error.message || '报名失败，请重试')
-    uni.showToast({ title: errorMsg, icon: 'none' })
+  } catch (error: unknown) {
+    const err = error as Error
+    console.error('报名失败:', err.message)
+    if (err.message !== 'Unauthorized') {
+      uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
+    }
+  } finally {
+    uni.hideLoading()
   }
 }
 
