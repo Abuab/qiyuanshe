@@ -10,7 +10,7 @@
 
     <view class="page-content">
       <view class="question-card">
-        <text class="question-title"># {{ questionTitle }}</text>
+        <text class="question-title"># {{ questionTitle || '回答问题' }}</text>
       </view>
 
       <view class="input-section">
@@ -64,6 +64,7 @@
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import request, { getBaseUrl } from '@/utils/request'
+import { getToken } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const questionId = ref(0)
@@ -112,9 +113,12 @@ const chooseImage = async () => {
           const uploadRes = await uploadImage(path)
           uploadedPhotoUrls.value.push(uploadRes.url)
           selectedPhotos.value.push(path)
-        } catch (e) {
+        } catch (e: any) {
           console.error('upload error', e)
-          uni.showToast({ title: '图片上传失败', icon: 'none' })
+          const errorMsg = e.message === 'Unauthorized'
+            ? '请先登录后再上传图片'
+            : (e.message === 'Network Error' ? '网络连接失败，请检查网络' : '图片上传失败')
+          uni.showToast({ title: errorMsg, icon: 'none' })
         }
       }
     },
@@ -126,25 +130,41 @@ const chooseImage = async () => {
 
 const uploadImage = (filePath: string): Promise<{ url: string }> => {
   return new Promise((resolve, reject) => {
+    const token = getToken()
+    const header: Record<string, string> = {}
+    if (token) {
+      header['Authorization'] = `Bearer ${token}`
+    }
+
     uni.uploadFile({
       url: `${getBaseUrl()}/upload`,
       filePath,
       name: 'file',
+      header,
+      timeout: 30000,
       success: (res) => {
         try {
           const data = JSON.parse(res.data)
+          // 兼容多种后端响应格式
+          if (res.statusCode === 401) {
+            reject(new Error('Unauthorized'))
+            return
+          }
           if (data.code === 200 && data.data?.url) {
             resolve({ url: data.data.url })
           } else if (data.url) {
             resolve({ url: data.url })
           } else {
-            reject(new Error('Upload failed'))
+            reject(new Error(data.msg || data.message || 'Upload failed'))
           }
         } catch {
           reject(new Error('Parse error'))
         }
       },
-      fail: reject,
+      fail: (err) => {
+        console.error('Upload error:', err)
+        reject(new Error('Network Error'))
+      },
     })
   })
 }
@@ -167,10 +187,10 @@ const handleSubmit = async () => {
 
   if (submitting.value) return
 
-  try {
-    submitting.value = true
-    uni.showLoading({ title: '提交中...' })
+  submitting.value = true
+  uni.showLoading({ title: '提交中...' })
 
+  try {
     await request({
       url: `/questions/${questionId.value}/answers`,
       method: 'POST',
@@ -180,22 +200,22 @@ const handleSubmit = async () => {
       },
     })
 
-    uni.hideLoading()
     uni.showToast({ title: '回答成功', icon: 'success' })
 
     setTimeout(() => {
       uni.navigateBack()
     }, 1500)
   } catch (e: any) {
-    uni.hideLoading()
     console.error('submit error', e)
 
-    if (e.statusCode === 401) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-    } else {
-      uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+    // 401 已由 request.ts 统一处理（清除 token 并跳转登录页）
+    // 此处只需要处理其他错误
+    if (e.message !== 'Unauthorized') {
+      const errorMsg = e.message || '提交失败，请重试'
+      uni.showToast({ title: errorMsg, icon: 'none' })
     }
   } finally {
+    uni.hideLoading()
     submitting.value = false
   }
 }

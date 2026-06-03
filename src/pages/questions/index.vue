@@ -17,6 +17,7 @@
       <scroll-view
         class="question-list"
         scroll-y
+        enable-flex
         @scrolltolower="loadMore"
         :refresher-enabled="true"
         @refresherrefresh="onRefresh"
@@ -30,8 +31,8 @@
         >
           <view class="question-header">
             <text class="question-title"># {{ question.title }}</text>
-            <view class="status-tag" :class="{ answered: question.answerCount > 0 }">
-              <text>{{ question.answerCount > 0 ? '已回答' : '待回答' }}</text>
+            <view class="status-tag" :class="{ active: question.answerCount > 0 }">
+              <text>{{ question.answerCount > 0 ? question.answerCount + '人回答' : '待回答' }}</text>
             </view>
           </view>
           <view class="question-action" @tap.stop="goToAnswer(question)">

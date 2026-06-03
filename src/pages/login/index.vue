@@ -16,7 +16,7 @@
             <text class="protocol-title">用户协议与隐私政策</text>
           </view>
 
-          <scroll-view class="protocol-content" scroll-y>
+          <scroll-view class="protocol-content" scroll-y enable-flex>
             <text class="protocol-text">
               欢迎使用产品及相关服务。
 
@@ -168,7 +168,12 @@ const handleProtocolClose = () => {
 }
 
 const handleWechatLogin = () => {
-  showProtocol.value = true
+  const protocolAgreed = uni.getStorageSync('protocolAgreed')
+  if (protocolAgreed) {
+    performWechatLogin()
+  } else {
+    showProtocol.value = true
+  }
 }
 
 const performWechatLogin = async () => {

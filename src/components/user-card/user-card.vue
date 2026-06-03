@@ -32,9 +32,9 @@
           v-for="(photo, index) in displayPhotos"
           :key="index"
           class="photo-thumb"
-          :src="photoFailedMap[photo] ? '/static/default-avatar.png' : photo"
+          :src="photo"
           mode="aspectFill"
-          @error="onPhotoError(photo)"
+          @error="onPhotoError(props.user.photos![index])"
         ></image>
       </view>
     </view>
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { getFullImageUrl } from '@/utils/common'
 
 export interface UserCardData {
   id: number
@@ -76,7 +77,11 @@ const photoFailedMap = ref<Record<string, true>>({})
 
 const avatarUrl = computed(() => {
   if (avatarError.value) return '/static/default-avatar.png'
-  return props.user.avatar || '/static/default-avatar.png'
+  const avatar = props.user.avatar
+  if (!avatar) return '/static/default-avatar.png'
+  // 对于本地路径直接返回，相对路径拼接完整 URL
+  if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
+  return getFullImageUrl(avatar)
 })
 
 const onAvatarError = () => {
@@ -91,7 +96,11 @@ const onPhotoError = (photoUrl: string) => {
 
 const displayPhotos = computed(() => {
   if (!props.user.photos || props.user.photos.length === 0) return []
-  return props.user.photos.slice(0, 4)
+  return props.user.photos.slice(0, 4).map(photo => {
+    if (photoFailedMap.value[photo]) return '/static/default-avatar.png'
+    if (photo.startsWith('http') || photo.startsWith('/static/')) return photo
+    return getFullImageUrl(photo)
+  })
 })
 
 const handleClick = () => {

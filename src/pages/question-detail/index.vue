@@ -8,7 +8,7 @@
       <view class="nav-right"></view>
     </view>
 
-    <scroll-view class="content" scroll-y>
+    <scroll-view class="content" scroll-y enable-flex>
       <view class="question-section">
         <text class="question-title">{{ questionTitle }}</text>
         <view class="more-link" @tap="goToQuestions">
@@ -93,6 +93,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -155,7 +156,14 @@ const fetchAnswers = async (isRefresh = false) => {
       },
     })
 
-    const list = res.answers || []
+    const list = (res.answers || []).map((answer: any) => ({
+      ...answer,
+      photos: (answer.photos || []).map((p: string) => getFullImageUrl(p)),
+      user: answer.user ? {
+        ...answer.user,
+        avatar: getFullImageUrl(answer.user.avatar) || '/static/default-avatar.png',
+      } : undefined,
+    }))
 
     if (isRefresh) {
       answerList.value = list
@@ -230,7 +238,7 @@ const handleBack = () => {
 }
 
 const goToQuestions = () => {
-  uni.navigateTo({
+  uni.switchTab({
     url: '/pages/questions/index',
   })
 }

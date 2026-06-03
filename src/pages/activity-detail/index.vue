@@ -9,7 +9,7 @@
       <view class="nav-placeholder"></view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y v-if="activity">
+    <scroll-view class="content-scroll" scroll-y enable-flex v-if="activity">
       <!-- 顶部海报大图 -->
       <view class="cover-wrapper">
         <image class="cover-image" :src="activity.coverImage" mode="aspectFill" />
@@ -323,9 +323,12 @@ async function submitSignup() {
     if (activity.value) {
       fetchActivityDetail(activity.value.id)
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('报名失败:', error)
-    uni.showToast({ title: '报名失败', icon: 'none' })
+    const errorMsg = error.message === 'Unauthorized'
+      ? '请先登录'
+      : (error.message || '报名失败，请重试')
+    uni.showToast({ title: errorMsg, icon: 'none' })
   }
 }
 

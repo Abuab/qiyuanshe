@@ -13,6 +13,7 @@
     <scroll-view
       class="message-list"
       scroll-y
+      enable-flex
       :scroll-top="scrollTop"
       :scroll-into-view="scrollIntoView"
       @scrolltoupper="loadMore"
@@ -118,6 +119,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import request, { getBaseUrl } from '@/utils/request'
+import { getToken } from '@/utils/auth'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -307,27 +309,40 @@ const chooseImage = async () => {
         uni.showLoading({ title: '上传中...' })
 
         const uploadRes = await new Promise<any>((resolve, reject) => {
+          const token = getToken()
+          const header: Record<string, string> = {}
+          if (token) {
+            header['Authorization'] = `Bearer ${token}`
+          }
+
           uni.uploadFile({
             url: `${getBaseUrl()}/upload`,
             filePath: tempFilePath,
             name: 'file',
+            header,
+            timeout: 30000,
             success: (res) => {
               try {
+                if (res.statusCode === 401) {
+                  reject(new Error('Unauthorized'))
+                  return
+                }
                 const data = JSON.parse(res.data)
                 if (data.success) {
                   resolve(data)
                 } else {
-                  reject(new Error('Upload failed'))
+                  reject(new Error(data.msg || data.message || 'Upload failed'))
                 }
               } catch {
                 reject(new Error('Parse error'))
               }
             },
-            fail: reject,
+            fail: (err) => {
+              console.error('Upload error:', err)
+              reject(new Error('Network Error'))
+            },
           })
         })
-
-        uni.hideLoading()
 
         await request({
           url: '/chat/messages',
@@ -358,8 +373,11 @@ const chooseImage = async () => {
         })
       } catch (e) {
         console.error('upload error', e)
+        if (e.message !== 'Unauthorized') {
+          uni.showToast({ title: '发送失败', icon: 'none' })
+        }
+      } finally {
         uni.hideLoading()
-        uni.showToast({ title: '发送失败', icon: 'none' })
       }
     },
   })
@@ -471,7 +489,7 @@ const clearChat = () => {
 
 const goToVip = () => {
   showVipLimit.value = false
-  uni.navigateTo({
+  uni.switchTab({
     url: '/pages/vip/index',
   })
 }

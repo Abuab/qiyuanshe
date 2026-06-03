@@ -6,7 +6,7 @@
         <text class="protocol-title">用户协议与隐私政策</text>
       </view>
 
-      <scroll-view class="protocol-content" scroll-y>
+      <scroll-view class="protocol-content" scroll-y enable-flex>
         <view class="protocol-text">
           <view class="p">欢迎使用产品及相关服务。</view>
           <view class="p">您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。</view>
@@ -160,14 +160,15 @@ defineExpose({
 }
 
 .protocol-content {
-  padding: 0 32rpx;
+  padding: 30rpx 32rpx;
   max-height: 50vh;
 }
 
 .protocol-text {
+  padding-bottom: 16rpx;
   font-size: 26rpx;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.6;
 
   .p {
     margin-bottom: 16rpx;

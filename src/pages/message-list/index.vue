@@ -11,6 +11,7 @@
     <scroll-view
       class="message-list"
       scroll-y
+      enable-flex
       @scrolltolower="loadMore"
       :refresher-enabled="true"
       @refresherrefresh="onRefresh"

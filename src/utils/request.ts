@@ -23,17 +23,22 @@ interface ResponseData {
 const request = <T = any>(options: RequestOptions): Promise<T> => {
   const { url, method = 'GET', data = {}, header = {}, retryCount = 0 } = options
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url
+  const token = getToken()
 
   return new Promise((resolve, reject) => {
+    const requestHeader: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...header,
+    }
+    if (token) {
+      requestHeader['Authorization'] = `Bearer ${token}`
+    }
+
     uni.request({
       url: fullUrl,
       method,
       data,
-      header: {
-        'Content-Type': 'application/json',
-        'Authorization': getToken() ? `Bearer ${getToken()}` : '',
-        ...header
-      },
+      header: requestHeader,
       timeout: TIMEOUT,
       success: (res: any) => {
         const response = res as UniApp.RequestSuccessCallbackResult
@@ -42,14 +47,22 @@ const request = <T = any>(options: RequestOptions): Promise<T> => {
           uni.removeStorageSync('token')
           uni.removeStorageSync('userInfo')
           uni.removeStorageSync('refreshToken')
-          uni.showToast({
-            title: '请先登录',
-            icon: 'none',
-            duration: 2000
-          })
-          uni.reLaunch({
-            url: '/pages/login/index'
-          })
+          
+          // 避免在当前已是登录页时重复跳转
+          const pages = getCurrentPages()
+          const currentPage = pages[pages.length - 1]?.route
+          if (currentPage !== 'pages/login/index') {
+            uni.showToast({
+              title: '登录已过期，请重新登录',
+              icon: 'none',
+              duration: 2000
+            })
+            setTimeout(() => {
+              uni.reLaunch({
+                url: '/pages/login/index'
+              })
+            }, 1500)
+          }
           reject(new Error('Unauthorized'))
           return
         }

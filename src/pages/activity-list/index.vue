@@ -27,6 +27,7 @@
     <scroll-view
       class="activity-scroll"
       scroll-y
+      enable-flex
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"

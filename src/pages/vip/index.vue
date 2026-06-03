@@ -8,7 +8,7 @@
       <view class="nav-right"></view>
     </view>
 
-    <scroll-view class="page-content" scroll-y>
+    <scroll-view class="page-content" scroll-y enable-flex>
       <view class="header-section">
         <text class="header-title">开通会员，享受专属特权</text>
 
@@ -189,8 +189,6 @@ const handleSubmit = async () => {
       },
     })
 
-    uni.hideLoading()
-
     if (res.payParams) {
       uni.requestPayment({
       provider: 'wxpay',
@@ -218,14 +216,13 @@ const handleSubmit = async () => {
       uni.showToast({ title: '创建订单失败', icon: 'none' })
     }
   } catch (e: any) {
-    uni.hideLoading()
     console.error('create order error', e)
 
-    if (e.statusCode === 401) {
-      uni.showToast({ title: '请先登录', icon: 'none' })
-    } else {
+    if (e.message !== 'Unauthorized') {
       uni.showToast({ title: '创建订单失败', icon: 'none' })
     }
+  } finally {
+    uni.hideLoading()
   }
 }
 

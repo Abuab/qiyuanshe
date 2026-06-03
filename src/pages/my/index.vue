@@ -4,7 +4,7 @@
       <view class="nav-title">我的</view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y>
+    <scroll-view class="content-scroll" scroll-y enable-flex>
       <!-- 用户信息卡片 -->
       <view class="user-card" @tap="goToLogin" v-if="!isLoggedIn">
         <image class="user-avatar" src="/static/default-avatar.png" mode="aspectFill" />

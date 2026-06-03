@@ -55,6 +55,7 @@
       "path": "pages/question-detail/index",
       "style": {
         "navigationBarTitleText": "问答详情",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": false
       }
     },
