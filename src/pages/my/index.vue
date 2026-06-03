@@ -97,7 +97,7 @@ const goToEditProfile = () => {
 }
 
 const goToVip = () => {
-  uni.navigateTo({
+  uni.switchTab({
     url: '/pages/vip/index',
   })
 }

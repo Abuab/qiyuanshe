@@ -269,13 +269,8 @@ async function fetchActivityDetail(id: number) {
       method: 'GET',
     })
 
-    if (result && result.code === 200 && result.data) {
-      activity.value = result.data
-      signupAvatars.value = result.data.signupAvatars || []
-    } else {
-      activity.value = result
-      signupAvatars.value = result.signupAvatars || []
-    }
+    activity.value = result
+    signupAvatars.value = result.signupAvatars || []
   } catch (error) {
     console.error('获取活动详情失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })

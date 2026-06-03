@@ -130,8 +130,8 @@ interface FilterTab {
 
 const quickEntries: QuickEntry[] = [
   { id: 1, name: '红娘评语', icon: '/static/matchmaker.png', bgColor: '#FFF0F5' },
-  { id: 2, name: '最新活动', icon: '/static/activity.png', bgColor: '#E6F7FF' },
-  { id: 3, name: '相亲圈子', icon: '/static/circle.png', bgColor: '#F9F0FF' },
+  { id: 2, name: '最新活动', icon: '/static/heart.png', bgColor: '#E6F7FF' },
+  { id: 3, name: '相亲圈子', icon: '/static/heart.png', bgColor: '#F9F0FF' },
   { id: 4, name: '我们脱单了', icon: '/static/heart.png', bgColor: '#FFF7E6' },
 ]
 
@@ -179,10 +179,10 @@ const loadUserList = async (reset = false) => {
   loadingMore.value = true
 
   try {
-    const result = await get<{ list: UserCardData[]; total: number }>('/user/list', {
+    const result = await get<{ list: UserCardData[]; total: number }>('/users/recommend', {
       page: currentPage.value,
-      pageSize,
-      filter: currentFilter.value,
+      limit: pageSize,
+      tab: currentFilter.value,
     })
 
     if (result && result.list) {
@@ -312,14 +312,14 @@ const onShareAppMessage = () => {
   return {
     title: '栖缘社 - 遇见对的TA',
     path: '/pages/index/index',
-    imageUrl: '/static/share-image.png',
+    imageUrl: '/static/heart.png',
   }
 }
 
 const onShareTimeline = () => {
   return {
     title: '栖缘社 - 遇见对的TA',
-    imageUrl: '/static/share-image.png',
+    imageUrl: '/static/heart.png',
   }
 }
 </script>

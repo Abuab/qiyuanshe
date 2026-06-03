@@ -4,7 +4,7 @@
 
     <view class="content">
       <view class="logo-section">
-        <image class="logo" src="/static/logo.png" mode="aspectFit"></image>
+        <view class="logo-circle">💕</view>
         <text class="app-name">栖缘社</text>
         <text class="slogan">遇见对的TA</text>
       </view>
@@ -70,7 +70,7 @@
 
       <view v-if="!showProtocol" class="login-buttons">
         <button class="btn-wechat" @tap="handleWechatLogin">
-          <image class="wechat-icon" src="/static/wechat.png" mode="aspectFit"></image>
+          <text class="wechat-icon-text">微</text>
           <text>微信一键登录</text>
         </button>
 
@@ -311,11 +311,15 @@ const handleLoginSuccess = () => {
   margin-bottom: 100rpx;
 }
 
-.logo {
+.logo-circle {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 40rpx;
-  background-color: #fff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B9D, #FF8FB0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80rpx;
   margin-bottom: 24rpx;
 }
 
@@ -439,9 +443,17 @@ const handleLoginSuccess = () => {
   }
 }
 
-.wechat-icon {
+.wechat-icon-text {
   width: 48rpx;
   height: 48rpx;
+  line-height: 48rpx;
+  text-align: center;
+  background-color: #07C160;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 28rpx;
+  font-weight: bold;
+  margin-right: 12rpx;
 }
 
 .divider {

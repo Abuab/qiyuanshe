@@ -91,7 +91,7 @@
 
         <view class="payment-method">
           <view class="method-item selected">
-            <image class="wechat-icon" src="/static/wechat-pay.png" mode="aspectFit" />
+            <text class="wechat-pay-icon">微</text>
             <text class="method-name">微信支付</text>
             <view class="check-icon">✓</view>
           </view>
@@ -470,9 +470,16 @@ const handleBack = () => {
   }
 }
 
-.wechat-icon {
+.wechat-pay-icon {
   width: 48rpx;
   height: 48rpx;
+  line-height: 48rpx;
+  text-align: center;
+  background-color: #07C160;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 28rpx;
+  font-weight: bold;
   margin-right: 16rpx;
 }
 

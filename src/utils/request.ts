@@ -86,7 +86,7 @@ const request = <T = any>(options: RequestOptions): Promise<T> => {
 
         const result = response.data as ResponseData
 
-        if (result.code === 0) {
+        if (result.code === 0 || result.code === 200) {
           resolve(result.data as T)
         } else {
           uni.showToast({
