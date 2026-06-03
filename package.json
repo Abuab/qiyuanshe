@@ -4,8 +4,8 @@
   "description": "栖缘社 - 缘分匹配小程序",
   "type": "module",
   "scripts": {
-    "dev:mp-weixin": "uni -p mp-weixin",
-    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:mp-weixin": "uni --mode development -p mp-weixin",
+    "build:mp-weixin": "uni build --mode production -p mp-weixin",
     "dev:h5": "uni",
     "build:h5": "uni build",
     "type-check": "vue-tsc --noEmit"

@@ -94,6 +94,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface Answer {
   id: number
@@ -225,7 +226,7 @@ const formatTime = (timeStr: string) => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const goToQuestions = () => {

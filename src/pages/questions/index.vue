@@ -135,8 +135,10 @@ const onRefresh = () => {
   fetchQuestions(true)
 }
 
+import { safeNavigateBack } from '@/utils/navigate'
+
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const goToDetail = (question: Question) => {

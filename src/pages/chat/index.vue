@@ -119,6 +119,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import request, { getBaseUrl } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface ChatMessage {
   id: number
@@ -517,7 +518,7 @@ const stopPolling = () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 

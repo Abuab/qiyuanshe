@@ -254,6 +254,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface PhotoItem {
   id?: number
@@ -393,7 +394,7 @@ const getConstellation = (birthYear: number): string => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const onPhotoChange = (e: any) => {

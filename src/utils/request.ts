@@ -1,6 +1,6 @@
 import { getToken } from './auth'
 
-const BASE_URL = 'https://api.lingtong.com'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 const TIMEOUT = 15000
 const MAX_RETRIES = 1
 

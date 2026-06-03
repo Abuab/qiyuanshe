@@ -84,6 +84,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface Activity {
   id: number
@@ -198,7 +199,7 @@ function goToDetail(id: number) {
 }
 
 function goBack() {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 onMounted(() => {

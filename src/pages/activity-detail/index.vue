@@ -193,6 +193,7 @@
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import request from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface Activity {
   id: number
@@ -341,7 +342,7 @@ async function submitSignup() {
 }
 
 function goBack() {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 onMounted(() => {

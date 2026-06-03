@@ -63,6 +63,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import request, { getBaseUrl } from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const questionId = ref(0)
 const questionTitle = ref('')
@@ -188,7 +189,7 @@ const handleSubmit = async () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 

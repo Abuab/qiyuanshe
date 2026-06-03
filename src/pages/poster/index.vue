@@ -72,6 +72,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface PosterTemplate {
   id: number
@@ -136,7 +137,7 @@ onMounted(() => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const selectTemplate = async (template: PosterTemplate) => {

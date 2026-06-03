@@ -116,6 +116,7 @@
 import { ref } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface VipPackage {
   level: number
@@ -235,7 +236,7 @@ const showAgreement = () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 
