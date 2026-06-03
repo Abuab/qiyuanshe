@@ -49,9 +49,16 @@ export class ActivityController {
     @Request() req,
     @Body() data: { realName?: string; phone?: string; remark?: string },
   ) {
-    const userId = req.user.userId
-    const result = await this.activityService.signup(id, userId, data)
-    return Result.success(result, '报名成功')
+    try {
+      const userId = req.user.userId
+      const result = await this.activityService.signup(id, userId, data)
+      return Result.success(result, '报名成功')
+    } catch (error: any) {
+      console.error('signup error:', error?.message || error)
+      // 如果是已知的 NestJS HTTP 异常，直接抛出
+      if (error.getStatus) throw error
+      return Result.serverError('报名失败: ' + (error?.message || '请稍后重试'))
+    }
   }
 
   // 小程序端 - 获取已报名用户头像列表

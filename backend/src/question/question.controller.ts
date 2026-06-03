@@ -58,20 +58,29 @@ export class QuestionController {
     @Body() dto: CreateAnswerDto,
     @Request() req: any,
   ) {
-    const answer = await this.questionService.createAnswer(
-      id,
-      req.user.userId,
-      dto.content,
-      dto.photos || [],
-    )
+    try {
+      const answer = await this.questionService.createAnswer(
+        id,
+        req.user.userId,
+        dto.content,
+        dto.photos || [],
+      )
 
-    return {
-      success: true,
-      message: '回答提交成功，等待审核',
-      data: {
-        id: answer.id,
-        status: answer.status,
-      },
+      return {
+        success: true,
+        message: '回答提交成功，等待审核',
+        data: {
+          id: answer.id,
+          status: answer.status,
+        },
+      }
+    } catch (error: any) {
+      console.error('createAnswer error:', error?.message || error)
+      if (error.getStatus) throw error
+      return {
+        success: false,
+        message: '回答提交失败: ' + (error?.message || '请稍后重试'),
+      }
     }
   }
 
@@ -81,14 +90,23 @@ export class QuestionController {
     @Param('answerId', ParseIntPipe) answerId: number,
     @Request() req: any,
   ) {
-    const result = await this.questionService.likeAnswer(
-      answerId,
-      req.user.userId,
-    )
+    try {
+      const result = await this.questionService.likeAnswer(
+        answerId,
+        req.user.userId,
+      )
 
-    return {
-      success: true,
-      ...result,
+      return {
+        success: true,
+        ...result,
+      }
+    } catch (error: any) {
+      console.error('likeAnswer error:', error?.message || error)
+      if (error.getStatus) throw error
+      return {
+        success: false,
+        message: '点赞失败: ' + (error?.message || '请稍后重试'),
+      }
     }
   }
 }
@@ -103,14 +121,23 @@ export class AnswerController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ) {
-    const result = await this.questionService.likeAnswer(
-      id,
-      req.user.userId,
-    )
+    try {
+      const result = await this.questionService.likeAnswer(
+        id,
+        req.user.userId,
+      )
 
-    return {
-      success: true,
-      ...result,
+      return {
+        success: true,
+        ...result,
+      }
+    } catch (error: any) {
+      console.error('AnswerController like error:', error?.message || error)
+      if (error.getStatus) throw error
+      return {
+        success: false,
+        message: '点赞失败: ' + (error?.message || '请稍后重试'),
+      }
     }
   }
 }

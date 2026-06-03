@@ -1,7 +1,9 @@
 <template>
   <view class="message-page">
     <view class="nav-bar">
-      <view class="nav-left"></view>
+      <view class="nav-left" @tap="handleBack">
+        <text class="back-icon">←</text>
+      </view>
       <view class="nav-title">消息</view>
       <view class="nav-right" @tap="handleClear">
         <text class="clear-btn">清空</text>
@@ -78,6 +80,7 @@
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 
 interface SystemMessage {
@@ -168,6 +171,10 @@ const onRefresh = () => {
   fetchConversations(true)
 }
 
+const handleBack = () => {
+  safeNavigateBack()
+}
+
 const handleClick = (item: MessageItem) => {
   if (item.type === 'system') {
     showSystemDetail(item)
@@ -253,6 +260,16 @@ const formatTime = (timeStr: string) => {
 .nav-left,
 .nav-right {
   width: 100rpx;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #333;
 }
 
 .clear-btn {

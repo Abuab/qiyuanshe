@@ -54,8 +54,14 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req?: any,
   ) {
-    const currentUserId = req?.user?.userId
-    return this.userService.getUserDetail(id, currentUserId)
+    try {
+      const currentUserId = req?.user?.userId
+      return this.userService.getUserDetail(id, currentUserId)
+    } catch (error: any) {
+      console.error('getUserDetail error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.notFound(error?.message || '用户不存在')
+    }
   }
 
   @Post(':id/follow')

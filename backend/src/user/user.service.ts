@@ -58,8 +58,12 @@ export class UserService {
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .andWhere('user.id != :adminId', { adminId: 1 })
 
-    if (gender !== undefined) {
-      queryBuilder.andWhere('user.gender = :gender', { gender })
+    // 严格校验 gender 参数，避免 NaN 传入 SQL
+    if (gender !== undefined && gender !== null) {
+      const genderNum = Number(gender)
+      if (Number.isFinite(genderNum) && (genderNum === 0 || genderNum === 1)) {
+        queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
+      }
     }
 
     switch (tab) {
@@ -148,8 +152,11 @@ export class UserService {
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .andWhere('user.id != :adminId', { adminId: 1 })
 
-    if (dto.gender !== undefined) {
-      queryBuilder.andWhere('user.gender = :gender', { gender: dto.gender })
+    if (dto.gender !== undefined && dto.gender !== null) {
+      const genderNum = Number(dto.gender)
+      if (Number.isFinite(genderNum) && (genderNum === 0 || genderNum === 1)) {
+        queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
+      }
     }
 
     if (dto.ageMin !== undefined) {
@@ -187,8 +194,11 @@ export class UserService {
       queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: dto.maritalStatus })
     }
 
-    if (dto.isRealName !== undefined) {
-      queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: dto.isRealName })
+    if (dto.isRealName !== undefined && dto.isRealName !== null) {
+      const isRealNameNum = Number(dto.isRealName)
+      if (Number.isFinite(isRealNameNum) && (isRealNameNum === 0 || isRealNameNum === 1)) {
+        queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: isRealNameNum })
+      }
     }
 
     if (dto.residence) {
