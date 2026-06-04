@@ -26,7 +26,7 @@ function resolveBaseUrl(): string {
 }
 
 const BASE_URL = resolveBaseUrl()
-const TIMEOUT = 15000
+const TIMEOUT = 8000
 const MAX_RETRIES = 2
 
 export const getBaseUrl = (): string => resolveBaseUrl()
