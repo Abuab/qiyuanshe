@@ -21,8 +21,8 @@ RUN npm run build
 # 生产阶段镜像
 FROM node:18-alpine AS production
 
-# 安装 dumb-init、curl（用于健康检查）和字体包（svg-captcha 需要）
-RUN apk add --no-cache dumb-init curl fontconfig ttf-dejavu
+# 安装 dumb-init、curl（用于健康检查）、su-exec（用于启动脚本切换用户）和字体包（svg-captcha 需要）
+RUN apk add --no-cache dumb-init curl su-exec fontconfig ttf-dejavu
 
 # 设置工作目录
 WORKDIR /app
@@ -36,12 +36,13 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 
-# 创建上传目录和日志目录
-RUN mkdir -p /app/uploads /app/logs && \
+# 创建上传目录和日志目录（包括 cert 子目录）
+RUN mkdir -p /app/uploads/cert /app/logs && \
     chown -R nestjs:nodejs /app/uploads /app/logs
 
-# 切换到非 root 用户
-USER nestjs
+# 复制启动脚本（必须以 root 运行，脚本内部切换到 nestjs）
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # 暴露端口
 EXPOSE 3000
@@ -50,5 +51,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
-# 使用 dumb-init 启动应用
-CMD ["dumb-init", "node", "dist/main.js"]
+# 启动脚本：以 root 身份创建目录并授权 → 切换 nestjs 用户 → 启动应用
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -35,7 +35,11 @@ const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
 
 const ensureDirectoryExists = (dir: string) => {
   if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true })
+    try {
+      mkdirSync(dir, { recursive: true })
+    } catch (_) {
+      // bind mount 下权限不足时静默失败，不阻塞进程启动
+    }
   }
 }
 

@@ -33,7 +33,11 @@ const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
 if (!existsSync(uploadsDir)) {
-  mkdirSync(uploadsDir, { recursive: true })
+  try {
+    mkdirSync(uploadsDir, { recursive: true })
+  } catch (_) {
+    // bind mount 下权限不足时静默失败，不阻塞进程启动
+  }
 }
 
 /**
