@@ -9,7 +9,7 @@
         lazy-load
       ></image>
       <view v-if="user.gender" class="gender-badge" :class="user.gender === 1 ? 'male' : 'female'">
-        <text>{{ user.gender === 1 ? '♂' : '♀' }}</text>
+        <text class="gender-text">{{ user.gender === 1 ? '♂' : '♀' }}</text>
       </view>
     </view>
 
@@ -38,7 +38,7 @@
       <view v-if="user.matchmakerComment" class="mk-row">
         <view class="mk-hd">
           <image class="mk-icon" :src="icons.quickEntry.matchmakerComment" mode="aspectFit" />
-          <text>红娘评语</text>
+          <text class="mk-title-text">红娘评语</text>
         </view>
         <text class="mk-txt">{{ user.matchmakerComment }}</text>
       </view>
@@ -48,7 +48,7 @@
       </view>
 
       <view v-if="displayIntro" class="intro-row">
-        <text>{{ displayIntro }}</text>
+        <text class="intro-text">{{ displayIntro }}</text>
       </view>
 
       <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
@@ -183,7 +183,7 @@ const handleClick = () => {
   align-items: center;
   justify-content: center;
 
-  text {
+  .gender-text {
     font-size: 22rpx;
     color: #fff;
   }
@@ -295,7 +295,7 @@ const handleClick = () => {
       height: 32rpx;
     }
 
-    text {
+    .mk-title-text {
       font-size: 24rpx;
       color: #FF9500;
       font-weight: bold;
@@ -327,7 +327,7 @@ const handleClick = () => {
 .intro-row {
   margin-bottom: 12rpx;
 
-  text {
+  .intro-text {
     font-size: 26rpx;
     color: #666;
     line-height: 1.5;

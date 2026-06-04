@@ -27,12 +27,6 @@
     "permission": {
       "scope.userLocation": {
         "desc": "你的位置信息将用于匹配附近的缘分"
-      },
-      "scope.writePhotosAlbum": {
-        "desc": "保存海报到相册需要此权限"
-      },
-      "scope.camera": {
-        "desc": "使用摄像头拍摄头像需要此权限"
       }
     },
     "requiredPrivateInfos": [

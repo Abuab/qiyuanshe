@@ -312,6 +312,52 @@ const onFilterReset = () => {
   handleClearFilter()
 }
 
+// Mock 公告数据兜底
+const getMockNotices = () => [
+  { id: 1, title: '栖缘社小程序正式上线啦！', type: 'banner' },
+  { id: 2, title: '开通VIP享受更多特权~', type: 'banner' },
+]
+
+const fetchAnnouncements = async () => {
+  try {
+    const res: any = await request({ url: '/announcements', method: 'GET', data: { type: 'banner' } })
+    notices.value = res.list || res.data || []
+  } catch (e: any) {
+    if (e?.statusCode === 404 || e?.code === 404) {
+      console.log('[公告]接口暂未开通')
+      notices.value = getMockNotices()
+      return
+    }
+    console.log('[公告]请求失败，使用Mock数据:', e?.message || e)
+    notices.value = getMockNotices()
+  }
+}
+
+const checkPopupAnnouncement = async () => {
+  try {
+    const res: any = await request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
+    const read: number[] = uni.getStorageSync('read_notices') || []
+    const list = res.list || res.data || []
+    const unread = list.filter((i: any) => !read.includes(i.id))
+    if (unread.length) {
+      uni.showModal({
+        title: unread[0].title,
+        content: unread[0].content,
+        showCancel: false,
+        confirmText: '知道了',
+        success: () => {
+          read.push(unread[0].id)
+          uni.setStorageSync('read_notices', read)
+        },
+      })
+    }
+  } catch (e: any) {
+    if (e?.statusCode === 404 || e?.code === 404) {
+      // 接口暂未开通，静默
+    }
+  }
+}
+
 const closeNotice = () => {
   showNotice.value = false
   uni.setStorageSync('notice_closed', new Date().toDateString())
@@ -345,11 +391,7 @@ const goToUserDetail = (user: UserCardData) => {
 onMounted(() => {
   // 公告：当日关闭后不再显示
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
-
-  // 获取公告横幅
-  request({ url: '/announcements?type=banner', method: 'GET' }).then((r: any) => {
-    notices.value = r.list || r.data || []
-  }).catch(() => {})
+  fetchAnnouncements()
 
   // 开启分享菜单
   try {
@@ -364,22 +406,7 @@ onMounted(() => {
 
 // 弹窗类型公告（onShow 中检查）
 onShow(() => {
-  request({ url: '/announcements?type=popup', method: 'GET' }).then((r: any) => {
-    const read: number[] = uni.getStorageSync('read_notices') || []
-    const unread = (r.list || r.data || []).filter((i: any) => !read.includes(i.id))
-    if (unread.length) {
-      uni.showModal({
-        title: unread[0].title,
-        content: unread[0].content,
-        showCancel: false,
-        confirmText: '知道了',
-        success: () => {
-          read.push(unread[0].id)
-          uni.setStorageSync('read_notices', read)
-        },
-      })
-    }
-  }).catch(() => {})
+  checkPopupAnnouncement()
 })
 
 const onShareAppMessage = () => {
