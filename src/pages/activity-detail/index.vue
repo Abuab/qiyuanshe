@@ -279,8 +279,8 @@ async function fetchActivityDetail(id: number) {
 }
 
 function handleShare() {
-  // 微信小程序通过右上角菜单分享，此处仅提示
-  uni.showToast({ title: '请点击右上角分享', icon: 'none' })
+  // 提示用户使用右上角原生分享（showShareMenu 已在 onMounted 激活）
+  uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
 }
 
 function showMatchmakerPopup() {
@@ -339,7 +339,13 @@ async function submitSignup() {
     const err = error as Error
     console.error('报名失败:', err.message)
     if (err.message !== 'Unauthorized') {
-      uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
+      // 已报名是正常状态，不报错
+      if (err.message?.includes('已报名')) {
+        uni.showToast({ title: '您已报名该活动', icon: 'none' })
+        closeSignupPopup()
+      } else {
+        uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
+      }
     }
   } finally {
     uni.hideLoading()
@@ -351,6 +357,16 @@ function goBack() {
 }
 
 onMounted(() => {
+  // 激活右上角原生分享按钮
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline'],
+    })
+  } catch (_) {
+    // showShareMenu 在开发工具中 ban，静默忽略
+  }
+
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const id = currentPage.options?.id || currentPage.$page?.options?.id

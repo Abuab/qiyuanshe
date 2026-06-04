@@ -188,17 +188,35 @@
 
         <view class="filter-section">
           <view class="section-title">现居地</view>
-          <view class="location-picker" @tap="showResidencePicker">
-            <text class="location-text">{{ filterData.residence || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+          <view class="location-row">
+            <view class="location-picker" @tap="showResidencePicker">
+              <text class="location-text">{{ filterData.residence || '请选择' }}</text>
+              <text class="picker-arrow">></text>
+            </view>
+            <view
+              v-if="filterData.residence"
+              class="clear-location"
+              @tap="clearResidence"
+            >
+              <text>不限</text>
+            </view>
           </view>
         </view>
 
         <view class="filter-section">
           <view class="section-title">户籍地</view>
-          <view class="location-picker" @tap="showHometownPicker">
-            <text class="location-text">{{ filterData.hometown || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+          <view class="location-row">
+            <view class="location-picker" @tap="showHometownPicker">
+              <text class="location-text">{{ filterData.hometown || '请选择' }}</text>
+              <text class="picker-arrow">></text>
+            </view>
+            <view
+              v-if="filterData.hometown"
+              class="clear-location"
+              @tap="clearHometown"
+            >
+              <text>不限</text>
+            </view>
           </view>
         </view>
 
@@ -372,12 +390,47 @@ const selectRealName = (value: number | undefined) => {
   filterData.value.isRealName = value
 }
 
+const cityOptions = [
+  '北京', '上海', '广州', '深圳', '杭州', '南京', '成都', '重庆', '武汉',
+  '西安', '郑州', '济南', '青岛', '苏州', '天津', '长沙', '东莞', '沈阳',
+  '宁波', '昆明', '大连', '厦门', '合肥', '佛山', '福州', '哈尔滨', '长春',
+  '南昌', '贵阳', '南宁', '石家庄', '太原', '无锡', '烟台', '温州', '珠海',
+]
+
 const showResidencePicker = () => {
-  uni.showToast({ title: '请选择现居地', icon: 'none' })
+  const range = ['不限', ...cityOptions]
+  uni.showActionSheet({
+    itemList: range,
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        filterData.value.residence = undefined
+      } else {
+        filterData.value.residence = range[res.tapIndex]
+      }
+    },
+  })
 }
 
 const showHometownPicker = () => {
-  uni.showToast({ title: '请选择户籍地', icon: 'none' })
+  const range = ['不限', ...cityOptions]
+  uni.showActionSheet({
+    itemList: range,
+    success: (res) => {
+      if (res.tapIndex === 0) {
+        filterData.value.hometown = undefined
+      } else {
+        filterData.value.hometown = range[res.tapIndex]
+      }
+    },
+  })
+}
+
+const clearResidence = () => {
+  filterData.value.residence = undefined
+}
+
+const clearHometown = () => {
+  filterData.value.hometown = undefined
 }
 
 const handleReset = () => {
@@ -596,6 +649,7 @@ defineExpose({
 }
 
 .location-picker {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -603,6 +657,26 @@ defineExpose({
   padding: 0 24rpx;
   background-color: #f5f5f5;
   border-radius: 12rpx;
+}
+
+.location-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.clear-location {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  padding: 0 24rpx;
+  border: 2rpx solid #ddd;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .location-text {

@@ -466,13 +466,15 @@ const closeSharePanel = () => {
 
 const shareToFriend = () => {
   closeSharePanel()
-  // 微信小程序分享需通过右上角原生按钮触发
-  // showShareMenu 已在 onMounted 中调用
+  // 引导用户使用右上角原生分享按钮
+  // 开发工具中 showShareMenu 可能不可用，真机预览正常
+  // #ifdef MP-WEIXIN
   uni.showToast({
     title: '请点击右上角「···」分享给好友',
     icon: 'none',
     duration: 2000,
   })
+  // #endif
 }
 
 const generatePoster = () => {

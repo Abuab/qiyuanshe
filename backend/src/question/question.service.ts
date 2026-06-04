@@ -112,23 +112,27 @@ export class QuestionService {
       throw new NotFoundException('问题不存在')
     }
 
-    const answer = this.answerRepository.create({
+    // 使用 insert 确保所有字段（含 userId）写入数据库
+    const insertResult = await this.answerRepository.insert({
       questionId,
       userId,
       content,
       photos,
       status: 0,
       likeCount: 0,
-    })
+    } as any)
 
-    const savedAnswer = await this.answerRepository.save(answer)
+    const answerId = insertResult.identifiers[0]?.id
+    if (!answerId) {
+      throw new Error('回答创建失败')
+    }
 
     await this.questionRepository.update(
       { id: questionId },
-      { answerCount: question.answerCount + 1 }
+      { answerCount: question.answerCount + 1 },
     )
 
-    return savedAnswer
+    return this.answerRepository.findOneOrFail({ where: { id: answerId } })
   }
 
   async likeAnswer(answerId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
