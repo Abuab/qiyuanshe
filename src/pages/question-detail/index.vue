@@ -129,12 +129,13 @@ const refreshing = ref(false)
 
 onMounted(() => {
   // 开启分享菜单
-  try {
-    uni.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage'],
-    })
-  } catch (_) { /* ignore */ }
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage'],
+    fail: () => {
+      console.log('[分享]showShareMenu 开发工具跳过')
+    },
+  })
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any

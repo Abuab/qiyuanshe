@@ -359,14 +359,14 @@ function goBack() {
 
 onMounted(() => {
   // 激活右上角原生分享按钮
-  try {
-    uni.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage', 'shareTimeline'],
-    })
-  } catch (_) {
-    // showShareMenu 在开发工具中 ban，静默忽略
-  }
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline'],
+    fail: () => {
+      // showShareMenu 在开发工具中 ban，静默忽略
+      console.log('[分享]showShareMenu 开发工具跳过')
+    },
+  })
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any

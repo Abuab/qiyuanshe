@@ -412,15 +412,14 @@ onMounted(() => {
     checkPopupAnnouncement()
   }, 800)
 
-  // 开启分享菜单（异步执行，避免阻塞页面渲染）
-  setTimeout(() => {
-    try {
-      uni.showShareMenu({
-        withShareTicket: true,
-        menus: ['shareAppMessage'],
-      })
-    } catch (_) { /* ignore */ }
-  }, 0)
+  // 开启分享菜单（开发工具中可能不可用，加 fail 静默处理）
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage'],
+    fail: () => {
+      console.log('[分享]showShareMenu 开发工具跳过')
+    },
+  })
 
   loadUserList(true)
 })

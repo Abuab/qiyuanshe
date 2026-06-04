@@ -119,51 +119,33 @@ const copyWechat = async () => {
 }
 
 const saveQrcode = async () => {
-  if (!props.matchmaker.qrCode) return
+  if (!props.matchmaker.qrCode) {
+    uni.showToast({ title: '暂无二维码', icon: 'none' })
+    return
+  }
+
+  uni.showLoading({ title: '保存中...' })
 
   try {
-    uni.showLoading({ title: '保存中...' })
+    // 本地图片路径直接用，网络图片需要先下载
+    let filePath = props.matchmaker.qrCode
+    if (filePath.startsWith('http')) {
+      const res = await uni.downloadFile({ url: filePath })
+      if (res.statusCode !== 200) throw new Error('下载失败')
+      filePath = res.tempFilePath
+    }
 
-    const tempFilePath = await new Promise<string>((resolve, reject) => {
-      uni.downloadFile({
-        url: props.matchmaker.qrCode,
-        success: (res) => {
-          if (res.statusCode === 200) {
-            resolve(res.tempFilePath)
-          } else {
-            reject(new Error('Download failed'))
-          }
-        },
-        fail: reject,
-      })
-    })
-
-    await new Promise<void>((resolve, reject) => {
-      uni.saveImageToPhotosAlbum({
-        filePath: tempFilePath,
-        success: () => {
-          uni.hideLoading()
-          uni.showToast({
-            title: '保存成功',
-            icon: 'success',
-          })
-          resolve()
-        },
-        fail: (err) => {
-          uni.hideLoading()
-          if (err.errMsg.includes('auth deny')) {
-            uni.showToast({
-              title: '请授权保存图片',
-              icon: 'none',
-            })
-          }
-          reject(err)
-        },
-      })
-    })
-  } catch (e) {
+    await uni.saveImageToPhotosAlbum({ filePath })
     uni.hideLoading()
-    console.error('save failed', e)
+    uni.showToast({ title: '保存成功', icon: 'success' })
+  } catch (e: any) {
+    uni.hideLoading()
+    if (e.errMsg?.includes('auth deny')) {
+      uni.showToast({ title: '请授权保存图片权限', icon: 'none' })
+    } else {
+      uni.showToast({ title: '保存失败', icon: 'none' })
+    }
+    console.error('save qrcode failed', e)
   }
 }
 

@@ -43,6 +43,8 @@ export interface RequestOptions {
   data?: Record<string, unknown>
   header?: Record<string, string>
   retryCount?: number
+  /** 单次请求超时（毫秒），不传则使用全局默认 TIMEOUT */
+  timeout?: number
 }
 
 /** HTTP 成功状态码范围 */
@@ -248,7 +250,8 @@ function retryRequest(
 }
 
 const request = <T = unknown>(options: RequestOptions): Promise<T> => {
-  const { url, method = 'GET', data = {}, header = {}, retryCount = 0 } = options
+  const { url, method = 'GET', data = {}, header = {}, retryCount = 0, timeout } = options
+  const requestTimeout = timeout || TIMEOUT
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url
   const token = getToken()
 
@@ -266,7 +269,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
       method: method as any,
       data,
       header: requestHeader,
-      timeout: TIMEOUT,
+      timeout: requestTimeout,
       success: (res: any) => {
         const response = res as UniApp.RequestSuccessCallbackResult
         const statusCode = response.statusCode
