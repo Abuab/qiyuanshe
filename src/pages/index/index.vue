@@ -121,10 +121,10 @@
     <view v-show="showPopup" class="popup-mask" @tap="closePopup">
       <view class="popup-content" @tap.stop>
         <view class="popup-header">
-          <text class="popup-title">{{ popupData.title }}</text>
+          <text class="popup-title">{{ popupTitle }}</text>
         </view>
         <view class="popup-body">
-          <text class="popup-text">{{ popupData.content }}</text>
+          <text class="popup-text">{{ popupContent }}</text>
         </view>
         <view class="popup-footer" @tap="closePopup">
           <text class="popup-btn">我知道了</text>
@@ -206,7 +206,8 @@ const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
 const showPopup = ref(false)
-const popupData = ref({ title: '', content: '' })
+const popupTitle = ref('')
+const popupContent = ref('')
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -361,9 +362,11 @@ const checkPopupAnnouncement = () => {
   }
 
   // 设置弹窗数据并显示
-  popupData.value = getMockPopupNotice()
+  const notice = getMockPopupNotice()
+  popupTitle.value = notice.title
+  popupContent.value = notice.content
   showPopup.value = true
-  console.log('[Popup] 弹窗已显示, title:', popupData.value.title)
+  console.log('[Popup] 弹窗已显示, title:', popupTitle.value, 'content长度:', popupContent.value.length)
 }
 
 const closePopup = () => {
@@ -758,6 +761,7 @@ const onShareTimeline = () => {
   font-size: 28rpx;
   color: #666;
   line-height: 1.8;
+  white-space: pre-wrap;
 }
 
 .popup-footer {
