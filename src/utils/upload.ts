@@ -1,10 +1,18 @@
 import { getToken } from './auth'
-import { getBaseUrl } from './request'
+import { getBaseUrl, getServerBaseUrl } from './request'
 
 /** 单张图片上传返回结果 */
 export interface UploadResult {
-  /** 服务器返回的图片 URL */
+  /** 服务器返回的图片 URL（已补全为完整 URL） */
   url: string
+}
+
+/** 将后端返回的相对路径补全为完整 URL */
+function resolveImageUrl(rawUrl: string): string {
+  if (!rawUrl) return ''
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl
+  if (rawUrl.startsWith('/')) return getServerBaseUrl() + rawUrl
+  return getServerBaseUrl() + '/uploads/' + rawUrl
 }
 
 /**
@@ -58,12 +66,12 @@ export function uploadImage(filePath: string, fieldName = 'file'): Promise<Uploa
           if (data.code === 200 && data.data && typeof data.data === 'object') {
             const inner = data.data as Record<string, unknown>
             if (typeof inner.url === 'string') {
-              resolve({ url: inner.url })
+              resolve({ url: resolveImageUrl(inner.url) })
               return
             }
           }
           if (typeof data.url === 'string') {
-            resolve({ url: data.url })
+            resolve({ url: resolveImageUrl(data.url) })
             return
           }
 

@@ -69,10 +69,8 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    const apiBaseUrl = process.env.API_BASE_URL || ''
-    const url = apiBaseUrl
-      ? `${apiBaseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
-      : `/uploads/${file.filename}`
+    const apiBaseUrl = process.env.API_BASE_URL || 'http://150.158.130.152:3000'
+    const url = `${apiBaseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
     console.log('Upload success:', file.originalname, '->', url)
     return Result.success({ url })
     } catch (error: any) {

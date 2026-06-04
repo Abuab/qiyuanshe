@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { getServerBaseUrl } from './request'
 
 export const formatDate = (date: string | Date | number, format: string = 'YYYY-MM-DD'): string => {
   if (!date) return ''
@@ -156,7 +157,7 @@ export const reLaunch = (url: string): void => {
 }
 
 /**
- * 将相对路径转为完整图片 URL
+ * 将相对图片路径转换为完整 URL
  * /static/xxx → 本地路径（小程序内图片）
  * /uploads/xxx → 拼接服务器域名
  * http/https 开头 → 直接返回
@@ -166,14 +167,13 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   if (path.startsWith('/static/')) return path
+  if (path.startsWith('data:')) return path
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
-  const serverBase = baseUrl.replace(/\/api$/, '')
+  const serverBase = getServerBaseUrl()
 
   if (path.startsWith('/uploads/')) {
     return serverBase + path
   }
-  if (path.startsWith('data:')) return path
   return serverBase + '/uploads/' + path.replace(/^\//, '')
 }
 

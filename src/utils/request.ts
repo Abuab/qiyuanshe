@@ -6,11 +6,11 @@ function getToken(): string {
 }
 
 /**
- * BASE_URL 获取优先级：
- * 1. 运行时缓存（uni.setStorageSync('api_base_url', ...)）
- * 2. 构建时环境变量 import.meta.env.VITE_API_BASE_URL
- * 3. 默认值（本地开发）
+ * 生产环境 API 地址（兜底默认值）
+ * 优先级：storage 缓存 > build-time VITE_API_BASE_URL > 此常量
  */
+const DEFAULT_BASE_URL = 'http://150.158.130.152:3000/api'
+const DEFAULT_SERVER_URL = 'http://150.158.130.152:3000'
 function resolveBaseUrl(): string {
   const storageUrl = uni.getStorageSync('api_base_url') as string | undefined
   if (storageUrl) return storageUrl
@@ -19,7 +19,7 @@ function resolveBaseUrl(): string {
   const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
   if (viteEnv?.VITE_API_BASE_URL) return viteEnv.VITE_API_BASE_URL
 
-  return 'http://localhost:3000/api'
+  return DEFAULT_BASE_URL
 }
 
 const BASE_URL = resolveBaseUrl()
@@ -27,6 +27,12 @@ const TIMEOUT = 15000
 const MAX_RETRIES = 2
 
 export const getBaseUrl = (): string => resolveBaseUrl()
+
+/** 获取服务器根地址（不含 /api），用于拼接图片路径 */
+export const getServerBaseUrl = (): string => {
+  const base = resolveBaseUrl()
+  return base.replace(/\/api\/?$/, '')
+}
 
 export interface RequestOptions {
   url: string
