@@ -121,10 +121,10 @@
     <view v-show="showPopup" class="popup-mask" @tap="closePopup">
       <view class="popup-content" @tap.stop>
         <view class="popup-header">
-          <text class="popup-title">{{ popupTitle }}</text>
+          <text class="popup-title">{{ popupTitle || '欢迎来到栖缘社！' }}</text>
         </view>
         <view class="popup-body">
-          <text class="popup-text">{{ popupContent }}</text>
+          <text class="popup-text">{{ popupContent || '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！' }}</text>
         </view>
         <view class="popup-footer" @tap="closePopup">
           <text class="popup-btn">我知道了</text>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
@@ -361,12 +361,18 @@ const checkPopupAnnouncement = () => {
     return
   }
 
-  // 设置弹窗数据并显示
-  const notice = getMockPopupNotice()
-  popupTitle.value = notice.title
-  popupContent.value = notice.content
-  showPopup.value = true
-  console.log('[Popup] 弹窗已显示, title:', popupTitle.value, 'content长度:', popupContent.value.length)
+  // 兜底：若数据意外为空（如从 onShow 路径进入），重新加载
+  if (!popupTitle.value || !popupContent.value) {
+    const notice = getMockPopupNotice()
+    popupTitle.value = notice.title
+    popupContent.value = notice.content
+  }
+
+  // 使用 nextTick 确保模板绑定已就绪再显示
+  nextTick(() => {
+    showPopup.value = true
+    console.log('[Popup] 弹窗已显示, title:', popupTitle.value, 'content长度:', popupContent.value.length)
+  })
 }
 
 const closePopup = () => {
@@ -409,6 +415,11 @@ onMounted(() => {
   // 公告：当日关闭后不再显示
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
+
+  // 提前同步加载弹窗内容数据，确保 setTimeout 触发时模板已有值
+  const notice = getMockPopupNotice()
+  popupTitle.value = notice.title
+  popupContent.value = notice.content
 
   // 延时弹出公告，确保页面渲染完成
   setTimeout(() => {
