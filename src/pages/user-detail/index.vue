@@ -11,7 +11,7 @@
         </view>
         <view class="nav-title">{{ userData.nickname || '用户' }}</view>
         <view class="nav-right">
-          <text class="more-icon">⋮</text>
+          <text class="more-icon" @tap="showMoreActions">⋮</text>
           <text class="eye-icon" :class="{ active: userData.isFollowed }">{{ userData.isFollowed ? '👁' : '👁‍🗨' }}</text>
         </view>
       </view>
@@ -66,6 +66,9 @@
               {{ userData.isFollowed ? '❤️' : '🤍' }}
             </text>
             <text class="follow-text">{{ userData.isFollowed ? '已关注' : '关注' }}</text>
+          </view>
+          <view v-else class="follow-btn edit-btn" @tap="goEditProfile">
+            <text>编辑资料</text>
           </view>
         </view>
 
@@ -239,6 +242,21 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
+
+      <!-- 单身承诺签署弹窗 -->
+      <view v-if="showCommitPopup" class="commit-popup">
+        <view class="commit-overlay" @tap="showCommitPopup = false"></view>
+        <view class="commit-card">
+          <view class="commit-title">单身承诺</view>
+          <text class="commit-text">本人承诺：目前在法律及事实上均为单身状态，无配偶、无恋人，自愿签署本承诺书，并对所填写信息的真实性负责。</text>
+          <view class="commit-actions">
+            <text class="commit-cancel" @tap="showCommitPopup = false">取消</text>
+            <view class="commit-confirm" @tap="signCommitment">
+              <text>同意并签署</text>
+            </view>
+          </view>
+        </view>
+      </view>
     </template>
 
     <view v-else class="empty-container">
@@ -304,6 +322,7 @@ const requirementTooLong = ref(false)
 const showShare = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
+const showCommitPopup = ref(false)
 const followLoading = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
@@ -485,6 +504,10 @@ const generatePoster = () => {
 }
 
 const toggleFollow = async () => {
+  if (userData.value?.isSelf) {
+    uni.showToast({ title: '不能关注自己', icon: 'none' })
+    return
+  }
   // 未登录 → 跳转登录页
   if (!isLoggedIn.value) {
     uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
@@ -548,6 +571,10 @@ const toggleFollow = async () => {
   }
 }
 
+const goEditProfile = () => {
+  uni.navigateTo({ url: '/pages/edit-profile/index' })
+}
+
 const handleChat = () => {
   // 未登录 → 跳转登录页
   if (!isLoggedIn.value) {
@@ -595,6 +622,49 @@ const onSelectMatchmaker = (matchmaker: any) => {
   }, 300)
 }
 
+const signCommitment = async () => {
+  try {
+    await request({ url: '/users/commitment', method: 'POST' } as any)
+    if (userData.value) {
+      ;(userData.value as any).hasCommitment = true
+    }
+    showCommitPopup.value = false
+    uni.showToast({ title: '签署成功', icon: 'success' })
+  } catch (e) {
+    uni.showToast({ title: '签署失败', icon: 'none' })
+  }
+}
+
+const showMoreActions = () => {
+  const items = ['分享主页', '举报用户']
+  if (userData.value && !userData.value.isSelf) items.push('拉黑')
+  uni.showActionSheet({
+    itemList: items,
+    success: (res) => {
+      if (res.tapIndex === 0) shareToFriend()
+      else if (res.tapIndex === 1) {
+        uni.navigateTo({ url: `/pages/report/index?userId=${userId.value}&type=user` })
+      } else {
+        blockUser()
+      }
+    },
+  })
+}
+
+const blockUser = () => {
+  uni.showModal({
+    title: '确认拉黑',
+    content: '拉黑后将不再看到该用户的动态和消息',
+    success: (res) => {
+      if (res.confirm) {
+        request({ url: `/users/${userId.value}/block`, method: 'POST' })
+          .then(() => uni.showToast({ title: '已拉黑', icon: 'success' }))
+          .catch(() => uni.showToast({ title: '拉黑失败', icon: 'none' }))
+      }
+    },
+  })
+}
+
 const showAuthDetail = (type: string) => {
   let title = ''
   let content = ''
@@ -617,8 +687,12 @@ const showAuthDetail = (type: string) => {
       content = userData.value?.carStatus || '未认证'
       break
     case 'commitment':
+      if (userData.value?.isSelf && !(userData.value as any)?.hasCommitment) {
+        showCommitPopup.value = true
+        return
+      }
       title = '单身承诺'
-      content = '已签署单身承诺书'
+      content = (userData.value as any)?.hasCommitment ? '已签署单身承诺书' : '未签署'
       break
     case 'marital':
       title = '婚姻状况'
@@ -1123,5 +1197,85 @@ const showAuthDetail = (type: string) => {
 .share-divider {
   height: 1rpx;
   background-color: #eee;
+}
+
+// ========== 单身承诺弹窗 ==========
+.commit-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+}
+
+.commit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.commit-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 600rpx;
+  background-color: #fff;
+  border-radius: 24rpx;
+  padding: 48rpx 40rpx;
+}
+
+.commit-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+  margin-bottom: 32rpx;
+}
+
+.commit-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+  display: block;
+  margin-bottom: 40rpx;
+}
+
+.commit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.commit-cancel {
+  font-size: 28rpx;
+  color: #999;
+  padding: 16rpx 32rpx;
+}
+
+.commit-confirm {
+  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  border-radius: 40rpx;
+  padding: 16rpx 40rpx;
+
+  text {
+    font-size: 28rpx;
+    color: #fff;
+    font-weight: 500;
+  }
+}
+
+.edit-btn {
+  background-color: #f5f5f5;
+  border: 2rpx solid #ddd;
+
+  text {
+    color: #666;
+    font-size: 26rpx;
+  }
 }
 </style>

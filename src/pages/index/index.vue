@@ -104,6 +104,8 @@
     </scroll-view>
 
     <tab-bar />
+
+    <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
   </view>
 </template>
 
@@ -115,6 +117,7 @@ import { showToast } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
+import FilterPanel from '@/components/filter-panel/filter-panel.vue'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 
@@ -174,6 +177,7 @@ const isRefreshing = ref(false)
 const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
+const showFilter = ref(false)
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -285,9 +289,15 @@ const goToQuestionDetail = (id: number) => {
 }
 
 const goToFilter = () => {
-  uni.navigateTo({
-    url: '/pages/filter/index',
-  })
+  showFilter.value = true
+}
+
+const onFilterConfirm = (data: FilterData) => {
+  applyFilter(data)
+}
+
+const onFilterReset = () => {
+  handleClearFilter()
 }
 
 /** 应用筛选条件并重新加载 */
@@ -321,17 +331,6 @@ onMounted(() => {
   } catch (_) { /* ignore */ }
 
   loadUserList(true)
-})
-
-// onShow 中检查 store 是否有筛选条件
-// tabbar 页面用 navigateTo 打开 filter 页后回退，EventChannel 可能不可靠
-onShow(() => {
-  if (filterStore.hasFilter) {
-    const filterData = filterStore.takeFilter()
-    if (filterData) {
-      applyFilter(filterData)
-    }
-  }
 })
 
 const onShareAppMessage = () => {

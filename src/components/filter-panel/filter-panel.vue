@@ -1,5 +1,5 @@
 <template>
-  <view v-if="visible" class="filter-panel" :class="{ asPage: noOverlay }">
+  <view v-show="visible" class="filter-panel" :class="{ asPage: noOverlay }">
     <view v-if="!noOverlay" class="overlay" @tap="handleClose"></view>
     <view class="panel-content" :class="{ open: visible, fullPage: noOverlay }">
       <view class="drag-indicator"></view>

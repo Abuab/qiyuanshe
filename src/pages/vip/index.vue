@@ -61,14 +61,15 @@
       <view class="packages-section">
         <text class="section-title">选择套餐</text>
 
-        <view class="packages-grid">
-          <view
-            v-for="pkg in packages"
-            :key="pkg.level"
-            class="package-card"
-            :class="{ selected: selectedLevel === pkg.level }"
-            @tap="selectPackage(pkg)"
-          >
+        <scroll-view class="packages-scroll" scroll-x enable-flex :show-scrollbar="false">
+          <view class="packages-row">
+            <view
+              v-for="pkg in packages"
+              :key="pkg.level"
+              class="package-card"
+              :class="{ selected: selectedLevel === pkg.level }"
+              @tap="selectPackage(pkg)"
+            >
             <!-- 顶部标签 -->
             <view class="package-tag" :class="pkg.tagClass">
               <text>{{ pkg.tag }}</text>
@@ -94,7 +95,8 @@
             <!-- 无节省时占位保持卡面高度一致 -->
             <view v-else class="package-save-placeholder"></view>
           </view>
-        </view>
+          </view>
+        </scroll-view>
       </view>
 
       <!-- 支付方式 -->
@@ -113,17 +115,18 @@
       </view>
 
       <!-- 协议 -->
-      <view class="agreement-section">
-        <text class="agreement-text">开通即表示同意</text>
-        <text class="agreement-link" @tap="showAgreement">《会员服务协议》</text>
-      </view>
+      <view style="height:40rpx"></view>
 
       <!-- 底部安全区占位 -->
-      <view class="bottom-placeholder"></view>
+      <view class="bottom-placeholder" style="height:200rpx"></view>
     </scroll-view>
 
     <!-- 底部固定按钮 -->
     <view class="fixed-bottom">
+      <view class="agreement-inline">
+        <text class="agreement-text">开通即表示同意</text>
+        <text class="agreement-link" @tap="showAgreement">《会员服务协议》</text>
+      </view>
       <view class="submit-btn" @tap="handleSubmit">
         <text>立即开通</text>
       </view>
@@ -400,26 +403,35 @@ const handleBack = () => {
   padding-left: 8rpx;
 }
 
-// 三列等宽网格，无横向滚动
-.packages-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 16rpx;
+// 横向可滚动套餐卡片
+.packages-scroll {
+  width: 100%;
+  white-space: nowrap;
 }
 
+.packages-row {
+  display: inline-flex;
+  gap: 16rpx;
+  padding: 0 8rpx;
+}
+
+// 三列等宽网格，无横向滚动
+// .packages-grid 已废弃，保留注释
+
 .package-card {
-  flex: 1;
-  min-width: 0; // 允许 flex 子元素收缩
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
-  padding: 36rpx 8rpx 24rpx; // 顶部留够空间给标签
+  width: 210rpx;
+  padding: 36rpx 12rpx 24rpx;
   background-color: #fff;
   border: 4rpx solid #eee;
   border-radius: 16rpx;
   position: relative;
   transition: all 0.25s ease;
   box-sizing: border-box;
+  flex-shrink: 0;
+  vertical-align: top;
 
   &.selected {
     border-color: #FF6B9D;
@@ -605,6 +617,13 @@ const handleBack = () => {
   background-color: #fff;
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
   z-index: 50;
+}
+
+.agreement-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
 }
 
 .submit-btn {
