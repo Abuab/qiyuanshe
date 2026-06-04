@@ -128,8 +128,7 @@
       "path": "pages/dynamic/index",
       "style": {
         "navigationBarTitleText": "动态",
-        "navigationBarBackgroundColor": "#ffffff",
-        "navigationBarTextStyle": "black"
+        "navigationStyle": "custom"
       }
     },
     {

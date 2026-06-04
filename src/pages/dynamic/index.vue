@@ -1,5 +1,15 @@
 <template>
   <view class="dynamic-page">
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar">
+      <view class="nav-left" v-if="showBack" @tap="handleBack">
+        <text class="back-icon">←</text>
+      </view>
+      <view class="nav-left" v-else></view>
+      <text class="nav-title">动态</text>
+      <view class="nav-right"></view>
+    </view>
+
     <scroll-view
       class="content-scroll"
       scroll-y
@@ -101,6 +111,7 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface LikeUser {
   id: number
@@ -128,6 +139,7 @@ const isRefreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const pageSize = 10
+const showBack = ref(false)
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -267,7 +279,14 @@ const shareDynamic = (item: DynamicItem) => {
   uni.showToast({ title: '请点击右上角分享', icon: 'none' })
 }
 
+const handleBack = () => {
+  safeNavigateBack()
+}
+
 onMounted(() => {
+  // 如果是从其他页面 navigateTo 过来的，显示返回按钮
+  showBack.value = getCurrentPages().length > 1
+
   fetchList(true)
 })
 </script>
@@ -278,9 +297,41 @@ onMounted(() => {
   background-color: #f5f5f5;
 }
 
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  background-color: #fff;
+  z-index: 100;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-left,
+.nav-right {
+  width: 120rpx;
+}
+
+.back-icon {
+  font-size: 36rpx;
+  color: #FF6B9D;
+  font-weight: bold;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
 .content-scroll {
   height: 100vh;
-  padding-top: 0;
+  padding-top: 88rpx;
   padding-bottom: 100rpx;
 }
 
