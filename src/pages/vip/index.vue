@@ -209,6 +209,20 @@ const handleSubmit = async () => {
     })
 
     if (res.payParams) {
+      // 测试模式：微信支付未配置，直接模拟支付成功
+      if (res.payParams.paySign === '__MOCK__') {
+        await request({
+          url: '/payment/mock-pay',
+          method: 'POST',
+          data: { orderNo: res.orderNo },
+        })
+        uni.hideLoading()
+        uni.redirectTo({
+          url: `/pages/pay-result/index?orderNo=${res.orderNo}&status=success`,
+        })
+        return
+      }
+
       uni.requestPayment({
         provider: 'wxpay',
         timeStamp: res.payParams.timeStamp,

@@ -34,6 +34,13 @@ export class PaymentController {
     return this.paymentService.processNotify(data)
   }
 
+  @Post('mock-pay')
+  @UseGuards(JwtAuthGuard)
+  async mockPay(@Body('orderNo') orderNo: string, @Request() req: any) {
+    await this.paymentService.mockPay(orderNo, req.user.userId)
+    return { success: true, message: '支付成功（测试模式）' }
+  }
+
   @Get('orders')
   @UseGuards(JwtAuthGuard)
   async getOrders(@Query() query: QueryOrdersDto, @Request() req: any) {

@@ -52,6 +52,10 @@ export class PaymentService {
     this.notifyUrl = process.env.WX_NOTIFY_URL || ''
   }
 
+  private isWechatPayConfigured(): boolean {
+    return !!(this.mchId && this.apiKey && this.appId)
+  }
+
   private getPackage(level: number): VipPackage {
     const pkg = VIP_PACKAGES.find(p => p.level === level)
     if (!pkg) {
@@ -113,6 +117,20 @@ export class PaymentService {
     })
 
     await this.orderRepository.save(order)
+
+    // 微信支付未配置时返回 mock 参数，前端可直接调 processNotify 完成支付
+    if (!this.isWechatPayConfigured()) {
+      return {
+        orderNo,
+        payParams: {
+          timeStamp: '',
+          nonceStr: '',
+          package: '',
+          signType: '',
+          paySign: '__MOCK__',
+        } as PayParams,
+      }
+    }
 
     const payParams = await this.unifiedOrder(orderNo, pkg.price, pkg.name)
 
@@ -249,6 +267,43 @@ export class PaymentService {
 
     const calculatedSign = await this.generateSignature(signParams)
     return receivedSign === calculatedSign
+  }
+
+  /** 测试模式：直接标记订单已支付并开通会员 */
+  async mockPay(orderNo: string, userId: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    try {
+      const order = await queryRunner.manager.findOne(VipOrder, {
+        where: { orderNo, userId, status: 0 },
+      })
+      if (!order) {
+        throw new NotFoundException('订单不存在或已处理')
+      }
+
+      const pkg = this.getPackage(order.vipLevel)
+      const expireTime = new Date()
+      expireTime.setMonth(expireTime.getMonth() + pkg.months)
+
+      const user = await queryRunner.manager.findOne(User, {
+        where: { id: userId },
+      })
+      if (user && user.vipExpireTime && user.vipExpireTime > new Date()) {
+        expireTime.setMonth(expireTime.getMonth() + pkg.months)
+      }
+
+      await queryRunner.manager.update(VipOrder, { orderNo }, { status: 1, paidAt: new Date() })
+      await queryRunner.manager.update(User, { id: userId }, { vipLevel: order.vipLevel, vipExpireTime: expireTime, isVip: 1 })
+
+      await queryRunner.commitTransaction()
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      throw error
+    } finally {
+      await queryRunner.release()
+    }
   }
 
   async getOrders(userId: number, page: number = 1, limit: number = 20) {
