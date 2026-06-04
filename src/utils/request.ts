@@ -93,6 +93,160 @@ function handleUnauthorized(tokenWasPresent: boolean): void {
   }
 }
 
+/** 标记是否正在刷新 token，防止并发刷新 */
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
+
+/** 通知等待中的请求：token 已刷新，传入新 token */
+function onTokenRefreshed(newToken: string) {
+  refreshSubscribers.forEach((cb) => cb(newToken))
+  refreshSubscribers = []
+}
+
+/** 通知等待中的请求：刷新失败 */
+function onRefreshFailed() {
+  refreshSubscribers = []
+}
+
+/** 尝试用 refresh token 刷新 access token，返回新的 access token 或 null */
+function tryRefreshToken(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const refreshToken = secureStorage.getRefreshToken()
+    if (!refreshToken) {
+      resolve(null)
+      return
+    }
+
+    uni.request({
+      url: BASE_URL + '/auth/refresh',
+      method: 'POST',
+      data: { refreshToken },
+      header: { 'Content-Type': 'application/json' },
+      timeout: TIMEOUT,
+      success: (res: any) => {
+        const body = (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as Record<string, unknown>
+        const newAccess = (body.data as Record<string, unknown>)?.accessToken as string | undefined
+          || (body.accessToken as string | undefined)
+        if (newAccess && res.statusCode >= 200 && res.statusCode < 300) {
+          secureStorage.setToken(newAccess)
+          const newRefresh = (body.data as Record<string, unknown>)?.refreshToken as string | undefined
+            || (body.refreshToken as string | undefined)
+          if (newRefresh) secureStorage.setRefreshToken(newRefresh)
+          resolve(newAccess)
+          return
+        }
+        resolve(null)
+      },
+      fail: () => {
+        resolve(null)
+      },
+    })
+  })
+}
+
+/** 处理 401：先尝试刷新 token，成功则重试原请求，失败则清空登录态 */
+function handle401AndRetry(
+  fullUrl: string,
+  method: string,
+  data: Record<string, unknown>,
+  header: Record<string, string>,
+  retryCount: number,
+  hadToken: boolean,
+  resolve: (value: any) => void,
+  reject: (reason: any) => void,
+): void {
+  if (!hadToken) {
+    handleUnauthorized(false)
+    reject(new Error('Unauthorized'))
+    return
+  }
+
+  // 如果正在刷新 token，加入等待队列
+  if (isRefreshing) {
+    refreshSubscribers.push((newToken: string) => {
+      retryRequest(fullUrl, method, data, header, retryCount, newToken, resolve, reject)
+    })
+    return
+  }
+
+  isRefreshing = true
+  tryRefreshToken().then((newToken) => {
+    if (newToken) {
+      onTokenRefreshed(newToken)
+      retryRequest(fullUrl, method, data, header, retryCount, newToken, resolve, reject)
+    } else {
+      onRefreshFailed()
+      handleUnauthorized(true)
+      reject(new Error('Unauthorized'))
+    }
+    isRefreshing = false
+  })
+}
+
+/** 用新 token 重试请求 */
+function retryRequest(
+  fullUrl: string,
+  method: string,
+  data: Record<string, unknown>,
+  header: Record<string, string>,
+  retryCount: number,
+  newToken: string,
+  resolve: (value: any) => void,
+  reject: (reason: any) => void,
+): void {
+  const retryHeader: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...header,
+    Authorization: `Bearer ${newToken}`,
+  }
+
+  uni.request({
+    url: fullUrl,
+    method: method as any,
+    data,
+    header: retryHeader,
+    timeout: TIMEOUT,
+    success: (res: any) => {
+      const response = res as UniApp.RequestSuccessCallbackResult
+      const statusCode = response.statusCode
+
+      if (statusCode === 401) {
+        // 刷新后的 token 仍然 401，彻底清除登录态
+        handleUnauthorized(true)
+        reject(new Error('Unauthorized'))
+        return
+      }
+
+      if (!isHttpSuccess(statusCode)) {
+        const responseBody = response.data as Record<string, unknown> | undefined
+        const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
+        const msg = bizMsg || statusMessage(statusCode)
+        uni.showToast({ title: msg, icon: 'none', duration: 2000 })
+        reject(new Error(msg))
+        return
+      }
+
+      const result = response.data as Record<string, unknown> | undefined
+      if (!result) { resolve({} as any); return }
+
+      const code = result.code as number | undefined
+      const success = code === 0 || code === 200 || result.success === true
+      if (success) {
+        resolve((result.data !== undefined ? result.data : result) as any)
+      } else {
+        const bizMsg = (result.msg || result.message || '请求失败') as string
+        uni.showToast({ title: bizMsg, icon: 'none', duration: 2000 })
+        reject(new Error(bizMsg))
+      }
+    },
+    fail: (err: any) => {
+      logger.error(`[request:retry] ${method} ${fullUrl} 失败:`, err)
+      uni.showToast({ title: '网络连接失败，请检查网络', icon: 'none', duration: 2000 })
+      reject(new Error('Network Error'))
+    },
+  })
+}
+
 const request = <T = unknown>(options: RequestOptions): Promise<T> => {
   const { url, method = 'GET', data = {}, header = {}, retryCount = 0 } = options
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url
@@ -117,10 +271,9 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
         const response = res as UniApp.RequestSuccessCallbackResult
         const statusCode = response.statusCode
 
-        // ---- 401 统一处理 ----
+        // ---- 401 自动刷新 token ----
         if (statusCode === 401) {
-          handleUnauthorized(!!token)
-          reject(new Error('Unauthorized'))
+          handle401AndRetry(fullUrl, method, data, header, retryCount, !!token, resolve, reject)
           return
         }
 
