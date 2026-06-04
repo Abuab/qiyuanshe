@@ -172,7 +172,20 @@ const fetchDetail = async () => {
       }
     }
   } catch (e) {
-    console.error('fetch detail error', e)
+    // 后端暂未部署动态接口时使用 Mock 数据兜底
+    console.log('[动态详情]接口未开通，使用Mock数据', e)
+    detail.value = {
+      id: dynamicId.value,
+      userId: 1,
+      nickname: '用户' + dynamicId.value,
+      avatar: icons.common.defaultAvatar,
+      content: '这是一条测试动态内容。后端动态接口暂未部署，此处为 Mock 数据占位。',
+      images: [],
+      createdAt: new Date().toISOString(),
+      likeCount: 0,
+      commentCount: 0,
+      isLiked: false,
+    }
   }
 }
 
@@ -189,8 +202,8 @@ const fetchComments = async () => {
       avatar: c.avatar ? getFullImageUrl(c.avatar) : icons.common.defaultAvatar,
     }))
   } catch (e) {
-    // 后端暂未实现评论接口时静默
-    console.error('fetch comments error', e)
+    // 后端评论接口暂未部署，静默处理
+    console.log('[动态评论]接口未开通', (e as any)?.message || e)
   } finally {
     loadingComments.value = false
   }
