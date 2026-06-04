@@ -118,7 +118,7 @@
     <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
     <!-- 公告弹窗 -->
-    <view v-show="showPopup" class="popup-mask" @tap="closePopup">
+    <view v-if="showPopup" class="popup-mask" @tap="closePopup">
       <view class="popup-content">
         <view class="popup-header">
           <text class="popup-title">{{ popupTitle || '欢迎来到栖缘社！' }}</text>
