@@ -86,9 +86,15 @@ export class UserController {
     @Param('id', ParseIntPipe) targetUserId: number,
     @Request() req: any,
   ) {
-    const userId = req.user.userId
-    await this.userService.followUser(userId, targetUserId)
-    return { success: true, message: '关注成功' }
+    try {
+      const userId = req.user.userId
+      await this.userService.followUser(userId, targetUserId)
+      return Result.success(null, '关注成功')
+    } catch (error: any) {
+      console.error('followUser error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('关注失败: ' + (error?.message || '请稍后重试'))
+    }
   }
 
   @Delete(':id/follow')
@@ -97,9 +103,32 @@ export class UserController {
     @Param('id', ParseIntPipe) targetUserId: number,
     @Request() req: any,
   ) {
-    const userId = req.user.userId
-    await this.userService.unfollowUser(userId, targetUserId)
-    return { success: true, message: '取消关注成功' }
+    try {
+      const userId = req.user.userId
+      await this.userService.unfollowUser(userId, targetUserId)
+      return Result.success(null, '取消关注成功')
+    } catch (error: any) {
+      console.error('unfollowUser error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('取消关注失败: ' + (error?.message || '请稍后重试'))
+    }
+  }
+
+  @Get(':id/follow-status')
+  @UseGuards(JwtAuthGuard)
+  async getFollowStatus(
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const userId = req.user.userId
+      const result = await this.userService.getFollowStatus(userId, targetUserId)
+      return Result.success(result)
+    } catch (error: any) {
+      console.error('getFollowStatus error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('查询失败: ' + (error?.message || ''))
+    }
   }
 
   @Get(':id/followers')

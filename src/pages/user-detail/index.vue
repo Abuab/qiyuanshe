@@ -249,6 +249,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
@@ -304,6 +305,7 @@ const requirementTooLong = ref(false)
 const showShare = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
+const followLoading = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
@@ -327,6 +329,29 @@ onMounted(() => {
 
   fetchMatchmakerList()
 })
+
+// 从登录页返回后刷新关注状态
+onShow(() => {
+  if (userId.value && isLoggedIn.value && userData.value) {
+    fetchFollowStatus()
+  }
+})
+
+/** 单独查询关注状态（从登录页返回时刷新） */
+const fetchFollowStatus = async () => {
+  if (!userId.value || !isLoggedIn.value) return
+  try {
+    const res = await request<{ isFollowed: boolean }>({
+      url: `/users/${userId.value}/follow-status`,
+      method: 'GET',
+    })
+    if (userData.value && typeof res === 'object' && res !== null) {
+      userData.value.isFollowed = (res as any).isFollowed ?? false
+    }
+  } catch (err) {
+    // 静默失败，不影响主流程
+  }
+}
 
 const onShareAppMessage = () => {
   if (!userData.value) return {}
@@ -450,38 +475,66 @@ const generatePoster = () => {
 }
 
 const toggleFollow = async () => {
+  // 未登录 → 跳转登录页
   if (!isLoggedIn.value) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none',
-    })
+    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
+    setTimeout(() => {
+      uni.navigateTo({
+        url: `/pages/login/index`
+      })
+    }, 1000)
     return
   }
 
-  if (!userData.value) return
+  if (!userData.value || followLoading.value) return
+  followLoading.value = true
 
   const isFollowed = userData.value.isFollowed
   const method = isFollowed ? 'DELETE' : 'POST'
   const actionText = isFollowed ? '取消关注' : '关注'
 
+  uni.showLoading({ title: (isFollowed ? '取消中...' : '关注中...'), mask: true })
+
   try {
     await request({
       url: `/users/${userId.value}/follow`,
       method,
-    })
+    } as any)
 
     userData.value.isFollowed = !isFollowed
 
+    uni.hideLoading()
     uni.showToast({
       title: `${actionText}成功`,
       icon: 'success',
+      duration: 1500,
     })
-  } catch (e) {
-    console.error('toggle follow error', e)
-    uni.showToast({
-      title: `${actionText}失败`,
-      icon: 'none',
-    })
+  } catch (err: unknown) {
+    const error = err as Error
+    console.error('toggleFollow error:', error.message)
+    uni.hideLoading()
+
+    // 业务异常提示
+    const bizErrors: Record<string, string> = {
+      '不能关注自己': '不能关注自己哦',
+      '已关注该用户': '已关注该用户',
+      '未关注该用户': '尚未关注该用户，无法取消',
+      '用户不存在': '该用户不存在',
+    }
+
+    for (const [key, msg] of Object.entries(bizErrors)) {
+      if (error.message?.includes(key)) {
+        uni.showToast({ title: msg, icon: 'none', duration: 2000 })
+        return
+      }
+    }
+
+    // 401 由 request.ts 统一处理，不重复 toast
+    if (error.message !== 'Unauthorized') {
+      uni.showToast({ title: `${actionText}失败，请重试`, icon: 'none' })
+    }
+  } finally {
+    followLoading.value = false
   }
 }
 

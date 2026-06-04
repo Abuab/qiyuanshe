@@ -336,40 +336,52 @@ export class UserService {
       throw new UnauthorizedException('不能关注自己')
     }
 
-    const targetUser = await this.userRepository.findOne({
-      where: { id: targetUserId, status: 1, isDeleted: 0 },
+    // 使用事务：同时检查、创建关注记录
+    await this.followRepository.manager.transaction(async (manager) => {
+      const targetUser = await manager.findOne(User, {
+        where: { id: targetUserId, status: 1, isDeleted: 0 },
+      })
+
+      if (!targetUser) {
+        throw new NotFoundException('用户不存在')
+      }
+
+      const existingFollow = await manager.findOne(Follow, {
+        where: { userId, targetUserId },
+      })
+
+      if (existingFollow) {
+        throw new UnauthorizedException('已关注该用户')
+      }
+
+      const follow = manager.create(Follow, { userId, targetUserId })
+      await manager.save(follow)
     })
-
-    if (!targetUser) {
-      throw new NotFoundException('用户不存在')
-    }
-
-    const existingFollow = await this.followRepository.findOne({
-      where: { userId, targetUserId },
-    })
-
-    if (existingFollow) {
-      return
-    }
-
-    const follow = this.followRepository.create({
-      userId,
-      targetUserId,
-    })
-
-    await this.followRepository.save(follow)
   }
 
   async unfollowUser(userId: number, targetUserId: number): Promise<void> {
+    await this.followRepository.manager.transaction(async (manager) => {
+      const follow = await manager.findOne(Follow, {
+        where: { userId, targetUserId },
+      })
+
+      if (!follow) {
+        throw new NotFoundException('未关注该用户')
+      }
+
+      await manager.remove(follow)
+    })
+  }
+
+  /** 查询当前用户是否已关注目标用户 */
+  async getFollowStatus(
+    userId: number,
+    targetUserId: number,
+  ): Promise<{ isFollowed: boolean }> {
     const follow = await this.followRepository.findOne({
       where: { userId, targetUserId },
     })
-
-    if (!follow) {
-      throw new NotFoundException('未关注该用户')
-    }
-
-    await this.followRepository.remove(follow)
+    return { isFollowed: !!follow }
   }
 
   async getFollowers(
