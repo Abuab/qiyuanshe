@@ -250,6 +250,7 @@ export class AuthService {
 
   private sanitizeUser(user: User, includePhone = false): Partial<User> {
     const sanitized: any = {
+      userId: user.id,
       id: user.id,
       nickname: user.nickname,
       avatar: user.avatar,
