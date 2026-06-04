@@ -45,6 +45,8 @@ export interface RequestOptions {
   retryCount?: number
   /** 单次请求超时（毫秒），不传则使用全局默认 TIMEOUT */
   timeout?: number
+  /** 不弹 toast（用于轮询/后台请求等不希望打断用户的场景） */
+  skipToast?: boolean
 }
 
 /** HTTP 成功状态码范围 */
@@ -250,7 +252,7 @@ function retryRequest(
 }
 
 const request = <T = unknown>(options: RequestOptions): Promise<T> => {
-  const { url, method = 'GET', data = {}, header = {}, retryCount = 0, timeout } = options
+  const { url, method = 'GET', data = {}, header = {}, retryCount = 0, timeout, skipToast = false } = options
   const requestTimeout = timeout || TIMEOUT
   const fullUrl = url.startsWith('http') ? url : BASE_URL + url
   const token = getToken()
@@ -286,7 +288,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
           const responseBody = response.data as Record<string, unknown> | undefined
           const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
           const msg = bizMsg || statusMessage(statusCode)
-          if (statusCode !== 401) {
+          if (statusCode !== 401 && !skipToast) {
             uni.showToast({ title: msg, icon: 'none', duration: 2000 })
           }
           reject(new Error(msg))
@@ -311,7 +313,9 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
           resolve((result.data !== undefined ? result.data : result) as T)
         } else {
           const bizMsg = (result.msg || result.message || '请求失败') as string
-          uni.showToast({ title: bizMsg, icon: 'none', duration: 2000 })
+          if (!skipToast) {
+            uni.showToast({ title: bizMsg, icon: 'none', duration: 2000 })
+          }
           reject(new Error(bizMsg))
         }
       },
@@ -338,7 +342,9 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
         const errorMsg = err.errMsg?.includes('timeout')
           ? '请求超时，请检查网络'
           : '网络连接失败，请检查网络'
-        uni.showToast({ title: errorMsg, icon: 'none', duration: 2000 })
+        if (!skipToast) {
+          uni.showToast({ title: errorMsg, icon: 'none', duration: 2000 })
+        }
         reject(new Error('Network Error'))
       },
     })

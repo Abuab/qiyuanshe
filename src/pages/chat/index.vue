@@ -474,6 +474,7 @@ const closeVipLimit = () => {
 
 const startPolling = () => {
   stopPolling()
+  let consecutiveErrors = 0
   pollTimer = setInterval(async () => {
     try {
       const res = await request({
@@ -483,8 +484,10 @@ const startPolling = () => {
           userId: toUserId.value,
           afterId: messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0,
         },
+        skipToast: true,
       })
 
+      consecutiveErrors = 0
       const newMessages = res.list || []
       if (newMessages.length > 0) {
         const existingIds = new Set(messages.value.map(m => m.id))
@@ -496,8 +499,12 @@ const startPolling = () => {
           })
         }
       }
-    } catch (e) {
-      // 轮询失败静默处理
+    } catch (e: any) {
+      consecutiveErrors++
+      // 连续 3 次失败后停止轮询（后端暂未部署 polling 接口）
+      if (consecutiveErrors >= 3) {
+        stopPolling()
+      }
     }
   }, POLL_INTERVAL)
 }

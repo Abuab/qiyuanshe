@@ -29,10 +29,11 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const res: any = await request({ url: '/users/answers', method: 'GET' })
+    const res: any = await request({ url: '/users/answers', method: 'GET', skipToast: true })
     list.value = res.list || res || []
   } catch (e) {
-    console.error('fetch my answers error', e)
+    // 后端接口暂未部署，静默处理，显示空列表
+    console.log('[我的回答] 接口未开通', (e as any)?.message)
   } finally {
     loading.value = false
   }
