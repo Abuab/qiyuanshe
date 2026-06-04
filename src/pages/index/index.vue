@@ -115,7 +115,7 @@
 
     <tab-bar />
 
-    <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
+    <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
   </view>
 </template>
@@ -356,29 +356,42 @@ const goToUserDetail = (user: UserCardData) => {
 }
 
 onMounted(() => {
-  // 公告：当日关闭后不再显示
+  // eslint-disable-next-line no-console
+  console.log('[首页] BUILD=v15-6a3f1c0')
+
+  // 公告通知栏
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
-  // === ISOLATION TEST: only popup, no loadUserList ===
-  uni.removeStorageSync('popup_notice_date')
-  setTimeout(() => {
-    uni.showModal({
-      title: '欢迎来到栖缘社！',
-      content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
-      showCancel: false,
-      confirmText: '我知道了',
-      confirmColor: '#FF6B9D',
-    })
-  }, 500)
+  // 公告弹窗：每天首次进入弹出
+  const today = new Date().toDateString()
+  const alreadyShown = uni.getStorageSync('popup_notice_date') === today
 
-  // 开启分享菜单（开发工具中可能不可用，加 fail 静默处理）
+  if (alreadyShown) {
+    // 今天已展示过，直接加载数据
+    loadUserList(true)
+  } else {
+    // 首次进入：延迟弹出弹窗，关闭后加载数据
+    setTimeout(() => {
+      uni.showModal({
+        title: '欢迎来到栖缘社！',
+        content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
+        showCancel: false,
+        confirmText: '我知道了',
+        confirmColor: '#FF6B9D',
+        success: () => {
+          uni.setStorageSync('popup_notice_date', today)
+          loadUserList(true)
+        },
+      })
+    }, 700)
+  }
+
+  // 开启分享菜单
   uni.showShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
-    fail: () => {
-      console.log('[分享]showShareMenu 开发工具跳过')
-    },
+    fail: () => {},
   })
 })
 
