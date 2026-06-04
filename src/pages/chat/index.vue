@@ -269,6 +269,7 @@ const handleSend = async () => {
         content,
         type: 'text',
       },
+      skipToast: true,
     })
 
     const newMessage: ChatMessage = {
@@ -326,6 +327,7 @@ const chooseImage = async () => {
             content: uploadRes.url,
             type: 'image',
           },
+          skipToast: true,
         })
 
         const newMessage: ChatMessage = {
@@ -474,7 +476,6 @@ const closeVipLimit = () => {
 
 const startPolling = () => {
   stopPolling()
-  let consecutiveErrors = 0
   pollTimer = setInterval(async () => {
     try {
       const res = await request({
@@ -487,7 +488,6 @@ const startPolling = () => {
         skipToast: true,
       })
 
-      consecutiveErrors = 0
       const newMessages = res.list || []
       if (newMessages.length > 0) {
         const existingIds = new Set(messages.value.map(m => m.id))
@@ -500,11 +500,8 @@ const startPolling = () => {
         }
       }
     } catch (e: any) {
-      consecutiveErrors++
-      // 连续 3 次失败后停止轮询（后端暂未部署 polling 接口）
-      if (consecutiveErrors >= 3) {
-        stopPolling()
-      }
+      // 轮询接口未部署，首次失败即停止（避免无限 404）
+      stopPolling()
     }
   }, POLL_INTERVAL)
 }
