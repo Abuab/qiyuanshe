@@ -1,14 +1,5 @@
 <template>
   <view class="dynamic-page">
-    <!-- 顶部导航 -->
-    <view class="nav-bar">
-      <view class="nav-left"></view>
-      <view class="nav-title">动态</view>
-      <view class="nav-right" @tap="goToPublish">
-        <text class="publish-icon">+</text>
-      </view>
-    </view>
-
     <scroll-view
       class="content-scroll"
       scroll-y
@@ -97,6 +88,10 @@
       </view>
 
       <view class="bottom-safe"></view>
+
+      <view class="fab-publish" @tap="goToPublish">
+        <text class="fab-icon">+</text>
+      </view>
     </scroll-view>
   </view>
 </template>
@@ -283,48 +278,9 @@ onMounted(() => {
   background-color: #f5f5f5;
 }
 
-.nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-}
-
-.nav-left,
-.nav-right {
-  width: 100rpx;
-}
-
-.nav-right {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.publish-icon {
-  font-size: 48rpx;
-  font-weight: 300;
-  color: #FF6B9D;
-  line-height: 1;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
 .content-scroll {
-  height: calc(100vh - 88rpx);
-  padding-top: 108rpx;
+  height: 100vh;
+  padding-top: 0;
   padding-bottom: 100rpx;
 }
 
@@ -472,6 +428,32 @@ onMounted(() => {
 }
 
 .bottom-safe {
-  height: 40rpx;
+  height: 120rpx;
+}
+
+.fab-publish {
+  position: fixed;
+  right: 40rpx;
+  bottom: calc(140rpx + env(safe-area-inset-bottom));
+  width: 100rpx;
+  height: 100rpx;
+  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 20rpx rgba(255, 107, 157, 0.4);
+  z-index: 100;
+
+  .fab-icon {
+    font-size: 48rpx;
+    color: #fff;
+    font-weight: bold;
+    line-height: 1;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 </style>

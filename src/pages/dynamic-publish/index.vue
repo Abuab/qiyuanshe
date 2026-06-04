@@ -1,16 +1,5 @@
 <template>
   <view class="publish-page">
-    <!-- 顶部导航 -->
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleCancel">
-        <text class="cancel-text">取消</text>
-      </view>
-      <view class="nav-title">发布动态</view>
-      <view class="nav-right" @tap="handlePublish">
-        <text class="publish-btn" :class="{ disabled: !canPublish }">发布</text>
-      </view>
-    </view>
-
     <view class="page-content">
       <!-- 文字输入 -->
       <view class="textarea-section">
@@ -48,6 +37,13 @@
             <text class="add-text">{{ uploadedImages.length === 0 ? '添加图片' : `${uploadedImages.length}/9` }}</text>
           </view>
         </view>
+      </view>
+    </view>
+
+    <!-- 底部发布按钮 -->
+    <view class="bottom-bar">
+      <view class="publish-submit-btn" :class="{ disabled: !canPublish }" @tap="handlePublish">
+        <text>发布</text>
       </view>
     </view>
   </view>
@@ -158,59 +154,13 @@ const handleCancel = () => {
 .publish-page {
   min-height: 100vh;
   background-color: #fff;
-}
-
-.nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-}
-
-.nav-left,
-.nav-right {
-  width: 120rpx;
-}
-
-.nav-right {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.cancel-text {
-  font-size: 30rpx;
-  color: #666;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.publish-btn {
-  font-size: 28rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-
-  &.disabled {
-    color: #ccc;
-  }
+  flex-direction: column;
 }
 
 .page-content {
-  padding-top: 108rpx;
-  padding-left: 32rpx;
-  padding-right: 32rpx;
+  padding: 24rpx 32rpx;
+  flex: 1;
 }
 
 .textarea-section {
@@ -301,5 +251,34 @@ const handleCancel = () => {
   font-size: 22rpx;
   color: #ccc;
   margin-top: 8rpx;
+}
+
+.bottom-bar {
+  padding: 20rpx 32rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #f0f0f0;
+  background-color: #fff;
+}
+
+.publish-submit-btn {
+  width: 100%;
+  height: 88rpx;
+  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fff;
+
+  &.disabled {
+    background: #e0e0e0;
+    color: #999;
+  }
+
+  &:active:not(.disabled) {
+    opacity: 0.85;
+  }
 }
 </style>
