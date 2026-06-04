@@ -43,7 +43,7 @@
           <image
             v-if="!msg.isMine"
             class="avatar"
-            :src="avatar || '/static/default-avatar.png'"
+            :src="otherAvatar"
             mode="aspectFill"
             lazy-load
           />
@@ -61,7 +61,7 @@
           <image
             v-if="msg.isMine"
             class="avatar"
-            :src="myAvatar || '/static/default-avatar.png'"
+            :src="myDisplayAvatar"
             mode="aspectFill"
             lazy-load
           />
@@ -126,6 +126,7 @@ import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
+import { getFullImageUrl } from '@/utils/common'
 
 interface ChatMessage {
   id: number
@@ -162,6 +163,9 @@ const POLL_INTERVAL = 3000
 const canSend = computed(() => {
   return inputContent.value.trim().length > 0
 })
+
+const otherAvatar = computed(() => getFullImageUrl(avatar.value) || '/static/default-avatar.png')
+const myDisplayAvatar = computed(() => getFullImageUrl(myAvatar.value) || '/static/default-avatar.png')
 
 const placeholder = computed(() => {
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {

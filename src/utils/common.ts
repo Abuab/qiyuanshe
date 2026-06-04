@@ -157,11 +157,7 @@ export const reLaunch = (url: string): void => {
 }
 
 /**
- * 将相对图片路径转换为完整 URL
- * /static/xxx → 本地路径（小程序内图片）
- * /uploads/xxx → 拼接服务器域名
- * http/https 开头 → 直接返回
- * 其他 → 拼接 uploads 路径
+ * 将相对图片路径转换为完整 URL（formatImageUrl 别名）
  */
 export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
@@ -176,6 +172,9 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   }
   return serverBase + '/uploads/' + path.replace(/^\//, '')
 }
+
+/** @deprecated 使用 getFullImageUrl 替代 */
+export const formatImageUrl = getFullImageUrl
 
 export const switchTab = (url: string): void => {
   uni.switchTab({ url })

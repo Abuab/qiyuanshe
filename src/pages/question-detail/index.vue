@@ -128,6 +128,14 @@ const noMore = ref(false)
 const refreshing = ref(false)
 
 onMounted(() => {
+  // 开启分享菜单
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage'],
+    })
+  } catch (_) { /* ignore */ }
+
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}

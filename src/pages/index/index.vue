@@ -311,6 +311,14 @@ const goToUserDetail = (user: UserCardData) => {
 }
 
 onMounted(() => {
+  // 开启分享菜单
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage'],
+    })
+  } catch (_) { /* ignore */ }
+
   loadUserList(true)
 })
 

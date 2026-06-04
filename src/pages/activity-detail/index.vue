@@ -195,6 +195,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
+import { getFullImageUrl } from '@/utils/common'
 
 interface Activity {
   id: number
@@ -271,7 +272,7 @@ async function fetchActivityDetail(id: number) {
     })
 
     activity.value = result
-    signupAvatars.value = result.signupAvatars || []
+    signupAvatars.value = (result.signupAvatars || []).map((a: string) => getFullImageUrl(a))
   } catch (error) {
     console.error('获取活动详情失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })

@@ -200,6 +200,7 @@ import { ref, computed, onMounted } from 'vue'
 import { put } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
+import { getFullImageUrl } from '@/utils/common'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface ProfileForm {
@@ -244,6 +245,7 @@ const birthYearOptions = Array.from({ length: 71 }, (_, i) => `${currentYear - 1
 
 const userStore = useUserStore()
 const saving = ref(false)
+const avatarErr = ref(false)
 
 const form = ref<ProfileForm>({
   avatar: '',

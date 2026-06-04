@@ -7,10 +7,26 @@ onLaunch(() => {
   logger.info('App Launch')
   const userStore = useUserStore()
   userStore.checkVip()
+
+  // 全局开启分享菜单（兜底），失败静默
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage'],
+    })
+  } catch (_) { /* 开发工具可能 ban，真机正常 */ }
 })
 
 onShow(() => {
   logger.info('App Show')
+
+  // 每次切回应用时重试开启分享菜单
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage'],
+    })
+  } catch (_) { /* ignore */ }
 })
 
 onHide(() => {

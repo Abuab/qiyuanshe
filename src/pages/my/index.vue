@@ -18,8 +18,9 @@
       <view class="user-card" v-else>
         <image
           class="user-avatar"
-          :src="userInfo?.avatar || '/static/default-avatar.png'"
+          :src="avatarSrc"
           mode="aspectFill"
+          @error="onAvatarError"
         />
         <view class="user-info">
           <text class="user-name">{{ userInfo?.nickname || '用户' }}</text>
@@ -75,11 +76,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useUserStore } from '@/store/user'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 
 const userStore = useUserStore()
+const avatarError = ref(false)
+
+const avatarSrc = computed(() => {
+  if (avatarError.value) return icons.common.defaultAvatar
+  return getFullImageUrl(userStore.userInfo?.avatar) || icons.common.defaultAvatar
+})
+
+const onAvatarError = () => {
+  avatarError.value = true
+}
+
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
