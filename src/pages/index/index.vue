@@ -337,9 +337,14 @@ const checkPopupAnnouncement = () => {
   // 当天已展示过则不再弹出
   const today = new Date().toDateString()
   const lastPopupDate = uni.getStorageSync('popup_notice_date')
-  if (lastPopupDate === today) return
+  console.log('[Popup] lastPopupDate:', lastPopupDate, 'today:', today)
+  if (lastPopupDate === today) {
+    console.log('[Popup] 已展示过，跳过')
+    return
+  }
 
   const popup = getMockPopupNotice()
+  console.log('[Popup] 准备弹出公告')
   uni.showModal({
     title: popup.title,
     content: popup.content,
@@ -347,6 +352,10 @@ const checkPopupAnnouncement = () => {
     confirmText: '我知道了',
     success: () => {
       uni.setStorageSync('popup_notice_date', today)
+      console.log('[Popup] 用户已确认')
+    },
+    fail: (err) => {
+      console.error('[Popup] 弹出失败:', err)
     },
   })
 }
@@ -386,6 +395,11 @@ onMounted(() => {
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
+  // 延时弹出公告，确保页面渲染完成
+  setTimeout(() => {
+    checkPopupAnnouncement()
+  }, 800)
+
   // 开启分享菜单
   try {
     uni.showShareMenu({
@@ -397,9 +411,11 @@ onMounted(() => {
   loadUserList(true)
 })
 
-// 弹窗类型公告（onShow 中检查）
+// 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
-  checkPopupAnnouncement()
+  setTimeout(() => {
+    checkPopupAnnouncement()
+  }, 300)
 })
 
 const onShareAppMessage = () => {
