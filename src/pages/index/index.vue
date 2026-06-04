@@ -116,6 +116,21 @@
     <tab-bar />
 
     <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
+
+    <!-- 公告弹窗 -->
+    <view v-if="showPopup" class="popup-mask" @tap="closePopup">
+      <view class="popup-content" @tap.stop>
+        <view class="popup-header">
+          <text class="popup-title">{{ popupData.title }}</text>
+        </view>
+        <view class="popup-body">
+          <text class="popup-text">{{ popupData.content }}</text>
+        </view>
+        <view class="popup-footer" @tap="closePopup">
+          <text class="popup-btn">我知道了</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -190,6 +205,8 @@ const currentPage = ref(1)
 const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
+const showPopup = ref(false)
+const popupData = ref({ title: '', content: '' })
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -343,21 +360,16 @@ const checkPopupAnnouncement = () => {
     return
   }
 
-  const popup = getMockPopupNotice()
-  console.log('[Popup] 准备弹出公告')
-  uni.showModal({
-    title: popup.title,
-    content: popup.content,
-    showCancel: false,
-    confirmText: '我知道了',
-    success: () => {
-      uni.setStorageSync('popup_notice_date', today)
-      console.log('[Popup] 用户已确认')
-    },
-    fail: (err) => {
-      console.error('[Popup] 弹出失败:', err)
-    },
-  })
+  // 设置弹窗数据并显示
+  popupData.value = getMockPopupNotice()
+  showPopup.value = true
+  console.log('[Popup] 弹窗已显示, title:', popupData.value.title)
+}
+
+const closePopup = () => {
+  showPopup.value = false
+  uni.setStorageSync('popup_notice_date', new Date().toDateString())
+  console.log('[Popup] 弹窗已关闭')
 }
 
 const closeNotice = () => {
@@ -703,5 +715,59 @@ const onShareTimeline = () => {
 
 .bottom-safe-area {
   height: 40rpx;
+}
+
+// 公告弹窗样式
+.popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-content {
+  width: 580rpx;
+  background-color: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.popup-header {
+  padding: 40rpx 32rpx 20rpx;
+  text-align: center;
+}
+
+.popup-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.popup-body {
+  padding: 20rpx 32rpx 40rpx;
+}
+
+.popup-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+}
+
+.popup-footer {
+  border-top: 1rpx solid #eee;
+  padding: 24rpx 0;
+  text-align: center;
+}
+
+.popup-btn {
+  font-size: 30rpx;
+  color: #FF6B9D;
+  font-weight: bold;
 }
 </style>
