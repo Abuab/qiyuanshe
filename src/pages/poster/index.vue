@@ -4,7 +4,7 @@
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
-      <view class="nav-title">栖缘社</view>
+      <view class="nav-title">生成海报</view>
       <view class="nav-right"></view>
     </view>
 
@@ -16,7 +16,6 @@
           v-for="template in templateList"
           :key="template.id"
           class="template-item"
-          :class="`template-${template.id}`"
           @tap="selectTemplate(template)"
         >
           <view class="template-preview" :style="{ background: template.bgColor }">
@@ -24,7 +23,7 @@
             <view class="preview-overlay">
               <view class="preview-info">
                 <text class="preview-id">ID: 10001</text>
-                <text class="preview-basic">26岁·168cm·本科</text>
+                <text class="preview-basic">26岁 · 168cm · 本科</text>
               </view>
             </view>
             <view class="preview-tag" :style="{ background: template.tagColor }">
@@ -36,6 +35,7 @@
       </view>
     </view>
 
+    <!-- Canvas 离屏渲染 -->
     <canvas
       canvas-id="poster-canvas"
       id="poster-canvas"
@@ -43,6 +43,7 @@
       :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
     ></canvas>
 
+    <!-- 加载遮罩 -->
     <view v-if="showLoading" class="loading-overlay">
       <view class="loading-content">
         <view class="loading-spinner"></view>
@@ -50,6 +51,7 @@
       </view>
     </view>
 
+    <!-- 预览弹窗 -->
     <view v-if="showPreview" class="preview-popup">
       <view class="preview-overlay" @tap="closePreview"></view>
       <view class="preview-card">
@@ -71,6 +73,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -124,13 +127,26 @@ const canvasId = 'poster-canvas'
 const canvasWidth = 750
 const canvasHeight = 1200
 
+// ============ 布局常量 ============
+const PADDING = 50
+const AVATAR_SIZE = 240 // 圆形头像直径
+const AVATAR_Y = 60 // 头像区域顶部
+const NICKNAME_Y = AVATAR_Y + AVATAR_SIZE + 40
+const INFO_Y = NICKNAME_Y + 50 // 两列信息起始 Y
+const ROW_HEIGHT = 52
+const DIVIDER_Y = INFO_Y + ROW_HEIGHT * 4 + 16
+const INTRO_Y = DIVIDER_Y + 40
+const INTRO_MAX_LINES = 6
+const INTRO_LINE_HEIGHT = 38
+const FOOTER_Y = canvasHeight - 300 // 底部区域
+
 onMounted(() => {
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
-  const options = (currentPage as any)?.options || {}
+  const options = (currentPage as Record<string, unknown>)?.options || {}
 
   if (options.userId) {
-    userId.value = parseInt(options.userId)
+    userId.value = parseInt(String(options.userId))
   } else {
     userId.value = userStore.userInfo?.id || 0
   }
@@ -145,21 +161,85 @@ const selectTemplate = async (template: PosterTemplate) => {
   await generatePoster(template)
 }
 
+// ==================== 海报生成主流程 ====================
+
 const generatePoster = async (template: PosterTemplate) => {
   try {
     showLoading.value = true
 
     const userData = await fetchUserData()
 
-    const ctx = uni.createCanvasContext(canvasId) as any
-    ctx.width = canvasWidth
-    ctx.height = canvasHeight
+    const ctx = uni.createCanvasContext(canvasId) as CanvasRenderingContext2D & {
+      setFillStyle: (c: string) => void
+      setStrokeStyle: (c: string) => void
+      setFontSize: (n: number) => void
+      fillText: (t: string, x: number, y: number) => void
+      strokeRect: (x: number, y: number, w: number, h: number) => void
+      fillRect: (x: number, y: number, w: number, h: number) => void
+      save: () => void
+      restore: () => void
+      beginPath: () => void
+      moveTo: (x: number, y: number) => void
+      lineTo: (x: number, y: number) => void
+      stroke: () => void
+      clip: () => void
+      arc: (x: number, y: number, r: number, s: number, e: number, ccw?: boolean) => void
+      drawImage: (src: string, x: number, y: number, w: number, h: number) => void
+      measureText: (t: string) => { width: number }
+      closePath: () => void
+      setLineWidth: (n: number) => void
+      draw: (reserve?: boolean, cb?: () => void) => void
+    }
 
-    drawPosterBackground(ctx, template)
-    await drawUserPhoto(ctx, userData.avatar || userData.photos?.[0]?.url)
+    // 1. 白色背景
+    ctx.setFillStyle('#FFFFFF')
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight)
+
+    // 2. 顶部粉色渐变装饰条
+    ctx.setFillStyle('#FF6B9D')
+    ctx.fillRect(0, 0, canvasWidth, 8)
+
+    // 3. 圆形头像
+    await drawAvatar(ctx, userData.avatar)
+
+    // 4. 昵称
+    drawNickname(ctx, userData.nickname, template)
+
+    // 5. 分隔线（昵称下方）
+    ctx.beginPath()
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.moveTo(PADDING + 120, NICKNAME_Y + 12)
+    ctx.lineTo(canvasWidth - PADDING - 120, NICKNAME_Y + 12)
+    ctx.stroke()
+
+    // 6. 两列信息
     drawUserInfo(ctx, userData, template)
+
+    // 7. 信息区底部分隔线
+    ctx.beginPath()
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.moveTo(PADDING, DIVIDER_Y)
+    ctx.lineTo(canvasWidth - PADDING, DIVIDER_Y)
+    ctx.stroke()
+
+    // 8. 自我介绍
     drawSelfIntro(ctx, userData.selfIntro)
-    drawQRCode(ctx, template)
+
+    // 9. 底部分隔线
+    const afterIntroY = INTRO_Y + INTRO_MAX_LINES * INTRO_LINE_HEIGHT + 30
+    ctx.beginPath()
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.moveTo(PADDING, afterIntroY)
+    ctx.lineTo(canvasWidth - PADDING, afterIntroY)
+    ctx.stroke()
+
+    // 10. 小程序码（从完整 URL 下载真实图片）
+    await drawQRCode(ctx, template)
+
+    // 11. 底部 footer
     drawFooter(ctx)
 
     ctx.draw()
@@ -167,11 +247,11 @@ const generatePoster = async (template: PosterTemplate) => {
     await new Promise<void>((resolve) => {
       setTimeout(async () => {
         try {
-          const res = await new Promise<any>((resolve, reject) => {
+          const res = await new Promise<{ tempFilePath: string }>((resolve, reject) => {
             uni.canvasToTempFilePath({
               canvasId,
               quality: 0.9,
-              success: (res) => resolve(res),
+              success: (res) => resolve(res as { tempFilePath: string }),
               fail: reject,
             })
           })
@@ -195,84 +275,124 @@ const generatePoster = async (template: PosterTemplate) => {
   }
 }
 
-const drawPosterBackground = (ctx: any, template: PosterTemplate) => {
-  ctx.setFillStyle('#FFFFFF')
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-}
+// ==================== Canvas 绘制函数 ====================
 
-const drawUserPhoto = async (ctx: any, photoUrl: string) => {
-  const photoWidth = canvasWidth
-  const photoHeight = 520
-  const y = 0
+/** 绘制圆形头像 */
+const drawAvatar = async (ctx: any, avatarUrl: string) => {
+  const cx = canvasWidth / 2
+  const cy = AVATAR_Y + AVATAR_SIZE / 2
+  const r = AVATAR_SIZE / 2
+
+  // 绘制底部粉色光环
+  ctx.beginPath()
+  ctx.arc(cx, cy, r + 8, 0, 2 * Math.PI)
+  ctx.setFillStyle('#FFF0F3')
+  ctx.fill()
 
   try {
-    const tempFilePath = await downloadImage(photoUrl)
+    const fullUrl = getFullImageUrl(avatarUrl) || avatarUrl
+    const tempFilePath = await downloadImage(fullUrl)
 
+    // 圆形裁剪
     ctx.save()
     ctx.beginPath()
-    ctx.rect(0, y, photoWidth, photoHeight)
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI)
     ctx.clip()
 
-    ctx.drawImage(tempFilePath, 0, y, photoWidth, photoHeight)
+    // 绘制头像图片，居中填充
+    ctx.drawImage(tempFilePath, cx - r, cy - r, AVATAR_SIZE, AVATAR_SIZE)
     ctx.restore()
-  } catch (e) {
-    ctx.setFillStyle('#f0f0f0')
-    ctx.fillRect(0, y, photoWidth, photoHeight)
+  } catch (_) {
+    // 加载失败：显示默认占位圆
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, 2 * Math.PI)
+    ctx.setFillStyle('#FFE0E8')
+    ctx.fill()
+    ctx.setFillStyle('#FF6B9D')
+    ctx.setFontSize(48)
+    ctx.fillText('?', cx - 14, cy + 16)
   }
 }
 
-const drawUserInfo = (ctx: any, userData: any, template: PosterTemplate) => {
-  const startY = 540
-  const leftX = 60
-  const rightX = 400
-  const rowHeight = 48
-  const labelFontSize = 24
-  const valueFontSize = 26
-
-  ctx.setFillStyle('#999999')
-  ctx.setFontSize(labelFontSize)
-  ctx.fillText('ID', leftX, startY + rowHeight * 0)
-  ctx.fillText('婚况', leftX, startY + rowHeight * 1)
-  ctx.fillText('年龄', leftX, startY + rowHeight * 2)
-  ctx.fillText('身高', rightX, startY + rowHeight * 0)
-  ctx.fillText('学历', rightX, startY + rowHeight * 1)
-  ctx.fillText('月薪', rightX, startY + rowHeight * 2)
-
+/** 绘制昵称 */
+const drawNickname = (ctx: any, nickname: string, template: PosterTemplate) => {
+  const name = nickname || '栖缘社用户'
   ctx.setFillStyle('#333333')
-  ctx.setFontSize(valueFontSize)
-  ctx.fillText(`:${userData.id || '10001'}`, leftX + 60, startY + rowHeight * 0)
-  ctx.fillText(`:${userData.maritalStatus || '未婚'}`, leftX + 90, startY + rowHeight * 1)
-  ctx.fillText(`:${userData.age || '26'}岁`, leftX + 60, startY + rowHeight * 2)
-  ctx.fillText(`:${userData.height || '168'}cm`, rightX + 70, startY + rowHeight * 0)
-  ctx.fillText(`:${userData.education || '本科'}`, rightX + 70, startY + rowHeight * 1)
-  ctx.fillText(`:${userData.incomeRange || '8千-1.2万'}`, rightX + 70, startY + rowHeight * 2)
-
-  ctx.setStrokeStyle('#EEEEEE')
-  ctx.setLineWidth(1)
-  ctx.beginPath()
-  ctx.moveTo(leftX, startY + rowHeight * 3 - 10)
-  ctx.lineTo(canvasWidth - leftX, startY + rowHeight * 3 - 10)
-  ctx.stroke()
+  ctx.setFontSize(36)
+  const nameWidth = ctx.measureText(name).width
+  const nameX = (canvasWidth - nameWidth) / 2
+  ctx.fillText(name, nameX, NICKNAME_Y)
 }
 
+/** 两列信息 */
+const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: PosterTemplate) => {
+  type InfoRow = { label: string; value: string }
+
+  // 左列
+  const leftItems: InfoRow[] = [
+    { label: 'ID', value: `:${userData.id || '---'}` },
+    { label: '婚况', value: `:${userData.maritalStatus as string || '---'}` },
+    { label: '年龄', value: `:${userData.age ? (userData.age as number) + '岁' : '---'}` },
+    { label: '职业', value: `:${(userData.occupation as string) || '---'}` },
+  ]
+
+  // 右列
+  const rightItems: InfoRow[] = [
+    { label: '身高', value: `:${userData.height ? (userData.height as number) + 'cm' : '---'}` },
+    { label: '学历', value: `:${(userData.education as string) || '---'}` },
+    { label: '月薪', value: `:${(userData.incomeRange as string) || '---'}` },
+    { label: '籍贯', value: `:${(userData.hometown as string) || '---'}` },
+  ]
+
+  const colGap = 60 // 两列间距
+  const colWidth = (canvasWidth - PADDING * 2 - colGap) / 2
+
+  // 标签列固定宽度，值列自适应
+  const labelWidth = 80
+
+  const drawInfoRow = (
+    items: InfoRow[],
+    xBase: number,
+  ) => {
+    items.forEach((item, index) => {
+      const y = INFO_Y + index * ROW_HEIGHT
+
+      // 标签：灰色、右对齐
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(22)
+      const labelW = ctx.measureText(item.label).width
+      ctx.fillText(item.label, xBase + labelWidth - labelW, y)
+
+      // 值：深色、左对齐
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(24)
+      ctx.fillText(item.value, xBase + labelWidth + 12, y)
+    })
+  }
+
+  const leftX = PADDING
+  const rightX = leftX + colWidth + colGap
+
+  drawInfoRow(leftItems, leftX)
+  drawInfoRow(rightItems, rightX)
+}
+
+/** 自我介绍 */
 const drawSelfIntro = (ctx: any, selfIntro: string) => {
-  const startY = 720
-  const maxWidth = canvasWidth - 120
-  const lineHeight = 36
-  const maxLines = 8
-  const fontSize = 24
+  const maxWidth = canvasWidth - PADDING * 2
+  const introText = selfIntro || '这个人很懒，什么都没有留下~'
 
   ctx.setFillStyle('#666666')
-  ctx.setFontSize(fontSize)
+  ctx.setFontSize(22)
 
-  const introText = selfIntro || '这个人很懒，什么都没有留下~'
-  const lines = wrapText(ctx, introText, maxWidth, maxLines)
+  const lines = wrapText(ctx, introText, maxWidth, INTRO_MAX_LINES)
 
   lines.forEach((line: string, index: number) => {
-    ctx.fillText(line, 60, startY + index * lineHeight)
+    ctx.fillText(line, PADDING, INTRO_Y + index * INTRO_LINE_HEIGHT)
   })
 }
 
+/** 文字自动换行 */
 const wrapText = (ctx: any, text: string, maxWidth: number, maxLines: number): string[] => {
   const chars = text.split('')
   const lines: string[] = []
@@ -298,46 +418,92 @@ const wrapText = (ctx: any, text: string, maxWidth: number, maxLines: number): s
     lines.push(currentLine)
   }
 
-  if (lines.length >= maxLines && lines[lines.length - 1].length < text.length) {
-    lines[lines.length - 1] = lines[lines.length - 1].substring(0, lines[lines.length - 1].length - 2) + '...'
+  if (lines.length >= maxLines) {
+    const lastLine = lines[lines.length - 1]
+    if (lastLine.length + 2 < currentLine.length) {
+      lines[lines.length - 1] = lastLine.substring(0, lastLine.length - 1) + '…'
+    }
   }
 
   return lines
 }
 
-const drawQRCode = (ctx: any, template: PosterTemplate) => {
-  const qrSize = 200
-  const qrX = canvasWidth - qrSize - 60
-  const qrY = canvasHeight - qrSize - 120
+/** 底部小程序码 */
+const drawQRCode = async (ctx: any, template: PosterTemplate) => {
+  const qrSize = 180
+  const qrX = canvasWidth - PADDING - qrSize
+  const qrY = canvasHeight - qrSize - 100
 
+  // 小程序码白色背景 + 边框
   ctx.setFillStyle('#FFFFFF')
-  ctx.fillRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 60)
-  ctx.setStrokeStyle('#EEEEEE')
-  ctx.setLineWidth(1)
-  ctx.strokeRect(qrX - 10, qrY - 10, qrSize + 20, qrSize + 60)
+  ctx.setStrokeStyle(template.tagColor)
+  ctx.setLineWidth(3)
+  ctx.beginPath()
+  ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
+  ctx.fill()
+  ctx.stroke()
 
-  ctx.setFillStyle('#f5f5f5')
-  ctx.fillRect(qrX, qrY, qrSize, qrSize)
+  // 尝试加载真实小程序码图片（后台返回完整 URL）
+  const qrCodeUrl = 'http://150.158.130.152:3000/qr/4.png'
 
-  ctx.setFillStyle('#999999')
-  ctx.setFontSize(18)
-  ctx.fillText('小程序码', qrX + qrSize / 2 - 35, qrY + qrSize / 2 + 6)
-
-  ctx.setFillStyle(template.tagColor)
-  ctx.setFontSize(20)
-  ctx.fillText('长按识别认识TA', qrX - 10, qrY + qrSize + 35)
-
-  ctx.setFontSize(18)
-  ctx.fillText('来自栖缘社，值得您信赖的相亲平台', qrX - 10, qrY + qrSize + 55)
+  try {
+    const tempFilePath = await downloadImage(qrCodeUrl)
+    ctx.save()
+    ctx.beginPath()
+    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
+    ctx.clip()
+    ctx.drawImage(tempFilePath, qrX, qrY, qrSize, qrSize)
+    ctx.restore()
+  } catch (_) {
+    // 加载失败：显示灰色占位
+    ctx.setFillStyle('#F5F5F5')
+    ctx.beginPath()
+    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
+    ctx.fill()
+    ctx.setFillStyle('#CCCCCC')
+    ctx.setFontSize(16)
+    ctx.fillText('小程序码', qrX + qrSize / 2 - 32, qrY + qrSize / 2 + 6)
+  }
 }
 
+/** 底部文字 */
 const drawFooter = (ctx: any) => {
-  const y = canvasHeight - 60
+  const qrSize = 180
+  const qrBottom = canvasHeight - 100 // QR 图底部 Y
+  const textY1 = qrBottom + 24
+  const textY2 = textY1 + 22
+  const textY3 = textY2 + 22
 
+  // 左侧：品牌名
   ctx.setFillStyle('#FF6B9D')
-  ctx.setFontSize(22)
-  ctx.fillText('栖缘社', canvasWidth / 2 - 30, y)
+  ctx.setFontSize(28)
+  ctx.fillText('栖缘社', PADDING, qrBottom - qrSize / 2 + 40)
+
+  ctx.setFillStyle('#CCCCCC')
+  ctx.setFontSize(18)
+  ctx.fillText('值得信赖的相亲平台', PADDING, qrBottom - qrSize / 2 + 68)
+
+  // 右侧：二维码下方说明（居中对齐于 QR 码）
+  const qrCenterX = canvasWidth - PADDING - qrSize / 2
+
+  ctx.setFillStyle('#666666')
+  ctx.setFontSize(18)
+  const line1 = '长按识别认识TA'
+  const line1W = ctx.measureText(line1).width
+  ctx.fillText(line1, qrCenterX - line1W / 2, textY1)
+
+  ctx.setFillStyle('#CCCCCC')
+  ctx.setFontSize(16)
+  const line2 = '来自栖缘社'
+  const line2W = ctx.measureText(line2).width
+  ctx.fillText(line2, qrCenterX - line2W / 2, textY2)
+
+  const line3 = '值得您信赖的相亲平台'
+  const line3W = ctx.measureText(line3).width
+  ctx.fillText(line3, qrCenterX - line3W / 2, textY3)
 }
+
+// ==================== 数据与工具函数 ====================
 
 const fetchUserData = async () => {
   try {
@@ -346,13 +512,21 @@ const fetchUserData = async () => {
       method: 'GET',
     })
 
-    const userData = res.user || res
+    const userData = (res as Record<string, unknown>).user || res
 
-    if (userData.birthYear && !userData.age) {
-      userData.age = new Date().getFullYear() - userData.birthYear
+    if (userData && (userData as Record<string, unknown>).birthYear && !(userData as Record<string, unknown>).age) {
+      (userData as Record<string, unknown>).age =
+        new Date().getFullYear() - ((userData as Record<string, unknown>).birthYear as number)
     }
 
-    return userData
+    // 处理图片 URL
+    if (userData && (userData as Record<string, unknown>).avatar) {
+      (userData as Record<string, unknown>).avatar = getFullImageUrl(
+        (userData as Record<string, unknown>).avatar as string,
+      )
+    }
+
+    return userData as Record<string, unknown>
   } catch (e) {
     console.error('fetch user data error', e)
     return {
@@ -376,13 +550,16 @@ const downloadImage = (url: string): Promise<string> => {
       return
     }
 
+    // 确保使用完整 URL
+    const fullUrl = url.startsWith('http') ? url : getFullImageUrl(url)
+
     uni.downloadFile({
-      url,
+      url: fullUrl,
       success: (res) => {
         if (res.statusCode === 200) {
           resolve(res.tempFilePath)
         } else {
-          reject(new Error('Download failed'))
+          reject(new Error('Download failed with status ' + res.statusCode))
         }
       },
       fail: reject,
@@ -651,29 +828,30 @@ const savePoster = async () => {
 
 .preview-tip {
   text-align: center;
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #999;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
 }
 
 .preview-image {
   width: 100%;
-  border-radius: 16rpx;
+  border-radius: 12rpx;
 }
 
 .preview-actions {
   display: flex;
-  gap: 24rpx;
+  justify-content: space-around;
   margin-top: 32rpx;
+  gap: 24rpx;
 }
 
 .action-btn {
   flex: 1;
-  height: 88rpx;
+  height: 80rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 44rpx;
+  border-radius: 40rpx;
   font-size: 30rpx;
 }
 
@@ -683,17 +861,7 @@ const savePoster = async () => {
 }
 
 .save-btn {
-  background-color: #FF6B9D;
+  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   color: #fff;
 }
-
-canvas {
-  position: fixed;
-  top: -9999px;
-  left: -9999px;
-  width: 750px;
-  height: 1200px;
-}
 </style>
-
-<canvas canvas-id="poster-canvas" id="poster-canvas" style="position:fixed;top:-9999px;left:-9999px;width:750px;height:1200px;"></canvas>
