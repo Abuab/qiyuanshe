@@ -44,6 +44,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 
 export interface UserCardData {
   id: number
@@ -76,9 +77,9 @@ const avatarError = ref(false)
 const photoFailedMap = ref<Record<string, true>>({})
 
 const avatarUrl = computed(() => {
-  if (avatarError.value) return '/static/default-avatar.png'
+  if (avatarError.value) return icons.common.defaultAvatar
   const avatar = props.user.avatar
-  if (!avatar) return '/static/default-avatar.png'
+  if (!avatar) return icons.common.defaultAvatar
   // 对于本地路径直接返回，相对路径拼接完整 URL
   if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
   return getFullImageUrl(avatar)
@@ -97,7 +98,7 @@ const onPhotoError = (photoUrl: string) => {
 const displayPhotos = computed(() => {
   if (!props.user.photos || props.user.photos.length === 0) return []
   return props.user.photos.slice(0, 4).map(photo => {
-    if (photoFailedMap.value[photo]) return '/static/default-avatar.png'
+    if (photoFailedMap.value[photo]) return icons.common.defaultAvatar
     if (photo.startsWith('http') || photo.startsWith('/static/')) return photo
     return getFullImageUrl(photo)
   })

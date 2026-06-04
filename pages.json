@@ -123,6 +123,20 @@
         "navigationBarTitleText": "编辑资料",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/dynamic/index",
+      "style": {
+        "navigationBarTitleText": "动态",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/dynamic-publish/index",
+      "style": {
+        "navigationBarTitleText": "发布动态",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {
@@ -145,7 +159,7 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/questions/index",
+        "pagePath": "pages/dynamic/index",
         "iconPath": "static/tabbar/tab-dynamic-default.png",
         "selectedIconPath": "static/tabbar/tab-dynamic-active.png",
         "text": "动态"

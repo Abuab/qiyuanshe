@@ -1,12 +1,16 @@
 import { createSSRApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
+import { icons } from './config/icons'
 
 export function createApp() {
   const app = createSSRApp(App)
   const pinia = createPinia()
 
   app.use(pinia)
+
+  // 全局挂载图标配置
+  app.config.globalProperties.$icons = icons
 
   app.config.errorHandler = (err, instance, info) => {
     console.error('Global Error:', err)

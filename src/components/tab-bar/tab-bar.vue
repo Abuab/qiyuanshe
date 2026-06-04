@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { icons } from '@/config/icons'
 
 interface TabItem {
   label: string
@@ -41,36 +42,36 @@ const tabs: TabItem[] = [
   {
     label: '首页',
     pagePath: '/pages/index/index',
-    defaultIcon: '/static/tabbar/tab-home-default.png',
-    activeIcon: '/static/tabbar/tab-home-active.png',
+    defaultIcon: icons.tabbar.home.default,
+    activeIcon: icons.tabbar.home.active,
     name: 'home',
   },
   {
     label: '动态',
-    pagePath: '/pages/questions/index',
-    defaultIcon: '/static/tabbar/tab-dynamic-default.png',
-    activeIcon: '/static/tabbar/tab-dynamic-active.png',
+    pagePath: '/pages/dynamic/index',
+    defaultIcon: icons.tabbar.dynamic.default,
+    activeIcon: icons.tabbar.dynamic.active,
     name: 'dynamic',
   },
   {
     label: '会员',
     pagePath: '/pages/vip/index',
-    defaultIcon: '/static/tabbar/tab-vip-default.png',
-    activeIcon: '/static/tabbar/tab-vip-active.png',
+    defaultIcon: icons.tabbar.vip.default,
+    activeIcon: icons.tabbar.vip.active,
     name: 'vip',
   },
   {
     label: '消息',
     pagePath: '/pages/message-list/index',
-    defaultIcon: '/static/tabbar/tab-message-default.png',
-    activeIcon: '/static/tabbar/tab-message-active.png',
+    defaultIcon: icons.tabbar.message.default,
+    activeIcon: icons.tabbar.message.active,
     name: 'message',
   },
   {
     label: '我的',
     pagePath: '/pages/my/index',
-    defaultIcon: '/static/tabbar/tab-my-default.png',
-    activeIcon: '/static/tabbar/tab-my-active.png',
+    defaultIcon: icons.tabbar.my.default,
+    activeIcon: icons.tabbar.my.active,
     name: 'my',
   },
 ]

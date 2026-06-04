@@ -115,6 +115,7 @@ import { showToast } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
+import { icons } from '@/config/icons'
 
 interface QuickEntry {
   id: number
@@ -135,10 +136,10 @@ interface FilterTab {
 }
 
 const quickEntries: QuickEntry[] = [
-  { id: 1, name: '红娘评语', icon: '/static/matchmaker.png', bgColor: '#FFF0F5' },
-  { id: 2, name: '最新活动', icon: '/static/heart.png', bgColor: '#E6F7FF' },
-  { id: 3, name: '相亲圈子', icon: '/static/heart.png', bgColor: '#F9F0FF' },
-  { id: 4, name: '我们脱单了', icon: '/static/heart.png', bgColor: '#FFF7E6' },
+  { id: 1, name: '红娘评语', icon: icons.quickEntry.matchmakerComment, bgColor: '#FFF0F5' },
+  { id: 2, name: '最新活动', icon: icons.quickEntry.latestActivity, bgColor: '#E6F7FF' },
+  { id: 3, name: '相亲圈子', icon: icons.quickEntry.datingCircle, bgColor: '#F9F0FF' },
+  { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF7E6' },
 ]
 
 const filterTabs: FilterTab[] = [
@@ -327,14 +328,14 @@ const onShareAppMessage = () => {
   return {
     title: '栖缘社 - 遇见对的TA',
     path: '/pages/index/index',
-    imageUrl: '/static/heart.png',
+    imageUrl: icons.common.heart,
   }
 }
 
 const onShareTimeline = () => {
   return {
     title: '栖缘社 - 遇见对的TA',
-    imageUrl: '/static/heart.png',
+    imageUrl: icons.common.heart,
   }
 }
 </script>
