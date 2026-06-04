@@ -92,7 +92,7 @@ const goToLogin = () => {
 
 const goToEditProfile = () => {
   uni.navigateTo({
-    url: '/pages/filter/index',
+    url: '/pages/edit-profile/index',
   })
 }
 

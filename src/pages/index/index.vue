@@ -93,7 +93,10 @@
         </view>
 
         <view v-if="userList.length === 0 && !loadingMore" class="empty-list">
-          <text class="empty-text">暂无匹配用户</text>
+          <text class="empty-text">{{ isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户' }}</text>
+          <view v-if="isEmptyFromFilter" class="clear-filter-btn" @tap="handleClearFilter">
+            <text>清除筛选</text>
+          </view>
         </view>
       </view>
 
@@ -106,10 +109,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import { useFilterStore, FilterData } from '@/store/filter'
 
 interface QuickEntry {
   id: number
@@ -168,8 +173,12 @@ const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
 const pageSize = 10
+const isEmptyFromFilter = ref(false)
+const activeFilterData = ref<FilterData | null>(null)
 
-const loadUserList = async (reset = false) => {
+const filterStore = useFilterStore()
+
+const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
     currentPage.value = 1
     noMoreData.value = false
@@ -180,11 +189,29 @@ const loadUserList = async (reset = false) => {
   loadingMore.value = true
 
   try {
-    const result = await get<{ list: UserCardData[]; total: number }>('/users/recommend', {
+    const params: Record<string, unknown> = {
       page: currentPage.value,
       limit: pageSize,
       tab: currentFilter.value,
-    })
+    }
+
+    // 合并筛选参数
+    if (filterParams) {
+      if (filterParams.keyword) params.keyword = filterParams.keyword
+      if (filterParams.gender !== undefined) params.gender = filterParams.gender
+      if (filterParams.ageMin && filterParams.ageMin > 18) params.ageMin = filterParams.ageMin
+      if (filterParams.ageMax && filterParams.ageMax < 80) params.ageMax = filterParams.ageMax
+      if (filterParams.heightMin && filterParams.heightMin > 140) params.heightMin = filterParams.heightMin
+      if (filterParams.heightMax && filterParams.heightMax < 200) params.heightMax = filterParams.heightMax
+      if (filterParams.education) params.education = filterParams.education
+      if (filterParams.incomeRange) params.incomeRange = filterParams.incomeRange
+      if (filterParams.maritalStatus) params.maritalStatus = filterParams.maritalStatus
+      if (filterParams.isRealName !== undefined) params.isRealName = filterParams.isRealName
+      if (filterParams.residence) params.residence = filterParams.residence
+      if (filterParams.hometown) params.hometown = filterParams.hometown
+    }
+
+    const result = await get<{ list: UserCardData[]; total: number }>('/users/recommend', params)
 
     if (result && result.list) {
       if (reset) {
@@ -201,7 +228,8 @@ const loadUserList = async (reset = false) => {
     } else {
       noMoreData.value = true
     }
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as Error
     console.error('加载用户列表失败:', error)
     if (error.message === 'Server Error') {
       showToast('服务器繁忙，请稍后重试', 'none')
@@ -259,6 +287,21 @@ const goToFilter = () => {
   })
 }
 
+/** 应用筛选条件并重新加载 */
+const applyFilter = (data: FilterData) => {
+  isEmptyFromFilter.value = true
+  activeFilterData.value = data
+  loadUserList(true, data)
+}
+
+/** 清除筛选条件 */
+const handleClearFilter = () => {
+  isEmptyFromFilter.value = false
+  activeFilterData.value = null
+  filterStore.clearFilter()
+  loadUserList(true)
+}
+
 const goToUserDetail = (user: UserCardData) => {
   uni.navigateTo({
     url: `/pages/user-detail/index?id=${user.id}`,
@@ -267,6 +310,17 @@ const goToUserDetail = (user: UserCardData) => {
 
 onMounted(() => {
   loadUserList(true)
+})
+
+// onShow 中检查 store 是否有筛选条件
+// tabbar 页面用 navigateTo 打开 filter 页后回退，EventChannel 可能不可靠
+onShow(() => {
+  if (filterStore.hasFilter) {
+    const filterData = filterStore.takeFilter()
+    if (filterData) {
+      applyFilter(filterData)
+    }
+  }
 })
 
 const onShareAppMessage = () => {
@@ -494,6 +548,7 @@ const onShareTimeline = () => {
 .no-more-data,
 .empty-list {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40rpx 0;
@@ -504,6 +559,18 @@ const onShareTimeline = () => {
 .empty-text {
   font-size: 26rpx;
   color: var(--text-secondary);
+}
+
+.clear-filter-btn {
+  margin-top: 24rpx;
+  padding: 12rpx 40rpx;
+  border: 2rpx solid #FF6B9D;
+  border-radius: 32rpx;
+
+  text {
+    font-size: 26rpx;
+    color: #FF6B9D;
+  }
 }
 
 .bottom-safe-area {

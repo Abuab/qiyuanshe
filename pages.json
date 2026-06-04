@@ -116,6 +116,13 @@
         "navigationStyle": "custom",
         "enablePullDownRefresh": false
       }
+    },
+    {
+      "path": "pages/edit-profile/index",
+      "style": {
+        "navigationBarTitleText": "编辑资料",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

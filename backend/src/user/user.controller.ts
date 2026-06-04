@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Query,
@@ -14,6 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserService } from './user.service'
 import { FilterUsersDto } from './dto'
+import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
 import { Result } from '../common/result'
@@ -47,6 +49,20 @@ export class UserController {
   async filterUsers(@Body() dto: FilterUsersDto, @Request() req: any) {
     const currentUserId = req?.user?.userId
     return this.userService.filterUsers(dto, currentUserId)
+  }
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  async updateProfile(@Body() dto: UpdateProfileDto, @Request() req: any) {
+    try {
+      const userId = req.user.userId
+      const user = await this.userService.updateProfile(userId, dto)
+      return Result.success(user, '保存成功')
+    } catch (error: any) {
+      console.error('updateProfile error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('保存失败: ' + (error?.message || '请稍后重试'))
+    }
   }
 
   @Get(':id')

@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder, In } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
 import { FilterUsersDto } from './dto'
+import { UpdateProfileDto } from './dto/update-profile.dto'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -539,5 +540,33 @@ export class UserService {
   private calculateAge(birthYear?: number): number {
     if (!birthYear) return 0
     return new Date().getFullYear() - birthYear
+  }
+
+  /** 编辑个人资料 */
+  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isDeleted: 0 },
+    })
+
+    if (!user) {
+      throw new NotFoundException('用户不存在')
+    }
+
+    // 只更新传入的非 undefined 字段
+    if (dto.nickname !== undefined) user.nickname = dto.nickname
+    if (dto.avatar !== undefined) user.avatar = dto.avatar
+    if (dto.gender !== undefined) user.gender = dto.gender
+    if (dto.birthYear !== undefined) user.birthYear = dto.birthYear
+    if (dto.height !== undefined) user.height = dto.height
+    if (dto.education !== undefined) user.education = dto.education
+    if (dto.occupation !== undefined) user.occupation = dto.occupation
+    if (dto.incomeRange !== undefined) user.incomeRange = dto.incomeRange
+    if (dto.maritalStatus !== undefined) user.maritalStatus = dto.maritalStatus
+    if (dto.hometown !== undefined) user.hometown = dto.hometown
+    if (dto.residence !== undefined) user.residence = dto.residence
+    if (dto.selfIntro !== undefined) user.selfIntro = dto.selfIntro
+
+    await this.userRepository.save(user)
+    return user
   }
 }
