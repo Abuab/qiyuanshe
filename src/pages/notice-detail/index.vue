@@ -26,9 +26,13 @@ onMounted(() => {
   const pages = getCurrentPages()
   const options = (pages[pages.length - 1] as any)?.options || {}
   if (options.id) {
-    request({ url: `/announcements/${options.id}`, method: 'GET' }).then((r: any) => {
-      detail.value = r.data || r
-    })
+    request({ url: `/announcements/${options.id}`, method: 'GET' })
+      .then((r: any) => {
+        detail.value = r.data || r
+      })
+      .catch(() => {
+        console.log('[公告详情]接口暂未开通')
+      })
   }
 })
 
