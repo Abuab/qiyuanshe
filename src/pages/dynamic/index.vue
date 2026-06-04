@@ -2,12 +2,12 @@
   <view class="dynamic-page">
     <!-- 顶部导航栏 -->
     <view class="nav-bar">
-      <view class="nav-left" v-if="showBack" @tap="handleBack">
-        <text class="back-icon">←</text>
+      <view class="nav-left">
+        <text v-if="canGoBack" class="back-icon" @tap="handleBack">←</text>
+        <text v-else class="spacer"></text>
       </view>
-      <view class="nav-left" v-else></view>
       <text class="nav-title">动态</text>
-      <view class="nav-right"></view>
+      <view class="nav-right"><text class="pub-text" @tap="goToPublish">+ 发布</text></view>
     </view>
 
     <scroll-view
@@ -65,7 +65,7 @@
             <text class="action-icon" :class="{ liked: item.isLiked }">{{ item.isLiked ? '❤️' : '🤍' }}</text>
             <text class="action-count" v-if="item.likeCount > 0">{{ item.likeCount }}</text>
           </view>
-          <view class="action-item">
+          <view class="action-item" @tap="goComment(item)">
             <text class="action-icon">💬</text>
             <text class="action-count" v-if="item.commentCount > 0">{{ item.commentCount }}</text>
           </view>
@@ -112,6 +112,7 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useUserStore } from '@/store/user'
 
 interface LikeUser {
   id: number
@@ -139,7 +140,8 @@ const isRefreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const pageSize = 10
-const showBack = ref(false)
+const canGoBack = ref(false)
+const userStore = useUserStore()
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -219,25 +221,35 @@ const onLoadMore = () => {
   fetchList(false)
 }
 
-const toggleLike = async (item: DynamicItem) => {
-  const wasLiked = item.isLiked
-  // 乐观更新
-  item.isLiked = !wasLiked
-  item.likeCount += wasLiked ? -1 : 1
+const toggleLike = async (item: DynamicItem & { likeLoading?: boolean }) => {
+  // 不能给自己的动态点赞
+  const myId = userStore.userInfo?.id
+  if (myId && item.userId === myId) {
+    uni.showToast({ title: '不能给自己的动态点赞', icon: 'none' })
+    return
+  }
+  // 已经点过赞了
+  if (item.isLiked) {
+    uni.showToast({ title: '已经点过赞了', icon: 'none' })
+    return
+  }
+  if (item.likeLoading) return
+  item.likeLoading = true
 
   try {
     await request({
       url: `/dynamics/${item.id}/like`,
       method: 'POST',
     } as Record<string, unknown>)
+    item.isLiked = true
+    item.likeCount++
 
     // 刷新该动态的点赞列表
     await refreshLikeUsers(item)
   } catch (e) {
-    // 回滚
-    item.isLiked = wasLiked
-    item.likeCount += wasLiked ? 1 : -1
-    console.error('toggle like error', e)
+    uni.showToast({ title: '点赞失败', icon: 'none' })
+  } finally {
+    item.likeLoading = false
   }
 }
 
@@ -279,14 +291,16 @@ const shareDynamic = (item: DynamicItem) => {
   uni.showToast({ title: '请点击右上角分享', icon: 'none' })
 }
 
+const goComment = (item: DynamicItem) => {
+  uni.navigateTo({ url: `/pages/dynamic-detail/index?id=${item.id}` })
+}
+
 const handleBack = () => {
-  safeNavigateBack()
+  uni.navigateBack({ delta: 1 })
 }
 
 onMounted(() => {
-  // 如果是从其他页面 navigateTo 过来的，显示返回按钮
-  showBack.value = getCurrentPages().length > 1
-
+  canGoBack.value = getCurrentPages().length > 1
   fetchList(true)
 })
 </script>
@@ -321,6 +335,16 @@ onMounted(() => {
   font-size: 36rpx;
   color: #FF6B9D;
   font-weight: bold;
+}
+
+.spacer {
+  width: 40rpx;
+}
+
+.pub-text {
+  font-size: 28rpx;
+  color: #FF6B9D;
+  font-weight: 500;
 }
 
 .nav-title {

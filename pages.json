@@ -139,6 +139,13 @@
       }
     },
     {
+      "path": "pages/dynamic-detail/index",
+      "style": {
+        "navigationBarTitleText": "动态详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/agreement/index",
       "style": {
         "navigationBarTitleText": "用户协议",

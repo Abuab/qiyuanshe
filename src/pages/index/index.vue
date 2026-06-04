@@ -274,6 +274,7 @@ const handleQuickEntry = (entry: QuickEntry) => {
 const goToQuestions = () => {
   uni.switchTab({
     url: '/pages/questions/index',
+    fail: () => uni.navigateTo({ url: '/pages/questions/index' }),
   })
 }
 
