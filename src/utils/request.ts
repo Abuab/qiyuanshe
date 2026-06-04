@@ -1,3 +1,5 @@
+import { logger } from './logger'
+
 /**
  * 直接从 storage 读取 token（避免循环依赖 auth.ts → request.ts）
  */
@@ -157,7 +159,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
         }
       },
       fail: (err: any) => {
-        console.error(`[request] ${method} ${url} 失败:`, err)
+        logger.error(`[request] ${method} ${url} 失败:`, err)
 
         // ---- 重试（仅网络错误） ----
         const isNetworkError =
@@ -167,7 +169,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
 
         if (isNetworkError && retryCount < MAX_RETRIES) {
           const delay = Math.pow(2, retryCount) * 1000 // 指数退避：1s, 2s
-          console.log(`[request] 第${retryCount + 1}次重试，${delay}ms后...`)
+          logger.info(`[request] 第${retryCount + 1}次重试，${delay}ms后...`)
           setTimeout(() => {
             request<T>({ ...options, retryCount: retryCount + 1 })
               .then(resolve)

@@ -2,6 +2,8 @@ import { createSSRApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import { icons } from './config/icons'
+import '@/utils/logger'
+import { logger } from '@/utils/logger'
 
 export function createApp() {
   const app = createSSRApp(App)
@@ -13,8 +15,8 @@ export function createApp() {
   app.config.globalProperties.$icons = icons
 
   app.config.errorHandler = (err, instance, info) => {
-    console.error('Global Error:', err)
-    console.error('Error Info:', info)
+    logger.error('Global Error:', err)
+    logger.error('Error Info:', info)
     uni.showToast({
       title: '应用程序出现错误',
       icon: 'none',
@@ -23,8 +25,8 @@ export function createApp() {
   }
 
   app.config.warnHandler = (msg, instance, trace) => {
-    console.warn('Vue Warning:', msg)
-    console.warn('Trace:', trace)
+    logger.warn('Vue Warning:', msg)
+    logger.warn('Trace:', trace)
   }
 
   return {

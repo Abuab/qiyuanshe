@@ -122,6 +122,7 @@ import request from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
 
 interface ChatMessage {
   id: number
@@ -224,7 +225,7 @@ const fetchMessages = async (isLoadMore = false) => {
       scrollToBottom()
     })
   } catch (e) {
-    console.error('fetch messages error', e)
+    logger.error('fetch messages error', e)
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -281,7 +282,7 @@ const handleSend = async () => {
       scrollToBottom()
     })
   } catch (e: any) {
-    console.error('send message error', e)
+    logger.error('send message error', e)
     inputContent.value = content
 
     if (e.statusCode === 403) {
@@ -338,7 +339,7 @@ const chooseImage = async () => {
           scrollToBottom()
         })
       } catch (e) {
-        console.error('upload error', e)
+        logger.error('upload error', e)
         if (e.message !== 'Unauthorized') {
           uni.showToast({ title: '发送失败', icon: 'none' })
         }
@@ -356,7 +357,7 @@ const markAsRead = async () => {
       method: 'PUT',
     })
   } catch (e) {
-    console.error('mark as read error', e)
+    logger.error('mark as read error', e)
   }
 }
 
@@ -446,7 +447,7 @@ const clearChat = () => {
           messages.value = []
           uni.showToast({ title: '已清空', icon: 'success' })
         } catch (e) {
-          console.error('clear chat error', e)
+          logger.error('clear chat error', e)
         }
       }
     },

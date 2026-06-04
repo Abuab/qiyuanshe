@@ -37,6 +37,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { logger } from '@/utils/logger'
 
 const status = ref('success')
 const failReason = ref('')
@@ -74,7 +75,7 @@ const fetchOrderDetail = async () => {
         : ''
     }
   } catch (e) {
-    console.error('fetch order detail error', e)
+    logger.error('fetch order detail error', e)
   }
 }
 

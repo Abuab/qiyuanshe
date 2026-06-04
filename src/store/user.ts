@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { logger } from '@/utils/logger'
 
 interface UserInfo {
   id: number
@@ -123,7 +124,7 @@ export const useUserStore = defineStore('user', () => {
         isVip.value = userInfo.value?.isVip || false
         vipExpireTime.value = userInfo.value?.vipExpireTime || ''
       } catch (e) {
-        console.error('Failed to parse userInfo:', e)
+        logger.error('Failed to parse userInfo:', e)
       }
     }
   }

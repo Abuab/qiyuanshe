@@ -116,6 +116,7 @@ import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import { icons } from '@/config/icons'
+import { logger } from '@/utils/logger'
 
 interface QuickEntry {
   id: number
@@ -231,7 +232,7 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
     }
   } catch (err: unknown) {
     const error = err as Error
-    console.error('加载用户列表失败:', error)
+    logger.error('加载用户列表失败:', error)
     if (error.message === 'Server Error') {
       showToast('服务器繁忙，请稍后重试', 'none')
     } else {

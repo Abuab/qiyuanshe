@@ -1,27 +1,28 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
+import { logger } from '@/utils/logger'
 
 onLaunch(() => {
-  console.log('App Launch')
+  logger.info('App Launch')
   const userStore = useUserStore()
   userStore.checkVip()
 })
 
 onShow(() => {
-  console.log('App Show')
+  logger.info('App Show')
 })
 
 onHide(() => {
-  console.log('App Hide')
+  logger.info('App Hide')
 })
 
 onError((err: string) => {
-  console.error('App onError:', err)
+  logger.error('App onError:', err)
 })
 
 onUnhandledRejection((res: { reason: string }) => {
-  console.error('App onUnhandledRejection:', res?.reason || res)
+  logger.error('App onUnhandledRejection:', res?.reason || res)
 })
 </script>
 

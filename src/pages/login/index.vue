@@ -119,6 +119,7 @@ import { onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { post } from '@/utils/request'
 import { showToast } from '@/utils/common'
+import { logger } from '@/utils/logger'
 
 interface LoginResult {
   user: any
@@ -209,7 +210,7 @@ const performWechatLogin = async () => {
       throw new Error('登录响应数据异常')
     }
   } catch (error: any) {
-    console.error('微信登录失败:', error)
+    logger.error('微信登录失败:', error)
     showToast(error.message || '登录失败，请重试', 'none')
   } finally {
     loading.value = false
@@ -259,7 +260,7 @@ const onGetPhoneNumber = async (e: any) => {
       handleLoginSuccess()
     }
   } catch (error: any) {
-    console.error('手机号登录失败:', error)
+    logger.error('手机号登录失败:', error)
     showToast(error.message || '登录失败，请重试', 'none')
   } finally {
     loading.value = false

@@ -6,7 +6,11 @@
         :src="avatarUrl"
         mode="aspectFill"
         @error="onAvatarError"
+        lazy-load
       ></image>
+      <view v-if="user.gender" class="gender-badge" :class="user.gender === 1 ? 'male' : 'female'">
+        <text>{{ user.gender === 1 ? '♂' : '♀' }}</text>
+      </view>
     </view>
 
     <view class="card-right">
@@ -27,6 +31,26 @@
         <text v-if="user.incomeRange" class="info-text">{{ user.incomeRange }}</text>
       </view>
 
+      <view v-if="user.residence || user.city" class="loc-row">
+        <text class="loc-text">📍 {{ user.residence || user.city }}</text>
+      </view>
+
+      <view v-if="user.matchmakerComment" class="mk-row">
+        <view class="mk-hd">
+          <image class="mk-icon" :src="icons.quickEntry.matchmakerComment" mode="aspectFit" />
+          <text>红娘评语</text>
+        </view>
+        <text class="mk-txt">{{ user.matchmakerComment }}</text>
+      </view>
+
+      <view v-if="user.mateRequirements" class="mate-row">
+        <text class="mate-lb">择偶要求：</text><text class="mate-val">{{ user.mateRequirements }}</text>
+      </view>
+
+      <view v-if="displayIntro" class="intro-row">
+        <text>{{ displayIntro }}</text>
+      </view>
+
       <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
         <image
           v-for="(photo, index) in displayPhotos"
@@ -35,6 +59,7 @@
           :src="photo"
           mode="aspectFill"
           @error="onPhotoError(props.user.photos![index])"
+          lazy-load
         ></image>
       </view>
     </view>
@@ -58,6 +83,13 @@ export interface UserCardData {
   housingStatus?: string
   isRealName?: boolean
   photos?: string[]
+  selfIntro?: string
+  bio?: string
+  residence?: string
+  city?: string
+  matchmakerComment?: string
+  mateRequirements?: string
+  gender?: number
 }
 
 interface Props {
@@ -80,9 +112,13 @@ const avatarUrl = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
   const avatar = props.user.avatar
   if (!avatar) return icons.common.defaultAvatar
-  // 对于本地路径直接返回，相对路径拼接完整 URL
   if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
   return getFullImageUrl(avatar)
+})
+
+const displayIntro = computed(() => {
+  const t = props.user.selfIntro || props.user.bio
+  return t ? (t.length > 60 ? t.slice(0, 60) + '...' : t) : ''
 })
 
 const onAvatarError = () => {
@@ -125,6 +161,7 @@ const handleClick = () => {
 .card-left {
   flex-shrink: 0;
   margin-right: 24rpx;
+  position: relative;
 }
 
 .avatar {
@@ -132,6 +169,32 @@ const handleClick = () => {
   height: 240rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
+}
+
+.gender-badge {
+  position: absolute;
+  bottom: 4rpx;
+  right: 4rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 22rpx;
+    color: #fff;
+  }
+
+  &.male {
+    background: #2979ff;
+  }
+
+  &.female {
+    background: #FF6B9D;
+  }
 }
 
 .card-right {
@@ -201,17 +264,89 @@ const handleClick = () => {
 .info-text {
   font-size: 24rpx;
   color: var(--text-secondary);
-  margin-right: 12rpx;
+}
+
+.loc-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+
+  .loc-text {
+    font-size: 24rpx;
+    color: var(--text-secondary);
+  }
+}
+
+.mk-row {
+  background: #FFF8F0;
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 12rpx;
+
+  .mk-hd {
+    display: flex;
+    align-items: center;
+    gap: 8rpx;
+    margin-bottom: 8rpx;
+
+    .mk-icon {
+      width: 32rpx;
+      height: 32rpx;
+    }
+
+    text {
+      font-size: 24rpx;
+      color: #FF9500;
+      font-weight: bold;
+    }
+  }
+
+  .mk-txt {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.5;
+  }
+}
+
+.mate-row {
+  margin-bottom: 12rpx;
+
+  .mate-lb {
+    font-size: 24rpx;
+    color: #FF6B9D;
+    font-weight: bold;
+  }
+
+  .mate-val {
+    font-size: 24rpx;
+    color: #666;
+  }
+}
+
+.intro-row {
+  margin-bottom: 12rpx;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
 
 .photos-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 12rpx;
 }
 
 .photo-thumb {
-  width: 80rpx;
-  height: 80rpx;
+  width: 160rpx;
+  height: 160rpx;
   border-radius: 8rpx;
   background-color: #f5f5f5;
 }
