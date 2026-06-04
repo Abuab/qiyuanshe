@@ -1,5 +1,5 @@
 <template>
-  <view v-show="visible" class="matchmaker-list-popup">
+  <view v-if="visible" class="matchmaker-list-popup">
     <view class="overlay" @tap="handleClose"></view>
     <view class="popup-panel" :class="{ open: visible }">
       <view class="panel-header">
