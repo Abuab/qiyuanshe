@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import request, { get } from '@/utils/request'
+import { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
@@ -312,50 +312,22 @@ const onFilterReset = () => {
   handleClearFilter()
 }
 
-// Mock 公告数据兜底
+// Mock 公告数据兜底（后端暂无 announcements 接口，直接使用本地数据，避免 404 控制台报错）
 const getMockNotices = () => [
   { id: 1, title: '栖缘社小程序正式上线啦！', type: 'banner' },
   { id: 2, title: '开通VIP享受更多特权~', type: 'banner' },
 ]
 
-const fetchAnnouncements = async () => {
-  try {
-    const res: any = await request({ url: '/announcements', method: 'GET', data: { type: 'banner' } })
-    notices.value = res.list || res.data || []
-  } catch (e: any) {
-    if (e?.statusCode === 404 || e?.code === 404) {
-      console.log('[公告]接口暂未开通')
-      notices.value = getMockNotices()
-      return
-    }
-    console.log('[公告]请求失败，使用Mock数据:', e?.message || e)
-    notices.value = getMockNotices()
-  }
+// 后端 announcements 接口暂未部署，直接使用 mock 数据
+// 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'banner' } })
+const fetchAnnouncements = () => {
+  notices.value = getMockNotices()
 }
 
-const checkPopupAnnouncement = async () => {
-  try {
-    const res: any = await request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
-    const read: number[] = uni.getStorageSync('read_notices') || []
-    const list = res.list || res.data || []
-    const unread = list.filter((i: any) => !read.includes(i.id))
-    if (unread.length) {
-      uni.showModal({
-        title: unread[0].title,
-        content: unread[0].content,
-        showCancel: false,
-        confirmText: '知道了',
-        success: () => {
-          read.push(unread[0].id)
-          uni.setStorageSync('read_notices', read)
-        },
-      })
-    }
-  } catch (e: any) {
-    if (e?.statusCode === 404 || e?.code === 404) {
-      // 接口暂未开通，静默
-    }
-  }
+// 后端 announcements popup 接口暂未部署，不做弹窗请求
+// 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
+const checkPopupAnnouncement = () => {
+  // 接口暂未开通，跳过
 }
 
 const closeNotice = () => {
