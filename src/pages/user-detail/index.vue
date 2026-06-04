@@ -253,7 +253,6 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
-import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -310,12 +309,17 @@ const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
 const userStore = useUserStore()
-const systemStore = useSystemStore()
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVip = computed(() => userStore.isVip)
 
 onMounted(() => {
+  // 激活右上角原生分享按钮
+  uni.showShareMenu({
+    withShareTicket: true,
+    menus: ['shareAppMessage', 'shareTimeline'],
+  })
+
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
   const options = (currentPage as any)?.options || {}
@@ -456,14 +460,14 @@ const closeSharePanel = () => {
   showShare.value = false
 }
 
-const shareToFriend = async () => {
+const shareToFriend = () => {
   closeSharePanel()
-
-  const shareTitle = systemStore.shareTitle || `${userData.value?.nickname} - 期待与你相遇`
-
+  // 微信小程序分享需通过右上角原生按钮触发
+  // showShareMenu 已在 onMounted 中调用
   uni.showToast({
-    title: '即将分享',
+    title: '请点击右上角「···」分享给好友',
     icon: 'none',
+    duration: 2000,
   })
 }
 
@@ -539,23 +543,24 @@ const toggleFollow = async () => {
 }
 
 const handleChat = () => {
+  // 未登录 → 跳转登录页
   if (!isLoggedIn.value) {
-    uni.showToast({
-      title: '请先登录',
-      icon: 'none',
-    })
+    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1000)
     return
   }
 
+  // 非 VIP → 跳转会员页（tabBar 页面必须用 switchTab）
   if (!isVip.value) {
-    uni.navigateTo({
-      url: '/pages/vip/index',
-    })
+    uni.switchTab({ url: '/pages/vip/index' })
     return
   }
 
+  // 已登录且 VIP → 进入聊天
   uni.navigateTo({
-    url: `/pages/chat/index?userId=${userId.value}&nickname=${userData.value?.nickname || ''}`,
+    url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(userData.value?.nickname || '')}`,
   })
 }
 
