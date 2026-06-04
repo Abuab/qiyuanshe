@@ -1,5 +1,5 @@
 <template>
-  <view v-if="visible" class="matchmaker-popup">
+  <view v-show="visible" class="matchmaker-popup">
     <view class="overlay" @tap="handleClose"></view>
     <view class="popup-card">
       <view class="close-btn" @tap="handleClose">
