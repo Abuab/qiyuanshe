@@ -117,20 +117,6 @@
 
     <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
-    <!-- 公告弹窗 -->
-    <view v-if="showPopup" class="popup-mask" @tap="closePopup" @touchmove.stop.prevent>
-      <view class="popup-content">
-        <view class="popup-header">
-          <text class="popup-title">{{ popupTitle || '欢迎来到栖缘社！' }}</text>
-        </view>
-        <view class="popup-body">
-          <text class="popup-text">{{ popupContent || '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！' }}</text>
-        </view>
-        <view class="popup-footer" @tap="closePopup">
-          <text class="popup-btn">我知道了</text>
-        </view>
-      </view>
-    </view>
   </view>
 </template>
 
@@ -205,9 +191,6 @@ const currentPage = ref(1)
 const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
-const showPopup = ref(false)
-const popupTitle = ref('')
-const popupContent = ref('')
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -357,19 +340,17 @@ const checkPopupAnnouncement = () => {
   const lastPopupDate = uni.getStorageSync('popup_notice_date')
   if (lastPopupDate === today) return
 
-  // 确保弹窗数据已就绪
-  if (!popupTitle.value || !popupContent.value) {
-    const notice = getMockPopupNotice()
-    popupTitle.value = notice.title
-    popupContent.value = notice.content
-  }
-
-  showPopup.value = true
-}
-
-const closePopup = () => {
-  showPopup.value = false
-  uni.setStorageSync('popup_notice_date', new Date().toDateString())
+  const notice = getMockPopupNotice()
+  uni.showModal({
+    title: notice.title,
+    content: notice.content,
+    showCancel: false,
+    confirmText: '我知道了',
+    confirmColor: '#FF6B9D',
+    success: () => {
+      uni.setStorageSync('popup_notice_date', today)
+    },
+  })
 }
 
 const closeNotice = () => {
@@ -407,12 +388,7 @@ onMounted(() => {
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
-  // 提前同步加载弹窗内容数据，确保 setTimeout 触发时模板已有值
-  const notice = getMockPopupNotice()
-  popupTitle.value = notice.title
-  popupContent.value = notice.content
-
-  // 延时弹出公告，确保页面渲染完成
+  // 延时弹出公告
   setTimeout(() => {
     checkPopupAnnouncement()
   }, 800)
@@ -723,58 +699,4 @@ const onShareTimeline = () => {
   height: 40rpx;
 }
 
-// 公告弹窗样式
-.popup-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.popup-content {
-  width: 580rpx;
-  background-color: #fff;
-  border-radius: 24rpx;
-  overflow: hidden;
-}
-
-.popup-header {
-  padding: 40rpx 32rpx 20rpx;
-  text-align: center;
-}
-
-.popup-title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.popup-body {
-  padding: 20rpx 32rpx 40rpx;
-}
-
-.popup-text {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.8;
-  white-space: pre-wrap;
-}
-
-.popup-footer {
-  border-top: 1rpx solid #eee;
-  padding: 24rpx 0;
-  text-align: center;
-}
-
-.popup-btn {
-  font-size: 30rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-}
 </style>
