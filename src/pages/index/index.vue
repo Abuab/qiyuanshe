@@ -412,13 +412,15 @@ onMounted(() => {
     checkPopupAnnouncement()
   }, 800)
 
-  // 开启分享菜单
-  try {
-    uni.showShareMenu({
-      withShareTicket: true,
-      menus: ['shareAppMessage'],
-    })
-  } catch (_) { /* ignore */ }
+  // 开启分享菜单（异步执行，避免阻塞页面渲染）
+  setTimeout(() => {
+    try {
+      uni.showShareMenu({
+        withShareTicket: true,
+        menus: ['shareAppMessage'],
+      })
+    } catch (_) { /* ignore */ }
+  }, 0)
 
   loadUserList(true)
 })
