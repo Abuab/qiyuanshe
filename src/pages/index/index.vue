@@ -119,7 +119,7 @@
 
     <!-- 公告弹窗 -->
     <view v-show="showPopup" class="popup-mask" @tap="closePopup">
-      <view class="popup-content" @tap.stop>
+      <view class="popup-content">
         <view class="popup-header">
           <text class="popup-title">{{ popupTitle || '欢迎来到栖缘社！' }}</text>
         </view>
