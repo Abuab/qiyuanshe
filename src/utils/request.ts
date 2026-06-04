@@ -126,8 +126,10 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
 
         // ---- 非成功状态码 ----
         if (!isHttpSuccess(statusCode)) {
-          const msg = statusMessage(statusCode)
-          // 403/404/422/500 等：toast 提示，不跳转
+          // 优先读取后端返回的真实错误信息
+          const responseBody = response.data as Record<string, unknown> | undefined
+          const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
+          const msg = bizMsg || statusMessage(statusCode)
           if (statusCode !== 401) {
             uni.showToast({ title: msg, icon: 'none', duration: 2000 })
           }
