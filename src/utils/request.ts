@@ -62,8 +62,18 @@ function statusMessage(statusCode: number): string {
   return map[statusCode] || `请求异常(${statusCode})`
 }
 
-/** 统一处理 401：清空登录态并跳转 */
-function handleUnauthorized(): void {
+/** 统一处理 401 */
+function handleUnauthorized(tokenWasPresent: boolean): void {
+  // 场景1：请求根本没带 token → 未登录，引导登录（不清除不存在的 token）
+  if (!tokenWasPresent) {
+    uni.showToast({ title: '请先登录', icon: 'none', duration: 2000 })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1500)
+    return
+  }
+
+  // 场景2：带了 token 但后端返回 401 → token 过期/被撤销/密钥变更
   uni.removeStorageSync('token')
   uni.removeStorageSync('userInfo')
   uni.removeStorageSync('refreshToken')
@@ -108,7 +118,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
 
         // ---- 401 统一处理 ----
         if (statusCode === 401) {
-          handleUnauthorized()
+          handleUnauthorized(!!token)
           reject(new Error('Unauthorized'))
           return
         }

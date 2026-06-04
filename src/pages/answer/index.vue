@@ -65,6 +65,7 @@ import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
+import { getToken } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const questionId = ref(0)
@@ -141,6 +142,15 @@ const handleSubmit = async () => {
 
   if (wordCount.value > 200) {
     uni.showToast({ title: '回答内容不能超过200字', icon: 'none' })
+    return
+  }
+
+  // 提交前检查 token：未登录先跳转，避免无意义的 401 请求
+  if (!getToken()) {
+    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/index' })
+    }, 1000)
     return
   }
 
