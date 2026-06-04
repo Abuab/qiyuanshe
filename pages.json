@@ -166,6 +166,13 @@
         "navigationBarTitleText": "设置",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/notice-detail/index",
+      "style": {
+        "navigationBarTitleText": "公告详情",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

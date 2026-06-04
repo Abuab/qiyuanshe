@@ -22,6 +22,10 @@
           />
           <text class="avatar-tip">点击更换头像</text>
         </view>
+        <view class="avatar-badges" v-if="form.avatarReviewStatus === 0 || form.avatarReviewStatus === 2">
+          <text v-if="form.avatarReviewStatus === 0" class="badge pending">头像审核中</text>
+          <text v-if="form.avatarReviewStatus === 2" class="badge rejected">头像已驳回</text>
+        </view>
       </view>
 
       <!-- 基本信息 -->
@@ -197,7 +201,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { put } from '@/utils/request'
+import request, { put } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { getFullImageUrl } from '@/utils/common'
@@ -205,6 +209,8 @@ import { safeNavigateBack } from '@/utils/navigate'
 
 interface ProfileForm {
   avatar: string
+  avatarReviewStatus: number // 0=待审核 1=已通过 2=驳回
+  reviewStatus: number // 0=待审核 1=已通过 2=驳回
   nickname: string
   gender: number
   birthYear: number | undefined
@@ -249,6 +255,8 @@ const avatarErr = ref(false)
 
 const form = ref<ProfileForm>({
   avatar: '',
+  avatarReviewStatus: 1,
+  reviewStatus: 1,
   nickname: '',
   gender: 0,
   birthYear: undefined,
@@ -286,6 +294,8 @@ onMounted(() => {
   if (info) {
     form.value = {
       avatar: info.avatar || '',
+      avatarReviewStatus: (info as any).avatarReviewStatus ?? 1,
+      reviewStatus: (info as any).reviewStatus ?? 1,
       nickname: info.nickname || '',
       gender: info.gender ?? 0,
       birthYear: info.birthYear,
@@ -312,7 +322,10 @@ const chooseAvatar = () => {
       try {
         const uploadRes = await uploadImage(filePath)
         form.value.avatar = uploadRes.url
-        uni.showToast({ title: '头像已更新', icon: 'success' })
+        // 提交头像审核
+        await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl: uploadRes.url } } as any)
+        form.value.avatarReviewStatus = 0
+        uni.showToast({ title: '已提交审核', icon: 'success' })
       } catch (err: unknown) {
         const error = err as Error
         console.error('头像上传失败:', error)
@@ -372,6 +385,14 @@ const handleSave = async () => {
     }
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
+
+    // 提交资料审核
+    try {
+      await request({ url: '/users/profile-review', method: 'POST', data } as any)
+      form.value.reviewStatus = 0
+    } catch (_) {
+      // 审核提交失败不阻断保存
+    }
 
     // 更新本地 store
     userStore.updateProfile(result)
@@ -479,6 +500,28 @@ const handleBack = () => {
 .avatar-tip {
   font-size: 24rpx;
   color: #999;
+}
+
+.avatar-badges {
+  display: flex;
+  justify-content: center;
+  margin-top: 8rpx;
+}
+
+.badge {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+
+  &.pending {
+    background-color: #FFF7E6;
+    color: #FA8C16;
+  }
+
+  &.rejected {
+    background-color: #FFF1F0;
+    color: #FF4D4F;
+  }
 }
 
 .form-item {

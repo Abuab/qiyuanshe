@@ -7,6 +7,16 @@
       </view>
     </view>
 
+    <view v-if="showNotice && notices.length" class="notice-bar">
+      <text class="notice-icon">📢</text>
+      <swiper class="notice-swiper" vertical autoplay circular interval="3000">
+        <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
+          <text class="notice-text">{{ n.title }}</text>
+        </swiper-item>
+      </swiper>
+      <text class="notice-close" @tap.stop="closeNotice">×</text>
+    </view>
+
     <scroll-view
       class="content-scroll"
       scroll-y
@@ -112,7 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { get } from '@/utils/request'
+import request, { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
@@ -178,6 +188,8 @@ const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
 const showFilter = ref(false)
+const showNotice = ref(true)
+const notices = ref<any[]>([])
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -300,6 +312,15 @@ const onFilterReset = () => {
   handleClearFilter()
 }
 
+const closeNotice = () => {
+  showNotice.value = false
+  uni.setStorageSync('notice_closed', new Date().toDateString())
+}
+
+const goNotice = (id: number) => {
+  uni.navigateTo({ url: `/pages/notice-detail/index?id=${id}` })
+}
+
 /** 应用筛选条件并重新加载 */
 const applyFilter = (data: FilterData) => {
   isEmptyFromFilter.value = true
@@ -322,6 +343,14 @@ const goToUserDetail = (user: UserCardData) => {
 }
 
 onMounted(() => {
+  // 公告：当日关闭后不再显示
+  showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
+
+  // 获取公告横幅
+  request({ url: '/announcements?type=banner', method: 'GET' }).then((r: any) => {
+    notices.value = r.list || r.data || []
+  }).catch(() => {})
+
   // 开启分享菜单
   try {
     uni.showShareMenu({
@@ -331,6 +360,26 @@ onMounted(() => {
   } catch (_) { /* ignore */ }
 
   loadUserList(true)
+})
+
+// 弹窗类型公告（onShow 中检查）
+onShow(() => {
+  request({ url: '/announcements?type=popup', method: 'GET' }).then((r: any) => {
+    const read: number[] = uni.getStorageSync('read_notices') || []
+    const unread = (r.list || r.data || []).filter((i: any) => !read.includes(i.id))
+    if (unread.length) {
+      uni.showModal({
+        title: unread[0].title,
+        content: unread[0].content,
+        showCancel: false,
+        confirmText: '知道了',
+        success: () => {
+          read.push(unread[0].id)
+          uni.setStorageSync('read_notices', read)
+        },
+      })
+    }
+  }).catch(() => {})
 })
 
 const onShareAppMessage = () => {
@@ -385,6 +434,39 @@ const onShareTimeline = () => {
   height: 56rpx;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 28rpx;
+}
+
+.notice-bar {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 32rpx;
+  background: linear-gradient(135deg, #FFF5F7, #FFE4ED);
+  margin-bottom: 20rpx;
+
+  .notice-swiper {
+    flex: 1;
+    height: 40rpx;
+    margin: 0 16rpx;
+  }
+
+  .notice-text {
+    font-size: 26rpx;
+    color: #FF6B9D;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+}
+
+.notice-icon {
+  font-size: 28rpx;
+}
+
+.notice-close {
+  font-size: 32rpx;
+  color: #999;
+  padding-left: 16rpx;
 }
 
 .content-scroll {
