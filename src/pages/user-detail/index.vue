@@ -436,6 +436,9 @@ const fetchUserDetail = async () => {
 }
 
 const fetchMatchmakerList = async () => {
+  // eslint-disable-next-line no-console
+  console.log('[红娘] fetchMatchmakerList 开始调用')
+
   try {
     const res = await request({
       url: '/matchmakers',
@@ -444,25 +447,33 @@ const fetchMatchmakerList = async () => {
     })
 
     // eslint-disable-next-line no-console
-    console.log('[红娘] API 返回原始数据:', JSON.stringify(res))
+    console.log('[红娘] API 返回类型:', typeof res, '是否为数组:', Array.isArray(res))
+    // eslint-disable-next-line no-console
+    console.log('[红娘] API 返回原始数据:', JSON.stringify(res).substring(0, 500))
 
-    const rawList: any[] = Array.isArray(res) ? res : (res?.list || [])
-    // 将后端返回的相对路径补全为完整 URL（兼容 snake_case 和 camelCase 字段名）
-    matchmakerList.value = rawList.map((item: any) => {
+    const rawList: any[] = Array.isArray(res) ? res : (res?.list || res?.data?.list || res?.data || [])
+    // eslint-disable-next-line no-console
+    console.log('[红娘] rawList 长度:', rawList.length)
+
+    matchmakerList.value = rawList.map((item: any, index: number) => {
       // eslint-disable-next-line no-console
-      console.log('[红娘] 单条原始数据:', JSON.stringify(item))
+      console.log(`[红娘] 第${index}条 keys:`, Object.keys(item))
+      // eslint-disable-next-line no-console
+      console.log(`[红娘] 第${index}条 原始:`, JSON.stringify(item).substring(0, 300))
+
       const resolvedQrCode = getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || item.QRCode)
+      const resolvedAvatar = getFullImageUrl(item.avatar || item.avatarUrl)
       // eslint-disable-next-line no-console
-      console.log('[红娘] qrCode 解析结果:', resolvedQrCode)
-      return {
-        ...item,
-        avatar: getFullImageUrl(item.avatar),
-        qrCode: resolvedQrCode,
-      }
+      console.log(`[红娘] 第${index}条 qrCode:`, resolvedQrCode, 'avatar:', resolvedAvatar)
+
+      return { ...item, avatar: resolvedAvatar, qrCode: resolvedQrCode }
     })
-  } catch (e) {
-    // 接口 404/超时时使用 Mock 数据兜底，确保红娘弹窗能正常显示
-    console.log('[红娘]接口未开通，使用Mock数据', e)
+
+    // eslint-disable-next-line no-console
+    console.log('[红娘] 最终 matchmakerList:', JSON.stringify(matchmakerList.value).substring(0, 500))
+  } catch (e: any) {
+    // eslint-disable-next-line no-console
+    console.log('[红娘] 接口调用失败，使用 Mock 数据', e?.message || e)
     matchmakerList.value = [
       {
         id: 1,
@@ -640,11 +651,15 @@ const handleChat = () => {
 const showMatchmakerPopup = () => {
   // 如果红娘列表为空，填充Mock数据确保弹窗能打开
   if (!matchmakerList.value || matchmakerList.value.length === 0) {
+    // eslint-disable-next-line no-console
+    console.log('[红娘] 列表为空，使用 Mock 数据')
     matchmakerList.value = [
       { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
   }
   selectedMatchmaker.value = matchmakerList.value[0]
+  // eslint-disable-next-line no-console
+  console.log('[红娘] 选中红娘 qrCode:', selectedMatchmaker.value.qrCode, 'avatar:', selectedMatchmaker.value.avatar)
   showMatchmaker.value = true
 }
 
