@@ -398,28 +398,44 @@ const cityOptions = [
 ]
 
 const showResidencePicker = () => {
-  const range = ['不限', ...cityOptions]
-  uni.showActionSheet({
-    itemList: range,
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        filterData.value.residence = undefined
-      } else {
-        filterData.value.residence = range[res.tapIndex]
-      }
-    },
-  })
+  pickAddr('residence')
 }
 
 const showHometownPicker = () => {
-  const range = ['不限', ...cityOptions]
-  uni.showActionSheet({
-    itemList: range,
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        filterData.value.hometown = undefined
+  pickAddr('hometown')
+}
+
+const pickAddr = (field: 'residence' | 'hometown') => {
+  // #ifdef MP-WEIXIN
+  uni.chooseAddress({
+    success: (res: any) => {
+      const addr = `${res.provinceName}${res.cityName}${res.countyName}${res.detailInfo}`
+      if (field === 'residence') {
+        filterData.value.residence = addr
       } else {
-        filterData.value.hometown = range[res.tapIndex]
+        filterData.value.hometown = addr
+      }
+    },
+    fail: () => pickFallback(field),
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  pickFallback(field)
+  // #endif
+}
+
+const pickFallback = (field: 'residence' | 'hometown') => {
+  uni.showModal({
+    title: field === 'residence' ? '输入现居地' : '输入户籍地',
+    editable: true,
+    placeholderText: '精确到街道，例：北京市海淀区中关村街道',
+    success: (res) => {
+      if (res.confirm && res.content) {
+        if (field === 'residence') {
+          filterData.value.residence = res.content
+        } else {
+          filterData.value.hometown = res.content
+        }
       }
     },
   })

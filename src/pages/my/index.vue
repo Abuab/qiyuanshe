@@ -123,13 +123,14 @@ const goToActivities = () => {
 }
 
 const goToQuestions = () => {
-  uni.switchTab({
-    url: '/pages/questions/index',
+  uni.navigateTo({
+    url: '/pages/my-answers/index',
+    fail: () => uni.navigateTo({ url: '/pages/questions/index' }),
   })
 }
 
 const goToSettings = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
+  uni.navigateTo({ url: '/pages/settings/index' })
 }
 
 const handleLogout = () => {

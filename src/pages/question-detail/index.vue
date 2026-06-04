@@ -246,8 +246,9 @@ const handleBack = () => {
 }
 
 const goToQuestions = () => {
-  uni.switchTab({
+  uni.navigateTo({
     url: '/pages/questions/index',
+    fail: () => uni.switchTab({ url: '/pages/questions/index' }),
   })
 }
 
