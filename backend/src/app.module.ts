@@ -24,6 +24,8 @@ import {
   MatchmakerReview,
   MatchRecord,
   UserBlock,
+  Dynamic,
+  DynamicLike,
 } from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -36,6 +38,7 @@ import { AuditModule } from './audit/audit.module'
 import { SystemModule } from './system/system.module'
 import { ActivityModule } from './activity/activity.module'
 import { UploadModule } from './upload/upload.module'
+import { DynamicModule } from './dynamic/dynamic.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { RedisService } from './common/redis.service'
@@ -69,6 +72,8 @@ import { RedisService } from './common/redis.service'
       MatchmakerReview,
       MatchRecord,
       UserBlock,
+      Dynamic,
+      DynamicLike,
     ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
@@ -85,6 +90,7 @@ import { RedisService } from './common/redis.service'
     SystemModule,
     ActivityModule,
     UploadModule,
+    DynamicModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],
