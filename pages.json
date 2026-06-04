@@ -136,8 +136,7 @@
       "path": "pages/dynamic-publish/index",
       "style": {
         "navigationBarTitleText": "发布动态",
-        "navigationBarBackgroundColor": "#ffffff",
-        "navigationBarTextStyle": "black"
+        "navigationStyle": "custom"
       }
     },
     {

@@ -1,5 +1,14 @@
 <template>
   <view class="publish-page">
+    <!-- 顶部导航 -->
+    <view class="nav-bar">
+      <view class="nav-left" @tap="handleCancel">
+        <text class="back-arrow">← 返回</text>
+      </view>
+      <text class="nav-title">发布动态</text>
+      <view class="nav-right"></view>
+    </view>
+
     <view class="page-content">
       <!-- 文字输入 -->
       <view class="textarea-section">
@@ -156,6 +165,39 @@ const handleCancel = () => {
   background-color: #fff;
   display: flex;
   flex-direction: column;
+  padding-top: 88rpx;
+}
+
+.nav-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  background-color: #fff;
+  z-index: 100;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-left,
+.nav-right {
+  min-width: 120rpx;
+}
+
+.back-arrow {
+  font-size: 28rpx;
+  color: #FF6B9D;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
 }
 
 .page-content {
