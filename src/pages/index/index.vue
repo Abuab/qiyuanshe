@@ -325,23 +325,26 @@ const fetchAnnouncements = () => {
   notices.value = getMockNotices()
 }
 
-// Mock 弹窗公告数据（后端暂无 announcements popup 接口，直接使用本地数据）
-const getMockPopupNotice = () => ({
-  id: 99,
-  title: '欢迎来到栖缘社！',
-  content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
-})
-
 // 后端 announcements popup 接口暂未部署，使用 mock 数据弹窗
 // 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
-const checkPopupAnnouncement = () => {
+const checkPopupAnnouncement = (force = false) => {
+  if (!force) {
+    const today = new Date().toDateString()
+    if (uni.getStorageSync('popup_notice_date') === today) return false
+  }
+
   uni.showModal({
     title: '欢迎来到栖缘社！',
     content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
     showCancel: false,
     confirmText: '我知道了',
     confirmColor: '#FF6B9D',
+    complete: () => {
+      uni.setStorageSync('popup_notice_date', new Date().toDateString())
+      loadUserList(true)
+    },
   })
+  return true
 }
 
 // 保留用于后续的每日跳过逻辑
@@ -380,11 +383,10 @@ onMounted(() => {
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
-  // 立即弹出公告（不依赖 setTimeout，确保必定触发）
-  try {
-    checkPopupAnnouncement()
-  } catch (e: any) {
-    console.error('[Popup] checkPopupAnnouncement error:', e)
+  // 弹窗：每天首次进入弹出，弹窗关闭后再加载数据
+  const popupShown = checkPopupAnnouncement()
+  if (!popupShown) {
+    loadUserList(true)
   }
 
   // 开启分享菜单（开发工具中可能不可用，加 fail 静默处理）
@@ -395,8 +397,6 @@ onMounted(() => {
       console.log('[分享]showShareMenu 开发工具跳过')
     },
   })
-
-  loadUserList(true)
 })
 
 // 每次页面显示时也检查（如从其他页返回）
