@@ -11,7 +11,7 @@
             <input
               class="search-input"
               v-model="filterData.keyword"
-              placeholder="请输入相亲ID"
+              placeholder="请输入昵称或ID搜索"
               placeholder-class="search-placeholder"
             />
           </view>

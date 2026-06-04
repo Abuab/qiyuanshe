@@ -1,8 +1,10 @@
 import { useUserStore } from '@/store/user'
 import { post } from '@/utils/request'
+import { secureStorage } from './crypto'
+import { logger } from './logger'
 
 export const getToken = (): string => {
-  return uni.getStorageSync('token') || ''
+  return secureStorage.getToken()
 }
 
 export const checkLogin = (): boolean => {
@@ -70,7 +72,7 @@ export const isVip = (): boolean => {
 }
 
 export const refreshToken = async (): Promise<boolean> => {
-  const refreshTokenValue = uni.getStorageSync('refreshToken')
+  const refreshTokenValue = secureStorage.getRefreshToken()
   if (!refreshTokenValue) {
     return false
   }
@@ -87,14 +89,14 @@ export const refreshToken = async (): Promise<boolean> => {
       }
 
       if (result.refreshToken) {
-        uni.setStorageSync('refreshToken', result.refreshToken)
+        secureStorage.setRefreshToken(result.refreshToken)
       }
 
       return true
     }
   } catch (error) {
-    console.error('刷新token失败:', error)
-    uni.removeStorageSync('refreshToken')
+    logger.error('刷新token失败:', error)
+    secureStorage.removeRefreshToken()
   }
 
   return false

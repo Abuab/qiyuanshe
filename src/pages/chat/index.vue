@@ -45,6 +45,7 @@
             class="avatar"
             :src="avatar || '/static/default-avatar.png'"
             mode="aspectFill"
+            lazy-load
           />
           <view class="bubble" :class="msg.isMine ? 'mine' : 'other'">
             <image
@@ -53,6 +54,7 @@
               mode="widthFix"
               class="message-image"
               @tap="previewImage(msg.content)"
+              lazy-load
             />
             <text v-else>{{ msg.content }}</text>
           </view>
@@ -61,6 +63,7 @@
             class="avatar"
             :src="myAvatar || '/static/default-avatar.png'"
             mode="aspectFill"
+            lazy-load
           />
         </view>
       </view>

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { logger } from '@/utils/logger'
+import { secureStorage } from '@/utils/crypto'
 
 interface UserInfo {
   id: number
@@ -46,8 +47,8 @@ export const useUserStore = defineStore('user', () => {
     isVip.value = newUserInfo.isVip || false
     vipExpireTime.value = newUserInfo.vipExpireTime || ''
 
-    uni.setStorageSync('token', newToken)
-    uni.setStorageSync('userInfo', JSON.stringify(newUserInfo))
+    secureStorage.setToken(newToken)
+    secureStorage.setUserInfo(newUserInfo)
   }
 
   const logout = () => {
@@ -56,8 +57,7 @@ export const useUserStore = defineStore('user', () => {
     isVip.value = false
     vipExpireTime.value = ''
 
-    uni.removeStorageSync('token')
-    uni.removeStorageSync('userInfo')
+    secureStorage.clearAll()
 
     uni.reLaunch({
       url: '/pages/index/index'
@@ -70,7 +70,7 @@ export const useUserStore = defineStore('user', () => {
       isVip.value = (newUserInfo.isVip as boolean | undefined) || isVip.value
       vipExpireTime.value = (newUserInfo.vipExpireTime as string | undefined) || vipExpireTime.value
     }
-    uni.setStorageSync('userInfo', JSON.stringify(userInfo.value))
+    secureStorage.setUserInfo(userInfo.value)
   }
 
   /** 编辑资料后更新 store */
@@ -92,7 +92,7 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.selfIntro === 'string') updates.selfIntro = data.selfIntro
     if (typeof data.bio === 'string') updates.bio = data.bio
     Object.assign(userInfo.value, updates)
-    uni.setStorageSync('userInfo', JSON.stringify(userInfo.value))
+    secureStorage.setUserInfo(userInfo.value)
   }
 
   const checkVip = () => {
@@ -105,7 +105,7 @@ export const useUserStore = defineStore('user', () => {
       isVip.value = false
       if (userInfo.value) {
         userInfo.value.isVip = false
-        uni.setStorageSync('userInfo', JSON.stringify(userInfo.value))
+        secureStorage.setUserInfo(userInfo.value)
       }
       return false
     }
@@ -114,18 +114,14 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const initFromStorage = () => {
-    const storedToken = uni.getStorageSync('token')
-    const storedUserInfo = uni.getStorageSync('userInfo')
+    const storedToken = secureStorage.getToken()
+    const storedUserInfo = secureStorage.getUserInfo() as UserInfo | null
 
     if (storedToken && storedUserInfo) {
       token.value = storedToken
-      try {
-        userInfo.value = JSON.parse(storedUserInfo)
-        isVip.value = userInfo.value?.isVip || false
-        vipExpireTime.value = userInfo.value?.vipExpireTime || ''
-      } catch (e) {
-        logger.error('Failed to parse userInfo:', e)
-      }
+      userInfo.value = storedUserInfo
+      isVip.value = storedUserInfo.isVip || false
+      vipExpireTime.value = storedUserInfo.vipExpireTime || ''
     }
   }
 

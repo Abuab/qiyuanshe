@@ -1,10 +1,11 @@
 import { logger } from './logger'
+import { secureStorage } from './crypto'
 
 /**
  * 直接从 storage 读取 token（避免循环依赖 auth.ts → request.ts）
  */
 function getToken(): string {
-  return uni.getStorageSync('token') as string || ''
+  return secureStorage.getToken()
 }
 
 /**
@@ -76,9 +77,7 @@ function handleUnauthorized(tokenWasPresent: boolean): void {
   }
 
   // 场景2：带了 token 但后端返回 401 → token 过期/被撤销/密钥变更
-  uni.removeStorageSync('token')
-  uni.removeStorageSync('userInfo')
-  uni.removeStorageSync('refreshToken')
+  secureStorage.clearAll()
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]?.route

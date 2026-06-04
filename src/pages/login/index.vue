@@ -120,6 +120,7 @@ import { useUserStore } from '@/store/user'
 import { post } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
+import { secureStorage } from '@/utils/crypto'
 
 interface LoginResult {
   user: any
@@ -150,7 +151,7 @@ const checkLogin = () => {
     handleLoginSuccess()
   } else {
     // 检查是否已同意协议
-    const protocolAgreed = uni.getStorageSync('protocolAgreed')
+    const protocolAgreed = secureStorage.isProtocolAgreed()
     if (!protocolAgreed) {
       showProtocol.value = true
     }
@@ -160,7 +161,7 @@ const checkLogin = () => {
 const handleAgree = async () => {
   showProtocol.value = false
   // 记录用户已同意协议
-  uni.setStorageSync('protocolAgreed', true)
+  secureStorage.setProtocolAgreed()
   await performWechatLogin()
 }
 
@@ -169,7 +170,7 @@ const handleProtocolClose = () => {
 }
 
 const handleWechatLogin = () => {
-  const protocolAgreed = uni.getStorageSync('protocolAgreed')
+  const protocolAgreed = secureStorage.isProtocolAgreed()
   if (protocolAgreed) {
     performWechatLogin()
   } else {
@@ -201,7 +202,7 @@ const performWechatLogin = async () => {
       userStore.login(result.tokens.accessToken, result.user)
 
       if (result.tokens.refreshToken) {
-        uni.setStorageSync('refreshToken', result.tokens.refreshToken)
+        secureStorage.setRefreshToken(result.tokens.refreshToken)
       }
 
       showToast('登录成功', 'success')
@@ -253,7 +254,7 @@ const onGetPhoneNumber = async (e: any) => {
       userStore.login(result.tokens.accessToken, result.user)
 
       if (result.tokens.refreshToken) {
-        uni.setStorageSync('refreshToken', result.tokens.refreshToken)
+        secureStorage.setRefreshToken(result.tokens.refreshToken)
       }
 
       showToast('登录成功', 'success')
