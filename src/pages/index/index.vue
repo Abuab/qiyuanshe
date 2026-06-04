@@ -118,7 +118,7 @@
     <filter-panel ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
     <!-- 公告弹窗 -->
-    <view v-if="showPopup" class="popup-mask" @tap="closePopup">
+    <view v-if="showPopup" class="popup-mask" @tap="closePopup" @touchmove.stop.prevent>
       <view class="popup-content">
         <view class="popup-header">
           <text class="popup-title">{{ popupTitle || '欢迎来到栖缘社！' }}</text>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
@@ -355,30 +355,21 @@ const checkPopupAnnouncement = () => {
   // 当天已展示过则不再弹出
   const today = new Date().toDateString()
   const lastPopupDate = uni.getStorageSync('popup_notice_date')
-  console.log('[Popup] lastPopupDate:', lastPopupDate, 'today:', today)
-  if (lastPopupDate === today) {
-    console.log('[Popup] 已展示过，跳过')
-    return
-  }
+  if (lastPopupDate === today) return
 
-  // 兜底：若数据意外为空（如从 onShow 路径进入），重新加载
+  // 确保弹窗数据已就绪
   if (!popupTitle.value || !popupContent.value) {
     const notice = getMockPopupNotice()
     popupTitle.value = notice.title
     popupContent.value = notice.content
   }
 
-  // 使用 nextTick 确保模板绑定已就绪再显示
-  nextTick(() => {
-    showPopup.value = true
-    console.log('[Popup] 弹窗已显示, title:', popupTitle.value, 'content长度:', popupContent.value.length)
-  })
+  showPopup.value = true
 }
 
 const closePopup = () => {
   showPopup.value = false
   uni.setStorageSync('popup_notice_date', new Date().toDateString())
-  console.log('[Popup] 弹窗已关闭')
 }
 
 const closeNotice = () => {
