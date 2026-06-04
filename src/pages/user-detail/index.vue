@@ -61,7 +61,7 @@
               <text class="id-value">{{ userData.id }}</text>
             </view>
           </view>
-          <view class="follow-btn" @tap="toggleFollow">
+          <view v-if="!userData.isSelf" class="follow-btn" @tap="toggleFollow">
             <text class="heart-icon" :class="{ filled: userData.isFollowed }">
               {{ userData.isFollowed ? '❤️' : '🤍' }}
             </text>
