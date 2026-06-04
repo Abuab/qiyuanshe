@@ -335,24 +335,16 @@ const getMockPopupNotice = () => ({
 // 后端 announcements popup 接口暂未部署，使用 mock 数据弹窗
 // 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
 const checkPopupAnnouncement = () => {
-  // 当天已展示过则不再弹出
-  const today = new Date().toDateString()
-  const lastPopupDate = uni.getStorageSync('popup_notice_date')
-  if (lastPopupDate === today) return
-
-  const notice = getMockPopupNotice()
   uni.showModal({
-    title: notice.title,
-    content: notice.content,
+    title: '欢迎来到栖缘社！',
+    content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
     showCancel: false,
     confirmText: '我知道了',
     confirmColor: '#FF6B9D',
-    success: () => {
-      uni.setStorageSync('popup_notice_date', today)
-    },
   })
 }
 
+// 保留用于后续的每日跳过逻辑
 const closeNotice = () => {
   showNotice.value = false
   uni.setStorageSync('notice_closed', new Date().toDateString())
@@ -388,10 +380,12 @@ onMounted(() => {
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
-  // 延时弹出公告
-  setTimeout(() => {
+  // 立即弹出公告（不依赖 setTimeout，确保必定触发）
+  try {
     checkPopupAnnouncement()
-  }, 800)
+  } catch (e: any) {
+    console.error('[Popup] checkPopupAnnouncement error:', e)
+  }
 
   // 开启分享菜单（开发工具中可能不可用，加 fail 静默处理）
   uni.showShareMenu({
@@ -407,9 +401,7 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
-  setTimeout(() => {
-    checkPopupAnnouncement()
-  }, 300)
+  // 暂不重复弹窗，后续可恢复
 })
 
 const onShareAppMessage = () => {
