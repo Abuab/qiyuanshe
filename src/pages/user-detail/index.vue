@@ -443,13 +443,23 @@ const fetchMatchmakerList = async () => {
       timeout: 5000,
     })
 
+    // eslint-disable-next-line no-console
+    console.log('[红娘] API 返回原始数据:', JSON.stringify(res))
+
     const rawList: any[] = Array.isArray(res) ? res : (res?.list || [])
-    // 将后端返回的相对路径补全为完整 URL（二维码和头像）
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      avatar: getFullImageUrl(item.avatar),
-      qrCode: getFullImageUrl(item.qrCode),
-    }))
+    // 将后端返回的相对路径补全为完整 URL（兼容 snake_case 和 camelCase 字段名）
+    matchmakerList.value = rawList.map((item: any) => {
+      // eslint-disable-next-line no-console
+      console.log('[红娘] 单条原始数据:', JSON.stringify(item))
+      const resolvedQrCode = getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || item.QRCode)
+      // eslint-disable-next-line no-console
+      console.log('[红娘] qrCode 解析结果:', resolvedQrCode)
+      return {
+        ...item,
+        avatar: getFullImageUrl(item.avatar),
+        qrCode: resolvedQrCode,
+      }
+    })
   } catch (e) {
     // 接口 404/超时时使用 Mock 数据兜底，确保红娘弹窗能正常显示
     console.log('[红娘]接口未开通，使用Mock数据', e)

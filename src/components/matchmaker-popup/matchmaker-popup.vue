@@ -23,7 +23,12 @@
         </view>
 
         <view class="qrcode-wrapper">
-          <image class="qrcode" :src="matchmaker.qrCode" mode="aspectFill" />
+          <image
+            class="qrcode"
+            :src="qrcodeUrl"
+            mode="widthFix"
+            @error="onQrcodeError"
+          />
         </view>
 
         <view class="qrcode-tip">长按识别二维码添加红娘微信</view>
@@ -76,14 +81,24 @@ const emit = defineEmits<Emits>()
 
 const visible = ref(false)
 const avatarError = ref(false)
+const qrcodeError = ref(false)
 
 const avatarUrl = computed(() => {
   if (avatarError.value) return '/static/default-avatar.png'
   return props.matchmaker.avatar || '/static/default-avatar.png'
 })
 
+const qrcodeUrl = computed(() => {
+  if (qrcodeError.value) return '/static/matchmaker.png'
+  return props.matchmaker.qrCode || '/static/matchmaker.png'
+})
+
 const onAvatarError = () => {
   avatarError.value = true
+}
+
+const onQrcodeError = () => {
+  qrcodeError.value = true
 }
 
 watch(
