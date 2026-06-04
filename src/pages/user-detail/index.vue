@@ -443,7 +443,7 @@ const fetchMatchmakerList = async () => {
     const res = await request({
       url: '/matchmakers',
       method: 'GET',
-      timeout: 5000,
+      timeout: 15000,
     })
 
     // eslint-disable-next-line no-console
