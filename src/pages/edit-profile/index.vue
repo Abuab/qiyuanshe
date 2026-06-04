@@ -418,6 +418,12 @@ const handleBack = () => {
   width: 120rpx;
 }
 
+.nav-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .back-icon {
   font-size: 40rpx;
   color: #333;

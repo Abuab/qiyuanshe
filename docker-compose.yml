@@ -107,10 +107,10 @@ services:
       PORT: 3000
       NODE_ENV: production
     volumes:
-      # 上传文件目录
-      - api_uploads:/app/uploads
+      # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
+      - ./data/uploads:/app/uploads
       # 日志目录
-      - api_logs:/app/logs
+      - ./data/logs:/app/logs
       # 支付证书目录
       - ./certs:/app/certs:ro
     ports:
@@ -182,10 +182,6 @@ volumes:
   mysql_data:
     driver: local
   redis_data:
-    driver: local
-  api_uploads:
-    driver: local
-  api_logs:
     driver: local
   nginx_logs:
     driver: local

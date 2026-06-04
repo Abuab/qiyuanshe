@@ -1,7 +1,7 @@
 <template>
-  <view v-if="visible" class="filter-panel">
-    <view class="overlay" @tap="handleClose"></view>
-    <view class="panel-content" :class="{ open: visible }">
+  <view v-if="visible" class="filter-panel" :class="{ asPage: noOverlay }">
+    <view v-if="!noOverlay" class="overlay" @tap="handleClose"></view>
+    <view class="panel-content" :class="{ open: visible, fullPage: noOverlay }">
       <view class="drag-indicator"></view>
 
       <scroll-view class="panel-scroll" scroll-y>
@@ -239,6 +239,8 @@ interface FilterData {
 interface Props {
   show: boolean
   initialData?: FilterData
+  /** 作为独立页面使用时隐藏遮罩层 */
+  noOverlay?: boolean
 }
 
 interface Emits {
@@ -435,6 +437,15 @@ defineExpose({
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+
+  // 作为独立页面使用时：无遮罩，页面级布局
+  &.asPage {
+    position: relative;
+    z-index: 1;
+    justify-content: flex-start;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+  }
 }
 
 .overlay {
@@ -458,6 +469,13 @@ defineExpose({
 
   &.open {
     transform: translateY(0);
+  }
+
+  // 作为独立页面：去掉底部弹出样式
+  &.fullPage {
+    max-height: none;
+    border-radius: 0;
+    transform: none;
   }
 }
 

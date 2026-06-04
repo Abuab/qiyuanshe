@@ -354,7 +354,9 @@ export class UserService {
         throw new UnauthorizedException('已关注该用户')
       }
 
-      const follow = manager.create(Follow, { userId, targetUserId })
+      const follow = manager.create(Follow)
+      follow.userId = userId
+      follow.targetUserId = targetUserId
       await manager.save(follow)
     })
   }

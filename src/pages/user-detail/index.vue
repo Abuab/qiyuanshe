@@ -314,11 +314,15 @@ const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVip = computed(() => userStore.isVip)
 
 onMounted(() => {
-  // 激活右上角原生分享按钮
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ['shareAppMessage', 'shareTimeline'],
-  })
+  // 激活右上角原生分享按钮（开发工具中可能不可用，加 try-catch）
+  try {
+    uni.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline'],
+    })
+  } catch (_) {
+    // showShareMenu 在开发工具中 ban，静默忽略
+  }
 
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]

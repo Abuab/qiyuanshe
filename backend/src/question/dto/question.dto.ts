@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min, MaxLength, IsArray, Max } from 'class-validator'
+import { IsOptional, IsInt, Min, Max, MaxLength, IsArray, ArrayMaxSize } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class GetQuestionsDto {
@@ -22,6 +22,6 @@ export class CreateAnswerDto {
 
   @IsOptional()
   @IsArray()
-  @Max(3, { message: '最多上传3张图片' })
+  @ArrayMaxSize(3, { message: '最多上传3张图片' })
   photos?: string[]
 }

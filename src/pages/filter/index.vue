@@ -2,6 +2,7 @@
   <view class="filter-page">
     <filter-panel
       ref="panelRef"
+      :no-overlay="true"
       @confirm="handleConfirm"
       @reset="handleReset"
     />
