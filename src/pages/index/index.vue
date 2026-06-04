@@ -324,10 +324,31 @@ const fetchAnnouncements = () => {
   notices.value = getMockNotices()
 }
 
-// 后端 announcements popup 接口暂未部署，不做弹窗请求
+// Mock 弹窗公告数据（后端暂无 announcements popup 接口，直接使用本地数据）
+const getMockPopupNotice = () => ({
+  id: 99,
+  title: '欢迎来到栖缘社！',
+  content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
+})
+
+// 后端 announcements popup 接口暂未部署，使用 mock 数据弹窗
 // 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'popup' } })
 const checkPopupAnnouncement = () => {
-  // 接口暂未开通，跳过
+  // 当天已展示过则不再弹出
+  const today = new Date().toDateString()
+  const lastPopupDate = uni.getStorageSync('popup_notice_date')
+  if (lastPopupDate === today) return
+
+  const popup = getMockPopupNotice()
+  uni.showModal({
+    title: popup.title,
+    content: popup.content,
+    showCancel: false,
+    confirmText: '我知道了',
+    success: () => {
+      uni.setStorageSync('popup_notice_date', today)
+    },
+  })
 }
 
 const closeNotice = () => {
