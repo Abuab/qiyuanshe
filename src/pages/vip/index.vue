@@ -407,12 +407,13 @@ const handleBack = () => {
 .packages-scroll {
   width: 100%;
   white-space: nowrap;
+  padding-top: 28rpx;
 }
 
 .packages-row {
   display: inline-flex;
   gap: 16rpx;
-  padding: 0 8rpx;
+  padding: 4rpx 8rpx 0;
 }
 
 // 三列等宽网格，无横向滚动
