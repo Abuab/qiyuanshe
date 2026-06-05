@@ -132,6 +132,7 @@ const detail = ref<DynamicDetail | null>(null)
 const comments = ref<CommentItem[]>([])
 const commentText = ref('')
 const loadingComments = ref(false)
+let hasMounted = false
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -160,6 +161,7 @@ const fetchDetail = async () => {
     const res: any = await request({
       url: `/dynamics/${dynamicId.value}`,
       method: 'GET',
+      skipToast: true,
     })
     const data = res.detail || res
     if (data) {
@@ -195,6 +197,7 @@ const fetchComments = async () => {
     const res: any = await request({
       url: `/dynamics/${dynamicId.value}/comments`,
       method: 'GET',
+      skipToast: true,
     })
     const list = res.list || res || []
     comments.value = (Array.isArray(list) ? list : []).map((c: any) => ({
@@ -218,6 +221,7 @@ const submitComment = async () => {
       url: `/dynamics/${dynamicId.value}/comments`,
       method: 'POST',
       data: { content: text } as Record<string, unknown>,
+      skipToast: true,
     })
     commentText.value = ''
     fetchComments()
@@ -243,6 +247,7 @@ const toggleLike = async () => {
     await request({
       url: `/dynamics/${dynamicId.value}/like`,
       method: 'POST',
+      skipToast: true,
     } as Record<string, unknown>)
     detail.value.isLiked = true
     detail.value.likeCount++
@@ -260,6 +265,9 @@ const handleBack = () => {
 }
 
 onMounted(() => {
+  if (hasMounted) return
+  hasMounted = true
+
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}
@@ -283,11 +291,11 @@ onMounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: 88rpx;
+  height: calc(88rpx + var(--status-bar-height));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
+  padding: var(--status-bar-height) 32rpx 0;
   background-color: #fff;
   z-index: 100;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -312,7 +320,7 @@ onMounted(() => {
 
 .content-scroll {
   height: 100vh;
-  padding-top: 88rpx;
+  padding-top: calc(88rpx + var(--status-bar-height));
 }
 
 .dynamic-card {
