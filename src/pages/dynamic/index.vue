@@ -3,8 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar">
       <view class="nav-left">
-        <text v-if="canGoBack" class="back-icon" @tap="handleBack">←</text>
-        <text v-else class="spacer"></text>
+        <text class="back-icon" @tap="handleBack">←</text>
       </view>
       <text class="nav-title">动态</text>
       <view class="nav-right"><text class="pub-text" @tap="goToPublish">+ 发布</text></view>
@@ -140,7 +139,6 @@ const isRefreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const pageSize = 10
-const canGoBack = ref(false)
 const userStore = useUserStore()
 
 const formatTime = (dateStr: string): string => {
@@ -296,11 +294,14 @@ const goComment = (item: DynamicItem) => {
 }
 
 const handleBack = () => {
-  uni.navigateBack({ delta: 1 })
+  if (getCurrentPages().length > 1) {
+    uni.navigateBack({ delta: 1 })
+  } else {
+    uni.switchTab({ url: '/pages/index/index' })
+  }
 }
 
 onMounted(() => {
-  canGoBack.value = getCurrentPages().length > 1
   fetchList(true)
 })
 </script>
