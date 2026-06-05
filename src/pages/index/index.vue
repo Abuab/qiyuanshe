@@ -7,25 +7,18 @@
       </view>
     </view>
 
-    <view v-if="showNotice && notices.length" class="notice-bar">
-      <text class="notice-icon">📢</text>
-      <swiper class="notice-swiper" vertical autoplay circular interval="3000">
-        <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
-          <text class="notice-text">{{ n.title }}</text>
-        </swiper-item>
-      </swiper>
-      <text class="notice-close" @tap.stop="closeNotice">×</text>
-    </view>
+    <!-- 顶部粉色连续区域：通知栏 + 功能图标 -->
+    <view class="top-pink-area">
+      <view v-if="showNotice && notices.length" class="notice-bar">
+        <text class="notice-icon">📢</text>
+        <swiper class="notice-swiper" vertical autoplay circular interval="3000">
+          <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
+            <text class="notice-text">{{ n.title }}</text>
+          </swiper-item>
+        </swiper>
+        <text class="notice-close" @tap.stop="closeNotice">×</text>
+      </view>
 
-    <scroll-view
-      class="content-scroll"
-      scroll-y
-      enable-flex
-      :refresher-enabled="true"
-      :refresher-triggered="isRefreshing"
-      @refresherrefresh="onRefresh"
-      @scrolltolower="onLoadMore"
-    >
       <view class="quick-entry-section">
         <view
           v-for="entry in quickEntries"
@@ -39,8 +32,19 @@
           <text class="quick-entry-text">{{ entry.name }}</text>
         </view>
       </view>
+    </view>
 
-      <view class="hot-questions-section">
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      enable-flex
+      :refresher-enabled="true"
+      :refresher-triggered="isRefreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="onLoadMore"
+    >
+      <!-- 热门问答浅色过渡卡片 -->
+      <view class="hot-questions-card">
         <view class="section-header">
           <text class="section-title">热门问答</text>
           <text class="section-more" @tap="goToQuestions">更多></text>
@@ -454,12 +458,15 @@ const onShareTimeline = () => {
   border-radius: 28rpx;
 }
 
+.top-pink-area {
+  margin-top: calc(var(--status-bar-height) + 96rpx);
+  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
+}
+
 .notice-bar {
   display: flex;
   align-items: center;
-  padding: 16rpx 32rpx;
-  background: linear-gradient(135deg, #FFF5F7, #FFE4ED);
-  margin-bottom: 0;
+  padding: 12rpx 32rpx 16rpx;
 
   .notice-swiper {
     flex: 1;
@@ -489,15 +496,14 @@ const onShareTimeline = () => {
 
 .content-scroll {
   flex: 1;
-  margin-top: calc(var(--status-bar-height) + 96rpx);
+  margin-top: 0;
   margin-bottom: 120rpx;
 }
 
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 24rpx 24rpx 36rpx;
-  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
+  padding: 0 24rpx 32rpx;
   margin-bottom: 0;
 }
 
@@ -527,14 +533,11 @@ const onShareTimeline = () => {
   color: var(--text);
 }
 
-.hot-questions-section {
-  background-color: #fff;
+.hot-questions-card {
+  background-color: #FFF0F5;
   padding: 24rpx;
-  margin-top: 20rpx;
-  margin-bottom: 20rpx;
+  margin: 0 24rpx 20rpx;
   border-radius: 16rpx;
-  margin-left: 24rpx;
-  margin-right: 24rpx;
 }
 
 .section-header {
