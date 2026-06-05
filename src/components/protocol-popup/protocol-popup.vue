@@ -36,7 +36,25 @@ const emit = defineEmits<{
 const visible = ref(false)
 const agreementTitle = ref('用户协议与隐私政策')
 const agreementContent = ref('')
+const rawAgreementHtml = ref('')
 let pendingCallback: (() => void) | null = null
+
+/** 清洗富文本 HTML：剥离可能导致不换行的内联样式 */
+const cleanHtmlForWrap = (html: string): string => {
+  if (!html) return ''
+  return html
+    // 移除 white-space 相关
+    .replace(/\bwhite-space\s*:\s*[^;"']+;?/gi, '')
+    // 移除 word-break 相关
+    .replace(/\bword-break\s*:\s*[^;"']+;?/gi, '')
+    // 移除 word-wrap / overflow-wrap
+    .replace(/\b(?:word|overflow)-wrap\s*:\s*[^;"']+;?/gi, '')
+    // 移除固定宽度（数字 + px/rpx）
+    .replace(/\bwidth\s*:\s*\d+(?:px|rpx|em|rem|%)\s*(?:!important)?\s*;?/gi, '')
+    // 清理 style 属性中可能残留的空引号
+    .replace(/\sstyle\s*=\s*""/gi, '')
+    .replace(/\sstyle\s*=\s*''/gi, '')
+}
 
 // 默认兜底内容
 const fallbackContent = `<div style="margin-bottom:16rpx;">欢迎使用栖缘社及相关服务。</div>
@@ -81,21 +99,24 @@ const fetchAgreement = async () => {
   try {
     const cached = uni.getStorageSync('agreement_content')
     if (cached) {
-      agreementContent.value = cached
+      rawAgreementHtml.value = cached
+      agreementContent.value = cleanHtmlForWrap(cached)
       return
     }
 
     const res: any = await get('/agreement', { type: 'USER_AGREEMENT' } as any)
     if (res && res.content) {
       agreementTitle.value = res.title || '用户协议与隐私政策'
-      agreementContent.value = res.content
+      rawAgreementHtml.value = res.content
+      const cleaned = cleanHtmlForWrap(res.content)
+      agreementContent.value = cleaned
       uni.setStorageSync('agreement_content', res.content)
     } else {
-      agreementContent.value = fallbackContent
+      agreementContent.value = cleanHtmlForWrap(fallbackContent)
     }
   } catch (e) {
     console.log('[协议] 接口获取失败，使用兜底内容')
-    agreementContent.value = fallbackContent
+    agreementContent.value = cleanHtmlForWrap(fallbackContent)
   }
 }
 
