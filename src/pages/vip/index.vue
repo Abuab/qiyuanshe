@@ -407,7 +407,7 @@ const handleBack = () => {
 .packages-scroll {
   width: 100%;
   white-space: nowrap;
-  padding-top: 28rpx;
+  padding-top: 36rpx;
 }
 
 .packages-row {
