@@ -459,7 +459,7 @@ const onShareTimeline = () => {
   align-items: center;
   padding: 16rpx 32rpx;
   background: linear-gradient(135deg, #FFF5F7, #FFE4ED);
-  margin-bottom: 20rpx;
+  margin-bottom: 0;
 
   .notice-swiper {
     flex: 1;
@@ -496,9 +496,9 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 32rpx 24rpx;
-  background-color: #fff;
-  margin-bottom: 20rpx;
+  padding: 24rpx 24rpx 36rpx;
+  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
+  margin-bottom: 0;
 }
 
 .quick-entry-item {
@@ -530,7 +530,11 @@ const onShareTimeline = () => {
 .hot-questions-section {
   background-color: #fff;
   padding: 24rpx;
+  margin-top: 20rpx;
   margin-bottom: 20rpx;
+  border-radius: 16rpx;
+  margin-left: 24rpx;
+  margin-right: 24rpx;
 }
 
 .section-header {
