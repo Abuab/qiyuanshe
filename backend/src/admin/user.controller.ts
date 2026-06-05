@@ -93,9 +93,10 @@ export class AdminUserController {
   @HttpCode(HttpStatus.OK)
   async sendNotification(
     @Param('id', ParseIntPipe) id: number,
+    @Body('title') title: string,
     @Body('content') content: string,
   ) {
-    await this.userService.sendNotification(id, content)
+    await this.userService.sendNotification(id, title, content)
     return Result.success(null, '通知已发送')
   }
 

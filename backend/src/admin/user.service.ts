@@ -39,6 +39,8 @@ export class AdminUserService {
     private readonly userPhotoRepository: Repository<UserPhoto>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(UserNotification)
+    private readonly notificationRepository: Repository<UserNotification>,
   ) {}
 
   async list(filter: UserFilter) {
@@ -254,9 +256,15 @@ export class AdminUserService {
     await this.userRepository.update(id, { password: hashedPassword })
   }
 
-  async sendNotification(id: number, content: string) {
-    // TODO: Implement notification sending via push service
-    console.log(`Sending notification to user ${id}: ${content}`)
+  async sendNotification(userId: number, title: string, content: string) {
+    await this.notificationRepository.save(
+      this.notificationRepository.create({
+        userId,
+        title: title || '系统通知',
+        content,
+        senderType: 'admin',
+      }),
+    )
   }
 
   async getPhotos(userId: number) {

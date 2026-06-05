@@ -148,11 +148,15 @@ const filteredMsgs = computed(() => {
 })
 
 onMounted(() => {
-  fetchConversations()
+  if (userStore.isLoggedIn) {
+    fetchConversations()
+  }
 })
 
 onShow(() => {
-  fetchConversations(true)
+  if (userStore.isLoggedIn) {
+    fetchConversations(true)
+  }
 })
 
 const fetchConversations = async (isRefresh = false) => {
@@ -164,26 +168,54 @@ const fetchConversations = async (isRefresh = false) => {
 
     loading.value = true
 
-    const res = await request({
-      url: '/chat/conversations',
-      method: 'GET',
-      data: { page: page.value },
-    })
+    // 并行获取聊天会话 + 系统通知
+    const [chatRes, notifyRes] = await Promise.all([
+      request({
+        url: '/chat/conversations',
+        method: 'GET',
+        data: { page: page.value },
+      }).catch(() => ({ list: [] })),
+      request({
+        url: '/notifications',
+        method: 'GET',
+        data: { page: 1, limit: 99 },
+      }).catch(() => ({ data: { list: [], unreadCount: 0 } })),
+    ])
 
-    const list = res.list || []
+    const chatList = (chatRes.list || []).map((item: any) => ({
+      ...item,
+      type: 'user',
+    }))
+
+    const notifyData = notifyRes?.data || notifyRes || {}
+    const notifyList: SystemMessage[] = ((notifyData.list || []) as any[]).map((n: any) => ({
+      id: n.id,
+      type: 'system' as const,
+      content: `[${n.title || '系统通知'}] ${n.content}`,
+      createdAt: n.createdAt,
+      unreadCount: n.isRead === 0 ? 1 : 0,
+    }))
+
+    // 更新未读数
+    const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0)
+      + (notifyData.unreadCount || 0)
+    uni.setStorageSync('unreadMessageCount', totalUnread)
+
+    // 合并：通知在前，聊天在后
+    const mergedList = [...notifyList, ...chatList]
 
     if (isRefresh) {
-      messageList.value = list
+      messageList.value = mergedList
       refreshing.value = false
     } else {
       if (page.value === 1) {
-        messageList.value = list
+        messageList.value = mergedList
       } else {
-        messageList.value.push(...list)
+        messageList.value.push(...chatList)
       }
     }
 
-    if (list.length < 20) {
+    if (chatList.length < 20) {
       noMore.value = true
     }
 
