@@ -146,6 +146,23 @@
       <text class="float-label">红娘</text>
     </view>
 
+    <!-- 红娘弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmaker"
+      :matchmaker="selectedMatchmaker"
+      @update:show="showMatchmaker = $event"
+      @close="showMatchmaker = false"
+      @more="openMatchmakerList"
+    />
+
+    <matchmaker-list-popup
+      :show="showMatchmakerList"
+      :matchmakers="matchmakerList"
+      @update:show="showMatchmakerList = $event"
+      @close="showMatchmakerList = false"
+      @contact="onSelectMatchmaker"
+    />
+
     <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
   </view>
@@ -160,6 +177,8 @@ import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import FilterPanel from '@/components/filter-panel/filter-panel.vue'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 
@@ -223,6 +242,11 @@ const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
 const questionSwiperIndex = ref(0)
+// 红娘弹窗
+const showMatchmaker = ref(false)
+const showMatchmakerList = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -341,13 +365,39 @@ const goToFilter = () => {
   showFilter.value = true
 }
 
-const handleMatchmakerFloat = () => {
-  uni.navigateTo({
-    url: '/pages/matchmaker-list/index',
-    fail: () => {
-      uni.showToast({ title: '功能开发中', icon: 'none' })
-    },
-  })
+const handleMatchmakerFloat = async () => {
+  // 先加载红娘列表
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
+  if (matchmakerList.value.length === 0) {
+    uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+    return
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
+  showMatchmaker.value = true
+}
+
+const fetchMatchmakerList = async () => {
+  try {
+    const res: any = await get('/matchmakers')
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+    matchmakerList.value = rawList
+  } catch (e) {
+    console.log('[红娘] 接口获取失败', e)
+    matchmakerList.value = []
+  }
+}
+
+const openMatchmakerList = () => {
+  showMatchmaker.value = false
+  showMatchmakerList.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  showMatchmakerList.value = false
+  selectedMatchmaker.value = matchmaker
+  showMatchmaker.value = true
 }
 
 const onFilterConfirm = (data: FilterData) => {
