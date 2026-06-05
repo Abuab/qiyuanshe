@@ -3,51 +3,11 @@
     <view class="protocol-overlay" @tap="handleClose"></view>
     <view class="protocol-card">
       <view class="protocol-header">
-        <text class="protocol-title">用户协议与隐私政策</text>
+        <text class="protocol-title">{{ agreementTitle }}</text>
       </view>
 
       <scroll-view class="protocol-content" scroll-y enable-flex>
-        <view class="protocol-text">
-          <view class="p">欢迎使用产品及相关服务。</view>
-          <view class="p">您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。</view>
-
-          <view class="section-title">【用户协议】</view>
-
-          <view class="h3">一、服务说明</view>
-          <view class="p">栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。</view>
-
-          <view class="h3">二、用户注册</view>
-          <view class="p">1. 您需要提供真实的个人信息进行注册</view>
-          <view class="p">2. 您必须年满18周岁方可使用本服务</view>
-          <view class="p">3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负</view>
-
-          <view class="h3">三、用户行为</view>
-          <view class="p">1. 不得发布虚假信息、诈骗信息</view>
-          <view class="p">2. 不得骚扰、辱骂其他用户</view>
-          <view class="p">3. 不得发布违法、违规内容</view>
-          <view class="p">4. 不得利用本平台进行商业营销</view>
-
-          <view class="h3">四、隐私保护</view>
-          <view class="p">我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。</view>
-
-          <view class="section-title">【隐私政策】</view>
-
-          <view class="h3">一、信息收集</view>
-          <view class="p">1. 我们会收集您主动提供的信息（手机号、头像等）</view>
-          <view class="p">2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）</view>
-          <view class="p">3. 我们会获取您的地理位置信息用于匹配功能</view>
-
-          <view class="h3">二、信息使用</view>
-          <view class="p">1. 用于提供和改进我们的服务</view>
-          <view class="p">2. 用于向您推送个性化内容</view>
-          <view class="p">3. 用于账号安全保护</view>
-
-          <view class="h3">三、信息共享</view>
-          <view class="p">未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。</view>
-
-          <view class="h3">四、信息安全</view>
-          <view class="p">我们采用行业标准的安全措施保护您的个人信息。</view>
-        </view>
+        <view class="protocol-text" v-html="agreementContent"></view>
       </scroll-view>
 
       <view class="protocol-buttons">
@@ -59,7 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { get } from '@/utils/request'
 
 interface Props {
   show: boolean
@@ -73,7 +34,40 @@ const emit = defineEmits<{
 }>()
 
 const visible = ref(false)
+const agreementTitle = ref('用户协议与隐私政策')
+const agreementContent = ref('')
 let pendingCallback: (() => void) | null = null
+
+// 默认兜底内容
+const fallbackContent = `<div style="margin-bottom:16rpx;">欢迎使用栖缘社及相关服务。</div>
+<div style="margin-bottom:16rpx;">您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。</div>
+<div style="font-size:30rpx;font-weight:bold;margin:32rpx 0 20rpx;">【用户协议】</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">一、服务说明</div>
+<div style="margin-bottom:16rpx;">栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">二、用户注册</div>
+<div style="margin-bottom:16rpx;">1. 您需要提供真实的个人信息进行注册</div>
+<div style="margin-bottom:16rpx;">2. 您必须年满18周岁方可使用本服务</div>
+<div style="margin-bottom:16rpx;">3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">三、用户行为</div>
+<div style="margin-bottom:16rpx;">1. 不得发布虚假信息、诈骗信息</div>
+<div style="margin-bottom:16rpx;">2. 不得骚扰、辱骂其他用户</div>
+<div style="margin-bottom:16rpx;">3. 不得发布违法、违规内容</div>
+<div style="margin-bottom:16rpx;">4. 不得利用本平台进行商业营销</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">四、隐私保护</div>
+<div style="margin-bottom:16rpx;">我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。</div>
+<div style="font-size:30rpx;font-weight:bold;margin:32rpx 0 20rpx;">【隐私政策】</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">一、信息收集</div>
+<div style="margin-bottom:16rpx;">1. 我们会收集您主动提供的信息（手机号、头像等）</div>
+<div style="margin-bottom:16rpx;">2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）</div>
+<div style="margin-bottom:16rpx;">3. 我们会获取您的地理位置信息用于匹配功能</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">二、信息使用</div>
+<div style="margin-bottom:16rpx;">1. 用于提供和改进我们的服务</div>
+<div style="margin-bottom:16rpx;">2. 用于向您推送个性化内容</div>
+<div style="margin-bottom:16rpx;">3. 用于账号安全保护</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">三、信息共享</div>
+<div style="margin-bottom:16rpx;">未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。</div>
+<div style="font-size:28rpx;font-weight:bold;margin:24rpx 0 12rpx;">四、信息安全</div>
+<div style="margin-bottom:16rpx;">我们采用行业标准的安全措施保护您的个人信息。</div>`
 
 watch(
   () => props.show,
@@ -82,6 +76,32 @@ watch(
   },
   { immediate: true }
 )
+
+const fetchAgreement = async () => {
+  try {
+    const cached = uni.getStorageSync('agreement_content')
+    if (cached) {
+      agreementContent.value = cached
+      return
+    }
+
+    const res: any = await get('/agreement', { type: 'USER_AGREEMENT' } as any)
+    if (res && res.content) {
+      agreementTitle.value = res.title || '用户协议与隐私政策'
+      agreementContent.value = res.content
+      uni.setStorageSync('agreement_content', res.content)
+    } else {
+      agreementContent.value = fallbackContent
+    }
+  } catch (e) {
+    console.log('[协议] 接口获取失败，使用兜底内容')
+    agreementContent.value = fallbackContent
+  }
+}
+
+onMounted(() => {
+  fetchAgreement()
+})
 
 const handleClose = () => {
   visible.value = false
@@ -144,13 +164,15 @@ defineExpose({
   max-height: 80vh;
   background-color: #fff;
   border-radius: 24rpx;
-  overflow: hidden;
-  margin: 40rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 0 40rpx;
 }
 
 .protocol-header {
-  padding: 40rpx 32rpx 24rpx;
+  padding: 40rpx 40rpx 20rpx;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .protocol-title {
@@ -160,41 +182,25 @@ defineExpose({
 }
 
 .protocol-content {
-  padding: 30rpx 32rpx;
-  max-height: 50vh;
+  flex: 1;
+  padding: 0 40rpx;
+  min-height: 0;
 }
 
 .protocol-text {
-  padding-bottom: 16rpx;
+  padding: 10rpx 0 16rpx;
   font-size: 26rpx;
   color: var(--text);
-  line-height: 1.6;
-
-  .p {
-    margin-bottom: 16rpx;
-    text-align: justify;
-  }
-
-  .section-title {
-    font-size: 30rpx;
-    font-weight: bold;
-    margin: 32rpx 0 20rpx;
-    color: var(--text);
-  }
-
-  .h3 {
-    font-size: 28rpx;
-    font-weight: bold;
-    margin: 24rpx 0 12rpx;
-    color: var(--text);
-  }
+  line-height: 1.8;
+  word-break: break-all;
 }
 
 .protocol-buttons {
-  padding: 32rpx;
+  padding: 32rpx 40rpx;
   display: flex;
   flex-direction: column;
   gap: 24rpx;
+  flex-shrink: 0;
 }
 
 .btn-agree {

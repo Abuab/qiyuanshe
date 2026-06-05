@@ -87,6 +87,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '系统配置', requiresAuth: true },
       },
       {
+        path: '/agreement',
+        name: 'AgreementEdit',
+        component: () => import('../views/agreement/edit.vue'),
+        meta: { title: '协议管理', requiresAuth: true },
+      },
+      {
         path: '/system/dict',
         name: 'SystemDict',
         component: () => import('../views/system/dict.vue'),
