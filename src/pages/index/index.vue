@@ -454,8 +454,6 @@ const onShareTimeline = () => {
 .header-capsule {
   width: 168rpx;
   height: 56rpx;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 28rpx;
 }
 
 .top-pink-area {
