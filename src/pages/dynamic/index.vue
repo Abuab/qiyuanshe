@@ -33,6 +33,7 @@
             class="author-avatar"
             :src="item.avatar || icons.common.defaultAvatar"
             mode="aspectFill"
+            @error="handleImageError"
             @tap="goToUserDetail(item.userId)"
           />
           <view class="author-info">
@@ -54,6 +55,7 @@
             class="grid-image"
             :src="img"
             mode="aspectFill"
+            @error="handleImageError"
             @tap="previewImages(item.images, idx)"
           />
         </view>
@@ -113,6 +115,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
+import { useImageFallback } from '@/composables/useImageFallback'
+const { handleImageError } = useImageFallback()
 
 interface LikeUser {
   id: number

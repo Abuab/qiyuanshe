@@ -30,6 +30,7 @@
               class="photo-image"
               :src="photo.url || photo"
               mode="aspectFill"
+              @error="handleImageError"
               @tap="previewPhoto(index)"
             />
           </swiper-item>
@@ -47,7 +48,7 @@
             :class="{ active: currentPhotoIndex === index }"
             @tap="currentPhotoIndex = index"
           >
-            <image class="thumbnail-image" :src="photo.url || photo" mode="aspectFill" />
+            <image class="thumbnail-image" :src="photo.url || photo" mode="aspectFill" @error="handleImageError" />
           </view>
         </view>
       </view>
@@ -274,6 +275,8 @@ import { useUserStore } from '@/store/user'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useImageFallback } from '@/composables/useImageFallback'
+const { handleImageError } = useImageFallback()
 
 interface PhotoItem {
   id?: number

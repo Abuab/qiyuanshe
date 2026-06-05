@@ -46,6 +46,7 @@
             :src="otherAvatar"
             mode="aspectFill"
             lazy-load
+            @error="handleImageError"
           />
           <view class="bubble" :class="msg.isMine ? 'mine' : 'other'">
             <image
@@ -55,6 +56,7 @@
               class="message-image"
               @tap="previewImage(msg.content)"
               lazy-load
+              @error="handleImageError"
             />
             <text v-else>{{ msg.content }}</text>
           </view>
@@ -64,6 +66,7 @@
             :src="myDisplayAvatar"
             mode="aspectFill"
             lazy-load
+            @error="handleImageError"
           />
         </view>
       </view>
@@ -127,6 +130,8 @@ import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
+import { useImageFallback } from '@/composables/useImageFallback'
+const { handleImageError } = useImageFallback()
 
 interface ChatMessage {
   id: number

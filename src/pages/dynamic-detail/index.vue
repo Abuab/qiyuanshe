@@ -21,6 +21,7 @@
             class="author-avatar"
             :src="detail.avatar || icons.common.defaultAvatar"
             mode="aspectFill"
+            @error="handleImageError"
           />
           <view class="author-info">
             <text class="author-name">{{ detail.nickname }}</text>
@@ -39,6 +40,7 @@
             class="grid-image"
             :src="img"
             mode="aspectFill"
+            @error="handleImageError"
             @tap="previewImages(detail.images, idx)"
           />
         </view>
@@ -66,7 +68,7 @@
       </view>
 
       <view v-for="c in comments" :key="c.id" class="comment-item">
-        <image class="comment-avatar" :src="c.avatar || icons.common.defaultAvatar" mode="aspectFill" />
+        <image class="comment-avatar" :src="c.avatar || icons.common.defaultAvatar" mode="aspectFill" @error="handleImageError" />
         <view class="comment-body">
           <view class="comment-top">
             <text class="comment-name">{{ c.nickname }}</text>
@@ -103,6 +105,8 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
+import { useImageFallback } from '@/composables/useImageFallback'
+const { handleImageError } = useImageFallback()
 
 interface DynamicDetail {
   id: number
