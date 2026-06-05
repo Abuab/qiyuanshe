@@ -43,32 +43,52 @@
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
     >
-      <!-- 热门问答浅色过渡卡片 -->
+      <!-- 热门问答轮播卡片 -->
       <view class="hot-questions-card">
         <view class="section-header">
-          <text class="section-title">热门问答</text>
-          <text class="section-more" @tap="goToQuestions">更多></text>
+          <view class="section-title-row">
+            <text class="section-title-icon">🔥</text>
+            <text class="section-title">热门问答</text>
+          </view>
+          <text class="section-more" @tap="goToQuestions">更多 ›</text>
         </view>
 
-        <scroll-view class="questions-scroll" scroll-x>
-          <view
-            v-for="question in hotQuestions"
-            :key="question.id"
-            class="question-card"
-            @tap="goToQuestionDetail(question.id)"
-          >
-            <text class="question-title">{{ question.title }}</text>
-            <view class="question-avatars">
-              <image
-                v-for="(avatar, index) in question.avatarList.slice(0, 3)"
-                :key="index"
-                class="question-avatar"
-                :src="avatar"
-                mode="aspectFill"
-              ></image>
+        <swiper
+          class="question-swiper"
+          :autoplay="true"
+          :circular="true"
+          :interval="4000"
+          :duration="400"
+          :current="questionSwiperIndex"
+          @change="onQuestionSwiperChange"
+          :style="{ height: '180rpx' }"
+        >
+          <swiper-item v-for="q in hotQuestions" :key="q.id">
+            <view class="question-slide" @tap="goToQuestionDetail(q.id)">
+              <view class="question-text-area">
+                <text class="question-slide-title">{{ q.title }}</text>
+              </view>
+              <view class="question-avatars">
+                <image
+                  v-for="(avatar, idx) in q.avatarList.slice(0, 3)"
+                  :key="idx"
+                  class="question-avatar"
+                  :src="avatar"
+                  mode="aspectFill"
+                ></image>
+              </view>
             </view>
-          </view>
-        </scroll-view>
+          </swiper-item>
+        </swiper>
+
+        <view class="question-dots">
+          <view
+            v-for="(_, idx) in hotQuestions"
+            :key="idx"
+            class="question-dot"
+            :class="{ active: idx === questionSwiperIndex }"
+          ></view>
+        </view>
       </view>
 
       <view class="filter-section">
@@ -155,10 +175,10 @@ interface FilterTab {
 }
 
 const quickEntries: QuickEntry[] = [
-  { id: 1, name: '红娘评语', icon: icons.quickEntry.matchmakerComment, bgColor: '#FFF0F5' },
-  { id: 2, name: '最新活动', icon: icons.quickEntry.latestActivity, bgColor: '#E6F7FF' },
-  { id: 3, name: '相亲圈子', icon: icons.quickEntry.datingCircle, bgColor: '#F9F0FF' },
-  { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF7E6' },
+  { id: 1, name: '红娘评语', icon: icons.quickEntry.matchmakerComment, bgColor: '#FFE4EC' },
+  { id: 2, name: '最新活动', icon: icons.quickEntry.latestActivity, bgColor: '#D6F0FF' },
+  { id: 3, name: '相亲圈子', icon: icons.quickEntry.datingCircle, bgColor: '#EDE0FF' },
+  { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF0D6' },
 ]
 
 const filterTabs: FilterTab[] = [
@@ -195,6 +215,7 @@ const currentPage = ref(1)
 const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
+const questionSwiperIndex = ref(0)
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -303,6 +324,10 @@ const goToQuestionDetail = (id: number) => {
   uni.navigateTo({
     url: `/pages/question-detail/index?id=${id}`,
   })
+}
+
+const onQuestionSwiperChange = (e: any) => {
+  questionSwiperIndex.value = e.detail.current
 }
 
 const goToFilter = () => {
@@ -462,25 +487,25 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56rpx;
+  height: 88rpx;
   padding: 0 32rpx;
 }
 
 .brand-title {
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 38rpx;
+  font-weight: 700;
   color: #FF6B9D;
-  line-height: 56rpx;
+  line-height: 88rpx;
 }
 
 .header-capsule {
-  width: 168rpx;
-  height: 56rpx;
+  width: 174rpx;
+  height: 64rpx;
 }
 
 .top-pink-area {
-  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
-  padding-top: calc(var(--status-bar-height) + 56rpx);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFFFFF 100%);
+  padding-top: calc(var(--status-bar-height) + 88rpx);
 }
 
 .notice-bar {
@@ -534,9 +559,9 @@ const onShareTimeline = () => {
 }
 
 .quick-entry-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -544,8 +569,8 @@ const onShareTimeline = () => {
 }
 
 .entry-icon {
-  width: 56rpx;
-  height: 56rpx;
+  width: 60rpx;
+  height: 60rpx;
 }
 
 .quick-entry-text {
@@ -554,17 +579,27 @@ const onShareTimeline = () => {
 }
 
 .hot-questions-card {
-  background-color: #FFF0F5;
-  padding: 24rpx;
-  margin: 0 24rpx 20rpx;
-  border-radius: 16rpx;
+  background-color: #FFF8FA;
+  padding: 28rpx 28rpx 20rpx;
+  margin: 0 28rpx 24rpx;
+  border-radius: 20rpx;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.section-title-icon {
+  font-size: 30rpx;
+  margin-right: 8rpx;
 }
 
 .section-title {
@@ -576,50 +611,78 @@ const onShareTimeline = () => {
 .section-more {
   font-size: 26rpx;
   color: #FF6B9D;
+  letter-spacing: 1rpx;
 }
 
-.questions-scroll {
-  white-space: nowrap;
-  height: 180rpx;
+.question-swiper {
+  width: 100%;
 }
 
-.question-card {
-  display: inline-flex;
-  flex-direction: column;
+.question-slide {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  width: 420rpx;
-  height: 160rpx;
-  padding: 24rpx;
-  background: linear-gradient(135deg, #FFF5F7 0%, #FFF0F5 100%);
-  border-radius: 16rpx;
-  margin-right: 20rpx;
+  height: 180rpx;
+  padding: 0 8rpx;
 }
 
-.question-title {
+.question-text-area {
+  flex: 1;
+  min-width: 0;
+  padding-right: 20rpx;
+}
+
+.question-slide-title {
   font-size: 28rpx;
+  line-height: 1.6;
   color: var(--text);
-  line-height: 1.4;
+  white-space: normal;
+  word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
 .question-avatars {
   display: flex;
-  margin-top: 16rpx;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .question-avatar {
-  width: 48rpx;
-  height: 48rpx;
+  width: 52rpx;
+  height: 52rpx;
   border-radius: 50%;
   border: 2px solid #fff;
   margin-left: -16rpx;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
 
   &:first-child {
     margin-left: 0;
+  }
+}
+
+.question-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 16rpx;
+  gap: 12rpx;
+}
+
+.question-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background-color: #FFCDD6;
+  transition: all 0.3s;
+
+  &.active {
+    width: 24rpx;
+    border-radius: 6rpx;
+    background-color: #FF6B9D;
   }
 }
 
