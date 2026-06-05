@@ -30,11 +30,20 @@
             <el-form-item label="Logo上传">
               <div class="upload-item">
                 <el-image
-                  v-if="basicConfig.logo"
+                  v-if="basicConfig.logo && !logoError"
                   :src="basicConfig.logo"
                   class="logo-preview"
                   fit="contain"
-                />
+                  @error="logoError = true"
+                  @load="logoError = false"
+                >
+                  <template #error>
+                    <div class="image-error-slot"></div>
+                  </template>
+                </el-image>
+                <div v-if="logoError" class="logo-broken">
+                  <span class="broken-text">图片加载失败，请重新上传</span>
+                </div>
                 <el-upload
                   action="#"
                   :http-request="uploadLogo"
@@ -352,6 +361,7 @@ import { system, adminSystem } from '../../api'
 
 const activeTab = ref('basic')
 const saving = ref(false)
+const logoError = ref(false)
 
 const basicConfig = reactive({
   appName: '栖缘社',
@@ -413,6 +423,8 @@ async function fetchConfig() {
       Object.assign(vipConfig, res.data.vip || {})
       Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
+      // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
+      logoError.value = false
     }
   } catch (error) {
     console.error(error)
@@ -449,6 +461,7 @@ async function uploadLogo(options: any) {
     const res = await adminSystem.upload(formData)
     if (res.success && res.data?.url) {
       basicConfig.logo = res.data.url
+      logoError.value = false
       ElMessage.success('上传成功')
     }
   } catch (error) {
@@ -537,6 +550,25 @@ async function uploadCertFile(options: any) {
       height: 80px;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
+    }
+
+    .logo-broken {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      border: 1px dashed #dcdfe6;
+      border-radius: 4px;
+      background: #fafafa;
+
+      .broken-text {
+        font-size: 11px;
+        color: #c0c4cc;
+        text-align: center;
+        padding: 4px;
+        line-height: 1.4;
+      }
     }
 
     .share-image-preview {
