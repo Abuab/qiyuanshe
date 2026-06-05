@@ -191,6 +191,27 @@
                     <el-tag :type="getAnswerStatusType(row.status)" size="small">{{ getAnswerStatusName(row.status) }}</el-tag>
                   </template>
                 </el-table-column>
+                <el-table-column v-if="!isReadonly" label="操作" width="180" fixed="right">
+                  <template #default="{ row }">
+                    <el-button
+                      v-if="row.status === 0"
+                      type="success"
+                      link
+                      size="small"
+                      :loading="answerAuditing[row.id]"
+                      @click="handleApproveAnswer(row)"
+                    >通过</el-button>
+                    <el-button
+                      v-if="row.status === 0"
+                      type="danger"
+                      link
+                      size="small"
+                      :loading="answerAuditing[row.id]"
+                      @click="handleRejectAnswer(row)"
+                    >拒绝</el-button>
+                    <span v-if="row.status !== 0" class="text-muted">-</span>
+                  </template>
+                </el-table-column>
               </el-table>
               <el-empty v-else description="暂无回答记录" />
             </div>
@@ -365,6 +386,7 @@ const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
 const userAnswerList = ref<any[]>([])
+const answerAuditing = reactive<Record<number, boolean>>({})
 const matchList = ref<any[]>([])
 const reviewList = ref<any[]>([])
 
@@ -441,6 +463,39 @@ async function loadUserAnswers() {
     if (res.success) userAnswerList.value = res.data?.list || []
   } catch (e) { console.error(e) }
   finally { tabLoading.answers = false }
+}
+
+async function handleApproveAnswer(row: any) {
+  try {
+    await ElMessageBox.confirm('确定要通过该回答吗？', '确认通过', { type: 'success' })
+    answerAuditing[row.id] = true
+    await adminUsers.approveAnswer(row.id)
+    ElMessage.success('回答审核已通过')
+    row.status = 1
+  } catch (e) {
+    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+  } finally {
+    answerAuditing[row.id] = false
+  }
+}
+
+async function handleRejectAnswer(row: any) {
+  try {
+    const { value: reason } = await ElMessageBox.prompt('请输入拒绝原因', '拒绝回答', {
+      type: 'warning',
+      inputType: 'textarea',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+    })
+    answerAuditing[row.id] = true
+    await adminUsers.rejectAnswer(row.id, reason || '')
+    ElMessage.success('回答已拒绝')
+    row.status = 2
+  } catch (e) {
+    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+  } finally {
+    answerAuditing[row.id] = false
+  }
 }
 
 async function loadMatches() {
@@ -597,4 +652,5 @@ function getMatchStatusName(status: string) {
 .tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }
 .link-text { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }
 .ml-10 { margin-left: 10px; }
+.text-muted { color: #909399; font-size: 13px; }
 </style>

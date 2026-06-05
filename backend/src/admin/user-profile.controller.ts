@@ -72,6 +72,21 @@ export class UserProfileController {
     return Result.success(data)
   }
 
+  @Put('answers/:answerId/approve')
+  async approveAnswer(@Param('answerId', ParseIntPipe) answerId: number) {
+    await this.profileService.approveAnswer(answerId)
+    return Result.success(null, '回答审核已通过')
+  }
+
+  @Put('answers/:answerId/reject')
+  async rejectAnswer(
+    @Param('answerId', ParseIntPipe) answerId: number,
+    @Body('reason') reason?: string,
+  ) {
+    await this.profileService.rejectAnswer(answerId, reason || '')
+    return Result.success(null, '回答已拒绝')
+  }
+
   @Get(':id/matches')
   async getMatchRecords(
     @Param('id', ParseIntPipe) id: number,

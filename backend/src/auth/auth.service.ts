@@ -63,12 +63,12 @@ export class AuthService {
         openid: session.openid,
         unionId: session.unionid || '',
         nickname: randomNickname,
-        status: 1,
+        status: 2,
       })
       user = await this.userRepository.save(user)
     }
 
-    if (user.status !== 1) {
+    if (user.status === 0) {
       throw new UnauthorizedException('账号已被禁用')
     }
 
@@ -105,7 +105,7 @@ export class AuthService {
       throw new UnauthorizedException('该手机号未注册，请先通过微信登录注册')
     }
 
-    if (user.status !== 1) {
+    if (user.status === 0) {
       throw new UnauthorizedException('账号已被禁用')
     }
 
@@ -133,7 +133,7 @@ export class AuthService {
         where: { id: payload.sub, isDeleted: 0 },
       })
 
-      if (!user || user.status !== 1) {
+      if (!user || user.status === 0) {
         throw new UnauthorizedException('用户不存在或已被禁用')
       }
 
@@ -151,7 +151,7 @@ export class AuthService {
       where: { id: userId, isDeleted: 0 },
     })
 
-    if (!user || user.status !== 1) {
+    if (!user || user.status === 0) {
       return null
     }
 

@@ -157,6 +157,14 @@ export const adminUsers = {
     return request.get(`/admin/users/${id}/answers`, { params: { page, limit } })
   },
 
+  approveAnswer(answerId: number): Promise<ApiResponse> {
+    return request.put(`/admin/users/answers/${answerId}/approve`)
+  },
+
+  rejectAnswer(answerId: number, reason?: string): Promise<ApiResponse> {
+    return request.put(`/admin/users/answers/${answerId}/reject`, { reason })
+  },
+
   getMatches(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
     return request.get(`/admin/users/${id}/matches`, { params: { page, limit } })
   },

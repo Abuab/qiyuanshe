@@ -158,7 +158,16 @@ export class AdminAuditService {
   }
 
   async reject(id: number, reason: string) {
+    const audit = await this.auditLogRepository.findOne({ where: { id } })
+    if (!audit) return
+
     await this.auditLogRepository.update(id, { action: 'REJECT', reason })
+
+    if (audit.targetType === 'photo' && audit.targetId) {
+      await this.userPhotoRepository.update(audit.targetId, { auditStatus: 2 })
+    } else if (audit.targetType === 'answer' && audit.targetId) {
+      await this.answerRepository.update(audit.targetId, { status: 2 })
+    }
   }
 
   async batchApprove(ids: number[]) {

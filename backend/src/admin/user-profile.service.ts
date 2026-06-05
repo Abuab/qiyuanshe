@@ -9,6 +9,7 @@ import { HotQuestion } from '../entities/HotQuestion'
 import { MatchRecord } from '../entities/MatchRecord'
 import { MatchmakerReview } from '../entities/MatchmakerReview'
 import { User } from '../entities/User'
+import { AuditLog } from '../entities/AuditLog'
 
 @Injectable()
 export class UserProfileService {
@@ -27,6 +28,8 @@ export class UserProfileService {
     private readonly matchRecordRepository: Repository<MatchRecord>,
     @InjectRepository(MatchmakerReview)
     private readonly reviewRepository: Repository<MatchmakerReview>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepository: Repository<AuditLog>,
   ) {}
 
   async getReports(userId: number) {
@@ -198,5 +201,27 @@ export class UserProfileService {
       senderId,
     })
     return this.notificationRepository.save(notification)
+  }
+
+  async approveAnswer(answerId: number) {
+    // 更新回答状态为通过
+    await this.answerRepository.update(answerId, { status: 1 })
+
+    // 更新审核记录
+    await this.auditLogRepository.update(
+      { targetType: 'answer', targetId: answerId, action: 'PENDING' },
+      { action: 'APPROVE' },
+    )
+  }
+
+  async rejectAnswer(answerId: number, reason: string) {
+    // 更新回答状态为拒绝
+    await this.answerRepository.update(answerId, { status: 2 })
+
+    // 更新审核记录
+    await this.auditLogRepository.update(
+      { targetType: 'answer', targetId: answerId, action: 'PENDING' },
+      { action: 'REJECT', reason },
+    )
   }
 }

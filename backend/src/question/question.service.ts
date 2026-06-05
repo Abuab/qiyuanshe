@@ -5,6 +5,7 @@ import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
 import { AnswerLike } from '../entities/AnswerLike'
+import { AuditLog } from '../entities/AuditLog'
 
 export interface QuestionListResult {
   list: HotQuestion[]
@@ -32,6 +33,8 @@ export class QuestionService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(AnswerLike)
     private readonly answerLikeRepository: Repository<AnswerLike>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepository: Repository<AuditLog>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -131,6 +134,16 @@ export class QuestionService {
       { id: questionId },
       { answerCount: question.answerCount + 1 },
     )
+
+    // 创建审核记录
+    const auditLog = this.auditLogRepository.create({
+      action: 'PENDING',
+      targetType: 'answer',
+      targetId: answerId,
+      submitterId: userId,
+      content: (content || '').substring(0, 200),
+    })
+    await this.auditLogRepository.save(auditLog)
 
     return this.answerRepository.findOneOrFail({ where: { id: answerId } })
   }
