@@ -97,11 +97,12 @@
       </view>
 
       <view class="bottom-safe"></view>
-
-      <view class="fab-publish" @tap="goToPublish">
-        <text class="fab-icon">+</text>
-      </view>
     </scroll-view>
+
+    <!-- 悬浮发布按钮（移到 scroll-view 外，不受滚动影响） -->
+    <view class="fab-publish" @tap="goToPublish">
+      <text class="fab-icon">+</text>
+    </view>
   </view>
 </template>
 
@@ -317,11 +318,11 @@ onMounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: 88rpx;
+  height: calc(88rpx + var(--status-bar-height));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
+  padding: var(--status-bar-height) 32rpx 0;
   background-color: #fff;
   z-index: 100;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -338,10 +339,6 @@ onMounted(() => {
   font-weight: bold;
 }
 
-.spacer {
-  width: 40rpx;
-}
-
 .pub-text {
   font-size: 28rpx;
   color: #FF6B9D;
@@ -356,8 +353,8 @@ onMounted(() => {
 
 .content-scroll {
   height: 100vh;
-  padding-top: 88rpx;
-  padding-bottom: 100rpx;
+  padding-top: calc(88rpx + var(--status-bar-height));
+  padding-bottom: 160rpx;
 }
 
 .empty-state {
@@ -372,8 +369,8 @@ onMounted(() => {
 }
 
 .dynamic-card {
-  margin: 16rpx 24rpx;
-  padding: 24rpx;
+  margin: 20rpx 24rpx;
+  padding: 28rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
 }
@@ -381,7 +378,7 @@ onMounted(() => {
 .card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
 }
 
 .author-avatar {
@@ -411,13 +408,14 @@ onMounted(() => {
 }
 
 .card-content {
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 0 4rpx;
 }
 
 .content-text {
   font-size: 28rpx;
   color: #333;
-  line-height: 1.6;
+  line-height: 1.7;
   word-break: break-all;
 }
 
@@ -425,7 +423,8 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
+  padding: 0 4rpx;
 
   &.grid-1 .grid-image {
     width: 400rpx;
@@ -453,7 +452,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 48rpx;
-  padding: 12rpx 0;
+  padding: 16rpx 4rpx 12rpx;
   border-top: 1rpx solid #f0f0f0;
 }
 
@@ -480,9 +479,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  padding-top: 12rpx;
-  border-top: 1rpx solid #f0f0f0;
-  margin-top: 4rpx;
+  padding: 12rpx 4rpx 0;
 }
 
 .like-icon {
@@ -498,13 +495,13 @@ onMounted(() => {
 .loading-more,
 .no-more {
   text-align: center;
-  padding: 24rpx 0;
+  padding: 32rpx 0;
   font-size: 24rpx;
   color: #999;
 }
 
 .bottom-safe {
-  height: 120rpx;
+  height: 40rpx;
 }
 
 .fab-publish {
