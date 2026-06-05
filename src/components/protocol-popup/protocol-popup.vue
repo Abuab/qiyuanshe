@@ -166,7 +166,8 @@ defineExpose({
   border-radius: 24rpx;
   display: flex;
   flex-direction: column;
-  margin: 0 40rpx;
+  overflow: hidden;
+  max-width: calc(100vw - 80rpx);
 }
 
 .protocol-header {
@@ -196,11 +197,13 @@ defineExpose({
 }
 
 .protocol-buttons {
-  padding: 32rpx 40rpx;
+  padding: 24rpx 40rpx 32rpx;
   display: flex;
   flex-direction: column;
-  gap: 24rpx;
+  gap: 16rpx;
   flex-shrink: 0;
+  background-color: #fff;
+  border-top: 1rpx solid #f0f0f0;
 }
 
 .btn-agree {
@@ -227,16 +230,21 @@ defineExpose({
 .btn-disagree {
   width: 100%;
   height: 88rpx;
-  background-color: transparent;
-  color: var(--text-secondary);
+  background-color: #fff;
+  color: #666;
   font-size: 28rpx;
-  border: none;
+  border: 1px solid #dcdfe6;
+  border-radius: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 
   &::after {
     border: none;
+  }
+
+  &:active {
+    background-color: #f5f5f5;
   }
 }
 </style>
