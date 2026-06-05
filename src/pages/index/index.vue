@@ -1,14 +1,14 @@
 <template>
   <view class="index-page">
-    <view class="header">
-      <view class="header-content">
-        <text class="brand-title">栖缘社</text>
-        <view class="header-capsule"></view>
-      </view>
-    </view>
-
-    <!-- 顶部粉色连续区域：通知栏 + 功能图标 -->
+    <!-- 顶部粉色连续区域：导航栏区域 + 通知栏 + 功能图标 -->
     <view class="top-pink-area">
+      <view class="header">
+        <view class="header-content">
+          <text class="brand-title">栖缘社</text>
+          <view class="header-capsule"></view>
+        </view>
+      </view>
+
       <view v-if="showNotice && notices.length" class="notice-bar">
         <text class="notice-icon">📢</text>
         <swiper class="notice-swiper" vertical autoplay circular interval="3000">
@@ -434,7 +434,6 @@ const onShareTimeline = () => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
   padding-top: var(--status-bar-height);
 }
 
@@ -442,13 +441,15 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20rpx 32rpx;
+  height: 56rpx;
+  padding: 0 32rpx;
 }
 
 .brand-title {
   font-size: 36rpx;
   font-weight: bold;
   color: #FF6B9D;
+  line-height: 56rpx;
 }
 
 .header-capsule {
@@ -457,8 +458,8 @@ const onShareTimeline = () => {
 }
 
 .top-pink-area {
-  margin-top: calc(var(--status-bar-height) + 96rpx);
   background: linear-gradient(135deg, #FFF5F7 0%, #FFE4ED 100%);
+  padding-top: calc(var(--status-bar-height) + 56rpx);
 }
 
 .notice-bar {
@@ -501,7 +502,7 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 0 24rpx 32rpx;
+  padding: 24rpx 24rpx 32rpx;
   margin-bottom: 0;
 }
 
