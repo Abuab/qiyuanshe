@@ -407,7 +407,7 @@ const handleBack = () => {
 .packages-scroll {
   width: 100%;
   white-space: nowrap;
-  padding-top: 44rpx;
+  padding-top: 16rpx;
 }
 
 .packages-row {
@@ -444,7 +444,7 @@ const handleBack = () => {
 // 顶部标签 — 居中悬浮于卡片上边缘
 .package-tag {
   position: absolute;
-  top: -22rpx;
+  top: -8rpx;
   left: 50%;
   transform: translateX(-50%);
   padding: 4rpx 20rpx;
