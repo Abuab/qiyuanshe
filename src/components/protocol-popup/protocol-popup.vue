@@ -7,7 +7,14 @@
       </view>
 
       <scroll-view class="protocol-content" scroll-y enable-flex>
-        <view class="protocol-text" v-html="agreementContent"></view>
+        <view class="protocol-text">
+          <text
+            v-for="(line, i) in textLines"
+            :key="i"
+            :class="line._cls"
+            :decode="true"
+          >{{ line._txt }}</text>
+        </view>
       </scroll-view>
 
       <view class="protocol-buttons">
@@ -19,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { get } from '@/utils/request'
 
 interface Props {
@@ -36,60 +43,145 @@ const emit = defineEmits<{
 const visible = ref(false)
 const agreementTitle = ref('用户协议与隐私政策')
 const agreementContent = ref('')
-const rawAgreementHtml = ref('')
 let pendingCallback: (() => void) | null = null
 
-/** 清洗富文本 HTML：剥离可能导致不换行的内联样式，rpx→px 转换 */
-const cleanHtmlForWrap = (html: string): string => {
-  if (!html) return ''
-  return html
-    // rpx → px（微信小程序 rich-text 不支持 rpx 单位，会导致内联样式失效、元素失去块级特性）
-    .replace(/(\d+)rpx/gi, (_, num) => Math.round(Number(num) / 2) + 'px')
-    // 移除 white-space 相关
-    .replace(/\bwhite-space\s*:\s*[^;"']+;?/gi, '')
-    // 移除 word-break 相关
-    .replace(/\bword-break\s*:\s*[^;"']+;?/gi, '')
-    // 移除 word-wrap / overflow-wrap
-    .replace(/\b(?:word|overflow)-wrap\s*:\s*[^;"']+;?/gi, '')
-    // 移除固定宽度
-    .replace(/\bwidth\s*:\s*\d+(?:px|em|rem|%)\s*(?:!important)?\s*;?/gi, '')
-    // 清理 style 属性中可能残留的空引号
-    .replace(/\sstyle\s*=\s*""/gi, '')
-    .replace(/\sstyle\s*=\s*''/gi, '')
+/** HTML 元素是否为块级（会换行） */
+const isBlockTag = (tag: string) => /^(p|div|h[1-6]|li|br|hr|section|article|header|footer|tr)$/i.test(tag)
+
+/** HTML 元素是否为标题/加粗 */
+const isHeadingTag = (tag: string) => /^(h[1-6]|strong|b|th)$/i.test(tag)
+
+/** 将 HTML 字符串解析为纯文本行数组，每行一个 <text> 组件 */
+const htmlToTextLines = (html: string): { _txt: string; _cls: string }[] => {
+  if (!html) return []
+
+  // 预处理：在块级标签闭合后加换行符
+  let processed = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<hr[^>]*>/gi, '\n')
+
+  // 存储当前位置是否在 bold 标签内
+  let inBold = false
+  const lines: { text: string; isBold: boolean }[] = []
+  let currentLine = { text: '', isBold: false }
+
+  // 逐字符解析，处理开/闭标签和文本
+  const chars = processed.split('')
+  let i = 0
+  while (i < chars.length) {
+    if (chars[i] === '<') {
+      // 提取标签
+      const end = chars.indexOf('>', i)
+      if (end === -1) break
+      const tagStr = processed.substring(i + 1, end)
+      i = end + 1
+
+      if (tagStr.startsWith('/')) {
+        // 闭合标签
+        const tagName = tagStr.substring(1).split(/\s/)[0].toLowerCase()
+        if (tagName === 'strong' || tagName === 'b') {
+          inBold = false
+          currentLine.isBold = false
+        }
+      } else {
+        // 开放标签
+        const tagName = tagStr.split(/\s/)[0].toLowerCase()
+        if (tagName === 'strong' || tagName === 'b') {
+          inBold = true
+          currentLine.isBold = true
+        } else if (isBlockTag(tagName)) {
+          // 块级标签前先保存当前行
+          if (currentLine.text.trim()) {
+            lines.push({ ...currentLine, text: currentLine.text.trim() })
+          }
+          currentLine = { text: '', isBold: inBold }
+        } else if (isHeadingTag(tagName)) {
+          // 标题标签前先保存当前行
+          if (currentLine.text.trim()) {
+            lines.push({ ...currentLine, text: currentLine.text.trim() })
+          }
+          currentLine = { text: '', isBold: true }
+        }
+      }
+    } else if (chars[i] === '\n') {
+      // 遇到换行符，保存当前行
+      if (currentLine.text.trim()) {
+        lines.push({ ...currentLine, text: currentLine.text.trim() })
+      }
+      currentLine = { text: '', isBold: inBold }
+      i++
+    } else {
+      // 普通文本
+      currentLine.text += chars[i]
+      i++
+    }
+  }
+
+  // 最后一行
+  if (currentLine.text.trim()) {
+    lines.push({ ...currentLine, text: currentLine.text.trim() })
+  }
+
+  // 解码 HTML 实体
+  const decodeEntities = (s: string) =>
+    s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+
+  return lines.map(l => ({
+    _txt: decodeEntities(l.text),
+    _cls: l.isBold ? 'text-bold' : 'text-normal',
+  }))
 }
 
-// 默认兜底内容（纯 p/strong 标签，无内联样式——微信小程序 rich-text 不支持 rpx 内联样式）
-const fallbackContent = `
-<p>欢迎使用栖缘社及相关服务。</p>
-<p>您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。</p>
-<p style="font-size:15px;font-weight:bold;margin-top:16px;margin-bottom:10px;">【用户协议】</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">一、服务说明</p>
-<p>栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">二、用户注册</p>
-<p>1. 您需要提供真实的个人信息进行注册</p>
-<p>2. 您必须年满18周岁方可使用本服务</p>
-<p>3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">三、用户行为</p>
-<p>1. 不得发布虚假信息、诈骗信息</p>
-<p>2. 不得骚扰、辱骂其他用户</p>
-<p>3. 不得发布违法、违规内容</p>
-<p>4. 不得利用本平台进行商业营销</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">四、隐私保护</p>
-<p>我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。</p>
-<p style="font-size:15px;font-weight:bold;margin-top:16px;margin-bottom:10px;">【隐私政策】</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">一、信息收集</p>
-<p>1. 我们会收集您主动提供的信息（手机号、头像等）</p>
-<p>2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）</p>
-<p>3. 我们会获取您的地理位置信息用于匹配功能</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">二、信息使用</p>
-<p>1. 用于提供和改进我们的服务</p>
-<p>2. 用于向您推送个性化内容</p>
-<p>3. 用于账号安全保护</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">三、信息共享</p>
-<p>未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。</p>
-<p style="font-size:14px;font-weight:bold;margin-top:12px;margin-bottom:6px;">四、信息安全</p>
-<p>我们采用行业标准的安全措施保护您的个人信息。</p>
-`
+// 默认兜底内容（纯文本，无需 HTML 解析也能直接显示）
+const fallbackText = `欢迎使用栖缘社及相关服务。
+
+您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。
+
+【用户协议】
+一、服务说明
+栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。
+
+二、用户注册
+1. 您需要提供真实的个人信息进行注册
+2. 您必须年满18周岁方可使用本服务
+3. 您需对账户安全负责，因个人原因导致的账户被盗用，责任自负
+
+三、用户行为
+1. 不得发布虚假信息、诈骗信息
+2. 不得骚扰、辱骂其他用户
+3. 不得发布违法、违规内容
+4. 不得利用本平台进行商业营销
+
+四、隐私保护
+我们承诺保护您的个人信息，不会未经您的同意向第三方透露您的个人信息。
+
+【隐私政策】
+一、信息收集
+1. 我们会收集您主动提供的信息（手机号、头像等）
+2. 我们会收集您使用服务时自动产生的信息（登录日志、操作记录等）
+3. 我们会获取您的地理位置信息用于匹配功能
+
+二、信息使用
+1. 用于提供和改进我们的服务
+2. 用于向您推送个性化内容
+3. 用于账号安全保护
+
+三、信息共享
+未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。
+
+四、信息安全
+我们采用行业标准的安全措施保护您的个人信息。`
+
+/** 计算文本行 */
+const textLines = computed(() => {
+  return htmlToTextLines(agreementContent.value)
+})
 
 watch(
   () => props.show,
@@ -103,24 +195,21 @@ const fetchAgreement = async () => {
   try {
     const cached = uni.getStorageSync('agreement_content')
     if (cached) {
-      rawAgreementHtml.value = cached
-      agreementContent.value = cleanHtmlForWrap(cached)
+      agreementContent.value = cached
       return
     }
 
     const res: any = await get('/agreement', { type: 'USER_AGREEMENT' } as any)
     if (res && res.content) {
       agreementTitle.value = res.title || '用户协议与隐私政策'
-      rawAgreementHtml.value = res.content
-      const cleaned = cleanHtmlForWrap(res.content)
-      agreementContent.value = cleaned
+      agreementContent.value = res.content
       uni.setStorageSync('agreement_content', res.content)
     } else {
-      agreementContent.value = cleanHtmlForWrap(fallbackContent)
+      agreementContent.value = fallbackText
     }
   } catch (e) {
     console.log('[协议] 接口获取失败，使用兜底内容')
-    agreementContent.value = cleanHtmlForWrap(fallbackContent)
+    agreementContent.value = fallbackText
   }
 }
 
@@ -211,18 +300,29 @@ defineExpose({
   flex: 1;
   padding: 0 40rpx;
   min-height: 0;
-  white-space: normal !important;
-  word-break: break-word !important;
 }
 
 .protocol-text {
   padding: 10rpx 0 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.text-normal {
   font-size: 26rpx;
   color: var(--text);
-  line-height: 1.8;
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  overflow-wrap: break-word !important;
+  line-height: 2;
+  display: block;
+  padding: 4rpx 0;
+}
+
+.text-bold {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: var(--text);
+  line-height: 2.2;
+  display: block;
+  padding: 12rpx 0 4rpx;
 }
 
 .protocol-buttons {
