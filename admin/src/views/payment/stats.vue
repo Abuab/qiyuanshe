@@ -206,6 +206,9 @@ function initTrendChart(data: { date: string; revenue: number }[]) {
     yAxis: {
       type: 'value',
       name: '营收（元）',
+      nameTextStyle: {
+        padding: [0, 0, 0, -10],
+      },
     },
     series: [
       {
@@ -228,9 +231,10 @@ function initTrendChart(data: { date: string; revenue: number }[]) {
       },
     ],
     grid: {
-      left: '3%',
+      left: '8%',
       right: '4%',
       bottom: '3%',
+      top: '10%',
       containLabel: true,
     },
   }
