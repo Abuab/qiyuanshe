@@ -288,11 +288,11 @@ const handleBack = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: 88rpx;
+  height: calc(88rpx + var(--status-bar-height));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
+  padding: var(--status-bar-height) 32rpx 0;
   background-color: #fff;
   z-index: 100;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -322,7 +322,7 @@ const handleBack = () => {
 // ========== 可滚动内容 ==========
 .page-content {
   flex: 1;
-  padding-top: 88rpx;
+  padding-top: calc(88rpx + var(--status-bar-height));
 }
 
 // ========== 头部标题 + 特权 ==========
