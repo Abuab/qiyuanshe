@@ -18,6 +18,7 @@ import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
+import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { Result } from '../common/result'
 
 @Controller('users')
@@ -25,6 +26,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     @InjectRepository(Report) private reportRepo: Repository<Report>,
+    @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
   ) {}
 
   @Get('recommend')
@@ -63,6 +65,28 @@ export class UserController {
       if (error.getStatus) throw error
       return Result.serverError('保存失败: ' + (error?.message || '请稍后重试'))
     }
+  }
+
+  @Get('answers')
+  @UseGuards(JwtAuthGuard)
+  async getUserAnswers(@Request() req: any) {
+    const answers = await this.answerRepo.find({
+      where: { userId: req.user.userId },
+      relations: ['question'],
+      order: { createdAt: 'DESC' },
+    })
+    return Result.success(
+      answers.map((a) => ({
+        id: a.id,
+        questionId: a.questionId,
+        questionTitle: a.question?.title || '',
+        content: a.content,
+        photos: a.photos || [],
+        likeCount: a.likeCount,
+        status: a.status,
+        createdAt: a.createdAt,
+      })),
+    )
   }
 
   @Get(':id')
