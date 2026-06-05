@@ -186,6 +186,8 @@ defineExpose({
   flex: 1;
   padding: 0 40rpx;
   min-height: 0;
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 
 .protocol-text {
@@ -193,17 +195,9 @@ defineExpose({
   font-size: 26rpx;
   color: var(--text);
   line-height: 1.8;
-  white-space: normal;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-
-  // v-html 渲染的富文本内容：确保所有元素都可正常换行
-  :deep(*) {
-    white-space: normal !important;
-    word-wrap: break-word !important;
-    overflow-wrap: break-word !important;
-    max-width: 100% !important;
-  }
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 .protocol-buttons {
