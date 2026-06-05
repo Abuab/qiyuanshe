@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Notice } from '../entities/Notice'
@@ -18,5 +18,14 @@ export class UserNoticeController {
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     })
     return Result.success(notices)
+  }
+
+  @Get(':id')
+  async detail(@Param('id', ParseIntPipe) id: number) {
+    const notice = await this.repo.findOne({ where: { id, status: 1 } })
+    if (!notice) {
+      return Result.notFound('公告不存在')
+    }
+    return Result.success(notice)
   }
 }

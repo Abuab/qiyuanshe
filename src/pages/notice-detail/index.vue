@@ -18,21 +18,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import request from '@/utils/request'
+import { get } from '@/utils/request'
 
 const detail = ref<any>(null)
 
-onMounted(() => {
+onMounted(async () => {
   const pages = getCurrentPages()
   const options = (pages[pages.length - 1] as any)?.options || {}
   if (options.id) {
-    request({ url: `/announcements/${options.id}`, method: 'GET' })
-      .then((r: any) => {
-        detail.value = r.data || r
-      })
-      .catch(() => {
-        console.log('[公告详情]接口暂未开通')
-      })
+    try {
+      const res: any = await get(`/notices/${options.id}`)
+      detail.value = res?.data || res
+    } catch (e) {
+      console.log('[公告详情] 接口调用失败', e)
+    }
   }
 })
 

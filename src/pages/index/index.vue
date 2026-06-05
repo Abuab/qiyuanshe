@@ -317,16 +317,23 @@ const onFilterReset = () => {
   handleClearFilter()
 }
 
-// Mock 公告数据兜底（后端暂无 announcements 接口，直接使用本地数据，避免 404 控制台报错）
-const getMockNotices = () => [
-  { id: 1, title: '栖缘社小程序正式上线啦！', type: 'banner' },
-  { id: 2, title: '开通VIP享受更多特权~', type: 'banner' },
-]
-
-// 后端 announcements 接口暂未部署，直接使用 mock 数据
-// 待后端接口上线后，改为调用：request({ url: '/announcements', method: 'GET', data: { type: 'banner' } })
-const fetchAnnouncements = () => {
-  notices.value = getMockNotices()
+// 从后端获取公告列表
+const fetchAnnouncements = async () => {
+  try {
+    const res: any = await get('/notices')
+    if (Array.isArray(res)) {
+      notices.value = res
+    } else if (res?.data && Array.isArray(res.data)) {
+      notices.value = res.data
+    } else if (res?.list && Array.isArray(res.list)) {
+      notices.value = res.list
+    } else {
+      notices.value = []
+    }
+  } catch (e) {
+    console.log('[公告] 接口获取失败', e)
+    notices.value = []
+  }
 }
 
 const closeNotice = () => {
@@ -367,19 +374,33 @@ onMounted(() => {
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
 
-  // 公告弹窗：每天首次进入弹出
+  // 公告弹窗：每天首次进入弹出 popup 类型公告
   const today = new Date().toDateString()
   const alreadyShown = uni.getStorageSync('popup_notice_date') === today
 
   if (alreadyShown) {
-    // 今天已展示过，直接加载数据
     loadUserList(true)
   } else {
-    // 首次进入：延迟弹出弹窗，关闭后加载数据
-    setTimeout(() => {
+    // 从后端获取弹窗类型公告
+    setTimeout(async () => {
+      let title = '欢迎来到栖缘社！'
+      let content = '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！'
+
+      try {
+        const res: any = await get('/notices')
+        const list = Array.isArray(res) ? res : (res?.data || res?.list || [])
+        const popupNotice = list.find((n: any) => n.type === 'popup' && n.status === 1)
+        if (popupNotice) {
+          title = popupNotice.title
+          content = popupNotice.content
+        }
+      } catch (e) {
+        console.log('[弹窗公告] 接口获取失败，使用默认文案')
+      }
+
       uni.showModal({
-        title: '欢迎来到栖缘社！',
-        content: '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！',
+        title,
+        content,
         showCancel: false,
         confirmText: '我知道了',
         confirmColor: '#FF6B9D',
