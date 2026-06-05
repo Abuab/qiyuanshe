@@ -59,9 +59,9 @@
             <text class="section-title">报名方式</text>
           </view>
           <text class="section-content">扫描下方二维码，添加红娘老师微信</text>
-          <text class="section-content phone-text">联系电话：{{ matchmakerPhone || '15703592518' }}</text>
+          <text class="section-content phone-text">联系电话：{{ selectedMatchmaker.phone || '15703592518' }}</text>
           <view class="qrcode-wrapper">
-            <image class="qrcode-image" :src="matchmakerQrCode || '/static/matchmaker.png'" mode="aspectFit" />
+            <image class="qrcode-image" :src="selectedMatchmaker.qrCode || '/static/matchmaker.png'" mode="aspectFit" />
           </view>
           <text class="qrcode-tip">（长按识别二维码添加红娘老师微信即可）</text>
         </view>
@@ -182,9 +182,18 @@
     <!-- 红娘弹窗 -->
     <matchmaker-popup
       :show="matchmakerVisible"
-      :matchmaker="defaultMatchmaker"
+      :matchmaker="selectedMatchmaker"
       @update:show="matchmakerVisible = $event"
       @close="matchmakerVisible = false"
+      @more="openMatchmakerList"
+    />
+
+    <matchmaker-list-popup
+      :show="matchmakerListVisible"
+      :matchmakers="matchmakerList"
+      @update:show="matchmakerListVisible = $event"
+      @close="matchmakerListVisible = false"
+      @contact="onSelectMatchmaker"
     />
   </view>
 </template>
@@ -192,6 +201,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -217,10 +227,9 @@ const activity = ref<Activity | null>(null)
 const signupAvatars = ref<string[]>([])
 const showSignupPopup = ref(false)
 const matchmakerVisible = ref(false)
-const matchmakerPhone = ref('')
-const matchmakerQrCode = ref('')
-
-const defaultMatchmaker = ref({
+const matchmakerListVisible = ref(false)
+const matchmakerList = ref<any[]>([])
+const selectedMatchmaker = ref({
   id: 1,
   name: '红娘老师',
   avatar: '/static/default-avatar.png',
@@ -285,7 +294,52 @@ function handleShare() {
 }
 
 function showMatchmakerPopup() {
+  if (!matchmakerList.value || matchmakerList.value.length === 0) {
+    matchmakerList.value = [
+      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+    ]
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
   matchmakerVisible.value = true
+}
+
+const openMatchmakerList = () => {
+  matchmakerVisible.value = false
+  matchmakerListVisible.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  matchmakerListVisible.value = false
+  selectedMatchmaker.value = matchmaker
+  setTimeout(() => {
+    matchmakerVisible.value = true
+  }, 300)
+}
+
+const fetchMatchmakerList = async () => {
+  try {
+    const res = await request({
+      url: '/matchmakers',
+      method: 'GET',
+    })
+
+    const rawList: any[] = Array.isArray(res) ? res : (res?.list || res?.data?.list || res?.data || [])
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      avatar: getFullImageUrl(item.avatar || item.avatarUrl),
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+    }))
+
+    if (matchmakerList.value.length > 0) {
+      selectedMatchmaker.value = matchmakerList.value[0]
+    }
+  } catch (e: any) {
+    console.log('[红娘] 接口调用失败，使用 Mock 数据', e?.message || e)
+    matchmakerList.value = [
+      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+    ]
+    selectedMatchmaker.value = matchmakerList.value[0]
+  }
 }
 
 function handleSignup() {
@@ -373,6 +427,7 @@ onMounted(() => {
   const id = currentPage.options?.id || currentPage.$page?.options?.id
   if (id) {
     fetchActivityDetail(Number(id))
+    fetchMatchmakerList()
   }
 })
 
