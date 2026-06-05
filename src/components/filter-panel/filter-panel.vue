@@ -528,11 +528,13 @@ defineExpose({
 
 .panel-content {
   position: relative;
+  height: 85vh;
   max-height: 85vh;
   background-color: #fff;
   border-radius: 24rpx 24rpx 0 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   transform: translateY(100%);
   transition: transform 0.3s ease-out;
 
@@ -542,9 +544,11 @@ defineExpose({
 
   // 作为独立页面：去掉底部弹出样式
   &.fullPage {
+    height: auto;
     max-height: none;
     border-radius: 0;
     transform: none;
+    overflow: visible;
   }
 }
 
@@ -558,7 +562,9 @@ defineExpose({
 
 .panel-scroll {
   flex: 1;
+  height: 0;
   padding: 0 32rpx;
+  padding-bottom: 40rpx;
 }
 
 .search-section {
@@ -706,7 +712,7 @@ defineExpose({
 }
 
 .bottom-safe-area {
-  height: 160rpx;
+  height: 20rpx;
 }
 
 .action-bar {
