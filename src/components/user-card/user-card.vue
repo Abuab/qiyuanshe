@@ -14,43 +14,34 @@
     </view>
 
     <view class="card-right">
+      <!-- 第一行：昵称 + 实名 + 年龄 -->
       <view class="user-header">
         <text class="nickname">{{ user.nickname }}</text>
         <view v-if="user.isRealName" class="real-name-badge">已实名</view>
+        <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
       </view>
 
+      <!-- 第二行：基础标签 -->
       <view class="tags-row">
-        <view class="tag age-tag">{{ user.age }}岁</view>
-        <view class="tag height-tag">{{ user.height }}cm</view>
-        <view v-if="user.education" class="tag education-tag">{{ user.education }}</view>
+        <text v-if="user.height" class="tag-text">{{ user.height }}cm</text>
+        <text v-if="user.education" class="tag-text">{{ user.education }}</text>
+        <text v-if="user.occupation" class="tag-text">{{ user.occupation }}</text>
+        <text v-if="user.incomeRange" class="tag-text">{{ user.incomeRange }}</text>
+        <text v-if="user.housingStatus" class="tag-text">{{ user.housingStatus }}</text>
       </view>
 
-      <view class="info-row">
-        <text v-if="user.housingStatus" class="info-text">{{ user.housingStatus }}</text>
-        <text v-if="user.occupation" class="info-text">{{ user.occupation }}</text>
-        <text v-if="user.incomeRange" class="info-text">{{ user.incomeRange }}</text>
+      <!-- 第三行：位置 + 红娘评语（如果有） -->
+      <view class="meta-row">
+        <text v-if="user.residence || user.city" class="loc-text">📍 {{ user.residence || user.city }}</text>
+        <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
       </view>
 
-      <view v-if="user.residence || user.city" class="loc-row">
-        <text class="loc-text">📍 {{ user.residence || user.city }}</text>
-      </view>
-
-      <view v-if="user.matchmakerComment" class="mk-row">
-        <view class="mk-hd">
-          <image class="mk-icon" :src="icons.quickEntry.matchmakerComment" mode="aspectFit" />
-          <text class="mk-title-text">红娘评语</text>
-        </view>
-        <text class="mk-txt">{{ user.matchmakerComment }}</text>
-      </view>
-
-      <view v-if="user.mateRequirements" class="mate-row">
-        <text class="mate-lb">择偶要求：</text><text class="mate-val">{{ user.mateRequirements }}</text>
-      </view>
-
+      <!-- 第四行：个人简介（如果有） -->
       <view v-if="displayIntro" class="intro-row">
         <text class="intro-text">{{ displayIntro }}</text>
       </view>
 
+      <!-- 照片缩略图 - 横向排列在信息下方 -->
       <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
         <image
           v-for="(photo, index) in displayPhotos"
@@ -148,10 +139,11 @@ const handleClick = () => {
 <style lang="scss" scoped>
 .user-card {
   display: flex;
-  padding: 24rpx;
+  padding: 20rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
+  align-items: flex-start;
 
   &:active {
     background-color: #f9f9f9;
@@ -160,13 +152,13 @@ const handleClick = () => {
 
 .card-left {
   flex-shrink: 0;
-  margin-right: 24rpx;
+  margin-right: 20rpx;
   position: relative;
 }
 
 .avatar {
-  width: 200rpx;
-  height: 240rpx;
+  width: 140rpx;
+  height: 140rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
 }
@@ -175,8 +167,8 @@ const handleClick = () => {
   position: absolute;
   bottom: 4rpx;
   right: 4rpx;
-  width: 36rpx;
-  height: 36rpx;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
   border: 2rpx solid #fff;
   display: flex;
@@ -184,7 +176,7 @@ const handleClick = () => {
   justify-content: center;
 
   .gender-text {
-    font-size: 22rpx;
+    font-size: 20rpx;
     color: #fff;
   }
 
@@ -199,155 +191,118 @@ const handleClick = () => {
 
 .card-right {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  overflow: hidden;
+  gap: 10rpx;
 }
 
+// 第一行：昵称 + 实名 + 年龄
 .user-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12rpx;
+  gap: 10rpx;
 }
 
 .nickname {
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: bold;
-  color: var(--text);
-  margin-right: 12rpx;
+  color: #333;
+  max-width: 160rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .real-name-badge {
-  padding: 4rpx 12rpx;
+  flex-shrink: 0;
+  padding: 2rpx 10rpx;
   font-size: 20rpx;
   color: #1890ff;
   background-color: #e6f7ff;
   border-radius: 4rpx;
+  line-height: 1.6;
 }
 
+.age-text {
+  font-size: 26rpx;
+  color: #999;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+// 第二行：标签行
 .tags-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12rpx;
-  margin-bottom: 12rpx;
 }
 
-.tag {
-  padding: 6rpx 16rpx;
-  font-size: 22rpx;
-  border-radius: 6rpx;
-}
-
-.age-tag {
-  color: #1890ff;
-  background-color: #e6f7ff;
-}
-
-.height-tag {
-  color: #722ed1;
-  background-color: #f9f0ff;
-}
-
-.education-tag {
-  color: #8c8c8c;
-  background-color: #f5f5f5;
-}
-
-.info-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-bottom: 12rpx;
-}
-
-.info-text {
+.tag-text {
   font-size: 24rpx;
-  color: var(--text-secondary);
+  color: #666;
+  position: relative;
+
+  &:not(:last-child)::after {
+    content: '|';
+    color: #ddd;
+    margin-left: 12rpx;
+    font-size: 20rpx;
+  }
 }
 
-.loc-row {
+// 第三行：位置 + 红娘评语
+.meta-row {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  margin-bottom: 12rpx;
-
-  .loc-text {
-    font-size: 24rpx;
-    color: var(--text-secondary);
-  }
+  gap: 16rpx;
+  overflow: hidden;
 }
 
-.mk-row {
-  background: #FFF8F0;
-  border-radius: 12rpx;
-  padding: 16rpx;
-  margin-bottom: 12rpx;
-
-  .mk-hd {
-    display: flex;
-    align-items: center;
-    gap: 8rpx;
-    margin-bottom: 8rpx;
-
-    .mk-icon {
-      width: 32rpx;
-      height: 32rpx;
-    }
-
-    .mk-title-text {
-      font-size: 24rpx;
-      color: #FF9500;
-      font-weight: bold;
-    }
-  }
-
-  .mk-txt {
-    font-size: 26rpx;
-    color: #666;
-    line-height: 1.5;
-  }
+.loc-text {
+  font-size: 22rpx;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.mate-row {
-  margin-bottom: 12rpx;
-
-  .mate-lb {
-    font-size: 24rpx;
-    color: #FF6B9D;
-    font-weight: bold;
-  }
-
-  .mate-val {
-    font-size: 24rpx;
-    color: #666;
-  }
+.mk-brief {
+  font-size: 22rpx;
+  color: #FF9500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+// 第四行：简介
 .intro-row {
-  margin-bottom: 12rpx;
-
   .intro-text {
-    font-size: 26rpx;
-    color: #666;
+    font-size: 24rpx;
+    color: #999;
     line-height: 1.5;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
 }
 
+// 照片缩略图
 .photos-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
+  gap: 10rpx;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  margin-top: 2rpx;
 }
 
 .photo-thumb {
-  width: 160rpx;
-  height: 160rpx;
+  width: 100rpx;
+  height: 100rpx;
   border-radius: 8rpx;
   background-color: #f5f5f5;
+  flex-shrink: 0;
 }
 </style>
