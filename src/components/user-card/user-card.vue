@@ -21,13 +21,20 @@
         <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
       </view>
 
-      <!-- 第二行：基础标签 -->
-      <view class="tags-row">
-        <text v-if="user.height" class="tag-text">{{ user.height }}cm</text>
-        <text v-if="user.education" class="tag-text">{{ user.education }}</text>
-        <text v-if="user.occupation" class="tag-text">{{ user.occupation }}</text>
-        <text v-if="user.incomeRange" class="tag-text">{{ user.incomeRange }}</text>
-        <text v-if="user.housingStatus" class="tag-text">{{ user.housingStatus }}</text>
+      <!-- 第二行：标签行（两行紧凑展示） -->
+      <view class="tags-area">
+        <!-- 第一行标签：年龄、身高、学历（带彩色背景） -->
+        <view class="tags-line tags-line-1">
+          <text v-if="user.age" class="tag-badge tag-age">{{ user.age }}岁</text>
+          <text v-if="user.height" class="tag-badge tag-height">{{ user.height }}cm</text>
+          <text v-if="user.education" class="tag-badge tag-edu">{{ user.education }}</text>
+        </view>
+        <!-- 第二行标签：购房、工作、收入（用圆点分隔） -->
+        <view v-if="user.housingStatus || user.occupation || user.incomeRange" class="tags-line tags-line-2">
+          <text v-if="user.housingStatus" class="tag-dot-text">{{ user.housingStatus }}</text>
+          <text v-if="user.occupation" class="tag-dot-text">{{ user.occupation }}</text>
+          <text v-if="user.incomeRange" class="tag-dot-text">{{ user.incomeRange }}</text>
+        </view>
       </view>
 
       <!-- 第三行：位置 + 红娘评语（如果有） -->
@@ -154,6 +161,7 @@ const handleClick = () => {
   flex-shrink: 0;
   margin-right: 20rpx;
   position: relative;
+  align-self: flex-start;
 }
 
 .avatar {
@@ -194,7 +202,7 @@ const handleClick = () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 10rpx;
+  gap: 6rpx;
 }
 
 // 第一行：昵称 + 实名 + 年龄
@@ -232,24 +240,57 @@ const handleClick = () => {
   margin-left: auto;
 }
 
-// 第二行：标签行
-.tags-row {
+// 第二行：标签行（两行紧凑展示）
+.tags-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.tags-line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12rpx;
+  gap: 10rpx;
 }
 
-.tag-text {
-  font-size: 24rpx;
-  color: #666;
-  position: relative;
+// 第一行彩色标签
+.tag-badge {
+  font-size: 22rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  line-height: 1.6;
+  flex-shrink: 0;
 
-  &:not(:last-child)::after {
-    content: '|';
+  &.tag-age {
+    color: #FF6B9D;
+    background-color: #FFF0F5;
+  }
+
+  &.tag-height {
+    color: #909399;
+    background-color: #F4F4F5;
+  }
+
+  &.tag-edu {
+    color: #409EFF;
+    background-color: #ECF5FF;
+  }
+}
+
+// 第二行圆点分隔文字
+.tags-line-2 {
+  gap: 0;
+}
+
+.tag-dot-text {
+  font-size: 22rpx;
+  color: #999;
+
+  &:not(:first-child)::before {
+    content: '·';
     color: #ddd;
-    margin-left: 12rpx;
-    font-size: 20rpx;
+    margin: 0 6rpx;
   }
 }
 

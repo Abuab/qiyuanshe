@@ -138,7 +138,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-around;
-  height: 110rpx;
+  height: 120rpx;
   box-sizing: content-box;
 }
 
@@ -150,12 +150,13 @@ defineExpose({
   flex: 1;
   height: 100%;
   position: relative;
+  padding-top: 12rpx;
 }
 
 .icon-wrapper {
   position: relative;
-  width: 44rpx;
-  height: 44rpx;
+  width: 52rpx;
+  height: 52rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,15 +164,15 @@ defineExpose({
 }
 
 .tab-icon {
-  width: 44rpx;
-  height: 44rpx;
+  width: 52rpx;
+  height: 52rpx;
   display: block;
 }
 
 .badge {
   position: absolute;
-  top: -6rpx;
-  right: -10rpx;
+  top: -8rpx;
+  right: -12rpx;
   min-width: 28rpx;
   height: 28rpx;
   padding: 0 6rpx;
@@ -186,9 +187,9 @@ defineExpose({
 }
 
 .tab-text {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: #999;
-  margin-top: 4rpx;
+  margin-top: 6rpx;
 
   &.active {
     color: #FF6B9D;

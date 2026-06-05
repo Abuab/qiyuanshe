@@ -61,7 +61,7 @@
           :duration="400"
           :current="questionSwiperIndex"
           @change="onQuestionSwiperChange"
-          :style="{ height: '180rpx' }"
+          :style="{ height: '140rpx' }"
         >
           <swiper-item v-for="q in hotQuestions" :key="q.id">
             <view class="question-slide" @tap="goToQuestionDetail(q.id)">
@@ -106,6 +106,7 @@
         </view>
 
         <view class="filter-btn" @tap="goToFilter">
+          <text class="filter-icon">⫶</text>
           <text class="filter-btn-text">筛选</text>
         </view>
       </view>
@@ -138,6 +139,12 @@
     </scroll-view>
 
     <tab-bar />
+
+    <!-- Hi红娘悬浮按钮 -->
+    <view class="float-matchmaker" @tap="handleMatchmakerFloat">
+      <text class="float-hi">Hi</text>
+      <text class="float-label">红娘</text>
+    </view>
 
     <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
@@ -332,6 +339,15 @@ const onQuestionSwiperChange = (e: any) => {
 
 const goToFilter = () => {
   showFilter.value = true
+}
+
+const handleMatchmakerFloat = () => {
+  uni.navigateTo({
+    url: '/pages/matchmaker-list/index',
+    fail: () => {
+      uni.showToast({ title: '功能开发中', icon: 'none' })
+    },
+  })
 }
 
 const onFilterConfirm = (data: FilterData) => {
@@ -548,7 +564,7 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 24rpx 24rpx 32rpx;
+  padding: 36rpx 24rpx 32rpx;
   margin-bottom: 0;
 }
 
@@ -580,16 +596,16 @@ const onShareTimeline = () => {
 
 .hot-questions-card {
   background-color: #FFF8FA;
-  padding: 28rpx 28rpx 20rpx;
-  margin: 0 28rpx 24rpx;
-  border-radius: 20rpx;
+  padding: 16rpx 20rpx 14rpx;
+  margin: 0 28rpx 20rpx;
+  border-radius: 16rpx;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
 }
 
 .section-title-row {
@@ -598,18 +614,18 @@ const onShareTimeline = () => {
 }
 
 .section-title-icon {
-  font-size: 30rpx;
-  margin-right: 8rpx;
+  font-size: 24rpx;
+  margin-right: 6rpx;
 }
 
 .section-title {
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
   color: var(--text);
 }
 
 .section-more {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #FF6B9D;
   letter-spacing: 1rpx;
 }
@@ -622,19 +638,19 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 180rpx;
-  padding: 0 8rpx;
+  height: 140rpx;
+  padding: 0 4rpx;
 }
 
 .question-text-area {
   flex: 1;
   min-width: 0;
-  padding-right: 20rpx;
+  padding-right: 16rpx;
 }
 
 .question-slide-title {
-  font-size: 28rpx;
-  line-height: 1.6;
+  font-size: 26rpx;
+  line-height: 1.5;
   color: var(--text);
   white-space: normal;
   word-break: break-all;
@@ -652,11 +668,11 @@ const onShareTimeline = () => {
 }
 
 .question-avatar {
-  width: 52rpx;
-  height: 52rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
   border: 2px solid #fff;
-  margin-left: -16rpx;
+  margin-left: -14rpx;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
 
   &:first-child {
@@ -668,20 +684,20 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 16rpx;
-  gap: 12rpx;
+  padding-top: 10rpx;
+  gap: 10rpx;
 }
 
 .question-dot {
-  width: 12rpx;
-  height: 12rpx;
+  width: 10rpx;
+  height: 10rpx;
   border-radius: 50%;
   background-color: #FFCDD6;
   transition: all 0.3s;
 
   &.active {
-    width: 24rpx;
-    border-radius: 6rpx;
+    width: 20rpx;
+    border-radius: 5rpx;
     background-color: #FF6B9D;
   }
 }
@@ -730,9 +746,16 @@ const onShareTimeline = () => {
 .filter-btn {
   display: flex;
   align-items: center;
-  padding: 12rpx 24rpx;
+  gap: 6rpx;
+  padding: 10rpx 20rpx;
   background-color: #FFF5F7;
   border-radius: 24rpx;
+}
+
+.filter-icon {
+  font-size: 24rpx;
+  color: #FF6B9D;
+  line-height: 1;
 }
 
 .filter-btn-text {
@@ -775,6 +798,37 @@ const onShareTimeline = () => {
 
 .bottom-safe-area {
   height: 40rpx;
+}
+
+// Hi红娘悬浮按钮
+.float-matchmaker {
+  position: fixed;
+  right: 24rpx;
+  bottom: 260rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB0 100%);
+  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+
+  .float-hi {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+  }
+
+  .float-label {
+    font-size: 20rpx;
+    color: #fff;
+    line-height: 1.2;
+    opacity: 0.9;
+  }
 }
 
 </style>
