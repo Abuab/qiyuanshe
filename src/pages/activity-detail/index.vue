@@ -1,7 +1,7 @@
 <template>
   <view class="activity-detail-page">
     <!-- 顶部导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-back" @tap="goBack">
         <text class="nav-back-icon">←</text>
       </view>
@@ -9,7 +9,7 @@
       <view class="nav-placeholder"></view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex v-if="activity">
+    <scroll-view class="content-scroll" scroll-y enable-flex v-if="activity" :style="{ height: scrollHeight }">
       <!-- 顶部海报大图 -->
       <view class="cover-wrapper">
         <image class="cover-image" :src="activity.coverImage" mode="aspectFill" />
@@ -226,6 +226,9 @@ interface Activity {
 const activity = ref<Activity | null>(null)
 const signupAvatars = ref<string[]>([])
 const showSignupPopup = ref(false)
+const statusBarHeight = ref(0)
+const navHeight = computed(() => 44 + statusBarHeight.value) // 88rpx内容 + 状态栏
+const scrollHeight = computed(() => `calc(100vh - ${navHeight.value}px)`)
 const matchmakerVisible = ref(false)
 const matchmakerListVisible = ref(false)
 const matchmakerList = ref<any[]>([])
@@ -412,6 +415,10 @@ function goBack() {
 }
 
 onMounted(() => {
+  // 获取状态栏高度（刘海屏安全区域适配）
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 0
+
   // 激活右上角原生分享按钮
   uni.showShareMenu({
     withShareTicket: true,
@@ -455,13 +462,11 @@ const onShareAppMessage = () => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  padding-top: var(--status-bar-height);
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-sizing: content-box;
 
   .nav-back {
     width: 60rpx;
@@ -490,7 +495,7 @@ const onShareAppMessage = () => {
 
 /* 内容滚动区 */
 .content-scroll {
-  height: calc(100vh - 208rpx - var(--status-bar-height));
+  /* height 由 JS computed scrollHeight 内联设置 */
 }
 
 /* 封面图 */

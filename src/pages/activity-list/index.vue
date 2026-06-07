@@ -1,7 +1,7 @@
 <template>
   <view class="activity-list-page">
     <!-- 顶部导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-back" @tap="goBack">
         <text class="nav-back-icon">←</text>
       </view>
@@ -104,6 +104,7 @@ const tabs = [
 ]
 
 const currentTab = ref('latest')
+const statusBarHeight = ref(0)
 const activityList = ref<Activity[]>([])
 const isRefreshing = ref(false)
 const loading = ref(false)
@@ -204,6 +205,8 @@ function goBack() {
 }
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 0
   fetchActivities(true)
 })
 </script>
