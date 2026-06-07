@@ -40,8 +40,6 @@
       enable-flex
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
-      :scroll-top="scrollToTop"
-      @scroll="onScroll"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
     >
@@ -151,11 +149,6 @@
 
     <tab-bar />
 
-    <!-- 返回顶部悬浮按钮 -->
-    <view v-show="showBackToTop" class="float-back-top" @tap="handleBackToTop">
-      <text class="back-top-icon">🚀</text>
-    </view>
-
     <!-- Hi红娘悬浮按钮 -->
     <view class="float-matchmaker" @tap="handleMatchmakerFloat">
       <text class="float-hi">Hi</text>
@@ -259,9 +252,6 @@ const showNotice = ref(true)
 const notices = ref<any[]>([])
 const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
-// 返回顶部
-const showBackToTop = ref(false)
-const scrollToTop = ref(0)
 // 红娘弹窗
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -418,17 +408,6 @@ const onSelectMatchmaker = (matchmaker: any) => {
   showMatchmakerList.value = false
   selectedMatchmaker.value = matchmaker
   showMatchmaker.value = true
-}
-
-const onScroll = (e: any) => {
-  showBackToTop.value = (e.detail?.scrollTop || 0) > 600
-}
-
-const handleBackToTop = () => {
-  scrollToTop.value = 1
-  nextTick(() => {
-    scrollToTop.value = 0
-  })
 }
 
 const onFilterConfirm = (data: FilterData) => {
@@ -903,32 +882,11 @@ const onShareTimeline = () => {
   height: 40rpx;
 }
 
-// 返回顶部悬浮按钮
-.float-back-top {
-   position: fixed;
-   right: 24rpx;
-   bottom: 340rpx;
-   width: 84rpx;
-   height: 84rpx;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.12);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 998;
-
-  .back-top-icon {
-    font-size: 36rpx;
-    line-height: 1;
-  }
-}
-
 // Hi红娘悬浮按钮
 .float-matchmaker {
   position: fixed;
   right: 24rpx;
-  bottom: 210rpx;
+  bottom: 260rpx;
   width: 100rpx;
   height: 100rpx;
   border-radius: 50%;
