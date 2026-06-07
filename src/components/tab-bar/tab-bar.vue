@@ -150,7 +150,7 @@ defineExpose({
   flex: 1;
   height: 100%;
   position: relative;
-  padding-top: 12rpx;
+  padding-top: 10rpx;
 }
 
 .icon-wrapper {
@@ -160,7 +160,6 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
 }
 
 .tab-icon {
@@ -171,25 +170,27 @@ defineExpose({
 
 .badge {
   position: absolute;
-  top: -8rpx;
-  right: -12rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
+  top: -6rpx;
+  right: -10rpx;
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 8rpx;
   background-color: #ff4d4f;
   color: #fff;
-  font-size: 18rpx;
-  border-radius: 14rpx;
+  font-size: 20rpx;
+  font-weight: 500;
+  border-radius: 17rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .tab-text {
   font-size: 22rpx;
   color: #999;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
 
   &.active {
     color: #FF6B9D;
