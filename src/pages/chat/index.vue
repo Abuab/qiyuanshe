@@ -91,7 +91,7 @@
       </view>
     </view>
 
-    <view class="input-area" :style="{ paddingBottom: keyboardHeight + 'px' }">
+    <view class="input-area" :style="{ paddingBottom: (16 + keyboardHeight + safeAreaBottom) + 'px' }">
       <view class="input-wrapper">
         <view class="input-box">
           <textarea
@@ -159,6 +159,7 @@ const noMore = ref(false)
 const scrollTop = ref(0)
 const scrollIntoView = ref('')
 const keyboardHeight = ref(0)
+const safeAreaBottom = ref(0)
 const showVipLimit = ref(false)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
@@ -181,6 +182,10 @@ const placeholder = computed(() => {
 
 onMounted(() => {
   const pages = getCurrentPages()
+
+  // 获取安全区域底部高度
+  const windowInfo = uni.getWindowInfo()
+  safeAreaBottom.value = windowInfo.safeAreaInsets?.bottom || 0
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}
 
@@ -574,7 +579,7 @@ const handleBack = () => {
 
 .message-list {
   flex: 1;
-  padding: 108rpx 24rpx 148rpx;
+  padding: 108rpx 24rpx 160rpx;
   height: calc(100vh - 88rpx);
 }
 
@@ -678,7 +683,7 @@ const handleBack = () => {
   right: 0;
   background-color: #fff;
   padding: 12rpx 24rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  padding-bottom: 0;
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
