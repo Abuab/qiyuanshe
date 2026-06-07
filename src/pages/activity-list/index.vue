@@ -1,7 +1,7 @@
 <template>
   <view class="activity-list-page">
     <!-- 顶部导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-back" @tap="goBack">
         <text class="nav-back-icon">←</text>
       </view>
@@ -110,6 +110,7 @@ const loading = ref(false)
 const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
+const statusBarHeight = ref(0)
 const pageSize = 10
 
 function getStatusText(status: number) {
@@ -204,6 +205,8 @@ function goBack() {
 }
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchActivities(true)
 })
 </script>
@@ -219,8 +222,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: calc(88rpx + var(--status-bar-height));
-  padding: var(--status-bar-height) 24rpx 0;
+  padding: 0 24rpx;
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
 
