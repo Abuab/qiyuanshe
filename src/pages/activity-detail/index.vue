@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar">
       <view class="nav-back" @tap="goBack">
-        <text class="nav-back-icon">&#xe679;</text>
+        <text class="nav-back-icon">←</text>
       </view>
       <text class="nav-title">活动详情</text>
       <view class="nav-placeholder"></view>
@@ -99,11 +99,11 @@
     <view v-if="activity" class="bottom-bar">
       <view class="bottom-left">
         <view class="action-btn" @tap="handleShare">
-          <text class="action-icon">&#xe6a5;</text>
+          <text class="action-icon action-icon-share">↗</text>
           <text class="action-text">分享</text>
         </view>
         <view class="action-btn" @tap="showMatchmakerPopup">
-          <text class="action-icon">&#xe6a1;</text>
+          <text class="action-icon action-icon-chat">✎</text>
           <text class="action-text">咨询</text>
         </view>
       </view>
@@ -445,7 +445,7 @@ const onShareAppMessage = () => {
 .activity-detail-page {
   min-height: 100vh;
   background-color: #f5f5f5;
-  padding-bottom: 120rpx;
+  padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
 }
 
 /* 顶部导航栏 */
@@ -455,6 +455,7 @@ const onShareAppMessage = () => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
+  padding-top: var(--status-bar-height);
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
   position: sticky;
@@ -469,13 +470,14 @@ const onShareAppMessage = () => {
     justify-content: center;
 
     .nav-back-icon {
-      font-size: 36rpx;
+      font-size: 52rpx;
       color: #333;
+      line-height: 1;
     }
   }
 
   .nav-title {
-    font-size: 36rpx;
+    font-size: 34rpx;
     font-weight: bold;
     color: #333;
   }
@@ -487,7 +489,7 @@ const onShareAppMessage = () => {
 
 /* 内容滚动区 */
 .content-scroll {
-  height: calc(100vh - 208rpx);
+  height: calc(100vh - 208rpx - var(--status-bar-height));
 }
 
 /* 封面图 */
@@ -668,18 +670,20 @@ const onShareAppMessage = () => {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120rpx;
+  height: 110rpx;
   background-color: #fff;
   border-top: 1rpx solid #eee;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 24rpx;
   padding-bottom: env(safe-area-inset-bottom);
   z-index: 100;
+  box-sizing: content-box;
 
   .bottom-left {
-    width: 40%;
     display: flex;
-    justify-content: space-around;
+    gap: 32rpx;
     align-items: center;
     height: 100%;
 
@@ -688,46 +692,56 @@ const onShareAppMessage = () => {
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2rpx;
+      padding: 0 12rpx;
 
       .action-icon {
-        font-size: 40rpx;
+        font-size: 36rpx;
+        color: #999;
+        line-height: 1.2;
+      }
+
+      .action-icon-share {
         color: #666;
-        margin-bottom: 4rpx;
+      }
+
+      .action-icon-chat {
+        color: #666;
       }
 
       .action-text {
-        font-size: 24rpx;
-        color: #666;
+        font-size: 22rpx;
+        color: #999;
       }
     }
   }
 
   .bottom-right {
-    width: 60%;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0 24rpx;
+    height: 100%;
 
     .signup-btn {
-      width: 100%;
-      height: 80rpx;
-      background-color: #ff6b9d;
+      width: 240rpx;
+      height: 72rpx;
+      background: linear-gradient(135deg, #FF6B9D 0%, #FF85A8 100%);
       color: #fff;
-      font-size: 32rpx;
+      font-size: 30rpx;
       font-weight: bold;
-      border-radius: 40rpx;
+      border-radius: 36rpx;
       display: flex;
       align-items: center;
       justify-content: center;
 
       &.disabled {
-        background-color: #ccc;
+        background: #ccc;
+        color: #fff;
       }
 
       &.ended {
-        background-color: #999;
-        font-size: 28rpx;
+        background: #ccc;
+        color: #999;
+        font-size: 26rpx;
       }
     }
   }

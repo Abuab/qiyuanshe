@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar">
       <view class="nav-back" @tap="goBack">
-        <text class="nav-back-icon">&#xe679;</text>
+        <text class="nav-back-icon">←</text>
       </view>
       <text class="nav-title">活动</text>
       <view class="nav-placeholder"></view>
