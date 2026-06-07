@@ -461,6 +461,7 @@ const onShareAppMessage = () => {
   position: sticky;
   top: 0;
   z-index: 100;
+  box-sizing: content-box;
 
   .nav-back {
     width: 60rpx;
