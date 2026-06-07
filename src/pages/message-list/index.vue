@@ -254,6 +254,25 @@ const showSystemDetail = (item: SystemMessage) => {
     title: '系统通知',
     content: item.content,
     showCancel: false,
+    success: async () => {
+      // 标记已读
+      try {
+        await request({
+          url: `/notifications/${item.id}/read`,
+          method: 'PUT',
+        })
+        // 从列表中移除该条目的未读数
+        const idx = messageList.value.findIndex((m) => m.id === item.id)
+        if (idx !== -1) {
+          messageList.value[idx] = { ...messageList.value[idx], unreadCount: 0 }
+        }
+        // 重新计算并保存未读总数
+        const totalUnread = messageList.value.reduce((sum: number, m: MessageItem) => sum + m.unreadCount, 0)
+        uni.setStorageSync('unreadMessageCount', totalUnread)
+      } catch {
+        // 静默
+      }
+    },
   })
 }
 
