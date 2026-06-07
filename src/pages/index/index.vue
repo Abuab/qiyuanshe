@@ -1,7 +1,7 @@
 <template>
   <view class="index-page">
     <!-- 顶部粉色连续区域：导航栏区域 + 通知栏 + 功能图标 -->
-    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }">
+    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
       <view class="header" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="header-content">
           <text class="brand-title">栖缘社</text>
