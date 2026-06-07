@@ -107,9 +107,14 @@
 
         <view class="filter-btn" @tap="goToFilter">
           <view class="filter-icon">
-            <view class="filter-line" style="width: 8rpx"></view>
-            <view class="filter-line" style="width: 16rpx"></view>
-            <view class="filter-line" style="width: 24rpx"></view>
+            <view class="filter-row">
+              <view class="filter-dot"></view>
+              <view class="filter-bar" style="width: 20rpx"></view>
+            </view>
+            <view class="filter-row">
+              <view class="filter-dot"></view>
+              <view class="filter-bar" style="width: 14rpx"></view>
+            </view>
           </view>
           <text class="filter-btn-text">筛选</text>
         </view>
@@ -812,15 +817,27 @@ const onShareTimeline = () => {
 .filter-icon {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 4rpx;
-  width: 24rpx;
+  gap: 5rpx;
 }
 
-.filter-line {
-  height: 4rpx;
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.filter-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
   background-color: #FF6B9D;
-  border-radius: 2rpx;
+  flex-shrink: 0;
+}
+
+.filter-bar {
+  height: 5rpx;
+  background-color: #FF6B9D;
+  border-radius: 3rpx;
 }
 
 .filter-btn-text {
