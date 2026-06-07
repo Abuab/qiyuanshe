@@ -221,8 +221,10 @@ onMounted(() => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
+  padding-top: var(--status-bar-height);
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
+  box-sizing: content-box;
 
   .nav-back {
     width: 60rpx;
