@@ -94,15 +94,16 @@
     <view class="input-area" :style="{ paddingBottom: (16 + keyboardHeight + safeAreaBottom) + 'px' }">
       <view class="input-wrapper">
         <view class="input-box">
-          <textarea
+          <input
             v-model="inputContent"
             class="message-input"
+            type="text"
+            confirm-type="send"
             :placeholder="placeholder"
-            :adjust-position="false"
-            :show-confirm-bar="false"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInput"
+            @confirm="handleSend"
           />
         </view>
         <view class="action-buttons">
@@ -579,7 +580,7 @@ const handleBack = () => {
 
 .message-list {
   flex: 1;
-  padding: 108rpx 24rpx 160rpx;
+  padding: 108rpx 24rpx 108rpx;
   height: calc(100vh - 88rpx);
 }
 
@@ -682,7 +683,7 @@ const handleBack = () => {
   left: 0;
   right: 0;
   background-color: #fff;
-  padding: 12rpx 24rpx;
+  padding: 8rpx 24rpx;
   padding-bottom: 0;
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
@@ -697,18 +698,18 @@ const handleBack = () => {
   flex: 1;
   background-color: #f5f5f5;
   border-radius: 24rpx;
-  padding: 10rpx 20rpx;
+  padding: 4rpx 16rpx;
   display: flex;
   align-items: center;
+  height: 68rpx;
 }
 
 .message-input {
   width: 100%;
-  min-height: 36rpx;
-  max-height: 160rpx;
+  height: 60rpx;
   font-size: 28rpx;
   color: #333;
-  line-height: 1.4;
+  line-height: 60rpx;
 }
 
 .action-buttons {
