@@ -453,15 +453,13 @@ const onShareAppMessage = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
-  padding: 0 24rpx;
-  padding-top: var(--status-bar-height);
+  height: calc(88rpx + var(--status-bar-height));
+  padding: var(--status-bar-height) 24rpx 0;
   background-color: #fff;
   border-bottom: 1rpx solid #eee;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-sizing: content-box;
 
   .nav-back {
     width: 60rpx;
@@ -490,7 +488,7 @@ const onShareAppMessage = () => {
 
 /* 内容滚动区 */
 .content-scroll {
-  height: calc(100vh - 208rpx - var(--status-bar-height));
+  height: calc(100vh - 89rpx - var(--status-bar-height));
 }
 
 /* 封面图 */
