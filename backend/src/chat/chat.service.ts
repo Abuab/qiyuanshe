@@ -1,9 +1,8 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource, In, MoreThan, LessThan } from 'typeorm'
+import { Repository, In, MoreThan, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
-import { Follow } from '../entities/Follow'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 
 @Injectable()
@@ -16,9 +15,6 @@ export class ChatService {
     private readonly messageRepository: Repository<ChatMessage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Follow)
-    private readonly followRepository: Repository<Follow>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async sendMessage(userId: number, dto: SendMessageDto): Promise<ChatMessage> {
@@ -43,17 +39,6 @@ export class ChatService {
       if (todayCount >= this.dailyFreeMessages) {
         throw new ForbiddenException('今日消息已用完，开通会员即可无限畅聊')
       }
-    }
-
-    const isFollowing = await this.followRepository.findOne({
-      where: [
-        { userId: userId, targetUserId: toUserId },
-        { userId: toUserId, targetUserId: userId },
-      ],
-    })
-
-    if (!isFollowing) {
-      throw new ForbiddenException('需要互相关注才能聊天')
     }
 
     const message = this.messageRepository.create({

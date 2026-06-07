@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { ChatMessage, User, Follow } from '../entities'
+import { ChatMessage, User } from '../entities'
 import { ChatController } from './chat.controller'
 import { ChatService } from './chat.service'
 
@@ -9,7 +9,6 @@ import { ChatService } from './chat.service'
     TypeOrmModule.forFeature([
       ChatMessage,
       User,
-      Follow,
     ]),
   ],
   controllers: [ChatController],
