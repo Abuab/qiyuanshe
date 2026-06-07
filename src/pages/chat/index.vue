@@ -574,8 +574,8 @@ const handleBack = () => {
 
 .message-list {
   flex: 1;
-  padding: 108rpx 24rpx 160rpx;
-  height: calc(100vh - 88rpx - 160rpx);
+  padding: 108rpx 24rpx 140rpx;
+  height: calc(100vh - 88rpx);
 }
 
 .loading-tip,
@@ -677,64 +677,68 @@ const handleBack = () => {
   left: 0;
   right: 0;
   background-color: #fff;
-  padding: 16rpx 24rpx;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .input-wrapper {
   display: flex;
-  align-items: flex-end;
-  gap: 16rpx;
+  align-items: center;
+  gap: 12rpx;
 }
 
 .input-box {
   flex: 1;
   background-color: #f5f5f5;
   border-radius: 24rpx;
-  padding: 16rpx 24rpx;
+  padding: 10rpx 20rpx;
+  display: flex;
+  align-items: center;
 }
 
 .message-input {
   width: 100%;
-  min-height: 48rpx;
-  max-height: 200rpx;
-  font-size: 30rpx;
+  min-height: 36rpx;
+  max-height: 160rpx;
+  font-size: 28rpx;
   color: #333;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .action-buttons {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
 }
 
 .action-btn {
-  width: 72rpx;
-  height: 72rpx;
+  width: 60rpx;
+  height: 60rpx;
   background-color: #f5f5f5;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 
   text {
-    font-size: 36rpx;
+    font-size: 32rpx;
   }
 }
 
 .send-btn {
-  height: 72rpx;
-  padding: 0 32rpx;
+  height: 60rpx;
+  padding: 0 28rpx;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 36rpx;
+  border-radius: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 
   text {
-    font-size: 28rpx;
+    font-size: 26rpx;
     font-weight: bold;
     color: #fff;
   }
