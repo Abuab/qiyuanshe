@@ -574,7 +574,7 @@ const handleBack = () => {
 
 .message-list {
   flex: 1;
-  padding: 108rpx 24rpx 140rpx;
+  padding: 108rpx 24rpx 148rpx;
   height: calc(100vh - 88rpx);
 }
 
@@ -678,7 +678,7 @@ const handleBack = () => {
   right: 0;
   background-color: #fff;
   padding: 12rpx 24rpx;
-  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
