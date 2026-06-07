@@ -1,7 +1,7 @@
 <template>
   <view class="dynamic-page">
     <!-- 顶部导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left">
         <text class="back-icon" @tap="handleBack">←</text>
       </view>
@@ -17,6 +17,7 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
+      :style="{ paddingTop: (44 + statusBarHeight) + 'px' }"
     >
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无动态，快去发布第一条吧</text>
@@ -144,6 +145,7 @@ const isRefreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const pageSize = 10
+const statusBarHeight = ref(0)
 const userStore = useUserStore()
 
 const formatTime = (dateStr: string): string => {
@@ -307,6 +309,8 @@ const handleBack = () => {
 }
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchList(true)
 })
 </script>
@@ -322,11 +326,10 @@ onMounted(() => {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + var(--status-bar-height));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--status-bar-height) 32rpx 0;
+  padding: 0 32rpx;
   background-color: #fff;
   z-index: 100;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -357,7 +360,6 @@ onMounted(() => {
 
 .content-scroll {
   height: 100vh;
-  padding-top: calc(88rpx + var(--status-bar-height));
   padding-bottom: 160rpx;
 }
 

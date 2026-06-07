@@ -1,8 +1,8 @@
 <template>
   <view class="index-page">
     <!-- 顶部粉色连续区域：导航栏区域 + 通知栏 + 功能图标 -->
-    <view class="top-pink-area">
-      <view class="header">
+    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }">
+      <view class="header" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="header-content">
           <text class="brand-title">栖缘社</text>
           <view class="header-capsule"></view>
@@ -42,6 +42,7 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
+      :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }"
     >
       <!-- 热门问答轮播卡片 -->
       <view class="hot-questions-card">
@@ -242,6 +243,7 @@ const showFilter = ref(false)
 const showNotice = ref(true)
 const notices = ref<any[]>([])
 const questionSwiperIndex = ref(0)
+const statusBarHeight = ref(0)
 // 红娘弹窗
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -461,6 +463,9 @@ onMounted(() => {
   // eslint-disable-next-line no-console
   console.log('[首页] BUILD=v15-6a3f1c0')
 
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+
   // 公告通知栏
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
@@ -546,7 +551,6 @@ const onShareTimeline = () => {
   left: 0;
   right: 0;
   z-index: 100;
-  padding-top: var(--status-bar-height);
 }
 
 .header-content {
@@ -571,7 +575,6 @@ const onShareTimeline = () => {
 
 .top-pink-area {
   background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFFFFF 100%);
-  padding-top: calc(var(--status-bar-height) + 88rpx);
 }
 
 .notice-bar {

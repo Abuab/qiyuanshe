@@ -1,7 +1,7 @@
 <template>
   <view class="vip-page">
     <!-- 顶部导航 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
@@ -9,7 +9,7 @@
       <view class="nav-right"></view>
     </view>
 
-    <scroll-view class="page-content" scroll-y enable-flex>
+    <scroll-view class="page-content" scroll-y enable-flex :style="{ paddingTop: (44 + statusBarHeight) + 'px' }">
       <!-- 头部标题 + 特权列表 -->
       <view class="header-section">
         <text class="header-title">开通会员，享受专属特权</text>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -153,6 +153,12 @@ interface VipPackage {
 
 const userStore = useUserStore()
 const selectedLevel = ref(1)
+const statusBarHeight = ref(0)
+
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+})
 
 const packages: VipPackage[] = [
   {
@@ -288,11 +294,10 @@ const handleBack = () => {
   top: 0;
   left: 0;
   right: 0;
-  height: calc(88rpx + var(--status-bar-height));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--status-bar-height) 32rpx 0;
+  padding: 0 32rpx;
   background-color: #fff;
   z-index: 100;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
@@ -322,7 +327,6 @@ const handleBack = () => {
 // ========== 可滚动内容 ==========
 .page-content {
   flex: 1;
-  padding-top: calc(88rpx + var(--status-bar-height));
 }
 
 // ========== 头部标题 + 特权 ==========
