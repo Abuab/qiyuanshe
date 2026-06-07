@@ -42,7 +42,6 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
-      :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }"
     >
       <!-- 热门问答轮播卡片 -->
       <view class="hot-questions-card">
@@ -551,6 +550,7 @@ const onShareTimeline = () => {
   left: 0;
   right: 0;
   z-index: 100;
+  background-color: #FFE4EC;
 }
 
 .header-content {
