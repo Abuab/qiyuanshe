@@ -12,7 +12,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common'
 import { ChatService } from './chat.service'
-import { SendMessageDto, QueryMessagesDto, QueryConversationsDto } from './dto'
+import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
 
 @Controller('chat')
@@ -27,6 +27,16 @@ export class ChatController {
     return {
       success: true,
       data: message,
+    }
+  }
+
+  @Get('messages/poll')
+  async pollMessages(@Query() dto: PollMessagesDto, @Request() req: any) {
+    const list = await this.chatService.pollMessages(req.user.userId, dto)
+
+    return {
+      success: true,
+      data: { list },
     }
   }
 

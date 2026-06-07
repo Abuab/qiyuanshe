@@ -43,3 +43,14 @@ export class QueryConversationsDto {
   @Type(() => Number)
   limit: number = 20
 }
+
+export class PollMessagesDto {
+  @IsNumber()
+  @Type(() => Number)
+  userId: number
+
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  afterId: number = 0
+}

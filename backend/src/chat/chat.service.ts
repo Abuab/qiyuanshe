@@ -4,7 +4,7 @@ import { Repository, DataSource, In, MoreThan, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { Follow } from '../entities/Follow'
-import { SendMessageDto, QueryMessagesDto, QueryConversationsDto } from './dto'
+import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 
 @Injectable()
 export class ChatService {
@@ -97,6 +97,24 @@ export class ChatService {
     }))
 
     return { list: messagesWithMine.reverse(), total }
+  }
+
+  async pollMessages(userId: number, dto: PollMessagesDto): Promise<ChatMessage[]> {
+    const { userId: toUserId, afterId } = dto
+
+    const messages = await this.messageRepository.find({
+      where: [
+        { fromUserId: userId, toUserId, id: MoreThan(afterId) },
+        { fromUserId: toUserId, toUserId: userId, id: MoreThan(afterId) },
+      ],
+      order: { createdAt: 'ASC' },
+      relations: ['fromUser', 'toUser'],
+    })
+
+    return messages.map((msg) => ({
+      ...msg,
+      isMine: msg.fromUserId === userId,
+    }))
   }
 
   async getConversations(
