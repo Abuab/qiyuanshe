@@ -67,4 +67,23 @@ export class SystemService {
       }
     }
   }
+
+  /**
+   * 获取当前项目名称，用于模板变量替换
+   */
+  async getAppName(): Promise<string> {
+    const config = await this.configRepository.findOne({
+      where: { configKey: 'basic.appName' },
+    })
+    return config?.configValue || '栖缘社'
+  }
+
+  /**
+   * 替换文本中的模板变量 {{appName}}
+   */
+  async replaceTemplateVars(text: string): Promise<string> {
+    if (!text) return text
+    const appName = await this.getAppName()
+    return text.replace(/\{\{appName\}\}/g, appName)
+  }
 }

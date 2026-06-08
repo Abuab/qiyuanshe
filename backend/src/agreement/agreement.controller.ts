@@ -14,10 +14,14 @@ import { AgreementService } from './agreement.service'
 import { CreateAgreementDto, UpdateAgreementDto } from './dto'
 import { AgreementType } from '../entities/Agreement'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { SystemService } from '../system/system.service'
 
 @Controller()
 export class AgreementController {
-  constructor(private readonly agreementService: AgreementService) {}
+  constructor(
+    private readonly agreementService: AgreementService,
+    private readonly systemService: SystemService,
+  ) {}
 
   /**
    * 小程序端：获取当前生效的协议
@@ -26,7 +30,10 @@ export class AgreementController {
   @Get('agreement')
   async getActive(@Query('type') type: AgreementType) {
     const agreement = await this.agreementService.getActive(type)
-    return agreement || null
+    if (!agreement) return null
+    // 替换模板变量 {{appName}}
+    agreement.content = await this.systemService.replaceTemplateVars(agreement.content)
+    return agreement
   }
 
   /**

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Notice } from '../entities/Notice'
 import { Result } from '../common/result'
+import { SystemService } from '../system/system.service'
 
 @Controller('notices')
 export class UserNoticeController {
   constructor(
     @InjectRepository(Notice)
     private readonly repo: Repository<Notice>,
+    private readonly systemService: SystemService,
   ) {}
 
   @Get()
@@ -17,6 +19,10 @@ export class UserNoticeController {
       where: { status: 1 },
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     })
+    // 替换模板变量 {{appName}}
+    for (const notice of notices) {
+      notice.content = await this.systemService.replaceTemplateVars(notice.content)
+    }
     return Result.success(notices)
   }
 
@@ -26,6 +32,8 @@ export class UserNoticeController {
     if (!notice) {
       return Result.notFound('公告不存在')
     }
+    // 替换模板变量 {{appName}}
+    notice.content = await this.systemService.replaceTemplateVars(notice.content)
     return Result.success(notice)
   }
 }
