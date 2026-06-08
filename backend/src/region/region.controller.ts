@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { RegionService } from './region.service'
 import { Result } from '../common/result'
 
-@Controller('api')
+@Controller('region')
 export class RegionController {
   constructor(private readonly regionService: RegionService) {}
 

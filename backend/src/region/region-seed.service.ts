@@ -11,15 +11,19 @@ export class RegionSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    const count = await this.repo.count()
-    if (count > 0) return
+    try {
+      const count = await this.repo.count()
+      if (count > 0) return
 
-    console.log('[RegionSeed] 开始导入行政区划数据...')
-    await this.seedProvinces()
-    await this.seedData('city', this.getCities())
-    await this.seedData('district', this.getDistricts())
-    await this.seedData('street', this.getStreets())
-    console.log('[RegionSeed] 行政区划数据导入完成')
+      console.log('[RegionSeed] 开始导入行政区划数据...')
+      await this.seedProvinces()
+      await this.seedData('city', this.getCities())
+      await this.seedData('district', this.getDistricts())
+      await this.seedData('street', this.getStreets())
+      console.log('[RegionSeed] 行政区划数据导入完成')
+    } catch (error: any) {
+      console.error('[RegionSeed] 导入失败（不影响应用启动）:', error?.message || error)
+    }
   }
 
   private async seedProvinces() {
