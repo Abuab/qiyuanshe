@@ -141,12 +141,15 @@
           </picker>
         </view>
 
-        <view class="form-item">
+        <view class="form-item" @tap="openCityPicker('hometown')">
           <text class="form-label">户籍地</text>
-          <input class="form-input" v-model="form.hometown" placeholder="请输入户籍地" maxlength="50" />
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.hometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.hometown || '请选择户籍地' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+          </view>
         </view>
 
-        <view class="form-item" @tap="openCityPicker">
+        <view class="form-item" @tap="openCityPicker('residence')">
           <text class="form-label">现居地</text>
           <view class="form-picker">
             <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
@@ -445,6 +448,7 @@ const tempTags = ref<string[]>([])
 
 // 城市选择器
 const showCityPicker = ref(false)
+const cityTarget = ref<'residence' | 'hometown'>('residence')
 
 // ===== 初始化 =====
 onMounted(() => {
@@ -629,11 +633,16 @@ const removeHopeTaTag = (idx: number) => {
 }
 
 // ===== 城市选择器 =====
-const openCityPicker = () => {
+const openCityPicker = (target: 'residence' | 'hometown' = 'residence') => {
+  cityTarget.value = target
   showCityPicker.value = true
 }
 const onCityConfirm = (value: string, _ids: number[]) => {
-  form.value.residence = value
+  if (cityTarget.value === 'hometown') {
+    form.value.hometown = value
+  } else {
+    form.value.residence = value
+  }
   showCityPicker.value = false
 }
 
