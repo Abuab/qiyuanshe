@@ -537,12 +537,12 @@ const handleBack = () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8rpx;
   height: 60rpx;
 
   text {
     font-size: 28rpx;
     color: #333;
+    text-align: right;
   }
 }
 
