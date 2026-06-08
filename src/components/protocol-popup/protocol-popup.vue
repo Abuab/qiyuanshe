@@ -277,7 +277,8 @@ defineExpose({
 .protocol-card {
   position: relative;
   width: 640rpx;
-  max-height: 80vh;
+  height: 75vh;
+  max-height: 75vh;
   background-color: #fff;
   border-radius: 24rpx;
   display: flex;
@@ -302,29 +303,33 @@ defineExpose({
   flex: 1;
   padding: 0 40rpx;
   min-height: 0;
+  height: 0;
+  overflow-y: auto;
 }
 
 .protocol-text {
   padding: 10rpx 0 16rpx;
-  display: flex;
-  flex-direction: column;
 }
 
 .text-normal {
   font-size: 26rpx;
   color: var(--text);
-  line-height: 2;
+  line-height: 1.8;
   display: block;
   padding: 4rpx 0;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .text-bold {
   font-size: 28rpx;
   font-weight: bold;
   color: var(--text);
-  line-height: 2.2;
+  line-height: 2;
   display: block;
   padding: 12rpx 0 4rpx;
+  word-break: break-all;
+  white-space: pre-wrap;
 }
 
 .protocol-buttons {
