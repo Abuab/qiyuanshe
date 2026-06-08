@@ -977,12 +977,13 @@ const handleBack = () => {
   justify-content: center;
   width: 56rpx;
   height: 56rpx;
-  border-radius: 30rpx;
+  border-radius: 50%;
   border: 2rpx solid #FFD0E0;
 
   text {
     font-size: 32rpx;
     color: #FF6B9D;
+    line-height: 1;
   }
 }
 

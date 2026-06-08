@@ -61,7 +61,7 @@
           :duration="400"
           :current="questionSwiperIndex"
           @change="onQuestionSwiperChange"
-          :style="{ height: '140rpx' }"
+          :style="{ height: '130rpx' }"
         >
           <swiper-item v-for="q in hotQuestions" :key="q.id">
             <view class="question-slide" @tap="goToQuestionDetail(q.id)">
@@ -671,6 +671,7 @@ const onShareTimeline = () => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0;
+  line-height: 1;
 }
 
 .section-title-row {
@@ -703,7 +704,7 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 140rpx;
+  height: 130rpx;
   padding: 0 4rpx;
 }
 
