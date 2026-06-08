@@ -24,20 +24,22 @@ export const useSystemStore = defineStore('system', () => {
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
+  let initialLoadDone = false
 
   const loadSystemConfig = async () => {
     try {
       const res = await get<SystemConfig>('/system/config')
       if (res) {
         splashText.value = res.splashText || splashText.value
-        appName.value = res.appName || appName.value
-        shareTitle.value = res.shareTitle || shareTitle.value
+        appName.value = res.appName !== undefined ? res.appName : appName.value
+        shareTitle.value = res.shareTitle !== undefined ? res.shareTitle : shareTitle.value
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
         saveToStorage()
+        initialLoadDone = true
       }
     } catch (e) {
-      console.error('Failed to load system config:', e)
+      console.error('[SystemStore] Failed to load system config:', e)
     }
   }
 
@@ -46,13 +48,16 @@ export const useSystemStore = defineStore('system', () => {
     if (storedConfig) {
       try {
         const config = JSON.parse(storedConfig)
-        splashText.value = config.splashText || splashText.value
-        appName.value = config.appName || appName.value
-        shareTitle.value = config.shareTitle || shareTitle.value
-        shareDesc.value = config.shareDesc || shareDesc.value
-        matchmakers.value = config.matchmakers || matchmakers.value
+        // 只有尚未从 API 加载时才使用缓存
+        if (!initialLoadDone) {
+          splashText.value = config.splashText || splashText.value
+          appName.value = config.appName || appName.value
+          shareTitle.value = config.shareTitle || shareTitle.value
+          shareDesc.value = config.shareDesc || shareDesc.value
+          matchmakers.value = config.matchmakers || matchmakers.value
+        }
       } catch (e) {
-        console.error('Failed to parse system config:', e)
+        console.error('[SystemStore] Failed to parse system config:', e)
       }
     }
   }
