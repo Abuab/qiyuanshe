@@ -6,7 +6,7 @@
 
         <view v-if="type === 'vip'" class="agreement-body">
           <text class="section-title">一、服务说明</text>
-          <text class="section-text">栖缘社会员服务是栖缘社为注册用户提供的增值服务。开通会员后可享受会员专属权益，具体权益以页面展示为准。</text>
+          <text class="section-text">{{ systemStore.appName }}会员服务是{{ systemStore.appName }}为注册用户提供的增值服务。开通会员后可享受会员专属权益，具体权益以页面展示为准。</text>
 
           <text class="section-title">二、会员套餐</text>
           <text class="section-text">1. 黄金会员：有效期1个月，价格¥99.00</text>
@@ -23,7 +23,7 @@
           <text class="section-text">2. 如因平台原因导致无法正常使用会员服务，可联系客服协商处理。</text>
 
           <text class="section-title">五、免责条款</text>
-          <text class="section-text">1. 栖缘社仅提供婚恋交友信息展示和匹配服务，不对用户之间的交往行为和结果承担责任。</text>
+          <text class="section-text">1. {{ systemStore.appName }}仅提供婚恋交友信息展示和匹配服务，不对用户之间的交往行为和结果承担责任。</text>
           <text class="section-text">2. 会员在使用过程中应遵守国家法律法规及平台规则。</text>
           <text class="section-text">3. 平台有权根据运营需要调整会员权益和价格，调整前已购买的会员不受影响。</text>
 
@@ -34,7 +34,7 @@
 
         <view v-else-if="type === 'privacy'" class="agreement-body">
           <text class="section-title">隐私政策</text>
-          <text class="section-text">栖缘社尊重并保护所有用户的个人隐私。本隐私政策说明了我们在收集、使用和保护您个人信息方面的做法。</text>
+          <text class="section-text">{{ systemStore.appName }}尊重并保护所有用户的个人隐私。本隐私政策说明了我们在收集、使用和保护您个人信息方面的做法。</text>
 
           <text class="section-title">一、信息收集</text>
           <text class="section-text">1. 您在注册时提供的微信昵称、头像等基本信息。</text>
@@ -52,10 +52,10 @@
 
         <view v-else class="agreement-body">
           <text class="section-title">用户协议</text>
-          <text class="section-text">欢迎使用栖缘社。在使用本平台服务前，请您仔细阅读以下条款。</text>
+          <text class="section-text">欢迎使用{{ systemStore.appName }}。在使用本平台服务前，请您仔细阅读以下条款。</text>
 
           <text class="section-title">一、服务条款</text>
-          <text class="section-text">栖缘社是一个婚恋交友信息展示和匹配平台，仅为用户提供信息交流和匹配服务。</text>
+          <text class="section-text">{{ systemStore.appName }}是一个婚恋交友信息展示和匹配平台，仅为用户提供信息交流和匹配服务。</text>
 
           <text class="section-title">二、用户义务</text>
           <text class="section-text">1. 用户应提供真实、准确的个人信息。</text>
@@ -71,6 +71,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
 
 const type = ref('user')
 const title = ref('用户协议')

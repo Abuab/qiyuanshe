@@ -28,6 +28,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { get } from '@/utils/request'
+import { useSystemStore } from '@/store/system'
 
 interface Props {
   show: boolean
@@ -43,6 +44,7 @@ const emit = defineEmits<{
 const visible = ref(false)
 const agreementTitle = ref('用户协议与隐私政策')
 const agreementContent = ref('')
+const systemStore = useSystemStore()
 let pendingCallback: (() => void) | null = null
 
 /** HTML 元素是否为块级（会换行） */
@@ -139,13 +141,13 @@ const htmlToTextLines = (html: string): { _txt: string; _cls: string }[] => {
 }
 
 // 默认兜底内容（纯文本，无需 HTML 解析也能直接显示）
-const fallbackText = `欢迎使用栖缘社及相关服务。
+const fallbackText = computed(() => `欢迎使用${systemStore.appName}及相关服务。
 
 您需要同意《用户协议》和《隐私政策》才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。
 
 【用户协议】
 一、服务说明
-栖缘社是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。
+${systemStore.appName}是一款婚恋交友平台，旨在帮助用户找到合适的伴侣。我们不对用户发布的内容真实性负责，请用户自行判断。
 
 二、用户注册
 1. 您需要提供真实的个人信息进行注册
@@ -176,7 +178,7 @@ const fallbackText = `欢迎使用栖缘社及相关服务。
 未经您的同意，我们不会与任何第三方共享您的个人信息，法律要求除外。
 
 四、信息安全
-我们采用行业标准的安全措施保护您的个人信息。`
+我们采用行业标准的安全措施保护您的个人信息。`)
 
 /** 计算文本行 */
 const textLines = computed(() => {
@@ -205,11 +207,11 @@ const fetchAgreement = async () => {
       agreementContent.value = res.content
       uni.setStorageSync('agreement_content', res.content)
     } else {
-      agreementContent.value = fallbackText
+      agreementContent.value = fallbackText.value
     }
   } catch (e) {
     console.log('[协议] 接口获取失败，使用兜底内容')
-    agreementContent.value = fallbackText
+    agreementContent.value = fallbackText.value
   }
 }
 
