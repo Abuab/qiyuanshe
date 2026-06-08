@@ -1,9 +1,9 @@
 <template>
-  <view class="city-picker-wrap">
+  <view class="city-picker-wrap" v-show="visible">
     <!-- 蒙层 -->
     <view class="city-mask" @tap="handleClose"></view>
     <!-- 白色面板 -->
-    <view class="city-panel" :class="{ show: visible }">
+    <view class="city-panel" :class="{ show: showPanel }">
       <!-- 标题 + 关闭 -->
       <view class="city-header">
         <text class="city-title">选择城市</text>
@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import request from '@/utils/request'
 
 interface RegionItem {
@@ -87,6 +87,7 @@ const emit = defineEmits<{
 
 // 当前浏览层级：0=省 1=市 2=区 3=街道
 const currentLevel = ref(0)
+const showPanel = ref(false)
 const isLoading = ref(false)
 
 // 已选择的数据
@@ -211,15 +212,22 @@ const handleConfirm = () => {
     names.push(selectedStreet.value.name)
     ids.push(selectedStreet.value.id)
   }
-  emit('confirm', names.join(','), ids)
+  showPanel.value = false
+  setTimeout(() => {
+    emit('confirm', names.join(','), ids)
+  }, 300)
 }
 
 const handleClose = () => {
-  emit('close')
+  showPanel.value = false
+  setTimeout(() => {
+    emit('close')
+  }, 300)
 }
 
 watch(() => props.visible, (val) => {
   if (val) {
+    showPanel.value = false
     currentLevel.value = 0
     selectedProvince.value = null
     selectedCity.value = null
@@ -232,6 +240,12 @@ watch(() => props.visible, (val) => {
     fetchRegions(0).then((list) => {
       provinceList.value = list
     })
+    // 下一帧触发面板滑入动画
+    nextTick(() => {
+      showPanel.value = true
+    })
+  } else {
+    showPanel.value = false
   }
 })
 </script>
