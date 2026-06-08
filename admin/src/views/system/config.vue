@@ -425,8 +425,8 @@ async function handleSave() {
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
-      // 直接设置 systemStore.appName，绕过 API 网络请求，100% 可靠
-      systemStore.appName = basicConfig.appName
+      // 直接写入 store + localStorage，持久化，刷新也不会丢
+      systemStore.setAppName(basicConfig.appName)
       ElMessage.success('配置保存成功')
     } else {
       ElMessage.error(res.message || '保存失败')
