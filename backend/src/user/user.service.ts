@@ -84,18 +84,18 @@ export class UserService {
 
     // 应用筛选条件
     if (filters) {
-      if (filters.ageMin !== undefined) {
+      if (filters.ageMin !== undefined && filters.ageMin !== null && Number.isFinite(filters.ageMin)) {
         const maxBirthYear = new Date().getFullYear() - filters.ageMin
         queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
       }
-      if (filters.ageMax !== undefined) {
+      if (filters.ageMax !== undefined && filters.ageMax !== null && Number.isFinite(filters.ageMax)) {
         const minBirthYear = new Date().getFullYear() - filters.ageMax
         queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
       }
-      if (filters.heightMin !== undefined) {
+      if (filters.heightMin !== undefined && filters.heightMin !== null && Number.isFinite(filters.heightMin)) {
         queryBuilder.andWhere('user.height >= :heightMin', { heightMin: filters.heightMin })
       }
-      if (filters.heightMax !== undefined) {
+      if (filters.heightMax !== undefined && filters.heightMax !== null && Number.isFinite(filters.heightMax)) {
         queryBuilder.andWhere('user.height <= :heightMax', { heightMax: filters.heightMax })
       }
       if (filters.education) {
@@ -222,21 +222,21 @@ export class UserService {
       }
     }
 
-    if (dto.ageMin !== undefined) {
+    if (dto.ageMin !== undefined && dto.ageMin !== null && Number.isFinite(dto.ageMin)) {
       const maxBirthYear = new Date().getFullYear() - dto.ageMin
       queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
     }
 
-    if (dto.ageMax !== undefined) {
+    if (dto.ageMax !== undefined && dto.ageMax !== null && Number.isFinite(dto.ageMax)) {
       const minBirthYear = new Date().getFullYear() - dto.ageMax
       queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
     }
 
-    if (dto.heightMin !== undefined) {
+    if (dto.heightMin !== undefined && dto.heightMin !== null && Number.isFinite(dto.heightMin)) {
       queryBuilder.andWhere('user.height >= :heightMin', { heightMin: dto.heightMin })
     }
 
-    if (dto.heightMax !== undefined) {
+    if (dto.heightMax !== undefined && dto.heightMax !== null && Number.isFinite(dto.heightMax)) {
       queryBuilder.andWhere('user.height <= :heightMax', { heightMax: dto.heightMax })
     }
 

@@ -52,8 +52,8 @@ export class RegionSeedService implements OnModuleInit {
       if (typeof parentRef === 'number') {
         parent = await this.repo.findOne({ where: { id: parentRef, level: 1 } })
       } else if (lv === 3) {
-        // district: parent is city, match by city code (first 4 chars)
-        parent = await this.repo.findOne({ where: { code: parentRef.substring(0, 4), level: 2 } })
+        // district: parent is city, match by full city code
+        parent = await this.repo.findOne({ where: { code: parentRef, level: 2 } })
       } else if (lv === 4) {
         // street: parent is district, match by full district code
         parent = await this.repo.findOne({ where: { code: parentRef, level: 3 } })
