@@ -8,14 +8,11 @@ export const useSystemStore = defineStore('system', () => {
   const fetchSystemConfig = async () => {
     try {
       const res: any = await request.get('/system/config')
-      console.log('[SystemStore] fetchSystemConfig response:', res)
-      // 无论 appName 是什么值都更新，包括空字符串
-      if (res && 'appName' in res) {
-        appName.value = res.appName || ''
-        console.log('[SystemStore] appName updated to:', appName.value)
-      }
+      const name = res?.appName || ''
+      console.log('[systemStore] appName =', name)
+      appName.value = name
     } catch (e) {
-      console.error('[SystemStore] Failed to load system config:', e)
+      console.error('[systemStore] fetch failed:', e)
     }
   }
 
