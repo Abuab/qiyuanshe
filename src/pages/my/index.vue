@@ -1,10 +1,10 @@
 <template>
   <view class="my-page">
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-title">我的</view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex>
+    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 88rpx - 120rpx - ' + statusBarHeight + 'px)' }">
       <!-- 用户信息卡片 -->
       <view class="user-card" @tap="goToLogin" v-if="!isLoggedIn">
         <image class="user-avatar" src="/static/default-avatar.png" mode="aspectFill" />
@@ -76,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { getFullImageUrl } from '@/utils/common'
@@ -84,6 +84,12 @@ import { icons } from '@/config/icons'
 
 const userStore = useUserStore()
 const avatarError = ref(false)
+const statusBarHeight = ref(20)
+
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+})
 
 const avatarSrc = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
