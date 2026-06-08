@@ -53,6 +53,8 @@
           <text class="section-more" @tap="goToQuestions">更多 ›</text>
         </view>
 
+        <view class="qa-divider"></view>
+
         <swiper
           class="question-swiper"
           :autoplay="true"
@@ -672,6 +674,12 @@ const onShareTimeline = () => {
   align-items: center;
   margin-bottom: 0;
   line-height: 1;
+}
+
+.qa-divider {
+  height: 2rpx;
+  background-color: #FFD0E0;
+  margin: 8rpx 0;
 }
 
 .section-title-row {
