@@ -326,7 +326,7 @@ const formatTime = (timeStr: string) => {
 <style lang="scss" scoped>
 .message-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #FFF0F3 0%, #FFF5F5 25%, #FFFFFF 50%, #f5f5f5 100%);
 }
 
 .nav-bar {
@@ -339,9 +339,9 @@ const formatTime = (timeStr: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
+  background-color: transparent;
   z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 .nav-left,
