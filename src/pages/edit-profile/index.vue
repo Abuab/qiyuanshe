@@ -1,16 +1,19 @@
 <template>
   <view class="edit-profile-page">
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
-      </view>
-      <view class="nav-title">编辑资料</view>
-      <view class="nav-right" @tap="handleSave">
-        <text class="save-text">保存</text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <view class="nav-left" @tap="handleBack">
+          <text class="back-icon">←</text>
+        </view>
+        <view class="nav-title">编辑资料</view>
+        <view class="nav-right" @tap="handleSave">
+          <text class="save-text">保存</text>
+        </view>
       </view>
     </view>
 
-    <scroll-view class="page-scroll" scroll-y>
+    <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 12) + 'px' }">
       <!-- 头像 -->
       <view class="section-card">
         <text class="section-title">头像</text>
@@ -79,17 +82,12 @@
           <text class="form-label">身高(cm)</text>
           <input
             class="form-input"
-            v-model.number="form.height"
-            type="number"
+            v-model="form.height"
             placeholder="请输入身高"
+            type="number"
             maxlength="3"
           />
         </view>
-      </view>
-
-      <!-- 职业与学历 -->
-      <view class="section-card">
-        <text class="section-title">职业与学历</text>
 
         <view class="form-item">
           <text class="form-label">学历</text>
@@ -101,7 +99,7 @@
           >
             <view class="form-picker">
               <text :class="{ placeholder: !form.education }">
-                {{ form.education || '请选择学历' }}
+                {{ form.education || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
             </view>
@@ -114,12 +112,12 @@
             class="form-input"
             v-model="form.occupation"
             placeholder="请输入职业"
-            maxlength="20"
+            maxlength="30"
           />
         </view>
 
         <view class="form-item">
-          <text class="form-label">月收入</text>
+          <text class="form-label">月薪</text>
           <picker
             mode="selector"
             :range="incomeLabels"
@@ -128,17 +126,12 @@
           >
             <view class="form-picker">
               <text :class="{ placeholder: !form.incomeRange }">
-                {{ form.incomeRange || '请选择月收入范围' }}
+                {{ form.incomeRange || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
             </view>
           </picker>
         </view>
-      </view>
-
-      <!-- 婚恋信息 -->
-      <view class="section-card">
-        <text class="section-title">婚恋信息</text>
 
         <view class="form-item">
           <text class="form-label">婚姻状况</text>
@@ -150,7 +143,7 @@
           >
             <view class="form-picker">
               <text :class="{ placeholder: !form.maritalStatus }">
-                {{ form.maritalStatus || '请选择婚姻状况' }}
+                {{ form.maritalStatus || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
             </view>
@@ -158,22 +151,22 @@
         </view>
 
         <view class="form-item">
-          <text class="form-label">现居城市</text>
+          <text class="form-label">户籍地</text>
           <input
             class="form-input"
-            v-model="form.residence"
-            placeholder="请输入现居城市"
-            maxlength="30"
+            v-model="form.hometown"
+            placeholder="请输入户籍地"
+            maxlength="50"
           />
         </view>
 
         <view class="form-item">
-          <text class="form-label">家乡</text>
+          <text class="form-label">现居地</text>
           <input
             class="form-input"
-            v-model="form.hometown"
-            placeholder="请输入家乡"
-            maxlength="30"
+            v-model="form.residence"
+            placeholder="请输入现居地"
+            maxlength="50"
           />
         </view>
       </view>
@@ -184,14 +177,10 @@
         <textarea
           class="intro-textarea"
           v-model="form.selfIntro"
-          placeholder="用一段话介绍自己吧~"
-          :maxlength="200"
-          :adjust-position="true"
-          :disable-default-padding="true"
+          placeholder="介绍一下自己吧，让别人更好地了解你..."
+          maxlength="500"
         />
-        <text class="intro-count" :class="{ over: introLen > 200 }">
-          {{ introLen }}/200
-        </text>
+        <text class="intro-count" :class="{ over: introLen > 500 }">{{ introLen }}/500</text>
       </view>
 
       <view class="bottom-safe"></view>
@@ -201,28 +190,49 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useUserStore } from '@/store/user'
 import request, { put } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
-import { useUserStore } from '@/store/user'
-import { getFullImageUrl } from '@/utils/common'
-import { safeNavigateBack } from '@/utils/navigate'
 
-interface ProfileForm {
-  avatar: string
-  avatarReviewStatus: number // 0=待审核 1=已通过 2=驳回
-  reviewStatus: number // 0=待审核 1=已通过 2=驳回
-  nickname: string
-  gender: number
-  birthYear: number | undefined
-  height: number | undefined
-  education: string
-  occupation: string
-  incomeRange: string
-  maritalStatus: string
-  residence: string
-  hometown: string
-  selfIntro: string
-}
+const userStore = useUserStore()
+const saving = ref(false)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44)
+
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+
+  const info = userStore.userInfo
+  if (info) {
+    form.value = {
+      avatar: info.avatar || '',
+      avatarReviewStatus: (info as any).avatarReviewStatus ?? 1,
+      reviewStatus: (info as any).reviewStatus ?? 1,
+      nickname: info.nickname || '',
+      gender: info.gender ?? 0,
+      birthYear: info.birthYear,
+      height: info.height,
+      education: info.education || '',
+      occupation: info.occupation || '',
+      incomeRange: info.incomeRange || '',
+      maritalStatus: info.maritalStatus || '',
+      residence: info.residence || info.city || '',
+      hometown: info.hometown || '',
+      selfIntro: info.selfIntro || info.bio || '',
+    }
+  }
+})
+
+const birthYearOptions = (() => {
+  const currentYear = new Date().getFullYear()
+  const years: string[] = []
+  for (let y = currentYear - 18; y >= 1940; y--) {
+    years.push(String(y))
+  }
+  return years
+})()
 
 const educationOptions = [
   { label: '高中', value: '高中' },
@@ -242,25 +252,18 @@ const incomeOptions = [
   { label: '2-5万', value: '2-5万' },
   { label: '5万以上', value: '5万以上' },
 ]
-const incomeLabels = incomeOptions.map((i) => i.label)
+const incomeLabels = incomeOptions.map((o) => o.label)
 
 const maritalOptions = ['未婚', '离异', '丧偶']
 
-const currentYear = new Date().getFullYear()
-const birthYearOptions = Array.from({ length: 71 }, (_, i) => `${currentYear - 18 - i}年`)
-
-const userStore = useUserStore()
-const saving = ref(false)
-const avatarErr = ref(false)
-
-const form = ref<ProfileForm>({
+const form = ref({
   avatar: '',
   avatarReviewStatus: 1,
   reviewStatus: 1,
   nickname: '',
   gender: 0,
-  birthYear: undefined,
-  height: undefined,
+  birthYear: undefined as number | undefined,
+  height: undefined as number | undefined,
   education: '',
   occupation: '',
   incomeRange: '',
@@ -289,28 +292,6 @@ const maritalIndex = computed(() => {
   return maritalOptions.indexOf(form.value.maritalStatus)
 })
 
-onMounted(() => {
-  const info = userStore.userInfo
-  if (info) {
-    form.value = {
-      avatar: info.avatar || '',
-      avatarReviewStatus: (info as any).avatarReviewStatus ?? 1,
-      reviewStatus: (info as any).reviewStatus ?? 1,
-      nickname: info.nickname || '',
-      gender: info.gender ?? 0,
-      birthYear: info.birthYear,
-      height: info.height,
-      education: info.education || '',
-      occupation: info.occupation || '',
-      incomeRange: info.incomeRange || '',
-      maritalStatus: info.maritalStatus || '',
-      residence: info.residence || info.city || '',
-      hometown: info.hometown || '',
-      selfIntro: info.selfIntro || info.bio || '',
-    }
-  }
-})
-
 const chooseAvatar = () => {
   uni.chooseImage({
     count: 1,
@@ -322,7 +303,6 @@ const chooseAvatar = () => {
       try {
         const uploadRes = await uploadImage(filePath)
         form.value.avatar = uploadRes.url
-        // 提交头像审核
         await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl: uploadRes.url } } as any)
         form.value.avatarReviewStatus = 0
         uni.showToast({ title: '已提交审核', icon: 'success' })
@@ -386,7 +366,6 @@ const handleSave = async () => {
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
 
-    // 提交资料审核
     try {
       await request({ url: '/users/profile-review', method: 'POST', data } as any)
       form.value.reviewStatus = 0
@@ -394,11 +373,10 @@ const handleSave = async () => {
       // 审核提交失败不阻断保存
     }
 
-    // 更新本地 store
     userStore.updateProfile(result)
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
-      safeNavigateBack()
+      uni.navigateBack({ delta: 1 })
     }, 1200)
   } catch (err: unknown) {
     const error = err as Error
@@ -413,7 +391,7 @@ const handleSave = async () => {
 }
 
 const handleBack = () => {
-  safeNavigateBack()
+  uni.navigateBack({ delta: 1 })
 }
 </script>
 
@@ -423,17 +401,22 @@ const handleBack = () => {
   background-color: #f5f5f5;
 }
 
-.nav-bar {
-  position: sticky;
+.nav-wrap {
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .nav-left,
@@ -465,14 +448,15 @@ const handleBack = () => {
 }
 
 .page-scroll {
-  padding: 24rpx 24rpx 80rpx;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 .section-card {
   background-color: #fff;
   border-radius: 16rpx;
   padding: 28rpx 28rpx 8rpx;
-  margin-bottom: 20rpx;
+  margin: 0 24rpx 20rpx;
 }
 
 .section-title {

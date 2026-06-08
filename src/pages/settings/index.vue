@@ -1,11 +1,14 @@
 <template>
   <view class="settings-page">
-    <view class="nav-bar">
-      <text class="back-btn" @tap="handleBack">←</text>
-      <text class="nav-title">设置</text>
-      <text class="nav-placeholder"></text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <text class="back-btn" @tap="handleBack">←</text>
+        <text class="nav-title">设置</text>
+        <text class="nav-placeholder"></text>
+      </view>
     </view>
-    <scroll-view class="settings-scroll" scroll-y>
+    <scroll-view class="settings-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view class="menu-group">
         <view v-for="menu in menus" :key="menu.url" class="menu-row" @tap="goTo(menu.url)">
           <text class="menu-label">{{ menu.label }}</text>
@@ -28,11 +31,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 
 const store = useUserStore()
 const isLoggedIn = computed(() => store.isLoggedIn)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44)
+
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+})
 
 const menus = [
   { url: '/pages/account-security/index', label: '账号与安全' },
@@ -86,19 +97,22 @@ const handleBack = () => {
   background-color: #f5f5f5;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .back-btn {
@@ -120,7 +134,6 @@ const handleBack = () => {
 
 .settings-scroll {
   height: 100vh;
-  padding-top: calc(88rpx + 20rpx);
 }
 
 .menu-group {
