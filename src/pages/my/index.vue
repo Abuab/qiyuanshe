@@ -155,7 +155,7 @@ const handleLogout = () => {
 <style lang="scss" scoped>
 .my-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(180deg, #FFF0F3 0%, #FFF5F5 25%, #FFFFFF 50%, #f5f5f5 100%);
   padding-bottom: 120rpx;
 }
 
@@ -164,10 +164,11 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fff;
+  background-color: transparent;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: none;
 }
 
 .nav-title {
