@@ -66,6 +66,7 @@
             :range="birthYearOptions"
             :value="birthYearIndex"
             @change="onBirthYearChange"
+            style="flex:1"
           >
             <view class="form-picker">
               <text class="picker-value" :class="{ placeholder: !form.birthYear }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
@@ -94,6 +95,7 @@
             :range="educationLabels"
             :value="educationIndex"
             @change="onEducationChange"
+            style="flex:1"
           >
             <view class="form-picker">
               <text class="picker-value" :class="{ placeholder: !form.education }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
@@ -121,6 +123,7 @@
             :range="incomeLabels"
             :value="incomeIndex"
             @change="onIncomeChange"
+            style="flex:1"
           >
             <view class="form-picker">
               <text class="picker-value" :class="{ placeholder: !form.incomeRange }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
@@ -138,6 +141,7 @@
             :range="maritalOptions"
             :value="maritalIndex"
             @change="onMaritalChange"
+            style="flex:1"
           >
             <view class="form-picker">
               <text class="picker-value" :class="{ placeholder: !form.maritalStatus }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
