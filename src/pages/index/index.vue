@@ -4,7 +4,7 @@
     <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
       <view class="header" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="header-content">
-          <text class="brand-title">栖缘社</text>
+          <text class="brand-title">{{ appName }}</text>
           <view class="header-capsule"></view>
         </view>
       </view>
@@ -178,7 +178,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast } from '@/utils/common'
@@ -190,6 +190,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
+import { useSystemStore } from '@/store/system'
 
 interface QuickEntry {
   id: number
@@ -262,6 +263,8 @@ const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
 
 const filterStore = useFilterStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName)
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
@@ -487,8 +490,8 @@ onMounted(() => {
   } else {
     // 从后端获取弹窗类型公告
     setTimeout(async () => {
-      let title = '欢迎来到栖缘社！'
-      let content = '栖缘社小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！'
+      let title = `欢迎来到${systemStore.appName}！`
+      let content = `${systemStore.appName}小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！`
 
       try {
         const res: any = await get('/notices')
@@ -531,7 +534,7 @@ onShow(() => {
 
 const onShareAppMessage = () => {
   return {
-    title: '栖缘社 - 遇见对的TA',
+    title: `${systemStore.appName} - 遇见对的TA`,
     path: '/pages/index/index',
     imageUrl: icons.common.heart,
   }
@@ -539,7 +542,7 @@ const onShareAppMessage = () => {
 
 const onShareTimeline = () => {
   return {
-    title: '栖缘社 - 遇见对的TA',
+    title: `${systemStore.appName} - 遇见对的TA`,
     imageUrl: icons.common.heart,
   }
 }

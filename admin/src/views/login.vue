@@ -2,7 +2,7 @@
   <div class="login-page">
     <div class="login-card">
       <div class="login-header">
-        <h1 class="login-title">栖缘社管理后台</h1>
+        <h1 class="login-title">{{ appName }}管理后台</h1>
         <p class="login-subtitle">Welcome to Qiyuanshe Admin</p>
       </div>
 
@@ -134,8 +134,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useAdminStore } from '../store/admin'
+import { useSystemStore } from '../store/system'
 import { adminSystem } from '../api'
 import { User, Lock, CircleCheck, View, Hide } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -149,6 +150,8 @@ interface LoginForm {
 }
 
 const adminStore = useAdminStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName)
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const showPassword = ref(false)
@@ -192,6 +195,7 @@ const rules: FormRules = {
 }
 
 onMounted(() => {
+  systemStore.fetchSystemConfig()
   refreshCaptcha()
 
   const rememberMe = localStorage.getItem('admin_remember')

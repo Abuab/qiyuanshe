@@ -1,8 +1,8 @@
 <template>
   <div class="sidebar">
     <div class="logo-area" :class="{ collapsed: isCollapsed }">
-      <span v-if="!isCollapsed" class="logo-text">栖缘社</span>
-      <span v-else class="logo-text-short">栖</span>
+      <span v-if="!isCollapsed" class="logo-text">{{ appName }}</span>
+      <span v-else class="logo-text-short">{{ appNameShort }}</span>
     </div>
 
     <el-menu
@@ -118,9 +118,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
+import { useSystemStore } from '../store/system'
 import Avatar from './Avatar.vue'
 import {
   DataAnalysis,
@@ -138,9 +139,17 @@ import {
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
+const systemStore = useSystemStore()
+
+const appName = computed(() => systemStore.appName)
+const appNameShort = computed(() => systemStore.appName.charAt(0))
 
 const isCollapsed = computed(() => adminStore.isCollapsed)
 const userInfo = computed(() => adminStore.userInfo)
+
+onMounted(() => {
+  systemStore.fetchSystemConfig()
+})
 const activeMenu = computed(() => route.path)
 
 const isSuperAdmin = computed(() => userInfo.value?.role === 'super_admin')

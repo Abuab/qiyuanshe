@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
 
 onLaunch(() => {
   logger.info('App Launch')
   const userStore = useUserStore()
   userStore.checkVip()
+
+  // 加载系统配置（应用名称等）
+  const systemStore = useSystemStore()
+  systemStore.loadSystemConfig().then(() => {
+    logger.setTag(systemStore.appName)
+  })
 
   // 全局开启分享菜单（兜底），失败静默
   uni.showShareMenu({

@@ -206,6 +206,7 @@ import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
+import { useSystemStore } from '@/store/system'
 
 interface Activity {
   id: number
@@ -222,6 +223,8 @@ interface Activity {
   status: number
   signUpEndTime?: string
 }
+
+const systemStore = useSystemStore()
 
 const activity = ref<Activity | null>(null)
 const signupAvatars = ref<string[]>([])
@@ -439,7 +442,7 @@ onMounted(() => {
 const onShareAppMessage = () => {
   if (!activity.value) return {}
   return {
-    title: `${activity.value.title} - 栖缘社活动`,
+    title: `${activity.value.title} - ${systemStore.appName}活动`,
     path: `/pages/activity-detail/index?id=${activity.value.id}`,
     imageUrl: activity.value.coverImage || '/static/heart.png',
   }

@@ -95,6 +95,7 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface Answer {
@@ -118,6 +119,7 @@ interface Answer {
 }
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const questionId = ref(0)
 const questionTitle = ref('')
 const answerList = ref<Answer[]>([])
@@ -272,7 +274,7 @@ const goToAnswer = () => {
 
 const onShareAppMessage = () => {
   return {
-    title: questionTitle.value || '问答详情 - 栖缘社',
+    title: questionTitle.value || `问答详情 - ${systemStore.appName}`,
     path: `/pages/question-detail/index?id=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
   }
 }

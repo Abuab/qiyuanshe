@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { useAdminStore } from '../store/admin'
+import { useSystemStore } from '../store/system'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -162,7 +163,9 @@ router.beforeEach((to, from, next) => {
     return
   }
 
-  document.title = `${to.meta.title || '管理后台'} - 栖缘社`
+  const systemStore = useSystemStore()
+  systemStore.fetchSystemConfig()
+  document.title = `${to.meta.title || '管理后台'} - ${systemStore.appName}`
   next()
 })
 

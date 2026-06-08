@@ -75,6 +75,7 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface PosterTemplate {
@@ -117,6 +118,7 @@ const templateList: PosterTemplate[] = [
 ]
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const userId = ref<number>(0)
 const showLoading = ref(false)
 const showPreview = ref(false)
@@ -316,7 +318,7 @@ const drawAvatar = async (ctx: any, avatarUrl: string) => {
 
 /** 绘制昵称 */
 const drawNickname = (ctx: any, nickname: string, template: PosterTemplate) => {
-  const name = nickname || '栖缘社用户'
+  const name = nickname || `${systemStore.appName}用户`
   ctx.setFillStyle('#333333')
   ctx.setFontSize(36)
   const nameWidth = ctx.measureText(name).width
@@ -477,7 +479,7 @@ const drawFooter = (ctx: any) => {
   // 左侧：品牌名
   ctx.setFillStyle('#FF6B9D')
   ctx.setFontSize(28)
-  ctx.fillText('栖缘社', PADDING, qrBottom - qrSize / 2 + 40)
+  ctx.fillText(systemStore.appName, PADDING, qrBottom - qrSize / 2 + 40)
 
   ctx.setFillStyle('#CCCCCC')
   ctx.setFontSize(18)
@@ -494,7 +496,7 @@ const drawFooter = (ctx: any) => {
 
   ctx.setFillStyle('#CCCCCC')
   ctx.setFontSize(16)
-  const line2 = '来自栖缘社'
+  const line2 = `来自${systemStore.appName}`
   const line2W = ctx.measureText(line2).width
   ctx.fillText(line2, qrCenterX - line2W / 2, textY2)
 

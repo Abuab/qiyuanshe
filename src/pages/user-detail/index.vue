@@ -272,6 +272,7 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -331,6 +332,7 @@ const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVip = computed(() => userStore.isVip)
@@ -386,7 +388,7 @@ const fetchFollowStatus = async () => {
 const onShareAppMessage = () => {
   if (!userData.value) return {}
   return {
-    title: `${userData.value.nickname}的个人主页 - 栖缘社`,
+    title: `${userData.value.nickname}的个人主页 - ${systemStore.appName}`,
     path: `/pages/user-detail/index?id=${userData.value.id}`,
     imageUrl: userData.value.avatar || '/static/default-avatar.png',
   }

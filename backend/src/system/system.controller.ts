@@ -51,7 +51,7 @@ export class PublicSystemController {
     const result = {
       splashText: configs.basic?.splashText || '正在寻找你的缘分...',
       appName: configs.basic?.appName || '栖缘社',
-      shareTitle: configs.share?.title || '栖缘社 - 遇见对的TA',
+      shareTitle: configs.share?.shareTitle || '栖缘社 - 遇见对的TA',
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
     }

@@ -5,7 +5,7 @@
     <view class="content">
       <view class="logo-section">
         <view class="logo-circle">💕</view>
-        <text class="app-name">栖缘社</text>
+        <text class="app-name">{{ appName }}</text>
         <text class="slogan">遇见对的TA</text>
       </view>
 
@@ -114,9 +114,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { post } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
@@ -137,6 +138,8 @@ interface WechatLoginResult {
 }
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName)
 const showProtocol = ref(false)
 const showPhonePopup = ref(false)
 const loading = ref(false)
