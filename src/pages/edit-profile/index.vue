@@ -7,13 +7,11 @@
           <text class="back-icon">←</text>
         </view>
         <view class="nav-title">编辑资料</view>
-        <view class="nav-right" @tap="handleSave">
-          <text class="save-text">保存</text>
-        </view>
+        <view class="nav-right"></view>
       </view>
     </view>
 
-    <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 12) + 'px' }">
+    <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 12) + 'px', height: 'calc(100vh - 120rpx)' }">
       <!-- 头像 -->
       <view class="section-card">
         <text class="section-title">头像</text>
@@ -185,6 +183,13 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+
+    <!-- 底部保存按钮 -->
+    <view class="save-bar">
+      <view class="save-btn" @tap="handleSave">
+        <text>保存</text>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -441,14 +446,7 @@ const handleBack = () => {
   color: #333;
 }
 
-.save-text {
-  font-size: 28rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-}
-
 .page-scroll {
-  height: 100vh;
   box-sizing: border-box;
 }
 
@@ -602,5 +600,33 @@ const handleBack = () => {
 
 .bottom-safe {
   height: 40rpx;
+}
+
+.save-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16rpx 32rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+  background-color: #fff;
+  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
+  z-index: 99;
+}
+
+.save-btn {
+  width: 100%;
+  height: 88rpx;
+  background-color: #FF6B9D;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #fff;
+  }
 }
 </style>
