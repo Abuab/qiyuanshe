@@ -301,14 +301,13 @@ defineExpose({
 
 .protocol-content {
   flex: 1;
-  padding: 0 40rpx;
   min-height: 0;
   height: 0;
   overflow-y: auto;
 }
 
 .protocol-text {
-  padding: 10rpx 0 16rpx;
+  padding: 10rpx 40rpx 16rpx;
 }
 
 .text-normal {
@@ -317,7 +316,7 @@ defineExpose({
   line-height: 1.8;
   display: block;
   padding: 4rpx 0;
-  word-break: break-all;
+  word-break: break-word;
   white-space: pre-wrap;
 }
 
@@ -328,7 +327,7 @@ defineExpose({
   line-height: 2;
   display: block;
   padding: 12rpx 0 4rpx;
-  word-break: break-all;
+  word-break: break-word;
   white-space: pre-wrap;
 }
 
