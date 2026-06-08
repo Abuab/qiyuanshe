@@ -68,7 +68,7 @@
             @change="onBirthYearChange"
           >
             <view class="form-picker">
-              <text :class="{ placeholder: !form.birthYear }">
+              <text class="picker-value" :class="{ placeholder: !form.birthYear }">
                 {{ form.birthYear ? form.birthYear + '年' : '请选择出生年份' }}
               </text>
               <text class="picker-arrow">></text>
@@ -96,7 +96,7 @@
             @change="onEducationChange"
           >
             <view class="form-picker">
-              <text :class="{ placeholder: !form.education }">
+              <text class="picker-value" :class="{ placeholder: !form.education }">
                 {{ form.education || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
@@ -123,7 +123,7 @@
             @change="onIncomeChange"
           >
             <view class="form-picker">
-              <text :class="{ placeholder: !form.incomeRange }">
+              <text class="picker-value" :class="{ placeholder: !form.incomeRange }">
                 {{ form.incomeRange || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
@@ -140,7 +140,7 @@
             @change="onMaritalChange"
           >
             <view class="form-picker">
-              <text :class="{ placeholder: !form.maritalStatus }">
+              <text class="picker-value" :class="{ placeholder: !form.maritalStatus }">
                 {{ form.maritalStatus || '请选择' }}
               </text>
               <text class="picker-arrow">></text>
@@ -536,13 +536,20 @@ const handleBack = () => {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   height: 60rpx;
 
-  text {
+  .picker-value {
+    flex: 1;
+    text-align: right;
     font-size: 28rpx;
     color: #333;
-    text-align: right;
+  }
+
+  .picker-arrow {
+    font-size: 24rpx;
+    color: #ccc;
+    margin-left: 8rpx;
+    flex-shrink: 0;
   }
 }
 
