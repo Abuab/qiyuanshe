@@ -20,8 +20,8 @@ interface SystemConfig {
 
 export const useSystemStore = defineStore('system', () => {
   const splashText = ref<string>('正在寻找你的缘分...')
-  const appName = ref<string>('栖缘社')
-  const shareTitle = ref<string>('栖缘社 - 遇见对的TA')
+  const appName = ref<string>('')
+  const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
 

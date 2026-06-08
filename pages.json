@@ -10,7 +10,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "栖缘社",
+        "navigationBarTitleText": "首页",
         "navigationStyle": "custom",
         "enablePullDownRefresh": false
       }
@@ -177,7 +177,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "栖缘社",
+    "navigationBarTitleText": "交友平台",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#FFF5F7"
   },

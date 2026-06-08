@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import request from '../api/request'
 
 export const useSystemStore = defineStore('system', () => {
-  const appName = ref<string>('栖缘社')
+  const appName = ref<string>('')
 
   const fetchSystemConfig = async () => {
     try {
