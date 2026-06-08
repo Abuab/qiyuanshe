@@ -1,11 +1,14 @@
 <template>
   <view class="notice-detail-page">
-    <view class="nav-bar">
-      <text class="back-btn" @tap="handleBack">←</text>
-      <text class="nav-title">公告详情</text>
-      <text class="nav-placeholder"></text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <text class="back-btn" @tap="handleBack">←</text>
+        <text class="nav-title">公告详情</text>
+        <text class="nav-placeholder"></text>
+      </view>
     </view>
-    <scroll-view v-if="detail" class="detail-scroll" scroll-y>
+    <scroll-view v-if="detail" class="detail-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <text class="detail-title">{{ detail.title }}</text>
       <text class="detail-time">{{ detail.createdAt }}</text>
       <rich-text class="detail-content" :nodes="detail.content" />
@@ -21,8 +24,15 @@ import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 
 const detail = ref<any>(null)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
 onMounted(async () => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+
   const pages = getCurrentPages()
   const options = (pages[pages.length - 1] as any)?.options || {}
   if (options.id) {
@@ -46,19 +56,22 @@ const handleBack = () => {
   background-color: #fff;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  background-color: #fff;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  border-bottom: 1rpx solid #f5f5f5;
 }
 
 .back-btn {
@@ -80,7 +93,6 @@ const handleBack = () => {
 
 .detail-scroll {
   height: 100vh;
-  padding-top: calc(88rpx + 32rpx);
   padding-left: 32rpx;
   padding-right: 32rpx;
   padding-bottom: 60rpx;
@@ -94,6 +106,7 @@ const handleBack = () => {
   color: #333;
   margin-bottom: 16rpx;
   line-height: 1.4;
+  margin-top: 32rpx;
 }
 
 .detail-time {
@@ -112,7 +125,7 @@ const handleBack = () => {
 .loading-tip {
   display: flex;
   justify-content: center;
-  padding-top: 200rpx;
+  margin-top: 200rpx;
   font-size: 28rpx;
   color: #999;
 }
