@@ -6,7 +6,7 @@ import { Result } from '../common/result'
 export class RegionController {
   constructor(private readonly regionService: RegionService) {}
 
-  @Get('region')
+  @Get()
   async getRegion(@Query('parentId') parentId?: string) {
     const pid = parentId ? parseInt(parentId, 10) : 0
     const list = await this.regionService.getChildren(pid)
