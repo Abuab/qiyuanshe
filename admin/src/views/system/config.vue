@@ -340,9 +340,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
 import { system, adminSystem } from '../../api'
+import { useSystemStore } from '../../store/system'
 
 const activeTab = ref('basic')
 const saving = ref(false)
+const systemStore = useSystemStore()
 const logoError = ref(false)
 
 const basicConfig = reactive({
@@ -423,6 +425,8 @@ async function handleSave() {
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
+      // 刷新系统 Store，使侧边栏/登录页等位置的项目名称即时生效
+      systemStore.fetchSystemConfig()
       ElMessage.success('配置保存成功')
     } else {
       ElMessage.error(res.message || '保存失败')

@@ -29,6 +29,12 @@ onLaunch(() => {
 onShow(() => {
   logger.info('App Show')
 
+  // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
+  const systemStore = useSystemStore()
+  systemStore.loadSystemConfig().then(() => {
+    logger.setTag(systemStore.appName)
+  })
+
   // 每次切回应用时重试开启分享菜单
   uni.showShareMenu({
     withShareTicket: true,

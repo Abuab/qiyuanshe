@@ -3,10 +3,8 @@ import { ref } from 'vue'
 
 export const useSystemStore = defineStore('system', () => {
   const appName = ref<string>('栖缘社')
-  const loaded = ref(false)
 
   const fetchSystemConfig = async () => {
-    if (loaded.value) return
     try {
       const response = await fetch('/api/system/config')
       const result = await response.json()
@@ -16,14 +14,11 @@ export const useSystemStore = defineStore('system', () => {
       }
     } catch (e) {
       console.error('Failed to load system config:', e)
-    } finally {
-      loaded.value = true
     }
   }
 
   return {
     appName,
-    loaded,
     fetchSystemConfig,
   }
 })

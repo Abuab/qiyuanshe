@@ -34,6 +34,7 @@ export const useSystemStore = defineStore('system', () => {
         shareTitle.value = res.shareTitle || shareTitle.value
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
+        saveToStorage()
       }
     } catch (e) {
       console.error('Failed to load system config:', e)
