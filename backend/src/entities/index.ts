@@ -1,6 +1,7 @@
 export * from './User'
 export * from './UserPhoto'
 export * from './UserAuth'
+export * from './AddressRegion'
 export * from './HotQuestion'
 export * from './QuestionAnswer'
 export * from './AnswerLike'

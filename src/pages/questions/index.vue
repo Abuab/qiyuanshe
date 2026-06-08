@@ -202,60 +202,60 @@ const goToAnswer = (question: Question) => {
 }
 
 .header-section {
-  padding: 32rpx;
+  padding: 20rpx 32rpx;
   background-color: #fff;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
 .header-title {
   display: block;
-  font-size: 36rpx;
+  font-size: 30rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 12rpx;
+  margin-bottom: 6rpx;
 }
 
 .header-tip {
-  font-size: 28rpx;
+  font-size: 24rpx;
   color: #999;
 }
 
 .question-list {
-  height: calc(100vh - 180rpx);
-  padding: 0 32rpx;
+  height: calc(100vh - 160rpx);
+  padding: 0 24rpx;
 }
 
 .question-card {
   background-color: #fff;
-  border-radius: 16rpx;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
 }
 
 .question-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
 }
 
 .question-title {
   flex: 1;
-  font-size: 32rpx;
+  font-size: 28rpx;
   font-weight: bold;
   color: #333;
   line-height: 1.4;
-  padding-right: 20rpx;
+  padding-right: 16rpx;
 }
 
 .status-tag {
-  padding: 8rpx 16rpx;
+  padding: 4rpx 12rpx;
   background-color: #FFF0F3;
-  border-radius: 8rpx;
+  border-radius: 6rpx;
   flex-shrink: 0;
 
   text {
-    font-size: 24rpx;
+    font-size: 22rpx;
     color: #FF6B9D;
   }
 
@@ -273,10 +273,10 @@ const goToAnswer = (question: Question) => {
   justify-content: flex-end;
 
   text {
-    padding: 8rpx 24rpx;
+    padding: 6rpx 20rpx;
     border: 2rpx solid #FF6B9D;
-    border-radius: 32rpx;
-    font-size: 26rpx;
+    border-radius: 24rpx;
+    font-size: 24rpx;
     color: #FF6B9D;
   }
 }

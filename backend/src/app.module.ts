@@ -8,6 +8,7 @@ import {
   User,
   UserPhoto,
   UserAuth,
+  AddressRegion,
   HotQuestion,
   QuestionAnswer,
   AnswerLike,
@@ -41,6 +42,7 @@ import { ActivityModule } from './activity/activity.module'
 import { UploadModule } from './upload/upload.module'
 import { DynamicModule } from './dynamic/dynamic.module'
 import { AgreementModule } from './agreement/agreement.module'
+import { RegionModule } from './region/region.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { RedisService } from './common/redis.service'
@@ -58,6 +60,7 @@ import { RedisService } from './common/redis.service'
       User,
       UserPhoto,
       UserAuth,
+      AddressRegion,
       HotQuestion,
       QuestionAnswer,
       AnswerLike,
@@ -95,6 +98,7 @@ import { RedisService } from './common/redis.service'
     UploadModule,
     DynamicModule,
     AgreementModule,
+    RegionModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],
