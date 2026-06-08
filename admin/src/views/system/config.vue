@@ -348,7 +348,7 @@ const systemStore = useSystemStore()
 const logoError = ref(false)
 
 const basicConfig = reactive({
-  appName: '栖缘社',
+  appName: '',
   splashText: '正在为您寻找心仪的对象...',
   servicePhone: '',
   serviceWechat: '',
@@ -358,7 +358,7 @@ const basicConfig = reactive({
 })
 
 const shareConfig = reactive({
-  shareTitle: '我在栖缘社等你，快来认识我吧！',
+  shareTitle: '我在等你，快来认识我吧！',
   shareDesc: '一个真诚的婚恋平台',
   shareImage: '',
   posterTemplates: '[]',
