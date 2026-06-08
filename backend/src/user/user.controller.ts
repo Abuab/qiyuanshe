@@ -35,11 +35,25 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('gender') gender?: number,
+    @Query('ageMin') ageMin?: number,
+    @Query('ageMax') ageMax?: number,
+    @Query('heightMin') heightMin?: number,
+    @Query('heightMax') heightMax?: number,
+    @Query('education') education?: string,
+    @Query('incomeRange') incomeRange?: string,
+    @Query('maritalStatus') maritalStatus?: string,
+    @Query('isRealName') isRealName?: number,
+    @Query('residence') residence?: string,
+    @Query('hometown') hometown?: string,
+    @Query('keyword') keyword?: string,
     @Request() req?: any,
   ) {
     try {
       const currentUserId = req?.user?.userId
-      return this.userService.findRecommend(tab, page, limit, gender, currentUserId)
+      return this.userService.findRecommend(
+        tab, page, limit, gender, currentUserId,
+        { ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName, residence, hometown, keyword },
+      )
     } catch (error: any) {
       console.error('findRecommend controller error:', error?.message || error)
       return Result.serverError('推荐数据加载失败，请稍后重试: ' + (error?.message || ''))

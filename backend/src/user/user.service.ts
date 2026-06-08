@@ -31,6 +31,20 @@ export interface UserListItem {
   isFollowed: boolean
 }
 
+export interface RecommendFilters {
+  ageMin?: number
+  ageMax?: number
+  heightMin?: number
+  heightMax?: number
+  education?: string
+  incomeRange?: string
+  maritalStatus?: string
+  isRealName?: number
+  residence?: string
+  hometown?: string
+  keyword?: string
+}
+
 @Injectable()
 export class UserService {
   constructor(
@@ -48,6 +62,7 @@ export class UserService {
     limit: number = 10,
     gender?: number,
     currentUserId?: number,
+    filters?: RecommendFilters,
   ): Promise<PaginatedResult<UserListItem>> {
     try {
     const pageNum = Math.max(1, parseInt(page as any) || 1)
@@ -64,6 +79,53 @@ export class UserService {
       const genderNum = Number(gender)
       if (Number.isFinite(genderNum) && (genderNum === 0 || genderNum === 1)) {
         queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
+      }
+    }
+
+    // 应用筛选条件
+    if (filters) {
+      if (filters.ageMin !== undefined) {
+        const maxBirthYear = new Date().getFullYear() - filters.ageMin
+        queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
+      }
+      if (filters.ageMax !== undefined) {
+        const minBirthYear = new Date().getFullYear() - filters.ageMax
+        queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
+      }
+      if (filters.heightMin !== undefined) {
+        queryBuilder.andWhere('user.height >= :heightMin', { heightMin: filters.heightMin })
+      }
+      if (filters.heightMax !== undefined) {
+        queryBuilder.andWhere('user.height <= :heightMax', { heightMax: filters.heightMax })
+      }
+      if (filters.education) {
+        const educationLevels = ['高中', '大专', '本科', '硕士', '博士']
+        const levelIndex = educationLevels.indexOf(filters.education)
+        if (levelIndex !== -1) {
+          const allowedEducations = educationLevels.slice(levelIndex)
+          queryBuilder.andWhere('user.education IN (:...educations)', { educations: allowedEducations })
+        }
+      }
+      if (filters.incomeRange) {
+        queryBuilder.andWhere('user.incomeRange = :incomeRange', { incomeRange: filters.incomeRange })
+      }
+      if (filters.maritalStatus) {
+        queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: filters.maritalStatus })
+      }
+      if (filters.isRealName !== undefined && filters.isRealName !== null) {
+        const isRealNameNum = Number(filters.isRealName)
+        if (Number.isFinite(isRealNameNum) && (isRealNameNum === 0 || isRealNameNum === 1)) {
+          queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: isRealNameNum })
+        }
+      }
+      if (filters.residence) {
+        queryBuilder.andWhere('user.residence LIKE :residence', { residence: `%${filters.residence}%` })
+      }
+      if (filters.hometown) {
+        queryBuilder.andWhere('user.hometown LIKE :hometown', { hometown: `%${filters.hometown}%` })
+      }
+      if (filters.keyword) {
+        queryBuilder.andWhere('(user.nickname LIKE :keyword)', { keyword: `%${filters.keyword}%` })
       }
     }
 
