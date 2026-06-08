@@ -2,8 +2,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import request from '../api/request'
 
+const STORAGE_KEY = 'admin_app_name'
+
 export const useSystemStore = defineStore('system', () => {
-  const appName = ref<string>('')
+  // 先从 localStorage 恢复，避免刷新后短暂空白
+  const stored = localStorage.getItem(STORAGE_KEY)
+  const appName = ref<string>(stored || '')
 
   const fetchSystemConfig = async () => {
     try {
@@ -11,6 +15,7 @@ export const useSystemStore = defineStore('system', () => {
       const name = res?.appName || ''
       console.log('[systemStore] appName =', name)
       appName.value = name
+      localStorage.setItem(STORAGE_KEY, name)
     } catch (e) {
       console.error('[systemStore] fetch failed:', e)
     }
