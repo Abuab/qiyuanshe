@@ -670,7 +670,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12rpx;
+  margin-bottom: 8rpx;
 }
 
 .section-title-row {
