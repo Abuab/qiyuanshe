@@ -68,10 +68,10 @@
             @change="onBirthYearChange"
           >
             <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.birthYear }">
+              <text class="picker-value" :class="{ placeholder: !form.birthYear }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
                 {{ form.birthYear ? form.birthYear + '年' : '请选择出生年份' }}
               </text>
-              <text class="picker-arrow">></text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
         </view>
@@ -96,10 +96,10 @@
             @change="onEducationChange"
           >
             <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.education }">
+              <text class="picker-value" :class="{ placeholder: !form.education }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
                 {{ form.education || '请选择' }}
               </text>
-              <text class="picker-arrow">></text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
         </view>
@@ -123,10 +123,10 @@
             @change="onIncomeChange"
           >
             <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.incomeRange }">
+              <text class="picker-value" :class="{ placeholder: !form.incomeRange }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
                 {{ form.incomeRange || '请选择' }}
               </text>
-              <text class="picker-arrow">></text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
         </view>
@@ -140,10 +140,10 @@
             @change="onMaritalChange"
           >
             <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.maritalStatus }">
+              <text class="picker-value" :class="{ placeholder: !form.maritalStatus }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">
                 {{ form.maritalStatus || '请选择' }}
               </text>
-              <text class="picker-arrow">></text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
         </view>
