@@ -22,7 +22,7 @@ export class SystemService {
     }
 
     for (const config of configs) {
-      const [group, key] = config.configKey.split(':')
+      const [group, key] = config.configKey.split('.')
       if (group && key) {
         if (!result[group]) {
           result[group] = {}
@@ -49,7 +49,7 @@ export class SystemService {
   async saveConfigs(configs: Record<string, Record<string, any>>): Promise<void> {
     for (const [group, items] of Object.entries(configs)) {
       for (const [key, value] of Object.entries(items as any)) {
-        const configKey = `${group}:${key}`
+        const configKey = `${group}.${key}`
         const configValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
 
         let config = await this.configRepository.findOne({ where: { configKey } })
@@ -60,7 +60,7 @@ export class SystemService {
           config = this.configRepository.create({
             configKey,
             configValue,
-            description: `${group}:${key}`,
+            description: `${group}.${key}`,
           })
           await this.configRepository.save(config)
         }
