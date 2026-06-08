@@ -661,8 +661,8 @@ const onShareTimeline = () => {
 
 .hot-questions-card {
   background-color: #FFF8FA;
-  padding: 12rpx 20rpx 10rpx;
-  margin: 0 28rpx 20rpx;
+  padding: 8rpx 20rpx 6rpx;
+  margin: 0 28rpx 16rpx;
   border-radius: 16rpx;
 }
 
@@ -670,7 +670,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 4rpx;
+  margin-bottom: 0;
 }
 
 .section-title-row {
@@ -749,7 +749,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 6rpx;
+  padding-top: 4rpx;
   gap: 10rpx;
 }
 
