@@ -11,7 +11,8 @@ export const useSystemStore = defineStore('system', () => {
 
   const fetchSystemConfig = async () => {
     try {
-      const res: any = await request.get('/system/config')
+      // _t 参数避免浏览器缓存返回 304
+      const res: any = await request.get(`/system/config?_t=${Date.now()}`)
       const name = res?.appName || ''
       console.log('[systemStore] appName =', name)
       appName.value = name

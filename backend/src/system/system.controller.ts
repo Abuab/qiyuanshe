@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   UseGuards,
+  Header,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { SystemService } from './system.service'
@@ -44,6 +45,8 @@ export class PublicSystemController {
   constructor(private readonly systemService: SystemService) {}
 
   @Get('config')
+  @Header('Cache-Control', 'no-store, no-cache, max-age=0')
+  @Header('Pragma', 'no-cache')
   async getPublicConfig() {
     const configs = await this.systemService.getAllConfigs()
 
