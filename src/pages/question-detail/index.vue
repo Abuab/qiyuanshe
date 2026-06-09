@@ -1,14 +1,17 @@
 <template>
   <view class="detail-page">
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <view class="nav-left" @tap="handleBack">
+          <text class="back-icon">←</text>
+        </view>
+        <view class="nav-title">问答详情</view>
+        <view class="nav-right"></view>
       </view>
-      <view class="nav-title">问答详情</view>
-      <view class="nav-right"></view>
     </view>
 
-    <scroll-view class="content" scroll-y enable-flex>
+    <scroll-view class="content" scroll-y enable-flex :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view class="question-section">
         <text class="question-title">{{ questionTitle }}</text>
         <view class="more-link" @tap="goToQuestions">
@@ -128,8 +131,13 @@ const limit = 20
 const loading = ref(false)
 const noMore = ref(false)
 const refreshing = ref(false)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   // 开启分享菜单
   uni.showShareMenu({
     withShareTicket: true,
@@ -286,19 +294,22 @@ const onShareAppMessage = () => {
   background-color: #f5f5f5;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .nav-left,
@@ -318,8 +329,7 @@ const onShareAppMessage = () => {
 }
 
 .content {
-  height: calc(100vh - 88rpx);
-  padding-top: 108rpx;
+  height: 100vh;
 }
 
 .question-section {
