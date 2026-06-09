@@ -1,7 +1,8 @@
 <template>
   <view class="agreement-page">
     <scroll-view class="content-scroll" scroll-y>
-      <view class="agreement-content">
+      <view class="content-inner">
+        <view class="agreement-content">
         <text class="agreement-title">{{ title }}</text>
 
         <view v-if="type === 'vip'" class="agreement-body">
@@ -67,6 +68,7 @@
           <text class="section-text">2. 用户不得利用平台从事违法或不当行为。</text>
           <text class="section-text">3. 用户应尊重其他用户的合法权益。</text>
         </view>
+        </view>
       </view>
 
       <view class="bottom-safe"></view>
@@ -123,8 +125,10 @@ onMounted(() => {
 
 .content-scroll {
   height: 100vh;
+}
+
+.content-inner {
   padding: 32rpx;
-  box-sizing: border-box;
 }
 
 .agreement-content {
