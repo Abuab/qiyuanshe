@@ -573,12 +573,15 @@ defineExpose({
   font-weight: bold;
   color: var(--text);
   margin-bottom: 24rpx;
+  gap: 16rpx;
 }
 
 .range-value {
   font-size: 24rpx;
   color: #FF6B9D;
   font-weight: normal;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .button-group {
