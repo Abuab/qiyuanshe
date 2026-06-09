@@ -88,12 +88,6 @@
           <text class="arrow">></text>
         </view>
 
-        <view class="menu-item" @tap="goToAbout">
-          <text class="menu-icon">📋</text>
-          <text class="menu-text">关于我们</text>
-          <text class="arrow">></text>
-        </view>
-
         <view class="menu-item" @tap="goToSettings">
           <text class="menu-icon">⚙️</text>
           <text class="menu-text">设置</text>
