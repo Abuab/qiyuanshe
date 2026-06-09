@@ -144,8 +144,8 @@
               <text class="auth-label">车</text>
             </view>
             <view class="auth-item" @tap="showAuthDetail('commitment')">
-              <view class="auth-icon verified">
-                <text>✓</text>
+              <view class="auth-icon" :class="{ verified: hasCommitment }">
+                <text>{{ hasCommitment ? '✓' : '—' }}</text>
               </view>
               <text class="auth-label">单身承诺</text>
             </view>
@@ -327,6 +327,7 @@ const showShare = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const showCommitPopup = ref(false)
+const hasCommitment = ref(false)
 const followLoading = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
@@ -686,9 +687,7 @@ const onSelectMatchmaker = (matchmaker: any) => {
 const signCommitment = async () => {
   try {
     await request({ url: '/users/commitment', method: 'POST' } as any)
-    if (userData.value) {
-      ;(userData.value as any).hasCommitment = true
-    }
+    hasCommitment.value = true
     showCommitPopup.value = false
     uni.showToast({ title: '签署成功', icon: 'success' })
   } catch (e) {
@@ -698,7 +697,7 @@ const signCommitment = async () => {
 
 const showMoreActions = () => {
   const items = ['分享主页', '举报用户']
-  if (userData.value && !userData.value.isSelf) items.push('拉黑')
+  if (!isSelf.value) items.push('拉黑')
   uni.showActionSheet({
     itemList: items,
     success: (res) => {
@@ -748,12 +747,12 @@ const showAuthDetail = (type: string) => {
       content = userData.value?.carStatus || '未认证'
       break
     case 'commitment':
-      if (userData.value?.isSelf && !(userData.value as any)?.hasCommitment) {
+      if (isSelf.value && !hasCommitment.value) {
         showCommitPopup.value = true
         return
       }
       title = '单身承诺'
-      content = (userData.value as any)?.hasCommitment ? '已签署单身承诺书' : '未签署'
+      content = hasCommitment.value ? '已签署单身承诺书' : '未签署'
       break
     case 'marital':
       title = '婚姻状况'
