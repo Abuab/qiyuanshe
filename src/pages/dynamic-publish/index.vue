@@ -1,53 +1,57 @@
 <template>
   <view class="publish-page">
-    <!-- 顶部导航 -->
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleCancel">
-        <text class="back-arrow">← 返回</text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <view class="nav-left" @tap="handleCancel">
+          <text class="back-arrow">← 返回</text>
+        </view>
+        <text class="nav-title">发布动态</text>
+        <view class="nav-right"></view>
       </view>
-      <text class="nav-title">发布动态</text>
-      <view class="nav-right"></view>
     </view>
 
-    <view class="page-content">
-      <!-- 文字输入 -->
-      <view class="textarea-section">
-        <textarea
-          class="content-textarea"
-          v-model="content"
-          placeholder="分享你的想法..."
-          placeholder-class="placeholder"
-          :maxlength="500"
-          @input="onContentInput"
-        />
-        <text class="word-count">{{ content.length }}/500</text>
-      </view>
+    <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
+      <view class="page-content">
+        <!-- 文字输入 -->
+        <view class="textarea-section">
+          <textarea
+            class="content-textarea"
+            v-model="content"
+            placeholder="分享你的想法..."
+            placeholder-class="placeholder"
+            :maxlength="500"
+            @input="onContentInput"
+          />
+          <text class="word-count">{{ content.length }}/500</text>
+        </view>
 
-      <!-- 图片上传区域 -->
-      <view class="image-section">
-        <view class="image-grid">
-          <view
-            v-for="(img, index) in uploadedImages"
-            :key="index"
-            class="image-item"
-          >
-            <image class="thumb-image" :src="img" mode="aspectFill" />
-            <view class="remove-btn" @tap="removeImage(index)">
-              <text class="remove-icon">×</text>
+        <!-- 图片上传区域 -->
+        <view class="image-section">
+          <view class="image-grid">
+            <view
+              v-for="(img, index) in uploadedImages"
+              :key="index"
+              class="image-item"
+            >
+              <image class="thumb-image" :src="img" mode="aspectFill" />
+              <view class="remove-btn" @tap="removeImage(index)">
+                <text class="remove-icon">×</text>
+              </view>
             </view>
-          </view>
 
-          <view
-            v-if="uploadedImages.length < 9"
-            class="image-item add-item"
-            @tap="chooseImage"
-          >
-            <text class="add-icon">+</text>
-            <text class="add-text">{{ uploadedImages.length === 0 ? '添加图片' : `${uploadedImages.length}/9` }}</text>
+            <view
+              v-if="uploadedImages.length < 9"
+              class="image-item add-item"
+              @tap="chooseImage"
+            >
+              <text class="add-icon">+</text>
+              <text class="add-text">{{ uploadedImages.length === 0 ? '添加图片' : `${uploadedImages.length}/9` }}</text>
+            </view>
           </view>
         </view>
       </view>
-    </view>
+    </scroll-view>
 
     <!-- 底部发布按钮 -->
     <view class="bottom-bar">
@@ -59,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -67,6 +71,14 @@ import { safeNavigateBack } from '@/utils/navigate'
 const content = ref('')
 const uploadedImages = ref<string[]>([]) // 本地临时路径（用于展示）
 const uploading = ref(false)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
+
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+})
 
 const canPublish = computed(() => {
   return (content.value.trim().length > 0 || uploadedImages.value.length > 0) && !uploading.value
@@ -165,22 +177,24 @@ const handleCancel = () => {
   background-color: #fff;
   display: flex;
   flex-direction: column;
-  padding-top: 88rpx;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .nav-left,
@@ -198,6 +212,10 @@ const handleCancel = () => {
   font-weight: bold;
   color: #333;
   text-align: center;
+}
+
+.page-scroll {
+  height: 100vh;
 }
 
 .page-content {
