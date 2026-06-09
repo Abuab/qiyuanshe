@@ -134,7 +134,7 @@
       <view class="popup-card">
         <view class="popup-header">
           <text class="popup-title">活动报名</text>
-          <text class="popup-close" @tap="closeSignupPopup">&#xe6a7;</text>
+          <text class="popup-close" @tap="closeSignupPopup">✕</text>
         </view>
 
         <view class="popup-info">
