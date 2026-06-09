@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 
 export interface FilterData {
   keyword?: string
-  gender?: number
   ageMin?: number
   ageMax?: number
   heightMin?: number

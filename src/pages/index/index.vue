@@ -272,7 +272,6 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
     // 合并筛选参数
     if (filterParams) {
       if (filterParams.keyword) params.keyword = filterParams.keyword
-      if (filterParams.gender !== undefined) params.gender = filterParams.gender
       if (filterParams.ageMin && filterParams.ageMin > 18) params.ageMin = filterParams.ageMin
       if (filterParams.ageMax && filterParams.ageMax < 80) params.ageMax = filterParams.ageMax
       if (filterParams.heightMin && filterParams.heightMin > 140) params.heightMin = filterParams.heightMin

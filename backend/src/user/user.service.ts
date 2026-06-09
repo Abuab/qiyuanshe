@@ -237,6 +237,18 @@ export class UserService {
       }
     }
 
+    // 按性别互推：男→女，女→男（筛选接口同样自动匹配性别）
+    if (currentUserId) {
+      const currentUser = await this.userRepository.findOne({ where: { id: currentUserId }, select: ['gender'] })
+      if (currentUser) {
+        if (currentUser.gender === 1) {
+          queryBuilder.andWhere('user.gender = :autoGender', { autoGender: 2 })
+        } else if (currentUser.gender === 2) {
+          queryBuilder.andWhere('user.gender = :autoGender', { autoGender: 1 })
+        }
+      }
+    }
+
     if (dto.ageMin !== undefined && dto.ageMin !== null && Number.isFinite(dto.ageMin)) {
       const maxBirthYear = new Date().getFullYear() - dto.ageMin
       queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })

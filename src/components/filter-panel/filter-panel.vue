@@ -18,33 +18,6 @@
         </view>
 
         <view class="filter-section">
-          <view class="section-title">性别</view>
-          <view class="button-group">
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.gender === undefined }"
-              @tap="selectGender(undefined)"
-            >
-              不限
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.gender === 1 }"
-              @tap="selectGender(1)"
-            >
-              男
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.gender === 2 }"
-              @tap="selectGender(2)"
-            >
-              女
-            </view>
-          </view>
-        </view>
-
-        <view class="filter-section">
           <view class="section-title">
             <text>年龄范围</text>
             <text class="range-value">{{ filterData.ageMin || 18 }} - {{ filterData.ageMax || 80 }}岁</text>
@@ -241,7 +214,6 @@ import { ref, computed, watch } from 'vue'
 
 interface FilterData {
   keyword?: string
-  gender?: number
   ageMin?: number
   ageMax?: number
   heightMin?: number
@@ -277,7 +249,6 @@ const emit = defineEmits<Emits>()
 const visible = ref(false)
 const filterData = ref<FilterData>({
   keyword: '',
-  gender: undefined,
   ageMin: 18,
   ageMax: 80,
   heightMin: 140,
@@ -312,7 +283,6 @@ const incomeOptions = [
 
 const selectedCount = computed(() => {
   let count = 0
-  if (filterData.value.gender !== undefined) count++
   if (filterData.value.ageMin && filterData.value.ageMin > 18) count++
   if (filterData.value.ageMax && filterData.value.ageMax < 80) count++
   if (filterData.value.heightMin && filterData.value.heightMin > 140) count++
@@ -340,10 +310,6 @@ watch(
 const handleClose = () => {
   visible.value = false
   emit('update:show', false)
-}
-
-const selectGender = (gender: number | undefined) => {
-  filterData.value.gender = gender
 }
 
 const onAgeMinChange = (e: any) => {
@@ -452,7 +418,6 @@ const clearHometown = () => {
 const handleReset = () => {
   filterData.value = {
     keyword: '',
-    gender: undefined,
     ageMin: 18,
     ageMax: 80,
     heightMin: 140,
