@@ -85,16 +85,14 @@ export class UserService {
       }
     }
 
-    // 按性别互推：男→女，女→女（不覆盖前端筛选器中用户主动选择的性别）
+    // 按性别互推：男→女，女→男
     if (currentUserId) {
       const currentUser = await this.userRepository.findOne({ where: { id: currentUserId }, select: ['gender'] })
       if (currentUser) {
         if (currentUser.gender === 1) {
-          // 男性默认只看女性
           queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 2 })
         } else if (currentUser.gender === 2) {
-          // 女性也只看女性
-          queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 2 })
+          queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 1 })
         }
       }
     }
