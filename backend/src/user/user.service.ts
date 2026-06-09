@@ -74,10 +74,10 @@ export class UserService {
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .andWhere('user.id != :adminId', { adminId: 1 })
 
-    // 严格校验 gender 参数，避免 NaN 传入 SQL
+    // 严格校验 gender 参数，避免 NaN 传入 SQL（0=未知, 1=男, 2=女）
     if (gender !== undefined && gender !== null) {
       const genderNum = Number(gender)
-      if (Number.isFinite(genderNum) && (genderNum === 0 || genderNum === 1)) {
+      if (Number.isFinite(genderNum) && genderNum >= 0 && genderNum <= 2) {
         queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
       }
     }
@@ -217,7 +217,7 @@ export class UserService {
 
     if (dto.gender !== undefined && dto.gender !== null) {
       const genderNum = Number(dto.gender)
-      if (Number.isFinite(genderNum) && (genderNum === 0 || genderNum === 1)) {
+      if (Number.isFinite(genderNum) && genderNum >= 0 && genderNum <= 2) {
         queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
       }
     }
