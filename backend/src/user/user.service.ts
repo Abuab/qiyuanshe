@@ -85,6 +85,14 @@ export class UserService {
       }
     }
 
+    // 若当前用户是女性，只推荐女性
+    if (currentUserId) {
+      const currentUser = await this.userRepository.findOne({ where: { id: currentUserId }, select: ['gender'] })
+      if (currentUser && currentUser.gender === 2) {
+        queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 2 })
+      }
+    }
+
     // 应用筛选条件
     if (filters) {
       if (filters.ageMin !== undefined && filters.ageMin !== null && Number.isFinite(filters.ageMin)) {
