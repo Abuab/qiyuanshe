@@ -64,6 +64,24 @@
               />
             </el-form-item>
 
+            <el-form-item label="用户协议">
+              <el-input
+                v-model="basicConfig.userAgreement"
+                type="textarea"
+                :rows="6"
+                placeholder="请输入用户协议内容"
+              />
+            </el-form-item>
+
+            <el-form-item label="隐私政策">
+              <el-input
+                v-model="basicConfig.privacyPolicy"
+                type="textarea"
+                :rows="6"
+                placeholder="请输入隐私政策内容"
+              />
+            </el-form-item>
+
             <el-form-item label="会员服务协议">
               <el-input
                 v-model="basicConfig.vipAgreement"
@@ -354,6 +372,8 @@ const basicConfig = reactive({
   serviceWechat: '',
   logo: '',
   aboutUs: '',
+  userAgreement: '',
+  privacyPolicy: '',
   vipAgreement: '',
 })
 

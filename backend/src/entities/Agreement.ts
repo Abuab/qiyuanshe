@@ -9,6 +9,7 @@ import {
 export enum AgreementType {
   USER_AGREEMENT = 'USER_AGREEMENT',
   PRIVACY_POLICY = 'PRIVACY_POLICY',
+  VIP_AGREEMENT = 'VIP_AGREEMENT',
 }
 
 @Entity('agreements')

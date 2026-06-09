@@ -14,6 +14,8 @@ import { AgreementService } from './agreement.service'
 import { CreateAgreementDto, UpdateAgreementDto } from './dto'
 import { AgreementType } from '../entities/Agreement'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { RoleGuard } from '../admin/role.guard'
+import { Roles } from '../admin/roles.decorator'
 import { SystemService } from '../system/system.service'
 
 @Controller()
@@ -41,7 +43,8 @@ export class AgreementController {
    * GET /admin/agreements
    */
   @Get('admin/agreements')
-  @UseGuards(AdminJwtAuthGuard)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles('super_admin', 'matchmaker', 'operator', 'readonly')
   async findAll() {
     return this.agreementService.findAll()
   }
@@ -51,7 +54,8 @@ export class AgreementController {
    * POST /admin/agreements
    */
   @Post('admin/agreements')
-  @UseGuards(AdminJwtAuthGuard)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles('super_admin', 'matchmaker', 'operator')
   async createOrUpdate(@Body() dto: CreateAgreementDto) {
     return this.agreementService.createOrUpdate(dto)
   }

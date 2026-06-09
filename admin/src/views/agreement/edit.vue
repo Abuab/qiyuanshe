@@ -9,6 +9,7 @@
       <el-radio-group v-model="currentType" class="type-switch" @change="handleTypeChange">
         <el-radio-button value="USER_AGREEMENT">用户协议</el-radio-button>
         <el-radio-button value="PRIVACY_POLICY">隐私政策</el-radio-button>
+        <el-radio-button value="VIP_AGREEMENT">会员服务协议</el-radio-button>
       </el-radio-group>
 
       <el-form :model="formData" label-width="80px" class="edit-form">
@@ -61,7 +62,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { adminAgreement } from '../../api/agreement'
 
-const currentType = ref<'USER_AGREEMENT' | 'PRIVACY_POLICY'>('USER_AGREEMENT')
+const currentType = ref<'USER_AGREEMENT' | 'PRIVACY_POLICY' | 'VIP_AGREEMENT'>('USER_AGREEMENT')
 const saving = ref(false)
 const editorRef = shallowRef<IDomEditor>()
 
