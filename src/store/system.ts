@@ -17,6 +17,8 @@ interface SystemConfig {
   shareDesc: string
   matchmakers: Matchmaker[]
   vipAgreement?: string
+  userAgreement?: string
+  privacyPolicy?: string
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -26,6 +28,8 @@ export const useSystemStore = defineStore('system', () => {
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
   const vipAgreement = ref<string>('')
+  const userAgreement = ref<string>('')
+  const privacyPolicy = ref<string>('')
   let initialLoadDone = false
 
   const loadSystemConfig = async () => {
@@ -38,6 +42,8 @@ export const useSystemStore = defineStore('system', () => {
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
         vipAgreement.value = res.vipAgreement || vipAgreement.value
+        userAgreement.value = res.userAgreement || userAgreement.value
+        privacyPolicy.value = res.privacyPolicy || privacyPolicy.value
         saveToStorage()
         initialLoadDone = true
       }
@@ -59,6 +65,8 @@ export const useSystemStore = defineStore('system', () => {
           shareDesc.value = config.shareDesc || shareDesc.value
           matchmakers.value = config.matchmakers || matchmakers.value
           vipAgreement.value = config.vipAgreement || vipAgreement.value
+          userAgreement.value = config.userAgreement || userAgreement.value
+          privacyPolicy.value = config.privacyPolicy || privacyPolicy.value
         }
       } catch (e) {
         console.error('[SystemStore] Failed to parse system config:', e)
@@ -74,6 +82,8 @@ export const useSystemStore = defineStore('system', () => {
       shareDesc: shareDesc.value,
       matchmakers: matchmakers.value,
       vipAgreement: vipAgreement.value,
+      userAgreement: userAgreement.value,
+      privacyPolicy: privacyPolicy.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
   }
@@ -87,6 +97,8 @@ export const useSystemStore = defineStore('system', () => {
     shareDesc,
     matchmakers,
     vipAgreement,
+    userAgreement,
+    privacyPolicy,
     loadSystemConfig,
     saveToStorage
   }

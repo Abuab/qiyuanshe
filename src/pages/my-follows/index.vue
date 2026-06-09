@@ -10,12 +10,12 @@
     <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }" @scrolltolower="loadMore">
       <view v-if="loading" class="loading">加载中...</view>
       <view v-else-if="follows.length === 0" class="empty">暂无关注</view>
-      <view v-for="f in follows" :key="f.id" class="follow-card" @tap="goToUser(f.targetUserId)">
-        <image class="avatar" :src="f.targetUser?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+      <view v-for="f in follows" :key="f.id" class="follow-card" @tap="goToUser(f.id)">
+        <image class="avatar" :src="f.avatar || '/static/default-avatar.png'" mode="aspectFill" />
         <view class="info">
-          <text class="name">{{ f.targetUser?.nickname || '用户' }}</text>
+          <text class="name">{{ f.nickname || '用户' }}</text>
         </view>
-        <view class="unfollow-btn" @tap.stop="handleUnfollow(f.targetUserId)"><text>取消关注</text></view>
+        <view class="unfollow-btn" @tap.stop="handleUnfollow(f.id)"><text>取消关注</text></view>
       </view>
       <view v-if="noMore" class="no-more">— 没有更多了 —</view>
       <view class="bottom-safe"></view>

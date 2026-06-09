@@ -157,6 +157,39 @@ export class UserController {
     return Result.success(null, '已删除')
   }
 
+  // ===== 我的关注列表（当前用户关注的用户） =====
+
+  @Get('follows')
+  @UseGuards(JwtAuthGuard)
+  async getMyFollows(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.userService.getFollowing(req.user.userId, page, limit)
+  }
+
+  // ===== 谁看过我（访客列表） =====
+
+  @Get('visitors')
+  @UseGuards(JwtAuthGuard)
+  async getMyVisitors(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.userService.getVisitors(req.user.userId, page, limit)
+  }
+
+  // ===== 注销账户 =====
+
+  @Put('deactivate')
+  @UseGuards(JwtAuthGuard)
+  async deactivateAccount(@Request() req: any) {
+    await this.userService.deactivateAccount(req.user.userId)
+    return Result.success(null, '账户已注销')
+  }
+
   @Get(':id')
   async getUserDetail(
     @Param('id', ParseIntPipe) id: number,

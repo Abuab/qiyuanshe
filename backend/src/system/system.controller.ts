@@ -28,6 +28,8 @@ export class PublicSystemController {
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
       vipAgreement: configs.basic?.vipAgreement || '',
+      userAgreement: configs.basic?.userAgreement || '',
+      privacyPolicy: configs.basic?.privacyPolicy || '',
     }
 
     return Result.success(result)

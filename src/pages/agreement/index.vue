@@ -39,34 +39,39 @@
         </view>
 
         <view v-else-if="type === 'privacy'" class="agreement-body">
-          <text class="section-title">隐私政策</text>
-          <text class="section-text">{{ systemStore.appName }}尊重并保护所有用户的个人隐私。本隐私政策说明了我们在收集、使用和保护您个人信息方面的做法。</text>
-
-          <text class="section-title">一、信息收集</text>
-          <text class="section-text">1. 您在注册时提供的微信昵称、头像等基本信息。</text>
-          <text class="section-text">2. 您主动填写的个人资料信息，如年龄、身高、学历、职业等。</text>
-          <text class="section-text">3. 您在使用服务时产生的行为数据，如浏览、点赞、关注等。</text>
-
-          <text class="section-title">二、信息使用</text>
-          <text class="section-text">1. 用于匹配和推荐合适的交友对象。</text>
-          <text class="section-text">2. 用于改进和优化我们的服务质量。</text>
-          <text class="section-text">3. 未经您明确同意，我们不会向第三方提供您的个人信息。</text>
-
-          <text class="section-title">三、信息安全</text>
-          <text class="section-text">我们采取合理的技术手段和管理措施保护您的个人信息安全，防止信息泄露、损毁或丢失。</text>
+          <template v-if="privacyContent">
+            <rich-text class="vip-rich" :nodes="privacyContent"></rich-text>
+          </template>
+          <template v-else>
+            <text class="section-title">隐私政策</text>
+            <text class="section-text">{{ systemStore.appName }}尊重并保护所有用户的个人隐私。本隐私政策说明了我们在收集、使用和保护您个人信息方面的做法。</text>
+            <text class="section-title">一、信息收集</text>
+            <text class="section-text">1. 您在注册时提供的微信昵称、头像等基本信息。</text>
+            <text class="section-text">2. 您主动填写的个人资料信息，如年龄、身高、学历、职业等。</text>
+            <text class="section-text">3. 您在使用服务时产生的行为数据，如浏览、点赞、关注等。</text>
+            <text class="section-title">二、信息使用</text>
+            <text class="section-text">1. 用于匹配和推荐合适的交友对象。</text>
+            <text class="section-text">2. 用于改进和优化我们的服务质量。</text>
+            <text class="section-text">3. 未经您明确同意，我们不会向第三方提供您的个人信息。</text>
+            <text class="section-title">三、信息安全</text>
+            <text class="section-text">我们采取合理的技术手段和管理措施保护您的个人信息安全，防止信息泄露、损毁或丢失。</text>
+          </template>
         </view>
 
         <view v-else class="agreement-body">
-          <text class="section-title">用户协议</text>
-          <text class="section-text">欢迎使用{{ systemStore.appName }}。在使用本平台服务前，请您仔细阅读以下条款。</text>
-
-          <text class="section-title">一、服务条款</text>
-          <text class="section-text">{{ systemStore.appName }}是一个婚恋交友信息展示和匹配平台，仅为用户提供信息交流和匹配服务。</text>
-
-          <text class="section-title">二、用户义务</text>
-          <text class="section-text">1. 用户应提供真实、准确的个人信息。</text>
-          <text class="section-text">2. 用户不得利用平台从事违法或不当行为。</text>
-          <text class="section-text">3. 用户应尊重其他用户的合法权益。</text>
+          <template v-if="userContent">
+            <rich-text class="vip-rich" :nodes="userContent"></rich-text>
+          </template>
+          <template v-else>
+            <text class="section-title">用户协议</text>
+            <text class="section-text">欢迎使用{{ systemStore.appName }}。在使用本平台服务前，请您仔细阅读以下条款。</text>
+            <text class="section-title">一、服务条款</text>
+            <text class="section-text">{{ systemStore.appName }}是一个婚恋交友信息展示和匹配平台，仅为用户提供信息交流和匹配服务。</text>
+            <text class="section-title">二、用户义务</text>
+            <text class="section-text">1. 用户应提供真实、准确的个人信息。</text>
+            <text class="section-text">2. 用户不得利用平台从事违法或不当行为。</text>
+            <text class="section-text">3. 用户应尊重其他用户的合法权益。</text>
+          </template>
         </view>
         </view>
       </view>
@@ -85,17 +90,18 @@ const systemStore = useSystemStore()
 const type = ref('user')
 const title = ref('用户协议')
 
-const vipContent = computed(() => {
-  const raw = systemStore.vipAgreement
+const vipContent = computed(() => formatContent(systemStore.vipAgreement))
+const userContent = computed(() => formatContent(systemStore.userAgreement))
+const privacyContent = computed(() => formatContent(systemStore.privacyPolicy))
+
+function formatContent(raw: string | undefined): string {
   if (!raw || !raw.trim()) return ''
-  // 将换行分隔的文本转为 HTML 段落，支持后台配置
-  const html = raw
+  return raw
     .split('\n')
     .filter((line) => line.trim())
     .map((line) => `<p style="font-size:28rpx;color:#666;line-height:1.8;margin-bottom:8rpx;">${line.trim()}</p>`)
     .join('')
-  return html
-})
+}
 
 onMounted(() => {
   const pages = getCurrentPages()

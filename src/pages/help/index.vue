@@ -21,6 +21,13 @@
         <text class="contact-title">没找到答案？联系客服</text>
         <button class="contact-btn" open-type="contact">联系客服</button>
       </view>
+
+      <view class="deactivate-section">
+        <view class="deactivate-btn" @tap="showDeactivateConfirm">
+          <text>注销账户</text>
+        </view>
+        <text class="deactivate-hint">注销后所有数据将被清除，请谨慎操作</text>
+      </view>
       <view class="bottom-safe"></view>
     </scroll-view>
   </view>
@@ -28,10 +35,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { put } from '@/utils/request'
+import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const userStore = useUserStore()
 
 const faqs = ref([
   { q: '如何注册账号？', a: '使用微信授权登录即可自动注册账号。', open: false },
@@ -49,6 +59,30 @@ onMounted(() => {
 
 function toggleFaq(idx: number) { faqs.value[idx].open = !faqs.value[idx].open }
 function handleBack() { safeNavigateBack() }
+
+async function showDeactivateConfirm() {
+  const res: any = await new Promise((resolve) => {
+    uni.showModal({
+      title: '注销账户',
+      content: '确定要注销账户吗？注销后您的个人资料将不可见，此操作不可撤销。',
+      confirmText: '确定注销',
+      confirmColor: '#E7412B',
+      success: (r) => resolve(r),
+    })
+  })
+  if (res.confirm) {
+    try {
+      await put('/users/deactivate')
+      uni.showToast({ title: '账户已注销', icon: 'none' })
+      userStore.logout()
+      setTimeout(() => {
+        uni.reLaunch({ url: '/pages/index/index' })
+      }, 1500)
+    } catch (e) {
+      uni.showToast({ title: '注销失败，请重试', icon: 'none' })
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -68,5 +102,30 @@ function handleBack() { safeNavigateBack() }
 .contact { background: #fff; border-radius: 16rpx; padding: 40rpx; text-align: center; }
 .contact-title { display: block; font-size: 28rpx; color: #333; margin-bottom: 24rpx; }
 .contact-btn { background: #07c160; color: #fff; border-radius: 40rpx; height: 80rpx; line-height: 80rpx; font-size: 28rpx; width: 300rpx; }
+
+.deactivate-section {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 40rpx;
+  text-align: center;
+  margin-top: 24rpx;
+}
+
+.deactivate-btn {
+  display: inline-block;
+  padding: 16rpx 64rpx;
+  border: 1rpx solid #E7412B;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+  color: #E7412B;
+}
+
+.deactivate-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #ccc;
+  margin-top: 16rpx;
+}
+
 .bottom-safe { height: 60rpx; }
 </style>

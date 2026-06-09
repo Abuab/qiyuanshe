@@ -110,6 +110,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   adminRemark: string
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  deleteReason: string
+
   @Column({ type: 'simple-json', nullable: true })
   tags: string[]
 

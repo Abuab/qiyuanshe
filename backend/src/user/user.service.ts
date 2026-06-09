@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, SelectQueryBuilder, In } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
+import { ProfileVisit } from '../entities/ProfileVisit'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 
@@ -54,6 +55,8 @@ export class UserService {
     private readonly userPhotoRepository: Repository<UserPhoto>,
     @InjectRepository(Follow)
     private readonly followRepository: Repository<Follow>,
+    @InjectRepository(ProfileVisit)
+    private readonly visitRepository: Repository<ProfileVisit>,
   ) {}
 
   async findRecommend(
@@ -348,6 +351,11 @@ export class UserService {
     if (currentUserId) {
       isSelf = currentUserId === id
       if (!isSelf) {
+        // 记录来访
+        this.visitRepository.save(
+          this.visitRepository.create({ userId: id, visitorUserId: currentUserId }),
+        ).catch((err) => console.error('Record visit error:', err?.message || err))
+
         const follow = await this.followRepository.findOne({
           where: { userId: currentUserId, targetUserId: id },
         })
@@ -648,5 +656,59 @@ export class UserService {
 
     await this.userRepository.save(user)
     return user
+  }
+
+  async getVisitors(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedResult<UserListItem>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+
+    const total = await this.visitRepository.count({
+      where: { userId },
+    })
+
+    const totalPages = Math.ceil(total / pageSize)
+    const offset = (pageNum - 1) * pageSize
+
+    const visits = await this.visitRepository.find({
+      where: { userId },
+      relations: ['visitorUser'],
+      skip: offset,
+      take: pageSize,
+      order: { createdAt: 'DESC' },
+    })
+
+    const list = visits.map((v) => ({
+      id: v.id,
+      visitorUserId: v.visitorUserId,
+      visitorUser: v.visitorUser
+        ? {
+            id: v.visitorUser.id,
+            nickname: v.visitorUser.nickname,
+            avatar: v.visitorUser.avatar || '',
+          }
+        : null,
+      createdAt: v.createdAt,
+    }))
+
+    return {
+      list: list as any,
+      total,
+      page: pageNum,
+      pageSize,
+      totalPages,
+    }
+  }
+
+  async deactivateAccount(userId: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) throw new NotFoundException('用户不存在')
+    user.isDeleted = 1
+    user.status = 0
+    user.deleteReason = '用户自行注销'
+    await this.userRepository.save(user)
   }
 }
