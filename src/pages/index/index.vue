@@ -53,8 +53,6 @@
           <text class="section-more" @tap="goToQuestions">更多 ›</text>
         </view>
 
-        <view class="qa-divider"></view>
-
         <swiper
           class="question-swiper"
           :autoplay="true"
@@ -63,7 +61,7 @@
           :duration="400"
           :current="questionSwiperIndex"
           @change="onQuestionSwiperChange"
-          :style="{ height: '130rpx' }"
+          :style="{ height: '120rpx' }"
         >
           <swiper-item v-for="q in hotQuestions" :key="q.id">
             <view class="question-slide" @tap="goToQuestionDetail(q.id)">
@@ -663,7 +661,7 @@ const onShareTimeline = () => {
 
 .hot-questions-card {
   background-color: #FFF8FA;
-  padding: 8rpx 20rpx 6rpx;
+  padding: 6rpx 20rpx 4rpx;
   margin: 0 28rpx 16rpx;
   border-radius: 16rpx;
 }
@@ -674,12 +672,6 @@ const onShareTimeline = () => {
   align-items: center;
   margin-bottom: 0;
   line-height: 1;
-}
-
-.qa-divider {
-  height: 2rpx;
-  background-color: #FFD0E0;
-  margin: 8rpx 0;
 }
 
 .section-title-row {
@@ -712,7 +704,7 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 130rpx;
+  height: 120rpx;
   padding: 0 4rpx;
 }
 
@@ -758,7 +750,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 4rpx;
+  padding-top: 2rpx;
   gap: 10rpx;
 }
 
