@@ -902,6 +902,7 @@ const onShareTimeline = () => {
   .float-hi {
     font-size: 20rpx;
     font-weight: 700;
+    font-style: italic;
     color: #D63384;
     line-height: 1.1;
   }
