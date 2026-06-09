@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
@@ -124,5 +124,16 @@ export class DynamicService {
         nickname: l.user?.nickname || '',
       })),
     }
+  }
+
+  async deleteDynamic(dynamicId: number, userId: number) {
+    const dynamic = await this.dynamicRepository.findOne({ where: { id: dynamicId } })
+    if (!dynamic) throw new NotFoundException('动态不存在')
+    if (dynamic.userId !== userId) throw new NotFoundException('无权删除此动态')
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(DynamicLike, { dynamicId })
+      await manager.remove(Dynamic, dynamic)
+    })
   }
 }

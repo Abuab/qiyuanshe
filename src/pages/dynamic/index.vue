@@ -41,6 +41,9 @@
             <text class="author-name">{{ item.nickname }}</text>
             <text class="publish-time">{{ formatTime(item.createdAt) }}</text>
           </view>
+          <view v-if="myUserId && item.userId === myUserId" class="delete-btn" @tap.stop="handleDelete(item)">
+            <text class="delete-icon">×</text>
+          </view>
         </view>
 
         <!-- 文字内容 -->
@@ -110,8 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { del } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -147,6 +151,8 @@ const page = ref(1)
 const pageSize = 10
 const statusBarHeight = ref(0)
 const userStore = useUserStore()
+
+const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -300,6 +306,25 @@ const goComment = (item: DynamicItem) => {
   uni.navigateTo({ url: `/pages/dynamic-detail/index?id=${item.id}` })
 }
 
+const handleDelete = (item: DynamicItem) => {
+  uni.showModal({
+    title: '删除动态',
+    content: '确定要删除这条动态吗？',
+    confirmColor: '#E7412B',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await del(`/dynamics/${item.id}`)
+          list.value = list.value.filter((d) => d.id !== item.id)
+          uni.showToast({ title: '已删除', icon: 'none' })
+        } catch (e) {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    },
+  })
+}
+
 const handleBack = () => {
   if (getCurrentPages().length > 1) {
     uni.navigateBack({ delta: 1 })
@@ -411,6 +436,23 @@ onMounted(() => {
   font-size: 22rpx;
   color: #999;
   margin-top: 4rpx;
+}
+
+.delete-btn {
+  margin-left: auto;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .delete-icon {
+    font-size: 32rpx;
+    color: #999;
+    line-height: 1;
+  }
 }
 
 .card-content {

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -73,5 +74,15 @@ export class DynamicController {
       success: true,
       ...result,
     }
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async deleteDynamic(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    await this.dynamicService.deleteDynamic(id, req.user.userId)
+    return { success: true, message: '已删除' }
   }
 }
