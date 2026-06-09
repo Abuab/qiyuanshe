@@ -1,6 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, In, MoreThan, LessThan } from 'typeorm'
+import { Repository, MoreThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
@@ -109,35 +109,30 @@ export class ChatService {
     const { page, limit } = dto
     const skip = (page - 1) * limit
 
-    const subQuery = this.messageRepository
-      .createQueryBuilder('msg')
-      .select('MAX(msg.id)', 'lastMessageId')
-      .where('(msg.fromUserId = :userId OR msg.toUserId = :userId)', { userId })
-      .groupBy('CASE WHEN msg.fromUserId = :userId THEN msg.toUserId ELSE msg.fromUserId END')
-
-    const conversations = await this.messageRepository
-      .createQueryBuilder('msg')
-      .innerJoin(
-        '(' + subQuery.getQuery() + ')',
-        'last_msg',
-        'msg.id = last_msg.lastMessageId',
-      )
-      .setParameters(subQuery.getParameters())
-      .leftJoin('msg.fromUser', 'fromUser')
-      .leftJoin('msg.toUser', 'toUser')
-      .select([
-        'msg.id as id',
-        'msg.content as "lastMessage"',
-        'msg.createdAt as "createdAt"',
-        '(CASE WHEN msg.fromUserId = :userId THEN msg.toUserId ELSE msg.fromUserId END) as "userId"',
-        '(CASE WHEN msg.fromUserId = :userId THEN toUser.nickname ELSE fromUser.nickname END) as nickname',
-        '(CASE WHEN msg.fromUserId = :userId THEN toUser.avatar ELSE fromUser.avatar END) as avatar',
-      ])
-      .setParameter('userId', userId)
-      .orderBy('msg.createdAt', 'DESC')
-      .offset(skip)
-      .limit(limit)
-      .getRawMany()
+    // 使用原始 SQL 代替 subQuery.getQuery() 拼接，避免参数注入错位导致同一对话出现两条
+    const conversations = await this.messageRepository.query(
+      `SELECT
+        m.id AS "id",
+        m.content AS "lastMessage",
+        m."createdAt" AS "createdAt",
+        CASE WHEN m."fromUserId" = ? THEN m."toUserId" ELSE m."fromUserId" END AS "userId",
+        CASE WHEN m."fromUserId" = ? THEN u2.nickname ELSE u1.nickname END AS "nickname",
+        CASE WHEN m."fromUserId" = ? THEN u2.avatar ELSE u1.avatar END AS "avatar"
+      FROM chat_messages m
+      INNER JOIN (
+        SELECT
+          MAX(id) AS "lastMessageId",
+          CASE WHEN "fromUserId" = ? THEN "toUserId" ELSE "fromUserId" END AS "otherUserId"
+        FROM chat_messages
+        WHERE "fromUserId" = ? OR "toUserId" = ?
+        GROUP BY CASE WHEN "fromUserId" = ? THEN "toUserId" ELSE "fromUserId" END
+      ) AS last_msg ON m.id = last_msg."lastMessageId"
+      LEFT JOIN users u1 ON u1.id = m."fromUserId"
+      LEFT JOIN users u2 ON u2.id = m."toUserId"
+      ORDER BY m."createdAt" DESC
+      LIMIT ? OFFSET ?`,
+      [userId, userId, userId, userId, userId, userId, userId, limit, skip],
+    )
 
     const unreadCounts = await this.messageRepository
       .createQueryBuilder('msg')
@@ -150,7 +145,7 @@ export class ChatService {
 
     const unreadMap = new Map(unreadCounts.map((u) => [u.fromUserId, parseInt(u.count)]))
 
-    const result = conversations.map((conv) => ({
+    const result = conversations.map((conv: any) => ({
       id: conv.userId,
       type: 'user',
       userId: conv.userId,
@@ -165,9 +160,9 @@ export class ChatService {
       .createQueryBuilder('other')
       .where(
         `other.id IN (
-          SELECT DISTINCT CASE WHEN msg1.fromUserId = :userId THEN msg1.toUserId ELSE msg1.fromUserId END
+          SELECT DISTINCT CASE WHEN msg1."fromUserId" = :userId THEN msg1."toUserId" ELSE msg1."fromUserId" END
           FROM chat_messages msg1
-          WHERE msg1.fromUserId = :userId OR msg1.toUserId = :userId
+          WHERE msg1."fromUserId" = :userId OR msg1."toUserId" = :userId
         )`,
         { userId },
       )

@@ -126,6 +126,7 @@ const loading = ref(false)
 const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
+let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 const activeCat = ref('all')
 const catTabs = ref([
@@ -160,6 +161,8 @@ onShow(() => {
 })
 
 const fetchConversations = async (isRefresh = false) => {
+  if (fetchLock) return
+  fetchLock = true
   try {
     if (isRefresh) {
       page.value = 1
@@ -225,6 +228,7 @@ const fetchConversations = async (isRefresh = false) => {
     refreshing.value = false
   } finally {
     loading.value = false
+    fetchLock = false
   }
 }
 
