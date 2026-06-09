@@ -886,13 +886,13 @@ const onShareTimeline = () => {
 // Hi红娘悬浮按钮
 .float-matchmaker {
   position: fixed;
-  right: 24rpx;
-  bottom: 260rpx;
-  width: 100rpx;
-  height: 100rpx;
+  right: 20rpx;
+  bottom: 240rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB0 100%);
-  box-shadow: 0 8rpx 24rpx rgba(255, 107, 157, 0.35);
+  background: #FFD1DC;
+  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -900,17 +900,16 @@ const onShareTimeline = () => {
   z-index: 998;
 
   .float-hi {
-    font-size: 32rpx;
+    font-size: 20rpx;
     font-weight: 700;
-    color: #fff;
-    line-height: 1.2;
+    color: #D63384;
+    line-height: 1.1;
   }
 
   .float-label {
-    font-size: 20rpx;
-    color: #fff;
-    line-height: 1.2;
-    opacity: 0.9;
+    font-size: 17rpx;
+    color: #D63384;
+    line-height: 1.1;
   }
 }
 
