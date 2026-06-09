@@ -185,6 +185,7 @@ import { showToast, getFullImageUrl } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
+import { useUserStore } from '@/store/user'
 import FilterPanel from '@/components/filter-panel/filter-panel.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -247,6 +248,7 @@ const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
 
 const filterStore = useFilterStore()
+const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName)
 
@@ -286,10 +288,17 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
     const result = await get<{ list: UserCardData[]; total: number }>('/users/recommend', params)
 
     if (result && result.list) {
+      // 过滤掉当前登录用户自己
+      const currentUserId = userStore.userInfo?.id
+      let filteredList = result.list
+      if (currentUserId) {
+        filteredList = result.list.filter((u: UserCardData) => u.id !== currentUserId)
+      }
+
       if (reset) {
-        userList.value = result.list
+        userList.value = filteredList
       } else {
-        userList.value = [...userList.value, ...result.list]
+        userList.value = [...userList.value, ...filteredList]
       }
 
       if (result.list.length < pageSize) {

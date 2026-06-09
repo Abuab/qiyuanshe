@@ -62,7 +62,7 @@
               <text class="id-value">{{ userData.id }}</text>
             </view>
           </view>
-          <view v-if="!userData.isSelf" class="follow-btn" @tap="toggleFollow">
+          <view v-if="!isSelf" class="follow-btn" @tap="toggleFollow">
             <text class="heart-icon" :class="{ filled: userData.isFollowed }">
               {{ userData.isFollowed ? '❤️' : '🤍' }}
             </text>
@@ -336,6 +336,8 @@ const systemStore = useSystemStore()
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVip = computed(() => userStore.isVip)
+/** 本地判断是否为自己，不依赖后端 isSelf 字段 */
+const isSelf = computed(() => userStore.userInfo?.id != null && userStore.userInfo.id === userId.value)
 
 onMounted(() => {
   // 激活右上角原生分享按钮（开发工具中可能不可用，加 fail 静默处理）
@@ -560,7 +562,7 @@ const generatePoster = () => {
 }
 
 const toggleFollow = async () => {
-  if (userData.value?.isSelf) {
+  if (isSelf.value) {
     uni.showToast({ title: '不能关注自己', icon: 'none' })
     return
   }
