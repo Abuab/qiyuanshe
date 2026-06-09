@@ -16,7 +16,7 @@ import { Repository } from 'typeorm'
 import { UserService } from './user.service'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
-import { JwtAuthGuard } from '../auth/guards'
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { UserPhoto } from '../entities/UserPhoto'
@@ -34,6 +34,7 @@ export class UserController {
   ) {}
 
   @Get('recommend')
+  @UseGuards(OptionalJwtAuthGuard)
   async findRecommend(
     @Query('tab') tab: string = 'active',
     @Query('page') page: number = 1,
