@@ -77,6 +77,12 @@ export class User {
   @Column({ type: 'varchar', length: 100, nullable: true })
   residence: string
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  partnerHometown: string
+
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  partnerResidence: string
+
   @Column({ type: 'text', nullable: true })
   selfIntro: string
 

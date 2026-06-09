@@ -101,6 +101,32 @@
           </picker>
         </view>
 
+        <view class="form-item-capsule">
+          <text class="form-label">住房情况</text>
+          <view class="capsule-group">
+            <view
+              v-for="opt in housingStatusOptions"
+              :key="opt"
+              class="capsule-btn"
+              :class="{ active: form.housingStatus === opt }"
+              @tap="form.housingStatus = opt"
+            >{{ opt }}</view>
+          </view>
+        </view>
+
+        <view class="form-item-capsule">
+          <text class="form-label">车辆情况</text>
+          <view class="capsule-group">
+            <view
+              v-for="opt in carStatusOptions"
+              :key="opt"
+              class="capsule-btn"
+              :class="{ active: form.carStatus === opt }"
+              @tap="form.carStatus = opt"
+            >{{ opt }}</view>
+          </view>
+        </view>
+
         <view class="form-item">
           <text class="form-label">独生子女</text>
           <picker mode="selector" :range="onlyChildOptions" :value="onlyChildIndex" @change="onOnlyChildChange" style="flex:1">
@@ -154,6 +180,24 @@
           <view class="form-picker">
             <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
             <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 我的照片 -->
+      <view class="section-card">
+        <view class="photo-header-row">
+          <text class="section-title">我的照片</text>
+          <text class="photo-count">{{ photos.length }}/9</text>
+        </view>
+        <view class="photo-grid">
+          <view v-for="(p, idx) in photos" :key="p.id" class="photo-item">
+            <image :src="p.photoUrl || p.url" mode="aspectFill" class="photo-img" @tap="previewPhoto(idx)" />
+            <view v-if="p.isMain" class="main-tag">主图</view>
+            <text class="photo-del" @tap.stop="deletePhoto(p.id)">×</text>
+          </view>
+          <view v-if="photos.length < 9" class="photo-add" @tap="uploadPhoto">
+            <text class="add-plus">+</text>
           </view>
         </view>
       </view>
@@ -221,6 +265,22 @@
           <text class="form-label">住房要求</text>
           <view class="form-picker">
             <text class="picker-value" :class="{ placeholder: !form.housingRequirement }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.housingRequirement || '请选择' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+          </view>
+        </view>
+
+        <view class="form-item" @tap="openCityPicker('partnerHometown')">
+          <text class="form-label">户籍地要求</text>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.partnerHometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.partnerHometown || '不限' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+          </view>
+        </view>
+
+        <view class="form-item" @tap="openCityPicker('partnerResidence')">
+          <text class="form-label">现居地要求</text>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.partnerResidence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.partnerResidence || '不限' }}</text>
             <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
         </view>
@@ -378,6 +438,9 @@ const incomeLabels = incomeOptions.map((o) => o.label)
 const maritalOptions = ['未婚', '离异', '丧偶']
 const onlyChildOptions = ['是', '否']
 
+const housingStatusOptions = ['已购房', '租房', '与父母同住', '其他']
+const carStatusOptions = ['已购车', '未购车']
+
 const whenMarryOptions = ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然']
 
 const zodiacOptions = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
@@ -422,6 +485,8 @@ const form = ref({
   occupation: '',
   incomeRange: '',
   maritalStatus: '',
+  housingStatus: '',
+  carStatus: '',
   onlyChild: '',
   whenMarry: '',
   zodiac: '',
@@ -438,7 +503,12 @@ const form = ref({
   partnerMaritalStatus: '',
   acceptChildren: '',
   hopeTaTags: [] as string[],
+  partnerHometown: '',
+  partnerResidence: '',
 })
+
+// 照片管理
+const photos = ref<any[]>([])
 
 // ===== 弹窗状态 =====
 const showHousingPopup = ref(false)
@@ -448,13 +518,15 @@ const tempTags = ref<string[]>([])
 
 // 城市选择器
 const showCityPicker = ref(false)
-const cityTarget = ref<'residence' | 'hometown'>('residence')
+const cityTarget = ref<'residence' | 'hometown' | 'partnerHometown' | 'partnerResidence'>('residence')
 
 // ===== 初始化 =====
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+
+  fetchPhotos()
 
   const info = userStore.userInfo as any
   if (info) {
@@ -471,6 +543,8 @@ onMounted(() => {
       occupation: info.occupation || '',
       incomeRange: info.incomeRange || '',
       maritalStatus: info.maritalStatus || '',
+      housingStatus: info.housingStatus || '',
+      carStatus: info.carStatus || '',
       onlyChild: info.onlyChild || '',
       whenMarry: info.whenMarry || '',
       zodiac: info.zodiac || '',
@@ -486,6 +560,8 @@ onMounted(() => {
       partnerMaritalStatus: info.partnerMaritalStatus || '',
       acceptChildren: info.acceptChildren || '',
       hopeTaTags: parseTags(info.hopeTaTags),
+      partnerHometown: info.partnerHometown || '',
+      partnerResidence: info.partnerResidence || '',
     }
   }
 })
@@ -633,17 +709,71 @@ const removeHopeTaTag = (idx: number) => {
 }
 
 // ===== 城市选择器 =====
-const openCityPicker = (target: 'residence' | 'hometown' = 'residence') => {
+const openCityPicker = (target: 'residence' | 'hometown' | 'partnerHometown' | 'partnerResidence' = 'residence') => {
   cityTarget.value = target
   showCityPicker.value = true
 }
 const onCityConfirm = (value: string, _ids: number[]) => {
   if (cityTarget.value === 'hometown') {
     form.value.hometown = value
+  } else if (cityTarget.value === 'partnerHometown') {
+    form.value.partnerHometown = value
+  } else if (cityTarget.value === 'partnerResidence') {
+    form.value.partnerResidence = value
   } else {
     form.value.residence = value
   }
   showCityPicker.value = false
+}
+
+// ===== 照片管理 =====
+const fetchPhotos = async () => {
+  try {
+    const res = await request({ url: '/users/photos', method: 'GET' } as any)
+    photos.value = res?.data?.list || []
+  } catch (e) { console.error(e) }
+}
+
+const uploadPhoto = () => {
+  uni.chooseImage({
+    count: 9 - photos.value.length,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: async (res: any) => {
+      const files = res.tempFiles || res.tempFilePaths || []
+      for (const f of files) {
+        try {
+          const uploadRes = await uploadImage(typeof f === 'string' ? f : f.path || f.tempFilePath)
+          if (uploadRes?.url) {
+            await request({ url: '/users/photos', method: 'POST', data: { url: uploadRes.url } } as any)
+          }
+        } catch (e) { console.error(e) }
+      }
+      await fetchPhotos()
+    },
+  })
+}
+
+const deletePhoto = (id: number) => {
+  uni.showModal({
+    title: '提示',
+    content: '确定删除这张照片吗？',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await request({ url: `/users/photos/${id}`, method: 'DELETE' } as any)
+          await fetchPhotos()
+        } catch (e) { uni.showToast({ title: '删除失败', icon: 'none' }) }
+      }
+    },
+  })
+}
+
+const previewPhoto = (idx: number) => {
+  uni.previewImage({
+    current: idx,
+    urls: photos.value.map((p: any) => p.photoUrl || p.url),
+  })
 }
 
 // ===== 保存 =====
@@ -669,6 +799,8 @@ const handleSave = async () => {
       occupation: form.value.occupation.trim(),
       incomeRange: form.value.incomeRange,
       maritalStatus: form.value.maritalStatus,
+      housingStatus: form.value.housingStatus,
+      carStatus: form.value.carStatus,
       onlyChild: form.value.onlyChild,
       whenMarry: form.value.whenMarry,
       zodiac: form.value.zodiac,
@@ -684,6 +816,8 @@ const handleSave = async () => {
       partnerMaritalStatus: form.value.partnerMaritalStatus,
       acceptChildren: form.value.acceptChildren,
       hopeTaTags: form.value.hopeTaTags.join(','),
+      partnerHometown: form.value.partnerHometown,
+      partnerResidence: form.value.partnerResidence,
     }
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
@@ -915,6 +1049,40 @@ const handleBack = () => {
   }
 }
 
+/* 胶囊选择 */
+.form-item-capsule {
+  padding: 20rpx 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1rpx solid #f5f5f5;
+
+  .form-label {
+    width: 140rpx;
+    flex-shrink: 0;
+  }
+}
+
+.capsule-group {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.capsule-btn {
+  padding: 10rpx 28rpx;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #999;
+  background-color: #f5f5f5;
+
+  &.active {
+    background-color: #FF6B9D;
+    color: #fff;
+  }
+}
+
 .intro-textarea {
   width: 100%;
   min-height: 200rpx;
@@ -1093,6 +1261,83 @@ const handleBack = () => {
     color: #fff;
     font-weight: bold;
   }
+}
+
+/* 照片管理 */
+.photo-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+
+  .section-title {
+    margin-bottom: 0;
+  }
+}
+
+.photo-count {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.photo-item {
+  position: relative;
+  width: calc(33.33% - 8rpx);
+  height: 220rpx;
+  border-radius: 8rpx;
+  overflow: hidden;
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+}
+
+.main-tag {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  background: #FF6B9D;
+  color: #fff;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 4rpx;
+}
+
+.photo-del {
+  position: absolute;
+  top: 4rpx;
+  right: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 40rpx;
+  font-size: 28rpx;
+}
+
+.photo-add {
+  width: calc(33.33% - 8rpx);
+  height: 220rpx;
+  border: 2rpx dashed #ddd;
+  border-radius: 8rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-plus {
+  font-size: 64rpx;
+  color: #ddd;
+  line-height: 1;
 }
 
 .bottom-safe {

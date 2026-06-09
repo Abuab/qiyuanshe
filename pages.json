@@ -173,6 +173,90 @@
         "navigationBarTitleText": "公告详情",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/matchmaker-reviews/index",
+      "style": {
+        "navigationBarTitleText": "红娘评语",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/circles/index",
+      "style": {
+        "navigationBarTitleText": "相亲圈子",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/circle-posts/index",
+      "style": {
+        "navigationBarTitleText": "帖子列表",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/circle-publish/index",
+      "style": {
+        "navigationBarTitleText": "发帖",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/success-cases/index",
+      "style": {
+        "navigationBarTitleText": "我们脱单了",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/success-case-detail/index",
+      "style": {
+        "navigationBarTitleText": "成功故事",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-follows/index",
+      "style": {
+        "navigationBarTitleText": "我的关注",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-visitors/index",
+      "style": {
+        "navigationBarTitleText": "谁看过我",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-photos/index",
+      "style": {
+        "navigationBarTitleText": "我的照片",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/realname-auth/index",
+      "style": {
+        "navigationBarTitleText": "实名认证",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/help/index",
+      "style": {
+        "navigationBarTitleText": "帮助与反馈",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/about/index",
+      "style": {
+        "navigationBarTitleText": "关于我们",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

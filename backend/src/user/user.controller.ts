@@ -19,6 +19,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { UserPhoto } from '../entities/UserPhoto'
 import { Result } from '../common/result'
 
 @Controller('users')
@@ -27,6 +28,7 @@ export class UserController {
     private readonly userService: UserService,
     @InjectRepository(Report) private reportRepo: Repository<Report>,
     @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
+    @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
   ) {}
 
   @Get('recommend')
@@ -101,6 +103,58 @@ export class UserController {
         createdAt: a.createdAt,
       })),
     )
+  }
+
+  // ===== 照片管理 =====
+
+  @Get('photos')
+  @UseGuards(JwtAuthGuard)
+  async getUserPhotos(@Request() req: any) {
+    const photos = await this.photoRepo.find({
+      where: { userId: req.user.userId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    })
+    return Result.success({ list: photos })
+  }
+
+  @Post('photos')
+  @UseGuards(JwtAuthGuard)
+  async addPhoto(
+    @Body() body: { url: string },
+    @Request() req: any,
+  ) {
+    const userId = req.user.userId
+    const count = await this.photoRepo.count({ where: { userId } })
+    if (count >= 9) return Result.serverError('最多上传9张照片')
+    const isMain = count === 0 ? 1 : 0
+    const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count })
+    await this.photoRepo.save(photo)
+    return Result.success(photo)
+  }
+
+  @Post('photos/:id/main')
+  @UseGuards(JwtAuthGuard)
+  async setMainPhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    const userId = req.user.userId
+    await this.photoRepo.update({ userId, isMain: 1 }, { isMain: 0 })
+    await this.photoRepo.update({ id, userId }, { isMain: 1 })
+    return Result.success(null, '已设置主图')
+  }
+
+  @Delete('photos/:id')
+  @UseGuards(JwtAuthGuard)
+  async deletePhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: any,
+  ) {
+    const userId = req.user.userId
+    const photo = await this.photoRepo.findOne({ where: { id, userId } })
+    if (!photo) return Result.serverError('照片不存在')
+    await this.photoRepo.remove(photo)
+    return Result.success(null, '已删除')
   }
 
   @Get(':id')

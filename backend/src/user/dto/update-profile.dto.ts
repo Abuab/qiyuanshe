@@ -65,4 +65,24 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(500)
   selfIntro?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  housingStatus?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  carStatus?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  partnerHometown?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  partnerResidence?: string
 }

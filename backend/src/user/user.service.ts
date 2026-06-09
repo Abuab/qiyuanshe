@@ -641,6 +641,10 @@ export class UserService {
     if (dto.hometown !== undefined) user.hometown = dto.hometown
     if (dto.residence !== undefined) user.residence = dto.residence
     if (dto.selfIntro !== undefined) user.selfIntro = dto.selfIntro
+    if (dto.housingStatus !== undefined) user.housingStatus = dto.housingStatus
+    if (dto.carStatus !== undefined) user.carStatus = dto.carStatus
+    if (dto.partnerHometown !== undefined) user.partnerHometown = dto.partnerHometown
+    if (dto.partnerResidence !== undefined) user.partnerResidence = dto.partnerResidence
 
     await this.userRepository.save(user)
     return user
