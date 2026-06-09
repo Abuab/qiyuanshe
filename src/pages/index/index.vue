@@ -342,9 +342,13 @@ const switchFilter = (value: string) => {
 
 const handleQuickEntry = (entry: QuickEntry) => {
   if (entry.name === '最新活动') {
-    uni.navigateTo({
-      url: '/pages/activity-list/index',
-    })
+    uni.navigateTo({ url: '/pages/activity-list/index' })
+  } else if (entry.name === '红娘评语') {
+    uni.navigateTo({ url: '/pages/matchmaker-reviews/index' })
+  } else if (entry.name === '相亲圈子') {
+    uni.navigateTo({ url: '/pages/circles/index' })
+  } else if (entry.name === '我们脱单了') {
+    uni.navigateTo({ url: '/pages/success-cases/index' })
   } else {
     showToast('功能开发中', 'none')
   }

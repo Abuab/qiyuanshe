@@ -55,6 +55,45 @@
           <text class="arrow">></text>
         </view>
 
+        <view class="menu-item" @tap="goToFollows">
+          <text class="menu-icon">❤️</text>
+          <text class="menu-text">我的关注</text>
+          <text class="arrow">></text>
+        </view>
+
+        <view class="menu-item" @tap="goToVisitors">
+          <text class="menu-icon">👁</text>
+          <text class="menu-text">谁看过我</text>
+          <text v-if="!isVipValid" class="menu-badge vip">VIP</text>
+          <text class="arrow">></text>
+        </view>
+
+        <view class="menu-item" @tap="goToPhotos">
+          <text class="menu-icon">🖼</text>
+          <text class="menu-text">我的照片</text>
+          <text class="arrow">></text>
+        </view>
+
+        <view class="menu-item" @tap="goToRealnameAuth">
+          <text class="menu-icon">🛡</text>
+          <text class="menu-text">实名认证</text>
+          <text v-if="userInfo?.isRealName" class="menu-badge real">已认证</text>
+          <text v-else class="menu-badge warn">未认证</text>
+          <text class="arrow">></text>
+        </view>
+
+        <view class="menu-item" @tap="goToHelp">
+          <text class="menu-icon">❓</text>
+          <text class="menu-text">帮助与反馈</text>
+          <text class="arrow">></text>
+        </view>
+
+        <view class="menu-item" @tap="goToAbout">
+          <text class="menu-icon">📋</text>
+          <text class="menu-text">关于我们</text>
+          <text class="arrow">></text>
+        </view>
+
         <view class="menu-item" @tap="goToSettings">
           <text class="menu-icon">⚙️</text>
           <text class="menu-text">设置</text>
@@ -137,6 +176,30 @@ const goToQuestions = () => {
 
 const goToSettings = () => {
   uni.navigateTo({ url: '/pages/settings/index' })
+}
+
+const goToFollows = () => {
+  uni.navigateTo({ url: '/pages/my-follows/index' })
+}
+
+const goToVisitors = () => {
+  uni.navigateTo({ url: '/pages/my-visitors/index' })
+}
+
+const goToPhotos = () => {
+  uni.navigateTo({ url: '/pages/my-photos/index' })
+}
+
+const goToRealnameAuth = () => {
+  uni.navigateTo({ url: '/pages/realname-auth/index' })
+}
+
+const goToHelp = () => {
+  uni.navigateTo({ url: '/pages/help/index' })
+}
+
+const goToAbout = () => {
+  uni.navigateTo({ url: '/pages/about/index' })
 }
 
 const handleLogout = () => {
@@ -289,6 +352,14 @@ const handleLogout = () => {
 
   &.vip {
     background-color: #FF6B9D;
+  }
+
+  &.real {
+    background-color: #07c160;
+  }
+
+  &.warn {
+    background-color: #f5a623;
   }
 }
 

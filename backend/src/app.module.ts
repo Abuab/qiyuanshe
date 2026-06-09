@@ -28,6 +28,10 @@ import {
   Dynamic,
   DynamicLike,
   Agreement,
+  MatchmakerComment,
+  Circle,
+  CirclePost,
+  SuccessCase,
 } from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -43,6 +47,9 @@ import { UploadModule } from './upload/upload.module'
 import { DynamicModule } from './dynamic/dynamic.module'
 import { AgreementModule } from './agreement/agreement.module'
 import { RegionModule } from './region/region.module'
+import { CircleModule } from './circle/circle.module'
+import { SuccessCaseModule } from './success-case/success-case.module'
+import { MatchmakerCommentModule } from './matchmaker-comment/matchmaker-comment.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { RedisService } from './common/redis.service'
@@ -80,6 +87,10 @@ import { RedisService } from './common/redis.service'
       Dynamic,
       DynamicLike,
       Agreement,
+      MatchmakerComment,
+      Circle,
+      CirclePost,
+      SuccessCase,
     ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
@@ -99,6 +110,9 @@ import { RedisService } from './common/redis.service'
     DynamicModule,
     AgreementModule,
     RegionModule,
+    CircleModule,
+    SuccessCaseModule,
+    MatchmakerCommentModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],

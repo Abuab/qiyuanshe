@@ -63,6 +63,56 @@ export const adminSystem = {
   resetPassword(data: { username: string; newPassword: string; adminKey: string }): Promise<ApiResponse> {
     return request.post('/admin/reset-password', data)
   },
+
+  // 红娘评语
+  getMatchmakerComments(page = 1, limit = 20): Promise<ApiResponse> {
+    return request.get('/admin/matchmaker-comments', { params: { page, limit } })
+  },
+  createMatchmakerComment(data: any): Promise<ApiResponse> {
+    return request.post('/admin/matchmaker-comments', data)
+  },
+  deleteMatchmakerComment(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/matchmaker-comments/${id}`)
+  },
+
+  // 圈子管理
+  getCircles(): Promise<ApiResponse> {
+    return request.get('/admin/circles')
+  },
+  createCircle(data: any): Promise<ApiResponse> {
+    return request.post('/admin/circles', data)
+  },
+  updateCircle(id: number, data: any): Promise<ApiResponse> {
+    return request.put(`/admin/circles/${id}`, data)
+  },
+  deleteCircle(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/circles/${id}`)
+  },
+
+  // 帖子审核
+  getCirclePosts(page = 1, limit = 20): Promise<ApiResponse> {
+    return request.get('/admin/circles/posts', { params: { page, limit } })
+  },
+  auditCirclePost(id: number, status: number): Promise<ApiResponse> {
+    return request.put(`/admin/circles/posts/${id}/audit`, { status })
+  },
+  deleteCirclePost(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/circles/posts/${id}`)
+  },
+
+  // 成功案例
+  getSuccessCases(page = 1, limit = 20): Promise<ApiResponse> {
+    return request.get('/admin/success-cases', { params: { page, limit } })
+  },
+  createSuccessCase(data: any): Promise<ApiResponse> {
+    return request.post('/admin/success-cases', data)
+  },
+  updateSuccessCase(id: number, data: any): Promise<ApiResponse> {
+    return request.put(`/admin/success-cases/${id}`, data)
+  },
+  deleteSuccessCase(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/success-cases/${id}`)
+  },
 }
 
 export const mfaApi = {

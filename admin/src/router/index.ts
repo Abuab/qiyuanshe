@@ -141,6 +141,30 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/report/index.vue'),
         meta: { title: '举报管理', requiresAuth: true },
       },
+      {
+        path: '/matchmaker-comments',
+        name: 'MatchmakerCommentList',
+        component: () => import('../views/matchmaker-comments/index.vue'),
+        meta: { title: '红娘评语', requiresAuth: true },
+      },
+      {
+        path: '/circles',
+        name: 'CircleList',
+        component: () => import('../views/circles/index.vue'),
+        meta: { title: '圈子管理', requiresAuth: true },
+      },
+      {
+        path: '/circle-posts',
+        name: 'CirclePostList',
+        component: () => import('../views/circles/posts.vue'),
+        meta: { title: '帖子审核', requiresAuth: true },
+      },
+      {
+        path: '/success-cases',
+        name: 'SuccessCaseList',
+        component: () => import('../views/success-cases/index.vue'),
+        meta: { title: '成功案例', requiresAuth: true },
+      },
     ],
   },
 ]

@@ -64,6 +64,26 @@
         <template #title>举报管理</template>
       </el-menu-item>
 
+      <el-menu-item v-if="isSuperAdmin" index="/matchmaker-comments">
+        <el-icon><Comment /></el-icon>
+        <template #title>红娘评语</template>
+      </el-menu-item>
+
+      <el-menu-item v-if="isSuperAdmin" index="/circles">
+        <el-icon><Connection /></el-icon>
+        <template #title>圈子管理</template>
+      </el-menu-item>
+
+      <el-menu-item v-if="isSuperAdmin" index="/circle-posts">
+        <el-icon><Document /></el-icon>
+        <template #title>帖子审核</template>
+      </el-menu-item>
+
+      <el-menu-item v-if="isSuperAdmin" index="/success-cases">
+        <el-icon><Star /></el-icon>
+        <template #title>成功案例</template>
+      </el-menu-item>
+
       <el-sub-menu v-if="canManagePayment" index="/payment">
         <template #title>
           <el-icon><Tickets /></el-icon>
@@ -134,6 +154,10 @@ import {
   Calendar,
   Warning,
   Avatar as AvatarIcon,
+  Comment,
+  Connection,
+  Document,
+  Star,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
