@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { UserPhoto } from '../entities/UserPhoto'
+import { UserBlock } from '../entities/UserBlock'
 import { Result } from '../common/result'
 
 @Controller('users')
@@ -29,6 +30,7 @@ export class UserController {
     @InjectRepository(Report) private reportRepo: Repository<Report>,
     @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
     @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
+    @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
   ) {}
 
   @Get('recommend')
@@ -236,6 +238,26 @@ export class UserController {
       console.error('unfollowUser error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('取消关注失败: ' + (error?.message || '请稍后重试'))
+    }
+  }
+
+  @Post(':id/block')
+  @UseGuards(JwtAuthGuard)
+  async blockUser(
+    @Param('id', ParseIntPipe) blockedUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const blockerId = req.user.userId
+      if (blockerId === blockedUserId) return Result.serverError('不能拉黑自己')
+      const exists = await this.blockRepo.findOne({ where: { blockerId, blockedUserId } })
+      if (exists) return Result.success(null, '已拉黑')
+      const block = this.blockRepo.create({ blockerId, blockedUserId })
+      await this.blockRepo.save(block)
+      return Result.success(null, '已拉黑')
+    } catch (error: any) {
+      console.error('blockUser error:', error?.message || error)
+      return Result.serverError('拉黑失败')
     }
   }
 
