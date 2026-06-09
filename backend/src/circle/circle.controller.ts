@@ -75,7 +75,7 @@ export class CircleController {
 
 @Controller('admin/circles')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('admin', 'matchmaker')
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 export class AdminCircleController {
   constructor(private readonly circleService: CircleService) {}
 
@@ -126,7 +126,7 @@ export class AdminCircleController {
   }
 
   @Delete('posts/:id')
-  @Roles('admin')
+  @Roles('super_admin', 'admin')
   async deletePost(@Param('id', ParseIntPipe) id: number) {
     await this.circleService.deletePost(id)
     return Result.success(null, '删除成功')
