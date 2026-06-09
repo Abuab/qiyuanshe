@@ -27,6 +27,7 @@ export class PublicSystemController {
       shareTitle: configs.share?.shareTitle || '栖缘社 - 遇见对的TA',
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
+      vipAgreement: configs.basic?.vipAgreement || '',
     }
 
     return Result.success(result)

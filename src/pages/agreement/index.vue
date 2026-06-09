@@ -5,31 +5,36 @@
         <text class="agreement-title">{{ title }}</text>
 
         <view v-if="type === 'vip'" class="agreement-body">
-          <text class="section-title">一、服务说明</text>
-          <text class="section-text">{{ systemStore.appName }}会员服务是{{ systemStore.appName }}为注册用户提供的增值服务。开通会员后可享受会员专属权益，具体权益以页面展示为准。</text>
+          <template v-if="vipContent">
+            <rich-text class="vip-rich" :nodes="vipContent"></rich-text>
+          </template>
+          <template v-else>
+            <text class="section-title">一、服务说明</text>
+            <text class="section-text">{{ systemStore.appName }}会员服务是{{ systemStore.appName }}为注册用户提供的增值服务。开通会员后可享受会员专属权益，具体权益以页面展示为准。</text>
 
-          <text class="section-title">二、会员套餐</text>
-          <text class="section-text">1. 黄金会员：有效期1个月，价格¥99.00</text>
-          <text class="section-text">2. 钻石会员：有效期3个月，价格¥249.00</text>
-          <text class="section-text">3. 至尊VIP：有效期12个月，价格¥799.00</text>
+            <text class="section-title">二、会员套餐</text>
+            <text class="section-text">1. 黄金会员：有效期1个月，价格¥99.00</text>
+            <text class="section-text">2. 钻石会员：有效期3个月，价格¥249.00</text>
+            <text class="section-text">3. 至尊VIP：有效期12个月，价格¥799.00</text>
 
-          <text class="section-title">三、购买与支付</text>
-          <text class="section-text">1. 会员服务通过微信支付完成购买，支付成功后立即生效。</text>
-          <text class="section-text">2. 同一账号在同一会员有效期内重复购买，会员有效期将自动叠加。</text>
-          <text class="section-text">3. 如因系统原因导致支付异常，请联系客服处理。</text>
+            <text class="section-title">三、购买与支付</text>
+            <text class="section-text">1. 会员服务通过微信支付完成购买，支付成功后立即生效。</text>
+            <text class="section-text">2. 同一账号在同一会员有效期内重复购买，会员有效期将自动叠加。</text>
+            <text class="section-text">3. 如因系统原因导致支付异常，请联系客服处理。</text>
 
-          <text class="section-title">四、退款政策</text>
-          <text class="section-text">1. 会员服务为虚拟商品，一经开通原则上不支持退款。</text>
-          <text class="section-text">2. 如因平台原因导致无法正常使用会员服务，可联系客服协商处理。</text>
+            <text class="section-title">四、退款政策</text>
+            <text class="section-text">1. 会员服务为虚拟商品，一经开通原则上不支持退款。</text>
+            <text class="section-text">2. 如因平台原因导致无法正常使用会员服务，可联系客服协商处理。</text>
 
-          <text class="section-title">五、免责条款</text>
-          <text class="section-text">1. {{ systemStore.appName }}仅提供婚恋交友信息展示和匹配服务，不对用户之间的交往行为和结果承担责任。</text>
-          <text class="section-text">2. 会员在使用过程中应遵守国家法律法规及平台规则。</text>
-          <text class="section-text">3. 平台有权根据运营需要调整会员权益和价格，调整前已购买的会员不受影响。</text>
+            <text class="section-title">五、免责条款</text>
+            <text class="section-text">1. {{ systemStore.appName }}仅提供婚恋交友信息展示和匹配服务，不对用户之间的交往行为和结果承担责任。</text>
+            <text class="section-text">2. 会员在使用过程中应遵守国家法律法规及平台规则。</text>
+            <text class="section-text">3. 平台有权根据运营需要调整会员权益和价格，调整前已购买的会员不受影响。</text>
 
-          <text class="section-title">六、其他</text>
-          <text class="section-text">1. 本协议的解释、变更和执行均适用中华人民共和国法律。</text>
-          <text class="section-text">2. 如本协议任何条款被认定无效，不影响其余条款的效力。</text>
+            <text class="section-title">六、其他</text>
+            <text class="section-text">1. 本协议的解释、变更和执行均适用中华人民共和国法律。</text>
+            <text class="section-text">2. 如本协议任何条款被认定无效，不影响其余条款的效力。</text>
+          </template>
         </view>
 
         <view v-else-if="type === 'privacy'" class="agreement-body">
@@ -70,13 +75,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useSystemStore } from '@/store/system'
 
 const systemStore = useSystemStore()
 
 const type = ref('user')
 const title = ref('用户协议')
+
+const vipContent = computed(() => {
+  const raw = systemStore.vipAgreement
+  if (!raw || !raw.trim()) return ''
+  // 将换行分隔的文本转为 HTML 段落，支持后台配置
+  const html = raw
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => `<p style="font-size:28rpx;color:#666;line-height:1.8;margin-bottom:8rpx;">${line.trim()}</p>`)
+    .join('')
+  return html
+})
 
 onMounted(() => {
   const pages = getCurrentPages()
@@ -107,6 +124,7 @@ onMounted(() => {
 .content-scroll {
   height: 100vh;
   padding: 32rpx;
+  box-sizing: border-box;
 }
 
 .agreement-content {
@@ -129,6 +147,7 @@ onMounted(() => {
   color: #333;
   margin-top: 32rpx;
   margin-bottom: 16rpx;
+  word-break: break-all;
 }
 
 .section-text {
@@ -137,6 +156,12 @@ onMounted(() => {
   color: #666;
   line-height: 1.8;
   margin-bottom: 8rpx;
+  word-break: break-all;
+}
+
+.vip-rich {
+  width: 100%;
+  word-break: break-all;
 }
 
 .bottom-safe {

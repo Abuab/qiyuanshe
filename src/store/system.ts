@@ -16,6 +16,7 @@ interface SystemConfig {
   shareTitle: string
   shareDesc: string
   matchmakers: Matchmaker[]
+  vipAgreement?: string
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -24,6 +25,7 @@ export const useSystemStore = defineStore('system', () => {
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
+  const vipAgreement = ref<string>('')
   let initialLoadDone = false
 
   const loadSystemConfig = async () => {
@@ -35,6 +37,7 @@ export const useSystemStore = defineStore('system', () => {
         shareTitle.value = res.shareTitle !== undefined ? res.shareTitle : shareTitle.value
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
+        vipAgreement.value = res.vipAgreement || vipAgreement.value
         saveToStorage()
         initialLoadDone = true
       }
@@ -55,6 +58,7 @@ export const useSystemStore = defineStore('system', () => {
           shareTitle.value = config.shareTitle || shareTitle.value
           shareDesc.value = config.shareDesc || shareDesc.value
           matchmakers.value = config.matchmakers || matchmakers.value
+          vipAgreement.value = config.vipAgreement || vipAgreement.value
         }
       } catch (e) {
         console.error('[SystemStore] Failed to parse system config:', e)
@@ -68,7 +72,8 @@ export const useSystemStore = defineStore('system', () => {
       appName: appName.value,
       shareTitle: shareTitle.value,
       shareDesc: shareDesc.value,
-      matchmakers: matchmakers.value
+      matchmakers: matchmakers.value,
+      vipAgreement: vipAgreement.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
   }
@@ -81,6 +86,7 @@ export const useSystemStore = defineStore('system', () => {
     shareTitle,
     shareDesc,
     matchmakers,
+    vipAgreement,
     loadSystemConfig,
     saveToStorage
   }
