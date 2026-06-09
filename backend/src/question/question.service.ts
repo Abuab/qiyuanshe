@@ -22,6 +22,13 @@ export interface QuestionDetailResult {
   answers: any[]
 }
 
+export interface HotQuestionWithAvatars {
+  id: number
+  title: string
+  answerCount: number
+  avatarList: string[]
+}
+
 @Injectable()
 export class QuestionService {
   constructor(
@@ -54,6 +61,38 @@ export class QuestionService {
       page,
       limit,
     }
+  }
+
+  async getHotQuestionsForHome(): Promise<HotQuestionWithAvatars[]> {
+    // 获取置顶的热门问题（最多3个）
+    const questions = await this.questionRepository.find({
+      where: { isActive: 1 },
+      order: { sortOrder: 'DESC', answerCount: 'DESC' },
+      take: 3,
+    })
+
+    if (questions.length === 0) return []
+
+    // 批量查询每个问题的回答用户头像
+    const result: HotQuestionWithAvatars[] = []
+    for (const q of questions) {
+      const answers = await this.answerRepository.find({
+        where: { questionId: q.id, status: 1 },
+        relations: ['user'],
+        order: { likeCount: 'DESC' },
+        take: 3,
+      })
+      const avatarList = answers
+        .map((a) => a.user?.avatar || '')
+        .filter((url) => url && url.length > 0)
+      result.push({
+        id: q.id,
+        title: q.title,
+        answerCount: q.answerCount,
+        avatarList,
+      })
+    }
+    return result
   }
 
   async getQuestionDetail(id: number, page: number = 1, limit: number = 20): Promise<QuestionDetailResult> {

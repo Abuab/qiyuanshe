@@ -17,6 +17,12 @@ import { JwtAuthGuard } from '../auth/guards'
 export class QuestionController {
   constructor(private readonly questionService: QuestionService) {}
 
+  @Get('hot')
+  async getHotQuestions() {
+    const list = await this.questionService.getHotQuestionsForHome()
+    return { success: true, list }
+  }
+
   @Get()
   async getQuestions(@Query() query: GetQuestionsDto) {
     const result = await this.questionService.getQuestions(

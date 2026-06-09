@@ -73,7 +73,7 @@
                   v-for="(avatar, idx) in q.avatarList.slice(0, 3)"
                   :key="idx"
                   class="question-avatar"
-                  :src="avatar"
+                  :src="getFullImageUrl(avatar)"
                   mode="aspectFill"
                 ></image>
               </view>
@@ -181,7 +181,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
-import { showToast } from '@/utils/common'
+import { showToast, getFullImageUrl } from '@/utils/common'
 import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
@@ -224,23 +224,7 @@ const filterTabs: FilterTab[] = [
   { label: '最新', value: 'newest' },
 ]
 
-const hotQuestions = ref<HotQuestion[]>([
-  {
-    id: 1,
-    title: '你理想中的婚姻生活是什么样的？',
-    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
-  },
-  {
-    id: 2,
-    title: '相亲时最看重对方的什么条件？',
-    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png'],
-  },
-  {
-    id: 3,
-    title: '结婚后要不要和父母一起住？',
-    avatarList: ['/static/default-avatar.png', '/static/default-avatar.png', '/static/default-avatar.png'],
-  },
-])
+const hotQuestions = ref<HotQuestion[]>([])
 
 const currentFilter = ref('active')
 const userList = ref<UserCardData[]>([])
@@ -362,6 +346,17 @@ const goToQuestions = () => {
     url: '/pages/questions/index',
     fail: () => uni.navigateTo({ url: '/pages/questions/index' }),
   })
+}
+
+const loadHotQuestions = async () => {
+  try {
+    const result = await get<{ list: HotQuestion[] }>('/questions/hot')
+    if (result?.list) {
+      hotQuestions.value = result.list
+    }
+  } catch (e) {
+    // 静默失败，使用已有的默认数据
+  }
 }
 
 const goToQuestionDetail = (id: number) => {
@@ -487,6 +482,7 @@ onMounted(() => {
 
   if (alreadyShown) {
     loadUserList(true)
+    loadHotQuestions()
   } else {
     // 从后端获取弹窗类型公告
     setTimeout(async () => {
@@ -514,6 +510,7 @@ onMounted(() => {
         success: () => {
           uni.setStorageSync('popup_notice_date', today)
           loadUserList(true)
+          loadHotQuestions()
         },
       })
     }, 700)
