@@ -19,9 +19,7 @@
 
         <view class="filter-section">
           <view class="section-title">
-            <text>年龄范围</text>
-          </view>
-          <view class="range-row">
+            <text class="title-label">年龄范围</text>
             <text class="range-value">{{ filterData.ageMin || 18 }} - {{ filterData.ageMax || 80 }}岁</text>
           </view>
           <view class="slider-container">
@@ -50,9 +48,7 @@
 
         <view class="filter-section">
           <view class="section-title">
-            <text>身高范围</text>
-          </view>
-          <view class="range-row">
+            <text class="title-label">身高范围</text>
             <text class="range-value">{{ filterData.heightMin || 140 }} - {{ filterData.heightMax || 200 }}cm</text>
           </view>
           <view class="slider-container">
@@ -532,8 +528,8 @@ defineExpose({
 .panel-scroll {
   flex: 1;
   height: 0;
-  padding: 0 32rpx;
-  padding-bottom: 40rpx;
+  padding: 0 40rpx 40rpx 32rpx;
+  box-sizing: border-box;
 }
 
 .search-section {
@@ -567,23 +563,31 @@ defineExpose({
 .filter-section {
   padding: 24rpx 0;
   border-bottom: 1px solid #f0f0f0;
+  padding-right: 8rpx;
 }
 
 .section-title {
+  display: flex;
+  align-items: center;
   font-size: 28rpx;
   font-weight: bold;
   color: var(--text);
-  margin-bottom: 8rpx;
-}
+  margin-bottom: 12rpx;
+  padding-right: 8rpx;
 
-.range-row {
-  margin-bottom: 16rpx;
+  .title-label {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .range-value {
   font-size: 24rpx;
   color: #FF6B9D;
   font-weight: normal;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-right: 16rpx;
 }
 
 .button-group {
