@@ -109,30 +109,42 @@ export class ChatService {
     const { page, limit } = dto
     const skip = (page - 1) * limit
 
-    // 使用原始 SQL 代替 subQuery.getQuery() 拼接，避免参数注入错位导致同一对话出现两条
-    const conversations = await this.messageRepository.query(
-      `SELECT
-        m.id AS "id",
-        m.content AS "lastMessage",
-        m."createdAt" AS "createdAt",
-        CASE WHEN m."fromUserId" = ? THEN m."toUserId" ELSE m."fromUserId" END AS "userId",
-        CASE WHEN m."fromUserId" = ? THEN u2.nickname ELSE u1.nickname END AS "nickname",
-        CASE WHEN m."fromUserId" = ? THEN u2.avatar ELSE u1.avatar END AS "avatar"
-      FROM chat_messages m
-      INNER JOIN (
-        SELECT
-          MAX(id) AS "lastMessageId",
-          CASE WHEN "fromUserId" = ? THEN "toUserId" ELSE "fromUserId" END AS "otherUserId"
-        FROM chat_messages
-        WHERE "fromUserId" = ? OR "toUserId" = ?
-        GROUP BY CASE WHEN "fromUserId" = ? THEN "toUserId" ELSE "fromUserId" END
-      ) AS last_msg ON m.id = last_msg."lastMessageId"
-      LEFT JOIN users u1 ON u1.id = m."fromUserId"
-      LEFT JOIN users u2 ON u2.id = m."toUserId"
-      ORDER BY m."createdAt" DESC
-      LIMIT ? OFFSET ?`,
-      [userId, userId, userId, userId, userId, userId, userId, limit, skip],
-    )
+    // 子查询：每个聊天对象的最新一条消息 ID
+    const latestIds = this.messageRepository
+      .createQueryBuilder('m')
+      .select('MAX(m.id)', 'maxId')
+      .where('m.fromUserId = :uid OR m.toUserId = :uid', { uid: userId })
+      .groupBy('CASE WHEN m.fromUserId = :uid2 THEN m.toUserId ELSE m.fromUserId END')
+      .setParameter('uid2', userId)
+
+    const conversations = await this.messageRepository
+      .createQueryBuilder('msg')
+      .innerJoin('(' + latestIds.getQuery() + ')', 'last_msg', 'msg.id = last_msg.maxId')
+      .setParameters(latestIds.getParameters())
+      .leftJoin('msg.fromUser', 'fromUser')
+      .leftJoin('msg.toUser', 'toUser')
+      .select('msg.id', 'id')
+      .addSelect('msg.content', 'lastMessage')
+      .addSelect('msg.createdAt', 'createdAt')
+      .addSelect(
+        'CASE WHEN msg.fromUserId = :uid3 THEN msg.toUserId ELSE msg.fromUserId END',
+        'userId',
+      )
+      .addSelect(
+        'CASE WHEN msg.fromUserId = :uid4 THEN toUser.nickname ELSE fromUser.nickname END',
+        'nickname',
+      )
+      .addSelect(
+        'CASE WHEN msg.fromUserId = :uid5 THEN toUser.avatar ELSE fromUser.avatar END',
+        'avatar',
+      )
+      .setParameter('uid3', userId)
+      .setParameter('uid4', userId)
+      .setParameter('uid5', userId)
+      .orderBy('msg.createdAt', 'DESC')
+      .offset(skip)
+      .limit(limit)
+      .getRawMany()
 
     const unreadCounts = await this.messageRepository
       .createQueryBuilder('msg')
@@ -143,7 +155,7 @@ export class ChatService {
       .groupBy('msg.fromUserId')
       .getRawMany()
 
-    const unreadMap = new Map(unreadCounts.map((u) => [u.fromUserId, parseInt(u.count)]))
+    const unreadMap = new Map(unreadCounts.map((u: any) => [u.fromUserId, parseInt(u.count)]))
 
     const result = conversations.map((conv: any) => ({
       id: conv.userId,
@@ -160,11 +172,11 @@ export class ChatService {
       .createQueryBuilder('other')
       .where(
         `other.id IN (
-          SELECT DISTINCT CASE WHEN msg1."fromUserId" = :userId THEN msg1."toUserId" ELSE msg1."fromUserId" END
+          SELECT DISTINCT CASE WHEN msg1.fromUserId = :uid6 THEN msg1.toUserId ELSE msg1.fromUserId END
           FROM chat_messages msg1
-          WHERE msg1."fromUserId" = :userId OR msg1."toUserId" = :userId
+          WHERE msg1.fromUserId = :uid6 OR msg1.toUserId = :uid6
         )`,
-        { userId },
+        { uid6: userId },
       )
       .andWhere('other.id != :userId', { userId })
       .andWhere('other.isDeleted = :isDeleted', { isDeleted: 0 })
