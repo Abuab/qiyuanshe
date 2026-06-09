@@ -19,7 +19,7 @@
 
         <view class="filter-section">
           <view class="section-title">
-            <text>年龄范围</text>
+            <text class="title-label">年龄范围</text>
             <text class="range-value">{{ filterData.ageMin || 18 }} - {{ filterData.ageMax || 80 }}岁</text>
           </view>
           <view class="slider-container">
@@ -48,7 +48,7 @@
 
         <view class="filter-section">
           <view class="section-title">
-            <text>身高范围</text>
+            <text class="title-label">身高范围</text>
             <text class="range-value">{{ filterData.heightMin || 140 }} - {{ filterData.heightMax || 200 }}cm</text>
           </view>
           <view class="slider-container">
@@ -563,17 +563,22 @@ defineExpose({
 .filter-section {
   padding: 24rpx 0;
   border-bottom: 1px solid #f0f0f0;
+  overflow: visible;
 }
 
 .section-title {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   font-size: 28rpx;
   font-weight: bold;
   color: var(--text);
   margin-bottom: 24rpx;
-  gap: 16rpx;
+  overflow: visible;
+
+  .title-label {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .range-value {
@@ -582,6 +587,7 @@ defineExpose({
   font-weight: normal;
   flex-shrink: 0;
   white-space: nowrap;
+  margin-left: 16rpx;
 }
 
 .button-group {
