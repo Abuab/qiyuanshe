@@ -14,9 +14,14 @@
     </view>
 
     <view class="card-right">
-      <!-- 第一行：昵称 + 实名 + 年龄 -->
+      <!-- 第一行：昵称 + 性别标识 + 实名 + 年龄 -->
       <view class="user-header">
-        <text class="nickname">{{ user.nickname }}</text>
+        <view class="name-section">
+          <text class="nickname">{{ user.nickname }}</text>
+          <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
+            {{ user.gender === 1 ? '♂男' : '♀女' }}
+          </text>
+        </view>
         <view v-if="user.isRealName" class="real-name-badge">已实名</view>
         <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
       </view>
@@ -175,8 +180,8 @@ const handleClick = () => {
   position: absolute;
   bottom: 4rpx;
   right: 4rpx;
-  width: 32rpx;
-  height: 32rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
   border: 2rpx solid #fff;
   display: flex;
@@ -184,7 +189,7 @@ const handleClick = () => {
   justify-content: center;
 
   .gender-text {
-    font-size: 20rpx;
+    font-size: 22rpx;
     color: #fff;
   }
 
@@ -212,6 +217,14 @@ const handleClick = () => {
   gap: 10rpx;
 }
 
+.name-section {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  max-width: 60%;
+}
+
 .nickname {
   font-size: 30rpx;
   font-weight: bold;
@@ -221,6 +234,24 @@ const handleClick = () => {
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.gender-tag {
+  font-size: 24rpx;
+  font-weight: bold;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  flex-shrink: 0;
+
+  &.male {
+    color: #fff;
+    background: #2979ff;
+  }
+
+  &.female {
+    color: #fff;
+    background: #FF6B9D;
+  }
 }
 
 .real-name-badge {
