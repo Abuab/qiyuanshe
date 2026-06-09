@@ -35,7 +35,7 @@ export class SuccessCaseController {
 
 @Controller('admin/success-cases')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('admin', 'matchmaker')
+@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 export class AdminSuccessCaseController {
   constructor(private readonly successCaseService: SuccessCaseService) {}
 
@@ -69,7 +69,7 @@ export class AdminSuccessCaseController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles('super_admin', 'admin')
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.successCaseService.remove(id)
     return Result.success(null, '删除成功')
