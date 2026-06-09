@@ -887,7 +887,7 @@ const onShareTimeline = () => {
 .float-matchmaker {
   position: fixed;
   right: 20rpx;
-  bottom: 240rpx;
+  bottom: 380rpx;
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
