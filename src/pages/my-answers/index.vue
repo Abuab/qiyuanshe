@@ -1,11 +1,14 @@
 <template>
   <view class="my-answers-page">
-    <view class="nav-bar">
-      <text class="back-btn" @tap="handleBack">←</text>
-      <text class="nav-title">我的回答</text>
-      <text class="nav-placeholder"></text>
+    <!-- 自定义导航栏（含状态栏占位） -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar">
+        <text class="back-btn" @tap="handleBack">←</text>
+        <text class="nav-title">我的回答</text>
+        <text class="nav-placeholder"></text>
+      </view>
     </view>
-    <scroll-view class="answer-scroll" scroll-y>
+    <scroll-view class="answer-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">还没有回答过问题</text>
       </view>
@@ -26,8 +29,19 @@ import request from '@/utils/request'
 
 const list = ref<any[]>([])
 const loading = ref(true)
+const statusBarHeight = ref(20)
+const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
-onMounted(async () => {
+onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
+  // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
+  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+
+  fetchAnswers()
+})
+
+const fetchAnswers = async () => {
   try {
     const res: any = await request({ url: '/users/answers', method: 'GET', skipToast: true })
     const data = res?.data || res?.list || res || []
@@ -37,7 +51,7 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
 
 const goToDetail = (item: any) => {
   uni.navigateTo({
@@ -56,19 +70,22 @@ const handleBack = () => {
   background-color: #f5f5f5;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .back-btn {
@@ -90,7 +107,6 @@ const handleBack = () => {
 
 .answer-scroll {
   height: 100vh;
-  padding-top: 88rpx;
 }
 
 .answer-item {
