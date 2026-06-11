@@ -729,8 +729,8 @@ const onCityConfirm = (value: string, _ids: number[]) => {
 // ===== 照片管理 =====
 const fetchPhotos = async () => {
   try {
-    const res = await request({ url: '/users/photos', method: 'GET' } as any)
-    photos.value = res?.data?.list || []
+    const res: any = await request({ url: '/users/photos', method: 'GET' } as any)
+    photos.value = res?.list || []
   } catch (e) { console.error(e) }
 }
 
@@ -741,14 +741,21 @@ const uploadPhoto = () => {
     sourceType: ['album', 'camera'],
     success: async (res: any) => {
       const files = res.tempFiles || res.tempFilePaths || []
+      uni.showLoading({ title: '上传中...' })
       for (const f of files) {
         try {
           const uploadRes = await uploadImage(typeof f === 'string' ? f : f.path || f.tempFilePath)
           if (uploadRes?.url) {
             await request({ url: '/users/photos', method: 'POST', data: { url: uploadRes.url } } as any)
           }
-        } catch (e) { console.error(e) }
+        } catch (e: any) {
+          console.error(e)
+          if (e.message !== 'Unauthorized') {
+            uni.showToast({ title: '上传失败', icon: 'none' })
+          }
+        }
       }
+      uni.hideLoading()
       await fetchPhotos()
     },
   })
