@@ -40,7 +40,6 @@
               <text class="user-detail">
                 {{ answer.user?.age || '--' }}岁 |
                 {{ answer.user?.height || '--' }}cm |
-                {{ answer.user?.weight || '--' }}kg |
                 {{ answer.user?.education || '--' }} |
                 {{ answer.user?.incomeRange || '--' }}
               </text>
