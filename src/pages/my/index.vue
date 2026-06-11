@@ -95,12 +95,6 @@
         </view>
       </view>
 
-      <view v-if="isLoggedIn" class="logout-section">
-        <view class="logout-btn" @tap="handleLogout">
-          <text>退出登录</text>
-        </view>
-      </view>
-
       <view class="bottom-safe-area"></view>
     </scroll-view>
 
@@ -190,22 +184,6 @@ const goToRealnameAuth = () => {
 
 const goToHelp = () => {
   uni.navigateTo({ url: '/pages/help/index' })
-}
-
-const goToAbout = () => {
-  uni.navigateTo({ url: '/pages/about/index' })
-}
-
-const handleLogout = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定要退出登录吗？',
-    success: (res) => {
-      if (res.confirm) {
-        userStore.logout()
-      }
-    },
-  })
 }
 </script>
 
@@ -354,24 +332,6 @@ const handleLogout = () => {
 
   &.warn {
     background-color: #f5a623;
-  }
-}
-
-.logout-section {
-  padding: 32rpx;
-}
-
-.logout-btn {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff;
-  border-radius: 16rpx;
-
-  text {
-    font-size: 30rpx;
-    color: #FF6B9D;
   }
 }
 
