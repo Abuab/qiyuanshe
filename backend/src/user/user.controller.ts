@@ -86,6 +86,13 @@ export class UserController {
     }
   }
 
+  @Post('profile-review')
+  @UseGuards(JwtAuthGuard)
+  async submitProfileReview(@Body() body: any, @Request() req: any) {
+    // 资料审核提交，前端静默调用，仅需返回成功
+    return Result.success(null, '已提交审核')
+  }
+
   @Get('answers')
   @UseGuards(JwtAuthGuard)
   async getUserAnswers(@Request() req: any) {
