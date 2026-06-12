@@ -957,7 +957,12 @@ const handleSave = async () => {
       form.value.reviewStatus = 0
     } catch (_) { /* 审核提交失败不阻断保存 */ }
 
-    userStore.updateProfile(result)
+    userStore.updateProfile({
+      ...(result || {}),
+      // 确保标签数组始终以数组形式存入 store，无论后端返回什么
+      personalityTags: form.value.personalityTags,
+      hopeTaTags: form.value.hopeTaTags,
+    })
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
       uni.navigateBack({ delta: 1 })

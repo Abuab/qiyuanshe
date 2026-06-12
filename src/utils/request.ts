@@ -9,6 +9,13 @@ function getToken(): string {
 }
 
 /**
+ * 检测 URL 是否包含 IP 地址（非域名）
+ */
+function isIpUrl(url: string): boolean {
+  return /https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)
+}
+
+/**
  * 生产环境 API 地址（兜底默认值）
  * 优先级：storage 缓存 > build-time VITE_API_BASE_URL > 此常量
  */
@@ -16,7 +23,8 @@ const DEFAULT_BASE_URL = 'http://localhost:3000/api'
 const DEFAULT_SERVER_URL = 'http://localhost:3000'
 function resolveBaseUrl(): string {
   const storageUrl = uni.getStorageSync('api_base_url') as string | undefined
-  if (storageUrl) return storageUrl
+  // 忽略缓存中的 IP 地址（旧版本遗留），自动使用 build-time 域名
+  if (storageUrl && !isIpUrl(storageUrl)) return storageUrl
 
   // import.meta.env 在 uni-app Vite 构建中可用，ts 需 declare
   const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env

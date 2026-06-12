@@ -161,7 +161,14 @@ export const reLaunch = (url: string): void => {
  */
 export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
-  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    // 替换旧 IP 地址为当前域名
+    const ipMatch = path.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/)
+    if (ipMatch) {
+      return path.replace(ipMatch[0], getServerBaseUrl())
+    }
+    return path
+  }
   if (path.startsWith('/static/')) return path
   if (path.startsWith('data:')) return path
 

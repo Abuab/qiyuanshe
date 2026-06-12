@@ -10,8 +10,15 @@ export interface UploadResult {
 /** 将后端返回的路径补全为完整 URL */
 function resolveImageUrl(rawUrl: string): string {
   if (!rawUrl) return ''
-  // 已经是完整 HTTP(S) URL（OSS/CDN 直连），直接返回
-  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl
+  // 已经是完整 HTTP(S) URL
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+    // 替换旧 IP 地址为当前域名
+    const ipMatch = rawUrl.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/)
+    if (ipMatch) {
+      return rawUrl.replace(ipMatch[0], getServerBaseUrl())
+    }
+    return rawUrl
+  }
   // 以 / 开头 → 拼接服务器根地址
   if (rawUrl.startsWith('/')) return getServerBaseUrl() + rawUrl
   // 相对路径 → 拼接 /uploads/ 前缀

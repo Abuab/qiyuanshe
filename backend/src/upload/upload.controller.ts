@@ -78,8 +78,11 @@ export class UploadController {
       ? process.env.CDN_DOMAIN.replace(/\/$/, '')
       : null
     const baseUrl = cdnDomain
-      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
-    const url = `${baseUrl}/uploads/${file.filename}`
+      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
+    // 避免存储 IP 地址的绝对 URL；无域名时使用相对路径，由前端拼接
+    const url = baseUrl && !/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(baseUrl)
+      ? `${baseUrl}/uploads/${file.filename}`
+      : `/uploads/${file.filename}`
     console.log('Upload success:', file.originalname, '->', url)
     return Result.success({ url })
     } catch (error: any) {
