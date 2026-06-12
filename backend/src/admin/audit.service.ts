@@ -73,6 +73,7 @@ export class AdminAuditService {
   private transformToResponse(audit: AuditLog) {
     const typeLabels: Record<string, string> = {
       user: '资料修改',
+      user_create: '用户创建',
       photo: '照片上传',
       answer: '回答审核',
     }
@@ -115,6 +116,9 @@ export class AdminAuditService {
     } else if (audit.targetType === 'user' && audit.targetId) {
       // Sync user profile changes from audit content
       await this.applyUserProfileChanges(audit)
+    } else if (audit.targetType === 'user_create' && audit.targetId) {
+      // 管理员创建用户审核通过 → 用户状态设为正常
+      await this.userRepository.update(audit.targetId, { status: 1 })
     }
   }
 
@@ -168,6 +172,9 @@ export class AdminAuditService {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 2 })
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 2 })
+    } else if (audit.targetType === 'user_create' && audit.targetId) {
+      // 管理员创建用户审核拒绝 → 用户状态设为禁用
+      await this.userRepository.update(audit.targetId, { status: 0 })
     }
   }
 

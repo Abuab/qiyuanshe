@@ -24,6 +24,7 @@
               <el-option label="资料修改" value="user" />
               <el-option label="照片上传" value="photo" />
               <el-option label="回答审核" value="answer" />
+              <el-option label="用户创建" value="user_create" />
             </el-select>
           </el-form-item>
           <el-form-item label="时间范围">
@@ -108,6 +109,10 @@
               <!-- User type: show diff if available -->
               <template v-else-if="row.targetType === 'user' && row.beforeAfter">
                 <span class="diff-text">{{ formatDiff(row.beforeAfter) }}</span>
+              </template>
+              <!-- User create: show user summary -->
+              <template v-else-if="row.targetType === 'user_create' && row.content">
+                <span>{{ formatUserCreateContent(row.content) }}</span>
               </template>
               <!-- Default: show reason or content -->
               <span v-else>{{ row.reason || row.content || '-' }}</span>
@@ -411,6 +416,22 @@ function formatDiff(beforeAfter: any): string {
   return parts.length > 0 ? parts.slice(0, 3).join(' | ') : (beforeAfter.toString?.() || '-')
 }
 
+function formatUserCreateContent(content: string): string {
+  try {
+    const user = JSON.parse(content)
+    const genderLabel = user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未知'
+    const parts: string[] = []
+    if (user.nickname) parts.push(user.nickname)
+    if (user.phone) parts.push(user.phone)
+    parts.push(genderLabel)
+    if (user.birthYear) parts.push(`${user.birthYear}年`)
+    if (user.education) parts.push(user.education)
+    return parts.join(' | ')
+  } catch {
+    return content || '-'
+  }
+}
+
 function getAiTagType(row: AuditItem) {
   if (!row.aiResult) return 'info'
   const lower = row.aiResult.toLowerCase()
@@ -435,6 +456,7 @@ function getTypeName(type: string) {
     user: '资料修改',
     photo: '照片上传',
     answer: '回答审核',
+    user_create: '用户创建',
   }
   return map[type] || type
 }
@@ -444,6 +466,7 @@ function getTypeTagType(type: string) {
     user: 'primary',
     photo: 'warning',
     answer: 'success',
+    user_create: '',
   }
   return map[type] || 'info'
 }

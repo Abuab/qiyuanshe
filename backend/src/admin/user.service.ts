@@ -303,8 +303,12 @@ export class AdminUserService {
     hometown?: string
     residence?: string
     status?: number
+    adminId?: number
   }) {
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
+    
+    // 管理员手动创建的用户默认为待审核状态(status=2)
+    const status = data.status !== undefined ? data.status : 2
     
     const user = this.userRepository.create({
       nickname: data.nickname,
@@ -322,14 +326,41 @@ export class AdminUserService {
       occupation: data.occupation || null,
       hometown: data.hometown || null,
       residence: data.residence || null,
-      status: data.status !== undefined ? data.status : 1,
+      status,
       isVip: 0,
       vipLevel: 0,
       openid: null,
       unionId: null,
     })
 
-    return this.userRepository.save(user)
+    const saved = await this.userRepository.save(user)
+
+    // 创建审核记录
+    const auditLog = this.auditLogRepository.create({
+      targetType: 'user_create',
+      targetId: saved.id,
+      action: 'PENDING',
+      adminId: data.adminId || null,
+      submitterId: data.adminId || null,
+      content: JSON.stringify({
+        nickname: saved.nickname,
+        phone: saved.phone,
+        gender: saved.gender,
+        birthYear: saved.birthYear,
+        education: saved.education,
+        incomeRange: saved.incomeRange,
+        housingStatus: saved.housingStatus,
+        carStatus: saved.carStatus,
+        maritalStatus: saved.maritalStatus,
+        height: saved.height,
+        occupation: saved.occupation,
+        hometown: saved.hometown,
+        residence: saved.residence,
+      }),
+    })
+    await this.auditLogRepository.save(auditLog)
+
+    return saved
   }
 
   async updateUser(id: number, data: Partial<User>) {

@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   Body,
+  Request,
   UseGuards,
   ParseIntPipe,
   HttpCode,
@@ -126,6 +127,7 @@ export class AdminUserController {
 
   @Post()
   async create(
+    @Request() req: any,
     @Body() body: {
       nickname: string
       phone: string
@@ -145,7 +147,7 @@ export class AdminUserController {
       status?: number
     },
   ) {
-    const user = await this.userService.createUser(body)
+    const user = await this.userService.createUser({ ...body, adminId: req.user?.id })
     return Result.success(user, '用户创建成功')
   }
 
