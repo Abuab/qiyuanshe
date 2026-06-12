@@ -666,6 +666,7 @@ export class UserService {
     if (dto.gender !== undefined) user.gender = dto.gender
     if (dto.birthYear !== undefined) user.birthYear = dto.birthYear
     if (dto.height !== undefined) user.height = dto.height
+    if (dto.weight !== undefined) user.weight = dto.weight
     if (dto.education !== undefined) user.education = dto.education
     if (dto.occupation !== undefined) user.occupation = dto.occupation
     if (dto.incomeRange !== undefined) user.incomeRange = dto.incomeRange

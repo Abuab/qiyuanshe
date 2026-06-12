@@ -32,6 +32,13 @@ export class UpdateProfileDto {
   height?: number
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(20)
+  @Max(300)
+  weight?: number
+
+  @IsOptional()
   @IsString()
   @MaxLength(20)
   education?: string
