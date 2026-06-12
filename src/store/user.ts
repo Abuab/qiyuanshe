@@ -11,6 +11,7 @@ interface UserInfo {
   gender?: number
   birthYear?: number
   height?: number
+  weight?: number
   education?: string
   occupation?: string
   incomeRange?: string
@@ -82,6 +83,7 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.gender === 'number') updates.gender = data.gender
     if (typeof data.birthYear === 'number') updates.birthYear = data.birthYear
     if (typeof data.height === 'number') updates.height = data.height
+    if (typeof data.weight === 'number') updates.weight = data.weight
     if (typeof data.education === 'string') updates.education = data.education
     if (typeof data.occupation === 'string') updates.occupation = data.occupation
     if (typeof data.incomeRange === 'string') updates.incomeRange = data.incomeRange
