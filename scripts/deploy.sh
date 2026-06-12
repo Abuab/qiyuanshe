@@ -126,6 +126,12 @@ pull_code() {
 build_and_start() {
     log_info "构建并启动 Docker 容器..."
 
+    # 确保 nginx.conf 存在（首次部署时从 .example 复制）
+    if [ ! -f "docker/nginx/nginx.conf" ] && [ -f "docker/nginx/nginx.conf.example" ]; then
+        log_info "首次部署：复制 nginx.conf.example → docker/nginx/nginx.conf"
+        cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
+    fi
+
     # 停止现有容器（保留数据卷）
     docker-compose down --remove-orphans 2>/dev/null || true
 

@@ -218,6 +218,12 @@ start_services() {
 
     cd "$PROJECT_DIR"
 
+    # 确保 nginx.conf 存在（从 .example 复制）
+    if [ ! -f "docker/nginx/nginx.conf" ] && [ -f "docker/nginx/nginx.conf.example" ]; then
+        log_info "复制 nginx.conf.example → docker/nginx/nginx.conf"
+        cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
+    fi
+
     # 构建并启动容器
     log_info "构建并启动容器（首次构建可能需要几分钟）..."
     docker-compose up -d --build
