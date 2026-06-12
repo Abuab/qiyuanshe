@@ -10,7 +10,7 @@
     <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view class="photo-grid">
         <view v-for="(photo, idx) in photos" :key="idx" class="photo-item">
-          <image :src="photo.url" mode="aspectFill" class="photo-img" />
+          <image :src="photo.photoUrl" mode="aspectFill" class="photo-img" />
           <view v-if="photo.isMain" class="main-badge">主图</view>
           <view class="photo-actions">
             <text v-if="!photo.isMain" @tap="setMain(photo.id)">设为主图</text>

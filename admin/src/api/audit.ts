@@ -41,12 +41,7 @@ export interface AuditListResponse {
 
 export const adminAudit = {
   list(params: AuditFilter): Promise<ApiResponse<AuditListResponse>> {
-    const statusMap: Record<string, number | undefined> = {
-      pending: 0,
-      approved: 1,
-      rejected: 2,
-    }
-    return request.get('/admin/audit/list', { params: { ...params, status: statusMap[params?.status?.toString() || ''] } })
+    return request.get('/admin/audit/list', { params })
   },
 
   pendingCount(): Promise<ApiResponse<number>> {
