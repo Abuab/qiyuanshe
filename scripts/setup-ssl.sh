@@ -26,21 +26,52 @@ DOMAIN="date.arvine.cn"
 EMAIL="kevin@arvine.cn"  # 改为你自己的邮箱
 
 # =============================================
-# 1. 安装 certbot
+# 0. 检测操作系统包管理器
+# =============================================
+detect_pkg_manager() {
+    if command -v dnf &> /dev/null; then
+        echo "dnf"
+    elif command -v yum &> /dev/null; then
+        echo "yum"
+    elif command -v apt &> /dev/null; then
+        echo "apt"
+    else
+        echo ""
+    fi
+}
+
+# =============================================
+# 1. 安装 certbot（兼容 Ubuntu/Debian/CentOS/RHEL）
 # =============================================
 install_certbot() {
     if command -v certbot &> /dev/null; then
         log_success "certbot 已安装"
         return
     fi
-    log_info "安装 certbot..."
-    if command -v snap &> /dev/null; then
-        sudo snap install --classic certbot
-        sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-    else
-        sudo apt update
-        sudo apt install -y certbot
-    fi
+
+    local PKG
+    PKG=$(detect_pkg_manager)
+
+    log_info "检测到包管理器: ${PKG:-未知}，开始安装 certbot..."
+
+    case "$PKG" in
+        dnf|yum)
+            # CentOS / RHEL / Fedora — 先启用 EPEL 再装 certbot
+            sudo $PKG install -y epel-release 2>/dev/null || true
+            sudo $PKG install -y certbot
+            ;;
+        apt)
+            # Ubuntu / Debian
+            sudo apt update -y
+            sudo apt install -y certbot
+            ;;
+        *)
+            log_error "未检测到 dnf/yum/apt，请手动安装 certbot"
+            log_info "参考: https://certbot.eff.org/instructions"
+            exit 1
+            ;;
+    esac
+
     log_success "certbot 安装完成"
 }
 
