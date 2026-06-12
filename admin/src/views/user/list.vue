@@ -408,102 +408,250 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="createDialogVisible" title="添加用户" width="700px">
+    <el-dialog v-model="createDialogVisible" title="添加用户" width="860px">
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px">
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
+        <!-- 头像 -->
+        <el-form-item label="头像">
+          <div style="display:flex;align-items:center;gap:12px">
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleCreateAvatarUpload"
+              :before-upload="beforeAvatarUpload"
+              accept="image/*"
+            >
+              <el-button type="primary" :loading="createAvatarUploading">上传头像</el-button>
+            </el-upload>
+            <el-image v-if="createForm.avatar" :src="createForm.avatar" style="width:60px;height:60px;border-radius:50%;border:1px solid #dcdfe6" fit="cover" />
+          </div>
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="createForm.phone" placeholder="请输入手机号" />
+
+        <el-divider content-position="left">基本信息</el-divider>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="昵称" prop="nickname">
+              <el-input v-model="createForm.nickname" placeholder="请输入昵称" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机号" prop="phone">
+              <el-input v-model="createForm.phone" placeholder="请输入手机号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="密码" prop="password">
+              <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="性别" prop="gender">
+              <el-radio-group v-model="createForm.gender">
+                <el-radio :label="1">男</el-radio>
+                <el-radio :label="2">女</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="出生年份">
+              <el-select v-model="createForm.birthYear" placeholder="请选择" filterable clearable style="width:100%">
+                <el-option v-for="y in birthYearOptions" :key="y" :label="y + '年'" :value="y" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="身高(cm)">
+              <el-input-number v-model="createForm.height" :min="100" :max="250" placeholder="身高" style="width:100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="体重(kg)">
+              <el-input-number v-model="createForm.weight" :min="20" :max="300" placeholder="体重" style="width:100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="学历">
+              <el-select v-model="createForm.education" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.education" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="职业">
+              <el-input v-model="createForm.occupation" placeholder="请输入职业" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="月收入">
+              <el-select v-model="createForm.incomeRange" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.incomeRange" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="住房情况">
+              <el-select v-model="createForm.housingStatus" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.housingStatus" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="车辆情况">
+              <el-select v-model="createForm.carStatus" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.carStatus" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="婚姻状况">
+              <el-select v-model="createForm.maritalStatus" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.maritalStatus" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="独生子女">
+              <el-select v-model="createForm.onlyChild" placeholder="请选择" clearable style="width:100%">
+                <el-option label="是" value="是" />
+                <el-option label="否" value="否" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="何时结婚">
+              <el-select v-model="createForm.whenMarry" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.whenMarry" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="属相">
+              <el-select v-model="createForm.zodiac" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.zodiac" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="星座">
+              <el-select v-model="createForm.constellation" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.constellation" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8" />
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="家乡">
+              <el-input v-model="createForm.hometown" placeholder="请输入家乡" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="居住地">
+              <el-input v-model="createForm.residence" placeholder="请输入居住地" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider content-position="left">详细介绍</el-divider>
+
+        <el-form-item label="自我介绍">
+          <el-input v-model="createForm.selfIntro" type="textarea" :rows="3" placeholder="简短的自我介绍" maxlength="500" show-word-limit />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+
+        <el-form-item label="我的特点">
+          <el-input v-model="createForm.personalityTags" placeholder="多个以逗号分隔，如：真诚靠谱,温柔体贴,社牛" />
         </el-form-item>
-        <el-form-item label="性别" prop="gender">
-          <el-radio-group v-model="createForm.gender">
-            <el-radio :label="1">男</el-radio>
-            <el-radio :label="2">女</el-radio>
-            <el-radio :label="0">未知</el-radio>
-          </el-radio-group>
+
+        <el-form-item label="希望TA">
+          <el-input v-model="createForm.hopeTaTags" placeholder="多个以逗号分隔，如：阳光运动,温柔体贴,有责任心" />
         </el-form-item>
-        <el-form-item label="出生年份">
-          <el-input-number v-model="createForm.birthYear" :min="1950" :max="2010" />
-        </el-form-item>
-        <el-form-item label="学历">
-          <el-select v-model="createForm.education" placeholder="请选择学历" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.education"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="月收入">
-          <el-select v-model="createForm.incomeRange" placeholder="请选择月收入" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.incomeRange"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="住房情况">
-          <el-select v-model="createForm.housingStatus" placeholder="请选择住房情况" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.housingStatus"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="车辆情况">
-          <el-select v-model="createForm.carStatus" placeholder="请选择车辆情况" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.carStatus"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="婚况">
-          <el-select v-model="createForm.maritalStatus" placeholder="请选择婚况" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.maritalStatus"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="身高(cm)">
-          <el-input-number v-model="createForm.height" :min="100" :max="250" />
-        </el-form-item>
-        <el-form-item label="职业">
-          <el-select v-model="createForm.occupation" placeholder="请选择职业" clearable style="width: 100%">
-            <el-option
-              v-for="item in dictData.occupation"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="家乡">
-          <el-input v-model="createForm.hometown" placeholder="请输入家乡" />
-        </el-form-item>
-        <el-form-item label="居住地">
-          <el-input v-model="createForm.residence" placeholder="请输入居住地" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-radio-group v-model="createForm.status">
-            <el-radio :label="1">正常</el-radio>
-            <el-radio :label="0">禁用</el-radio>
-          </el-radio-group>
-        </el-form-item>
+
+        <el-divider content-position="left">择偶要求</el-divider>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="年龄范围">
+              <el-select v-model="createForm.partnerAgeRange" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.partnerAgeRange" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="最低身高">
+              <el-select v-model="createForm.partnerHeightMin" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.partnerHeight" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="最低学历">
+              <el-select v-model="createForm.partnerEducation" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.partnerEducation" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="收入要求">
+              <el-select v-model="createForm.partnerIncome" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.partnerIncome" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="住房要求">
+              <el-select v-model="createForm.housingRequirement" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.housingRequirement" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="婚况要求">
+              <el-select v-model="createForm.partnerMaritalStatus" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.partnerMaritalStatus" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <el-form-item label="接受子女">
+              <el-select v-model="createForm.acceptChildren" placeholder="请选择" clearable style="width:100%">
+                <el-option v-for="o in createDicts.acceptChildren" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="状态">
+              <el-radio-group v-model="createForm.status">
+                <el-radio :label="1">正常</el-radio>
+                <el-radio :label="0">禁用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
@@ -520,7 +668,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import { useAdminStore } from '../../store/admin'
-import { system } from '../../api/system'
+import { system, adminSystem } from '../../api/system'
 import type { User, UserFilter } from '../../api/user'
 
 const router = useRouter()
@@ -545,6 +693,32 @@ async function loadDicts() {
       }
     } catch { dictData[key] = [] }
   }
+}
+
+// 创建用户表单 - 硬编码选项（与小程序一致）
+const birthYearOptions = (() => {
+  const currentYear = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = currentYear - 18; y >= 1940; y--) years.push(y)
+  return years
+})()
+
+const createDicts: Record<string, string[]> = {
+  education: ['高中', '大专', '本科', '硕士', '博士'],
+  incomeRange: ['3千以下', '3-5千', '5-8千', '8千-1.2万', '1.2-2万', '2-5万', '5万以上'],
+  housingStatus: ['已购房', '租房', '与父母同住', '其他'],
+  carStatus: ['已购车', '未购车'],
+  maritalStatus: ['未婚', '离异', '丧偶'],
+  whenMarry: ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然'],
+  zodiac: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
+  constellation: ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'],
+  partnerAgeRange: ['不限', '18-22岁', '20-25岁', '22-28岁', '25-30岁', '28-33岁', '30-35岁', '33-38岁', '35-40岁', '40岁以上'],
+  partnerHeight: ['不限', '150cm以上', '155cm以上', '160cm以上', '165cm以上', '170cm以上', '175cm以上', '180cm以上', '185cm以上'],
+  partnerEducation: ['不限', '高中', '大专', '本科', '硕士', '博士'],
+  partnerIncome: ['不限', '3千以上', '5千以上', '8千以上', '1万以上', '2万以上', '3万以上', '5万以上'],
+  housingRequirement: ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置'],
+  partnerMaritalStatus: ['不限', '仅限未婚', '仅限离异'],
+  acceptChildren: ['不限', '不接受', '无所谓'],
 }
 
 const filterForm = reactive<UserFilter>({
@@ -592,21 +766,38 @@ const notifyForm = reactive({
 
 const createFormRef = ref()
 const createLoading = ref(false)
+const createAvatarUploading = ref(false)
 const createForm = reactive({
+  avatar: '',
   nickname: '',
   phone: '',
   password: '',
-  gender: 0,
-  birthYear: undefined,
-  education: undefined,
-  incomeRange: undefined,
-  housingStatus: undefined,
-  carStatus: undefined,
-  maritalStatus: undefined,
-  height: undefined,
+  gender: 1,
+  birthYear: undefined as number | undefined,
+  height: undefined as number | undefined,
+  weight: undefined as number | undefined,
+  education: undefined as string | undefined,
   occupation: '',
+  incomeRange: undefined as string | undefined,
+  housingStatus: undefined as string | undefined,
+  carStatus: undefined as string | undefined,
+  maritalStatus: undefined as string | undefined,
   hometown: '',
   residence: '',
+  onlyChild: undefined as string | undefined,
+  whenMarry: undefined as string | undefined,
+  zodiac: undefined as string | undefined,
+  constellation: undefined as string | undefined,
+  selfIntro: '',
+  personalityTags: '',
+  hopeTaTags: '',
+  partnerAgeRange: undefined as string | undefined,
+  partnerHeightMin: undefined as string | undefined,
+  partnerEducation: undefined as string | undefined,
+  partnerIncome: undefined as string | undefined,
+  housingRequirement: undefined as string | undefined,
+  partnerMaritalStatus: undefined as string | undefined,
+  acceptChildren: undefined as string | undefined,
   status: 1,
 })
 
@@ -655,27 +846,46 @@ function handleSearch() {
 
 function handleCreate() {
   Object.assign(createForm, {
+    avatar: '',
     nickname: '',
     phone: '',
     password: '',
-    gender: 0,
+    gender: 1,
     birthYear: undefined,
+    height: undefined,
+    weight: undefined,
     education: undefined,
+    occupation: '',
     incomeRange: undefined,
     housingStatus: undefined,
     carStatus: undefined,
     maritalStatus: undefined,
-    height: undefined,
-    occupation: '',
     hometown: '',
     residence: '',
+    onlyChild: undefined,
+    whenMarry: undefined,
+    zodiac: undefined,
+    constellation: undefined,
+    selfIntro: '',
+    personalityTags: '',
+    hopeTaTags: '',
+    partnerAgeRange: undefined,
+    partnerHeightMin: undefined,
+    partnerEducation: undefined,
+    partnerIncome: undefined,
+    housingRequirement: undefined,
+    partnerMaritalStatus: undefined,
+    acceptChildren: undefined,
     status: 1,
   })
   createDialogVisible.value = true
 }
 
 async function handleCreateSubmit() {
-  await createFormRef.value?.validate()
+  if (!createForm.nickname || !createForm.phone || !createForm.password) {
+    ElMessage.warning('请填写昵称、手机号和密码')
+    return
+  }
   createLoading.value = true
   try {
     await adminUsers.create(createForm as any)
@@ -688,6 +898,34 @@ async function handleCreateSubmit() {
   } finally {
     createLoading.value = false
   }
+}
+
+function beforeAvatarUpload(file: File) {
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return false
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+async function handleCreateAvatarUpload(options: any) {
+  createAvatarUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const res = await adminSystem.upload(fd as any)
+    if (res.success && res.data?.url) {
+      createForm.avatar = res.data.url
+      ElMessage.success('上传成功')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败')
+  }
+  createAvatarUploading.value = false
 }
 
 function handleReset() {

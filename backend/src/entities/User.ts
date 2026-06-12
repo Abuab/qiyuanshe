@@ -71,6 +71,18 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   maritalStatus: string
 
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  onlyChild: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  whenMarry: string
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  zodiac: string
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  constellation: string
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   hometown: string
 
@@ -82,6 +94,27 @@ export class User {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   partnerResidence: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  partnerAgeRange: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  partnerHeightMin: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  partnerEducation: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  partnerIncome: string
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  housingRequirement: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  partnerMaritalStatus: string
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  acceptChildren: string
 
   @Column({ type: 'text', nullable: true })
   selfIntro: string

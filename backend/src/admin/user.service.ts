@@ -306,17 +306,44 @@ export class AdminUserService {
     carStatus?: string
     maritalStatus?: string
     height?: number
+    weight?: number
     occupation?: string
     hometown?: string
     residence?: string
     status?: number
     adminId?: number
+    selfIntro?: string
+    personalityTags?: string | string[]
+    hopeTaTags?: string | string[]
+    onlyChild?: string
+    whenMarry?: string
+    zodiac?: string
+    constellation?: string
+    partnerAgeRange?: string
+    partnerHeightMin?: string
+    partnerEducation?: string
+    partnerIncome?: string
+    housingRequirement?: string
+    partnerMaritalStatus?: string
+    acceptChildren?: string
   }) {
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
     
     // 管理员手动创建的用户默认为待审核状态(status=2)
     const status = data.status !== undefined ? data.status : 2
     
+    // 处理 personalityTags / hopeTaTags: 兼容逗号分隔字符串和数组
+    const personalityTags = Array.isArray(data.personalityTags)
+      ? data.personalityTags
+      : data.personalityTags
+        ? data.personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : null
+    const hopeTaTags = Array.isArray(data.hopeTaTags)
+      ? data.hopeTaTags
+      : data.hopeTaTags
+        ? data.hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : null
+
     const user = this.userRepository.create({
       nickname: data.nickname,
       phone: data.phone,
@@ -330,9 +357,24 @@ export class AdminUserService {
       carStatus: data.carStatus || null,
       maritalStatus: data.maritalStatus || null,
       height: data.height || null,
+      weight: data.weight || null,
       occupation: data.occupation || null,
       hometown: data.hometown || null,
       residence: data.residence || null,
+      selfIntro: data.selfIntro || null,
+      personalityTags,
+      hopeTaTags,
+      onlyChild: data.onlyChild || null,
+      whenMarry: data.whenMarry || null,
+      zodiac: data.zodiac || null,
+      constellation: data.constellation || null,
+      partnerAgeRange: data.partnerAgeRange || null,
+      partnerHeightMin: data.partnerHeightMin || null,
+      partnerEducation: data.partnerEducation || null,
+      partnerIncome: data.partnerIncome || null,
+      housingRequirement: data.housingRequirement || null,
+      partnerMaritalStatus: data.partnerMaritalStatus || null,
+      acceptChildren: data.acceptChildren || null,
       status,
       isVip: 0,
       vipLevel: 0,

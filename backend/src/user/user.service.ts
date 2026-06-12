@@ -678,6 +678,17 @@ export class UserService {
     if (dto.carStatus !== undefined) user.carStatus = dto.carStatus
     if (dto.partnerHometown !== undefined) user.partnerHometown = dto.partnerHometown
     if (dto.partnerResidence !== undefined) user.partnerResidence = dto.partnerResidence
+    if (dto.onlyChild !== undefined) user.onlyChild = dto.onlyChild
+    if (dto.whenMarry !== undefined) user.whenMarry = dto.whenMarry
+    if (dto.zodiac !== undefined) user.zodiac = dto.zodiac
+    if (dto.constellation !== undefined) user.constellation = dto.constellation
+    if (dto.partnerAgeRange !== undefined) user.partnerAgeRange = dto.partnerAgeRange
+    if (dto.partnerHeightMin !== undefined) user.partnerHeightMin = dto.partnerHeightMin
+    if (dto.partnerEducation !== undefined) user.partnerEducation = dto.partnerEducation
+    if (dto.partnerIncome !== undefined) user.partnerIncome = dto.partnerIncome
+    if (dto.housingRequirement !== undefined) user.housingRequirement = dto.housingRequirement
+    if (dto.partnerMaritalStatus !== undefined) user.partnerMaritalStatus = dto.partnerMaritalStatus
+    if (dto.acceptChildren !== undefined) user.acceptChildren = dto.acceptChildren
 
     // personalityTags: 支持逗号分隔字符串或数组
     if (dto.personalityTags !== undefined) {

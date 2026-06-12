@@ -141,10 +141,25 @@ export class AdminUserController {
       carStatus?: string
       maritalStatus?: string
       height?: number
+      weight?: number
       occupation?: string
       hometown?: string
       residence?: string
       status?: number
+      selfIntro?: string
+      personalityTags?: string
+      hopeTaTags?: string
+      onlyChild?: string
+      whenMarry?: string
+      zodiac?: string
+      constellation?: string
+      partnerAgeRange?: string
+      partnerHeightMin?: string
+      partnerEducation?: string
+      partnerIncome?: string
+      housingRequirement?: string
+      partnerMaritalStatus?: string
+      acceptChildren?: string
     },
   ) {
     const user = await this.userService.createUser({ ...body, adminId: req.user?.id })

@@ -94,6 +94,61 @@ export class UpdateProfileDto {
   partnerResidence?: string
 
   @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  onlyChild?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  whenMarry?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  zodiac?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  constellation?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  partnerAgeRange?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  partnerHeightMin?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  partnerEducation?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  partnerIncome?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  housingRequirement?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  partnerMaritalStatus?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  acceptChildren?: string
+
+  @IsOptional()
   personalityTags?: string | string[]
 
   @IsOptional()
