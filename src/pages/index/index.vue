@@ -402,7 +402,11 @@ const fetchMatchmakerList = async () => {
   try {
     const res: any = await get('/matchmakers')
     const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+      avatar: getFullImageUrl(item.avatar),
+    }))
   } catch (e) {
     console.log('[红娘] 接口获取失败', e)
     matchmakerList.value = []
