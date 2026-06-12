@@ -407,13 +407,30 @@ function formatDiff(beforeAfter: any): string {
     height: '身高',
     weight: '体重',
     occupation: '职业',
+    onlyChild: '独生子女',
+    whenMarry: '何时结婚',
+    zodiac: '生肖',
+    constellation: '星座',
+    partnerAgeRange: '要求年龄',
+    partnerHeightMin: '要求身高',
+    partnerEducation: '要求学历',
+    partnerIncome: '要求收入',
+    housingRequirement: '住房要求',
+    partnerMaritalStatus: '要求婚况',
+    acceptChildren: '接受子女',
+    partnerHometown: '要求籍贯',
+    partnerResidence: '要求工作地',
+    personalityTags: '我的特点',
+    hopeTaTags: '希望TA',
   }
   for (const [key, label] of Object.entries(labelMap)) {
     if (beforeAfter[key] !== undefined) {
-      parts.push(`${label}: ${beforeAfter[key]}`)
+      const value = beforeAfter[key]
+      const display = Array.isArray(value) ? value.join(', ') : String(value)
+      parts.push(`${label}: ${display}`)
     }
   }
-  return parts.length > 0 ? parts.slice(0, 3).join(' | ') : (beforeAfter.toString?.() || '-')
+  return parts.length > 0 ? parts.slice(0, 4).join(' | ') : '-'
 }
 
 function formatUserCreateContent(content: string): string {

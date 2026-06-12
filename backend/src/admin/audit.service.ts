@@ -147,11 +147,31 @@ export class AdminAuditService {
         residence: 'residence',
         selfIntro: 'selfIntro',
         mateRequirement: 'mateRequirement',
+        onlyChild: 'onlyChild',
+        whenMarry: 'whenMarry',
+        zodiac: 'zodiac',
+        constellation: 'constellation',
+        partnerAgeRange: 'partnerAgeRange',
+        partnerHeightMin: 'partnerHeightMin',
+        partnerEducation: 'partnerEducation',
+        partnerIncome: 'partnerIncome',
+        housingRequirement: 'housingRequirement',
+        partnerMaritalStatus: 'partnerMaritalStatus',
+        acceptChildren: 'acceptChildren',
+        partnerHometown: 'partnerHometown',
+        partnerResidence: 'partnerResidence',
+        personalityTags: 'personalityTags',
+        hopeTaTags: 'hopeTaTags',
       }
 
       for (const [key, field] of Object.entries(fieldMap)) {
-        if (diff[key]) {
-          updatedFields[field] = diff[key]
+        if (diff[key] !== undefined) {
+          // personalityTags / hopeTaTags: 逗号分隔字符串 → 数组
+          if ((field === 'personalityTags' || field === 'hopeTaTags') && typeof diff[key] === 'string') {
+            updatedFields[field] = diff[key].split(',').map((s: string) => s.trim()).filter(Boolean)
+          } else {
+            updatedFields[field] = diff[key]
+          }
         }
       }
 

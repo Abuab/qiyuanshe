@@ -13,7 +13,12 @@
         <text class="empty-text">还没有回答过问题</text>
       </view>
       <view v-for="item in list" :key="item.id" class="answer-item" @tap="goToDetail(item)">
-        <text class="question-title">{{ item.questionTitle }}</text>
+        <view class="answer-header">
+          <text class="question-title">{{ item.questionTitle }}</text>
+          <text class="answer-status" :class="'status-' + (item.status || 0)">
+            {{ item.status === 1 ? '已通过' : item.status === 2 ? '已拒绝' : '待审核' }}
+          </text>
+        </view>
         <text class="answer-content">{{ item.content }}</text>
       </view>
       <view v-if="loading" class="loading-tip">
@@ -119,12 +124,39 @@ const handleBack = () => {
   margin-top: 16rpx;
 }
 
+.answer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
 .question-title {
-  display: block;
   font-size: 26rpx;
   color: #FF6B9D;
-  margin-bottom: 12rpx;
   font-weight: 500;
+}
+
+.answer-status {
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  flex-shrink: 0;
+
+  &.status-0 {
+    color: #FF9800;
+    background-color: #FFF3E0;
+  }
+
+  &.status-1 {
+    color: #4CAF50;
+    background-color: #E8F5E9;
+  }
+
+  &.status-2 {
+    color: #F44336;
+    background-color: #FFEBEE;
+  }
 }
 
 .answer-content {
