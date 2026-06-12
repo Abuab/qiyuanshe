@@ -73,8 +73,13 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://150.158.130.152:3000'
-    const url = `${apiBaseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
+    // 静态资源基础 URL：CDN 优先 → STATIC_BASE_URL → API_BASE_URL
+    const cdnDomain = (process.env.CDN_ENABLED === 'true' && process.env.CDN_DOMAIN)
+      ? process.env.CDN_DOMAIN.replace(/\/$/, '')
+      : null
+    const baseUrl = cdnDomain
+      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || 'http://150.158.130.152:3000').replace(/\/$/, '')
+    const url = `${baseUrl}/uploads/${file.filename}`
     console.log('Upload success:', file.originalname, '->', url)
     return Result.success({ url })
     } catch (error: any) {

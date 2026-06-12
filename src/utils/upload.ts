@@ -7,11 +7,14 @@ export interface UploadResult {
   url: string
 }
 
-/** 将后端返回的相对路径补全为完整 URL */
+/** 将后端返回的路径补全为完整 URL */
 function resolveImageUrl(rawUrl: string): string {
   if (!rawUrl) return ''
+  // 已经是完整 HTTP(S) URL（OSS/CDN 直连），直接返回
   if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) return rawUrl
+  // 以 / 开头 → 拼接服务器根地址
   if (rawUrl.startsWith('/')) return getServerBaseUrl() + rawUrl
+  // 相对路径 → 拼接 /uploads/ 前缀
   return getServerBaseUrl() + '/uploads/' + rawUrl
 }
 

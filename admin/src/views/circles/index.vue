@@ -31,7 +31,19 @@
     <el-dialog v-model="showDialog" :title="isEdit ? '编辑圈子' : '新增圈子'" width="480px">
       <el-form :model="form" label-width="80px">
         <el-form-item label="名称"><el-input v-model="form.name" placeholder="圈子名称" /></el-form-item>
-        <el-form-item label="图标URL"><el-input v-model="form.icon" placeholder="图标URL" /></el-form-item>
+        <el-form-item label="图标">
+          <div style="display:flex;align-items:center;gap:12px">
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleIconUpload"
+              :before-upload="beforeUpload"
+              accept="image/*"
+            >
+              <el-button type="primary" :loading="iconUploading">上传图片</el-button>
+            </el-upload>
+            <el-image v-if="form.icon" :src="form.icon" style="width:60px;height:60px;border-radius:4px;border:1px solid #dcdfe6" fit="cover" />
+          </div>
+        </el-form-item>
         <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" placeholder="圈子描述" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
         <el-form-item v-if="isEdit" label="状态">
@@ -40,7 +52,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
       </template>
     </el-dialog>
   </div>
@@ -56,7 +68,37 @@ const list = ref<any[]>([])
 const showDialog = ref(false)
 const isEdit = ref(false)
 const editId = ref(0)
+const saving = ref(false)
+const iconUploading = ref(false)
 const form = reactive({ name: '', icon: '', description: '', sort: 0, statusBool: true })
+
+function beforeUpload(file: File) {
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return false
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+async function handleIconUpload(options: any) {
+  iconUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const res = await adminSystem.upload(fd)
+    if (res.success && res.data?.url) {
+      form.icon = res.data.url
+      ElMessage.success('上传成功')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败')
+  }
+  iconUploading.value = false
+}
 
 onMounted(() => fetchList())
 
@@ -81,6 +123,7 @@ function openDialog(row?: any) {
 }
 
 async function handleSave() {
+  saving.value = true
   try {
     const data = { ...form, status: form.statusBool ? 1 : 0 }
     let res
@@ -88,6 +131,7 @@ async function handleSave() {
     else res = await adminSystem.createCircle(data)
     if (res.success) { ElMessage.success(isEdit.value ? '已更新' : '已创建'); showDialog.value = false; fetchList() }
   } catch (e) { ElMessage.error('保存失败') }
+  finally { saving.value = false }
 }
 
 async function handleDelete(id: number) {

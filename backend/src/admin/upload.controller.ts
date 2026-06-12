@@ -79,9 +79,14 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    const baseUrl = process.env.API_BASE_URL || ''
+    // 静态资源基础 URL：CDN 优先 → STATIC_BASE_URL → API_BASE_URL
+    const cdnDomain = (process.env.CDN_ENABLED === 'true' && process.env.CDN_DOMAIN)
+      ? process.env.CDN_DOMAIN.replace(/\/$/, '')
+      : null
+    const baseUrl = cdnDomain
+      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
     const url = baseUrl
-      ? `${baseUrl.replace(/\/$/, '')}/uploads/${file.filename}`
+      ? `${baseUrl}/uploads/${file.filename}`
       : `/uploads/${file.filename}`
     return Result.success({ url })
   }

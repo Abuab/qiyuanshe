@@ -91,10 +91,13 @@ qiyuanshe/
 │   │   ├── init.sql          # 数据库初始化
 │   │   └── my.cnf            # MySQL 配置
 │   └── nginx/
-│       └── nginx.conf        # Nginx 配置
+│       ├── nginx.conf        # Nginx 反向代理 + SSL
+│       ├── ssl/              # SSL 证书目录
+│       └── certbot/          # Certbot 验证目录
 │
 ├── scripts/                  # 运维脚本
 │   ├── deploy.sh             # 一键部署
+│   ├── setup-ssl.sh          # SSL 证书申请 & 自动续期
 │   ├── backup.sh             # 数据库备份
 │   ├── cleanup.sh            # 日志清理
 │   ├── monitor.sh            # 监控告警
@@ -196,13 +199,31 @@ WECHAT_SECRET=your_wechat_secret
 #=========================================
 WECHAT_MCH_ID=your_merchant_id
 WECHAT_API_V3_KEY=your_api_v3_key
-WECHAT_NOTIFY_URL=https://api.lingtong.com/payment/notify
+WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
 
 #=========================================
 # 腾讯云配置（内容审核）
 #=========================================
 TENCENT_SECRET_ID=your_secret_id
 TENCENT_SECRET_KEY=your_secret_key
+
+#=========================================
+# OSS + CDN 配置（可选）
+#=========================================
+# 上传策略：local = 服务器本地 / oss = 对象存储
+UPLOAD_STRATEGY=local
+
+# 静态资源 CDN 域名
+CDN_DOMAIN=https://cdn.arvine.cn
+CDN_ENABLED=false
+STATIC_BASE_URL=https://date.arvine.cn
+
+# 阿里云 OSS
+OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
+OSS_BUCKET=your-bucket-name
+OSS_ACCESS_KEY_ID=your-key
+OSS_ACCESS_KEY_SECRET=your-secret
+OSS_UPLOAD_PREFIX=uploads/
 ```
 
 ### 后端 `backend/.env`（应用直接使用）
@@ -231,6 +252,9 @@ REDIS_DB=0
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 
+# 静态资源 URL 前缀（CDN）
+STATIC_BASE_URL=https://date.arvine.cn
+
 # 微信配置
 WECHAT_APPID=your_wechat_appid
 WECHAT_SECRET=your_wechat_secret
@@ -244,80 +268,138 @@ WECHAT_NOTIFY_URL=http://localhost:3000/api/payment/notify
 - 后端 `backend/.env` 用于本地开发时应用直接读取
 - 两者用途不同，不是冗余配置
 
-## 生产部署
+## 生产部署（完整步骤）
 
-### 部署方式一：使用 Docker Compose（一键部署）
+**前置条件**：已购买域名 `date.arvine.cn` 并解析到服务器公网 IP `150.158.130.152`，防火墙已开放 80 / 443 端口。
 
-```bash
-# 一键启动所有服务
-docker compose up -d --build
-
-# 查看服务状态
-docker compose ps
-
-# 查看日志
-docker compose logs -f
-```
-
-### 部署方式二：手动部署
-
-#### 1. 服务器要求
-
-| 配置项 | 最低要求 | 推荐配置 |
-|--------|----------|----------|
-| CPU | 2核 | 4核+ |
-| 内存 | 4GB | 8GB+ |
-| 硬盘 | 50GB | 100GB+ SSD |
-| 带宽 | 5Mbps | 10Mbps+ |
-
-#### 2. 安装 Docker
+### 第一步：克隆项目
 
 ```bash
-# 自动安装脚本
-curl -fsSL https://get.docker.com | sh
-systemctl enable docker
-systemctl start docker
+git clone https://github.com/Abuab/qiyuanshe.git /opt/lingtong
+cd /opt/lingtong
 ```
 
-#### 3. 申请 SSL 证书
-
-```bash
-# 停止 nginx（如果正在运行）
-systemctl stop nginx
-
-# 申请 Let's Encrypt 免费证书
-certbot certonly --standalone -d api.lingtong.com -d admin.lingtong.com \
-  --email your-email@example.com --agree-tos --no-eff-email --manual --preferred-challenges dns
-
-# 复制证书到项目目录
-mkdir -p docker/nginx/ssl
-cp /etc/letsencrypt/live/api.lingtong.com/fullchain.pem docker/nginx/ssl/cert.pem
-cp /etc/letsencrypt/live/api.lingtong.com/privkey.pem docker/nginx/ssl/key.pem
-```
-
-#### 4. 配置环境变量
+### 第二步：配置主目录 `.env`
 
 ```bash
 cp .env.example .env
-vim .env  # 修改各项配置
+vim .env
 ```
 
-#### 5. 初始化数据库
+需要修改的配置项（其余保持默认或按需调整）：
 
-```bash
-# 等待 MySQL 启动完成
-sleep 30
+```env
+# 数据库 — 务必修改密码
+MYSQL_ROOT_PASSWORD=your_strong_mysql_password
+MYSQL_PASSWORD=your_strong_mysql_password
 
-# 执行初始化 SQL
-docker compose exec -T mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" qiyuanshe < docker/mysql/init.sql
+# Redis — 务必修改密码
+REDIS_PASSWORD=your_strong_redis_password
+
+# JWT — 务必修改为随机字符串（至少 32 位）
+JWT_SECRET=your-random-32-char-jwt-secret
+ADMIN_JWT_SECRET=your-random-admin-jwt-secret
+
+# 微信小程序（必须填写真实值）
+WECHAT_APPID=你的微信AppID
+WECHAT_SECRET=你的微信AppSecret
+
+# 腾讯云审核
+TENCENT_SECRET_ID=你的腾讯云SecretId
+TENCENT_SECRET_KEY=你的腾讯云SecretKey
+
+# 域名
+DOMAIN=date.arvine.cn
+API_BASE_URL=https://date.arvine.cn
+ADMIN_BASE_URL=https://date.arvine.cn
 ```
 
-#### 6. 配置开机自启
+### 第三步：配置后端 `backend/.env`
 
 ```bash
-cat > /etc/systemd/system/lingtong.service << EOF
+cp backend/.env.example backend/.env
+vim backend/.env
+```
+
+需要修改：
+
+```env
+NODE_ENV=production
+DB_PASSWORD=和主目录 .env 中 MYSQL_PASSWORD 保持一致
+REDIS_PASSWORD=和主目录 .env 中 REDIS_PASSWORD 保持一致
+JWT_SECRET=和主目录 .env 中 JWT_SECRET 保持一致
+WECHAT_APPID=你的微信AppID
+WECHAT_SECRET=你的微信AppSecret
+WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
+```
+
+> **注意**：Docker Compose 启动时会通过 `environment` 注入变量覆盖这些值，此文件是备用/手动启动时使用。
+
+### 第四步：构建并启动所有服务
+
+```bash
+docker compose up -d --build
+```
+
+等待约 1-2 分钟所有服务启动完成。
+
+```bash
+# 查看服务状态（所有容器 state 应为 Up 且 healthy）
+docker compose ps
+
+# 查看日志（如有异常）
+docker compose logs -f
+```
+
+### 第五步：申请 SSL 证书
+
+```bash
+# 运行证书申请脚本
+./scripts/setup-ssl.sh apply
+```
+
+此脚本会自动：
+1. 停止 nginx 容器（释放 80 端口）
+2. 调用 certbot standalone 模式申请 Let's Encrypt 证书
+3. 将证书复制到 `docker/nginx/ssl/`
+4. 重启 nginx 容器，SSL 生效
+
+### 第六步：配置证书自动续期
+
+```bash
+./scripts/setup-ssl.sh setup-renewal
+```
+
+此脚本会：
+1. 创建续期钩子脚本（续期后自动复制证书并 reload nginx）
+2. 添加 crontab 定时任务（每天凌晨 2:00 检查续期）
+
+验证自动续期是否正常：
+
+```bash
+# 测试续期（不会真正续期，仅检查）
+sudo certbot renew --dry-run
+```
+
+### 第七步：验证部署
+
+```bash
+# 验证 HTTPS
+curl -I https://date.arvine.cn
+
+# 验证 API
+curl https://date.arvine.cn/api/health
+
+# 浏览器打开管理后台
+# https://date.arvine.cn
+```
+
+### 第八步：配置开机自启
+
+```bash
+sudo tee /etc/systemd/system/lingtong.service > /dev/null << 'EOF'
 [Unit]
-Description=Lingtong Match Platform
+Description=栖缘社婚恋交友平台
 Requires=docker.service
 After=docker.service
 
@@ -333,17 +415,606 @@ TimeoutStartSec=0
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reload
-systemctl enable lingtong.service
+sudo systemctl daemon-reload
+sudo systemctl enable lingtong.service
+```
+
+## 手动部署（不使用 Docker）
+
+本方案适合不想使用 Docker 的场景，所有服务直接运行在宿主机上。
+
+### 服务器要求
+
+| 配置项 | 最低要求 | 推荐配置 |
+|--------|----------|----------|
+| 操作系统 | Ubuntu 20.04 / CentOS 7 / Debian 11 | Ubuntu 22.04 LTS |
+| CPU | 2 核 | 4 核+ |
+| 内存 | 4 GB | 8 GB+ |
+| 硬盘 | 50 GB | 100 GB+ SSD |
+| 带宽 | 5 Mbps | 10 Mbps+ |
+
+### 第一步：更新系统 & 安装基础工具
+
+```bash
+# Ubuntu / Debian
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl wget git vim build-essential software-properties-common
+
+# CentOS
+sudo yum update -y
+sudo yum install -y epel-release curl wget git vim gcc-c++ make
+```
+
+### 第二步：安装 Node.js 18（LTS）
+
+```bash
+# 使用 NodeSource 官方源
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# 验证版本
+node -v    # v18.x.x
+npm -v     # 9.x.x
+
+# 安装全局工具
+sudo npm install -g pm2 typescript @nestjs/cli
+```
+
+> **CentOS**: 将 `apt` 替换为 `yum`，或使用 `nvm` 安装（见下文备选方案）。
+
+**备选方案 — 使用 nvm：**
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
+npm install -g pm2 typescript @nestjs/cli
+```
+
+### 第三步：安装 MySQL 8.0
+
+```bash
+# Ubuntu 22.04
+sudo apt install -y mysql-server
+
+# 启动并设置开机自启
+sudo systemctl enable mysql
+sudo systemctl start mysql
+
+# 安全初始化（设置 root 密码、删除匿名用户等）
+sudo mysql_secure_installation
+```
+
+> **CentOS**：
+> ```bash
+> sudo yum install -y https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm
+> sudo yum install -y mysql-community-server
+> sudo systemctl enable mysqld && sudo systemctl start mysqld
+> # 首次启动会生成临时密码
+> sudo grep 'temporary password' /var/log/mysqld.log
+> ```
+
+**创建数据库和用户：**
+
+```bash
+sudo mysql -u root -p
+```
+
+```sql
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS lingtong_match
+  DEFAULT CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- 创建数据库用户（修改密码）
+CREATE USER IF NOT EXISTS 'lingtong'@'localhost' IDENTIFIED BY 'your_mysql_password';
+CREATE USER IF NOT EXISTS 'lingtong'@'127.0.0.1' IDENTIFIED BY 'your_mysql_password';
+
+-- 授权
+GRANT ALL PRIVILEGES ON lingtong_match.* TO 'lingtong'@'localhost';
+GRANT ALL PRIVILEGES ON lingtong_match.* TO 'lingtong'@'127.0.0.1';
+
+-- 刷新权限
+FLUSH PRIVILEGES;
+
+EXIT;
+```
+
+**导入表结构（TypeORM synchronize 会自动建表，也可手动执行 init.sql）：**
+
+```bash
+# 方式一：让 NestJS 自动建表（synchronize: true，推荐）
+# 方式二：手动导入 SQL
+sudo mysql -u root -p lingtong_match < docker/mysql/init.sql
+```
+
+### 第四步：安装 Redis 7.x
+
+```bash
+# Ubuntu
+sudo apt install -y redis-server
+
+# 配置 Redis 密码
+sudo sed -i 's/^# requirepass .*/requirepass your_redis_password/' /etc/redis/redis.conf
+
+# 启动并设置开机自启
+sudo systemctl enable redis-server
+sudo systemctl restart redis-server
+
+# 验证
+redis-cli -a your_redis_password ping   # 返回 PONG
+```
+
+> **CentOS**：
+> ```bash
+> sudo yum install -y redis
+> sudo systemctl enable redis && sudo systemctl start redis
+> ```
+
+### 第五步：克隆项目 & 配置环境变量
+
+```bash
+# 克隆到 /opt 目录
+cd /opt
+sudo git clone https://github.com/Abuab/qiyuanshe.git lingtong
+sudo chown -R $USER:$USER /opt/lingtong
+cd /opt/lingtong
+```
+
+**配置主目录 `.env`（后端运行时参考）：**
+
+```bash
+cp .env.example .env
+vim .env
+```
+
+```env
+# 数据库
+MYSQL_ROOT_PASSWORD=your_root_password
+MYSQL_DATABASE=lingtong_match
+MYSQL_USER=lingtong
+MYSQL_PASSWORD=your_mysql_password
+
+# Redis
+REDIS_PASSWORD=your_redis_password
+
+# JWT
+JWT_SECRET=生成一个至少32位的随机字符串
+ADMIN_JWT_SECRET=生成另一个不同的随机字符串
+
+# 微信
+WECHAT_APPID=你的微信小程序AppID
+WECHAT_SECRET=你的微信小程序AppSecret
+
+# 域名
+DOMAIN=date.arvine.cn
+API_BASE_URL=https://date.arvine.cn
+ADMIN_BASE_URL=https://date.arvine.cn
+STATIC_BASE_URL=https://date.arvine.cn
+```
+
+**配置后端专用 `backend/.env`：**
+
+```bash
+cp backend/.env.example backend/.env
+vim backend/.env
+```
+
+```env
+NODE_ENV=production
+PORT=3000
+
+# 数据库（连接本地）
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USERNAME=lingtong
+DB_PASSWORD=your_mysql_password
+DB_DATABASE=lingtong_match
+
+# Redis（连接本地）
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+REDIS_PASSWORD=your_redis_password
+REDIS_DB=0
+
+# JWT
+JWT_SECRET=和主目录 .env 相同的 JWT_SECRET
+JWT_EXPIRES_IN=7d
+
+# 微信
+WECHAT_APPID=你的微信AppID
+WECHAT_SECRET=你的微信AppSecret
+WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
+
+# 静态资源
+STATIC_BASE_URL=https://date.arvine.cn
+
+# 腾讯云审核
+TENCENT_SECRET_ID=你的SecretId
+TENCENT_SECRET_KEY=你的SecretKey
+
+# CORS 允许的域名
+CORS_ORIGINS=https://date.arvine.cn,http://localhost:5173
+
+# 上传文件目录（不配置则默认用 ./uploads）
+UPLOAD_DIR=/opt/lingtong/data/uploads
+```
+
+**创建数据目录：**
+
+```bash
+mkdir -p /opt/lingtong/data/uploads /opt/lingtong/data/logs
+chmod 755 /opt/lingtong/data/uploads
+```
+
+### 第六步：构建 & 启动后端服务
+
+```bash
+cd /opt/lingtong/backend
+
+# 安装依赖
+npm install
+
+# 编译 TypeScript
+npm run build
+
+# 验证编译产物
+ls dist/main.js   # 应存在
+
+# 用 PM2 启动后端（进程守护）
+pm2 start dist/main.js \
+  --name "lingtong-api" \
+  --cwd /opt/lingtong/backend \
+  --time \
+  --log /opt/lingtong/data/logs/api.log \
+  --env production
+
+# 保存 PM2 进程列表（开机自启用）
+pm2 save
+
+# 配置 PM2 开机自启
+pm2 startup
+# 执行屏幕上输出的 sudo 命令
+sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME
+
+# 验证后端是否运行
+curl http://127.0.0.1:3000/api/health
+# 应返回: {"code":200,"message":"success","data":{"status":"ok"}}
+```
+
+**后端 PM2 管理命令：**
+
+```bash
+pm2 status                    # 查看所有进程
+pm2 logs lingtong-api         # 查看日志
+pm2 restart lingtong-api      # 重启后端
+pm2 stop lingtong-api         # 停止后端
+pm2 reload lingtong-api       # 0 秒停机重载
+```
+
+### 第七步：构建管理后台前端
+
+```bash
+cd /opt/lingtong/admin
+
+# 安装依赖
+npm install
+
+# 编译生产版本
+npm run build
+
+# 构建产物在 dist/ 目录
+ls dist/index.html   # 应存在
+
+# 将构建产物部署到 Nginx 静态目录
+sudo mkdir -p /var/www/lingtong/admin
+sudo cp -r dist/* /var/www/lingtong/admin/
+sudo chown -R www-data:www-data /var/www/lingtong/admin
+```
+
+### 第八步：安装 & 配置 Nginx
+
+```bash
+# 安装 Nginx
+sudo apt install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+
+**创建 Nginx 站点配置：**
+
+```bash
+sudo vim /etc/nginx/sites-available/lingtong
+```
+
+```nginx
+# 上游后端服务
+upstream lingtong_api {
+    server 127.0.0.1:3000;
+    keepalive 32;
+}
+
+# HTTP (80) — 重定向到 HTTPS + Let's Encrypt 验证
+server {
+    listen 80;
+    server_name date.arvine.cn;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+        allow all;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS (443)
+server {
+    listen 443 ssl http2;
+    server_name date.arvine.cn;
+
+    ssl_certificate /etc/nginx/ssl/fullchain.pem;
+    ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # certbot 续期验证
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+        allow all;
+    }
+
+    # API 代理
+    location /api/ {
+        proxy_pass http://lingtong_api/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+
+        # 禁止缓存 API 响应
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        expires -1;
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 上传文件（静态资源 — 可长期缓存）
+    location ^~ /uploads/ {
+        root /opt/lingtong/data;
+        expires 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # 管理后台静态资源（Vite 构建产物带 hash）
+    location /assets/ {
+        root /var/www/lingtong/admin;
+        expires 365d;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header Access-Control-Allow-Origin "*" always;
+    }
+
+    # 管理后台（SPA 入口）
+    location / {
+        root /var/www/lingtong/admin;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+**启用站点并重载 Nginx：**
+
+```bash
+# 创建 certbot 验证目录
+sudo mkdir -p /var/www/certbot
+
+# 启用站点
+sudo ln -sf /etc/nginx/sites-available/lingtong /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# 验证配置语法
+sudo nginx -t
+
+# 重载 Nginx
+sudo systemctl reload nginx
+```
+
+### 第九步：申请 SSL 证书
+
+```bash
+# 安装 certbot
+sudo apt install -y certbot
+
+# 创建 SSL 证书目录
+sudo mkdir -p /etc/nginx/ssl
+
+# 首次申请证书（standalone 模式需先停 Nginx）
+sudo systemctl stop nginx
+
+sudo certbot certonly \
+  --standalone \
+  --preferred-challenges http \
+  --agree-tos \
+  --no-eff-email \
+  --email your-email@example.com \
+  -d date.arvine.cn
+
+# 复制证书到 Nginx 目录
+sudo cp /etc/letsencrypt/live/date.arvine.cn/fullchain.pem /etc/nginx/ssl/fullchain.pem
+sudo cp /etc/letsencrypt/live/date.arvine.cn/privkey.pem /etc/nginx/ssl/privkey.pem
+sudo chmod 644 /etc/nginx/ssl/fullchain.pem
+sudo chmod 600 /etc/nginx/ssl/privkey.pem
+
+# 启动 Nginx
+sudo systemctl start nginx
+```
+
+**配置证书自动续期：**
+
+```bash
+# 创建续期钩子脚本
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/lingtong-ssl.sh > /dev/null << 'HOOK'
+#!/bin/bash
+cp /etc/letsencrypt/live/date.arvine.cn/fullchain.pem /etc/nginx/ssl/fullchain.pem
+cp /etc/letsencrypt/live/date.arvine.cn/privkey.pem /etc/nginx/ssl/privkey.pem
+chmod 644 /etc/nginx/ssl/fullchain.pem
+chmod 600 /etc/nginx/ssl/privkey.pem
+systemctl reload nginx
+echo "$(date '+%Y-%m-%d %H:%M:%S') SSL renewed" >> /var/log/lingtong-ssl-renewal.log
+HOOK
+
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/lingtong-ssl.sh
+
+# 测试续期
+sudo certbot renew --dry-run
+
+# 添加 crontab 定时任务（每天凌晨 2:00）
+(sudo crontab -l 2>/dev/null | grep -v "certbot renew"; echo "0 2 * * * certbot renew --quiet") | sudo crontab -
+```
+
+### 第十步：编译小程序代码
+
+```bash
+cd /opt/lingtong
+
+# 安装小程序依赖
+npm install
+
+# 编译微信小程序
+npm run build:mp-weixin
+```
+
+构建产物在 `dist/build/mp-weixin`，用微信开发者工具导入即可。
+
+### 第十一步：验证部署
+
+```bash
+# 1. 健康检查
+curl https://date.arvine.cn/api/health
+
+# 2. SSL 证书是否生效
+curl -I https://date.arvine.cn
+
+# 3. 管理后台可访问
+curl -I https://date.arvine.cn/index.html
+
+# 4. Nginx 日志
+sudo tail -f /var/log/nginx/access.log
+```
+
+### 第十二步：配置系统服务开机自启
+
+**PM2 进程守护：**
+
+```bash
+# 之前 pm2 startup 已配置，确认一下
+pm2 status
+
+# 确保 PM2 开机自启
+systemctl is-enabled pm2-$USER
+```
+
+**Nginx 开机自启：**
+
+```bash
+sudo systemctl enable nginx
+```
+
+**MySQL 开机自启：**
+
+```bash
+sudo systemctl enable mysql    # Ubuntu
+# 或 sudo systemctl enable mysqld   # CentOS
+```
+
+**Redis 开机自启：**
+
+```bash
+sudo systemctl enable redis-server   # Ubuntu
+# 或 sudo systemctl enable redis     # CentOS
+```
+
+### 日常运维命令速查
+
+```bash
+# ====== 后端 ======
+pm2 status                              # 查看后端进程状态
+pm2 restart lingtong-api                # 重启后端
+pm2 logs lingtong-api --lines 100       # 查看最近 100 行日志
+
+# ====== Nginx ======
+sudo nginx -t                           # 检查配置语法
+sudo systemctl reload nginx             # 热重载配置
+sudo systemctl restart nginx            # 重启
+sudo tail -f /var/log/nginx/access.log  # 查看访问日志
+sudo tail -f /var/log/nginx/error.log   # 查看错误日志
+
+# ====== 更新部署 ======
+cd /opt/lingtong
+git pull
+
+# 更新后端
+cd backend && npm install && npm run build
+pm2 restart lingtong-api
+
+# 更新管理后台
+cd ../admin && npm install && npm run build
+sudo cp -r dist/* /var/www/lingtong/admin/
+sudo systemctl reload nginx
+
+# 重新编译小程序
+cd /opt/lingtong && npm run build:mp-weixin
+```
+
+### 文件目录结构（手动部署）
+
+```
+/opt/lingtong/                          # 项目根目录
+├── backend/                            # NestJS 后端源码
+├── admin/                              # Vue3 管理后台源码
+├── data/uploads/                       # 用户上传图片
+├── data/logs/                          # 应用日志
+├── dist/build/mp-weixin/               # 小程序构建产物
+
+/var/www/lingtong/admin/                # 管理后台静态文件（Nginx 服务）
+    ├── index.html
+    ├── assets/
+    └── ...
+
+/etc/nginx/
+├── sites-available/lingtong            # 站点配置
+├── sites-enabled/lingtong -> ...       # 启用的站点（软链接）
+└── ssl/
+    ├── fullchain.pem                   # SSL 证书
+    └── privkey.pem                     # SSL 私钥
 ```
 
 ## 服务访问地址
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 管理后台 | http://localhost:8080 | 管理员操作界面（本地开发） |
-| 后端 API | http://localhost:3000/api | 小程序/前端调用 |
-| 健康检查 | http://localhost:3000/api/health | 服务状态检查 |
+| 管理后台 | https://date.arvine.cn | 管理员操作界面 |
+| 后端 API | https://date.arvine.cn/api | 小程序调用 |
+| 上传文件 | https://date.arvine.cn/uploads/ | 用户上传图片 |
+| 健康检查 | https://date.arvine.cn/api/health | 服务状态检查 |
 
 ### 默认管理员账号
 - 用户名: `admin`
@@ -421,6 +1092,7 @@ systemctl enable lingtong.service
 |------|------|
 | `scripts/install.sh` | 一键安装（Ubuntu） |
 | `scripts/deploy.sh` | 一键部署 |
+| `scripts/setup-ssl.sh` | SSL 证书申请 & 自动续期 |
 | `scripts/backup.sh` | 数据库备份 |
 | `scripts/cleanup.sh` | 日志清理 |
 | `scripts/monitor.sh` | 监控告警 |
@@ -437,8 +1109,164 @@ systemctl enable lingtong.service
 # 监控检查（每5分钟）
 */5 * * * * cd /opt/lingtong && ./scripts/monitor.sh >> /var/log/monitor.log 2>&1
 
-# SSL 证书续期（每天凌晨）
-0 0 * * * certbot renew --quiet --deploy-hook "docker compose exec -T nginx nginx -s reload"
+# SSL 证书续期（每天凌晨2:00，由 setup-ssl.sh setup-renewal 自动配置）
+0 2 * * * certbot renew --quiet --webroot -w /opt/lingtong/docker/nginx/certbot/www
+```
+
+## OSS 对象存储 & CDN 加速接入
+
+### 架构图
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│  小程序客户端 │────▶│  CDN 边缘节点  │────▶│  源站 Nginx:443  │
+│  浏览器浏览器 │     │ cdn.arvine.cn │     │ date.arvine.cn  │
+└─────────────┘     └──────┬───────┘     └────────┬────────┘
+                           │                       │
+                           │ 回源方式：              │ /api/*  → NestJS API
+                           │ 1. origin → 服务器      │ /uploads/* → 静态文件
+                           │ 2. oss    → OSS Bucket │ /* → Vue 管理后台
+                           │              │
+                           └──────────────┘
+```
+
+### 配置层级
+
+接入 OSS/CDN 只需要修改环境变量，无需改代码：
+
+| 变量 | 作用 | 影响范围 |
+|------|------|----------|
+| `UPLOAD_STRATEGY` | `local` 存服务器本地 / `oss` 上传到对象存储 | 上传接口行为 |
+| `STATIC_BASE_URL` | 返回给客户端的图片 URL 前缀 | 上传接口返回值 |
+| `CDN_ENABLED` | `true` 时优先使用 `CDN_DOMAIN` 作为返回前缀 | 上传接口返回值 |
+| `CDN_DOMAIN` | CDN 加速域名 | 图片访问 URL |
+| `CDN_ORIGIN_TYPE` | `origin` 回源到服务器 / `oss` 回源到 OSS | CDN 回源配置 |
+| `OSS_*` | 阿里云 OSS 连接参数 | OSS 上传 / 回源 |
+
+### 方案 A：CDN 回源到服务器（最小改动，推荐入门）
+
+不引入 OSS，CDN 直接回源到你的服务器 Nginx。
+
+**CDN 服务商控制台配置：**
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 加速域名 | `cdn.arvine.cn` | 需先配置 CNAME 解析 |
+| 源站类型 | 源站域名 | |
+| 源站地址 | `date.arvine.cn` | 你的服务器域名 |
+| 回源端口 | 443 | |
+| 回源协议 | HTTPS | 跟随 CDN |
+| 回源 HOST | `date.arvine.cn` | 源站域名 |
+| 缓存规则 — `/uploads/` | 缓存 7 天 | 图片文件（文件名唯一） |
+| 缓存规则 — `/assets/` | 缓存 365 天 | JS/CSS 路径含 hash |
+| 缓存规则 — `/api/` | 不缓存（0 秒） | API 动态数据 |
+| 缓存规则 — 其他 | 遵循源站 | |
+
+**`.env` 配置：**
+
+```env
+# 保持上传到本地磁盘
+UPLOAD_STRATEGY=local
+
+# 上传后返回 CDN 地址给客户端
+CDN_ENABLED=true
+CDN_DOMAIN=https://cdn.arvine.cn
+STATIC_BASE_URL=https://cdn.arvine.cn
+
+# CDN 从服务器源站拉取
+CDN_ORIGIN_TYPE=origin
+CDN_ORIGIN_HOST=date.arvine.cn
+```
+
+**重新部署：**
+
+```bash
+vim .env          # 修改上述配置
+docker compose up -d api  # 重启 API 使环境变量生效
+```
+
+### 方案 B：OSS 存储 + CDN 回源到 OSS（推荐生产使用）
+
+图片上传直接存到阿里云 OSS，CDN 从 OSS Bucket 拉取，减轻服务器带宽压力。
+
+**前置步骤 — 阿里云控制台操作：**
+
+1. 开通 [阿里云 OSS](https://oss.console.aliyun.com/)，创建 Bucket（公共读）
+2. 开通 [阿里云 CDN](https://cdn.console.aliyun.com/)，添加加速域名 `cdn.arvine.cn`
+3. CDN 源站选择「OSS 域名」，指向刚创建的 Bucket
+4. OSS 绑定自定义域名（可选），配置 CDN CNAME 解析
+
+**`.env` 配置：**
+
+```env
+# 上传策略改为 OSS
+UPLOAD_STRATEGY=oss
+
+# 阿里云 OSS
+OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
+OSS_BUCKET=your-bucket-name
+OSS_ACCESS_KEY_ID=your-ak-id
+OSS_ACCESS_KEY_SECRET=your-ak-secret
+OSS_UPLOAD_PREFIX=uploads/
+
+# CDN 返回地址
+CDN_ENABLED=true
+CDN_DOMAIN=https://cdn.arvine.cn
+STATIC_BASE_URL=https://cdn.arvine.cn
+
+# CDN 从 OSS 回源
+CDN_ORIGIN_TYPE=oss
+```
+
+> **注意**：方案 B 需要在后端代码中新增 OSS SDK 上传逻辑（`@aws-sdk/client-s3` 或 `ali-oss`）。目前项目中 `UPLOAD_STRATEGY=oss` 已预留，SDK 集成可根据需要后续实现。
+
+### 无需 CDN（直连模式）
+
+```env
+UPLOAD_STRATEGY=local
+CDN_ENABLED=false
+STATIC_BASE_URL=https://date.arvine.cn
+```
+
+上传后返回的图片 URL 为 `https://date.arvine.cn/uploads/xxx.jpg`。
+
+### URL 返回逻辑（代码级）
+
+后端上传接口按以下优先级生成返回给客户端的 URL：
+
+```
+CDN_ENABLED=true && CDN_DOMAIN 有效
+  → https://cdn.arvine.cn/uploads/xxx.jpg
+
+STATIC_BASE_URL 已配置
+  → https://date.arvine.cn/uploads/xxx.jpg
+
+API_BASE_URL 兜底
+  → https://date.arvine.cn/uploads/xxx.jpg
+```
+
+### 源站 Nginx 缓存头（已内置）
+
+Nginx 已针对 CDN 回源场景配置了完整的缓存策略：
+
+| 路径 | Cache-Control | 过期时间 | 说明 |
+|------|---------------|----------|------|
+| `/uploads/*` | `public, max-age=31536000, immutable` | 365 天 | 图片文件（文件名含时间戳，永不重复） |
+| `/assets/*` | `public, max-age=31536000, immutable` | 365 天 | Vite 构建产物（路径含 hash） |
+| `/api/*` | `no-cache, no-store, must-revalidate` | 不缓存 | API 动态响应 |
+
+### 验证 CDN 是否生效
+
+```bash
+# 1. 直接访问源站
+curl -I https://date.arvine.cn/uploads/test.jpg
+
+# 2. 通过 CDN 访问（观察 X-Cache 头）
+curl -I https://cdn.arvine.cn/uploads/test.jpg
+
+# 预期看到：
+# X-Cache: MISS (首次) 或 HIT (后续)
+# Cache-Control: public, max-age=31536000, immutable
 ```
 
 ## 常见问题排查
