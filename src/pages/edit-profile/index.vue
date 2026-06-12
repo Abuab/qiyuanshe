@@ -202,16 +202,17 @@
         </view>
       </view>
 
-      <!-- 自我介绍 -->
+      <!-- 我的特点 -->
       <view class="section-card">
-        <text class="section-title">自我介绍</text>
-        <textarea
-          class="intro-textarea"
-          v-model="form.selfIntro"
-          placeholder="介绍一下自己吧，让别人更好地了解你..."
-          maxlength="500"
-        />
-        <text class="intro-count" :class="{ over: introLen > 500 }">{{ introLen }}/500</text>
+        <text class="section-title">我的特点</text>
+        <view class="personality-tags" @tap="openPersonalityPicker">
+          <view v-for="(tag, idx) in form.personalityTags" :key="idx" class="personality-tag-item">
+            <text>{{ tag }}</text>
+          </view>
+          <view class="personality-tag-add">
+            <text>+</text>
+          </view>
+        </view>
       </view>
 
       <!-- 择偶要求 -->
@@ -393,6 +394,63 @@
       @confirm="onCityConfirm"
       @close="showCityPicker = false"
     />
+
+    <!-- 我的特点弹窗 -->
+    <view class="popup-mask" v-if="showPersonalityPopup" @tap="closePersonalityPicker"></view>
+    <view class="personality-popup-panel" :class="{ show: showPersonalityPopup }">
+      <view class="personality-popup-header">
+        <text class="personality-popup-title">我的特点</text>
+        <text class="personality-popup-close" @tap="closePersonalityPicker">✕</text>
+      </view>
+      <view class="personality-popup-subtitle">
+        <text>系统将自动根据所选标签生成个人简介</text>
+        <text>建议每个类型至少选择3项</text>
+      </view>
+      <!-- 已选标签 -->
+      <view class="personality-selected-area" v-if="tempPersonalityTags.length > 0">
+        <view v-for="(tag, idx) in tempPersonalityTags" :key="idx" class="personality-selected-tag">
+          <text>{{ tag }}</text>
+          <view class="personality-selected-remove" @tap.stop="removePersonalityTag(tag)">
+            <text>✕</text>
+          </view>
+        </view>
+      </view>
+      <view class="personality-selected-empty" v-else>
+        <text>请选择您的个性特点</text>
+      </view>
+      <!-- Tab 切换 -->
+      <view class="personality-tabs">
+        <view
+          v-for="tab in personalityTabs"
+          :key="tab.key"
+          class="personality-tab"
+          :class="{ active: activePersonalityTab === tab.key }"
+          @tap="activePersonalityTab = tab.key"
+        >
+          <text>{{ tab.label }}</text>
+        </view>
+      </view>
+      <!-- 标签区 -->
+      <scroll-view class="personality-options-scroll" scroll-y>
+        <view class="personality-options">
+          <view
+            v-for="(tag, idx) in currentPersonalityOptions"
+            :key="idx"
+            class="personality-option-item"
+            :class="{ active: tempPersonalityTags.includes(tag) }"
+            @tap="togglePersonalityTag(tag)"
+          >
+            <text>{{ tag }}</text>
+          </view>
+        </view>
+      </scroll-view>
+      <!-- 底部确定按钮 -->
+      <view class="personality-popup-footer">
+        <view class="personality-confirm-btn" @tap="confirmPersonalityPicker">
+          <text>确定</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -471,6 +529,35 @@ const hopeTaTagOptions = [
   '有上进心', '孝敬父母', '能一起打拼', '独立不粘人',
 ]
 
+// 我的特点标签选项
+const personalityTabs = [
+  { key: 'character' as const, label: '性格' },
+  { key: 'hobby' as const, label: '爱好' },
+  { key: 'loveRule' as const, label: '恋爱准则' },
+]
+const personalityTagMap: Record<string, string[]> = {
+  character: [
+    '话痨', '社牛', '慢热', '敏感', '闷骚', '佛系', '有强迫症', '热爱工作',
+    '关注细节', '比较乖', '没心机', '笑点低', '真诚靠谱', '乐观自信', '调皮可爱',
+    '温柔体贴', '贤惠顾家', '严谨细心', '智慧颜值并存', '爱玩爱闹', '勤奋好学',
+    '风趣幽默', '有气质', '御姐范', '敢爱敢恨', '有选择恐惧症', '喜欢宅',
+    '大方直率', '善解人意', '有完美主义', '知书达理', '有点社恐', '欢乐逗比',
+    '外冷内热', '斯文内敛', '开朗积极', '淳朴憨厚',
+  ],
+  hobby: [
+    '剧本杀', '玩游戏', '二次元', '看动漫', '看小说', '美食', '自驾游',
+    '听音乐', '看电影', '爱追剧', 'K歌', '看书', '逛街', '宠物', '厨艺',
+    '旅行', '运动', '户外爬山', '跑步', '精致生活',
+  ],
+  loveRule: [
+    '接受姐弟恋', '绝不做舔狗', '接受异地恋', '信一见钟情', '拒绝异地恋',
+    '宁缺也毋滥', '喜欢被照顾', '恋爱以结婚为目的', '拒大男子主义',
+  ],
+}
+
+const activePersonalityTab = ref<'character' | 'hobby' | 'loveRule'>('character')
+const currentPersonalityOptions = computed(() => personalityTagMap[activePersonalityTab.value] || [])
+
 // ===== 表单数据 =====
 const form = ref({
   avatar: '',
@@ -503,6 +590,7 @@ const form = ref({
   partnerMaritalStatus: '',
   acceptChildren: '',
   hopeTaTags: [] as string[],
+  personalityTags: [] as string[],
   partnerHometown: '',
   partnerResidence: '',
 })
@@ -519,6 +607,32 @@ const tempTags = ref<string[]>([])
 // 城市选择器
 const showCityPicker = ref(false)
 const cityTarget = ref<'residence' | 'hometown' | 'partnerHometown' | 'partnerResidence'>('residence')
+
+// 我的特点弹窗
+const showPersonalityPopup = ref(false)
+const tempPersonalityTags = ref<string[]>([])
+
+const openPersonalityPicker = () => {
+  tempPersonalityTags.value = [...form.value.personalityTags]
+  showPersonalityPopup.value = true
+}
+const closePersonalityPicker = () => { showPersonalityPopup.value = false }
+const togglePersonalityTag = (tag: string) => {
+  const idx = tempPersonalityTags.value.indexOf(tag)
+  if (idx > -1) {
+    tempPersonalityTags.value.splice(idx, 1)
+  } else {
+    tempPersonalityTags.value.push(tag)
+  }
+}
+const removePersonalityTag = (tag: string) => {
+  const idx = tempPersonalityTags.value.indexOf(tag)
+  if (idx > -1) tempPersonalityTags.value.splice(idx, 1)
+}
+const confirmPersonalityPicker = () => {
+  form.value.personalityTags = [...tempPersonalityTags.value]
+  showPersonalityPopup.value = false
+}
 
 // ===== 初始化 =====
 onMounted(() => {
@@ -560,6 +674,7 @@ onMounted(() => {
       partnerMaritalStatus: info.partnerMaritalStatus || '',
       acceptChildren: info.acceptChildren || '',
       hopeTaTags: parseTags(info.hopeTaTags),
+      personalityTags: parseTags(info.personalityTags),
       partnerHometown: info.partnerHometown || '',
       partnerResidence: info.partnerResidence || '',
     }
@@ -573,8 +688,6 @@ const parseTags = (val: any): string[] => {
 }
 
 // ===== Computed =====
-const introLen = computed(() => form.value.selfIntro.length)
-
 const birthYearIndex = computed(() => {
   if (!form.value.birthYear) return -1
   return birthYearOptions.findIndex((o) => o.startsWith(String(form.value.birthYear)))
@@ -823,6 +936,7 @@ const handleSave = async () => {
       partnerMaritalStatus: form.value.partnerMaritalStatus,
       acceptChildren: form.value.acceptChildren,
       hopeTaTags: form.value.hopeTaTags.join(','),
+      personalityTags: form.value.personalityTags.join(','),
       partnerHometown: form.value.partnerHometown,
       partnerResidence: form.value.partnerResidence,
     }
@@ -1364,6 +1478,235 @@ const handleBack = () => {
 }
 
 .save-btn {
+  width: 100%;
+  height: 88rpx;
+  background-color: #FF6B9D;
+  border-radius: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #fff;
+  }
+}
+
+/* 我的特点标签 */
+.personality-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding-top: 8rpx;
+}
+
+.personality-tag-item {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 20rpx;
+  border: 1rpx solid #FF6B9D;
+  border-radius: 30rpx;
+  background-color: #FFF0F3;
+
+  text {
+    font-size: 24rpx;
+    color: #FF6B9D;
+  }
+}
+
+.personality-tag-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 30rpx;
+  border: 1rpx solid #FF6B9D;
+
+  text {
+    font-size: 28rpx;
+    color: #FF6B9D;
+    line-height: 1;
+  }
+}
+
+/* 我的特点弹窗 */
+.personality-popup-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  z-index: 201;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+
+  &.show {
+    transform: translateY(0);
+  }
+}
+
+.personality-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 32rpx 8rpx;
+  position: relative;
+}
+
+.personality-popup-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.personality-popup-close {
+  position: absolute;
+  right: 32rpx;
+  font-size: 36rpx;
+  color: #999;
+  padding: 8rpx;
+}
+
+.personality-popup-subtitle {
+  padding: 0 32rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #FF6B9D;
+  }
+}
+
+.personality-selected-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  padding: 8rpx 30rpx 16rpx;
+  min-height: 0;
+}
+
+.personality-selected-tag {
+  display: flex;
+  align-items: center;
+  padding: 6rpx 12rpx 6rpx 20rpx;
+  border-radius: 30rpx;
+  background-color: #FF6B9D;
+
+  text {
+    font-size: 24rpx;
+    color: #fff;
+  }
+}
+
+.personality-selected-remove {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background-color: #FF6B9D;
+  border: 2rpx solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8rpx;
+
+  text {
+    font-size: 20rpx;
+    color: #fff;
+    line-height: 1;
+  }
+}
+
+.personality-selected-empty {
+  padding: 16rpx 30rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #ccc;
+  }
+}
+
+.personality-tabs {
+  display: flex;
+  border-bottom: 1rpx solid #eee;
+  padding: 0 30rpx;
+}
+
+.personality-tab {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 0;
+  position: relative;
+
+  text {
+    font-size: 28rpx;
+    color: #999;
+  }
+
+  &.active {
+    text {
+      color: #FF6B9D;
+      font-weight: bold;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60rpx;
+      height: 4rpx;
+      background-color: #FF6B9D;
+      border-radius: 2rpx;
+    }
+  }
+}
+
+.personality-options-scroll {
+  flex: 1;
+  padding: 16rpx 30rpx;
+  max-height: 50vh;
+}
+
+.personality-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.personality-option-item {
+  padding: 12rpx 24rpx;
+  border-radius: 30rpx;
+  background-color: #F5F5F5;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
+  }
+
+  &.active {
+    background-color: #FF6B9D;
+
+    text {
+      color: #fff;
+    }
+  }
+}
+
+.personality-popup-footer {
+  padding: 16rpx 30rpx;
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
+}
+
+.personality-confirm-btn {
   width: 100%;
   height: 88rpx;
   background-color: #FF6B9D;

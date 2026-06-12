@@ -116,6 +116,9 @@ export class User {
   @Column({ type: 'simple-json', nullable: true })
   tags: string[]
 
+  @Column({ type: 'simple-json', nullable: true })
+  personalityTags: string[]
+
   @Column({ type: 'varchar', length: 128, nullable: true })
   password: string
 

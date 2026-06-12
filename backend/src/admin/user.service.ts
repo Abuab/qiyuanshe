@@ -368,7 +368,7 @@ export class AdminUserService {
       'nickname', 'avatar', 'gender', 'birthYear', 'height', 'weight',
       'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
       'maritalStatus', 'hometown', 'residence', 'selfIntro', 'mateRequirement',
-      'isRealName', 'status', 'phone', 'tags', 'adminRemark',
+      'isRealName', 'status', 'phone', 'tags', 'personalityTags', 'adminRemark',
     ]
 
     const safeData: any = {}

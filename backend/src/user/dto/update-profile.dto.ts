@@ -92,4 +92,7 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(100)
   partnerResidence?: string
+
+  @IsOptional()
+  personalityTags?: string | string[]
 }

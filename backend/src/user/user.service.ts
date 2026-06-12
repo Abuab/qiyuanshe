@@ -679,6 +679,15 @@ export class UserService {
     if (dto.partnerHometown !== undefined) user.partnerHometown = dto.partnerHometown
     if (dto.partnerResidence !== undefined) user.partnerResidence = dto.partnerResidence
 
+    // personalityTags: 支持逗号分隔字符串或数组
+    if (dto.personalityTags !== undefined) {
+      if (Array.isArray(dto.personalityTags)) {
+        user.personalityTags = dto.personalityTags
+      } else if (typeof dto.personalityTags === 'string') {
+        user.personalityTags = dto.personalityTags.split(',').map(s => s.trim()).filter(Boolean)
+      }
+    }
+
     await this.userRepository.save(user)
     return user
   }
