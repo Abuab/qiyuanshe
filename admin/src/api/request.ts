@@ -38,6 +38,13 @@ instance.interceptors.response.use(
       return { success: true, data: null }
     }
 
+    // 检测 NestJS 标准错误响应（statusCode / error 字段）
+    const isNestError = data.statusCode !== undefined && data.statusCode >= 400
+    if (isNestError) {
+      ElMessage.error(data.message || '请求失败')
+      return Promise.reject(new Error(data.message || '请求失败'))
+    }
+
     const isWrapped = data.code !== undefined && data.data !== undefined
     const result = isWrapped ? data.data : data
 

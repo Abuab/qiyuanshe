@@ -16,7 +16,7 @@ import { Roles } from './roles.decorator'
 import { UserProfileService } from './user-profile.service'
 import { Result } from '../common/result'
 
-@Controller('admin/users')
+@Controller('admin/user-profiles')
 @Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class UserProfileController {

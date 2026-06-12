@@ -138,51 +138,51 @@ export const adminUsers = {
 
   // 用户详情页扩展接口
   getReports(id: number): Promise<ApiResponse<any[]>> {
-    return request.get(`/admin/users/${id}/reports`)
+    return request.get(`/admin/user-profiles/${id}/reports`)
   },
 
   getBlocks(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
-    return request.get(`/admin/users/${id}/blocks`, { params: { page, limit } })
+    return request.get(`/admin/user-profiles/${id}/blocks`, { params: { page, limit } })
   },
 
   getNotifications(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
-    return request.get(`/admin/users/${id}/notifications`, { params: { page, limit } })
+    return request.get(`/admin/user-profiles/${id}/notifications`, { params: { page, limit } })
   },
 
   sendUserNotification(id: number, data: { title?: string; content: string }): Promise<ApiResponse> {
-    return request.post(`/admin/users/${id}/notifications`, data)
+    return request.post(`/admin/user-profiles/${id}/notifications`, data)
   },
 
   getUserAnswers(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
-    return request.get(`/admin/users/${id}/answers`, { params: { page, limit } })
+    return request.get(`/admin/user-profiles/${id}/answers`, { params: { page, limit } })
   },
 
   approveAnswer(answerId: number): Promise<ApiResponse> {
-    return request.put(`/admin/users/answers/${answerId}/approve`)
+    return request.put(`/admin/user-profiles/answers/${answerId}/approve`)
   },
 
   rejectAnswer(answerId: number, reason?: string): Promise<ApiResponse> {
-    return request.put(`/admin/users/answers/${answerId}/reject`, { reason })
+    return request.put(`/admin/user-profiles/answers/${answerId}/reject`, { reason })
   },
 
   getMatches(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
-    return request.get(`/admin/users/${id}/matches`, { params: { page, limit } })
+    return request.get(`/admin/user-profiles/${id}/matches`, { params: { page, limit } })
   },
 
   getReviews(id: number): Promise<ApiResponse<any[]>> {
-    return request.get(`/admin/users/${id}/matchmaker-reviews`)
+    return request.get(`/admin/user-profiles/${id}/matchmaker-reviews`)
   },
 
   createReview(id: number, data: { matchmakerId: number; content?: string; difficulty?: string }): Promise<ApiResponse> {
-    return request.post(`/admin/users/${id}/matchmaker-reviews`, data)
+    return request.post(`/admin/user-profiles/${id}/matchmaker-reviews`, data)
   },
 
   updateReview(reviewId: number, data: { content?: string; difficulty?: string }): Promise<ApiResponse> {
-    return request.put(`/admin/users/matchmaker-reviews/${reviewId}`, data)
+    return request.put(`/admin/user-profiles/matchmaker-reviews/${reviewId}`, data)
   },
 
   deleteReview(reviewId: number): Promise<ApiResponse> {
-    return request.delete(`/admin/users/matchmaker-reviews/${reviewId}`)
+    return request.delete(`/admin/user-profiles/matchmaker-reviews/${reviewId}`)
   },
 
   getPhotos(id: number): Promise<ApiResponse<UserPhoto[]>> {
