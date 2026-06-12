@@ -48,6 +48,10 @@ backups/
 # Docker
 docker/mysql/data/
 
+# Nginx config (copy from .example and customize per server)
+docker/nginx/nginx.conf
+admin/nginx.conf
+
 # SSL certificates
 *.pem
 *.key

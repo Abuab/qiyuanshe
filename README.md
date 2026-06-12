@@ -65,7 +65,7 @@ qiyuanshe/
 │   │       ├── system/       # 系统配置
 │   │       └── user/         # 用户管理
 │   ├── Dockerfile
-│   ├── nginx.conf
+│   ├── nginx.conf.example # 管理后台 Nginx 模板
 │   └── package.json
 │
 ├── backend/                  # 后端服务
@@ -91,7 +91,7 @@ qiyuanshe/
 │   │   ├── init.sql          # 数据库初始化
 │   │   └── my.cnf            # MySQL 配置
 │   └── nginx/
-│       ├── nginx.conf        # Nginx 反向代理 + SSL
+│       ├── nginx.conf.example # Nginx 配置模板（复制为 nginx.conf 后修改）
 │       ├── ssl/              # SSL 证书目录
 │       └── certbot/          # Certbot 验证目录
 │
@@ -335,7 +335,23 @@ WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 
 > **注意**：Docker Compose 启动时会通过 `environment` 注入变量覆盖这些值，此文件是备用/手动启动时使用。
 
-### 第四步：构建并启动所有服务
+### 第四步：配置 Nginx（Docker 容器内）
+
+```bash
+cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
+vim docker/nginx/nginx.conf
+```
+
+需要修改：
+
+```nginx
+# 替换两处 server_name
+server_name yourdomain.com;   # 改为你的实际域名
+```
+
+> `docker/nginx/nginx.conf` 已被 `.gitignore` 忽略，git pull 不会覆盖你已配置的版本。
+
+### 第五步：构建并启动所有服务
 
 ```bash
 docker compose up -d --build
@@ -351,7 +367,7 @@ docker compose ps
 docker compose logs -f
 ```
 
-### 第五步：申请 SSL 证书
+### 第六步：申请 SSL 证书
 
 ```bash
 # 运行证书申请脚本
@@ -364,7 +380,7 @@ docker compose logs -f
 3. 将证书复制到 `docker/nginx/ssl/`
 4. 重启 nginx 容器，SSL 生效
 
-### 第六步：配置证书自动续期
+### 第七步：配置证书自动续期
 
 ```bash
 ./scripts/setup-ssl.sh setup-renewal
@@ -381,7 +397,7 @@ docker compose logs -f
 sudo certbot renew --dry-run
 ```
 
-### 第七步：验证部署
+### 第八步：验证部署
 
 ```bash
 # 验证 HTTPS
@@ -394,7 +410,7 @@ curl https://yourdomain.com/api/health
 # https://yourdomain.com
 ```
 
-### 第八步：配置开机自启
+### 第九步：配置开机自启
 
 ```bash
 sudo tee /etc/systemd/system/lingtong.service > /dev/null << 'EOF'

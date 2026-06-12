@@ -12,8 +12,8 @@ function getToken(): string {
  * 生产环境 API 地址（兜底默认值）
  * 优先级：storage 缓存 > build-time VITE_API_BASE_URL > 此常量
  */
-const DEFAULT_BASE_URL = 'https://yourdomain.com/api'
-const DEFAULT_SERVER_URL = 'https://yourdomain.com'
+const DEFAULT_BASE_URL = 'http://localhost:3000/api'
+const DEFAULT_SERVER_URL = 'http://localhost:3000'
 function resolveBaseUrl(): string {
   const storageUrl = uni.getStorageSync('api_base_url') as string | undefined
   if (storageUrl) return storageUrl

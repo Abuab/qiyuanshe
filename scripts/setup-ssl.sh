@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================
 # 栖缘社 SSL 证书申请 & 自动续期脚本
-# 域名: yourdomain.com
+# 域名从项目根目录 .env 中读取 DOMAIN 变量
 # 使用 Let's Encrypt + certbot
 # =============================================
 
@@ -22,8 +22,22 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SSL_DIR="$PROJECT_DIR/docker/nginx/ssl"
 CERTBOT_WWW="$PROJECT_DIR/docker/nginx/certbot/www"
-DOMAIN="yourdomain.com"
-EMAIL="kevin@yourdomain.com"  # 改为你自己的邮箱
+
+# 从项目 .env 读取域名，不存在则提示用户设置
+if [ -f "$PROJECT_DIR/.env" ]; then
+    DOMAIN=$(grep -E '^DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2-)
+fi
+if [ -z "$DOMAIN" ]; then
+    log_error "请在项目根目录 .env 中设置 DOMAIN=yourdomain.com"
+    exit 1
+fi
+
+# 从项目 .env 读取邮箱，不存在则使用占位符（Let's Encrypt 要求有效邮箱）
+SSL_EMAIL=$(grep -E '^SSL_EMAIL=' "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2-)
+if [ -z "$SSL_EMAIL" ]; then
+    SSL_EMAIL="admin@$DOMAIN"
+    log_warning "未在 .env 中设置 SSL_EMAIL，将使用: $SSL_EMAIL"
+fi
 
 # =============================================
 # 0. 检测操作系统包管理器
@@ -95,7 +109,7 @@ apply_cert_standalone() {
         --preferred-challenges http \
         --agree-tos \
         --no-eff-email \
-        --email "$EMAIL" \
+        --email "$SSL_EMAIL" \
         -d "$DOMAIN"
 
     log_success "证书申请成功"
@@ -124,29 +138,29 @@ setup_renewal() {
     # 创建续期钩子脚本
     sudo mkdir -p "$CERTBOT_WWW"
 
-    sudo tee /etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh > /dev/null << 'HOOK'
+    sudo tee /etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh > /dev/null << HOOK
 #!/bin/bash
 # Let's Encrypt 续期后自动复制证书并重载 nginx
 
-SSL_DIR="/opt/lingtong/docker/nginx/ssl"
-DOMAIN="yourdomain.com"
+SSL_DIR="$SSL_DIR"
+DOMAIN="$DOMAIN"
 
-cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem "$SSL_DIR/fullchain.pem"
-cp /etc/letsencrypt/live/$DOMAIN/privkey.pem "$SSL_DIR/privkey.pem"
-chmod 644 "$SSL_DIR/fullchain.pem"
-chmod 600 "$SSL_DIR/privkey.pem"
+cp /etc/letsencrypt/live/\$DOMAIN/fullchain.pem "\$SSL_DIR/fullchain.pem"
+cp /etc/letsencrypt/live/\$DOMAIN/privkey.pem "\$SSL_DIR/privkey.pem"
+chmod 644 "\$SSL_DIR/fullchain.pem"
+chmod 600 "\$SSL_DIR/privkey.pem"
 
 # 重载 nginx 使新证书生效
-cd /opt/lingtong
+cd "$PROJECT_DIR"
 docker compose exec -T nginx nginx -s reload
 
-echo "$(date '+%Y-%m-%d %H:%M:%S') SSL certificate renewed and nginx reloaded" >> /var/log/lingtong-ssl-renewal.log
+echo "\$(date '+%Y-%m-%d %H:%M:%S') SSL certificate renewed and nginx reloaded" >> /var/log/lingtong-ssl-renewal.log
 HOOK
 
     sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh
 
     # 添加定时任务（每天凌晨 2 点检查并续期）
-    CRON_JOB="0 2 * * * certbot renew --quiet --webroot -w /opt/lingtong/docker/nginx/certbot/www"
+    CRON_JOB="0 2 * * * certbot renew --quiet --webroot -w $CERTBOT_WWW"
     (sudo crontab -l 2>/dev/null | grep -v "certbot renew"; echo "$CRON_JOB") | sudo crontab -
 
     log_success "自动续期已配置完成"

@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import request from '@/utils/request'
+import request, { getServerBaseUrl } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -446,7 +446,7 @@ const drawQRCode = async (ctx: any, template: PosterTemplate) => {
   ctx.stroke()
 
   // 尝试加载真实小程序码图片（后台返回完整 URL）
-  const qrCodeUrl = 'https://yourdomain.com/qr/4.png'
+  const qrCodeUrl = `${getServerBaseUrl()}/qr/4.png`
 
   try {
     const tempFilePath = await downloadImage(qrCodeUrl)
