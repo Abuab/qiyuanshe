@@ -64,7 +64,7 @@
         <template #title>举报管理</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/matchmaker-comments">
+      <el-menu-item v-if="isSuperAdmin || userInfo?.role === 'matchmaker'" index="/matchmaker-comments">
         <el-icon><Comment /></el-icon>
         <template #title>红娘评语</template>
       </el-menu-item>

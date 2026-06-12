@@ -21,6 +21,7 @@ import { Report, ReportType, ReportReason } from '../entities/Report'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserBlock } from '../entities/UserBlock'
+import { AuditLog } from '../entities/AuditLog'
 import { Result } from '../common/result'
 
 @Controller('users')
@@ -31,6 +32,7 @@ export class UserController {
     @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
     @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
     @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
+    @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
   ) {}
 
   @Get('recommend')
@@ -89,7 +91,31 @@ export class UserController {
   @Post('profile-review')
   @UseGuards(JwtAuthGuard)
   async submitProfileReview(@Body() body: any, @Request() req: any) {
-    // 资料审核提交，前端静默调用，仅需返回成功
+    // 创建审核记录到 audit_logs 表
+    const userId = req.user.userId
+    const auditLog = this.auditLogRepo.create({
+      action: 'PENDING',
+      targetType: 'user',
+      targetId: userId,
+      submitterId: userId,
+      content: JSON.stringify(body || {}),
+    })
+    await this.auditLogRepo.save(auditLog)
+    return Result.success(null, '已提交审核')
+  }
+
+  @Post('avatar-review')
+  @UseGuards(JwtAuthGuard)
+  async submitAvatarReview(@Body() body: { avatarUrl: string }, @Request() req: any) {
+    const userId = req.user.userId
+    const auditLog = this.auditLogRepo.create({
+      action: 'PENDING',
+      targetType: 'photo',
+      targetId: userId,
+      submitterId: userId,
+      content: JSON.stringify({ url: body.avatarUrl, type: 'avatar' }),
+    })
+    await this.auditLogRepo.save(auditLog)
     return Result.success(null, '已提交审核')
   }
 
@@ -137,9 +163,20 @@ export class UserController {
     const count = await this.photoRepo.count({ where: { userId } })
     if (count >= 9) return Result.serverError('最多上传9张照片')
     const isMain = count === 0 ? 1 : 0
-    const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count })
-    await this.photoRepo.save(photo)
-    return Result.success(photo)
+    const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count, auditStatus: 0 })
+    const saved = await this.photoRepo.save(photo)
+
+    // 创建审核记录
+    const auditLog = this.auditLogRepo.create({
+      action: 'PENDING',
+      targetType: 'photo',
+      targetId: saved.id,
+      submitterId: userId,
+      content: JSON.stringify({ url: body.url, photoId: saved.id }),
+    })
+    await this.auditLogRepo.save(auditLog)
+
+    return Result.success(saved)
   }
 
   @Post('photos/:id/main')
