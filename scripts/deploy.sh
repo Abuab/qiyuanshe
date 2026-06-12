@@ -126,7 +126,11 @@ pull_code() {
 build_and_start() {
     log_info "构建并启动 Docker 容器..."
 
-    # 确保 nginx.conf 存在（首次部署时从 .example 复制）
+    # 确保 nginx.conf 存在（Docker 可能创建了同名目录，先删除）
+    if [ -d "docker/nginx/nginx.conf" ]; then
+        log_info "检测到 nginx.conf 是目录（Docker 自动创建），删除中..."
+        rm -rf docker/nginx/nginx.conf
+    fi
     if [ ! -f "docker/nginx/nginx.conf" ] && [ -f "docker/nginx/nginx.conf.example" ]; then
         log_info "首次部署：复制 nginx.conf.example → docker/nginx/nginx.conf"
         cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
