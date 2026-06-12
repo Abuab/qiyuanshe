@@ -204,13 +204,19 @@
 
       <!-- 我的特点 -->
       <view class="section-card">
-        <text class="section-title">我的特点</text>
-        <view class="personality-tags" @tap="openPersonalityPicker">
-          <view v-for="(tag, idx) in form.personalityTags" :key="idx" class="personality-tag-item">
-            <text>{{ tag }}</text>
+        <view class="hope-ta-section">
+          <view class="section-title-row">
+            <text class="section-title-bar"></text>
+            <text class="section-title">我的特点</text>
           </view>
-          <view class="personality-tag-add">
-            <text>+</text>
+          <view class="hope-ta-tags">
+            <view v-for="(tag, idx) in form.personalityTags" :key="idx" class="hope-tag-item" @tap="removePersonalityEditTag(idx)">
+              <text>{{ tag }}</text>
+              <text class="hope-tag-close">×</text>
+            </view>
+            <view class="hope-tag-add" @tap="openPersonalityPicker">
+              <text>+</text>
+            </view>
           </view>
         </view>
       </view>
@@ -819,6 +825,9 @@ const confirmTagPicker = () => {
 }
 const removeHopeTaTag = (idx: number) => {
   form.value.hopeTaTags.splice(idx, 1)
+}
+const removePersonalityEditTag = (idx: number) => {
+  form.value.personalityTags.splice(idx, 1)
 }
 
 // ===== 城市选择器 =====
