@@ -199,7 +199,7 @@ WECHAT_SECRET=your_wechat_secret
 #=========================================
 WECHAT_MCH_ID=your_merchant_id
 WECHAT_API_V3_KEY=your_api_v3_key
-WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
+WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 
 #=========================================
 # 腾讯云配置（内容审核）
@@ -214,9 +214,9 @@ TENCENT_SECRET_KEY=your_secret_key
 UPLOAD_STRATEGY=local
 
 # 静态资源 CDN 域名
-CDN_DOMAIN=https://cdn.arvine.cn
+CDN_DOMAIN=https://cdn.yourdomain.com
 CDN_ENABLED=false
-STATIC_BASE_URL=https://date.arvine.cn
+STATIC_BASE_URL=https://yourdomain.com
 
 # 阿里云 OSS
 OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
@@ -253,7 +253,7 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 
 # 静态资源 URL 前缀（CDN）
-STATIC_BASE_URL=https://date.arvine.cn
+STATIC_BASE_URL=https://yourdomain.com
 
 # 微信配置
 WECHAT_APPID=your_wechat_appid
@@ -270,7 +270,7 @@ WECHAT_NOTIFY_URL=http://localhost:3000/api/payment/notify
 
 ## 生产部署（完整步骤）
 
-**前置条件**：已购买域名 `date.arvine.cn` 并解析到服务器公网 IP `150.158.130.152`，防火墙已开放 80 / 443 端口。
+**前置条件**：已购买域名并解析到服务器公网 IP，防火墙已开放 80 / 443 端口。
 
 ### 第一步：克隆项目
 
@@ -309,9 +309,9 @@ TENCENT_SECRET_ID=你的腾讯云SecretId
 TENCENT_SECRET_KEY=你的腾讯云SecretKey
 
 # 域名
-DOMAIN=date.arvine.cn
-API_BASE_URL=https://date.arvine.cn
-ADMIN_BASE_URL=https://date.arvine.cn
+DOMAIN=yourdomain.com
+API_BASE_URL=https://yourdomain.com
+ADMIN_BASE_URL=https://yourdomain.com
 ```
 
 ### 第三步：配置后端 `backend/.env`
@@ -330,7 +330,7 @@ REDIS_PASSWORD=和主目录 .env 中 REDIS_PASSWORD 保持一致
 JWT_SECRET=和主目录 .env 中 JWT_SECRET 保持一致
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
-WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
+WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 ```
 
 > **注意**：Docker Compose 启动时会通过 `environment` 注入变量覆盖这些值，此文件是备用/手动启动时使用。
@@ -385,13 +385,13 @@ sudo certbot renew --dry-run
 
 ```bash
 # 验证 HTTPS
-curl -I https://date.arvine.cn
+curl -I https://yourdomain.com
 
 # 验证 API
-curl https://date.arvine.cn/api/health
+curl https://yourdomain.com/api/health
 
 # 浏览器打开管理后台
-# https://date.arvine.cn
+# https://yourdomain.com
 ```
 
 ### 第八步：配置开机自启
@@ -588,10 +588,10 @@ WECHAT_APPID=你的微信小程序AppID
 WECHAT_SECRET=你的微信小程序AppSecret
 
 # 域名
-DOMAIN=date.arvine.cn
-API_BASE_URL=https://date.arvine.cn
-ADMIN_BASE_URL=https://date.arvine.cn
-STATIC_BASE_URL=https://date.arvine.cn
+DOMAIN=yourdomain.com
+API_BASE_URL=https://yourdomain.com
+ADMIN_BASE_URL=https://yourdomain.com
+STATIC_BASE_URL=https://yourdomain.com
 ```
 
 **配置后端专用 `backend/.env`：**
@@ -625,17 +625,17 @@ JWT_EXPIRES_IN=7d
 # 微信
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
-WECHAT_NOTIFY_URL=https://date.arvine.cn/api/payment/notify
+WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 
 # 静态资源
-STATIC_BASE_URL=https://date.arvine.cn
+STATIC_BASE_URL=https://yourdomain.com
 
 # 腾讯云审核
 TENCENT_SECRET_ID=你的SecretId
 TENCENT_SECRET_KEY=你的SecretKey
 
 # CORS 允许的域名
-CORS_ORIGINS=https://date.arvine.cn,http://localhost:5173
+CORS_ORIGINS=https://yourdomain.com,http://localhost:5173
 
 # 上传文件目录（不配置则默认用 ./uploads）
 UPLOAD_DIR=/opt/lingtong/data/uploads
@@ -738,7 +738,7 @@ upstream lingtong_api {
 # HTTP (80) — 重定向到 HTTPS + Let's Encrypt 验证
 server {
     listen 80;
-    server_name date.arvine.cn;
+    server_name yourdomain.com;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -754,7 +754,7 @@ server {
 # HTTPS (443)
 server {
     listen 443 ssl http2;
-    server_name date.arvine.cn;
+    server_name yourdomain.com;
 
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
@@ -855,11 +855,11 @@ sudo certbot certonly \
   --agree-tos \
   --no-eff-email \
   --email your-email@example.com \
-  -d date.arvine.cn
+  -d yourdomain.com
 
 # 复制证书到 Nginx 目录
-sudo cp /etc/letsencrypt/live/date.arvine.cn/fullchain.pem /etc/nginx/ssl/fullchain.pem
-sudo cp /etc/letsencrypt/live/date.arvine.cn/privkey.pem /etc/nginx/ssl/privkey.pem
+sudo cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /etc/nginx/ssl/fullchain.pem
+sudo cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /etc/nginx/ssl/privkey.pem
 sudo chmod 644 /etc/nginx/ssl/fullchain.pem
 sudo chmod 600 /etc/nginx/ssl/privkey.pem
 
@@ -873,8 +873,8 @@ sudo systemctl start nginx
 # 创建续期钩子脚本
 sudo tee /etc/letsencrypt/renewal-hooks/deploy/lingtong-ssl.sh > /dev/null << 'HOOK'
 #!/bin/bash
-cp /etc/letsencrypt/live/date.arvine.cn/fullchain.pem /etc/nginx/ssl/fullchain.pem
-cp /etc/letsencrypt/live/date.arvine.cn/privkey.pem /etc/nginx/ssl/privkey.pem
+cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /etc/nginx/ssl/fullchain.pem
+cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /etc/nginx/ssl/privkey.pem
 chmod 644 /etc/nginx/ssl/fullchain.pem
 chmod 600 /etc/nginx/ssl/privkey.pem
 systemctl reload nginx
@@ -908,13 +908,13 @@ npm run build:mp-weixin
 
 ```bash
 # 1. 健康检查
-curl https://date.arvine.cn/api/health
+curl https://yourdomain.com/api/health
 
 # 2. SSL 证书是否生效
-curl -I https://date.arvine.cn
+curl -I https://yourdomain.com
 
 # 3. 管理后台可访问
-curl -I https://date.arvine.cn/index.html
+curl -I https://yourdomain.com/index.html
 
 # 4. Nginx 日志
 sudo tail -f /var/log/nginx/access.log
@@ -1011,10 +1011,10 @@ cd /opt/lingtong && npm run build:mp-weixin
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 管理后台 | https://date.arvine.cn | 管理员操作界面 |
-| 后端 API | https://date.arvine.cn/api | 小程序调用 |
-| 上传文件 | https://date.arvine.cn/uploads/ | 用户上传图片 |
-| 健康检查 | https://date.arvine.cn/api/health | 服务状态检查 |
+| 管理后台 | https://yourdomain.com | 管理员操作界面 |
+| 后端 API | https://yourdomain.com/api | 小程序调用 |
+| 上传文件 | https://yourdomain.com/uploads/ | 用户上传图片 |
+| 健康检查 | https://yourdomain.com/api/health | 服务状态检查 |
 
 ### 默认管理员账号
 - 用户名: `admin`
@@ -1088,14 +1088,167 @@ cd /opt/lingtong && npm run build:mp-weixin
 
 ## 运维脚本
 
-| 脚本 | 说明 |
-|------|------|
-| `scripts/install.sh` | 一键安装（Ubuntu） |
-| `scripts/deploy.sh` | 一键部署 |
-| `scripts/setup-ssl.sh` | SSL 证书申请 & 自动续期 |
-| `scripts/backup.sh` | 数据库备份 |
-| `scripts/cleanup.sh` | 日志清理 |
-| `scripts/monitor.sh` | 监控告警 |
+### `scripts/install.sh` — 一键环境安装
+
+**用途**：在空白服务器上安装 Docker、Docker Compose，创建项目目录，自动生成 `.env` 配置文件。
+
+**用法**：
+
+```bash
+sudo bash scripts/install.sh
+```
+
+**执行内容**：
+1. 自动检测操作系统（Ubuntu 20.04+ / CentOS 7+）
+2. 安装 Docker + Docker Compose
+3. 创建 backups / logs / certs / docker/nginx/ssl 等目录
+4. 从 `.env.example` 生成 `.env`，并自动填入随机密码
+
+> 注：`.env` 中的微信/腾讯云配置项仍需手动填写。
+
+---
+
+### `scripts/deploy.sh` — 一键部署
+
+**用途**：Docker Compose 方式拉代码、备份数据库、构建并启动所有服务，执行健康检查。
+
+**用法**：
+
+```bash
+bash scripts/deploy.sh
+```
+
+**执行内容**：
+1. 检查 Docker 环境
+2. 加载 `.env` 环境变量
+3. 询问是否拉取最新代码（git pull）
+4. 自动备份当前数据库
+5. `docker compose up -d --build` 构建并启动
+6. 等待服务就绪后依次检查 MySQL → Redis → API 健康状态
+7. 输出所有容器运行状态
+
+---
+
+### `scripts/setup-ssl.sh` — SSL 证书管理
+
+**用途**：Let's Encrypt 免费证书的申请与自动续期。
+
+**用法**：
+
+```bash
+# 首次申请证书
+bash scripts/setup-ssl.sh apply
+
+# 配置自动续期（crontab + 钩子）
+bash scripts/setup-ssl.sh setup-renewal
+
+# 手动触发一次续期检查
+bash scripts/setup-ssl.sh renew
+
+# 仅安装 certbot 工具
+bash scripts/setup-ssl.sh install
+```
+
+**子命令说明**：
+
+| 子命令 | 说明 |
+|--------|------|
+| `apply` | 停止 nginx 容器 → standalone 模式申请证书 → 复制到 `docker/nginx/ssl/` → 重启 nginx |
+| `setup-renewal` | 创建续期钩子脚本（续期后自动复制证书 + reload nginx）+ 添加 crontab 定时任务 |
+| `renew` | 手动执行续期（webroot 模式，无需停机） |
+| `install` | 仅安装 certbot（自动识别 dnf/yum/apt） |
+
+**证书位置**：
+- Let's Encrypt 归档：`/etc/letsencrypt/live/yourdomain.com/`
+- 项目挂载目录：`docker/nginx/ssl/fullchain.pem` + `privkey.pem`
+
+---
+
+### `scripts/backup.sh` — 数据库备份
+
+**用途**：自动备份 MySQL 数据库，压缩存储，支持远程上传到 OSS。
+
+**用法**：
+
+```bash
+# 手动执行备份
+bash scripts/backup.sh
+
+# 配置定时任务（每天凌晨 2 点）
+(crontab -l 2>/dev/null; echo "0 2 * * * cd /opt/lingtong && bash scripts/backup.sh >> /var/log/lingtong-backup.log 2>&1") | crontab -
+```
+
+**执行内容**：
+1. 检查 MySQL 容器是否运行
+2. 执行 `mysqldump` 导出全量数据（含存储过程/触发器/事件）
+3. gzip 压缩备份文件
+4. 自动清理超过 `BACKUP_RETENTION_DAYS` 天的旧备份
+5. 如配置了 OSS，可上传到阿里云 OSS（`ENABLE_REMOTE_BACKUP=true`）
+
+**备份文件位置**：`backups/lingtong_YYMMDD_HHMMSS.sql.gz`
+
+**依赖环境变量**：
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `MYSQL_ROOT_PASSWORD` | 数据库 root 密码 | - |
+| `BACKUP_RETENTION_DAYS` | 备份保留天数 | 30 |
+| `BACKUP_PATH` | 备份存储路径 | ./backups |
+| `ENABLE_REMOTE_BACKUP` | 是否上传到 OSS | false |
+
+---
+
+### `scripts/cleanup.sh` — 日志清理
+
+**用途**：清理应用日志、Nginx 日志、Docker 容器日志，释放磁盘空间。
+
+**用法**：
+
+```bash
+# 手动执行清理
+bash scripts/cleanup.sh
+
+# 配置定时任务（每天凌晨 3 点）
+(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/lingtong && bash scripts/cleanup.sh >> /var/log/lingtong-cleanup.log 2>&1") | crontab -
+```
+
+**执行内容**：
+1. 删除超过 7 天的应用日志（`logs/*.log`）
+2. 清空所有 Docker 容器的内部日志（`docker inspect --LogPath`）
+3. 删除空的日志目录
+
+**日志保留策略**：
+- 应用日志：保留 7 天
+- Docker 容器日志：每次执行清空（容器内日志）
+- Nginx 日志：跟随系统 `/var/log/nginx/`，由 logrotate 管理
+
+---
+
+### `scripts/monitor.sh` — 系统监控告警
+
+**用途**：监控服务器磁盘、内存使用率，以及 API 响应时间，自动发送告警。
+
+**用法**：
+
+```bash
+# 手动执行检查
+bash scripts/monitor.sh
+
+# 配置定时任务（每 5 分钟）
+(crontab -l 2>/dev/null; echo "*/5 * * * * cd /opt/lingtong && bash scripts/monitor.sh >> /var/log/lingtong-monitor.log 2>&1") | crontab -
+```
+
+**监控指标**：
+
+| 指标 | 阈值 | 环境变量 |
+|------|------|----------|
+| 磁盘使用率 | 80% | `DISK_USAGE_THRESHOLD` |
+| 内存使用率 | 85% | `MEMORY_USAGE_THRESHOLD` |
+| API 响应时间 | 3000ms | `API_RESPONSE_TIME_THRESHOLD` |
+
+**告警渠道**（`.env` 中配置）：
+- 企业微信机器人：`WECHAT_WEBHOOK_URL`
+- 钉钉机器人：`DINGTALK_WEBHOOK_URL`
 
 ## 定时任务配置
 
@@ -1120,7 +1273,7 @@ cd /opt/lingtong && npm run build:mp-weixin
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
 │  小程序客户端 │────▶│  CDN 边缘节点  │────▶│  源站 Nginx:443  │
-│  浏览器浏览器 │     │ cdn.arvine.cn │     │ date.arvine.cn  │
+│  浏览器浏览器 │     │ cdn.yourdomain.com │     │ yourdomain.com  │
 └─────────────┘     └──────┬───────┘     └────────┬────────┘
                            │                       │
                            │ 回源方式：              │ /api/*  → NestJS API
@@ -1151,12 +1304,12 @@ cd /opt/lingtong && npm run build:mp-weixin
 
 | 配置项 | 值 | 说明 |
 |--------|-----|------|
-| 加速域名 | `cdn.arvine.cn` | 需先配置 CNAME 解析 |
+| 加速域名 | `cdn.yourdomain.com` | 需先配置 CNAME 解析 |
 | 源站类型 | 源站域名 | |
-| 源站地址 | `date.arvine.cn` | 你的服务器域名 |
+| 源站地址 | `yourdomain.com` | 你的服务器域名 |
 | 回源端口 | 443 | |
 | 回源协议 | HTTPS | 跟随 CDN |
-| 回源 HOST | `date.arvine.cn` | 源站域名 |
+| 回源 HOST | `yourdomain.com` | 源站域名 |
 | 缓存规则 — `/uploads/` | 缓存 7 天 | 图片文件（文件名唯一） |
 | 缓存规则 — `/assets/` | 缓存 365 天 | JS/CSS 路径含 hash |
 | 缓存规则 — `/api/` | 不缓存（0 秒） | API 动态数据 |
@@ -1170,12 +1323,12 @@ UPLOAD_STRATEGY=local
 
 # 上传后返回 CDN 地址给客户端
 CDN_ENABLED=true
-CDN_DOMAIN=https://cdn.arvine.cn
-STATIC_BASE_URL=https://cdn.arvine.cn
+CDN_DOMAIN=https://cdn.yourdomain.com
+STATIC_BASE_URL=https://cdn.yourdomain.com
 
 # CDN 从服务器源站拉取
 CDN_ORIGIN_TYPE=origin
-CDN_ORIGIN_HOST=date.arvine.cn
+CDN_ORIGIN_HOST=yourdomain.com
 ```
 
 **重新部署：**
@@ -1192,7 +1345,7 @@ docker compose up -d api  # 重启 API 使环境变量生效
 **前置步骤 — 阿里云控制台操作：**
 
 1. 开通 [阿里云 OSS](https://oss.console.aliyun.com/)，创建 Bucket（公共读）
-2. 开通 [阿里云 CDN](https://cdn.console.aliyun.com/)，添加加速域名 `cdn.arvine.cn`
+2. 开通 [阿里云 CDN](https://cdn.console.aliyun.com/)，添加加速域名 `cdn.yourdomain.com`
 3. CDN 源站选择「OSS 域名」，指向刚创建的 Bucket
 4. OSS 绑定自定义域名（可选），配置 CDN CNAME 解析
 
@@ -1211,8 +1364,8 @@ OSS_UPLOAD_PREFIX=uploads/
 
 # CDN 返回地址
 CDN_ENABLED=true
-CDN_DOMAIN=https://cdn.arvine.cn
-STATIC_BASE_URL=https://cdn.arvine.cn
+CDN_DOMAIN=https://cdn.yourdomain.com
+STATIC_BASE_URL=https://cdn.yourdomain.com
 
 # CDN 从 OSS 回源
 CDN_ORIGIN_TYPE=oss
@@ -1225,10 +1378,10 @@ CDN_ORIGIN_TYPE=oss
 ```env
 UPLOAD_STRATEGY=local
 CDN_ENABLED=false
-STATIC_BASE_URL=https://date.arvine.cn
+STATIC_BASE_URL=https://yourdomain.com
 ```
 
-上传后返回的图片 URL 为 `https://date.arvine.cn/uploads/xxx.jpg`。
+上传后返回的图片 URL 为 `https://yourdomain.com/uploads/xxx.jpg`。
 
 ### URL 返回逻辑（代码级）
 
@@ -1236,13 +1389,13 @@ STATIC_BASE_URL=https://date.arvine.cn
 
 ```
 CDN_ENABLED=true && CDN_DOMAIN 有效
-  → https://cdn.arvine.cn/uploads/xxx.jpg
+  → https://cdn.yourdomain.com/uploads/xxx.jpg
 
 STATIC_BASE_URL 已配置
-  → https://date.arvine.cn/uploads/xxx.jpg
+  → https://yourdomain.com/uploads/xxx.jpg
 
 API_BASE_URL 兜底
-  → https://date.arvine.cn/uploads/xxx.jpg
+  → https://yourdomain.com/uploads/xxx.jpg
 ```
 
 ### 源站 Nginx 缓存头（已内置）
@@ -1259,10 +1412,10 @@ Nginx 已针对 CDN 回源场景配置了完整的缓存策略：
 
 ```bash
 # 1. 直接访问源站
-curl -I https://date.arvine.cn/uploads/test.jpg
+curl -I https://yourdomain.com/uploads/test.jpg
 
 # 2. 通过 CDN 访问（观察 X-Cache 头）
-curl -I https://cdn.arvine.cn/uploads/test.jpg
+curl -I https://cdn.yourdomain.com/uploads/test.jpg
 
 # 预期看到：
 # X-Cache: MISS (首次) 或 HIT (后续)

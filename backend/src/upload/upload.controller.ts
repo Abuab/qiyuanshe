@@ -78,7 +78,7 @@ export class UploadController {
       ? process.env.CDN_DOMAIN.replace(/\/$/, '')
       : null
     const baseUrl = cdnDomain
-      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || 'http://150.158.130.152:3000').replace(/\/$/, '')
+      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
     const url = `${baseUrl}/uploads/${file.filename}`
     console.log('Upload success:', file.originalname, '->', url)
     return Result.success({ url })

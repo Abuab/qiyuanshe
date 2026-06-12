@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================
 # 栖缘社 SSL 证书申请 & 自动续期脚本
-# 域名: date.arvine.cn
+# 域名: yourdomain.com
 # 使用 Let's Encrypt + certbot
 # =============================================
 
@@ -22,8 +22,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SSL_DIR="$PROJECT_DIR/docker/nginx/ssl"
 CERTBOT_WWW="$PROJECT_DIR/docker/nginx/certbot/www"
-DOMAIN="date.arvine.cn"
-EMAIL="kevin@arvine.cn"  # 改为你自己的邮箱
+DOMAIN="yourdomain.com"
+EMAIL="kevin@yourdomain.com"  # 改为你自己的邮箱
 
 # =============================================
 # 0. 检测操作系统包管理器
@@ -129,7 +129,7 @@ setup_renewal() {
 # Let's Encrypt 续期后自动复制证书并重载 nginx
 
 SSL_DIR="/opt/lingtong/docker/nginx/ssl"
-DOMAIN="date.arvine.cn"
+DOMAIN="yourdomain.com"
 
 cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem "$SSL_DIR/fullchain.pem"
 cp /etc/letsencrypt/live/$DOMAIN/privkey.pem "$SSL_DIR/privkey.pem"

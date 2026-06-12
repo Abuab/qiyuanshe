@@ -106,7 +106,7 @@ services:
       # OSS + CDN 配置
       UPLOAD_STRATEGY: ${UPLOAD_STRATEGY:-local}
       CDN_ENABLED: ${CDN_ENABLED:-false}
-      STATIC_BASE_URL: ${STATIC_BASE_URL:-https://date.arvine.cn}
+      STATIC_BASE_URL: ${STATIC_BASE_URL:-https://yourdomain.com}
       CDN_DOMAIN: ${CDN_DOMAIN:-}
       CDN_ORIGIN_TYPE: ${CDN_ORIGIN_TYPE:-origin}
       OSS_ENDPOINT: ${OSS_ENDPOINT:-}

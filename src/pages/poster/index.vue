@@ -446,7 +446,7 @@ const drawQRCode = async (ctx: any, template: PosterTemplate) => {
   ctx.stroke()
 
   // 尝试加载真实小程序码图片（后台返回完整 URL）
-  const qrCodeUrl = 'http://150.158.130.152:3000/qr/4.png'
+  const qrCodeUrl = 'https://yourdomain.com/qr/4.png'
 
   try {
     const tempFilePath = await downloadImage(qrCodeUrl)
