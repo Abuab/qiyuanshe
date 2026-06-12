@@ -150,9 +150,12 @@ async function handleSave() {
   saving.value = true
   try {
     const data = {
-      ...form,
+      title: form.title,
+      cover: form.cover,
       maleUserId: +form.maleUserId || null,
       femaleUserId: +form.femaleUserId || null,
+      storyContent: form.storyContent,
+      sort: form.sort,
       photos: form.photosStr.split('\n').filter(Boolean),
     }
     let res

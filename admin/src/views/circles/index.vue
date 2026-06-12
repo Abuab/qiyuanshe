@@ -125,7 +125,13 @@ function openDialog(row?: any) {
 async function handleSave() {
   saving.value = true
   try {
-    const data = { ...form, status: form.statusBool ? 1 : 0 }
+    const data = {
+      name: form.name,
+      icon: form.icon,
+      description: form.description,
+      sort: form.sort,
+      status: form.statusBool ? 1 : 0,
+    }
     let res
     if (isEdit.value) res = await adminSystem.updateCircle(editId.value, data)
     else res = await adminSystem.createCircle(data)
