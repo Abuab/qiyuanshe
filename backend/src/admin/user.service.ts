@@ -5,6 +5,7 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
 import { AuditLog } from '../entities/AuditLog'
+import { normalizeImageUrl } from '../common/image-url'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -230,7 +231,12 @@ export class AdminUserService {
       order: { sortOrder: 'ASC' },
     })
     const { password, ...safeUser } = user
-    return { ...safeUser, photos, age: user.birthYear ? new Date().getFullYear() - user.birthYear : null }
+    return {
+      ...safeUser,
+      avatar: normalizeImageUrl(safeUser.avatar),
+      photos: photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) })),
+      age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
+    }
   }
 
   async updateStatus(id: number, status: number) {
@@ -268,10 +274,11 @@ export class AdminUserService {
   }
 
   async getPhotos(userId: number) {
-    return this.userPhotoRepository.find({
+    const photos = await this.userPhotoRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
     })
+    return photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) }))
   }
 
   async batchUpdateStatus(ids: number[], status: number) {

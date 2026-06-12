@@ -5,6 +5,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { UserPhoto } from '../entities/UserPhoto'
 import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { normalizeImageUrl } from '../common/image-url'
 
 interface AuditFilter {
   page?: number
@@ -83,7 +84,7 @@ export class AdminAuditService {
       submitter: audit.submitter ? {
         id: audit.submitter.id,
         nickname: audit.submitter.nickname,
-        avatar: audit.submitter.avatar,
+        avatar: normalizeImageUrl(audit.submitter.avatar),
       } : null,
       // Parse before/after from content if it's JSON
       beforeAfter: this.parseContentDiff(audit.content),

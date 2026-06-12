@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Matchmaker } from '../entities/Matchmaker'
+import { normalizeImageUrl } from '../common/image-url'
 
 interface MatchmakerFilter {
   page?: number
@@ -20,8 +21,10 @@ export class AdminMatchmakerService {
   private transformToResponse(matchmaker: Matchmaker) {
     return {
       ...matchmaker,
+      avatar: normalizeImageUrl(matchmaker.avatar),
+      qrCode: normalizeImageUrl(matchmaker.qrCode),
       status: matchmaker.isActive,
-      qrcode: matchmaker.qrCode,
+      qrcode: normalizeImageUrl(matchmaker.qrCode),
     }
   }
 
