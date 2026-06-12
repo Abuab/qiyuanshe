@@ -688,6 +688,15 @@ export class UserService {
       }
     }
 
+    // hopeTaTags: 支持逗号分隔字符串或数组
+    if (dto.hopeTaTags !== undefined) {
+      if (Array.isArray(dto.hopeTaTags)) {
+        user.hopeTaTags = dto.hopeTaTags
+      } else if (typeof dto.hopeTaTags === 'string') {
+        user.hopeTaTags = dto.hopeTaTags.split(',').map(s => s.trim()).filter(Boolean)
+      }
+    }
+
     await this.userRepository.save(user)
     return user
   }

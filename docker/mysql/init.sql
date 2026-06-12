@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `isDeleted` TINYINT NOT NULL DEFAULT 0 COMMENT '软删除: 0-正常, 1-已删除',
   `tags` JSON NULL COMMENT '用户标签',
   `personalityTags` JSON NULL COMMENT '个性特点标签',
+  `hopeTaTags` JSON NULL COMMENT '希望TA标签',
   `adminRemark` TEXT NULL COMMENT '管理员备注',
   `lastLoginAt` DATETIME NULL COMMENT '最后登录时间',
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',

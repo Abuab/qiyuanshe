@@ -95,4 +95,7 @@ export class UpdateProfileDto {
 
   @IsOptional()
   personalityTags?: string | string[]
+
+  @IsOptional()
+  hopeTaTags?: string | string[]
 }

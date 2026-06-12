@@ -408,7 +408,7 @@
         <text class="personality-popup-title">我的特点</text>
         <text class="personality-popup-close" @tap="closePersonalityPicker">✕</text>
       </view>
-      <view class="personality-popup-subtitle">
+      <view class="personality-popup-subtitle" v-if="tempPersonalityTags.length === 0">
         <text>系统将自动根据所选标签生成个人简介</text>
         <text>建议每个类型至少选择3项</text>
       </view>
@@ -1616,20 +1616,21 @@ const handleBack = () => {
 }
 
 .personality-selected-remove {
-  width: 32rpx;
-  height: 32rpx;
+  width: 36rpx;
+  height: 36rpx;
   border-radius: 50%;
   background-color: #FF6B9D;
-  border: 2rpx solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8rpx;
+  flex-shrink: 0;
 
   text {
-    font-size: 20rpx;
+    font-size: 22rpx;
     color: #fff;
     line-height: 1;
+    text-align: center;
   }
 }
 

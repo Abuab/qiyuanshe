@@ -22,6 +22,8 @@ interface UserInfo {
   selfIntro?: string
   bio?: string
   photos?: string[]
+  personalityTags?: string[]
+  hopeTaTags?: string[]
   isVip?: boolean
   isRealName?: boolean
   vipExpireTime?: string
@@ -93,6 +95,8 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.hometown === 'string') updates.hometown = data.hometown
     if (typeof data.selfIntro === 'string') updates.selfIntro = data.selfIntro
     if (typeof data.bio === 'string') updates.bio = data.bio
+    if (Array.isArray(data.personalityTags)) updates.personalityTags = data.personalityTags as string[]
+    if (Array.isArray(data.hopeTaTags)) updates.hopeTaTags = data.hopeTaTags as string[]
     Object.assign(userInfo.value, updates)
     secureStorage.setUserInfo(userInfo.value)
   }
