@@ -226,9 +226,6 @@ const generatePoster = async (template: PosterTemplate) => {
     ctx.lineTo(canvasWidth - PADDING, DIVIDER_Y)
     ctx.stroke()
 
-    // 8. 自我介绍
-    drawSelfIntro(ctx, userData.selfIntro)
-
     // 9. 底部分隔线
     const afterIntroY = INTRO_Y + INTRO_MAX_LINES * INTRO_LINE_HEIGHT + 30
     ctx.beginPath()
@@ -379,21 +376,6 @@ const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: Pos
   drawInfoRow(rightItems, rightX)
 }
 
-/** 自我介绍 */
-const drawSelfIntro = (ctx: any, selfIntro: string) => {
-  const maxWidth = canvasWidth - PADDING * 2
-  const introText = selfIntro || '这个人很懒，什么都没有留下~'
-
-  ctx.setFillStyle('#666666')
-  ctx.setFontSize(22)
-
-  const lines = wrapText(ctx, introText, maxWidth, INTRO_MAX_LINES)
-
-  lines.forEach((line: string, index: number) => {
-    ctx.fillText(line, PADDING, INTRO_Y + index * INTRO_LINE_HEIGHT)
-  })
-}
-
 /** 文字自动换行 */
 const wrapText = (ctx: any, text: string, maxWidth: number, maxLines: number): string[] => {
   const chars = text.split('')
@@ -540,7 +522,6 @@ const fetchUserData = async () => {
       education: '本科',
       incomeRange: '8千-1.2万',
       maritalStatus: '未婚',
-      selfIntro: '这个人很懒，什么都没有留下~',
     }
   }
 }

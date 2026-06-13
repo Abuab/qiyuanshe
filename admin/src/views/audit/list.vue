@@ -417,7 +417,6 @@ function formatDiff(beforeAfter: any): string {
     whenMarry: '何时结婚',
     zodiac: '属相',
     constellation: '星座',
-    selfIntro: '简介',
     personalityTags: '我的特点',
     hopeTaTags: '希望TA',
     partnerAgeRange: '要求年龄',

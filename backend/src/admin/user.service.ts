@@ -337,7 +337,6 @@ export class AdminUserService {
     residence?: string
     status?: number
     adminId?: number
-    selfIntro?: string
     personalityTags?: string | string[]
     hopeTaTags?: string | string[]
     onlyChild?: string
@@ -387,7 +386,6 @@ export class AdminUserService {
       occupation: data.occupation || null,
       hometown: data.hometown || null,
       residence: data.residence || null,
-      selfIntro: data.selfIntro || null,
       personalityTags,
       hopeTaTags,
       onlyChild: data.onlyChild || null,
@@ -454,7 +452,7 @@ export class AdminUserService {
     const allowedFields = [
       'nickname', 'avatar', 'gender', 'birthYear', 'height', 'weight',
       'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
-      'maritalStatus', 'hometown', 'residence', 'selfIntro', 'mateRequirement',
+      'maritalStatus', 'hometown', 'residence', 'mateRequirement',
       'isRealName', 'status', 'phone', 'tags', 'personalityTags', 'hopeTaTags', 'adminRemark',
     ]
 

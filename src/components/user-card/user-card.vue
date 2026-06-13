@@ -86,8 +86,6 @@ export interface UserCardData {
   housingStatus?: string
   isRealName?: boolean
   photos?: string[]
-  selfIntro?: string
-  bio?: string
   residence?: string
   city?: string
   matchmakerComment?: string
@@ -119,10 +117,7 @@ const avatarUrl = computed(() => {
   return getFullImageUrl(avatar)
 })
 
-const displayIntro = computed(() => {
-  const t = props.user.selfIntro || props.user.bio
-  return t ? (t.length > 60 ? t.slice(0, 60) + '...' : t) : ''
-})
+const displayIntro = computed(() => '')
 
 const onAvatarError = () => {
   avatarError.value = true

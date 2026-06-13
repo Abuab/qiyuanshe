@@ -145,7 +145,6 @@ export class AdminAuditService {
         maritalStatus: 'maritalStatus',
         hometown: 'hometown',
         residence: 'residence',
-        selfIntro: 'selfIntro',
         mateRequirement: 'mateRequirement',
         onlyChild: 'onlyChild',
         whenMarry: 'whenMarry',

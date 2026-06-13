@@ -72,8 +72,11 @@
             </el-descriptions>
           </el-tab-pane>
 
-          <el-tab-pane label="个人简介" name="intro">
-            <div class="text-content">{{ user.selfIntro || '暂无个人简介' }}</div>
+          <el-tab-pane label="我的特点" name="personality">
+            <div v-if="user.personalityTags && user.personalityTags.length" class="tag-group">
+              <el-tag v-for="tag in user.personalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+            </div>
+            <div v-else class="text-content text-muted">暂无</div>
           </el-tab-pane>
 
           <el-tab-pane label="择偶要求" name="mate">
@@ -371,7 +374,6 @@ interface UserDetail {
   maritalStatus?: string
   hometown?: string
   residence?: string
-  selfIntro?: string
   mateRequirement?: string
   isRealName: number
   isVip: number
@@ -382,6 +384,8 @@ interface UserDetail {
   updatedAt: string
   lastLoginAt?: string
   tags?: string[]
+  personalityTags?: string[]
+  hopeTaTags?: string[]
   adminRemark?: string
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
 }
@@ -729,6 +733,7 @@ function getMatchStatusName(status: string) {
 }
 .tab-card {
   .text-content { padding: 16px; min-height: 200px; white-space: pre-wrap; line-height: 1.8; color: #333; }
+  .tag-group { padding: 16px; }
   .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } .photo-card { position: relative; .photo-actions { display: flex; align-items: center; gap: 6px; justify-content: center; padding-top: 6px; } } }
 }
 .tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }

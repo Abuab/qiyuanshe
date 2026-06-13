@@ -70,11 +70,6 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  selfIntro?: string
-
-  @IsOptional()
-  @IsString()
   @MaxLength(50)
   housingStatus?: string
 

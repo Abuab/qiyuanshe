@@ -19,8 +19,6 @@ interface UserInfo {
   residence?: string
   city?: string
   hometown?: string
-  selfIntro?: string
-  bio?: string
   housingStatus?: string
   carStatus?: string
   onlyChild?: string
@@ -108,8 +106,6 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.residence === 'string') updates.residence = data.residence
     if (typeof data.city === 'string') updates.city = data.city
     if (typeof data.hometown === 'string') updates.hometown = data.hometown
-    if (typeof data.selfIntro === 'string') updates.selfIntro = data.selfIntro
-    if (typeof data.bio === 'string') updates.bio = data.bio
     if (typeof data.housingStatus === 'string') updates.housingStatus = data.housingStatus
     if (typeof data.carStatus === 'string') updates.carStatus = data.carStatus
     if (typeof data.onlyChild === 'string') updates.onlyChild = data.onlyChild

@@ -19,7 +19,6 @@ export interface User {
   maritalStatus?: string
   hometown?: string
   residence?: string
-  selfIntro?: string
   mateRequirement?: string
   isRealName: number
   realNameAuth?: number

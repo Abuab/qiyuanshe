@@ -176,12 +176,6 @@
           <view v-if="userData.marriagePlan" class="info-tag">{{ userData.marriagePlan }}</view>
         </view>
 
-        <view v-if="userData.selfIntro" class="intro-content">
-          <text class="intro-text" :class="{ collapsed: !showFullIntro }">{{ userData.selfIntro }}</text>
-          <view v-if="introTooLong" class="expand-btn" @tap="showFullIntro = !showFullIntro">
-            <text>{{ showFullIntro ? '收起' : '展开' }}</text>
-          </view>
-        </view>
       </view>
 
       <view v-if="userData.mateRequirement" class="requirement-section">
@@ -302,7 +296,6 @@ interface UserDetailData {
   maritalStatus: string
   hometown: string
   residence: string
-  selfIntro: string
   mateRequirement: string
   isRealName: number
   isVip: number
@@ -319,9 +312,7 @@ const userId = ref<number>(0)
 const loading = ref(true)
 const userData = ref<UserDetailData | null>(null)
 const currentPhotoIndex = ref(0)
-const showFullIntro = ref(false)
 const showFullRequirement = ref(false)
-const introTooLong = ref(false)
 const requirementTooLong = ref(false)
 const showShare = ref(false)
 const showMatchmaker = ref(false)
@@ -422,10 +413,6 @@ const fetchUserDetail = async () => {
       if (userData.value.birthYear) {
         userData.value.zodiac = getZodiac(userData.value.birthYear)
         userData.value.constellation = getConstellation(userData.value.birthYear)
-      }
-
-      if (userData.value.selfIntro && userData.value.selfIntro.length > 150) {
-        introTooLong.value = true
       }
 
       if (userData.value.mateRequirement && userData.value.mateRequirement.length > 150) {

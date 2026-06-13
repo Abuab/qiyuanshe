@@ -55,10 +55,6 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  selfIntro?: string
-
-  @IsOptional()
-  @IsString()
   mateRequirement?: string
 
   @IsOptional()

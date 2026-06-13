@@ -117,9 +117,6 @@ export class User {
   acceptChildren: string
 
   @Column({ type: 'text', nullable: true })
-  selfIntro: string
-
-  @Column({ type: 'text', nullable: true })
   mateRequirement: string
 
   @Column({ type: 'tinyint', default: 0 })

@@ -167,7 +167,6 @@ export class AdminUserController {
       hometown?: string
       residence?: string
       status?: number
-      selfIntro?: string
       personalityTags?: string
       hopeTaTags?: string
       onlyChild?: string

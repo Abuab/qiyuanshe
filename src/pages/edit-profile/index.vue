@@ -350,6 +350,11 @@
           </view>
         </view>
       </view>
+      <view class="popup-footer">
+        <view class="popup-confirm" @tap="closeHousingStatusPicker">
+          <text>取消</text>
+        </view>
+      </view>
     </view>
 
     <!-- 车辆情况弹窗 -->
@@ -370,6 +375,11 @@
           >
             <text>{{ opt }}</text>
           </view>
+        </view>
+      </view>
+      <view class="popup-footer">
+        <view class="popup-confirm" @tap="closeCarStatusPicker">
+          <text>取消</text>
         </view>
       </view>
     </view>
@@ -497,7 +507,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import request, { put } from '@/utils/request'
+import request, { put, get } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
 import CityPicker from '@/components/city-picker/city-picker.vue'
@@ -621,7 +631,6 @@ const form = ref({
   constellation: '',
   residence: '',
   hometown: '',
-  selfIntro: '',
   // 择偶要求
   partnerAgeRange: '',
   partnerHeightMin: '',
@@ -678,14 +687,26 @@ const confirmPersonalityPicker = () => {
 }
 
 // ===== 初始化 =====
-onMounted(() => {
+onMounted(async () => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
   fetchPhotos()
 
-  const info = userStore.userInfo as any
+  let info: any = userStore.userInfo
+
+  // 本地无缓存时从服务器获取最新资料（如重新编译后 storage 被清空）
+  if (!info) {
+    try {
+      const profile = await get<any>('/auth/profile')
+      if (profile) {
+        info = profile
+        userStore.updateProfile(profile)
+      }
+    } catch (_) { /* 网络失败或无登录态时静默跳过 */ }
+  }
+
   if (info) {
     form.value = {
       avatar: info.avatar || '',
@@ -708,7 +729,6 @@ onMounted(() => {
       constellation: info.constellation || '',
       residence: info.residence || info.city || '',
       hometown: info.hometown || '',
-      selfIntro: info.selfIntro || info.bio || '',
       partnerAgeRange: info.partnerAgeRange || '',
       partnerHeightMin: info.partnerHeightMin || '',
       partnerEducation: info.partnerEducation || '',
@@ -989,7 +1009,6 @@ const handleSave = async () => {
       constellation: form.value.constellation,
       residence: form.value.residence.trim(),
       hometown: form.value.hometown.trim(),
-      selfIntro: form.value.selfIntro.trim(),
       partnerAgeRange: form.value.partnerAgeRange,
       partnerHeightMin: form.value.partnerHeightMin,
       partnerEducation: form.value.partnerEducation,

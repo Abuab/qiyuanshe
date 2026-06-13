@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `maritalStatus` VARCHAR(20) NULL COMMENT '婚姻状况',
   `hometown` VARCHAR(100) NULL COMMENT '籍贯',
   `residence` VARCHAR(100) NULL COMMENT '居住地',
-  `selfIntro` TEXT NULL COMMENT '自我介绍',
   `mateRequirement` TEXT NULL COMMENT '择偶要求',
   `isRealName` TINYINT NOT NULL DEFAULT 0 COMMENT '是否实名认证: 0-否, 1-是',
   `isVip` TINYINT NOT NULL DEFAULT 0 COMMENT '是否VIP: 0-否, 1-是',

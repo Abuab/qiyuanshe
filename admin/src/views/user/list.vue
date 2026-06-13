@@ -595,10 +595,8 @@
           </el-col>
         </el-row>
 
-        <el-divider content-position="left">详细介绍</el-divider>
-
-        <el-form-item label="自我介绍">
-          <el-input v-model="createForm.selfIntro" type="textarea" :rows="3" placeholder="简短的自我介绍" maxlength="500" show-word-limit />
+        <el-form-item label="我的特点">
+          <el-input v-model="createForm.personalityTags" placeholder="逗号分隔, 如：品味出众,喜欢厨艺" maxlength="500" />
         </el-form-item>
 
         <el-form-item label="我的特点">
@@ -815,7 +813,6 @@ const createForm = reactive({
   whenMarry: undefined as string | undefined,
   zodiac: undefined as string | undefined,
   constellation: undefined as string | undefined,
-  selfIntro: '',
   personalityTags: '',
   hopeTaTags: '',
   partnerAgeRange: undefined as string | undefined,
@@ -893,7 +890,6 @@ function handleCreate() {
     whenMarry: undefined,
     zodiac: undefined,
     constellation: undefined,
-    selfIntro: '',
     personalityTags: '',
     hopeTaTags: '',
     partnerAgeRange: undefined,
