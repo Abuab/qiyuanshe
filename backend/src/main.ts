@@ -44,18 +44,30 @@ async function bootstrap() {
     fs.mkdirSync(uploadsDir, { recursive: true })
   }
 
+  // 静态文件前置检查：文件不存在 → 404，避免 express.static 内部异常落入 NestJS 返回 500
+  app.use('/uploads', (req, res, next) => {
+    const fileName = req.path.replace(/^\//, '').split('?')[0]
+    // 防止路径穿越
+    if (fileName.includes('..')) {
+      return res.status(403).json({ code: 403, message: '禁止访问' })
+    }
+    const filePath = join(uploadsDir, fileName)
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ code: 404, message: '文件不存在' })
+    }
+    // 确保文件可读，避免 EACCES 被 express.static 转为 500
+    try { fs.accessSync(filePath, fs.constants.R_OK) } catch {
+      return res.status(404).json({ code: 404, message: '文件不存在' })
+    }
+    next()
+  })
+
   // 注册静态资源（必须在 setGlobalPrefix 之前，避免被加上 /api 前缀）
   app.useStaticAssets(uploadsDir, {
     prefix: '/uploads',
-    // 静态资源不存在时返回 404，避免 fallthrough 到 NestJS 路由触发 500
     setHeaders: (res) => {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
     },
-  })
-
-  // 拦截 /uploads/* 丢失的文件，返回 404 避免落入 NestJS 路由
-  app.use('/uploads', (req, res) => {
-    res.status(404).json({ code: 404, message: '文件不存在' })
   })
 
   app.useStaticAssets(join(__dirname, '..', 'static'), {
