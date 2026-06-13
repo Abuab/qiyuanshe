@@ -624,12 +624,18 @@ async function handleReviewSubmit() {
 async function handleDeleteReview(row: any) {
   try {
     await ElMessageBox.confirm('确定要删除该评价吗？', '删除确认', { type: 'warning' })
-    await adminUsers.deleteReview(row.id)
-    // 先从本地列表中移除，立即更新 UI
-    reviewList.value = reviewList.value.filter((r: any) => r.id !== row.id)
+    const reviewId = Number(row.id)
+    const res = await adminUsers.deleteReview(reviewId)
+    console.log('[deleteReview] API response:', res)
+    // 直接从本地列表中移除
+    const idx = reviewList.value.findIndex((r: any) => Number(r.id) === reviewId)
+    if (idx !== -1) {
+      reviewList.value.splice(idx, 1)
+      console.log('[deleteReview] 已从本地列表移除, 剩余:', reviewList.value.length)
+    } else {
+      console.warn('[deleteReview] 未在本地列表中找到 id=', reviewId)
+    }
     ElMessage.success('删除成功')
-    // 再从后端拉取最新数据确认
-    await loadReviews()
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 

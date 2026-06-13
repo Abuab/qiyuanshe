@@ -189,7 +189,13 @@ export class UserProfileService {
   }
 
   async deleteReview(reviewId: number) {
-    await this.reviewRepository.delete(reviewId)
+    const review = await this.reviewRepository.findOne({ where: { id: reviewId } })
+    if (review) {
+      await this.reviewRepository.remove(review)
+      console.log(`[deleteReview] 已删除评语 id=${reviewId}, userId=${review.userId}`)
+    } else {
+      console.warn(`[deleteReview] 评语不存在 id=${reviewId}`)
+    }
   }
 
   async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number) {
