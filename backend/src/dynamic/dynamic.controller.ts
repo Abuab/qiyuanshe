@@ -9,8 +9,10 @@ import {
   Query,
   UseGuards,
   Request,
+  Headers,
   ParseIntPipe,
 } from '@nestjs/common'
+import { JwtService } from '@nestjs/jwt'
 import { DynamicService } from './dynamic.service'
 import { CreateDynamicDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
@@ -21,15 +23,26 @@ import { Result } from '../common/result'
 
 @Controller('dynamics')
 export class DynamicController {
-  constructor(private readonly dynamicService: DynamicService) {}
+  constructor(
+    private readonly dynamicService: DynamicService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Get()
   async getDynamics(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
-    @Request() req?: any,
+    @Headers('authorization') auth?: string,
   ) {
-    const currentUserId = req?.user?.userId
+    // 尝试从 JWT 中提取 userId（不强制要求登录）
+    let currentUserId: number | undefined
+    try {
+      if (auth) {
+        const token = auth.replace('Bearer ', '')
+        const payload = this.jwtService.verify(token) as any
+        currentUserId = payload?.userId || payload?.sub
+      }
+    } catch { /* 忽略无效 token */ }
     const result = await this.dynamicService.getDynamics(
       page || 1,
       limit || 10,
