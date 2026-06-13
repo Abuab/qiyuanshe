@@ -40,6 +40,11 @@ export const adminSystem = {
     return request.get(`/admin/system/config/${key}`)
   },
 
+  // 区域数据
+  getRegionChildren(parentId = 0): Promise<ApiResponse<{ id: number; name: string; level: number; hasChildren: boolean }[]>> {
+    return request.get('/region', { params: { parentId } })
+  },
+
   updateProfile(data: { nickname?: string; avatar?: string; password?: string }): Promise<ApiResponse> {
     return request.put('/admin/profile', data)
   },
