@@ -83,7 +83,7 @@
         <el-icon><Document /></el-icon>
         <template #title>
           <span>帖子审核</span>
-          <el-badge v-if="pendingAuditCount > 0" :value="pendingAuditCount" class="menu-badge" />
+          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
         </template>
       </el-menu-item>
 
@@ -202,15 +202,14 @@ const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.ro
 const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 
-// 待审核计数
-const pendingAuditCount = ref(0)
+// 待审核计数轮询
 let pendingCountTimer: ReturnType<typeof setInterval> | null = null
 
 async function fetchPendingCount() {
   try {
     const res = await adminAudit.pendingCount()
     const data = res.data as any
-    pendingAuditCount.value = data?.total || data || 0
+    adminStore.pendingAuditCount = data?.total || data || 0
   } catch { /* ignore */ }
 }
 
@@ -324,7 +323,9 @@ function handleLogout() {
 }
 
 .menu-badge {
-  margin-left: 12px;
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
 
   :deep(.el-badge__content) {
     background-color: #F56C6C;

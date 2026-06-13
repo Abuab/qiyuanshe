@@ -60,6 +60,10 @@ export interface UserFilter {
   order?: string
   minAge?: number
   maxAge?: number
+  minHeight?: number
+  maxHeight?: number
+  minWeight?: number
+  maxWeight?: number
   maritalStatus?: string
   incomeRange?: string
   housingStatus?: string

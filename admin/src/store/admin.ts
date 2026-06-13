@@ -18,6 +18,7 @@ export const useAdminStore = defineStore('admin', () => {
   const userInfo = ref<AdminUser | null>(null)
   const permissions = ref<string[]>([])
   const isCollapsed = ref(false)
+  const pendingAuditCount = ref(0)
 
   const isLoggedIn = computed(() => !!token.value)
 
@@ -144,6 +145,7 @@ export const useAdminStore = defineStore('admin', () => {
     userInfo,
     permissions,
     isCollapsed,
+    pendingAuditCount,
     isLoggedIn,
     initApp,
     login,

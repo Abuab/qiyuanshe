@@ -54,6 +54,44 @@
                 style="width: 120px"
               />
             </el-form-item>
+            <el-form-item label="身高">
+              <el-input-number
+                v-model="filterForm.minHeight"
+                :min="100"
+                :max="250"
+                placeholder="最低"
+                controls-position="right"
+                style="width: 110px"
+              />
+              <span class="range-separator">—</span>
+              <el-input-number
+                v-model="filterForm.maxHeight"
+                :min="100"
+                :max="250"
+                placeholder="最高"
+                controls-position="right"
+                style="width: 110px"
+              />
+            </el-form-item>
+            <el-form-item label="体重">
+              <el-input-number
+                v-model="filterForm.minWeight"
+                :min="20"
+                :max="300"
+                placeholder="最轻"
+                controls-position="right"
+                style="width: 110px"
+              />
+              <span class="range-separator">—</span>
+              <el-input-number
+                v-model="filterForm.maxWeight"
+                :min="20"
+                :max="300"
+                placeholder="最重"
+                controls-position="right"
+                style="width: 110px"
+              />
+            </el-form-item>
             <el-form-item label="会员等级">
               <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
@@ -774,6 +812,10 @@ const filterForm = reactive<UserFilter>({
   status: undefined,
   minAge: undefined,
   maxAge: undefined,
+  minHeight: undefined,
+  maxHeight: undefined,
+  minWeight: undefined,
+  maxWeight: undefined,
   maritalStatus: undefined,
   incomeRange: undefined,
   housingStatus: undefined,
@@ -1147,11 +1189,16 @@ function handleReset() {
     status: undefined,
     minAge: undefined,
     maxAge: undefined,
+    minHeight: undefined,
+    maxHeight: undefined,
+    minWeight: undefined,
+    maxWeight: undefined,
     maritalStatus: undefined,
     incomeRange: undefined,
     housingStatus: undefined,
     carStatus: undefined,
     education: undefined,
+    occupation: undefined,
     tags: [],
   })
   dateRange.value = []

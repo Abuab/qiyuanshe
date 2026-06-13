@@ -22,6 +22,10 @@ interface UserFilter {
   order?: string
   minAge?: number
   maxAge?: number
+  minHeight?: number
+  maxHeight?: number
+  minWeight?: number
+  maxWeight?: number
   maritalStatus?: string
   incomeRange?: string
   housingStatus?: string
@@ -92,6 +96,20 @@ export class AdminUserService {
         const minBirthYear = currentYear - filter.maxAge
         queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
       }
+    }
+
+    if (filter.minHeight !== undefined) {
+      queryBuilder.andWhere('user.height >= :minHeight', { minHeight: filter.minHeight })
+    }
+    if (filter.maxHeight !== undefined) {
+      queryBuilder.andWhere('user.height <= :maxHeight', { maxHeight: filter.maxHeight })
+    }
+
+    if (filter.minWeight !== undefined) {
+      queryBuilder.andWhere('user.weight >= :minWeight', { minWeight: filter.minWeight })
+    }
+    if (filter.maxWeight !== undefined) {
+      queryBuilder.andWhere('user.weight <= :maxWeight', { maxWeight: filter.maxWeight })
     }
 
     if (filter.maritalStatus) {

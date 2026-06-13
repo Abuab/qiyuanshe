@@ -63,11 +63,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminSystem } from '../../api'
+import { useAdminStore } from '../../store/admin'
 
 const loading = ref(false)
 const list = ref<any[]>([])
 const pagination = reactive({ page: 1, limit: 20, total: 0 })
 const activeTab = ref('circle')
+const adminStore = useAdminStore()
 
 onMounted(() => fetchList())
 
@@ -94,13 +96,21 @@ function onTabChange() {
 
 async function handleAudit(id: number, status: number) {
   try {
+    const prevStatus = list.value.find((item: any) => item.id === id)?.status
     let res: any
     if (activeTab.value === 'dynamic') {
       res = await adminSystem.auditDynamic(id, status)
     } else {
       res = await adminSystem.auditCirclePost(id, status)
     }
-    if (res.success) { ElMessage.success('操作成功'); fetchList() }
+    if (res.success) {
+      ElMessage.success('操作成功')
+      // 如果是待审核状态变为已审核，立即更新红点计数
+      if (prevStatus === 0 && status !== 0) {
+        adminStore.pendingAuditCount = Math.max(0, adminStore.pendingAuditCount - 1)
+      }
+      fetchList()
+    }
   } catch (e) { ElMessage.error('操作失败') }
 }
 
