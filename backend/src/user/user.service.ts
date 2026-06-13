@@ -363,7 +363,7 @@ export class UserService {
   ): Promise<{
     user: Partial<User> & {
       photos: any[]
-      matchmakerReviews: { id: number; content: string; rating: number; matchmakerName: string; createdAt: Date }[]
+      matchmakerReviews: { id: number; content: string; matchmakerName: string; createdAt: Date }[]
       isFollowed: boolean
       isSelf: boolean
     }
@@ -415,7 +415,6 @@ export class UserService {
     const matchmakerReviews = reviews.map((r) => ({
       id: r.id,
       content: r.content,
-      rating: r.rating,
       matchmakerName: r.matchmaker?.name || '红娘',
       createdAt: r.createdAt,
     }))

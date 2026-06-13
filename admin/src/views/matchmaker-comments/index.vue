@@ -22,11 +22,6 @@
           </template>
         </el-table-column>
         <el-table-column prop="content" label="评语内容" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="rating" label="评分" width="80">
-          <template #default="{ row }">
-            <span v-for="i in 5" :key="i" :style="{ color: i <= row.rating ? '#f5a623' : '#ddd' }">★</span>
-          </template>
-        </el-table-column>
         <el-table-column label="时间" width="160">
           <template #default="{ row }">{{ row.createdAt?.slice(0, 16) }}</template>
         </el-table-column>
@@ -86,9 +81,6 @@
         <el-form-item label="评语" required>
           <el-input v-model="form.content" type="textarea" :rows="4" placeholder="评语内容" maxlength="500" show-word-limit />
         </el-form-item>
-        <el-form-item label="评分">
-          <el-rate v-model="form.rating" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
@@ -111,7 +103,7 @@ interface MatchmakerOption { id: number; name: string }
 const loading = ref(false)
 const list = ref<any[]>([])
 const showDialog = ref(false)
-const form = reactive({ matchmakerId: null as number | null, userId: null as number | null, content: '', rating: 5 })
+const form = reactive({ matchmakerId: null as number | null, userId: null as number | null, content: '' })
 const pagination = reactive({ page: 1, limit: 20, total: 0 })
 
 const matchmakerOptions = ref<MatchmakerOption[]>([])
@@ -178,7 +170,6 @@ function openCreateDialog() {
   form.matchmakerId = null
   form.userId = null
   form.content = ''
-  form.rating = 5
   userOptions.value = []
   showDialog.value = true
 }
@@ -193,7 +184,6 @@ async function handleCreate() {
       matchmakerId: form.matchmakerId,
       userId: form.userId,
       content: form.content.trim(),
-      rating: form.rating,
     })
     if (res.success) {
       ElMessage.success('创建成功')

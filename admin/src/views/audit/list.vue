@@ -240,7 +240,7 @@ async function fetchPendingCount() {
   try {
     const res = await adminAudit.pendingCount()
     if (res.success) {
-      pendingCount.value = res.data || 0
+      pendingCount.value = (res.data as any)?.total ?? res.data ?? 0
     }
   } catch (error) {
     console.error(error)

@@ -204,9 +204,6 @@
         <view v-for="review in userData.matchmakerReviews" :key="review.id" class="review-item">
           <view class="review-header">
             <text class="review-author">{{ review.matchmakerName }}</text>
-            <text class="review-stars">
-              <text v-for="i in 5" :key="i" :style="{ color: i <= review.rating ? '#f5a623' : '#ddd' }">★</text>
-            </text>
             <text class="review-time">{{ formatReviewTime(review.createdAt) }}</text>
           </view>
           <text class="review-content">{{ review.content }}</text>
@@ -321,7 +318,7 @@ interface UserDetailData {
   isFollowed: boolean
   isSelf: boolean
   photos: PhotoItem[]
-  matchmakerReviews?: { id: number; content: string; rating: number; matchmakerName: string; createdAt: string }[]
+  matchmakerReviews?: { id: number; content: string; matchmakerName: string; createdAt: string }[]
   zodiac?: string
   constellation?: string
   isOnlyChild?: number
@@ -1198,10 +1195,6 @@ const showAuthDetail = (type: string) => {
   font-size: 26rpx;
   font-weight: 500;
   color: #FF6B9D;
-}
-
-.review-stars {
-  font-size: 22rpx;
 }
 
 .review-time {
