@@ -269,7 +269,7 @@
               <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
                 <el-button type="primary" size="small" @click="handleAddReview">新增评价</el-button>
               </div>
-              <el-table :data="reviewList" stripe v-if="reviewList.length > 0">
+              <el-table :data="reviewList" stripe v-if="reviewList.length > 0" row-key="id">
                 <el-table-column prop="id" label="评价ID" width="80" />
                 <el-table-column prop="matchmakerName" label="评价红娘" width="120" />
                 <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip />
@@ -345,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
@@ -625,16 +625,15 @@ async function handleDeleteReview(row: any) {
   try {
     await ElMessageBox.confirm('确定要删除该评价吗？', '删除确认', { type: 'warning' })
     const reviewId = Number(row.id)
+    console.log('[deleteReview] 开始删除, id=', reviewId, ' 当前列表长度=', reviewList.value.length, ' 列表IDs=', reviewList.value.map((r: any) => r.id))
     const res = await adminUsers.deleteReview(reviewId)
     console.log('[deleteReview] API response:', res)
-    // 直接从本地列表中移除
-    const idx = reviewList.value.findIndex((r: any) => Number(r.id) === reviewId)
-    if (idx !== -1) {
-      reviewList.value.splice(idx, 1)
-      console.log('[deleteReview] 已从本地列表移除, 剩余:', reviewList.value.length)
-    } else {
-      console.warn('[deleteReview] 未在本地列表中找到 id=', reviewId)
-    }
+    // 使用 filter 重新赋值触发完整响应式更新
+    const newList = reviewList.value.filter((r: any) => Number(r.id) !== reviewId)
+    console.log('[deleteReview] filter 后列表长度从', reviewList.value.length, '变为', newList.length)
+    reviewList.value = newList
+    await nextTick()
+    console.log('[deleteReview] nextTick 后 reviewList.length=', reviewList.value.length)
     ElMessage.success('删除成功')
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }

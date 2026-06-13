@@ -156,11 +156,12 @@ export class UserProfileService {
   }
 
   async getReviews(userId: number) {
-    const reviews = await this.reviewRepository.find({
-      where: { userId },
-      relations: ['matchmaker'],
-      order: { createdAt: 'DESC' },
-    })
+    const reviews = await this.reviewRepository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.matchmaker', 'matchmaker')
+      .where('review.userId = :userId', { userId })
+      .orderBy('review.createdAt', 'DESC')
+      .getMany()
     return reviews.map(r => ({
       id: r.id,
       userId: r.userId,
@@ -189,9 +190,13 @@ export class UserProfileService {
   }
 
   async deleteReview(reviewId: number) {
-    // 使用 TypeORM 软删除，通过 UPDATE deletedAt 实现，比 remove/delete 更可靠
-    const result = await this.reviewRepository.softDelete(reviewId)
-    console.log(`[deleteReview] softDelete id=${reviewId}, affected=${result.affected}`)
+    const result = await this.reviewRepository
+      .createQueryBuilder()
+      .delete()
+      .from('matchmaker_reviews')
+      .where('id = :id', { id: reviewId })
+      .execute()
+    console.log(`[deleteReview] 原始SQL DELETE id=${reviewId}, affected=${result.affected}`)
   }
 
   async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number) {
