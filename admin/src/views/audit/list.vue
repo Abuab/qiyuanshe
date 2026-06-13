@@ -21,7 +21,6 @@
           <el-form-item label="类型">
             <el-select v-model="filterForm.type" placeholder="全部" clearable style="width: 130px">
               <el-option label="全部" :value="undefined" />
-              <el-option label="资料修改" value="user" />
               <el-option label="照片上传" value="photo" />
               <el-option label="回答审核" value="answer" />
               <el-option label="用户创建" value="user_create" />
@@ -86,36 +85,27 @@
             <span v-else class="text-muted">系统提交</span>
           </template>
         </el-table-column>
-        <el-table-column label="内容预览" min-width="250">
+        <el-table-column label="内容预览" min-width="200">
           <template #default="{ row }">
             <div class="content-preview">
               <!-- Photo type: show thumbnail -->
-              <template v-if="row.targetType === 'photo' && row.content">
+              <template v-if="isPhotoContent(row)">
                 <el-image
                   :src="tryParseImageUrl(row.content)"
                   fit="cover"
                   class="preview-image"
                   :preview-src-list="[tryParseImageUrl(row.content)]"
                   preview-teleported
-                  style="width: 50px; height: 50px"
+                  style="width: 80px; height: 80px"
                 >
                   <template #error>
-                    <div style="width: 50px; height: 50px; background: #f5f5f5; display: flex; align-items: center; justify-content: center">
-                      <el-icon :size="24"><Picture /></el-icon>
+                    <div style="width:80px;height:80px;background:#f5f5f5;display:flex;align-items:center;justify-content:center">
+                      <el-icon :size="32"><Picture /></el-icon>
                     </div>
                   </template>
                 </el-image>
               </template>
-              <!-- User type: show diff if available -->
-              <template v-else-if="row.targetType === 'user' && row.beforeAfter">
-                <span class="diff-text">{{ formatDiff(row.beforeAfter) }}</span>
-              </template>
-              <!-- User create: show user summary -->
-              <template v-else-if="row.targetType === 'user_create' && row.content">
-                <span>{{ formatUserCreateContent(row.content) }}</span>
-              </template>
-              <!-- Default: show reason or content -->
-              <span v-else>{{ row.reason || row.content || '-' }}</span>
+              <span v-else class="text-muted">{{ getContentSummary(row) }}</span>
             </div>
           </template>
         </el-table-column>
@@ -394,76 +384,29 @@ function tryParseImageUrl(content?: string): string {
   }
 }
 
-function formatDiff(beforeAfter: any): string {
-  if (!beforeAfter) return '-'
-  const parts: string[] = []
-  // 按重要性排序：基本信息 → 详细资料 → 择偶要求
-  const labelMap: Record<string, string> = {
-    nickname: '昵称',
-    gender: '性别',
-    birthYear: '出生年份',
-    avatar: '头像',
-    education: '学历',
-    occupation: '职业',
-    incomeRange: '月收入',
-    height: '身高',
-    weight: '体重',
-    maritalStatus: '婚况',
-    housingStatus: '住房',
-    carStatus: '车辆',
-    hometown: '家乡',
-    residence: '居住地',
-    onlyChild: '独生',
-    whenMarry: '何时结婚',
-    zodiac: '属相',
-    constellation: '星座',
-    personalityTags: '我的特点',
-    hopeTaTags: '希望TA',
-    partnerAgeRange: '要求年龄',
-    partnerHeightMin: '要求身高',
-    partnerEducation: '要求学历',
-    partnerIncome: '要求收入',
-    housingRequirement: '住房要求',
-    partnerMaritalStatus: '要求婚况',
-    acceptChildren: '接受子女',
-    partnerHometown: '要求籍贯',
-    partnerResidence: '要求现居地',
+function isPhotoContent(row: any): boolean {
+  if (row.targetType === 'photo') return true
+  // 头像审核也按照片处理
+  if (row.targetType === 'avatar') return true
+  // content 中包含图片 URL 的也展示缩略图
+  if (row.content) {
+    try {
+      const parsed = JSON.parse(row.content)
+      if (parsed.url || parsed.imageUrl || parsed.photoUrl || parsed.avatarUrl) return true
+    } catch { return false }
   }
-  for (const [key, label] of Object.entries(labelMap)) {
-    if (beforeAfter[key] !== undefined && beforeAfter[key] !== null && String(beforeAfter[key]).trim() !== '') {
-      let value = beforeAfter[key]
-      let display: string
-      if (key === 'gender') {
-        display = value === 1 ? '男' : value === 2 ? '女' : ''
-      } else if (Array.isArray(value)) {
-        display = value.join(', ')
-      } else {
-        display = String(value)
-      }
-      if (display) parts.push(`${label}: ${display}`)
-    }
-  }
-  return parts.length > 0 ? parts.slice(0, 8).join(' | ') : '-'
+  return false
 }
 
-function formatUserCreateContent(content: string): string {
-  try {
-    const user = JSON.parse(content)
-    const genderLabel = user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未设'
-    const parts: string[] = []
-    if (user.nickname) parts.push(user.nickname)
-    parts.push(genderLabel)
-    if (user.birthYear) parts.push(`${user.birthYear}年`)
-    if (user.education) parts.push(user.education)
-    if (user.occupation) parts.push(user.occupation)
-    if (user.incomeRange) parts.push(user.incomeRange)
-    if (user.maritalStatus) parts.push(user.maritalStatus)
-    if (user.hometown) parts.push(user.hometown)
-    return parts.slice(0, 6).join(' | ')
-  } catch {
-    return content || '-'
-  }
+function getContentSummary(row: any): string {
+  if (!row) return '-'
+  if (row.targetType === 'answer') return row.reason || row.content || '回答内容'
+  if (row.targetType === 'user_create') return '新用户注册'
+  if (row.targetType === 'user') return '资料修改（已关闭审核）'
+  return row.reason || row.content || '-'
 }
+
+// formatDiff / formatUserCreateContent 函数已移除，不再需要展示资料修改差异
 
 function getAiTagType(row: AuditItem) {
   if (!row.aiResult) return 'info'

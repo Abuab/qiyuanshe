@@ -16,6 +16,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     children: [
       {
+        path: '/chat/monitor',
+        name: 'ChatMonitor',
+        component: () => import('../views/chat/monitor.vue'),
+        meta: { title: '聊天监控', requiresAuth: true },
+      },
+      {
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('../views/dashboard.vue'),

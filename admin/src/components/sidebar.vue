@@ -59,6 +59,11 @@
         <el-menu-item index="/audit/list">待审核列表</el-menu-item>
       </el-sub-menu>
 
+      <el-menu-item v-if="canManageAudit" index="/chat/monitor">
+        <el-icon><ChatDotRound /></el-icon>
+        <template #title>聊天监控</template>
+      </el-menu-item>
+
       <el-menu-item v-if="isSuperAdmin" index="/report">
         <el-icon><Warning /></el-icon>
         <template #title>举报管理</template>
@@ -158,6 +163,7 @@ import {
   Connection,
   Document,
   Star,
+  ChatDotRound,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

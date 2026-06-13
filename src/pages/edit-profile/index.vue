@@ -1024,11 +1024,6 @@ const handleSave = async () => {
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
 
-    try {
-      await request({ url: '/users/profile-review', method: 'POST', data } as any)
-      form.value.reviewStatus = 0
-    } catch (_) { /* 审核提交失败不阻断保存 */ }
-
     userStore.updateProfile({
       ...(result || {}),
       // 确保标签数组始终以数组形式存入 store，无论后端返回什么

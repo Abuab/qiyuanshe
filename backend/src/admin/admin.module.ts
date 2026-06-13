@@ -29,6 +29,7 @@ import { AdminNoticeController } from './notice.controller'
 import { Notice } from '../entities/Notice'
 import { Report } from '../entities/Report'
 import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
+import { ChatMessage } from '../entities/ChatMessage'
 import { UserNotification } from '../entities/UserNotification'
 import { MatchmakerReview } from '../entities/MatchmakerReview'
 import { MatchRecord } from '../entities/MatchRecord'
@@ -44,6 +45,8 @@ import { VipOrder } from '../entities/VipOrder'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { AdminReportController } from './report.controller'
+import { AdminChatController } from './chat.controller'
+import { AdminChatService } from './chat.service'
 import { AdminAccountService } from './admin-account.service'
 import { RoleGuard } from './role.guard'
 import { UserProfileService } from './user-profile.service'
@@ -67,6 +70,7 @@ import { UserProfileController } from './user-profile.controller'
       MatchmakerReview,
       MatchRecord,
       UserBlock,
+      ChatMessage,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -90,6 +94,7 @@ import { UserProfileController } from './user-profile.controller'
     ForgotPasswordController,
     AdminNoticeController,
     AdminReportController,
+    AdminChatController,
     UserProfileController,
   ],
   providers: [
@@ -107,6 +112,7 @@ import { UserProfileController } from './user-profile.controller'
     AdminJwtAuthGuard,
     AdminAccountService,
     RoleGuard,
+    AdminChatService,
     UserProfileService,
   ],
   exports: [
@@ -120,6 +126,7 @@ import { UserProfileController } from './user-profile.controller'
     AdminSystemService,
     AdminAccountService,
     RoleGuard,
+    AdminChatService,
   ],
 })
 export class AdminModule {}
