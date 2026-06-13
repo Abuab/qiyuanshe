@@ -159,6 +159,7 @@ export class ChatService {
       .leftJoin('msg.toUser', 'toUser')
       .select('msg.id', 'id')
       .addSelect('msg.content', 'lastMessage')
+      .addSelect('msg.type', 'messageType')
       .addSelect('msg.createdAt', 'createdAt')
       .addSelect(
         'CASE WHEN msg.fromUserId = :uid3 THEN msg.toUserId ELSE msg.fromUserId END',

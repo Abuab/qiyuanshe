@@ -75,7 +75,7 @@
               <text class="message-title">{{ item.nickname }}</text>
               <text class="message-time">{{ formatTime(item.createdAt) }}</text>
             </view>
-            <text class="message-preview">{{ item.lastMessage }}</text>
+            <text class="message-preview">{{ isImagePreview(item) ? '[图片]' : item.lastMessage }}</text>
           </view>
           <view v-if="item.unreadCount > 0" class="unread-badge">
             <text>{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</text>
@@ -114,6 +114,7 @@ interface UserMessage {
   nickname: string
   avatar: string
   lastMessage: string
+  messageType?: string
   createdAt: string
   unreadCount: number
 }
@@ -324,6 +325,13 @@ const formatTime = (timeStr: string) => {
   if (days < 7) return `${days}天前`
 
   return `${date.getMonth() + 1}-${date.getDate()}`
+}
+
+const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i
+
+function isImagePreview(item: UserMessage): boolean {
+  if (item.messageType === 'image') return true
+  return IMAGE_EXT_RE.test(item.lastMessage || '')
 }
 </script>
 
