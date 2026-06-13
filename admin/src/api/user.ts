@@ -71,6 +71,10 @@ export interface UserFilter {
   education?: string
   occupation?: string
   tags?: string[]
+  zodiac?: string
+  constellation?: string
+  onlyChild?: string
+  whenMarry?: string
 }
 
 export interface UserListResponse {

@@ -55,6 +55,7 @@
         <template #title>
           <el-icon><CircleCheck /></el-icon>
           <span>审核管理</span>
+          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
         </template>
         <el-menu-item index="/audit/list">待审核列表</el-menu-item>
       </el-sub-menu>
@@ -150,7 +151,6 @@ import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
-import { adminAudit } from '../api/audit'
 import Avatar from './Avatar.vue'
 import {
   DataAnalysis,
@@ -183,9 +183,9 @@ const userInfo = computed(() => adminStore.userInfo)
 
 onMounted(() => {
   systemStore.fetchSystemConfig()
-  fetchPendingCount()
+  adminStore.fetchPendingAuditCount()
   // 每 60 秒轮询一次审核计数
-  pendingCountTimer = setInterval(fetchPendingCount, 60000)
+  pendingCountTimer = setInterval(() => adminStore.fetchPendingAuditCount(), 60000)
 })
 
 onUnmounted(() => {
@@ -204,14 +204,6 @@ const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.r
 
 // 待审核计数轮询
 let pendingCountTimer: ReturnType<typeof setInterval> | null = null
-
-async function fetchPendingCount() {
-  try {
-    const res = await adminAudit.pendingCount()
-    const data = res.data as any
-    adminStore.pendingAuditCount = data?.total || data || 0
-  } catch { /* ignore */ }
-}
 
 function getRoleLabel(role?: string) {
   const map: Record<string, string> = {

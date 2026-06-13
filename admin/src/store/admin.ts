@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import router from '../router'
+import { adminAudit } from '../api/audit'
 
 export interface AdminUser {
   id: number
@@ -140,6 +141,14 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  async function fetchPendingAuditCount() {
+    try {
+      const res = await adminAudit.pendingCount()
+      const data = res.data as any
+      pendingAuditCount.value = data?.total ?? data ?? 0
+    } catch { /* ignore */ }
+  }
+
   return {
     token,
     userInfo,
@@ -154,6 +163,7 @@ export const useAdminStore = defineStore('admin', () => {
     toggleSidebar,
     hasPermission,
     updateUserInfo,
+    fetchPendingAuditCount,
   }
 })
 

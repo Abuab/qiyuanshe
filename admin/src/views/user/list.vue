@@ -191,6 +191,49 @@
               </el-select>
             </el-form-item>
           </div>
+          <!-- 第二行半：属相星座等 -->
+          <div class="filter-row">
+            <el-form-item label="属相">
+              <el-select v-model="filterForm.zodiac" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option
+                  v-for="item in createDicts.zodiac"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="星座">
+              <el-select v-model="filterForm.constellation" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option
+                  v-for="item in createDicts.constellation"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="独生子女">
+              <el-select v-model="filterForm.onlyChild" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="是" value="是" />
+                <el-option label="否" value="否" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="何时结婚">
+              <el-select v-model="filterForm.whenMarry" placeholder="全部" clearable style="width: 140px">
+                <el-option label="全部" :value="undefined" />
+                <el-option
+                  v-for="item in createDicts.whenMarry"
+                  :key="item"
+                  :label="item"
+                  :value="item"
+                />
+              </el-select>
+            </el-form-item>
+          </div>
           <!-- 第三行：时间和操作 -->
           <div class="filter-row">
             <el-form-item label="注册时间">
@@ -825,6 +868,10 @@ const filterForm = reactive<UserFilter>({
   startDate: undefined,
   endDate: undefined,
   tags: [],
+  zodiac: undefined,
+  constellation: undefined,
+  onlyChild: undefined,
+  whenMarry: undefined,
   sort: 'createdAt',
   order: 'desc',
 })
@@ -1200,6 +1247,10 @@ function handleReset() {
     education: undefined,
     occupation: undefined,
     tags: [],
+    zodiac: undefined,
+    constellation: undefined,
+    onlyChild: undefined,
+    whenMarry: undefined,
   })
   dateRange.value = []
   pagination.page = 1

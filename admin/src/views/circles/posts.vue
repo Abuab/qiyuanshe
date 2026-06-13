@@ -96,7 +96,6 @@ function onTabChange() {
 
 async function handleAudit(id: number, status: number) {
   try {
-    const prevStatus = list.value.find((item: any) => item.id === id)?.status
     let res: any
     if (activeTab.value === 'dynamic') {
       res = await adminSystem.auditDynamic(id, status)
@@ -105,10 +104,8 @@ async function handleAudit(id: number, status: number) {
     }
     if (res.success) {
       ElMessage.success('操作成功')
-      // 如果是待审核状态变为已审核，立即更新红点计数
-      if (prevStatus === 0 && status !== 0) {
-        adminStore.pendingAuditCount = Math.max(0, adminStore.pendingAuditCount - 1)
-      }
+      // 审核后立即刷新红点计数
+      adminStore.fetchPendingAuditCount()
       fetchList()
     }
   } catch (e) { ElMessage.error('操作失败') }

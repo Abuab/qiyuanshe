@@ -33,6 +33,10 @@ interface UserFilter {
   education?: string
   occupation?: string
   tags?: string[]
+  zodiac?: string
+  constellation?: string
+  onlyChild?: string
+  whenMarry?: string
 }
 
 @Injectable()
@@ -134,6 +138,22 @@ export class AdminUserService {
 
     if (filter.occupation) {
       queryBuilder.andWhere('user.occupation = :occupation', { occupation: filter.occupation })
+    }
+
+    if (filter.zodiac) {
+      queryBuilder.andWhere('user.zodiac = :zodiac', { zodiac: filter.zodiac })
+    }
+
+    if (filter.constellation) {
+      queryBuilder.andWhere('user.constellation = :constellation', { constellation: filter.constellation })
+    }
+
+    if (filter.onlyChild) {
+      queryBuilder.andWhere('user.onlyChild = :onlyChild', { onlyChild: filter.onlyChild })
+    }
+
+    if (filter.whenMarry) {
+      queryBuilder.andWhere('user.whenMarry = :whenMarry', { whenMarry: filter.whenMarry })
     }
 
     if (filter.tags && filter.tags.length > 0) {
