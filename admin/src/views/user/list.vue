@@ -933,6 +933,8 @@ function buildResidenceLabel(pId?: number, cId?: number, dId?: number): string {
 onMounted(() => {
   fetchData()
   loadDicts()
+  loadHometownProvinces()
+  loadResidenceProvinces()
 })
 
 async function loadDicts() {
@@ -991,7 +993,7 @@ function handleSearch() {
   fetchData()
 }
 
-function handleCreate() {
+async function handleCreate() {
   Object.assign(createForm, {
     avatar: '',
     nickname: '',
@@ -1033,13 +1035,13 @@ function handleCreate() {
   hometownDistrictId.value = undefined
   hometownCities.value = []
   hometownDistricts.value = []
-  loadHometownProvinces()
+  await loadHometownProvinces()
   residenceProvinceId.value = undefined
   residenceCityId.value = undefined
   residenceDistrictId.value = undefined
   residenceCities.value = []
   residenceDistricts.value = []
-  loadResidenceProvinces()
+  await loadResidenceProvinces()
   createDialogVisible.value = true
 }
 
