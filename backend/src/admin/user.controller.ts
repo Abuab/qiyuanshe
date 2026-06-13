@@ -107,6 +107,27 @@ export class AdminUserController {
     return Result.success(photos)
   }
 
+  @Post(':id/photos')
+  async addPhoto(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { photoUrl: string },
+  ) {
+    const photo = await this.userService.addPhoto(id, body.photoUrl)
+    return Result.success(photo, '照片上传成功')
+  }
+
+  @Delete('photos/:photoId')
+  async deletePhoto(@Param('photoId', ParseIntPipe) photoId: number) {
+    await this.userService.deletePhoto(photoId)
+    return Result.success(null, '照片已删除')
+  }
+
+  @Put('photos/:photoId/main')
+  async setMainPhoto(@Param('photoId', ParseIntPipe) photoId: number) {
+    await this.userService.setMainPhoto(photoId)
+    return Result.success(null, '已设为主图')
+  }
+
   @Put('batch-status')
   async batchUpdateStatus(@Body() body: { ids: number[]; status: number }) {
     await this.userService.batchUpdateStatus(body.ids, body.status)
@@ -160,6 +181,7 @@ export class AdminUserController {
       housingRequirement?: string
       partnerMaritalStatus?: string
       acceptChildren?: string
+      photoUrls?: string[]
     },
   ) {
     const user = await this.userService.createUser({ ...body, adminId: req.user?.id })

@@ -188,4 +188,16 @@ export const adminUsers = {
   getPhotos(id: number): Promise<ApiResponse<UserPhoto[]>> {
     return request.get(`/admin/users/${id}/photos`)
   },
+
+  addUserPhoto(id: number, photoUrl: string): Promise<ApiResponse<UserPhoto>> {
+    return request.post(`/admin/users/${id}/photos`, { photoUrl })
+  },
+
+  deletePhoto(photoId: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/photos/${photoId}`)
+  },
+
+  setMainPhoto(photoId: number): Promise<ApiResponse> {
+    return request.put(`/admin/users/photos/${photoId}/main`)
+  },
 }

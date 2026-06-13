@@ -281,6 +281,31 @@ export class AdminUserService {
     return photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) }))
   }
 
+  async addPhoto(userId: number, photoUrl: string) {
+    const normalizedUrl = photoUrl.includes('://') ? '/' + photoUrl.split('/').slice(3).join('/') : photoUrl
+    const photo = this.userPhotoRepository.create({
+      userId,
+      photoUrl: normalizedUrl,
+      isMain: 0,
+      sortOrder: 0,
+      auditStatus: 1,
+    })
+    return this.userPhotoRepository.save(photo)
+  }
+
+  async deletePhoto(photoId: number) {
+    await this.userPhotoRepository.delete(photoId)
+  }
+
+  async setMainPhoto(photoId: number) {
+    const photo = await this.userPhotoRepository.findOne({ where: { id: photoId } })
+    if (!photo) throw new Error('照片不存在')
+    // 将该用户的所有照片设为非主图
+    await this.userPhotoRepository.update({ userId: photo.userId }, { isMain: 0 })
+    // 设置目标照片为主图
+    await this.userPhotoRepository.update(photoId, { isMain: 1 })
+  }
+
   async batchUpdateStatus(ids: number[], status: number) {
     await this.userRepository.update(ids, { status })
   }
@@ -326,6 +351,7 @@ export class AdminUserService {
     housingRequirement?: string
     partnerMaritalStatus?: string
     acceptChildren?: string
+    photoUrls?: string[]
   }) {
     const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
     
@@ -383,6 +409,18 @@ export class AdminUserService {
     })
 
     const saved = await this.userRepository.save(user)
+
+    // 创建用户照片记录
+    if (data.photoUrls && data.photoUrls.length > 0) {
+      const photos = data.photoUrls.map((url, index) => ({
+        userId: saved.id,
+        photoUrl: url,
+        isMain: index === 0 ? 1 : 0,
+        sortOrder: index,
+        auditStatus: 1,
+      }))
+      await this.userPhotoRepository.insert(photos)
+    }
 
     // 创建审核记录
     const auditLog = this.auditLogRepository.create({

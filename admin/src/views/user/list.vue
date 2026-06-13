@@ -425,6 +425,30 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="更多照片">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleCreatePhotoUpload"
+              :before-upload="beforeCreatePhotoUpload"
+              accept="image/*"
+              multiple
+            >
+              <el-button type="primary" :loading="createPhotoUploading">上传照片</el-button>
+            </el-upload>
+            <el-image
+              v-for="(url, idx) in createPhotoUrls"
+              :key="idx"
+              :src="url"
+              style="width:60px;height:60px;border-radius:4px;border:1px solid #dcdfe6"
+              fit="cover"
+            />
+          </div>
+          <div v-if="createPhotoUrls.length > 0" style="margin-top:4px;font-size:12px;color:#999">
+            已上传 {{ createPhotoUrls.length }} 张照片（第一张自动设为主图）
+          </div>
+        </el-form-item>
+
         <el-divider content-position="left">基本信息</el-divider>
 
         <el-row :gutter="16">
@@ -767,6 +791,8 @@ const notifyForm = reactive({
 const createFormRef = ref()
 const createLoading = ref(false)
 const createAvatarUploading = ref(false)
+const createPhotoUploading = ref(false)
+const createPhotoUrls = ref<string[]>([])
 const createForm = reactive({
   avatar: '',
   nickname: '',
@@ -878,6 +904,7 @@ function handleCreate() {
     acceptChildren: undefined,
     status: 1,
   })
+  createPhotoUrls.value = []
   createDialogVisible.value = true
 }
 
@@ -888,7 +915,7 @@ async function handleCreateSubmit() {
   }
   createLoading.value = true
   try {
-    await adminUsers.create(createForm as any)
+    await adminUsers.create({ ...createForm, photoUrls: createPhotoUrls.value } as any)
     ElMessage.success('用户创建成功')
     createDialogVisible.value = false
     fetchData()
@@ -926,6 +953,34 @@ async function handleCreateAvatarUpload(options: any) {
     ElMessage.error('上传失败')
   }
   createAvatarUploading.value = false
+}
+
+function beforeCreatePhotoUpload(file: File) {
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return false
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过10MB')
+    return false
+  }
+  return true
+}
+
+async function handleCreatePhotoUpload(options: any) {
+  createPhotoUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const res = await adminSystem.upload(fd as any)
+    if (res.success && res.data?.url) {
+      createPhotoUrls.value.push(res.data.url)
+      ElMessage.success('上传成功')
+    }
+  } catch (e) {
+    ElMessage.error('上传失败')
+  }
+  createPhotoUploading.value = false
 }
 
 function handleReset() {

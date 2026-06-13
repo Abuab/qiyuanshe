@@ -86,13 +86,33 @@
           </el-tab-pane>
 
           <el-tab-pane label="照片墙" name="photos">
-            <div v-if="user.photos && user.photos.length > 0" class="photo-grid">
-              <el-image v-for="photo in user.photos" :key="photo.id" :src="photo.photoUrl"
-                :preview-src-list="user.photos.map(p => p.photoUrl)" :initial-index="user.photos.indexOf(photo)" fit="cover" class="photo-item">
-                <template #error><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px"><el-icon :size="32"><Picture /></el-icon></div></template>
-              </el-image>
+            <div v-loading="tabLoading.photos">
+              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
+                <el-upload
+                  :show-file-list="false"
+                  :http-request="handlePhotoUpload"
+                  :before-upload="beforePhotoUpload"
+                  accept="image/*"
+                  multiple
+                >
+                  <el-button type="primary" size="small" :loading="photoUploading">上传照片</el-button>
+                </el-upload>
+              </div>
+              <div v-if="userPhotos.length > 0" class="photo-grid">
+                <div v-for="photo in userPhotos" :key="photo.id" class="photo-card">
+                  <el-image :src="photo.photoUrl"
+                    :preview-src-list="userPhotos.map(p => p.photoUrl)" :initial-index="userPhotos.indexOf(photo)" fit="cover" class="photo-item">
+                    <template #error><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px"><el-icon :size="32"><Picture /></el-icon></div></template>
+                  </el-image>
+                  <div class="photo-actions">
+                    <el-tag v-if="photo.isMain" type="success" size="small">主图</el-tag>
+                    <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为主图</el-button>
+                    <el-button type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-else description="暂无照片" />
             </div>
-            <el-empty v-else description="暂无照片" />
           </el-tab-pane>
 
           <!-- ===== 新增标签页 ===== -->
@@ -149,7 +169,7 @@
 
           <el-tab-pane label="系统通知" name="notifications">
             <div v-loading="tabLoading.notifications">
-              <div style="margin-bottom:12px">
+              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
                 <el-button type="primary" size="small" @click="handleSendNotify">发送新通知</el-button>
               </div>
               <el-table :data="notificationList" stripe v-if="notificationList.length > 0">
@@ -246,7 +266,7 @@
 
           <el-tab-pane label="红娘评价" name="matchmaker-reviews">
             <div v-loading="tabLoading.reviews">
-              <div style="margin-bottom:12px">
+              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
                 <el-button type="primary" size="small" @click="handleAddReview">新增评价</el-button>
               </div>
               <el-table :data="reviewList" stripe v-if="reviewList.length > 0">
@@ -381,7 +401,7 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, matches: false, reviews: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, matches: false, reviews: false, photos: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
@@ -389,6 +409,8 @@ const userAnswerList = ref<any[]>([])
 const answerAuditing = reactive<Record<number, boolean>>({})
 const matchList = ref<any[]>([])
 const reviewList = ref<any[]>([])
+const userPhotos = ref<any[]>([])
+const photoUploading = ref(false)
 
 // Review dialog
 const reviewDialogVisible = ref(false)
@@ -422,6 +444,7 @@ function handleTabChange(tabName: string) {
     case 'answers': loadUserAnswers(); break
     case 'matches': loadMatches(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
+    case 'photos': loadPhotos(); break
   }
 }
 
@@ -606,6 +629,70 @@ async function handleDeleteReview(row: any) {
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 
+// Photo management
+async function loadPhotos() {
+  if (!user.value) return
+  tabLoading.photos = true
+  try {
+    const res = await adminUsers.getPhotos(user.value.id)
+    if (res.success) userPhotos.value = res.data || []
+  } catch (e) { console.error(e) }
+  finally { tabLoading.photos = false }
+}
+
+function beforePhotoUpload(file: File) {
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('请选择图片文件')
+    return false
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过10MB')
+    return false
+  }
+  return true
+}
+
+async function handlePhotoUpload(options: any) {
+  if (!user.value) return
+  photoUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const { adminSystem } = await import('../../api/system')
+    const uploadRes = await adminSystem.upload(fd as any)
+    if (uploadRes.success && uploadRes.data?.url) {
+      const res = await adminUsers.addUserPhoto(user.value.id, uploadRes.data.url)
+      if (res.success) {
+        ElMessage.success('照片上传成功')
+        loadPhotos()
+      }
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('上传失败')
+  }
+  photoUploading.value = false
+}
+
+async function handleSetMainPhoto(photoId: number) {
+  try {
+    const res = await adminUsers.setMainPhoto(photoId)
+    if (res.success) {
+      ElMessage.success('已设为主图')
+      loadPhotos()
+    }
+  } catch (e) { console.error(e) }
+}
+
+async function handleDeletePhoto(photoId: number) {
+  try {
+    await ElMessageBox.confirm('确定要删除该照片吗？', '删除确认', { type: 'warning' })
+    await adminUsers.deletePhoto(photoId)
+    ElMessage.success('删除成功')
+    loadPhotos()
+  } catch (e) { if (e !== 'cancel') console.error(e) }
+}
+
 // Helpers
 function formatDate(dateStr?: string) {
   if (!dateStr) return '-'
@@ -643,11 +730,11 @@ function getMatchStatusName(status: string) {
     .user-name { margin: 0 0 12px; font-size: 24px; }
     .user-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; .tag-label { color: #999; font-size: 13px; } }
   }
-  .header-actions { display: flex; flex-direction: column; gap: 8px; }
+  .header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
 }
 .tab-card {
   .text-content { padding: 16px; min-height: 200px; white-space: pre-wrap; line-height: 1.8; color: #333; }
-  .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } }
+  .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } .photo-card { position: relative; .photo-actions { display: flex; align-items: center; gap: 6px; justify-content: center; padding-top: 6px; } } }
 }
 .tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }
 .link-text { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }
