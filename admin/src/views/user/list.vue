@@ -411,7 +411,7 @@
     </el-dialog>
 
     <el-dialog v-model="createDialogVisible" title="添加用户" width="860px" destroy-on-close>
-      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px">
+      <el-form ref="createFormRef" :key="'createForm-' + dialogVersion" :model="createForm" :rules="createRules" label-width="100px">
         <!-- 头像 -->
         <el-form-item label="头像">
           <div style="display:flex;align-items:center;gap:12px">
@@ -799,6 +799,7 @@ const pagination = reactive({
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
 const createDialogVisible = ref(false)
+const dialogVersion = ref(0)
 const currentUser = ref<User | null>(null)
 
 const vipForm = reactive({
@@ -1048,6 +1049,7 @@ async function handleCreate() {
   residenceCities.value = []
   residenceDistricts.value = []
   await loadResidenceProvinces()
+  dialogVersion.value++
   createDialogVisible.value = true
 }
 
