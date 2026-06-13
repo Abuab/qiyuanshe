@@ -512,7 +512,9 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="职业">
-              <el-input v-model="createForm.occupation" placeholder="请输入职业" />
+              <el-select v-model="createForm.occupation" placeholder="请选择" clearable filterable style="width:100%">
+                <el-option v-for="o in createDicts.occupation" :key="o" :label="o" :value="o" />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -598,15 +600,29 @@
         </el-row>
 
         <el-form-item label="我的特点">
-          <el-input v-model="createForm.personalityTags" placeholder="逗号分隔, 如：品味出众,喜欢厨艺" maxlength="500" />
-        </el-form-item>
-
-        <el-form-item label="我的特点">
-          <el-input v-model="createForm.personalityTags" placeholder="多个以逗号分隔，如：真诚靠谱,温柔体贴,社牛" />
+          <el-select
+            v-model="createForm.personalityTagsArr"
+            placeholder="请选择我的特点标签"
+            multiple
+            filterable
+            clearable
+            style="width:100%"
+          >
+            <el-option v-for="o in createDicts.personalityTags" :key="o" :label="o" :value="o" />
+          </el-select>
         </el-form-item>
 
         <el-form-item label="希望TA">
-          <el-input v-model="createForm.hopeTaTags" placeholder="多个以逗号分隔，如：阳光运动,温柔体贴,有责任心" />
+          <el-select
+            v-model="createForm.hopeTaTagsArr"
+            placeholder="请选择希望TA标签"
+            multiple
+            filterable
+            clearable
+            style="width:100%"
+          >
+            <el-option v-for="o in createDicts.hopeTaTags" :key="o" :label="o" :value="o" />
+          </el-select>
         </el-form-item>
 
         <el-divider content-position="left">择偶要求</el-divider>
@@ -661,7 +677,7 @@
 
         <el-row :gutter="16">
           <el-col :span="8">
-            <el-form-item label="接受子女">
+            <el-form-item label="接受小孩">
               <el-select v-model="createForm.acceptChildren" placeholder="请选择" clearable style="width:100%">
                 <el-option v-for="o in createDicts.acceptChildren" :key="o" :label="o" :value="o" />
               </el-select>
@@ -719,7 +735,9 @@ const createDicts: Record<string, string[]> = {
   housingStatus: ['已购房', '租房', '与父母同住', '其他'],
   carStatus: ['已购车', '未购车'],
   maritalStatus: ['未婚', '离异', '丧偶'],
-  occupation: ['公务员', '事业单位', '国企', '外企', '私企', '自由职业', '个体经营', '其他'],
+  occupation: [],
+  personalityTags: [],
+  hopeTaTags: [],
   whenMarry: ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然'],
   zodiac: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
   constellation: ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'],
@@ -802,7 +820,9 @@ const createForm = reactive({
   zodiac: undefined as string | undefined,
   constellation: undefined as string | undefined,
   personalityTags: '',
+  personalityTagsArr: [] as string[],
   hopeTaTags: '',
+  hopeTaTagsArr: [] as string[],
   partnerAgeRange: undefined as string | undefined,
   partnerHeightMin: undefined as string | undefined,
   partnerEducation: undefined as string | undefined,
@@ -822,7 +842,33 @@ const createRules = {
 
 onMounted(() => {
   fetchData()
+  loadDicts()
 })
+
+async function loadDicts() {
+  try {
+    const keys = ['dict.occupation', 'dict.hopeTaTags', 'dict.personalityTags']
+    for (const key of keys) {
+      const res = await adminSystem.getConfigByKey(key)
+      if (res.data) {
+        const dictKey = key.replace('dict.', '')
+        const parsed = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+        if (dictKey === 'personalityTags' && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          // 扁平化我的特点: character + hobby + loveRule 合并去重
+          const all: string[] = []
+          for (const arr of Object.values(parsed as Record<string, string[]>)) {
+            all.push(...arr)
+          }
+          createDicts.personalityTags = [...new Set(all)]
+        } else if (Array.isArray(parsed)) {
+          createDicts[dictKey as keyof typeof createDicts] = parsed
+        }
+      }
+    }
+  } catch (e) {
+    console.error('加载选项字典失败:', e)
+  }
+}
 
 async function fetchData() {
   loading.value = true
@@ -878,7 +924,9 @@ function handleCreate() {
     zodiac: undefined,
     constellation: undefined,
     personalityTags: '',
+    personalityTagsArr: [],
     hopeTaTags: '',
+    hopeTaTagsArr: [],
     partnerAgeRange: undefined,
     partnerHeightMin: undefined,
     partnerEducation: undefined,
@@ -899,7 +947,12 @@ async function handleCreateSubmit() {
   }
   createLoading.value = true
   try {
-    await adminUsers.create({ ...createForm, photoUrls: createPhotoUrls.value } as any)
+    await adminUsers.create({
+      ...createForm,
+      personalityTags: createForm.personalityTagsArr.join(','),
+      hopeTaTags: createForm.hopeTaTagsArr.join(','),
+      photoUrls: createPhotoUrls.value,
+    } as any)
     ElMessage.success('用户创建成功')
     createDialogVisible.value = false
     fetchData()

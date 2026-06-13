@@ -118,7 +118,7 @@
               <el-descriptions-item label="收入要求">{{ user.partnerIncome || '-' }}</el-descriptions-item>
               <el-descriptions-item label="住房要求">{{ user.housingRequirement || '-' }}</el-descriptions-item>
               <el-descriptions-item label="婚况要求">{{ user.partnerMaritalStatus || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="接受子女">{{ user.acceptChildren || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="接受小孩">{{ user.acceptChildren || '-' }}</el-descriptions-item>
             </el-descriptions>
             <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
             <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
