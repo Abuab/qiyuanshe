@@ -361,7 +361,12 @@ export class UserService {
     id: number,
     currentUserId?: number,
   ): Promise<{
-    user: Partial<User> & { photos: any[]; isFollowed: boolean; isSelf: boolean }
+    user: Partial<User> & {
+      photos: any[]
+      matchmakerReviews: { id: number; content: string; rating: number; matchmakerName: string; createdAt: Date }[]
+      isFollowed: boolean
+      isSelf: boolean
+    }
   }> {
     const user = await this.userRepository.findOne({
       where: { id, status: 1, isDeleted: 0 },
@@ -401,6 +406,20 @@ export class UserService {
       sortOrder: p.sortOrder,
     }))
 
+    // 获取红娘评语
+    const reviews = await this.commentRepo.find({
+      where: { userId: id, status: 1 },
+      relations: ['matchmaker'],
+      order: { createdAt: 'DESC' },
+    })
+    const matchmakerReviews = reviews.map((r) => ({
+      id: r.id,
+      content: r.content,
+      rating: r.rating,
+      matchmakerName: r.matchmaker?.name || '红娘',
+      createdAt: r.createdAt,
+    }))
+
     return {
       user: {
         id: user.id,
@@ -426,6 +445,7 @@ export class UserService {
         lastLoginAt: user.lastLoginAt,
         createdAt: user.createdAt,
         photos: userPhotos as any,
+        matchmakerReviews,
         isFollowed,
         isSelf,
       },

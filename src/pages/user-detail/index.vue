@@ -194,6 +194,25 @@
         </view>
       </view>
 
+      <view v-if="userData.matchmakerReviews && userData.matchmakerReviews.length > 0" class="review-section">
+        <view class="section-header">
+          <view class="section-title">
+            <text class="heart-icon-small">📝</text>
+            <text>红娘评语</text>
+          </view>
+        </view>
+        <view v-for="review in userData.matchmakerReviews" :key="review.id" class="review-item">
+          <view class="review-header">
+            <text class="review-author">{{ review.matchmakerName }}</text>
+            <text class="review-stars">
+              <text v-for="i in 5" :key="i" :style="{ color: i <= review.rating ? '#f5a623' : '#ddd' }">★</text>
+            </text>
+            <text class="review-time">{{ formatReviewTime(review.createdAt) }}</text>
+          </view>
+          <text class="review-content">{{ review.content }}</text>
+        </view>
+      </view>
+
       <view class="bottom-safe-area"></view>
 
       <view class="action-bar">
@@ -302,6 +321,7 @@ interface UserDetailData {
   isFollowed: boolean
   isSelf: boolean
   photos: PhotoItem[]
+  matchmakerReviews?: { id: number; content: string; rating: number; matchmakerName: string; createdAt: string }[]
   zodiac?: string
   constellation?: string
   isOnlyChild?: number
@@ -501,6 +521,12 @@ const getZodiac = (year: number): string => {
 
 const getConstellation = (birthYear: number): string => {
   return '星座'
+}
+
+const formatReviewTime = (dateStr: string): string => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 const handleBack = () => {
@@ -1144,6 +1170,50 @@ const showAuthDetail = (type: string) => {
     font-size: 26rpx;
     color: #FF6B9D;
   }
+}
+
+.review-section {
+  background-color: #fff;
+  padding: 24rpx 32rpx;
+  margin-top: 16rpx;
+}
+
+.review-item {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.review-author {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: #FF6B9D;
+}
+
+.review-stars {
+  font-size: 22rpx;
+}
+
+.review-time {
+  font-size: 22rpx;
+  color: #ccc;
+  margin-left: auto;
+}
+
+.review-content {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
 }
 
 .bottom-safe-area {
