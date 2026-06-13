@@ -97,6 +97,17 @@ export const adminSystem = {
     return request.delete(`/admin/circles/posts/${id}`)
   },
 
+  // 动态审核
+  getDynamics(page = 1, limit = 20): Promise<ApiResponse> {
+    return request.get('/admin/dynamics', { params: { page, limit } })
+  },
+  auditDynamic(id: number, status: number): Promise<ApiResponse> {
+    return request.put(`/admin/dynamics/${id}/audit`, { status })
+  },
+  deleteDynamic(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/dynamics/${id}`)
+  },
+
   // 成功案例
   getSuccessCases(page = 1, limit = 20): Promise<ApiResponse> {
     return request.get('/admin/success-cases', { params: { page, limit } })

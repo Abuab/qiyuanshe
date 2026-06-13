@@ -46,7 +46,7 @@
         </el-table-column>
         <el-table-column label="最新消息" min-width="250">
           <template #default="{ row }">
-            <span class="last-msg">{{ row.lastMessage }}</span>
+            <span class="last-msg">{{ row.messageType === 'image' ? '[图片]' : row.lastMessage }}</span>
           </template>
         </el-table-column>
         <el-table-column label="时间" width="160">
@@ -102,7 +102,10 @@
             <span class="msg-sender">{{ msg.fromUserId === chatFromUser ? chatFromName : chatToName }}</span>
             <span class="msg-time">{{ formatDate(msg.createdAt) }}</span>
           </div>
-          <div class="msg-bubble">{{ msg.content }}</div>
+          <div class="msg-bubble">
+            <el-image v-if="msg.type === 'image'" :src="msg.content" style="max-width:200px;max-height:200px;border-radius:8px" fit="contain" :preview-src-list="[msg.content]" />
+            <template v-else>{{ msg.content }}</template>
+          </div>
         </div>
       </div>
       <div class="chat-pagination" v-if="messageTotal > messageLimit">

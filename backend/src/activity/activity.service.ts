@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common'
+import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Activity } from '../entities/Activity'
@@ -102,7 +102,7 @@ export class ActivityService {
         where: { activityId, userId },
       })
       if (existingSignup) {
-        throw new BadRequestException('您已报名该活动')
+        throw new ConflictException('您已报名该活动')
       }
 
       const signup = this.signupRepository.create({

@@ -33,6 +33,9 @@ export class Dynamic {
   @Column({ type: 'int', default: 0 })
   commentCount: number
 
+  @Column({ type: 'tinyint', default: 0 })
+  status: number
+
   @CreateDateColumn()
   createdAt: Date
 

@@ -386,6 +386,7 @@ async function submitSignup() {
       url: `/activities/${activity.value?.id}/signup`,
       method: 'POST',
       data: signupForm.value as Record<string, unknown>,
+      skipToast: true,
     })
 
     uni.showToast({ title: '报名成功', icon: 'success' })
@@ -398,12 +399,9 @@ async function submitSignup() {
     const err = error as Error
     console.error('报名失败:', err.message)
     if (err.message !== 'Unauthorized') {
-      // 已报名是正常状态，不报错
+      uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
       if (err.message?.includes('已报名')) {
-        uni.showToast({ title: '您已报名该活动', icon: 'none' })
         closeSignupPopup()
-      } else {
-        uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
       }
     }
   } finally {

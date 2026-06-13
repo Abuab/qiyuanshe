@@ -16,6 +16,7 @@ export class DynamicService {
 
   async getDynamics(page: number, limit: number, currentUserId?: number) {
     const [list, total] = await this.dynamicRepository.findAndCount({
+      where: { status: 1 },
       relations: ['user'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
@@ -66,6 +67,27 @@ export class DynamicService {
       total,
       page,
       limit,
+    }
+  }
+
+  async getDynamicDetail(dynamicId: number) {
+    const dynamic = await this.dynamicRepository.findOne({
+      where: { id: dynamicId },
+      relations: ['user'],
+    })
+
+    if (!dynamic) throw new NotFoundException('动态不存在')
+
+    return {
+      id: dynamic.id,
+      userId: dynamic.userId,
+      nickname: dynamic.user?.nickname || '',
+      avatar: dynamic.user?.avatar || '',
+      content: dynamic.content,
+      images: dynamic.images || [],
+      createdAt: dynamic.createdAt,
+      likeCount: dynamic.likeCount,
+      commentCount: dynamic.commentCount,
     }
   }
 
@@ -133,6 +155,46 @@ export class DynamicService {
 
     await this.dataSource.transaction(async (manager) => {
       await manager.delete(DynamicLike, { dynamicId })
+      await manager.remove(Dynamic, dynamic)
+    })
+  }
+
+  // ===== 管理后台 =====
+
+  async getAdminDynamics(page: number, limit: number) {
+    const [list, total] = await this.dynamicRepository.findAndCount({
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+
+    const formattedList = list.map((item) => ({
+      id: item.id,
+      userId: item.userId,
+      nickname: item.user?.nickname || '',
+      content: item.content,
+      images: item.images || [],
+      likeCount: item.likeCount,
+      commentCount: item.commentCount,
+      status: item.status,
+      createdAt: item.createdAt,
+    }))
+
+    return { list: formattedList, total }
+  }
+
+  async auditDynamic(id: number, status: number) {
+    const dynamic = await this.dynamicRepository.findOne({ where: { id } })
+    if (!dynamic) throw new NotFoundException('动态不存在')
+    await this.dynamicRepository.update(id, { status })
+  }
+
+  async deleteAdminDynamic(id: number) {
+    const dynamic = await this.dynamicRepository.findOne({ where: { id } })
+    if (!dynamic) throw new NotFoundException('动态不存在')
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(DynamicLike, { dynamicId: id })
       await manager.remove(Dynamic, dynamic)
     })
   }

@@ -179,21 +179,8 @@ const fetchDetail = async () => {
         ),
       }
     }
-  } catch (e) {
-    // 后端暂未部署动态接口时使用 Mock 数据兜底
-    console.log('[动态详情]接口未开通，使用Mock数据', e)
-    detail.value = {
-      id: dynamicId.value,
-      userId: 1,
-      nickname: '用户' + dynamicId.value,
-      avatar: icons.common.defaultAvatar,
-      content: '这是一条测试动态内容。后端动态接口暂未部署，此处为 Mock 数据占位。',
-      images: [],
-      createdAt: new Date().toISOString(),
-      likeCount: 0,
-      commentCount: 0,
-      isLiked: false,
-    }
+  } catch (e: any) {
+    console.error('获取动态详情失败:', e?.message || e)
   }
 }
 

@@ -10,6 +10,19 @@ export class ChatService {
   private readonly dailyFreeMessages = 3
   private messageCountCache: Map<number, { count: number; date: string }> = new Map()
 
+  private bannedKeywords = [
+    // 赌博
+    '赌博', '博彩', '赌场', '下注', '押注', '赔率', '六合彩', '时时彩',
+    // 色情
+    '裸聊', '约炮', '嫖娼', '卖淫', '色情', '成人',
+    // 违法
+    '毒品', '枪支', '假钞', '洗钱', '诈骗',
+    // 广告
+    '加微信', '加我微信', '加VX', '加我VX', '微商', '刷单',
+    // 政治敏感
+    '台独', '藏独', '疆独',
+  ]
+
   constructor(
     @InjectRepository(ChatMessage)
     private readonly messageRepository: Repository<ChatMessage>,
@@ -38,6 +51,14 @@ export class ChatService {
       const todayCount = await this.getTodayMessageCount(userId)
       if (todayCount >= this.dailyFreeMessages) {
         throw new ForbiddenException('今日消息已用完，开通会员即可无限畅聊')
+      }
+    }
+
+    // 敏感词过滤
+    if (type === 'text') {
+      const hit = this.bannedKeywords.find(kw => content?.includes(kw))
+      if (hit) {
+        throw new ForbiddenException('消息包含违规内容，无法发送')
       }
     }
 
