@@ -50,11 +50,11 @@
           />
           <view class="bubble" :class="msg.isMine ? 'mine' : 'other'">
             <image
-              v-if="msg.type === 'image'"
-              :src="msg.content"
+              v-if="isImageMessage(msg)"
+              :src="resolveMessageImage(msg.content)"
               mode="widthFix"
               class="message-image"
-              @tap="previewImage(msg.content)"
+              @tap="previewMessageImage(msg)"
               lazy-load
               @error="handleImageError"
             />
@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
-import request from '@/utils/request'
+import request, { getServerBaseUrl } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -414,6 +414,32 @@ const previewImage = (url: string) => {
   uni.previewImage({
     urls: [url],
     current: url,
+  })
+}
+
+/** 检测图片扩展名 */
+const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i
+
+/** 判断消息是否应显示为图片 */
+function isImageMessage(msg: ChatMessage): boolean {
+  if (msg.type === 'image') return true
+  // fallback: content 是图片 URL 也当作图片渲染
+  return IMAGE_EXT_RE.test(msg.content || '')
+}
+
+/** 确保图片 URL 是完整路径 */
+function resolveMessageImage(content: string): string {
+  if (!content) return ''
+  if (content.startsWith('http://') || content.startsWith('https://') || content.startsWith('wxfile://')) return content
+  // 相对路径补全
+  return getServerBaseUrl() + (content.startsWith('/') ? '' : '/') + content
+}
+
+/** 预览消息图片 */
+function previewMessageImage(msg: ChatMessage) {
+  uni.previewImage({
+    urls: [resolveMessageImage(msg.content)],
+    current: resolveMessageImage(msg.content),
   })
 }
 

@@ -12,7 +12,7 @@ import { normalizeImageUrl } from '../image-url'
 const IMAGE_URL_FIELDS = new Set([
   'avatar', 'cover', 'icon', 'qrCode', 'qrcode', 'photoUrl',
   'imageUrl', 'images', 'photos', 'url', 'userAvatar',
-  'blockerAvatar', 'matchedAvatar', 'matchmakerAvatar',
+  'blockerAvatar', 'matchedAvatar', 'matchmakerAvatar', 'content',
 ])
 
 /**
