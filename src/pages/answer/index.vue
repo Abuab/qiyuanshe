@@ -169,7 +169,7 @@ const handleSubmit = async () => {
       },
     })
 
-    uni.showToast({ title: '回答已提交，待审核', icon: 'success' })
+    uni.showToast({ title: '已提交，待审核', icon: 'success' })
 
     setTimeout(() => {
       uni.navigateBack()
