@@ -31,4 +31,12 @@ export class PublicSystemController {
 
     return Result.success(result)
   }
+
+  /** 获取选项字典（职业、我的特点、希望TA等） */
+  @Get('dicts')
+  @Header('Cache-Control', 'public, max-age=300')
+  async getDicts() {
+    const dicts = await this.systemService.getDicts()
+    return Result.success(dicts)
+  }
 }

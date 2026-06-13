@@ -521,9 +521,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
+
+const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
 
 const userStore = useUserStore()
@@ -587,12 +590,16 @@ const housingOptions = [
   '已购房有贷款', '与父母同住', '需要时可购置', '房子买在老家', '自建房',
 ]
 
-const hopeTaTagOptions = [
+const DEFAULT_HOPE_TA_TAGS = [
   '品味出众', '喜欢厨艺', '不冷暴力', '重视家庭', '整洁干净', '阳光运动',
   '文艺范', '懂得尊重', '低调沉稳', '心地善良', '浪漫主义', '乐观积极',
   '成熟稳重', '爱情专一', '真诚靠谱', '风趣幽默', '温柔体贴', '有责任心',
   '有上进心', '孝敬父母', '能一起打拼', '独立不粘人',
 ]
+
+const hopeTaTagOptions = computed(() => {
+  return (systemStore.dicts.hopeTaTags as string[]) || DEFAULT_HOPE_TA_TAGS
+})
 
 // 我的特点标签选项
 const personalityTabs = [
@@ -600,7 +607,7 @@ const personalityTabs = [
   { key: 'hobby' as const, label: '爱好' },
   { key: 'loveRule' as const, label: '恋爱准则' },
 ]
-const personalityTagMap: Record<string, string[]> = {
+const DEFAULT_PERSONALITY_TAGS: Record<string, string[]> = {
   character: [
     '话痨', '社牛', '慢热', '敏感', '闷骚', '佛系', '有强迫症', '热爱工作',
     '关注细节', '比较乖', '没心机', '笑点低', '真诚靠谱', '乐观自信', '调皮可爱',
@@ -620,8 +627,12 @@ const personalityTagMap: Record<string, string[]> = {
   ],
 }
 
+const personalityTagMap = computed<Record<string, string[]>>(() => {
+  return (systemStore.dicts.personalityTags as Record<string, string[]>) || DEFAULT_PERSONALITY_TAGS
+})
+
 const activePersonalityTab = ref<'character' | 'hobby' | 'loveRule'>('character')
-const currentPersonalityOptions = computed(() => personalityTagMap[activePersonalityTab.value] || [])
+const currentPersonalityOptions = computed(() => personalityTagMap.value[activePersonalityTab.value] || [])
 
 // ===== 表单数据 =====
 const form = ref({
@@ -703,6 +714,8 @@ onMounted(async () => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+
+  systemStore.loadDicts()
 
   fetchPhotos()
 
@@ -889,13 +902,16 @@ const selectCarStatus = (opt: string) => {
 }
 
 // ===== 职业弹窗 =====
-const occupationOptions = [
+const DEFAULT_OCCUPATION = [
   '事业编','中学老师','小学老师','幼师','辅导站老师','服务行业','保险','老师','药剂师',
   '设计','培训','发型师','运营','个体工商户','普通职员','银行','工程','财务','技术',
   '技术工','餐饮','体制内','事业单位','销售','公务员','国企职员','工程师','银行职员',
   '个体户','老板创业者','公司职员','公司高管','律师','设计师','IT从业者','客服','人事',
   '财务会计','军人','服务业','教师','医生','护士','警察','其他',
 ]
+const occupationOptions = computed(() => {
+  return (systemStore.dicts.occupation as string[]) || DEFAULT_OCCUPATION
+})
 const showOccupationPopup = ref(false)
 const openOccupationPicker = () => { showOccupationPopup.value = true }
 const closeOccupationPicker = () => { showOccupationPopup.value = false }

@@ -9,6 +9,7 @@ export interface SystemConfigs {
   vip?: Record<string, any>
   payment?: Record<string, any>
   audit?: Record<string, any>
+  dict?: Record<string, any>
 }
 
 @Injectable()

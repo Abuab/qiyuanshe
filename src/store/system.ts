@@ -24,6 +24,7 @@ export const useSystemStore = defineStore('system', () => {
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
+  const dicts = ref<Record<string, any>>({})
   let initialLoadDone = false
 
   const loadSystemConfig = async () => {
@@ -40,6 +41,18 @@ export const useSystemStore = defineStore('system', () => {
       }
     } catch (e) {
       console.error('[SystemStore] Failed to load system config:', e)
+    }
+  }
+
+  /** 加载选项字典（职业、我的特点、希望TA） */
+  const loadDicts = async () => {
+    try {
+      const res = await get<Record<string, any>>('/system/dicts')
+      if (res) {
+        dicts.value = res
+      }
+    } catch (e) {
+      console.error('[SystemStore] Failed to load dicts:', e)
     }
   }
 
@@ -80,7 +93,9 @@ export const useSystemStore = defineStore('system', () => {
     shareTitle,
     shareDesc,
     matchmakers,
+    dicts,
     loadSystemConfig,
+    loadDicts,
     saveToStorage,
   }
 })
