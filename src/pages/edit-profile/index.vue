@@ -76,9 +76,12 @@
           </picker>
         </view>
 
-        <view class="form-item">
+        <view class="form-item" @tap="openOccupationPicker">
           <text class="form-label">职业</text>
-          <input class="form-input" v-model="form.occupation" placeholder="请输入职业" maxlength="30" />
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.occupation }">{{ form.occupation || '请选择' }}</text>
+            <text class="picker-arrow">></text>
+          </view>
         </view>
 
         <view class="form-item">
@@ -363,6 +366,33 @@
       </view>
       <view class="popup-footer">
         <view class="popup-confirm" @tap="closeCarStatusPicker">
+          <text>取消</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 职业弹窗 -->
+    <view class="popup-mask" v-if="showOccupationPopup" @tap="closeOccupationPicker"></view>
+    <view class="popup-panel" :class="{ show: showOccupationPopup }">
+      <view class="popup-header">
+        <text class="popup-title">职业</text>
+        <text class="popup-close" @tap="closeOccupationPicker">✕</text>
+      </view>
+      <view class="popup-body">
+        <view class="popup-options">
+          <view
+            v-for="(opt, idx) in occupationOptions"
+            :key="idx"
+            class="popup-option"
+            :class="{ active: form.occupation === opt }"
+            @tap="selectOccupation(opt)"
+          >
+            <text>{{ opt }}</text>
+          </view>
+        </view>
+      </view>
+      <view class="popup-footer">
+        <view class="popup-confirm" @tap="closeOccupationPicker">
           <text>取消</text>
         </view>
       </view>
@@ -856,6 +886,22 @@ const closeCarStatusPicker = () => { showCarStatusPopup.value = false }
 const selectCarStatus = (opt: string) => {
   form.value.carStatus = opt
   showCarStatusPopup.value = false
+}
+
+// ===== 职业弹窗 =====
+const occupationOptions = [
+  '事业编','中学老师','小学老师','幼师','辅导站老师','服务行业','保险','老师','药剂师',
+  '设计','培训','发型师','运营','个体工商户','普通职员','银行','工程','财务','技术',
+  '技术工','餐饮','体制内','事业单位','销售','公务员','国企职员','工程师','银行职员',
+  '个体户','老板创业者','公司职员','公司高管','律师','设计师','IT从业者','客服','人事',
+  '财务会计','军人','服务业','教师','医生','护士','警察','其他',
+]
+const showOccupationPopup = ref(false)
+const openOccupationPicker = () => { showOccupationPopup.value = true }
+const closeOccupationPicker = () => { showOccupationPopup.value = false }
+const selectOccupation = (opt: string) => {
+  form.value.occupation = opt
+  showOccupationPopup.value = false
 }
 
 // ===== 希望TA标签弹窗 =====
