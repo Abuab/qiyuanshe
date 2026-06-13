@@ -21,6 +21,8 @@ const IMAGE_URL_FIELDS = new Set([
 function deepNormalizeImageUrls(obj: any, depth = 0): any {
   if (depth > 20 || obj === null || obj === undefined) return obj
   if (typeof obj !== 'object') return obj
+  // Date / Buffer 等特殊对象原样返回，避免 Object.entries 将其拆解为 {}
+  if (obj instanceof Date || Buffer.isBuffer(obj)) return obj
 
   if (Array.isArray(obj)) {
     return obj.map(item => deepNormalizeImageUrls(item, depth + 1))
