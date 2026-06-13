@@ -189,13 +189,9 @@ export class UserProfileService {
   }
 
   async deleteReview(reviewId: number) {
-    const review = await this.reviewRepository.findOne({ where: { id: reviewId } })
-    if (review) {
-      await this.reviewRepository.remove(review)
-      console.log(`[deleteReview] 已删除评语 id=${reviewId}, userId=${review.userId}`)
-    } else {
-      console.warn(`[deleteReview] 评语不存在 id=${reviewId}`)
-    }
+    // 使用 TypeORM 软删除，通过 UPDATE deletedAt 实现，比 remove/delete 更可靠
+    const result = await this.reviewRepository.softDelete(reviewId)
+    console.log(`[deleteReview] softDelete id=${reviewId}, affected=${result.affected}`)
   }
 
   async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number) {
