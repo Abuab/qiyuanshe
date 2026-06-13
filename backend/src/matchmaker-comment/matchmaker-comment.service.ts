@@ -34,9 +34,14 @@ export class MatchmakerCommentService {
     return this.commentRepo.save(comment)
   }
 
-  // 删除评语
+  // 删除评语（原始SQL物理删除）
   async remove(id: number) {
-    await this.commentRepo.update(id, { status: 0 })
+    await this.commentRepo
+      .createQueryBuilder()
+      .delete()
+      .from('matchmaker_comments')
+      .where('id = :id', { id })
+      .execute()
   }
 
   // 管理后台：获取所有评语

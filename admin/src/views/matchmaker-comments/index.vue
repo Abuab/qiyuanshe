@@ -9,7 +9,7 @@
         <el-button type="primary" @click="showDialog = true">新增评语</el-button>
       </div>
 
-      <el-table :data="list" border stripe v-loading="loading" style="width: 100%">
+      <el-table :data="list" border stripe v-loading="loading" style="width: 100%" row-key="id">
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column label="红娘" width="100">
           <template #default="{ row }">
@@ -104,8 +104,11 @@ async function handleCreate() {
 async function handleDelete(id: number) {
   try {
     await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
-    const res = await adminSystem.deleteMatchmakerComment(id)
-    if (res.success) { ElMessage.success('已删除'); fetchList() }
+    await adminSystem.deleteMatchmakerComment(id)
+    // 先从本地列表移除
+    list.value = list.value.filter((r: any) => r.id !== id)
+    pagination.total = Math.max(0, pagination.total - 1)
+    ElMessage.success('已删除')
   } catch (e) { /* cancelled */ }
 }
 </script>
