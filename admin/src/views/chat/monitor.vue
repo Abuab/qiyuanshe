@@ -82,6 +82,12 @@
       top="5vh"
       destroy-on-close
     >
+      <template #header="{ close, titleId, titleClass }">
+        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+          <span :id="titleId" :class="titleClass">{{ chatDialogTitle }}</span>
+          <el-button type="primary" size="small" @click="exportChat">导出聊天记录</el-button>
+        </div>
+      </template>
       <div class="chat-messages" v-loading="messageLoading">
         <div v-if="messages.length === 0 && !messageLoading" class="empty-chat">
           暂无聊天记录
@@ -118,6 +124,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Search, User } from '@element-plus/icons-vue'
+import { formatDate } from '../../utils/date'
 import { adminChat, type ChatConversation, type ChatMessageItem } from '../../api/chat'
 
 const router = useRouter()
@@ -208,11 +215,24 @@ function goUserDetail(userId: number) {
   router.push(`/user/detail/${userId}`)
 }
 
-function formatDate(dateStr: string): string {
-  if (!dateStr) return '-'
-  const d = new Date(dateStr)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+function exportChat() {
+  if (messages.value.length === 0) {
+    ElMessage.warning('暂无聊天记录可导出')
+    return
+  }
+  const lines = messages.value.map((m) => {
+    const from = m.fromUserId === chatFromUser.value ? chatFromName.value : chatToName.value
+    return `[${formatDate(m.createdAt)}] ${from}: ${m.content}`
+  })
+  const text = lines.join('\n')
+  const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${chatFromName.value}_${chatToName.value}_聊天记录.txt`
+  a.click()
+  URL.revokeObjectURL(url)
+  ElMessage.success('导出成功')
 }
 </script>
 

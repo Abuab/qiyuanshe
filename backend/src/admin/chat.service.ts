@@ -82,7 +82,7 @@ export class AdminChatService {
       toAvatar: r.toAvatar,
       lastMessage: r.lastMessage,
       messageType: r.messageType,
-      lastTime: r.lastTime,
+      lastTime: r.lastTime ? new Date(r.lastTime).toISOString() : null,
     }))
 
     return { list, page, limit, total }
@@ -156,7 +156,7 @@ export class AdminChatService {
         avatar: isFrom ? r.toUser_avatar || r.to_avatar : r.fromUser_avatar || r.from_avatar,
         lastMessage: r.m_content,
         messageType: r.m_type,
-        lastTime: r.m_createdAt,
+        lastTime: r.m_createdAt ? new Date(r.m_createdAt).toISOString() : null,
       }
     })
 

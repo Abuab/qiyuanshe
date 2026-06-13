@@ -283,7 +283,6 @@
                 <template v-if="row.vipExpireTime">
                   {{ formatVipExpire(row.vipExpireTime) }}
                 </template>
-                <template v-else>已过期</template>
               </div>
             </div>
           </template>

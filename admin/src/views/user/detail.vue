@@ -76,6 +76,32 @@
             </el-descriptions>
           </el-tab-pane>
 
+          <el-tab-pane label="聊天记录" name="chat">
+            <div v-loading="tabLoading.chat">
+              <div v-if="chatConversations.length > 0">
+                <div
+                  v-for="conv in chatConversations"
+                  :key="conv.userId"
+                  class="chat-conv-item"
+                  style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #ebeef5;cursor:pointer"
+                  @click="openUserChat(conv)"
+                >
+                  <el-image :src="conv.avatar" fit="cover" style="width:44px;height:44px;border-radius:50%">
+                    <template #error><div style="width:44px;height:44px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="22"><User /></el-icon></div></template>
+                  </el-image>
+                  <div style="flex:1;margin-left:12px;overflow:hidden">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                      <span style="font-weight:500">{{ conv.nickname }}</span>
+                      <span style="font-size:12px;color:#999">{{ formatDate(conv.lastTime) }}</span>
+                    </div>
+                    <div style="color:#666;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ conv.lastMessage }}</div>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-else description="暂无聊天记录" />
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane label="我的特点" name="personality">
             <div v-if="user.personalityTags && user.personalityTags.length" class="tag-group">
               <el-tag v-for="tag in user.personalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
@@ -361,6 +387,31 @@
       </el-form>
       <template #footer><el-button @click="reviewDialogVisible = false">取消</el-button><el-button type="primary" @click="handleReviewSubmit">确定</el-button></template>
     </el-dialog>
+
+    <!-- 聊天记录弹窗 -->
+    <el-dialog v-model="userChatDialogVisible" :title="`与 ${userChatPeerName} 的聊天记录`" width="700px" top="5vh" destroy-on-close>
+      <div v-loading="userChatMsgLoading" style="max-height:60vh;overflow-y:auto;padding:8px 0">
+        <div v-if="userChatMessages.length === 0 && !userChatMsgLoading" style="text-align:center;color:#999;padding:60px 0">
+          暂无聊天记录
+        </div>
+        <div
+          v-for="msg in userChatMessages"
+          :key="msg.id"
+          style="margin-bottom:16px;padding:0 12px"
+          :style="{ textAlign: msg.fromUserId === user?.id ? 'right' : 'left' }"
+        >
+          <div style="margin-bottom:4px;display:flex;align-items:center;gap:8px" :style="{ justifyContent: msg.fromUserId === user?.id ? 'flex-end' : 'flex-start' }">
+            <span style="font-size:12px;color:#909399;font-weight:500">
+              {{ msg.fromUserId === user?.id ? user?.nickname : userChatPeerName }}
+            </span>
+            <span style="font-size:11px;color:#c0c4cc">{{ formatDate(msg.createdAt) }}</span>
+          </div>
+          <div style="display:inline-block;max-width:70%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;word-break:break-all"
+            :style="{ background: msg.fromUserId === user?.id ? '#95ec69' : '#f0f2f5', color: '#333' }"
+          >{{ msg.content }}</div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -370,6 +421,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
 import { adminUsers, adminMatchmaker } from '../../api'
+import { adminChat, type ChatMessageItem } from '../../api/chat'
 import { formatDate } from '../../utils/date'
 import { useAdminStore } from '../../store/admin'
 
@@ -444,7 +496,7 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, matches: false, reviews: false, photos: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, matches: false, reviews: false, photos: false, chat: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
@@ -460,6 +512,14 @@ const reviewDialogVisible = ref(false)
 const editingReview = ref<any>(null)
 const reviewForm = reactive({ matchmakerId: null as number | null, content: '', difficulty: '' })
 const matchmakerOptions = ref<any[]>([])
+
+// Chat
+const chatConversations = ref<any[]>([])
+const userChatDialogVisible = ref(false)
+const userChatPeerId = ref(0)
+const userChatPeerName = ref('')
+const userChatMessages = ref<ChatMessageItem[]>([])
+const userChatMsgLoading = ref(false)
 
 const tabDataLoaded: Record<string, boolean> = {}
 
@@ -488,6 +548,7 @@ function handleTabChange(tabName: string) {
     case 'matches': loadMatches(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
     case 'photos': loadPhotos(); break
+    case 'chat': loadChatConversations(); break
   }
 }
 
@@ -681,6 +742,38 @@ async function loadPhotos() {
     if (res.success) userPhotos.value = res.data || []
   } catch (e) { console.error(e) }
   finally { tabLoading.photos = false }
+}
+
+async function loadChatConversations() {
+  if (!user.value) return
+  tabLoading.chat = true
+  try {
+    const res = await adminChat.getUserConversations(user.value.id)
+    if (res.success && res.data) {
+      chatConversations.value = res.data.list || []
+    }
+  } catch (e) { console.error(e) }
+  finally { tabLoading.chat = false }
+}
+
+function openUserChat(conv: any) {
+  userChatPeerId.value = conv.userId
+  userChatPeerName.value = conv.nickname
+  userChatDialogVisible.value = true
+  loadUserChatMessages()
+}
+
+async function loadUserChatMessages() {
+  if (!user.value) return
+  userChatMsgLoading.value = true
+  userChatMessages.value = []
+  try {
+    const res = await adminChat.getMessages(user.value.id, userChatPeerId.value)
+    if (res.success && res.data) {
+      userChatMessages.value = res.data.list || []
+    }
+  } catch (e) { console.error(e) }
+  finally { userChatMsgLoading.value = false }
 }
 
 function beforePhotoUpload(file: File) {
