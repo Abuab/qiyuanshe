@@ -101,29 +101,19 @@
           </picker>
         </view>
 
-        <view class="form-item-capsule">
+        <view class="form-item" @tap="openHousingStatusPicker">
           <text class="form-label">住房情况</text>
-          <view class="capsule-group">
-            <view
-              v-for="opt in housingStatusOptions"
-              :key="opt"
-              class="capsule-btn"
-              :class="{ active: form.housingStatus === opt }"
-              @tap="form.housingStatus = opt"
-            >{{ opt }}</view>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.housingStatus }">{{ form.housingStatus || '请选择' }}</text>
+            <text class="picker-arrow">></text>
           </view>
         </view>
 
-        <view class="form-item-capsule">
+        <view class="form-item" @tap="openCarStatusPicker">
           <text class="form-label">车辆情况</text>
-          <view class="capsule-group">
-            <view
-              v-for="opt in carStatusOptions"
-              :key="opt"
-              class="capsule-btn"
-              :class="{ active: form.carStatus === opt }"
-              @tap="form.carStatus = opt"
-            >{{ opt }}</view>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.carStatus }">{{ form.carStatus || '请选择' }}</text>
+            <text class="picker-arrow">></text>
           </view>
         </view>
 
@@ -337,6 +327,50 @@
     <view class="save-bar">
       <view class="save-btn" @tap="handleSave">
         <text>保存</text>
+      </view>
+    </view>
+
+    <!-- 住房情况弹窗 -->
+    <view class="popup-mask" v-if="showHousingStatusPopup" @tap="closeHousingStatusPicker"></view>
+    <view class="popup-panel" :class="{ show: showHousingStatusPopup }">
+      <view class="popup-header">
+        <text class="popup-title">住房情况</text>
+        <text class="popup-close" @tap="closeHousingStatusPicker">✕</text>
+      </view>
+      <view class="popup-body">
+        <view class="popup-options">
+          <view
+            v-for="(opt, idx) in housingStatusOptions"
+            :key="idx"
+            class="popup-option"
+            :class="{ active: form.housingStatus === opt }"
+            @tap="selectHousingStatus(opt)"
+          >
+            <text>{{ opt }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 车辆情况弹窗 -->
+    <view class="popup-mask" v-if="showCarStatusPopup" @tap="closeCarStatusPicker"></view>
+    <view class="popup-panel" :class="{ show: showCarStatusPopup }">
+      <view class="popup-header">
+        <text class="popup-title">车辆情况</text>
+        <text class="popup-close" @tap="closeCarStatusPicker">✕</text>
+      </view>
+      <view class="popup-body">
+        <view class="popup-options">
+          <view
+            v-for="(opt, idx) in carStatusOptions"
+            :key="idx"
+            class="popup-option"
+            :class="{ active: form.carStatus === opt }"
+            @tap="selectCarStatus(opt)"
+          >
+            <text>{{ opt }}</text>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -608,6 +642,8 @@ const photos = ref<any[]>([])
 // ===== 弹窗状态 =====
 const showHousingPopup = ref(false)
 const tempHousing = ref<string[]>([])
+const showHousingStatusPopup = ref(false)
+const showCarStatusPopup = ref(false)
 const showTagPopup = ref(false)
 const tempTags = ref<string[]>([])
 
@@ -804,6 +840,22 @@ const toggleHousing = (opt: string) => {
 const confirmHousingPicker = () => {
   form.value.housingRequirement = tempHousing.value.join(',')
   showHousingPopup.value = false
+}
+
+// ===== 住房情况弹窗 =====
+const openHousingStatusPicker = () => { showHousingStatusPopup.value = true }
+const closeHousingStatusPicker = () => { showHousingStatusPopup.value = false }
+const selectHousingStatus = (opt: string) => {
+  form.value.housingStatus = opt
+  showHousingStatusPopup.value = false
+}
+
+// ===== 车辆情况弹窗 =====
+const openCarStatusPicker = () => { showCarStatusPopup.value = true }
+const closeCarStatusPicker = () => { showCarStatusPopup.value = false }
+const selectCarStatus = (opt: string) => {
+  form.value.carStatus = opt
+  showCarStatusPopup.value = false
 }
 
 // ===== 希望TA标签弹窗 =====
