@@ -21,6 +21,21 @@ interface UserInfo {
   hometown?: string
   selfIntro?: string
   bio?: string
+  housingStatus?: string
+  carStatus?: string
+  onlyChild?: string
+  whenMarry?: string
+  zodiac?: string
+  constellation?: string
+  partnerAgeRange?: string
+  partnerHeightMin?: string
+  partnerEducation?: string
+  partnerIncome?: string
+  housingRequirement?: string
+  partnerMaritalStatus?: string
+  acceptChildren?: string
+  partnerHometown?: string
+  partnerResidence?: string
   photos?: string[]
   personalityTags?: string[]
   hopeTaTags?: string[]
@@ -95,6 +110,21 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.hometown === 'string') updates.hometown = data.hometown
     if (typeof data.selfIntro === 'string') updates.selfIntro = data.selfIntro
     if (typeof data.bio === 'string') updates.bio = data.bio
+    if (typeof data.housingStatus === 'string') updates.housingStatus = data.housingStatus
+    if (typeof data.carStatus === 'string') updates.carStatus = data.carStatus
+    if (typeof data.onlyChild === 'string') updates.onlyChild = data.onlyChild
+    if (typeof data.whenMarry === 'string') updates.whenMarry = data.whenMarry
+    if (typeof data.zodiac === 'string') updates.zodiac = data.zodiac
+    if (typeof data.constellation === 'string') updates.constellation = data.constellation
+    if (typeof data.partnerAgeRange === 'string') updates.partnerAgeRange = data.partnerAgeRange
+    if (typeof data.partnerHeightMin === 'string') updates.partnerHeightMin = data.partnerHeightMin
+    if (typeof data.partnerEducation === 'string') updates.partnerEducation = data.partnerEducation
+    if (typeof data.partnerIncome === 'string') updates.partnerIncome = data.partnerIncome
+    if (typeof data.housingRequirement === 'string') updates.housingRequirement = data.housingRequirement
+    if (typeof data.partnerMaritalStatus === 'string') updates.partnerMaritalStatus = data.partnerMaritalStatus
+    if (typeof data.acceptChildren === 'string') updates.acceptChildren = data.acceptChildren
+    if (typeof data.partnerHometown === 'string') updates.partnerHometown = data.partnerHometown
+    if (typeof data.partnerResidence === 'string') updates.partnerResidence = data.partnerResidence
     if (Array.isArray(data.personalityTags)) updates.personalityTags = data.personalityTags as string[]
     if (Array.isArray(data.hopeTaTags)) updates.hopeTaTags = data.hopeTaTags as string[]
     Object.assign(userInfo.value, updates)
