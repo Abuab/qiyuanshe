@@ -328,9 +328,12 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="标签" width="140">
+        <el-table-column label="用户标签" width="160">
           <template #default="{ row }">
-            <el-tag v-for="tag in row.tags" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+            <template v-if="row.tags && row.tags.length">
+              <el-tag v-for="tag in row.tags" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+            </template>
+            <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
         <el-table-column v-if="!isReadonly" label="操作" width="240" fixed="right">
@@ -1251,6 +1254,7 @@ function goAudit(_row: User, auditType: string) {
 function formatVipExpire(dateStr: string) {
   if (!dateStr) return '已过期'
   const expireDate = new Date(dateStr)
+  if (isNaN(expireDate.getTime())) return '已过期'
   if (expireDate <= new Date()) return '已过期'
   return `到期: ${expireDate.toLocaleDateString('zh-CN')}`
 }
