@@ -16,9 +16,6 @@ interface SystemConfig {
   shareTitle: string
   shareDesc: string
   matchmakers: Matchmaker[]
-  vipAgreement?: string
-  userAgreement?: string
-  privacyPolicy?: string
 }
 
 export const useSystemStore = defineStore('system', () => {
@@ -27,9 +24,6 @@ export const useSystemStore = defineStore('system', () => {
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakers = ref<Matchmaker[]>([])
-  const vipAgreement = ref<string>('')
-  const userAgreement = ref<string>('')
-  const privacyPolicy = ref<string>('')
   let initialLoadDone = false
 
   const loadSystemConfig = async () => {
@@ -41,9 +35,6 @@ export const useSystemStore = defineStore('system', () => {
         shareTitle.value = res.shareTitle !== undefined ? res.shareTitle : shareTitle.value
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
-        vipAgreement.value = res.vipAgreement || vipAgreement.value
-        userAgreement.value = res.userAgreement || userAgreement.value
-        privacyPolicy.value = res.privacyPolicy || privacyPolicy.value
         saveToStorage()
         initialLoadDone = true
       }
@@ -57,16 +48,12 @@ export const useSystemStore = defineStore('system', () => {
     if (storedConfig) {
       try {
         const config = JSON.parse(storedConfig)
-        // 只有尚未从 API 加载时才使用缓存
         if (!initialLoadDone) {
           splashText.value = config.splashText || splashText.value
           appName.value = config.appName || appName.value
           shareTitle.value = config.shareTitle || shareTitle.value
           shareDesc.value = config.shareDesc || shareDesc.value
           matchmakers.value = config.matchmakers || matchmakers.value
-          vipAgreement.value = config.vipAgreement || vipAgreement.value
-          userAgreement.value = config.userAgreement || userAgreement.value
-          privacyPolicy.value = config.privacyPolicy || privacyPolicy.value
         }
       } catch (e) {
         console.error('[SystemStore] Failed to parse system config:', e)
@@ -81,9 +68,6 @@ export const useSystemStore = defineStore('system', () => {
       shareTitle: shareTitle.value,
       shareDesc: shareDesc.value,
       matchmakers: matchmakers.value,
-      vipAgreement: vipAgreement.value,
-      userAgreement: userAgreement.value,
-      privacyPolicy: privacyPolicy.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
   }
@@ -96,10 +80,7 @@ export const useSystemStore = defineStore('system', () => {
     shareTitle,
     shareDesc,
     matchmakers,
-    vipAgreement,
-    userAgreement,
-    privacyPolicy,
     loadSystemConfig,
-    saveToStorage
+    saveToStorage,
   }
 })
