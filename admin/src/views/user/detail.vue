@@ -59,6 +59,10 @@
               <el-descriptions-item label="婚况">{{ user.maritalStatus || '-' }}</el-descriptions-item>
               <el-descriptions-item label="家乡">{{ user.hometown || '-' }}</el-descriptions-item>
               <el-descriptions-item label="居住地">{{ user.residence || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="独生子女">{{ user.onlyChild || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="何时结婚">{{ user.whenMarry || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="属相">{{ user.zodiac || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="星座">{{ user.constellation || '-' }}</el-descriptions-item>
               <el-descriptions-item label="实名认证">
                 <el-tag v-if="user.isRealName" type="success" size="small">已认证</el-tag>
                 <el-tag v-else type="info" size="small">未认证</el-tag>
@@ -80,7 +84,20 @@
           </el-tab-pane>
 
           <el-tab-pane label="择偶要求" name="mate">
-            <div class="text-content">{{ user.mateRequirement || '暂无择偶要求' }}</div>
+            <el-descriptions v-if="hasMateRequirement" :column="2" border style="margin-bottom:16px">
+              <el-descriptions-item label="希望TA">{{ (user.hopeTaTags || []).join('、') || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="年龄要求">{{ user.partnerAgeRange || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="身高要求">{{ user.partnerHeightMin || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="学历要求">{{ user.partnerEducation || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="收入要求">{{ user.partnerIncome || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="住房要求">{{ user.housingRequirement || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="婚况要求">{{ user.partnerMaritalStatus || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="接受子女">{{ user.acceptChildren || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="要求籍贯">{{ user.partnerHometown || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="要求现居地">{{ user.partnerResidence || '-' }}</el-descriptions-item>
+            </el-descriptions>
+            <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
+            <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
           </el-tab-pane>
 
           <el-tab-pane label="管理员备注" name="remark">
@@ -384,8 +401,21 @@ interface UserDetail {
   updatedAt: string
   lastLoginAt?: string
   tags?: string[]
+  onlyChild?: string
+  whenMarry?: string
+  zodiac?: string
+  constellation?: string
   personalityTags?: string[]
   hopeTaTags?: string[]
+  partnerAgeRange?: string
+  partnerHeightMin?: string
+  partnerEducation?: string
+  partnerIncome?: string
+  housingRequirement?: string
+  partnerMaritalStatus?: string
+  acceptChildren?: string
+  partnerHometown?: string
+  partnerResidence?: string
   adminRemark?: string
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
 }
@@ -393,6 +423,14 @@ interface UserDetail {
 const route = useRoute()
 const adminStore = useAdminStore()
 const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+
+const hasMateRequirement = computed(() => {
+  const u = user.value
+  if (!u) return false
+  return !!(u.hopeTaTags?.length || u.partnerAgeRange || u.partnerHeightMin ||
+    u.partnerEducation || u.partnerIncome || u.housingRequirement ||
+    u.partnerMaritalStatus || u.acceptChildren || u.partnerHometown || u.partnerResidence)
+})
 
 const loading = ref(false)
 const user = ref<UserDetail | null>(null)
