@@ -284,15 +284,18 @@ export class PaymentService {
       }
 
       const pkg = this.getPackage(order.vipLevel)
-      const expireTime = new Date()
-      expireTime.setMonth(expireTime.getMonth() + pkg.months)
+      const now = new Date()
+      let expireTime: Date
 
       const user = await queryRunner.manager.findOne(User, {
         where: { id: userId },
       })
-      if (user && user.vipExpireTime && user.vipExpireTime > new Date()) {
-        expireTime.setMonth(expireTime.getMonth() + pkg.months)
+      if (user && user.vipExpireTime && user.vipExpireTime > now) {
+        expireTime = new Date(user.vipExpireTime)
+      } else {
+        expireTime = now
       }
+      expireTime.setMonth(expireTime.getMonth() + pkg.months)
 
       await queryRunner.manager.update(VipOrder, { orderNo }, { status: 1, paidAt: new Date() })
       await queryRunner.manager.update(User, { id: userId }, { vipLevel: order.vipLevel, vipExpireTime: expireTime, isVip: 1 })

@@ -10,7 +10,7 @@
     <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view class="photo-grid">
         <view v-for="(photo, idx) in photos" :key="idx" class="photo-item">
-          <image :src="photo.photoUrl" mode="aspectFill" class="photo-img" />
+          <image :src="getFullImageUrl(photo.photoUrl)" mode="aspectFill" class="photo-img" />
           <view v-if="photo.isMain" class="main-badge">主图</view>
           <view class="photo-actions">
             <text v-if="!photo.isMain" @tap="setMain(photo.id)">设为主图</text>
@@ -31,6 +31,7 @@
 import { ref, onMounted } from 'vue'
 import { get, post, del } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
+import { getFullImageUrl } from '@/utils/common'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const statusBarHeight = ref(20)

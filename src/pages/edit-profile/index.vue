@@ -192,7 +192,7 @@
         </view>
         <view class="photo-grid">
           <view v-for="(p, idx) in photos" :key="p.id" class="photo-item">
-            <image :src="p.photoUrl || p.url" mode="aspectFill" class="photo-img" @tap="previewPhoto(idx)" />
+            <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-img" @tap="previewPhoto(idx)" />
             <view v-if="p.isMain" class="main-tag">主图</view>
             <text class="photo-del" @tap.stop="deletePhoto(p.id)">×</text>
           </view>
@@ -465,6 +465,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import request, { put } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
+import { getFullImageUrl } from '@/utils/common'
 import CityPicker from '@/components/city-picker/city-picker.vue'
 
 const userStore = useUserStore()
@@ -901,7 +902,7 @@ const deletePhoto = (id: number) => {
 const previewPhoto = (idx: number) => {
   uni.previewImage({
     current: idx,
-    urls: photos.value.map((p: any) => p.photoUrl || p.url),
+    urls: photos.value.map((p: any) => getFullImageUrl(p.photoUrl || p.url)),
   })
 }
 

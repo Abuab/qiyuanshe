@@ -40,7 +40,7 @@ export class AdminDashboardService {
       this.userRepository.count({ where: { isVip: 1, isDeleted: 0, id: Not(1) } }),
       this.orderRepository.count({ where: { status: 1 } }),
       this.getTodayRevenue(),
-      this.auditLogRepository.count(),
+      this.auditLogRepository.count({ where: { action: 'PENDING' } }),
       this.matchmakerRepository.count({ where: { isActive: 1 } }),
       this.questionRepository.count({ where: { isActive: 1 } }),
       this.getYesterdayNewUsers(),

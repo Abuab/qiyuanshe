@@ -49,7 +49,20 @@ export class ChatService {
       isRead: 0,
     })
 
-    return this.messageRepository.save(message)
+    const saved = await this.messageRepository.save(message)
+
+    // 非VIP用户发送成功后更新缓存计数，避免并发绕过限制
+    if (!isVip) {
+      const today = new Date().toISOString().split('T')[0]
+      const cacheEntry = this.messageCountCache.get(userId)
+      if (cacheEntry && cacheEntry.date === today) {
+        cacheEntry.count++
+      } else {
+        this.messageCountCache.set(userId, { count: 1, date: today })
+      }
+    }
+
+    return saved
   }
 
   async getMessages(userId: number, dto: QueryMessagesDto): Promise<{ list: ChatMessage[]; total: number }> {

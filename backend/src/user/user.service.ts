@@ -637,7 +637,7 @@ export class UserService {
         map.set(photo.userId, [])
       }
       const existing = map.get(photo.userId)
-      if (existing && existing.length < 4) {
+      if (existing && existing.length < 4 && !existing.includes(photo.photoUrl)) {
         existing.push(photo.photoUrl)
       }
     }

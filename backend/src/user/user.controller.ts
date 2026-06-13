@@ -23,6 +23,7 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { UserBlock } from '../entities/UserBlock'
 import { AuditLog } from '../entities/AuditLog'
 import { Result } from '../common/result'
+import { normalizeImageUrl } from '../common/image-url'
 
 @Controller('users')
 export class UserController {
@@ -110,7 +111,7 @@ export class UserController {
     const userId = req.user.userId
     const auditLog = this.auditLogRepo.create({
       action: 'PENDING',
-      targetType: 'photo',
+      targetType: 'avatar',
       targetId: userId,
       submitterId: userId,
       content: JSON.stringify({ url: body.avatarUrl, type: 'avatar' }),
@@ -150,7 +151,12 @@ export class UserController {
       where: { userId: req.user.userId },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
     })
-    return Result.success({ list: photos })
+    return Result.success({
+      list: photos.map((p) => ({
+        ...p,
+        photoUrl: normalizeImageUrl(p.photoUrl),
+      })),
+    })
   }
 
   @Post('photos')
