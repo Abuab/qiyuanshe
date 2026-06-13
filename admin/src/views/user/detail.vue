@@ -625,8 +625,11 @@ async function handleDeleteReview(row: any) {
   try {
     await ElMessageBox.confirm('确定要删除该评价吗？', '删除确认', { type: 'warning' })
     await adminUsers.deleteReview(row.id)
+    // 先从本地列表中移除，立即更新 UI
+    reviewList.value = reviewList.value.filter((r: any) => r.id !== row.id)
     ElMessage.success('删除成功')
-    loadReviews()
+    // 再从后端拉取最新数据确认
+    await loadReviews()
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 
