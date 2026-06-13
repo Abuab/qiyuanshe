@@ -15,13 +15,26 @@ export class DynamicService {
   ) {}
 
   async getDynamics(page: number, limit: number, currentUserId?: number) {
-    const [list, total] = await this.dynamicRepository.findAndCount({
-      where: { status: 1 },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    })
+    const where: any = { status: 1 }
+    // 同时展示用户自己待审核的动态
+    if (currentUserId) {
+      where.status = undefined // 不能用简单 where
+    }
+
+    const qb = this.dynamicRepository
+      .createQueryBuilder('dynamic')
+      .leftJoinAndSelect('dynamic.user', 'user')
+      .orderBy('dynamic.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (currentUserId) {
+      qb.where('(dynamic.status = 1 OR (dynamic.status = 0 AND dynamic.userId = :uid))', { uid: currentUserId })
+    } else {
+      qb.where('dynamic.status = 1')
+    }
+
+    const [list, total] = await qb.getManyAndCount()
 
     const formattedList = await Promise.all(
       list.map(async (item) => {
@@ -56,6 +69,7 @@ export class DynamicService {
           createdAt: item.createdAt,
           likeCount: item.likeCount,
           commentCount: item.commentCount,
+          status: item.status,
           isLiked,
           likeUsers,
         }

@@ -27,10 +27,13 @@ export class DynamicController {
   async getDynamics(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Request() req?: any,
   ) {
+    const currentUserId = req?.user?.userId
     const result = await this.dynamicService.getDynamics(
       page || 1,
       limit || 10,
+      currentUserId,
     )
 
     return {

@@ -6,6 +6,8 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { normalizeImageUrl } from '../common/image-url'
+import { CirclePost } from '../entities/CirclePost'
+import { Dynamic } from '../entities/Dynamic'
 
 interface AuditFilter {
   page?: number
@@ -27,6 +29,10 @@ export class AdminAuditService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepository: Repository<QuestionAnswer>,
+    @InjectRepository(CirclePost)
+    private readonly circlePostRepository: Repository<CirclePost>,
+    @InjectRepository(Dynamic)
+    private readonly dynamicRepository: Repository<Dynamic>,
   ) {}
 
   async list(filter: AuditFilter) {
@@ -101,7 +107,17 @@ export class AdminAuditService {
   }
 
   async getPendingCount() {
-    return this.auditLogRepository.count({ where: { action: 'PENDING' } })
+    const [profileCount, circlePostCount, dynamicCount] = await Promise.all([
+      this.auditLogRepository.count({ where: { action: 'PENDING' } }),
+      this.circlePostRepository.count({ where: { status: 0 } }),
+      this.dynamicRepository.count({ where: { status: 0 } }),
+    ])
+    return {
+      profile: profileCount,
+      circlePost: circlePostCount,
+      dynamic: dynamicCount,
+      total: profileCount + circlePostCount + dynamicCount,
+    }
   }
 
   async approve(id: number, reason?: string) {

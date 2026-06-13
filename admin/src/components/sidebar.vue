@@ -81,7 +81,10 @@
 
       <el-menu-item v-if="isSuperAdmin" index="/circle-posts">
         <el-icon><Document /></el-icon>
-        <template #title>帖子审核</template>
+        <template #title>
+          <span>帖子审核</span>
+          <el-badge v-if="pendingAuditCount > 0" :value="pendingAuditCount" class="menu-badge" />
+        </template>
       </el-menu-item>
 
       <el-menu-item v-if="isSuperAdmin" index="/success-cases">
@@ -143,10 +146,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
+import { adminAudit } from '../api/audit'
 import Avatar from './Avatar.vue'
 import {
   DataAnalysis,
@@ -179,6 +183,16 @@ const userInfo = computed(() => adminStore.userInfo)
 
 onMounted(() => {
   systemStore.fetchSystemConfig()
+  fetchPendingCount()
+  // 每 60 秒轮询一次审核计数
+  pendingCountTimer = setInterval(fetchPendingCount, 60000)
+})
+
+onUnmounted(() => {
+  if (pendingCountTimer) {
+    clearInterval(pendingCountTimer)
+    pendingCountTimer = null
+  }
 })
 const activeMenu = computed(() => route.path)
 
@@ -187,6 +201,18 @@ const canManageAudit = computed(() => isSuperAdmin.value || userInfo.value?.role
 const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
 const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
+
+// 待审核计数
+const pendingAuditCount = ref(0)
+let pendingCountTimer: ReturnType<typeof setInterval> | null = null
+
+async function fetchPendingCount() {
+  try {
+    const res = await adminAudit.pendingCount()
+    const data = res.data as any
+    pendingAuditCount.value = data?.total || data || 0
+  } catch { /* ignore */ }
+}
 
 function getRoleLabel(role?: string) {
   const map: Record<string, string> = {
@@ -294,6 +320,14 @@ function handleLogout() {
   &:hover {
     background-color: #3d4a5c;
     color: #fff;
+  }
+}
+
+.menu-badge {
+  margin-left: 12px;
+
+  :deep(.el-badge__content) {
+    background-color: #F56C6C;
   }
 }
 </style>

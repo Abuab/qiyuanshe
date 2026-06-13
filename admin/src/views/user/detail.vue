@@ -94,7 +94,7 @@
                       <span style="font-weight:500">{{ conv.nickname }}</span>
                       <span style="font-size:12px;color:#999">{{ formatDate(conv.lastTime) }}</span>
                     </div>
-                    <div style="color:#666;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ conv.lastMessage }}</div>
+                    <div style="color:#666;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ conv.messageType === 'image' ? '[图片]' : conv.lastMessage }}</div>
                   </div>
                 </div>
               </div>
@@ -406,7 +406,10 @@
           </div>
           <div style="display:inline-block;max-width:70%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.6;word-break:break-all"
             :style="{ background: msg.fromUserId === user?.id ? '#95ec69' : '#f0f2f5', color: '#333' }"
-          >{{ msg.content }}</div>
+          >
+            <el-image v-if="msg.type === 'image'" :src="msg.content" style="max-width:200px;max-height:200px;border-radius:8px" fit="contain" :preview-src-list="[msg.content]" />
+            <template v-else>{{ msg.content }}</template>
+          </div>
         </div>
       </div>
     </el-dialog>

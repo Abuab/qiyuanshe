@@ -40,6 +40,7 @@
           <view class="author-info">
             <text class="author-name">{{ item.nickname }}</text>
             <text class="publish-time">{{ formatTime(item.createdAt) }}</text>
+            <text v-if="item.status === 0" class="audit-badge">审核中</text>
           </view>
           <view v-if="myUserId && item.userId === myUserId" class="delete-btn" @tap.stop="handleDelete(item)">
             <text class="delete-icon">×</text>
@@ -140,6 +141,7 @@ interface DynamicItem {
   commentCount: number
   isLiked: boolean
   likeUsers: LikeUser[]
+  status?: number
 }
 
 const list = ref<DynamicItem[]>([])
@@ -436,6 +438,16 @@ onMounted(() => {
   font-size: 22rpx;
   color: #999;
   margin-top: 4rpx;
+}
+
+.audit-badge {
+  font-size: 20rpx;
+  color: #E6A23C;
+  background-color: #FDF6EC;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  border: 1rpx solid #FAECD8;
+  margin-left: 12rpx;
 }
 
 .delete-btn {

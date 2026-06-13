@@ -44,6 +44,8 @@ import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { VipOrder } from '../entities/VipOrder'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
+import { CirclePost } from '../entities/CirclePost'
+import { Dynamic } from '../entities/Dynamic'
 import { AdminReportController } from './report.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
@@ -71,6 +73,8 @@ import { UserProfileController } from './user-profile.controller'
       MatchRecord,
       UserBlock,
       ChatMessage,
+      CirclePost,
+      Dynamic,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
