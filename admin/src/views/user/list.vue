@@ -410,7 +410,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="createDialogVisible" title="添加用户" width="860px">
+    <el-dialog v-model="createDialogVisible" title="添加用户" width="860px" destroy-on-close>
       <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px">
         <!-- 头像 -->
         <el-form-item label="头像">
@@ -589,13 +589,13 @@
         <!-- 家乡 -->
         <el-form-item label="家乡">
           <div style="display:flex;gap:8px">
-            <el-select v-model="hometownProvinceId" placeholder="省" @change="onHometownProvinceChange" style="flex:1" filterable clearable>
+            <el-select v-model="hometownProvinceId" placeholder="省" style="flex:1" clearable>
               <el-option v-for="p in hometownProvinces" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
-            <el-select v-model="hometownCityId" placeholder="市" @change="onHometownCityChange" style="flex:1" filterable clearable :disabled="!hometownProvinceId">
+            <el-select v-model="hometownCityId" placeholder="市" style="flex:1" clearable :disabled="!hometownProvinceId">
               <el-option v-for="c in hometownCities" :key="c.id" :label="c.name" :value="c.id" />
             </el-select>
-            <el-select v-model="hometownDistrictId" placeholder="区/县" style="flex:1" filterable clearable :disabled="!hometownCityId">
+            <el-select v-model="hometownDistrictId" placeholder="区/县" style="flex:1" clearable :disabled="!hometownCityId">
               <el-option v-for="d in hometownDistricts" :key="d.id" :label="d.name" :value="d.id" />
             </el-select>
           </div>
@@ -604,13 +604,13 @@
         <!-- 居住地 -->
         <el-form-item label="居住地">
           <div style="display:flex;gap:8px">
-            <el-select v-model="residenceProvinceId" placeholder="省" @change="onResidenceProvinceChange" style="flex:1" filterable clearable>
+            <el-select v-model="residenceProvinceId" placeholder="省" style="flex:1" clearable>
               <el-option v-for="p in residenceProvinces" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
-            <el-select v-model="residenceCityId" placeholder="市" @change="onResidenceCityChange" style="flex:1" filterable clearable :disabled="!residenceProvinceId">
+            <el-select v-model="residenceCityId" placeholder="市" style="flex:1" clearable :disabled="!residenceProvinceId">
               <el-option v-for="c in residenceCities" :key="c.id" :label="c.name" :value="c.id" />
             </el-select>
-            <el-select v-model="residenceDistrictId" placeholder="区/县" style="flex:1" filterable clearable :disabled="!residenceCityId">
+            <el-select v-model="residenceDistrictId" placeholder="区/县" style="flex:1" clearable :disabled="!residenceCityId">
               <el-option v-for="d in residenceDistricts" :key="d.id" :label="d.name" :value="d.id" />
             </el-select>
           </div>
@@ -719,7 +719,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
@@ -872,7 +872,8 @@ async function loadHometownProvinces() {
   const res = await adminSystem.getRegionChildren(0)
   hometownProvinces.value = res.data || []
 }
-async function onHometownProvinceChange(pid: number) {
+
+watch(hometownProvinceId, async (pid) => {
   hometownCityId.value = undefined
   hometownDistrictId.value = undefined
   hometownCities.value = []
@@ -880,14 +881,16 @@ async function onHometownProvinceChange(pid: number) {
   if (!pid) return
   const res = await adminSystem.getRegionChildren(pid)
   hometownCities.value = res.data || []
-}
-async function onHometownCityChange(cid: number) {
+})
+
+watch(hometownCityId, async (cid) => {
   hometownDistrictId.value = undefined
   hometownDistricts.value = []
   if (!cid) return
   const res = await adminSystem.getRegionChildren(cid)
   hometownDistricts.value = res.data || []
-}
+})
+
 function buildCityLabel(pId?: number, cId?: number, dId?: number): string {
   const p = hometownProvinces.value.find(x => x.id === pId)
   const c = hometownCities.value.find(x => x.id === cId)
@@ -907,7 +910,8 @@ async function loadResidenceProvinces() {
   const res = await adminSystem.getRegionChildren(0)
   residenceProvinces.value = res.data || []
 }
-async function onResidenceProvinceChange(pid: number) {
+
+watch(residenceProvinceId, async (pid) => {
   residenceCityId.value = undefined
   residenceDistrictId.value = undefined
   residenceCities.value = []
@@ -915,14 +919,16 @@ async function onResidenceProvinceChange(pid: number) {
   if (!pid) return
   const res = await adminSystem.getRegionChildren(pid)
   residenceCities.value = res.data || []
-}
-async function onResidenceCityChange(cid: number) {
+})
+
+watch(residenceCityId, async (cid) => {
   residenceDistrictId.value = undefined
   residenceDistricts.value = []
   if (!cid) return
   const res = await adminSystem.getRegionChildren(cid)
   residenceDistricts.value = res.data || []
-}
+})
+
 function buildResidenceLabel(pId?: number, cId?: number, dId?: number): string {
   const p = residenceProvinces.value.find(x => x.id === pId)
   const c = residenceCities.value.find(x => x.id === cId)
