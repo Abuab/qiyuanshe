@@ -90,7 +90,7 @@
               <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.maritalStatus"
+                  v-for="item in createDicts.maritalStatus"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -101,7 +101,7 @@
               <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.incomeRange"
+                  v-for="item in createDicts.incomeRange"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -112,7 +112,7 @@
               <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.housingStatus"
+                  v-for="item in createDicts.housingStatus"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -123,7 +123,7 @@
               <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.carStatus"
+                  v-for="item in createDicts.carStatus"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -134,7 +134,7 @@
               <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.education"
+                  v-for="item in createDicts.education"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -145,7 +145,7 @@
               <el-select v-model="filterForm.occupation" placeholder="全部" clearable style="width: 140px">
                 <el-option label="全部" :value="undefined" />
                 <el-option
-                  v-for="item in dictData.occupation"
+                  v-for="item in createDicts.occupation"
                   :key="item"
                   :label="item"
                   :value="item"
@@ -692,7 +692,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import { useAdminStore } from '../../store/admin'
-import { system, adminSystem } from '../../api/system'
+import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
 import type { User, UserFilter } from '../../api/user'
 
@@ -704,21 +704,6 @@ const exportLoading = ref(false)
 const tableData = ref<User[]>([])
 const selectedRows = ref<User[]>([])
 const tableRef = ref()
-
-// 字典数据
-const dictData = reactive<Record<string, string[]>>({})
-const dictKeys = ['education', 'maritalStatus', 'incomeRange', 'housingStatus', 'carStatus', 'occupation']
-
-async function loadDicts() {
-  for (const key of dictKeys) {
-    try {
-      const res = await system.getDict(key)
-      if (res.success) {
-        dictData[key] = res.data || []
-      }
-    } catch { dictData[key] = [] }
-  }
-}
 
 // 创建用户表单 - 硬编码选项（与小程序一致）
 const birthYearOptions = (() => {
@@ -734,6 +719,7 @@ const createDicts: Record<string, string[]> = {
   housingStatus: ['已购房', '租房', '与父母同住', '其他'],
   carStatus: ['已购车', '未购车'],
   maritalStatus: ['未婚', '离异', '丧偶'],
+  occupation: ['公务员', '事业单位', '国企', '外企', '私企', '自由职业', '个体经营', '其他'],
   whenMarry: ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然'],
   zodiac: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
   constellation: ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'],
@@ -835,7 +821,6 @@ const createRules = {
 }
 
 onMounted(() => {
-  loadDicts()
   fetchData()
 })
 
