@@ -345,7 +345,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
@@ -624,16 +624,8 @@ async function handleReviewSubmit() {
 async function handleDeleteReview(row: any) {
   try {
     await ElMessageBox.confirm('确定要删除该评价吗？', '删除确认', { type: 'warning' })
-    const reviewId = Number(row.id)
-    console.log('[deleteReview] 开始删除, id=', reviewId, ' 当前列表长度=', reviewList.value.length, ' 列表IDs=', reviewList.value.map((r: any) => r.id))
-    const res = await adminUsers.deleteReview(reviewId)
-    console.log('[deleteReview] API response:', res)
-    // 使用 filter 重新赋值触发完整响应式更新
-    const newList = reviewList.value.filter((r: any) => Number(r.id) !== reviewId)
-    console.log('[deleteReview] filter 后列表长度从', reviewList.value.length, '变为', newList.length)
-    reviewList.value = newList
-    await nextTick()
-    console.log('[deleteReview] nextTick 后 reviewList.length=', reviewList.value.length)
+    await adminUsers.deleteReview(row.id)
+    reviewList.value = reviewList.value.filter((r: any) => r.id !== row.id)
     ElMessage.success('删除成功')
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }

@@ -156,12 +156,11 @@ export class UserProfileService {
   }
 
   async getReviews(userId: number) {
-    const reviews = await this.reviewRepository
-      .createQueryBuilder('review')
-      .leftJoinAndSelect('review.matchmaker', 'matchmaker')
-      .where('review.userId = :userId', { userId })
-      .orderBy('review.createdAt', 'DESC')
-      .getMany()
+    const reviews = await this.reviewRepository.find({
+      where: { userId },
+      relations: ['matchmaker'],
+      order: { createdAt: 'DESC' },
+    })
     return reviews.map(r => ({
       id: r.id,
       userId: r.userId,
@@ -190,13 +189,7 @@ export class UserProfileService {
   }
 
   async deleteReview(reviewId: number) {
-    const result = await this.reviewRepository
-      .createQueryBuilder()
-      .delete()
-      .from('matchmaker_reviews')
-      .where('id = :id', { id: reviewId })
-      .execute()
-    console.log(`[deleteReview] 原始SQL DELETE id=${reviewId}, affected=${result.affected}`)
+    await this.reviewRepository.delete(reviewId)
   }
 
   async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number) {
