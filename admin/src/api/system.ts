@@ -21,14 +21,6 @@ export const system = {
   getConfig(key: string): Promise<ApiResponse<string>> {
     return request.get(`/admin/system/config/${key}`)
   },
-
-  getDict(key: string): Promise<ApiResponse<string[]>> {
-    return request.get(`/admin/system/dict/${key}`)
-  },
-
-  updateDict(key: string, value: string[]): Promise<ApiResponse> {
-    return request.put(`/admin/system/dict/${key}`, { value })
-  },
 }
 
 export const adminSystem = {

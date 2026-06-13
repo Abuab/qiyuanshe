@@ -34,18 +34,4 @@ export class AdminSystemController {
     await this.systemService.updateConfig(key, value)
     return Result.success(null, '更新成功')
   }
-
-  @Get('dict/:key')
-  @Roles('super_admin', 'matchmaker', 'operator', 'readonly')
-  @UseGuards(AdminJwtAuthGuard, RoleGuard)
-  async getDict(@Param('key') key: string) {
-    const value = await this.systemService.getConfig('dict_' + key)
-    return Result.success(value ? JSON.parse(value) : [])
-  }
-
-  @Put('dict/:key')
-  async updateDict(@Param('key') key: string, @Body() body: { value: string[] }) {
-    await this.systemService.updateConfig('dict_' + key, JSON.stringify(body.value || []))
-    return Result.success(null, '更新成功')
-  }
 }

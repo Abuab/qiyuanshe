@@ -100,12 +100,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '协议管理', requiresAuth: true },
       },
       {
-        path: '/system/dict',
-        name: 'SystemDict',
-        component: () => import('../views/system/dict.vue'),
-        meta: { title: '数据字典', requiresAuth: true },
-      },
-      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),

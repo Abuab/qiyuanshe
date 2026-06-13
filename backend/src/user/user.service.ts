@@ -4,6 +4,7 @@ import { Repository, SelectQueryBuilder, In } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
+import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 
@@ -30,6 +31,7 @@ export interface UserListItem {
   lastLoginAt: Date
   photos: string[]
   isFollowed: boolean
+  matchmakerComment?: string
 }
 
 export interface RecommendFilters {
@@ -56,8 +58,10 @@ export class UserService {
     @InjectRepository(Follow)
     private readonly followRepository: Repository<Follow>,
     @InjectRepository(ProfileVisit)
-    private readonly visitRepository: Repository<ProfileVisit>,
-  ) {}
+      private readonly visitRepository: Repository<ProfileVisit>,
+      @InjectRepository(MatchmakerComment)
+      private readonly commentRepo: Repository<MatchmakerComment>,
+    ) {}
 
   async findRecommend(
     tab: string,
@@ -185,6 +189,7 @@ export class UserService {
 
     const userIds = users.map((u) => u.id)
     const photosMap = await this.getPhotosMap(userIds)
+    const commentsMap = await this.getCommentsMap(userIds)
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
@@ -201,6 +206,7 @@ export class UserService {
       lastLoginAt: user.lastLoginAt,
       photos: photosMap.get(user.id) || [],
       isFollowed: followedUserIds.includes(user.id),
+      matchmakerComment: commentsMap.get(user.id) || '',
     }))
 
     return {
@@ -322,6 +328,7 @@ export class UserService {
 
     const userIds = users.map((u) => u.id)
     const photosMap = await this.getPhotosMap(userIds)
+    const commentsMap = await this.getCommentsMap(userIds)
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
@@ -338,6 +345,7 @@ export class UserService {
       lastLoginAt: user.lastLoginAt,
       photos: photosMap.get(user.id) || [],
       isFollowed: followedUserIds.includes(user.id),
+      matchmakerComment: commentsMap.get(user.id) || '',
     }))
 
     return {
@@ -519,6 +527,7 @@ export class UserService {
 
     const userIds = users.map((u) => u.id)
     const photosMap = await this.getPhotosMap(userIds)
+    const commentsMap = await this.getCommentsMap(userIds)
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
@@ -535,6 +544,7 @@ export class UserService {
       lastLoginAt: user.lastLoginAt,
       photos: photosMap.get(user.id) || [],
       isFollowed: false,
+      matchmakerComment: commentsMap.get(user.id) || '',
     }))
 
     return {
@@ -586,6 +596,7 @@ export class UserService {
 
     const userIds = users.map((u) => u.id)
     const photosMap = await this.getPhotosMap(userIds)
+    const commentsMap = await this.getCommentsMap(userIds)
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
@@ -602,6 +613,7 @@ export class UserService {
       lastLoginAt: user.lastLoginAt,
       photos: photosMap.get(user.id) || [],
       isFollowed: true,
+      matchmakerComment: commentsMap.get(user.id) || '',
     }))
 
     return {
@@ -641,6 +653,34 @@ export class UserService {
       }
     }
 
+    return map
+  }
+
+  private async getCommentsMap(userIds: number[]): Promise<Map<number, string>> {
+    if (!userIds.length) return new Map()
+    const comments = await this.commentRepo
+      .createQueryBuilder('mc')
+      .select('mc.userId', 'userId')
+      .addSelect('mc.content', 'content')
+      .where('mc.userId IN (:...userIds)', { userIds })
+      .andWhere('mc.status = 1')
+      .andWhere(qb => {
+        // 每个用户取最新一条
+        const subQuery = qb
+          .subQuery()
+          .select('MAX(mc2.id)', 'maxId')
+          .from('matchmaker_comments', 'mc2')
+          .where('mc2.status = 1')
+          .groupBy('mc2.userId')
+          .getQuery()
+        return 'mc.id IN ' + subQuery
+      })
+      .getRawMany()
+    
+    const map = new Map<number, string>()
+    for (const c of comments) {
+      map.set(Number(c.userId), c.content)
+    }
     return map
   }
 
