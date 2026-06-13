@@ -396,21 +396,29 @@ function tryParseImageUrl(content?: string): string {
 function formatDiff(beforeAfter: any): string {
   if (!beforeAfter) return '-'
   const parts: string[] = []
+  // 按重要性排序：基本信息 → 详细资料 → 择偶要求
   const labelMap: Record<string, string> = {
     nickname: '昵称',
-    selfIntro: '简介',
+    gender: '性别',
+    birthYear: '出生年份',
+    avatar: '头像',
     education: '学历',
-    incomeRange: '收入',
-    housingStatus: '住房',
-    carStatus: '车辆',
-    maritalStatus: '婚况',
+    occupation: '职业',
+    incomeRange: '月收入',
     height: '身高',
     weight: '体重',
-    occupation: '职业',
-    onlyChild: '独生子女',
+    maritalStatus: '婚况',
+    housingStatus: '住房',
+    carStatus: '车辆',
+    hometown: '家乡',
+    residence: '居住地',
+    onlyChild: '独生',
     whenMarry: '何时结婚',
-    zodiac: '生肖',
+    zodiac: '属相',
     constellation: '星座',
+    selfIntro: '简介',
+    personalityTags: '我的特点',
+    hopeTaTags: '希望TA',
     partnerAgeRange: '要求年龄',
     partnerHeightMin: '要求身高',
     partnerEducation: '要求学历',
@@ -419,31 +427,39 @@ function formatDiff(beforeAfter: any): string {
     partnerMaritalStatus: '要求婚况',
     acceptChildren: '接受子女',
     partnerHometown: '要求籍贯',
-    partnerResidence: '要求工作地',
-    personalityTags: '我的特点',
-    hopeTaTags: '希望TA',
+    partnerResidence: '要求现居地',
   }
   for (const [key, label] of Object.entries(labelMap)) {
-    if (beforeAfter[key] !== undefined) {
-      const value = beforeAfter[key]
-      const display = Array.isArray(value) ? value.join(', ') : String(value)
-      parts.push(`${label}: ${display}`)
+    if (beforeAfter[key] !== undefined && beforeAfter[key] !== null && String(beforeAfter[key]).trim() !== '') {
+      let value = beforeAfter[key]
+      let display: string
+      if (key === 'gender') {
+        display = value === 1 ? '男' : value === 2 ? '女' : ''
+      } else if (Array.isArray(value)) {
+        display = value.join(', ')
+      } else {
+        display = String(value)
+      }
+      if (display) parts.push(`${label}: ${display}`)
     }
   }
-  return parts.length > 0 ? parts.slice(0, 4).join(' | ') : '-'
+  return parts.length > 0 ? parts.slice(0, 8).join(' | ') : '-'
 }
 
 function formatUserCreateContent(content: string): string {
   try {
     const user = JSON.parse(content)
-    const genderLabel = user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未知'
+    const genderLabel = user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未设'
     const parts: string[] = []
     if (user.nickname) parts.push(user.nickname)
-    if (user.phone) parts.push(user.phone)
     parts.push(genderLabel)
     if (user.birthYear) parts.push(`${user.birthYear}年`)
     if (user.education) parts.push(user.education)
-    return parts.join(' | ')
+    if (user.occupation) parts.push(user.occupation)
+    if (user.incomeRange) parts.push(user.incomeRange)
+    if (user.maritalStatus) parts.push(user.maritalStatus)
+    if (user.hometown) parts.push(user.hometown)
+    return parts.slice(0, 6).join(' | ')
   } catch {
     return content || '-'
   }
