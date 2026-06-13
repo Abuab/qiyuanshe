@@ -266,22 +266,6 @@
           </view>
         </view>
 
-        <view class="form-item" @tap="openCityPicker('partnerHometown')">
-          <text class="form-label">户籍地要求</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.partnerHometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.partnerHometown || '不限' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
-        </view>
-
-        <view class="form-item" @tap="openCityPicker('partnerResidence')">
-          <text class="form-label">现居地要求</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.partnerResidence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.partnerResidence || '不限' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
-        </view>
-
         <view class="form-item">
           <text class="form-label">婚况要求</text>
           <picker mode="selector" :range="partnerMaritalOptions" :value="partnerMaritalIndex" @change="onPartnerMaritalChange" style="flex:1">
@@ -641,8 +625,6 @@ const form = ref({
   acceptChildren: '',
   hopeTaTags: [] as string[],
   personalityTags: [] as string[],
-  partnerHometown: '',
-  partnerResidence: '',
 })
 
 // 照片管理
@@ -658,7 +640,7 @@ const tempTags = ref<string[]>([])
 
 // 城市选择器
 const showCityPicker = ref(false)
-const cityTarget = ref<'residence' | 'hometown' | 'partnerHometown' | 'partnerResidence'>('residence')
+const cityTarget = ref<'residence' | 'hometown'>('residence')
 
 // 我的特点弹窗
 const showPersonalityPopup = ref(false)
@@ -738,8 +720,6 @@ onMounted(async () => {
       acceptChildren: info.acceptChildren || '',
       hopeTaTags: parseTags(info.hopeTaTags),
       personalityTags: parseTags(info.personalityTags),
-      partnerHometown: info.partnerHometown || '',
-      partnerResidence: info.partnerResidence || '',
     }
   }
 })
@@ -904,17 +884,13 @@ const removePersonalityEditTag = (idx: number) => {
 }
 
 // ===== 城市选择器 =====
-const openCityPicker = (target: 'residence' | 'hometown' | 'partnerHometown' | 'partnerResidence' = 'residence') => {
+const openCityPicker = (target: 'residence' | 'hometown' = 'residence') => {
   cityTarget.value = target
   showCityPicker.value = true
 }
 const onCityConfirm = (value: string, _ids: number[]) => {
   if (cityTarget.value === 'hometown') {
     form.value.hometown = value
-  } else if (cityTarget.value === 'partnerHometown') {
-    form.value.partnerHometown = value
-  } else if (cityTarget.value === 'partnerResidence') {
-    form.value.partnerResidence = value
   } else {
     form.value.residence = value
   }
@@ -1018,8 +994,6 @@ const handleSave = async () => {
       acceptChildren: form.value.acceptChildren,
       hopeTaTags: form.value.hopeTaTags.join(','),
       personalityTags: form.value.personalityTags.join(','),
-      partnerHometown: form.value.partnerHometown,
-      partnerResidence: form.value.partnerResidence,
     }
 
     const result = await put<Record<string, unknown>>('/users/profile', data)

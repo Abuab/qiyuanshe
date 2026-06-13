@@ -32,8 +32,6 @@ interface UserInfo {
   housingRequirement?: string
   partnerMaritalStatus?: string
   acceptChildren?: string
-  partnerHometown?: string
-  partnerResidence?: string
   photos?: string[]
   personalityTags?: string[]
   hopeTaTags?: string[]
@@ -119,8 +117,6 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.housingRequirement === 'string') updates.housingRequirement = data.housingRequirement
     if (typeof data.partnerMaritalStatus === 'string') updates.partnerMaritalStatus = data.partnerMaritalStatus
     if (typeof data.acceptChildren === 'string') updates.acceptChildren = data.acceptChildren
-    if (typeof data.partnerHometown === 'string') updates.partnerHometown = data.partnerHometown
-    if (typeof data.partnerResidence === 'string') updates.partnerResidence = data.partnerResidence
     if (Array.isArray(data.personalityTags)) updates.personalityTags = data.personalityTags as string[]
     if (Array.isArray(data.hopeTaTags)) updates.hopeTaTags = data.hopeTaTags as string[]
     Object.assign(userInfo.value, updates)

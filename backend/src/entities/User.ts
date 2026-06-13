@@ -90,12 +90,6 @@ export class User {
   residence: string
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  partnerHometown: string
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  partnerResidence: string
-
-  @Column({ type: 'varchar', length: 50, nullable: true })
   partnerAgeRange: string
 
   @Column({ type: 'varchar', length: 50, nullable: true })

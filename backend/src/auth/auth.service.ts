@@ -279,8 +279,6 @@ export class AuthService {
       housingRequirement: user.housingRequirement,
       partnerMaritalStatus: user.partnerMaritalStatus,
       acceptChildren: user.acceptChildren,
-      partnerHometown: user.partnerHometown,
-      partnerResidence: user.partnerResidence,
       mateRequirement: user.mateRequirement,
       isRealName: user.isRealName,
       isVip: user.isVip,

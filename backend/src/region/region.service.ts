@@ -1,7 +1,4 @@
-import { Injectable } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { AddressRegion } from '../entities/AddressRegion'
+import { Injectable, OnModuleInit } from '@nestjs/common'
 
 export interface RegionItem {
   id: number
@@ -12,60 +9,87 @@ export interface RegionItem {
 }
 
 @Injectable()
-export class RegionService {
-  constructor(
-    @InjectRepository(AddressRegion)
-    private readonly regionRepository: Repository<AddressRegion>,
-  ) {}
+export class RegionService implements OnModuleInit {
+  /** level → parentId → RegionItem[] */
+  private regionsByParent = new Map<number, RegionItem[]>()
 
-  async getChildren(parentId: number): Promise<RegionItem[]> {
-    const list = await this.regionRepository.find({
-      where: { parentId },
-      order: { id: 'ASC' },
-    })
-
-    // 批量 check 是否有子级
-    const ids = list.map((r) => r.id)
-    if (ids.length === 0) return []
-
-    const childrenCountMap = new Map<number, number>()
-    if (ids.length <= 100) {
-      // 小批量可以逐个查
-      for (const id of ids) {
-        const count = await this.regionRepository.count({ where: { parentId: id } })
-        childrenCountMap.set(id, count)
-      }
-    } else {
-      // 大批量一次性查
-      const rows = await this.regionRepository
-        .createQueryBuilder('r')
-        .select('r.parentId', 'parentId')
-        .addSelect('COUNT(*)', 'cnt')
-        .where('r.parentId IN (:...ids)', { ids })
-        .groupBy('r.parentId')
-        .getRawMany()
-      for (const row of rows) {
-        childrenCountMap.set(Number(row.parentId), Number(row.cnt))
-      }
-    }
-
-    return list.map((r) => ({
-      id: r.id,
-      name: r.name,
-      level: r.level,
-      code: r.code,
-      hasChildren: (childrenCountMap.get(r.id) || 0) > 0,
-    }))
+  async onModuleInit() {
+    await this.loadRegions()
   }
 
-  async getPathById(regionId: number): Promise<AddressRegion[]> {
-    const path: AddressRegion[] = []
-    let current = await this.regionRepository.findOne({ where: { id: regionId } })
-    while (current) {
-      path.unshift(current)
-      if (current.parentId === 0) break
-      current = await this.regionRepository.findOne({ where: { id: current.parentId } })
+  private async loadRegions() {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const data = require('china-division') as {
+      provinces: { code: string; name: string }[]
+      cities: { code: string; name: string; provinceCode: string }[]
+      areas: { code: string; name: string; cityCode: string; provinceCode: string }[]
     }
+
+    const hasChildrenMap = new Map<number, boolean>()
+
+    // 省份 (level=0)
+    for (const p of data.provinces) {
+      const id = parseInt(p.code, 10)
+      const list = this.regionsByParent.get(0) || []
+      list.push({ id, name: p.name, level: 0, code: p.code, hasChildren: true })
+      this.regionsByParent.set(0, list)
+    }
+
+    // 城市 (level=1)
+    for (const c of data.cities) {
+      const id = parseInt(c.code, 10)
+      const parentId = parseInt(c.provinceCode, 10)
+      const list = this.regionsByParent.get(parentId) || []
+      // 城市暂时标记有子级（后面areas会更新）
+      list.push({ id, name: c.name, level: 1, code: c.code, hasChildren: true })
+      this.regionsByParent.set(parentId, list)
+    }
+
+    // 区县 (level=2)
+    for (const a of data.areas) {
+      const id = parseInt(a.code, 10)
+      const parentId = parseInt(a.cityCode, 10)
+      const list = this.regionsByParent.get(parentId) || []
+      list.push({ id, name: a.name, level: 2, code: a.code, hasChildren: false })
+      this.regionsByParent.set(parentId, list)
+      hasChildrenMap.set(parentId, true)
+    }
+
+    // 修正：没有 areas 的城市标记 hasChildren=false（直辖市等特殊情况）
+    for (const [, list] of this.regionsByParent) {
+      for (const item of list) {
+        if (item.level === 1 && !hasChildrenMap.has(item.id)) {
+          item.hasChildren = false
+        }
+      }
+    }
+  }
+
+  async getChildren(parentId: number): Promise<RegionItem[]> {
+    return this.regionsByParent.get(parentId) || []
+  }
+
+  async getPathById(regionId: number): Promise<{ id: number; name: string; level: number }[]> {
+    // 反向查找父级链路
+    const path: { id: number; name: string; level: number }[] = []
+    let currentId = regionId
+
+    for (let i = 0; i < 10; i++) {
+      let found: RegionItem | undefined
+      for (const [, list] of this.regionsByParent) {
+        found = list.find((r) => r.id === currentId)
+        if (found) break
+      }
+      if (!found) break
+      path.unshift({ id: found.id, name: found.name, level: found.level })
+      // 找父级
+      const parentEntry = [...this.regionsByParent.entries()].find(([, list]) =>
+        list.some((r) => r.id === found!.id),
+      )
+      if (!parentEntry || parentEntry[0] === 0) break
+      currentId = parentEntry[0]
+    }
+
     return path
   }
 }

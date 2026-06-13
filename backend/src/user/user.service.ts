@@ -714,8 +714,6 @@ export class UserService {
     if (dto.residence !== undefined) user.residence = dto.residence
     if (dto.housingStatus !== undefined) user.housingStatus = dto.housingStatus
     if (dto.carStatus !== undefined) user.carStatus = dto.carStatus
-    if (dto.partnerHometown !== undefined) user.partnerHometown = dto.partnerHometown
-    if (dto.partnerResidence !== undefined) user.partnerResidence = dto.partnerResidence
     if (dto.onlyChild !== undefined) user.onlyChild = dto.onlyChild
     if (dto.whenMarry !== undefined) user.whenMarry = dto.whenMarry
     if (dto.zodiac !== undefined) user.zodiac = dto.zodiac

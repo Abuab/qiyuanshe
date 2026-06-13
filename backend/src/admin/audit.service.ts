@@ -157,8 +157,6 @@ export class AdminAuditService {
         housingRequirement: 'housingRequirement',
         partnerMaritalStatus: 'partnerMaritalStatus',
         acceptChildren: 'acceptChildren',
-        partnerHometown: 'partnerHometown',
-        partnerResidence: 'partnerResidence',
         personalityTags: 'personalityTags',
         hopeTaTags: 'hopeTaTags',
       }

@@ -80,16 +80,6 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  partnerHometown?: string
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  partnerResidence?: string
-
-  @IsOptional()
-  @IsString()
   @MaxLength(20)
   onlyChild?: string
 

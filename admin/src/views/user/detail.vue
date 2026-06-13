@@ -119,8 +119,6 @@
               <el-descriptions-item label="住房要求">{{ user.housingRequirement || '-' }}</el-descriptions-item>
               <el-descriptions-item label="婚况要求">{{ user.partnerMaritalStatus || '-' }}</el-descriptions-item>
               <el-descriptions-item label="接受子女">{{ user.acceptChildren || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="要求籍贯">{{ user.partnerHometown || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="要求现居地">{{ user.partnerResidence || '-' }}</el-descriptions-item>
             </el-descriptions>
             <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
             <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
@@ -466,8 +464,6 @@ interface UserDetail {
   housingRequirement?: string
   partnerMaritalStatus?: string
   acceptChildren?: string
-  partnerHometown?: string
-  partnerResidence?: string
   adminRemark?: string
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
 }
@@ -481,7 +477,7 @@ const hasMateRequirement = computed(() => {
   if (!u) return false
   return !!(u.hopeTaTags?.length || u.partnerAgeRange || u.partnerHeightMin ||
     u.partnerEducation || u.partnerIncome || u.housingRequirement ||
-    u.partnerMaritalStatus || u.acceptChildren || u.partnerHometown || u.partnerResidence)
+    u.partnerMaritalStatus || u.acceptChildren)
 })
 
 const loading = ref(false)
