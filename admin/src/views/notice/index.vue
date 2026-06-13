@@ -96,6 +96,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { noticeApi } from '../../api/notice'
+import { formatDate } from '../../utils/date'
 import type { Notice } from '../../api/notice'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -214,14 +215,6 @@ async function handleToggleStatus(row: Notice, val: boolean) {
   } catch {
     ElMessage.error('操作失败')
   }
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  })
 }
 </script>
 

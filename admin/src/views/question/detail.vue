@@ -103,6 +103,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Edit, User } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminQuestion } from '../../api'
+import { formatDate } from '../../utils/date'
 import type { Question, Answer } from '../../api/question'
 
 const route = useRoute()
@@ -174,17 +175,6 @@ async function handleDeleteAnswer(row: Answer) {
       console.error(error)
     }
   }
-}
-
-function formatDate(dateStr?: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function getAnswerStatusName(status: number) {

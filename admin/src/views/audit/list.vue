@@ -190,6 +190,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Picture } from '@element-plus/icons-vue'
 import { adminAudit } from '../../api'
+import { formatDate } from '../../utils/date'
 import type { AuditItem } from '../../api/audit'
 
 const router = useRouter()
@@ -471,17 +472,6 @@ function getAiTagType(row: AuditItem) {
   if (lower.includes('网图') || lower.includes('风险') || lower.includes('异常')) return 'danger'
   if (lower.includes('完整') || lower.includes('正常') || lower.includes('可靠')) return 'success'
   return 'warning'
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function getTypeName(type: string) {

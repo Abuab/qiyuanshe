@@ -130,6 +130,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { adminAccountApi } from '../../api/admin-user'
+import { formatDate } from '../../utils/date'
 import type { AdminAccount } from '../../api/admin-user'
 
 const loading = ref(false)
@@ -268,14 +269,6 @@ async function handleDelete(id: number) {
   } catch (error: any) {
     ElMessage.error(error?.message || '删除失败')
   }
-}
-
-function formatDate(dateStr?: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit',
-  })
 }
 
 function getRoleName(role: string) {

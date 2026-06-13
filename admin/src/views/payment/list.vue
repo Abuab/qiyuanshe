@@ -184,6 +184,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import { adminPayment } from '../../api'
+import { formatDate } from '../../utils/date'
 import type { Order } from '../../api/payment'
 
 const loading = ref(false)
@@ -295,17 +296,6 @@ async function confirmRefund() {
   } finally {
     refundLoading.value = false
   }
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function getStatusName(status: number) {

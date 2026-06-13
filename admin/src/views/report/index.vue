@@ -168,6 +168,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { adminReport } from '../../api/report'
+import { formatDate } from '../../utils/date'
 import type { ReportItem } from '../../api/report'
 
 const loading = ref(false)
@@ -284,17 +285,6 @@ async function confirmProcess() {
   } finally {
     processLoading.value = false
   }
-}
-
-function formatDate(dateStr?: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function getTypeName(type?: string) {

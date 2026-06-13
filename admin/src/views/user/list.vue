@@ -693,6 +693,7 @@ import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vu
 import { adminUsers } from '../../api'
 import { useAdminStore } from '../../store/admin'
 import { system, adminSystem } from '../../api/system'
+import { formatDate } from '../../utils/date'
 import type { User, UserFilter } from '../../api/user'
 
 const router = useRouter()
@@ -1249,17 +1250,6 @@ function getAuditTagType(status?: string) {
 
 function goAudit(_row: User, auditType: string) {
   router.push({ path: '/audit/list', query: { type: auditType } })
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 function formatVipExpire(dateStr: string) {

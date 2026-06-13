@@ -163,6 +163,7 @@ import * as echarts from 'echarts'
 import StatsCard from '../components/stats-card.vue'
 import { ElMessage } from 'element-plus'
 import { adminDashboard, adminUsers, adminOrders } from '../api'
+import { formatDate } from '../utils/date'
 
 interface Stats {
   totalUsers: number
@@ -681,18 +682,6 @@ watch(userChartType, () => {
     updateUserChart(cachedUserTrendData.value)
   }
 })
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function getVipName(level: number) {
   const map: Record<number, string> = {

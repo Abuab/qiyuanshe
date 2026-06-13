@@ -99,6 +99,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User } from '@element-plus/icons-vue'
 import { adminActivity } from '../../api'
+import { formatDate } from '../../utils/date'
 import type { ActivitySignup } from '../../api/activity'
 
 const route = useRoute()
@@ -110,17 +111,6 @@ const total = ref(0)
 const page = ref(1)
 const limit = ref(20)
 const stats = ref({ total: 0, pending: 0, confirmed: 0 })
-
-function formatDate(date: string) {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function getStatusLabel(status: number) {
   const map: Record<number, string> = {

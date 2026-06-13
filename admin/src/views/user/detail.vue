@@ -350,6 +350,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
 import { adminUsers, adminMatchmaker } from '../../api'
+import { formatDate } from '../../utils/date'
 import { useAdminStore } from '../../store/admin'
 
 interface UserDetail {
@@ -691,12 +692,6 @@ async function handleDeletePhoto(photoId: number) {
     ElMessage.success('删除成功')
     loadPhotos()
   } catch (e) { if (e !== 'cancel') console.error(e) }
-}
-
-// Helpers
-function formatDate(dateStr?: string) {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
 function getReportTypeName(type: string) {

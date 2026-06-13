@@ -131,6 +131,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Picture } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminActivity } from '../../api'
+import { formatDate } from '../../utils/date'
 import type { Activity } from '../../api/activity'
 
 const router = useRouter()
@@ -147,17 +148,6 @@ const filterForm = reactive({
   page: 1,
   limit: 10,
 })
-
-function formatDate(date: string) {
-  if (!date) return '-'
-  return new Date(date).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
 
 function getTypeLabel(type: string) {
   const map: Record<string, string> = {
