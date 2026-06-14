@@ -84,7 +84,7 @@
         <el-icon><Document /></el-icon>
         <template #title>
           <span>帖子审核</span>
-          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
+          <el-badge v-if="adminStore.pendingPostCount > 0" :value="adminStore.pendingPostCount" class="menu-badge" />
         </template>
       </el-menu-item>
 
