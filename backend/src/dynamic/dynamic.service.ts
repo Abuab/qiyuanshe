@@ -42,13 +42,9 @@ export class DynamicService implements OnModuleInit {
     }, 5000)
   }
 
-  /** 扫描所有用户已有照片和问答，生成对应动态 */
+  /** 扫描所有用户已有照片和问答，生成对应动态（每次启动都执行，per-record 去重） */
   private async seedExistingDynamics() {
-    const key = 'system.dynamic_seeded'
-    const seeded = await this.systemService.getConfig(key)
-    if (seeded === '1') return
-
-    this.logger.log('[Dynamic] 开始为已有数据生成动态...')
+    this.logger.log('[Dynamic] 扫描已有数据...')
 
     // 1. 每个有标签的用户生成一条「个人简介」动态
     const users = await this.userRepository.find({ where: { isDeleted: 0 } })
@@ -136,10 +132,7 @@ export class DynamicService implements OnModuleInit {
       } as any)
     }
 
-    await this.systemService.saveConfigs({
-      system: { dynamic_seeded: '1' },
-    })
-    this.logger.log('[Dynamic] 种子数据生成完成')
+    this.logger.log('[Dynamic] 扫描完成')
   }
 
   /** 获取动态列表（支持按类型过滤） */

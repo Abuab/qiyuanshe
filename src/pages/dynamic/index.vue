@@ -71,8 +71,8 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 用户一句话简介（所有类型卡片都展示） -->
-        <view v-if="item.introText" class="intro-row">
+        <!-- 个人简介动态 -->
+        <view v-if="item.type === 'intro' && item.introText" class="intro-row">
           <text class="intro-text">{{ item.introText }}</text>
         </view>
 
