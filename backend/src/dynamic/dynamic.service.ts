@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource, In } from 'typeorm'
+import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
@@ -49,13 +49,19 @@ export class DynamicService {
 
     const [list, total] = await qb.getManyAndCount()
 
-    // simple-json 列（personalityTags/hopeTaTags）在 createQueryBuilder join 时可能
-    // 不解析为数组，改用 find() + In() 单独加载用户确保类型正确
+    // 用 raw SQL 直接读取标签列，绕过 TypeORM simple-json 解析问题
     const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
-    const userMap = new Map<number, User>()
+    const tagMap = new Map<number, { personalityTags: any; hopeTaTags: any }>()
     if (userIds.length > 0) {
-      const users = await this.userRepository.find({ where: { id: In(userIds) } })
-      users.forEach((u) => userMap.set(u.id, u))
+      const rows: any[] = await this.dataSource.query(
+        `SELECT id, personalityTags, hopeTaTags FROM user WHERE id IN (${userIds.join(',')})`,
+      )
+      for (const row of rows) {
+        tagMap.set(row.id, {
+          personalityTags: this.parseJsonField(row.personalityTags),
+          hopeTaTags: this.parseJsonField(row.hopeTaTags),
+        })
+      }
     }
 
     // 读取简介模板配置
@@ -86,9 +92,11 @@ export class DynamicService {
           }
         }
 
-        // 优先用 find() 加载的用户（simple-json 解析正确），回退 join 结果
-        const user = userMap.get(item.userId) || item.user
-        const introText = this.buildIntroFromUser(user, introTemplate, introSep)
+        // 用 raw SQL 加载的标签构建简介
+        const tags = tagMap.get(item.userId)
+        const introText = tags
+          ? this.buildIntroFromTags(tags.personalityTags, tags.hopeTaTags, introTemplate, introSep)
+          : ''
 
         return {
           id: item.id,
@@ -151,6 +159,16 @@ export class DynamicService {
     return { list: finalList, total: total + seenIntro.size, page, limit }
   }
 
+  /** 从 MySQL raw 字段解析 JSON（兼容字符串/已解析对象） */
+  private parseJsonField(value: any): any {
+    if (value === null || value === undefined) return null
+    if (typeof value === 'object') return value
+    if (typeof value === 'string') {
+      try { return JSON.parse(value) } catch { return null }
+    }
+    return null
+  }
+
   /** 规范化标签值：兼容 simple-json 可能返回的 JSON 字符串 / 数组 / 对象 */
   private normalizeTags(raw: any): any {
     if (!raw) return null
@@ -176,12 +194,15 @@ export class DynamicService {
     return null
   }
 
-  /** 从用户标签实时构建一句话简介 */
-  private buildIntroFromUser(user: User | null, template: string, sep: string): string {
-    if (!user) return ''
-
-    const personalityTags = this.normalizeTags((user as any).personalityTags)
-    const hopeTaTags = this.normalizeTags((user as any).hopeTaTags)
+  /** 从已解析的标签实时构建一句话简介 */
+  private buildIntroFromTags(
+    rawPersonality: any,
+    rawHopeTa: any,
+    template: string,
+    sep: string,
+  ): string {
+    const personalityTags = this.normalizeTags(rawPersonality)
+    const hopeTaTags = this.normalizeTags(rawHopeTa)
 
     let charTags: string[] = []
     let hobbyTags: string[] = []
