@@ -224,20 +224,23 @@ export class DynamicService implements OnModuleInit {
     return { list: formattedList, total, page, limit }
   }
 
-  /** 规范化标签值：兼容 simple-json 返回的 JSON 字符串、数组、对象 */
+  /** 规范化标签值：兼容 simple-json 返回的 JSON 字符串、数组、对象。空数组视为无数据 */
   private normalizeTags(raw: any): any {
     if (!raw) return null
-    // 已经是对象/数组 → 直接返回
+    if (Array.isArray(raw)) return raw.length > 0 ? raw : null
     if (typeof raw === 'object') return raw
     // 字符串 → 尝试 JSON.parse，失败则逗号分割
     if (typeof raw === 'string') {
-      if (raw.trim().startsWith('[') || raw.trim().startsWith('{')) {
-        try { return JSON.parse(raw) } catch { /* fall through */ }
+      const trimmed = raw.trim()
+      if (!trimmed) return null
+      if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+        try { const parsed = JSON.parse(trimmed); return Array.isArray(parsed) ? (parsed.length > 0 ? parsed : null) : parsed } catch { /* fall through */ }
       }
-      if (raw.includes(',')) {
-        return raw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      if (trimmed.includes(',')) {
+        const parts = trimmed.split(',').map((s: string) => s.trim()).filter(Boolean)
+        return parts.length > 0 ? parts : null
       }
-      return raw.length > 0 ? [raw] : null
+      return [trimmed]
     }
     return null
   }

@@ -569,6 +569,10 @@ export class AdminUserService {
     const safeData: any = {}
     for (const key of allowedFields) {
       if (data[key] !== undefined) {
+        // 跳过空数组（simple-json 字段），避免误清数据
+        if (Array.isArray(data[key]) && data[key].length === 0) {
+          continue
+        }
         safeData[key] = data[key]
       }
     }
