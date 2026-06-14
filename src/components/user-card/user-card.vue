@@ -158,8 +158,8 @@ const handleClick = () => {
 }
 
 .avatar {
-  width: 200rpx;
-  height: 200rpx;
+  width: 240rpx;
+  height: 240rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
 }
