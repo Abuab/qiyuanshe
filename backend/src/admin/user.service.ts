@@ -179,50 +179,64 @@ export class AdminUserService {
       queryBuilder.orderBy('user.createdAt', 'DESC')
     }
 
-    // Add audit status subqueries
-    queryBuilder
-      .addSelect(subQuery => 
-        subQuery
-          .select('a.action', 'profileAuditAction')
-          .from(AuditLog, 'a')
-          .where('a.targetType = :userType', { userType: 'user' })
-          .andWhere('a.targetId = user.id')
-          .orderBy('a.createdAt', 'DESC')
-          .limit(1),
-        'profileAuditStatus'
-      )
-      .addSelect(subQuery =>
-        subQuery
-          .select('a.action', 'photoAuditAction')
-          .from(AuditLog, 'a')
-          .where('a.targetType = :photoType', { photoType: 'photo' })
-          .andWhere('a.targetId = user.id')
-          .orderBy('a.createdAt', 'DESC')
-          .limit(1),
-        'photoAuditStatus'
-      )
-
     queryBuilder.skip(skip).take(limit)
 
-    const { entities, raw } = await queryBuilder.getRawAndEntities()
+    const [users, total] = await queryBuilder.getManyAndCount()
 
-    // Merge audit status from raw subqueries
-    const users = entities.map((user, index) => ({
+    // Bulk query audit statuses
+    const userIds = users.map(u => u.id)
+
+    const profileAuditMap = new Map<number, string>()
+    const photoAuditMap = new Map<number, string>()
+
+    if (userIds.length > 0) {
+      const profileAudits = await this.auditLogRepository
+        .createQueryBuilder('a')
+        .select('a.targetId', 'targetId')
+        .addSelect('a.action', 'action')
+        .where('a.targetType = :userType', { userType: 'user' })
+        .andWhere('a.targetId IN (:...userIds)', { userIds })
+        .orderBy('a.createdAt', 'DESC')
+        .getRawMany<{ targetId: number; action: string }>()
+
+      const photoAudits = await this.auditLogRepository
+        .createQueryBuilder('a')
+        .select('a.targetId', 'targetId')
+        .addSelect('a.action', 'action')
+        .where('a.targetType = :photoType', { photoType: 'photo' })
+        .andWhere('a.targetId IN (:...userIds)', { userIds })
+        .orderBy('a.createdAt', 'DESC')
+        .getRawMany<{ targetId: number; action: string }>()
+
+      // Keep first (latest) record per targetId
+      for (const row of profileAudits) {
+        if (!profileAuditMap.has(row.targetId)) {
+          profileAuditMap.set(row.targetId, row.action)
+        }
+      }
+      for (const row of photoAudits) {
+        if (!photoAuditMap.has(row.targetId)) {
+          photoAuditMap.set(row.targetId, row.action)
+        }
+      }
+    }
+
+    // Merge audit status from bulk queries
+    const result = users.map(user => ({
       ...user,
-      // simple-json 列在 getRawAndEntities 后可能为原始字符串，须手动解析
       tags: parseSimpleJson(user.tags),
       personalityTags: parseSimpleJson(user.personalityTags),
       hopeTaTags: parseSimpleJson(user.hopeTaTags),
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
-      profileAuditStatus: raw[index]?.profileAuditStatus || 'unsubmitted',
-      photoAuditStatus: raw[index]?.photoAuditStatus || 'unsubmitted',
+      profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
+      photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
     }))
 
     return {
-      list: users,
+      list: result,
       page,
       limit,
-      total: await queryBuilder.getCount(),
+      total,
     }
   }
 
