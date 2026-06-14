@@ -50,7 +50,39 @@ export class DynamicService implements OnModuleInit {
 
     this.logger.log('[Dynamic] 开始为已有数据生成动态...')
 
-    // 1. 照片动态：每个有照片的用户生成一条
+    // 1. 每个有标签的用户生成一条「个人简介」动态
+    const users = await this.userRepository.find({ where: { isDeleted: 0 } })
+    for (const user of users) {
+      const exists = await this.dynamicRepository.findOne({
+        where: { userId: user.id, type: 'intro' },
+      })
+      if (exists) continue
+
+      const personalityTags = (user as any).personalityTags
+      const hopeTaTags = (user as any).hopeTaTags
+      const hasPersonality = personalityTags && (
+        (Array.isArray(personalityTags) && personalityTags.length > 0) ||
+        (typeof personalityTags === 'object' && !Array.isArray(personalityTags) &&
+          (Array.isArray(personalityTags.character) || Array.isArray(personalityTags.hobby) || Array.isArray(personalityTags.loveRule)))
+      )
+      const hasHopeTa = hopeTaTags && (
+        (Array.isArray(hopeTaTags) && hopeTaTags.length > 0) ||
+        (typeof hopeTaTags === 'string' && hopeTaTags.trim().length > 0)
+      )
+      if (!hasPersonality && !hasHopeTa) continue
+
+      await this.dynamicRepository.insert({
+        userId: user.id,
+        type: 'intro',
+        content: null,
+        images: [],
+        status: 1,
+        likeCount: 0,
+        commentCount: 0,
+      } as any)
+    }
+
+    // 2. 照片动态：每个有照片的用户生成一条（最多3张）
     const photos = await this.userPhotoRepository
       .createQueryBuilder('photo')
       .select('DISTINCT photo.userId', 'userId')
@@ -64,6 +96,8 @@ export class DynamicService implements OnModuleInit {
 
       const userPhotos = await this.userPhotoRepository.find({
         where: { userId },
+        order: { sortOrder: 'ASC' },
+        take: 3,
       })
       if (userPhotos.length === 0) continue
 
@@ -79,7 +113,7 @@ export class DynamicService implements OnModuleInit {
       } as any)
     }
 
-    // 2. 问答动态
+    // 3. 问答动态
     const answers = await this.answerRepository.find({ relations: ['question'] })
     for (const answer of answers) {
       const exists = await this.dynamicRepository.findOne({
@@ -119,7 +153,7 @@ export class DynamicService implements OnModuleInit {
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
-      .where("dynamic.type IN ('photo', 'answer')")
+      .where("dynamic.type IN ('intro', 'photo', 'answer')")
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

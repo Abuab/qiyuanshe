@@ -71,9 +71,9 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 用户一句话简介 -->
-        <view v-if="item.introText" class="intro-row">
-          <text class="intro-text">{{ item.introText }}</text>
+        <!-- 个人简介动态 -->
+        <view v-if="item.type === 'intro' && item.introText" class="card-content intro-card">
+          <text class="intro-card-text">{{ item.introText }}</text>
         </view>
 
         <!-- 相册动态 -->
@@ -151,6 +151,23 @@
       </view>
       <view class="bottom-safe" />
     </scroll-view>
+
+    <!-- 红娘弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmaker"
+      :matchmaker="selectedMatchmaker"
+      @update:show="showMatchmaker = $event"
+      @close="showMatchmaker = false"
+      @more="openMatchmakerList"
+    />
+
+    <matchmaker-list-popup
+      :show="showMatchmakerList"
+      :matchmakers="matchmakerList"
+      @update:show="showMatchmakerList = $event"
+      @close="showMatchmakerList = false"
+      @contact="onSelectMatchmaker"
+    />
   </view>
 </template>
 
@@ -161,6 +178,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { useImageFallback } from '@/composables/useImageFallback'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 const { handleImageError } = useImageFallback()
 
 interface DynamicItem {
@@ -197,6 +216,12 @@ const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
 
 // 当前登录用户的照片数量（用于判断是否模糊）
 const myPhotoCount = ref(0)
+
+// 红娘弹窗
+const showMatchmaker = ref(false)
+const showMatchmakerList = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
 
 const tabs = [
   { key: 'all', label: '全部' },
@@ -369,33 +394,47 @@ const handleHi = (item: DynamicItem) => {
   })
 }
 
-const handleMatchmaker = (item: DynamicItem) => {
+const handleMatchmaker = async (item: DynamicItem) => {
   if (item.userId === myUserId.value) {
     uni.showToast({ title: '这是你自己的动态', icon: 'none' })
     return
   }
-  // 弹出红娘联系框逻辑
-  uni.showModal({
-    title: '红娘牵线',
-    content: '将由红娘为您牵线搭桥，是否继续？',
-    confirmText: '联系红娘',
-    cancelText: '取消',
-    confirmColor: '#FF6B9D',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await request({
-            url: '/matchmaker/request',
-            method: 'POST',
-            data: { targetUserId: item.userId } as Record<string, unknown>,
-          })
-          uni.showToast({ title: '已通知红娘，请耐心等待', icon: 'none' })
-        } catch (e) {
-          uni.showToast({ title: '操作失败，请重试', icon: 'none' })
-        }
-      }
-    },
-  })
+  // 先加载红娘列表
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
+  if (matchmakerList.value.length === 0) {
+    uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+    return
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
+  showMatchmaker.value = true
+}
+
+const fetchMatchmakerList = async () => {
+  try {
+    const res: any = await request({ url: '/matchmakers', method: 'GET' })
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+      avatar: getFullImageUrl(item.avatar),
+    }))
+  } catch {
+    // 静默失败
+    matchmakerList.value = []
+  }
+}
+
+const openMatchmakerList = () => {
+  showMatchmaker.value = false
+  showMatchmakerList.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  showMatchmakerList.value = false
+  selectedMatchmaker.value = matchmaker
+  showMatchmaker.value = true
 }
 
 onMounted(() => {
@@ -571,16 +610,15 @@ onMounted(() => {
   padding: 0 4rpx;
 }
 
-/* 用户一句话简介 */
-.intro-row {
-  margin-bottom: 20rpx;
-  padding: 16rpx 20rpx;
+/* 个人简介卡片 */
+.intro-card {
+  padding: 20rpx 24rpx;
   background-color: #FFF8FA;
   border-radius: 10rpx;
   border-left: 4rpx solid #FF6B9D;
 }
 
-.intro-text {
+.intro-card-text {
   font-size: 26rpx;
   color: #666;
   line-height: 1.6;
