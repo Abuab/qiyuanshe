@@ -359,14 +359,13 @@ const handleClick = () => {
   }
 }
 
-// 照片缩略图 — 独立行，与 card-right 文字左边缘对齐
+// 照片缩略图 — 独立行，小图左边缘与头像左边缘对齐（同一垂直轴）
 .photos-row {
   display: flex;
   gap: 10rpx;
   flex-wrap: nowrap;
   overflow: hidden;
-  // 左偏移 = 头像宽度 140 + 间距 20 = 160rpx
-  padding-left: 160rpx;
+  margin-top: 16rpx;
 }
 
 .photo-thumb {
