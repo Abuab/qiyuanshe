@@ -71,8 +71,8 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 个人简介动态 -->
-        <view v-if="item.type === 'intro' && item.introText" class="intro-row">
+        <!-- 用户一句话简介（随标签实时更新，不依赖种子数据） -->
+        <view v-if="item.introText" class="intro-row">
           <text class="intro-text">{{ item.introText }}</text>
         </view>
 

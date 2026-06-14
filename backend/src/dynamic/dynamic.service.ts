@@ -1,18 +1,13 @@
-import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource, In } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
-import { UserPhoto } from '../entities/UserPhoto'
-import { QuestionAnswer } from '../entities/QuestionAnswer'
-import { HotQuestion } from '../entities/HotQuestion'
 import { SystemService } from '../system/system.service'
 
 @Injectable()
-export class DynamicService implements OnModuleInit {
-  private readonly logger = new Logger(DynamicService.name)
-
+export class DynamicService {
   constructor(
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
@@ -20,120 +15,9 @@ export class DynamicService implements OnModuleInit {
     private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(UserPhoto)
-    private readonly userPhotoRepository: Repository<UserPhoto>,
-    @InjectRepository(QuestionAnswer)
-    private readonly answerRepository: Repository<QuestionAnswer>,
-    @InjectRepository(HotQuestion)
-    private readonly questionRepository: Repository<HotQuestion>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
   ) {}
-
-  /** 启动时自动为已有数据生成动态（仅执行一次） */
-  async onModuleInit() {
-    // 延迟执行，等待数据库连接就绪
-    setTimeout(async () => {
-      try {
-        await this.seedExistingDynamics()
-      } catch (e: any) {
-        this.logger.warn(`[Dynamic] 种子数据生成失败: ${e?.message}`)
-      }
-    }, 5000)
-  }
-
-  /** 扫描所有用户已有照片和问答，生成对应动态（每次启动都执行，per-record 去重） */
-  private async seedExistingDynamics() {
-    this.logger.log('[Dynamic] 扫描已有数据...')
-
-    // 1. 每个有标签的用户生成一条「个人简介」动态
-    const users = await this.userRepository.find({ where: { isDeleted: 0 } })
-    for (const user of users) {
-      const exists = await this.dynamicRepository.findOne({
-        where: { userId: user.id, type: 'intro' },
-      })
-      if (exists) continue
-
-      const personalityTags = (user as any).personalityTags
-      const hopeTaTags = (user as any).hopeTaTags
-      const hasPersonality = personalityTags && (
-        (Array.isArray(personalityTags) && personalityTags.length > 0) ||
-        (typeof personalityTags === 'object' && !Array.isArray(personalityTags) &&
-          (Array.isArray(personalityTags.character) || Array.isArray(personalityTags.hobby) || Array.isArray(personalityTags.loveRule)))
-      )
-      const hasHopeTa = hopeTaTags && (
-        (Array.isArray(hopeTaTags) && hopeTaTags.length > 0) ||
-        (typeof hopeTaTags === 'string' && hopeTaTags.trim().length > 0)
-      )
-      if (!hasPersonality && !hasHopeTa) continue
-
-      await this.dynamicRepository.insert({
-        userId: user.id,
-        type: 'intro',
-        content: null,
-        images: [],
-        status: 1,
-        likeCount: 0,
-        commentCount: 0,
-      } as any)
-    }
-
-    // 2. 照片动态：每个有照片的用户生成一条（最多3张）
-    const photos = await this.userPhotoRepository
-      .createQueryBuilder('photo')
-      .select('DISTINCT photo.userId', 'userId')
-      .getRawMany<{ userId: number }>()
-
-    for (const { userId } of photos) {
-      const exists = await this.dynamicRepository.findOne({
-        where: { userId, type: 'photo' },
-      })
-      if (exists) continue
-
-      const userPhotos = await this.userPhotoRepository.find({
-        where: { userId },
-        order: { sortOrder: 'ASC' },
-        take: 3,
-      })
-      if (userPhotos.length === 0) continue
-
-      await this.dynamicRepository.insert({
-        userId,
-        type: 'photo',
-        content: '更新了相册',
-        images: userPhotos.map((p) => p.photoUrl),
-        totalImages: userPhotos.length,
-        status: 1,
-        likeCount: 0,
-        commentCount: 0,
-      } as any)
-    }
-
-    // 3. 问答动态
-    const answers = await this.answerRepository.find({ relations: ['question'] })
-    for (const answer of answers) {
-      const exists = await this.dynamicRepository.findOne({
-        where: { userId: answer.userId, type: 'answer', referenceId: answer.id },
-      })
-      if (exists) continue
-
-      await this.dynamicRepository.insert({
-        userId: answer.userId,
-        type: 'answer',
-        content: answer.content,
-        images: answer.photos || [],
-        totalImages: (answer.photos || []).length,
-        referenceId: answer.id,
-        questionId: answer.questionId,
-        questionTitle: answer.question?.title || '',
-        status: 1,
-        likeCount: 0,
-        commentCount: 0,
-      } as any)
-    }
-
-    this.logger.log('[Dynamic] 扫描完成')
-  }
 
   /** 获取动态列表（支持按类型过滤） */
   async getDynamics(
@@ -146,7 +30,7 @@ export class DynamicService implements OnModuleInit {
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
-      .where("dynamic.type IN ('intro', 'photo', 'answer')")
+      .where("dynamic.type IN ('photo', 'answer')")
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -165,7 +49,8 @@ export class DynamicService implements OnModuleInit {
 
     const [list, total] = await qb.getManyAndCount()
 
-    // simple-json 列在 createQueryBuilder join 时可能不解析，改用 find() 单独加载用户
+    // simple-json 列（personalityTags/hopeTaTags）在 createQueryBuilder join 时可能
+    // 不解析为数组，改用 find() + In() 单独加载用户确保类型正确
     const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
     const userMap = new Map<number, User>()
     if (userIds.length > 0) {
@@ -201,7 +86,7 @@ export class DynamicService implements OnModuleInit {
           }
         }
 
-        // 优先用 find() 加载的用户（simple-json 正确解析），回退到 join 结果的用户
+        // 优先用 find() 加载的用户（simple-json 解析正确），回退 join 结果
         const user = userMap.get(item.userId) || item.user
         const introText = this.buildIntroFromUser(user, introTemplate, introSep)
 
@@ -233,17 +118,21 @@ export class DynamicService implements OnModuleInit {
     return { list: formattedList, total, page, limit }
   }
 
-  /** 规范化标签值：兼容 simple-json 返回的 JSON 字符串、数组、对象。空数组视为无数据 */
+  /** 规范化标签值：兼容 simple-json 可能返回的 JSON 字符串 / 数组 / 对象 */
   private normalizeTags(raw: any): any {
     if (!raw) return null
     if (Array.isArray(raw)) return raw.length > 0 ? raw : null
     if (typeof raw === 'object') return raw
-    // 字符串 → 尝试 JSON.parse，失败则逗号分割
     if (typeof raw === 'string') {
       const trimmed = raw.trim()
       if (!trimmed) return null
+      // 可能是 JSON 字符串 "[\"a\",\"b\"]" 或 "{\"character\":[\"a\"]}"
       if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-        try { const parsed = JSON.parse(trimmed); return Array.isArray(parsed) ? (parsed.length > 0 ? parsed : null) : parsed } catch { /* fall through */ }
+        try {
+          const parsed = JSON.parse(trimmed)
+          if (Array.isArray(parsed)) return parsed.length > 0 ? parsed : null
+          return parsed
+        } catch { /* ignore, fall through */ }
       }
       if (trimmed.includes(',')) {
         const parts = trimmed.split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -254,17 +143,12 @@ export class DynamicService implements OnModuleInit {
     return null
   }
 
-  /** 从用户标签构建一句话简介 */
+  /** 从用户标签实时构建一句话简介 */
   private buildIntroFromUser(user: User | null, template: string, sep: string): string {
     if (!user) return ''
 
-    const rawPersonality = (user as any).personalityTags
-    const rawHopeTa = (user as any).hopeTaTags
-    console.log(`[Dynamic] buildIntroFromUser userId=${(user as any).id} personalityType=${typeof rawPersonality} personality=${JSON.stringify(rawPersonality)} hopeTaType=${typeof rawHopeTa} hopeTa=${JSON.stringify(rawHopeTa)}`)
-
-    const personalityTags = this.normalizeTags(rawPersonality)
-    const hopeTaTags = this.normalizeTags(rawHopeTa)
-    console.log(`[Dynamic] normalized personalityTags=${JSON.stringify(personalityTags)} hopeTaTags=${JSON.stringify(hopeTaTags)}`)
+    const personalityTags = this.normalizeTags((user as any).personalityTags)
+    const hopeTaTags = this.normalizeTags((user as any).hopeTaTags)
 
     let charTags: string[] = []
     let hobbyTags: string[] = []
@@ -272,10 +156,10 @@ export class DynamicService implements OnModuleInit {
 
     if (personalityTags) {
       if (!Array.isArray(personalityTags)) {
-        // 结构化对象：{character:[...], hobby:[...], loveRule:[...]}
+        // 结构化对象 {character:[...], hobby:[...], loveRule:[...]}
         charTags = Array.isArray(personalityTags.character) ? personalityTags.character : []
         hobbyTags = Array.isArray(personalityTags.hobby) ? personalityTags.hobby : []
-        ruleTags  = Array.isArray(personalityTags.loveRule) ? personalityTags.loveRule : []
+        ruleTags = Array.isArray(personalityTags.loveRule) ? personalityTags.loveRule : []
       } else {
         charTags = personalityTags
       }
@@ -286,10 +170,10 @@ export class DynamicService implements OnModuleInit {
       hopeTags = hopeTaTags
     }
 
-    // 全部未选 → 不展示
+    // 全部未选 → 不显示
     if (!charTags.length && !hobbyTags.length && !ruleTags.length && !hopeTags.length) return ''
 
-    // 构建替换映射（空数组 → 空字符串）
+    // 构建替换映射
     const map: Record<string, string> = {
       character: charTags.length > 0 ? charTags.join(sep) : '',
       hobby: hobbyTags.length > 0 ? hobbyTags.join(sep) : '',
@@ -297,28 +181,24 @@ export class DynamicService implements OnModuleInit {
       hopeTa: hopeTags.length > 0 ? hopeTags.join(sep) : '',
     }
 
-    // 逐个占位符：有值则替换，无值则剔除该占位符所在的逗号分隔句子片段
+    // 逐个占位符替换；无值的占位符所在逗号片段整段剔除
     let result = template
     for (const [key, value] of Object.entries(map)) {
       if (value) {
         result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
       } else {
-        // 删除包含此占位符的整个逗号片段（含前后逗号）
         result = result.replace(new RegExp(`，?[^，]*?\\{${key}\\}[^，]*，?`, 'g'), '')
       }
     }
 
-    // 最终清理
-    result = result
+    return result
       .replace(/，+/g, '，')
       .replace(/^，+/, '')
       .replace(/，+$/, '')
       .trim()
-
-    return result
   }
 
-  /** 自动生成动态（照片更新 + 问答回答），status=1 跳过审核 */
+  /** 自动生成动态（照片更新 / 问答回答），status=1 跳过审核 */
   async autoCreateDynamic(params: {
     userId: number
     type: 'photo' | 'answer'
