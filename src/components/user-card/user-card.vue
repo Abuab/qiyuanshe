@@ -154,6 +154,7 @@ const handleClick = () => {
   }
 }
 
+/* ======== 左列：头像 ======== */
 .card-left {
   flex-shrink: 0;
   margin-right: 20rpx;
@@ -194,6 +195,7 @@ const handleClick = () => {
   }
 }
 
+/* ======== 右列：信息 + 相册 ======== */
 .card-right {
   flex: 1;
   min-width: 0;
@@ -201,18 +203,11 @@ const handleClick = () => {
   flex-direction: column;
 }
 
-// 昵称行
+/* --- 昵称行 --- */
 .user-header {
   display: flex;
   align-items: center;
   margin-bottom: 8rpx;
-
-  > view {
-    margin-right: 10rpx;
-    &:last-child {
-      margin-right: 0;
-    }
-  }
 }
 
 .name-section {
@@ -220,13 +215,6 @@ const handleClick = () => {
   align-items: center;
   flex-shrink: 0;
   max-width: 60%;
-
-  > text {
-    margin-right: 8rpx;
-    &:last-child {
-      margin-right: 0;
-    }
-  }
 }
 
 .nickname {
@@ -246,6 +234,7 @@ const handleClick = () => {
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
   flex-shrink: 0;
+  margin-left: 8rpx;
 
   &.male {
     color: #fff;
@@ -266,6 +255,7 @@ const handleClick = () => {
   background-color: #e6f7ff;
   border-radius: 4rpx;
   line-height: 1.6;
+  margin-left: 10rpx;
 }
 
 .age-text {
@@ -275,31 +265,29 @@ const handleClick = () => {
   margin-left: auto;
 }
 
-// 标签行
+/* --- 标签行 --- */
 .tags-area {
   display: flex;
   flex-direction: column;
   margin-bottom: 8rpx;
-
-  > view {
-    margin-bottom: 8rpx;
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
 }
 
-.tags-line {
+.tags-line-1 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  margin-bottom: 8rpx;
+}
 
-  > text {
-    margin-right: 10rpx;
-    &:last-child {
-      margin-right: 0;
-    }
-  }
+.tags-line-2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tag-age,
+.tag-height {
+  margin-right: 10rpx;
 }
 
 .tag-badge {
@@ -308,39 +296,35 @@ const handleClick = () => {
   border-radius: 6rpx;
   line-height: 1.6;
   flex-shrink: 0;
-
-  &.tag-age {
-    color: #FF6B9D;
-    background-color: #FFF0F5;
-  }
-
-  &.tag-height {
-    color: #909399;
-    background-color: #F4F4F5;
-  }
-
-  &.tag-edu {
-    color: #409EFF;
-    background-color: #ECF5FF;
-  }
 }
 
-.tags-line-2 > text {
-  margin-right: 0;
+.tag-age {
+  color: #FF6B9D;
+  background-color: #FFF0F5;
+}
+
+.tag-height {
+  color: #909399;
+  background-color: #F4F4F5;
+}
+
+.tag-edu {
+  color: #409EFF;
+  background-color: #ECF5FF;
 }
 
 .tag-dot-text {
   font-size: 22rpx;
   color: #999;
 
-  &:not(:first-child)::before {
-    content: '·';
-    color: #ddd;
-    margin: 0 6rpx;
+  & + .tag-dot-text {
+    margin-left: 12rpx;
   }
+
+  /* 保留圆点分隔视觉效果 */
 }
 
-// 位置 + 红娘评语
+/* --- 位置 + 红娘评语 --- */
 .meta-row {
   display: flex;
   align-items: center;
@@ -364,7 +348,7 @@ const handleClick = () => {
   white-space: nowrap;
 }
 
-// 简介
+/* --- 简介 --- */
 .intro-row {
   margin-bottom: 6rpx;
 
@@ -379,7 +363,7 @@ const handleClick = () => {
   }
 }
 
-// 相册小图 — 右列内部，与上方文字共享同一左边缘
+/* --- 相册小图：右列底部，左边缘对齐上方文字 --- */
 .photos-row {
   display: flex;
   flex-wrap: nowrap;
