@@ -65,9 +65,6 @@
             v-model="form.userId"
             placeholder="请选择会员"
             filterable
-            remote
-            :remote-method="searchUsers"
-            :loading="userSearchLoading"
             style="width:100%"
           >
             <el-option
@@ -108,7 +105,6 @@ const pagination = reactive({ page: 1, limit: 20, total: 0 })
 
 const matchmakerOptions = ref<MatchmakerOption[]>([])
 const userOptions = ref<UserOption[]>([])
-const userSearchLoading = ref(false)
 
 // 缓存已加载的用户名称
 const userNameMap = new Map<number, string>()
@@ -143,14 +139,9 @@ async function loadMatchmakers() {
   } catch (e) { console.error(e) }
 }
 
-async function searchUsers(query: string) {
-  if (!query || query.trim().length < 2) {
-    userOptions.value = []
-    return
-  }
-  userSearchLoading.value = true
+async function loadUsers() {
   try {
-    const res = await adminUsers.list({ keyword: query, limit: 20, page: 1 } as any)
+    const res = await adminUsers.list({ limit: 2000, page: 1 } as any)
     if (res.success && res.data) {
       const users = (res.data as any).list || []
       userOptions.value = users.map((u: any) => ({ id: u.id, nickname: u.nickname }))
@@ -159,7 +150,6 @@ async function searchUsers(query: string) {
       }
     }
   } catch (e) { console.error(e) }
-  userSearchLoading.value = false
 }
 
 function getUserName(userId: number): string {
@@ -170,7 +160,9 @@ function openCreateDialog() {
   form.matchmakerId = null
   form.userId = null
   form.content = ''
-  userOptions.value = []
+  if (userOptions.value.length === 0) {
+    loadUsers()
+  }
   showDialog.value = true
 }
 
