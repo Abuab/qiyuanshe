@@ -81,7 +81,7 @@
           <text class="content-text">{{ item.content || '更新了相册' }}</text>
           <view class="photo-grid">
             <view
-              v-for="(img, idx) in item.images"
+              v-for="(img, idx) in item.images.slice(0, 3)"
               :key="idx"
               class="photo-item"
               :class="{

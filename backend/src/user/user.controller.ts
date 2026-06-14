@@ -184,8 +184,8 @@ export class UserController {
     })
     await this.auditLogRepo.save(auditLog)
 
-    // 自动生成动态：「更新了相册」
-    const userPhotos = await this.photoRepo.find({ where: { userId }, order: { sortOrder: 'ASC' } })
+    // 自动生成动态：「更新了相册」（最多 3 张）
+    const userPhotos = await this.photoRepo.find({ where: { userId }, order: { sortOrder: 'ASC' }, take: 3 })
     const photoUrls = userPhotos.map((p) => normalizeImageUrl(p.photoUrl))
     this.dynamicService.autoCreateDynamic({
       userId,
