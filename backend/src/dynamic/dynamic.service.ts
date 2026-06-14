@@ -115,7 +115,40 @@ export class DynamicService {
       }),
     )
 
-    return { list: formattedList, total, page, limit }
+    // 为有 introText 的动态在它前面插入独立的 intro 卡片
+    const finalList: any[] = []
+    const seenIntro = new Set<number>() // 同一用户 intro 只插一次
+    for (const item of formattedList) {
+      if (item.introText && !seenIntro.has(item.userId)) {
+        seenIntro.add(item.userId)
+        finalList.push({
+          id: -item.userId,          // 负 ID 确保不冲突
+          type: 'intro',
+          userId: item.userId,
+          nickname: item.nickname,
+          avatar: item.avatar,
+          isRealName: item.isRealName,
+          age: item.age,
+          height: item.height,
+          education: item.education,
+          incomeRange: item.incomeRange,
+          introText: item.introText,
+          content: '',
+          images: [],
+          questionId: undefined,
+          questionTitle: undefined,
+          createdAt: item.createdAt,
+          likeCount: 0,
+          commentCount: 0,
+          isLiked: false,
+          likeUsers: [],
+        })
+      }
+      // photo/answer 卡片不带 introText
+      finalList.push({ ...item, introText: '' })
+    }
+
+    return { list: finalList, total: total + seenIntro.size, page, limit }
   }
 
   /** 规范化标签值：兼容 simple-json 可能返回的 JSON 字符串 / 数组 / 对象 */

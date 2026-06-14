@@ -71,8 +71,8 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 用户一句话简介（随标签实时更新，不依赖种子数据） -->
-        <view v-if="item.introText" class="intro-row">
+        <!-- 个人简介卡片（独立于照片/问答） -->
+        <view v-if="item.type === 'intro'" class="intro-row">
           <text class="intro-text">{{ item.introText }}</text>
         </view>
 
@@ -127,8 +127,8 @@
           <text class="answer-text">{{ item.content }}</text>
         </view>
 
-        <!-- 底部操作栏 -->
-        <view class="bottom-bar">
+        <!-- 底部操作栏（intro 卡片不显示按钮） -->
+        <view v-if="item.type !== 'intro'" class="bottom-bar">
           <text class="time-text">{{ formatTime(item.createdAt) }}</text>
           <view class="action-buttons">
             <view class="btn-hi" @tap="handleHi(item)">
