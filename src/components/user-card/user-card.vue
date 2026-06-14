@@ -199,22 +199,41 @@ const handleClick = () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+
+  // 子元素间距（替代 gap，小程序兼容性更好）
+  > * {
+    margin-bottom: 8rpx;
+  }
+  > *:last-child {
+    margin-bottom: 0;
+  }
 }
 
-// 第一行：昵称 + 实名 + 年龄
+// 昵称 + 实名 + 年龄
 .user-header {
   display: flex;
   align-items: center;
-  gap: 10rpx;
+
+  > * {
+    margin-right: 10rpx;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 }
 
 .name-section {
   display: flex;
   align-items: center;
-  gap: 8rpx;
   flex-shrink: 0;
   max-width: 60%;
+
+  > * {
+    margin-right: 8rpx;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 }
 
 .nickname {
@@ -267,14 +286,26 @@ const handleClick = () => {
 .tags-area {
   display: flex;
   flex-direction: column;
-  gap: 8rpx;
+
+  > * {
+    margin-bottom: 8rpx;
+  }
+  > *:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .tags-line {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10rpx;
+
+  > * {
+    margin-right: 10rpx;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 }
 
 .tag-badge {
@@ -300,8 +331,14 @@ const handleClick = () => {
   }
 }
 
+// 第二行标签用圆点分隔，取消子元素 margin，靠伪元素实现间距
 .tags-line-2 {
-  gap: 0;
+  > * {
+    margin-right: 0;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 }
 
 .tag-dot-text {
@@ -319,8 +356,14 @@ const handleClick = () => {
 .meta-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
   overflow: hidden;
+
+  > * {
+    margin-right: 16rpx;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 }
 
 .loc-text {
@@ -354,7 +397,6 @@ const handleClick = () => {
 // 相册小图 — 右列内部，与上方文字共享同一左边缘
 .photos-row {
   display: flex;
-  gap: 10rpx;
   flex-wrap: nowrap;
   overflow: hidden;
 }
@@ -366,5 +408,10 @@ const handleClick = () => {
   background-color: #f5f5f5;
   flex-shrink: 0;
   display: block;
+  margin-right: 10rpx;
+
+  &:last-child {
+    margin-right: 0;
+  }
 }
 </style>
