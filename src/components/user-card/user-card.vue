@@ -148,13 +148,9 @@ const handleClick = () => {
   background-color: #fff;
   border-radius: 16rpx;
   margin-bottom: 16rpx;
-
-  &:active {
-    background-color: #f9f9f9;
-  }
 }
 
-/* ======== 左列：头像 ======== */
+/* ======== 左列 ======== */
 .card-left {
   flex-shrink: 0;
   margin-right: 20rpx;
@@ -166,7 +162,6 @@ const handleClick = () => {
   height: 140rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
-  display: block;
 }
 
 .gender-badge {
@@ -180,22 +175,12 @@ const handleClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-
-  .gender-text {
-    font-size: 22rpx;
-    color: #fff;
-  }
-
-  &.male {
-    background: #2979ff;
-  }
-
-  &.female {
-    background: #FF6B9D;
-  }
 }
+.gender-badge.male { background: #2979ff; }
+.gender-badge.female { background: #FF6B9D; }
+.gender-text { font-size: 22rpx; color: #fff; }
 
-/* ======== 右列：信息 + 相册 ======== */
+/* ======== 右列 ======== */
 .card-right {
   flex: 1;
   min-width: 0;
@@ -203,7 +188,6 @@ const handleClick = () => {
   flex-direction: column;
 }
 
-/* --- 昵称行 --- */
 .user-header {
   display: flex;
   align-items: center;
@@ -235,17 +219,9 @@ const handleClick = () => {
   border-radius: 6rpx;
   flex-shrink: 0;
   margin-left: 8rpx;
-
-  &.male {
-    color: #fff;
-    background: #2979ff;
-  }
-
-  &.female {
-    color: #fff;
-    background: #FF6B9D;
-  }
 }
+.gender-tag.male { color: #fff; background: #2979ff; }
+.gender-tag.female { color: #fff; background: #FF6B9D; }
 
 .real-name-badge {
   flex-shrink: 0;
@@ -265,7 +241,7 @@ const handleClick = () => {
   margin-left: auto;
 }
 
-/* --- 标签行 --- */
+/* --- 标签区 --- */
 .tags-area {
   display: flex;
   flex-direction: column;
@@ -285,51 +261,29 @@ const handleClick = () => {
   align-items: center;
 }
 
-.tag-age,
-.tag-height {
-  margin-right: 10rpx;
-}
-
 .tag-badge {
   font-size: 22rpx;
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
-  line-height: 1.6;
   flex-shrink: 0;
+  margin-right: 10rpx;
 }
 
-.tag-age {
-  color: #FF6B9D;
-  background-color: #FFF0F5;
-}
-
-.tag-height {
-  color: #909399;
-  background-color: #F4F4F5;
-}
-
-.tag-edu {
-  color: #409EFF;
-  background-color: #ECF5FF;
-}
+.tag-age { color: #FF6B9D; background-color: #FFF0F5; }
+.tag-height { color: #909399; background-color: #F4F4F5; }
+.tag-edu { color: #409EFF; background-color: #ECF5FF; margin-right: 0; }
 
 .tag-dot-text {
   font-size: 22rpx;
   color: #999;
-
-  & + .tag-dot-text {
-    margin-left: 12rpx;
-  }
-
-  /* 保留圆点分隔视觉效果 */
+  margin-right: 12rpx;
 }
 
-/* --- 位置 + 红娘评语 --- */
+/* --- 位置 --- */
 .meta-row {
   display: flex;
   align-items: center;
-  overflow: hidden;
-  margin-bottom: 4rpx;
+  margin-bottom: 8rpx;
 }
 
 .loc-text {
@@ -343,31 +297,13 @@ const handleClick = () => {
 .mk-brief {
   font-size: 22rpx;
   color: #FF9500;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* --- 简介 --- */
-.intro-row {
-  margin-bottom: 6rpx;
-
-  .intro-text {
-    font-size: 24rpx;
-    color: #999;
-    line-height: 1.5;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-}
-
-/* --- 相册小图：右列底部，左边缘对齐上方文字 --- */
+/* --- 相册小图 --- */
 .photos-row {
   display: flex;
-  flex-wrap: nowrap;
-  overflow: hidden;
+  flex-wrap: wrap;
 }
 
 .photo-thumb {
@@ -375,12 +311,7 @@ const handleClick = () => {
   height: 100rpx;
   border-radius: 8rpx;
   background-color: #f5f5f5;
-  flex-shrink: 0;
-  display: block;
   margin-right: 10rpx;
-
-  &:last-child {
-    margin-right: 0;
-  }
+  margin-bottom: 10rpx;
 }
 </style>
