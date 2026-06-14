@@ -231,22 +231,18 @@ export class DynamicService implements OnModuleInit {
     const personalityTags = (user as any).personalityTags
     const hopeTaTags = (user as any).hopeTaTags
 
-    // 提取标签值（personalityTags 是平铺数组，无法区分 character/hobby/loveRule）
     let charTags: string[] = []
     let hobbyTags: string[] = []
     let ruleTags: string[] = []
 
     if (personalityTags) {
       if (typeof personalityTags === 'object' && !Array.isArray(personalityTags)) {
-        // 结构化：{character:[...], hobby:[...], loveRule:[...]}
         charTags = Array.isArray(personalityTags.character) ? personalityTags.character : []
         hobbyTags = Array.isArray(personalityTags.hobby) ? personalityTags.hobby : []
         ruleTags  = Array.isArray(personalityTags.loveRule) ? personalityTags.loveRule : []
       } else if (Array.isArray(personalityTags)) {
-        // 平铺数组：全部放进 character
         charTags = personalityTags
       } else if (typeof personalityTags === 'string' && personalityTags.length > 0) {
-        // 逗号字符串
         charTags = personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
       }
     }
@@ -260,28 +256,33 @@ export class DynamicService implements OnModuleInit {
       }
     }
 
-    // 构建替换映射
-    const vals: Record<string, string> = {
+    // 全部未选 → 不展示
+    if (!charTags.length && !hobbyTags.length && !ruleTags.length && !hopeTags.length) return ''
+
+    // 构建替换映射（空数组 → 空字符串）
+    const map: Record<string, string> = {
       character: charTags.length > 0 ? charTags.join(sep) : '',
       hobby: hobbyTags.length > 0 ? hobbyTags.join(sep) : '',
       loveRule: ruleTags.length > 0 ? ruleTags.join(sep) : '',
       hopeTa: hopeTags.length > 0 ? hopeTags.join(sep) : '',
     }
 
-    // 如果所有标签都为空，返回空字符串（不显示简介行）
-    const hasAny = Object.values(vals).some((v) => v.length > 0)
-    if (!hasAny) return ''
-
-    // 替换模板变量，空的类别直接去掉该段
+    // 逐个占位符：有值则替换，无值则剔除该占位符所在的逗号分隔句子片段
     let result = template
-      .replace(/\{(\w+)\}/g, (_: string, key: string) => vals[key] || '')
+    for (const [key, value] of Object.entries(map)) {
+      if (value) {
+        result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
+      } else {
+        // 删除包含此占位符的整个逗号片段（含前后逗号）
+        result = result.replace(new RegExp(`，?[^，]*?\\{${key}\\}[^，]*，?`, 'g'), '')
+      }
+    }
 
-    // 清理残留的标点和多余空格
+    // 最终清理
     result = result
       .replace(/，+/g, '，')
-      .replace(/^[，,\s]+/, '')
-      .replace(/[，,\s]+$/, '')
-      .replace(/，(\s*)/g, '，')
+      .replace(/^，+/, '')
+      .replace(/，+$/, '')
       .trim()
 
     return result

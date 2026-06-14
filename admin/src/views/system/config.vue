@@ -341,20 +341,13 @@
               />
               <div class="form-tip">多选标签之间的连接符号，默认顿号「、」</div>
             </el-form-item>
-            <el-form-item label="空值占位">
-              <el-input
-                v-model="introConfig.emptyPlaceholder"
-                placeholder="（暂未填写）"
-                style="width: 240px"
-              />
-              <div class="form-tip">某项标签为空时显示的文字</div>
-            </el-form-item>
             <el-form-item label="预览">
               <el-alert type="info" :closable="false" show-icon>
                 <template #title>
                   <span class="preview-text">{{ introPreview }}</span>
                 </template>
               </el-alert>
+              <div class="form-tip" style="margin-top:4px">以上为完整填写效果，部分缺失时自动跳过空项</div>
             </el-form-item>
           </el-form>
         </el-card>
@@ -428,10 +421,9 @@ const auditConfig = reactive({
 const introConfig = reactive({
   template: '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}',
   separator: '、',
-  emptyPlaceholder: '（暂未填写）',
 })
 
-// 模拟预览：用伪数据填充模板
+// 模拟预览：与后端 buildIntroFromUser 同逻辑
 const introPreview = computed(() => {
   const demo = {
     character: ['温柔体贴', '开朗积极'],
@@ -439,11 +431,23 @@ const introPreview = computed(() => {
     loveRule: ['宁缺也毋滥', '恋爱以结婚为目的'],
     hopeTa: ['成熟稳重', '有责任心'],
   }
-  const values: Record<string, string> = {}
+  const map: Record<string, string> = {}
   for (const [k, v] of Object.entries(demo)) {
-    values[k] = v.length > 0 ? v.join(introConfig.separator) : introConfig.emptyPlaceholder
+    map[k] = v.length > 0 ? v.join(introConfig.separator) : ''
   }
-  return introConfig.template.replace(/\{(\w+)\}/g, (_, key) => values[key] || introConfig.emptyPlaceholder)
+  let result = introConfig.template
+  for (const [key, value] of Object.entries(map)) {
+    if (value) {
+      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
+    } else {
+      result = result.replace(new RegExp(`，?[^，]*?\\{${key}\\}[^，]*，?`, 'g'), '')
+    }
+  }
+  return result
+    .replace(/，+/g, '，')
+    .replace(/^，+/, '')
+    .replace(/，+$/, '')
+    .trim()
 })
 
 onMounted(async () => {
