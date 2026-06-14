@@ -1,13 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
+import { UserPhoto } from '../entities/UserPhoto'
+import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { HotQuestion } from '../entities/HotQuestion'
 import { SystemService } from '../system/system.service'
 
 @Injectable()
-export class DynamicService {
+export class DynamicService implements OnModuleInit {
+  private readonly logger = new Logger(DynamicService.name)
+
   constructor(
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
@@ -15,9 +20,93 @@ export class DynamicService {
     private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserPhoto)
+    private readonly userPhotoRepository: Repository<UserPhoto>,
+    @InjectRepository(QuestionAnswer)
+    private readonly answerRepository: Repository<QuestionAnswer>,
+    @InjectRepository(HotQuestion)
+    private readonly questionRepository: Repository<HotQuestion>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
   ) {}
+
+  /** 启动时自动为已有数据生成动态（仅执行一次） */
+  async onModuleInit() {
+    // 延迟执行，等待数据库连接就绪
+    setTimeout(async () => {
+      try {
+        await this.seedExistingDynamics()
+      } catch (e: any) {
+        this.logger.warn(`[Dynamic] 种子数据生成失败: ${e?.message}`)
+      }
+    }, 5000)
+  }
+
+  /** 扫描所有用户已有照片和问答，生成对应动态 */
+  private async seedExistingDynamics() {
+    const key = 'system.dynamic_seeded'
+    const seeded = await this.systemService.getConfig(key)
+    if (seeded === '1') return
+
+    this.logger.log('[Dynamic] 开始为已有数据生成动态...')
+
+    // 1. 照片动态：每个有照片的用户生成一条
+    const photos = await this.userPhotoRepository
+      .createQueryBuilder('photo')
+      .select('DISTINCT photo.userId', 'userId')
+      .getRawMany<{ userId: number }>()
+
+    for (const { userId } of photos) {
+      const exists = await this.dynamicRepository.findOne({
+        where: { userId, type: 'photo' },
+      })
+      if (exists) continue
+
+      const userPhotos = await this.userPhotoRepository.find({
+        where: { userId },
+      })
+      if (userPhotos.length === 0) continue
+
+      await this.dynamicRepository.insert({
+        userId,
+        type: 'photo',
+        content: '更新了相册',
+        images: userPhotos.map((p) => p.photoUrl),
+        totalImages: userPhotos.length,
+        status: 1,
+        likeCount: 0,
+        commentCount: 0,
+      } as any)
+    }
+
+    // 2. 问答动态
+    const answers = await this.answerRepository.find({ relations: ['question'] })
+    for (const answer of answers) {
+      const exists = await this.dynamicRepository.findOne({
+        where: { userId: answer.userId, type: 'answer', referenceId: answer.id },
+      })
+      if (exists) continue
+
+      await this.dynamicRepository.insert({
+        userId: answer.userId,
+        type: 'answer',
+        content: answer.content,
+        images: answer.photos || [],
+        totalImages: (answer.photos || []).length,
+        referenceId: answer.id,
+        questionId: answer.questionId,
+        questionTitle: answer.question?.title || '',
+        status: 1,
+        likeCount: 0,
+        commentCount: 0,
+      } as any)
+    }
+
+    await this.systemService.saveConfigs({
+      system: { dynamic_seeded: '1' },
+    })
+    this.logger.log('[Dynamic] 种子数据生成完成')
+  }
 
   /** 获取动态列表（支持按类型过滤） */
   async getDynamics(
@@ -30,8 +119,7 @@ export class DynamicService {
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
-      .where('dynamic.status IN (0, 1)')
-      .andWhere("dynamic.type != 'text'")
+      .where("dynamic.type IN ('photo', 'answer')")
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -46,11 +134,10 @@ export class DynamicService {
 
     const [list, total] = await qb.getManyAndCount()
 
-    // 读取简介模板配置（一次性，不用每条都查）
+    // 读取简介模板配置
     const rawTemplate = await this.systemService.getConfig('intro.template')
     const introTemplate = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
     const introSep = (await this.systemService.getConfig('intro.separator')) || '、'
-    const introEmpty = (await this.systemService.getConfig('intro.emptyPlaceholder')) || '（暂未填写）'
 
     const formattedList = await Promise.all(
       list.map(async (item) => {
@@ -75,22 +162,8 @@ export class DynamicService {
           }
         }
 
-        // 构建用户一句话简介
-        const pt = (item.user as any)?.personalityTags
-        const ht = (item.user as any)?.hopeTaTags
-        const vals: Record<string, string[]> = { character: [], hobby: [], loveRule: [], hopeTa: [] }
-        if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
-          if (Array.isArray(pt.character)) vals.character = pt.character
-          if (Array.isArray(pt.hobby)) vals.hobby = pt.hobby
-          if (Array.isArray(pt.loveRule)) vals.loveRule = pt.loveRule
-        } else if (Array.isArray(pt)) {
-          vals.character = pt
-        }
-        if (Array.isArray(ht)) vals.hopeTa = ht
-        const introText = introTemplate.replace(/\{(\w+)\}/g, (_: string, key: string) => {
-          const tags = vals[key]
-          return tags && tags.length > 0 ? tags.join(introSep) : introEmpty
-        })
+        // 构建用户一句话简介：只包含用户实际选中的标签
+        const introText = this.buildIntroFromUser(item.user, introTemplate, introSep)
 
         return {
           id: item.id,
@@ -118,6 +191,69 @@ export class DynamicService {
     )
 
     return { list: formattedList, total, page, limit }
+  }
+
+  /** 从用户标签构建一句话简介 */
+  private buildIntroFromUser(user: User | null, template: string, sep: string): string {
+    if (!user) return ''
+
+    const personalityTags = (user as any).personalityTags
+    const hopeTaTags = (user as any).hopeTaTags
+
+    // 提取标签值（personalityTags 是平铺数组，无法区分 character/hobby/loveRule）
+    let charTags: string[] = []
+    let hobbyTags: string[] = []
+    let ruleTags: string[] = []
+
+    if (personalityTags) {
+      if (typeof personalityTags === 'object' && !Array.isArray(personalityTags)) {
+        // 结构化：{character:[...], hobby:[...], loveRule:[...]}
+        charTags = Array.isArray(personalityTags.character) ? personalityTags.character : []
+        hobbyTags = Array.isArray(personalityTags.hobby) ? personalityTags.hobby : []
+        ruleTags  = Array.isArray(personalityTags.loveRule) ? personalityTags.loveRule : []
+      } else if (Array.isArray(personalityTags)) {
+        // 平铺数组：全部放进 character
+        charTags = personalityTags
+      } else if (typeof personalityTags === 'string' && personalityTags.length > 0) {
+        // 逗号字符串
+        charTags = personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+      }
+    }
+
+    let hopeTags: string[] = []
+    if (hopeTaTags) {
+      if (Array.isArray(hopeTaTags)) {
+        hopeTags = hopeTaTags
+      } else if (typeof hopeTaTags === 'string' && hopeTaTags.length > 0) {
+        hopeTags = hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+      }
+    }
+
+    // 构建替换映射
+    const vals: Record<string, string> = {
+      character: charTags.length > 0 ? charTags.join(sep) : '',
+      hobby: hobbyTags.length > 0 ? hobbyTags.join(sep) : '',
+      loveRule: ruleTags.length > 0 ? ruleTags.join(sep) : '',
+      hopeTa: hopeTags.length > 0 ? hopeTags.join(sep) : '',
+    }
+
+    // 如果所有标签都为空，返回空字符串（不显示简介行）
+    const hasAny = Object.values(vals).some((v) => v.length > 0)
+    if (!hasAny) return ''
+
+    // 替换模板变量，空的类别直接去掉该段
+    let result = template
+      .replace(/\{(\w+)\}/g, (_: string, key: string) => vals[key] || '')
+
+    // 清理残留的标点和多余空格
+    result = result
+      .replace(/，+/g, '，')
+      .replace(/^[，,\s]+/, '')
+      .replace(/[，,\s]+$/, '')
+      .replace(/，(\s*)/g, '，')
+      .trim()
+
+    return result
   }
 
   /** 自动生成动态（照片更新 + 问答回答），status=1 跳过审核 */

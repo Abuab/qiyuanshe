@@ -4,13 +4,16 @@ import { JwtModule } from '@nestjs/jwt'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
+import { UserPhoto } from '../entities/UserPhoto'
+import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { HotQuestion } from '../entities/HotQuestion'
 import { DynamicController } from './dynamic.controller'
 import { DynamicService } from './dynamic.service'
 import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Dynamic, DynamicLike, User]),
+    TypeOrmModule.forFeature([Dynamic, DynamicLike, User, UserPhoto, QuestionAnswer, HotQuestion]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
