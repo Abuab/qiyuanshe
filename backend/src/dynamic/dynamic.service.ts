@@ -165,6 +165,14 @@ export class DynamicService implements OnModuleInit {
 
     const [list, total] = await qb.getManyAndCount()
 
+    // simple-json 列在 createQueryBuilder join 时可能不解析，改用 find() 单独加载用户
+    const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
+    const userMap = new Map<number, User>()
+    if (userIds.length > 0) {
+      const users = await this.userRepository.find({ where: userIds.map((id) => ({ id } as any)) })
+      users.forEach((u) => userMap.set(u.id, u))
+    }
+
     // 读取简介模板配置
     const rawTemplate = await this.systemService.getConfig('intro.template')
     const introTemplate = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
@@ -193,8 +201,9 @@ export class DynamicService implements OnModuleInit {
           }
         }
 
-        // 构建用户一句话简介：只包含用户实际选中的标签
-        const introText = this.buildIntroFromUser(item.user, introTemplate, introSep)
+        // 优先用 find() 加载的用户（simple-json 正确解析），回退到 join 结果的用户
+        const user = userMap.get(item.userId) || item.user
+        const introText = this.buildIntroFromUser(user, introTemplate, introSep)
 
         return {
           id: item.id,
@@ -249,8 +258,13 @@ export class DynamicService implements OnModuleInit {
   private buildIntroFromUser(user: User | null, template: string, sep: string): string {
     if (!user) return ''
 
-    const personalityTags = this.normalizeTags((user as any).personalityTags)
-    const hopeTaTags = this.normalizeTags((user as any).hopeTaTags)
+    const rawPersonality = (user as any).personalityTags
+    const rawHopeTa = (user as any).hopeTaTags
+    console.log(`[Dynamic] buildIntroFromUser userId=${(user as any).id} personalityType=${typeof rawPersonality} personality=${JSON.stringify(rawPersonality)} hopeTaType=${typeof rawHopeTa} hopeTa=${JSON.stringify(rawHopeTa)}`)
+
+    const personalityTags = this.normalizeTags(rawPersonality)
+    const hopeTaTags = this.normalizeTags(rawHopeTa)
+    console.log(`[Dynamic] normalized personalityTags=${JSON.stringify(personalityTags)} hopeTaTags=${JSON.stringify(hopeTaTags)}`)
 
     let charTags: string[] = []
     let hobbyTags: string[] = []
