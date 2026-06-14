@@ -514,6 +514,18 @@ export class AdminUserService {
       }
     }
 
+    // personalityTags / hopeTaTags: 兼容逗号分割字符串与数组两种格式
+    if (safeData.personalityTags && typeof safeData.personalityTags === 'string') {
+      safeData.personalityTags = safeData.personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+    }
+    if (safeData.hopeTaTags && typeof safeData.hopeTaTags === 'string') {
+      safeData.hopeTaTags = safeData.hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+    }
+    // tags 同理
+    if (safeData.tags && typeof safeData.tags === 'string') {
+      safeData.tags = safeData.tags.split(',').map((s: string) => s.trim()).filter(Boolean)
+    }
+
     if (data['password']) {
       safeData['password'] = await bcrypt.hash(data['password'], 10)
     }

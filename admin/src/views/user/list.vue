@@ -1168,7 +1168,9 @@ async function handleCreateSubmit() {
   } as any
 
   if (editingUserId.value) {
-    // Edit mode
+    // Edit mode — personalityTags/hopeTaTags 直接传数组，而非逗号字符串
+    payload.personalityTags = createForm.personalityTagsArr
+    payload.hopeTaTags = createForm.hopeTaTagsArr
     editLoading.value = true
     try {
       if (!payload.password) {
