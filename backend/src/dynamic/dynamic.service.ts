@@ -56,11 +56,12 @@ export class DynamicService {
       const rows: any[] = await this.dataSource.query(
         `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
       )
+      console.log('[Dynamic] raw SQL rows:', JSON.stringify(rows))
       for (const row of rows) {
-        tagMap.set(row.id, {
-          personalityTags: this.parseJsonField(row.personalityTags),
-          hopeTaTags: this.parseJsonField(row.hopeTaTags),
-        })
+        const pt = this.parseJsonField(row.personalityTags)
+        const ht = this.parseJsonField(row.hopeTaTags)
+        console.log(`[Dynamic] userId=${row.id} parsed personalityTags=${JSON.stringify(pt)} hopeTaTags=${JSON.stringify(ht)}`)
+        tagMap.set(row.id, { personalityTags: pt, hopeTaTags: ht })
       }
     }
 
