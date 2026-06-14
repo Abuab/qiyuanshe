@@ -224,36 +224,49 @@ export class DynamicService implements OnModuleInit {
     return { list: formattedList, total, page, limit }
   }
 
+  /** 规范化标签值：兼容 simple-json 返回的 JSON 字符串、数组、对象 */
+  private normalizeTags(raw: any): any {
+    if (!raw) return null
+    // 已经是对象/数组 → 直接返回
+    if (typeof raw === 'object') return raw
+    // 字符串 → 尝试 JSON.parse，失败则逗号分割
+    if (typeof raw === 'string') {
+      if (raw.trim().startsWith('[') || raw.trim().startsWith('{')) {
+        try { return JSON.parse(raw) } catch { /* fall through */ }
+      }
+      if (raw.includes(',')) {
+        return raw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      }
+      return raw.length > 0 ? [raw] : null
+    }
+    return null
+  }
+
   /** 从用户标签构建一句话简介 */
   private buildIntroFromUser(user: User | null, template: string, sep: string): string {
     if (!user) return ''
 
-    const personalityTags = (user as any).personalityTags
-    const hopeTaTags = (user as any).hopeTaTags
+    const personalityTags = this.normalizeTags((user as any).personalityTags)
+    const hopeTaTags = this.normalizeTags((user as any).hopeTaTags)
 
     let charTags: string[] = []
     let hobbyTags: string[] = []
     let ruleTags: string[] = []
 
     if (personalityTags) {
-      if (typeof personalityTags === 'object' && !Array.isArray(personalityTags)) {
+      if (!Array.isArray(personalityTags)) {
+        // 结构化对象：{character:[...], hobby:[...], loveRule:[...]}
         charTags = Array.isArray(personalityTags.character) ? personalityTags.character : []
         hobbyTags = Array.isArray(personalityTags.hobby) ? personalityTags.hobby : []
         ruleTags  = Array.isArray(personalityTags.loveRule) ? personalityTags.loveRule : []
-      } else if (Array.isArray(personalityTags)) {
+      } else {
         charTags = personalityTags
-      } else if (typeof personalityTags === 'string' && personalityTags.length > 0) {
-        charTags = personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
       }
     }
 
     let hopeTags: string[] = []
-    if (hopeTaTags) {
-      if (Array.isArray(hopeTaTags)) {
-        hopeTags = hopeTaTags
-      } else if (typeof hopeTaTags === 'string' && hopeTaTags.length > 0) {
-        hopeTags = hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
-      }
+    if (Array.isArray(hopeTaTags)) {
+      hopeTags = hopeTaTags
     }
 
     // 全部未选 → 不展示
