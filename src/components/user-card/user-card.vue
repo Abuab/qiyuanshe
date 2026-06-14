@@ -1,70 +1,66 @@
 <template>
   <view class="user-card" @tap="handleClick">
-    <view class="card-body">
-      <view class="card-left">
-        <image
-          class="avatar"
-          :src="avatarUrl"
-          mode="aspectFill"
-          @error="onAvatarError"
-          lazy-load
-        ></image>
-        <view v-if="user.gender" class="gender-badge" :class="user.gender === 1 ? 'male' : 'female'">
-          <text class="gender-text">{{ user.gender === 1 ? '♂' : '♀' }}</text>
-        </view>
-      </view>
-
-      <view class="card-right">
-        <!-- 第一行：昵称 + 性别标识 + 实名 + 年龄 -->
-        <view class="user-header">
-          <view class="name-section">
-            <text class="nickname">{{ user.nickname }}</text>
-            <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
-              {{ user.gender === 1 ? '♂男' : '♀女' }}
-            </text>
-          </view>
-          <view v-if="user.isRealName" class="real-name-badge">已实名</view>
-          <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
-        </view>
-
-        <!-- 第二行：标签行（两行紧凑展示） -->
-        <view class="tags-area">
-          <view class="tags-line tags-line-1">
-            <text v-if="user.age" class="tag-badge tag-age">{{ user.age }}岁</text>
-            <text v-if="user.height" class="tag-badge tag-height">{{ user.height }}cm</text>
-            <text v-if="user.education" class="tag-badge tag-edu">{{ user.education }}</text>
-          </view>
-          <view v-if="user.housingStatus || user.occupation || user.incomeRange" class="tags-line tags-line-2">
-            <text v-if="user.housingStatus" class="tag-dot-text">{{ user.housingStatus }}</text>
-            <text v-if="user.occupation" class="tag-dot-text">{{ user.occupation }}</text>
-            <text v-if="user.incomeRange" class="tag-dot-text">{{ user.incomeRange }}</text>
-          </view>
-        </view>
-
-        <!-- 第三行：位置 + 红娘评语 -->
-        <view class="meta-row">
-          <text v-if="user.residence || user.city" class="loc-text">📍 {{ user.residence || user.city }}</text>
-          <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
-        </view>
-
-        <!-- 第四行：个人简介 -->
-        <view v-if="displayIntro" class="intro-row">
-          <text class="intro-text">{{ displayIntro }}</text>
-        </view>
+    <!-- 左列：仅头像 -->
+    <view class="card-left">
+      <image
+        class="avatar"
+        :src="avatarUrl"
+        mode="aspectFill"
+        @error="onAvatarError"
+        lazy-load
+      ></image>
+      <view v-if="user.gender" class="gender-badge" :class="user.gender === 1 ? 'male' : 'female'">
+        <text class="gender-text">{{ user.gender === 1 ? '♂' : '♀' }}</text>
       </view>
     </view>
 
-    <!-- 照片缩略图 — 独立于 card-body，与右侧文字左边缘对齐 -->
-    <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
-      <image
-        v-for="(photo, index) in displayPhotos"
-        :key="index"
-        class="photo-thumb"
-        :src="photo"
-        mode="aspectFill"
-        @error="onPhotoError(props.user.photos![index])"
-        lazy-load
-      ></image>
+    <!-- 右列：昵称、标签、简介、相册小图 -->
+    <view class="card-right">
+      <view class="user-header">
+        <view class="name-section">
+          <text class="nickname">{{ user.nickname }}</text>
+          <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
+            {{ user.gender === 1 ? '♂男' : '♀女' }}
+          </text>
+        </view>
+        <view v-if="user.isRealName" class="real-name-badge">已实名</view>
+        <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
+      </view>
+
+      <view class="tags-area">
+        <view class="tags-line tags-line-1">
+          <text v-if="user.age" class="tag-badge tag-age">{{ user.age }}岁</text>
+          <text v-if="user.height" class="tag-badge tag-height">{{ user.height }}cm</text>
+          <text v-if="user.education" class="tag-badge tag-edu">{{ user.education }}</text>
+        </view>
+        <view v-if="user.housingStatus || user.occupation || user.incomeRange" class="tags-line tags-line-2">
+          <text v-if="user.housingStatus" class="tag-dot-text">{{ user.housingStatus }}</text>
+          <text v-if="user.occupation" class="tag-dot-text">{{ user.occupation }}</text>
+          <text v-if="user.incomeRange" class="tag-dot-text">{{ user.incomeRange }}</text>
+        </view>
+      </view>
+
+      <view class="meta-row">
+        <text v-if="user.residence || user.city" class="loc-text">📍 {{ user.residence || user.city }}</text>
+        <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
+      </view>
+
+      <view v-if="displayIntro" class="intro-row">
+        <text class="intro-text">{{ displayIntro }}</text>
+      </view>
+
+      <!-- 相册小图：右列内部，与上方文字共享同一左边缘 -->
+      <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
+        <image
+          v-for="(photo, index) in displayPhotos"
+          :key="index"
+          class="photo-thumb"
+          :src="photo"
+          mode="aspectFill"
+          @error="onPhotoError(props.user.photos![index])"
+          lazy-load
+        ></image>
+      </view>
     </view>
   </view>
 </template>
@@ -146,7 +142,8 @@ const handleClick = () => {
 <style lang="scss" scoped>
 .user-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: flex-start;
   padding: 20rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
@@ -155,11 +152,6 @@ const handleClick = () => {
   &:active {
     background-color: #f9f9f9;
   }
-}
-
-.card-body {
-  display: flex;
-  align-items: flex-start;
 }
 
 .card-left {
@@ -173,6 +165,7 @@ const handleClick = () => {
   height: 140rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
+  display: block;
 }
 
 .gender-badge {
@@ -206,8 +199,7 @@ const handleClick = () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6rpx;
-  padding-top: 2rpx;
+  gap: 8rpx;
 }
 
 // 第一行：昵称 + 实名 + 年龄
@@ -271,7 +263,7 @@ const handleClick = () => {
   margin-left: auto;
 }
 
-// 第二行：标签行
+// 标签行
 .tags-area {
   display: flex;
   flex-direction: column;
@@ -323,7 +315,7 @@ const handleClick = () => {
   }
 }
 
-// 第三行：位置 + 红娘评语
+// 位置 + 红娘评语
 .meta-row {
   display: flex;
   align-items: center;
@@ -346,7 +338,7 @@ const handleClick = () => {
   white-space: nowrap;
 }
 
-// 第四行：简介
+// 简介
 .intro-row {
   .intro-text {
     font-size: 24rpx;
@@ -359,13 +351,12 @@ const handleClick = () => {
   }
 }
 
-// 照片缩略图 — 独立行，小图左边缘与头像左边缘对齐（同一垂直轴）
+// 相册小图 — 右列内部，与上方文字共享同一左边缘
 .photos-row {
   display: flex;
   gap: 10rpx;
   flex-wrap: nowrap;
   overflow: hidden;
-  margin-top: 16rpx;
 }
 
 .photo-thumb {
@@ -374,5 +365,6 @@ const handleClick = () => {
   border-radius: 8rpx;
   background-color: #f5f5f5;
   flex-shrink: 0;
+  display: block;
 }
 </style>
