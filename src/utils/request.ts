@@ -234,7 +234,9 @@ function retryRequest(
         const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
         const msg = bizMsg || statusMessage(statusCode)
         uni.showToast({ title: msg, icon: 'none', duration: 2000 })
-        reject(new Error(msg))
+        const err = new Error(msg) as Error & { statusCode: number }
+        err.statusCode = statusCode
+        reject(err)
         return
       }
 
@@ -292,14 +294,16 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
 
         // ---- 非成功状态码 ----
         if (!isHttpSuccess(statusCode)) {
-          // 优先读取后端返回的真实错误信息
           const responseBody = response.data as Record<string, unknown> | undefined
           const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
           const msg = bizMsg || statusMessage(statusCode)
           if (statusCode !== 401 && !skipToast) {
             uni.showToast({ title: msg, icon: 'none', duration: 2000 })
           }
-          reject(new Error(msg))
+          const err = new Error(msg) as Error & { statusCode: number; bizCode: number }
+          err.statusCode = statusCode
+          err.bizCode = (responseBody?.code as number) || statusCode
+          reject(err)
           return
         }
 

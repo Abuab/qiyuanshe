@@ -304,10 +304,13 @@ const handleSend = async () => {
     logger.error('send message error', e)
     inputContent.value = content
 
-    if (e.statusCode === 403) {
+    // 弹出后端返回的具体错误信息
+    const errMsg = e.message || '发送失败'
+    uni.showToast({ title: errMsg, icon: 'none', duration: 2000 })
+
+    // 仅「今日消息用完」时弹 VIP 引导
+    if (errMsg && (errMsg.includes('消息已用完') || errMsg.includes('开通会员'))) {
       showVipLimit.value = true
-    } else {
-      uni.showToast({ title: '发送失败', icon: 'none' })
     }
   }
 }
