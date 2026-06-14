@@ -1411,10 +1411,10 @@ async function handleEditUser(row: User) {
   createForm.whenMarry = user.whenMarry ?? undefined
   createForm.zodiac = user.zodiac ?? undefined
   createForm.constellation = user.constellation ?? undefined
-  createForm.personalityTagsArr = parseJsonArray(user.personalityTags) || []
-  createForm.personalityTags = (parseJsonArray(user.personalityTags) || []).join(',')
-  createForm.hopeTaTagsArr = parseJsonArray(user.hopeTaTags) || []
-  createForm.hopeTaTags = (parseJsonArray(user.hopeTaTags) || []).join(',')
+  createForm.personalityTagsArr = ensureJsonArray(user.personalityTags)
+  createForm.personalityTags = ensureJsonArray(user.personalityTags).join(',')
+  createForm.hopeTaTagsArr = ensureJsonArray(user.hopeTaTags)
+  createForm.hopeTaTags = ensureJsonArray(user.hopeTaTags).join(',')
   createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
   createForm.partnerHeightMin = user.partnerHeightMin ?? undefined
   createForm.partnerEducation = user.partnerEducation ?? undefined
@@ -1716,32 +1716,29 @@ function formatVipExpire(dateStr: string) {
   return `到期: ${expireDate.toLocaleDateString('zh-CN')}`
 }
 
-/**
- * 前端兜底解析 simple-json 字段（后端尚未部署 parseSimpleJson 时直接生效）
- */
-function parseJsonArray(val: any): any[] | null {
-  if (val === null || val === undefined) return null
+/** 始终返回数组，解析失败返回 [] */
+function ensureJsonArray(val: any): any[] {
   if (Array.isArray(val)) return val
   if (typeof val === 'string') {
     try {
-      const p = JSON.parse(val)
-      return Array.isArray(p) ? p : null
-    } catch { return null }
+      const parsed = JSON.parse(val)
+      if (Array.isArray(parsed)) return parsed
+    } catch { /* ignore */ }
   }
-  return null
+  return []
 }
 
 function normalizeUser(user: any): any {
-  const tags = parseJsonArray(user.tags)
+  const tags = ensureJsonArray(user.tags)
+  const personalityTags = ensureJsonArray(user.personalityTags)
+  const hopeTaTags = ensureJsonArray(user.hopeTaTags)
   // 调试：观察 API 返回的原始 tags 形状
-  if (tags === null && user.tags !== undefined) {
-    console.warn('[normalizeUser] tags 解析失败, 原始值:', typeof user.tags, user.tags)
-  }
+  console.log('[normalizeUser] id=' + user.id, 'tags=', tags, 'raw=', typeof user.tags, user.tags)
   return {
     ...user,
     tags,
-    personalityTags: parseJsonArray(user.personalityTags),
-    hopeTaTags: parseJsonArray(user.hopeTaTags),
+    personalityTags,
+    hopeTaTags,
   }
 }
 </script>

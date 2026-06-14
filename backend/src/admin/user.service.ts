@@ -222,15 +222,59 @@ export class AdminUserService {
     }
 
     // Merge audit status from bulk queries
-    const result = users.map(user => ({
-      ...user,
-      tags: parseSimpleJson(user.tags),
-      personalityTags: parseSimpleJson(user.personalityTags),
-      hopeTaTags: parseSimpleJson(user.hopeTaTags),
-      age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
-      profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
-      photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
-    }))
+    const result = users.map(user => {
+      // 将 simple-json 字段强制转纯 JS 数组，确保 JSON 序列化正确
+      const tags = ensureArray(user.tags)
+      const personalityTags = ensureArray(user.personalityTags)
+      const hopeTaTags = ensureArray(user.hopeTaTags)
+
+      // 直接用显式字段构建纯对象，绕过 TypeORM entity 的序列化陷阱
+      return {
+        id: user.id,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        phone: user.phone,
+        gender: user.gender,
+        birthYear: user.birthYear,
+        height: user.height,
+        weight: user.weight,
+        education: user.education,
+        occupation: user.occupation,
+        incomeRange: user.incomeRange,
+        housingStatus: user.housingStatus,
+        carStatus: user.carStatus,
+        maritalStatus: user.maritalStatus,
+        onlyChild: user.onlyChild,
+        whenMarry: user.whenMarry,
+        zodiac: user.zodiac,
+        constellation: user.constellation,
+        hometown: user.hometown,
+        residence: user.residence,
+        partnerAgeRange: user.partnerAgeRange,
+        partnerHeightMin: user.partnerHeightMin,
+        partnerEducation: user.partnerEducation,
+        partnerIncome: user.partnerIncome,
+        housingRequirement: user.housingRequirement,
+        partnerMaritalStatus: user.partnerMaritalStatus,
+        acceptChildren: user.acceptChildren,
+        mateRequirement: user.mateRequirement,
+        isRealName: user.isRealName,
+        isVip: user.isVip,
+        vipLevel: user.vipLevel,
+        vipExpireTime: user.vipExpireTime,
+        status: user.status,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        lastLoginAt: user.lastLoginAt,
+        tags,
+        personalityTags,
+        hopeTaTags,
+        adminRemark: user.adminRemark,
+        age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
+        profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
+        photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
+      }
+    })
 
     return {
       list: result,
@@ -564,4 +608,16 @@ function parseSimpleJson(value: any): any[] | null {
     }
   }
   return null
+}
+
+/** 同上但始终返回数组（失败时返回 []） */
+function ensureArray(value: any): any[] {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) return parsed
+    } catch { /* ignore */ }
+  }
+  return []
 }
