@@ -1079,7 +1079,7 @@ async function fetchData() {
 
     const res = await adminUsers.list(params)
     if (res.success && res.data) {
-      tableData.value = res.data.list || []
+      tableData.value = (res.data.list || []).map(normalizeUser)
       pagination.total = res.data.total || 0
     }
   } catch (error) {
@@ -1409,10 +1409,10 @@ async function handleEditUser(row: User) {
   createForm.whenMarry = user.whenMarry ?? undefined
   createForm.zodiac = user.zodiac ?? undefined
   createForm.constellation = user.constellation ?? undefined
-  createForm.personalityTagsArr = user.personalityTags || []
-  createForm.personalityTags = (user.personalityTags || []).join(',')
-  createForm.hopeTaTagsArr = user.hopeTaTags || []
-  createForm.hopeTaTags = (user.hopeTaTags || []).join(',')
+  createForm.personalityTagsArr = parseJsonArray(user.personalityTags) || []
+  createForm.personalityTags = (parseJsonArray(user.personalityTags) || []).join(',')
+  createForm.hopeTaTagsArr = parseJsonArray(user.hopeTaTags) || []
+  createForm.hopeTaTags = (parseJsonArray(user.hopeTaTags) || []).join(',')
   createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
   createForm.partnerHeightMin = user.partnerHeightMin ?? undefined
   createForm.partnerEducation = user.partnerEducation ?? undefined
@@ -1712,6 +1712,30 @@ function formatVipExpire(dateStr: string) {
   if (isNaN(expireDate.getTime())) return '已过期'
   if (expireDate <= new Date()) return '已过期'
   return `到期: ${expireDate.toLocaleDateString('zh-CN')}`
+}
+
+/**
+ * 前端兜底解析 simple-json 字段（后端尚未部署 parseSimpleJson 时直接生效）
+ */
+function parseJsonArray(val: any): any[] | null {
+  if (val === null || val === undefined) return null
+  if (Array.isArray(val)) return val
+  if (typeof val === 'string') {
+    try {
+      const p = JSON.parse(val)
+      return Array.isArray(p) ? p : null
+    } catch { return null }
+  }
+  return null
+}
+
+function normalizeUser(user: any): any {
+  return {
+    ...user,
+    tags: parseJsonArray(user.tags),
+    personalityTags: parseJsonArray(user.personalityTags),
+    hopeTaTags: parseJsonArray(user.hopeTaTags),
+  }
 }
 </script>
 
