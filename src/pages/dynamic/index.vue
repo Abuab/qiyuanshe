@@ -255,7 +255,9 @@ const fetchList = async (reset = false) => {
     const params: Record<string, unknown> = {
       page: page.value,
       limit: pageSize,
-      type: currentTab.value === 'all' ? undefined : currentTab.value,
+    }
+    if (currentTab.value !== 'all') {
+      params.type = currentTab.value
     }
     const res = await request<{ list: DynamicItem[]; total?: number }>({
       url: '/dynamics',
