@@ -492,6 +492,10 @@ export class AdminUserService {
       'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
       'maritalStatus', 'hometown', 'residence', 'mateRequirement',
       'isRealName', 'status', 'phone', 'tags', 'personalityTags', 'hopeTaTags', 'adminRemark',
+      'onlyChild', 'whenMarry', 'zodiac', 'constellation',
+      'partnerAgeRange', 'partnerHeightMin', 'partnerEducation', 'partnerIncome',
+      'housingRequirement', 'partnerMaritalStatus', 'acceptChildren',
+      'isVip', 'vipLevel', 'vipExpireTime',
     ]
 
     const safeData: any = {}
@@ -499,6 +503,10 @@ export class AdminUserService {
       if (data[key] !== undefined) {
         safeData[key] = data[key]
       }
+    }
+
+    if (data['password']) {
+      safeData['password'] = await bcrypt.hash(data['password'], 10)
     }
 
     await this.userRepository.update(id, safeData)

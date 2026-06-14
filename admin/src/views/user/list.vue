@@ -416,9 +416,10 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isReadonly" label="操作" width="240" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
+            <el-button type="info" link @click="handleEditUser(row)">编辑资料</el-button>
             <el-button
               type="warning"
               link
@@ -491,7 +492,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="createDialogVisible" title="添加用户" width="860px" destroy-on-close>
+    <el-dialog v-model="createDialogVisible" :title="editingUserId ? '编辑用户' : '添加用户'" width="860px" destroy-on-close>
       <el-form ref="createFormRef" :key="'createForm-' + dialogVersion" :model="createForm" :rules="createRules" label-width="100px">
         <!-- 头像 -->
         <el-form-item label="头像">
@@ -549,8 +550,8 @@
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="密码" prop="password">
-              <el-input v-model="createForm.password" type="password" placeholder="请输入密码" show-password />
+            <el-form-item label="密码" :prop="editingUserId ? undefined : 'password'">
+              <el-input v-model="createForm.password" type="password" :placeholder="editingUserId ? '留空则不修改密码' : '请输入密码'" show-password />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -793,7 +794,7 @@
       </el-form>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleCreateSubmit" :loading="createLoading">确定</el-button>
+        <el-button type="primary" @click="handleCreateSubmit" :loading="createLoading || editLoading">{{ editingUserId ? '保存' : '确定' }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -889,6 +890,8 @@ const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
 const createDialogVisible = ref(false)
 const dialogVersion = ref(0)
+const editingUserId = ref<number | null>(null)
+const editLoading = ref(false)
 const currentUser = ref<User | null>(null)
 
 const vipForm = reactive({
@@ -1094,6 +1097,7 @@ function handleSearch() {
 }
 
 async function handleCreate() {
+  editingUserId.value = null
   Object.assign(createForm, {
     avatar: '',
     nickname: '',
@@ -1147,28 +1151,57 @@ async function handleCreate() {
 }
 
 async function handleCreateSubmit() {
-  if (!createForm.nickname || !createForm.phone || !createForm.password) {
+  if (!editingUserId.value && (!createForm.nickname || !createForm.phone || !createForm.password)) {
     ElMessage.warning('请填写昵称、手机号和密码')
     return
   }
-  createLoading.value = true
-  try {
-    await adminUsers.create({
-      ...createForm,
-      hometown: buildCityLabel(hometownProvinceId.value, hometownCityId.value, hometownDistrictId.value),
-      residence: buildResidenceLabel(residenceProvinceId.value, residenceCityId.value, residenceDistrictId.value),
-      personalityTags: createForm.personalityTagsArr.join(','),
-      hopeTaTags: createForm.hopeTaTagsArr.join(','),
-      photoUrls: createPhotoUrls.value,
-    } as any)
-    ElMessage.success('用户创建成功')
-    createDialogVisible.value = false
-    fetchData()
-  } catch (error) {
-    console.error(error)
-    ElMessage.error('创建失败')
-  } finally {
-    createLoading.value = false
+  if (!createForm.nickname || !createForm.phone) {
+    ElMessage.warning('请填写昵称和手机号')
+    return
+  }
+
+  const payload = {
+    ...createForm,
+    hometown: buildCityLabel(hometownProvinceId.value, hometownCityId.value, hometownDistrictId.value),
+    residence: buildResidenceLabel(residenceProvinceId.value, residenceCityId.value, residenceDistrictId.value),
+    personalityTags: createForm.personalityTagsArr.join(','),
+    hopeTaTags: createForm.hopeTaTagsArr.join(','),
+    photoUrls: createPhotoUrls.value,
+  } as any
+
+  if (editingUserId.value) {
+    // Edit mode
+    editLoading.value = true
+    try {
+      if (!payload.password) {
+        delete payload.password
+      }
+      delete payload.photoUrls
+      await adminUsers.update(editingUserId.value, payload)
+      ElMessage.success('用户资料已更新')
+      createDialogVisible.value = false
+      editingUserId.value = null
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      ElMessage.error('更新失败')
+    } finally {
+      editLoading.value = false
+    }
+  } else {
+    // Create mode
+    createLoading.value = true
+    try {
+      await adminUsers.create(payload)
+      ElMessage.success('用户创建成功')
+      createDialogVisible.value = false
+      fetchData()
+    } catch (error) {
+      console.error(error)
+      ElMessage.error('创建失败')
+    } finally {
+      createLoading.value = false
+    }
   }
 }
 
@@ -1289,6 +1322,60 @@ function handleSortChange({ prop, order }: { prop: string; order: string }) {
 
 function handleView(row: User) {
   router.push(`/user/detail/${row.id}`)
+}
+
+async function handleEditUser(row: User) {
+  editingUserId.value = row.id
+
+  // Load user detail to get all fields
+  try {
+    const res = await adminUsers.detail(row.id)
+    const user = res.success ? res.data : row
+
+    if (user) {
+      createForm.avatar = user.avatar || ''
+      createForm.nickname = user.nickname || ''
+      createForm.phone = user.phone || ''
+      createForm.password = ''
+      createForm.gender = user.gender || 1
+      createForm.birthYear = user.birthYear ?? undefined
+      createForm.height = user.height ?? undefined
+      createForm.weight = user.weight ?? undefined
+      createForm.education = user.education ?? undefined
+      createForm.occupation = user.occupation ?? ''
+      createForm.incomeRange = user.incomeRange ?? undefined
+      createForm.housingStatus = user.housingStatus ?? undefined
+      createForm.carStatus = user.carStatus ?? undefined
+      createForm.maritalStatus = user.maritalStatus ?? undefined
+      createForm.onlyChild = user.onlyChild ?? undefined
+      createForm.whenMarry = user.whenMarry ?? undefined
+      createForm.zodiac = user.zodiac ?? undefined
+      createForm.constellation = user.constellation ?? undefined
+      createForm.personalityTagsArr = user.personalityTags || []
+      createForm.personalityTags = (user.personalityTags || []).join(',')
+      createForm.hopeTaTagsArr = user.hopeTaTags || []
+      createForm.hopeTaTags = (user.hopeTaTags || []).join(',')
+      createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
+      createForm.partnerHeightMin = user.partnerHeightMin ?? undefined
+      createForm.partnerEducation = user.partnerEducation ?? undefined
+      createForm.partnerIncome = user.partnerIncome ?? undefined
+      createForm.housingRequirement = user.housingRequirement ?? undefined
+      createForm.partnerMaritalStatus = user.partnerMaritalStatus ?? undefined
+      createForm.acceptChildren = user.acceptChildren ?? undefined
+      createForm.status = user.status ?? 1
+      createForm.hometown = user.hometown || ''
+      createForm.residence = user.residence || ''
+    }
+  } catch (e) {
+    console.error('获取用户详情失败:', e)
+  }
+
+  createPhotoUrls.value = []
+  await loadHometownProvinces()
+  await loadResidenceProvinces()
+
+  dialogVersion.value++
+  createDialogVisible.value = true
 }
 
 async function handleToggleStatus(row: User) {

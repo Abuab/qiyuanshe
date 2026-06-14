@@ -17,9 +17,22 @@ export interface User {
   housingStatus?: string
   carStatus?: string
   maritalStatus?: string
+  onlyChild?: string
+  whenMarry?: string
+  zodiac?: string
+  constellation?: string
   hometown?: string
   residence?: string
   mateRequirement?: string
+  personalityTags?: string[]
+  hopeTaTags?: string[]
+  partnerAgeRange?: string
+  partnerHeightMin?: string
+  partnerEducation?: string
+  partnerIncome?: string
+  housingRequirement?: string
+  partnerMaritalStatus?: string
+  acceptChildren?: string
   isRealName: number
   realNameAuth?: number
   educationAuth?: number

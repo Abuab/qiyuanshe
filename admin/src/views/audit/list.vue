@@ -180,10 +180,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Picture } from '@element-plus/icons-vue'
 import { adminAudit } from '../../api'
+import { useAdminStore } from '../../store/admin'
 import { formatDate } from '../../utils/date'
 import type { AuditItem } from '../../api/audit'
 
 const router = useRouter()
+const adminStore = useAdminStore()
 const loading = ref(false)
 const activeTab = ref('pending')
 const tableData = ref<AuditItem[]>([])
@@ -288,6 +290,7 @@ async function handleApprove(row: AuditItem) {
     ElMessage.success('审核已通过，用户资料已更新')
     fetchData()
     fetchPendingCount()
+    adminStore.fetchPendingAuditCount()
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
@@ -314,6 +317,7 @@ async function confirmReject() {
     rejectDialogVisible.value = false
     fetchData()
     fetchPendingCount()
+    adminStore.fetchPendingAuditCount()
   } catch (error) {
     console.error(error)
     ElMessage.error('操作失败')
@@ -337,6 +341,7 @@ async function handleBatchApprove() {
     ElMessage.success('批量通过成功')
     fetchData()
     fetchPendingCount()
+    adminStore.fetchPendingAuditCount()
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
@@ -359,6 +364,7 @@ async function handleBatchReject() {
     ElMessage.success('批量拒绝成功')
     fetchData()
     fetchPendingCount()
+    adminStore.fetchPendingAuditCount()
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
