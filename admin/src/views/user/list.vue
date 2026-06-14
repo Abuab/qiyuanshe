@@ -1732,9 +1732,14 @@ function parseJsonArray(val: any): any[] | null {
 }
 
 function normalizeUser(user: any): any {
+  const tags = parseJsonArray(user.tags)
+  // 调试：观察 API 返回的原始 tags 形状
+  if (tags === null && user.tags !== undefined) {
+    console.warn('[normalizeUser] tags 解析失败, 原始值:', typeof user.tags, user.tags)
+  }
   return {
     ...user,
-    tags: parseJsonArray(user.tags),
+    tags,
     personalityTags: parseJsonArray(user.personalityTags),
     hopeTaTags: parseJsonArray(user.hopeTaTags),
   }
