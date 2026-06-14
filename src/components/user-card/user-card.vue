@@ -199,26 +199,19 @@ const handleClick = () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-
-  // 子元素间距（替代 gap，小程序兼容性更好）
-  > * {
-    margin-bottom: 8rpx;
-  }
-  > *:last-child {
-    margin-bottom: 0;
-  }
 }
 
-// 昵称 + 实名 + 年龄
+// 昵称行
 .user-header {
   display: flex;
   align-items: center;
+  margin-bottom: 8rpx;
 
-  > * {
+  > view {
     margin-right: 10rpx;
-  }
-  > *:last-child {
-    margin-right: 0;
+    &:last-child {
+      margin-right: 0;
+    }
   }
 }
 
@@ -228,11 +221,11 @@ const handleClick = () => {
   flex-shrink: 0;
   max-width: 60%;
 
-  > * {
+  > text {
     margin-right: 8rpx;
-  }
-  > *:last-child {
-    margin-right: 0;
+    &:last-child {
+      margin-right: 0;
+    }
   }
 }
 
@@ -286,12 +279,13 @@ const handleClick = () => {
 .tags-area {
   display: flex;
   flex-direction: column;
+  margin-bottom: 8rpx;
 
-  > * {
+  > view {
     margin-bottom: 8rpx;
-  }
-  > *:last-child {
-    margin-bottom: 0;
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 
@@ -300,11 +294,11 @@ const handleClick = () => {
   flex-wrap: wrap;
   align-items: center;
 
-  > * {
+  > text {
     margin-right: 10rpx;
-  }
-  > *:last-child {
-    margin-right: 0;
+    &:last-child {
+      margin-right: 0;
+    }
   }
 }
 
@@ -331,14 +325,8 @@ const handleClick = () => {
   }
 }
 
-// 第二行标签用圆点分隔，取消子元素 margin，靠伪元素实现间距
-.tags-line-2 {
-  > * {
-    margin-right: 0;
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
+.tags-line-2 > text {
+  margin-right: 0;
 }
 
 .tag-dot-text {
@@ -357,13 +345,7 @@ const handleClick = () => {
   display: flex;
   align-items: center;
   overflow: hidden;
-
-  > * {
-    margin-right: 16rpx;
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
+  margin-bottom: 4rpx;
 }
 
 .loc-text {
@@ -371,6 +353,7 @@ const handleClick = () => {
   color: #999;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-right: 16rpx;
 }
 
 .mk-brief {
@@ -383,6 +366,8 @@ const handleClick = () => {
 
 // 简介
 .intro-row {
+  margin-bottom: 6rpx;
+
   .intro-text {
     font-size: 24rpx;
     color: #999;
