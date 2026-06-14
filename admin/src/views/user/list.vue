@@ -336,16 +336,18 @@
         </el-table-column>
         <el-table-column prop="carStatus" label="车辆" width="80">
           <template #default="{ row }">
-            <el-tag v-if="row.carStatus === '有车'" type="success" size="small">有车</el-tag>
-            <el-tag v-else-if="row.carStatus === '无车'" type="info" size="small">无车</el-tag>
-            <span v-else>-</span>
+            <el-tag v-if="row.carStatus === '已购车'" type="success" size="small">有车</el-tag>
+            <el-tag v-else-if="row.carStatus === '未购车'" type="info" size="small">无车</el-tag>
+            <span v-else>{{ row.carStatus || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="housingStatus" label="住房" width="80">
+        <el-table-column prop="housingStatus" label="住房" width="90">
           <template #default="{ row }">
-            <el-tag v-if="row.housingStatus === '有房'" type="success" size="small">有房</el-tag>
-            <el-tag v-else-if="row.housingStatus === '无房'" type="info" size="small">无房</el-tag>
-            <span v-else>-</span>
+            <el-tag v-if="row.housingStatus === '已购房'" type="success" size="small">有房</el-tag>
+            <el-tag v-else-if="row.housingStatus === '租房'" type="warning" size="small">租房</el-tag>
+            <el-tag v-else-if="row.housingStatus === '与父母同住'" type="info" size="small">与父母同住</el-tag>
+            <el-tag v-else-if="row.housingStatus === '其他'" type="info" size="small">其他</el-tag>
+            <span v-else>{{ row.housingStatus || '-' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="education" label="学历" width="80">
@@ -1323,55 +1325,167 @@ function handleView(row: User) {
 async function handleEditUser(row: User) {
   editingUserId.value = row.id
 
-  // Load user detail to get all fields
+  // 先重置表单
+  Object.assign(createForm, {
+    avatar: '',
+    nickname: '',
+    phone: '',
+    password: '',
+    gender: 1,
+    birthYear: undefined,
+    height: undefined,
+    weight: undefined,
+    education: undefined,
+    occupation: '',
+    incomeRange: undefined,
+    housingStatus: undefined,
+    carStatus: undefined,
+    maritalStatus: undefined,
+    hometown: '',
+    residence: '',
+    onlyChild: undefined,
+    whenMarry: undefined,
+    zodiac: undefined,
+    constellation: undefined,
+    personalityTags: '',
+    personalityTagsArr: [],
+    hopeTaTags: '',
+    hopeTaTagsArr: [],
+    partnerAgeRange: undefined,
+    partnerHeightMin: undefined,
+    partnerEducation: undefined,
+    partnerIncome: undefined,
+    housingRequirement: undefined,
+    partnerMaritalStatus: undefined,
+    acceptChildren: undefined,
+    status: 1,
+  })
+  createPhotoUrls.value = []
+  hometownProvinceId.value = undefined
+  hometownCityId.value = undefined
+  hometownDistrictId.value = undefined
+  hometownCities.value = []
+  hometownDistricts.value = []
+  residenceProvinceId.value = undefined
+  residenceCityId.value = undefined
+  residenceDistrictId.value = undefined
+  residenceCities.value = []
+  residenceDistricts.value = []
+
+  await loadHometownProvinces()
+  await loadResidenceProvinces()
+
+  // 加载用户完整数据
+  let user: any = row
   try {
     const res = await adminUsers.detail(row.id)
-    const user = res.success ? res.data : row
-
-    if (user) {
-      createForm.avatar = user.avatar || ''
-      createForm.nickname = user.nickname || ''
-      createForm.phone = user.phone || ''
-      createForm.password = ''
-      createForm.gender = user.gender || 1
-      createForm.birthYear = user.birthYear ?? undefined
-      createForm.height = user.height ?? undefined
-      createForm.weight = user.weight ?? undefined
-      createForm.education = user.education ?? undefined
-      createForm.occupation = user.occupation ?? ''
-      createForm.incomeRange = user.incomeRange ?? undefined
-      createForm.housingStatus = user.housingStatus ?? undefined
-      createForm.carStatus = user.carStatus ?? undefined
-      createForm.maritalStatus = user.maritalStatus ?? undefined
-      createForm.onlyChild = user.onlyChild ?? undefined
-      createForm.whenMarry = user.whenMarry ?? undefined
-      createForm.zodiac = user.zodiac ?? undefined
-      createForm.constellation = user.constellation ?? undefined
-      createForm.personalityTagsArr = user.personalityTags || []
-      createForm.personalityTags = (user.personalityTags || []).join(',')
-      createForm.hopeTaTagsArr = user.hopeTaTags || []
-      createForm.hopeTaTags = (user.hopeTaTags || []).join(',')
-      createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
-      createForm.partnerHeightMin = user.partnerHeightMin ?? undefined
-      createForm.partnerEducation = user.partnerEducation ?? undefined
-      createForm.partnerIncome = user.partnerIncome ?? undefined
-      createForm.housingRequirement = user.housingRequirement ?? undefined
-      createForm.partnerMaritalStatus = user.partnerMaritalStatus ?? undefined
-      createForm.acceptChildren = user.acceptChildren ?? undefined
-      createForm.status = user.status ?? 1
-      createForm.hometown = user.hometown || ''
-      createForm.residence = user.residence || ''
+    if (res.success && res.data) {
+      user = res.data
     }
   } catch (e) {
     console.error('获取用户详情失败:', e)
   }
 
-  createPhotoUrls.value = []
-  await loadHometownProvinces()
-  await loadResidenceProvinces()
+  // 回填表单字段
+  createForm.avatar = user.avatar || ''
+  createForm.nickname = user.nickname || ''
+  createForm.phone = user.phone || ''
+  createForm.password = ''
+  createForm.gender = user.gender || 1
+  createForm.birthYear = user.birthYear ?? undefined
+  createForm.height = user.height ?? undefined
+  createForm.weight = user.weight ?? undefined
+  createForm.education = user.education ?? undefined
+  createForm.occupation = user.occupation ?? ''
+  createForm.incomeRange = user.incomeRange ?? undefined
+  createForm.housingStatus = user.housingStatus ?? undefined
+  createForm.carStatus = user.carStatus ?? undefined
+  createForm.maritalStatus = user.maritalStatus ?? undefined
+  createForm.onlyChild = user.onlyChild ?? undefined
+  createForm.whenMarry = user.whenMarry ?? undefined
+  createForm.zodiac = user.zodiac ?? undefined
+  createForm.constellation = user.constellation ?? undefined
+  createForm.personalityTagsArr = user.personalityTags || []
+  createForm.personalityTags = (user.personalityTags || []).join(',')
+  createForm.hopeTaTagsArr = user.hopeTaTags || []
+  createForm.hopeTaTags = (user.hopeTaTags || []).join(',')
+  createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
+  createForm.partnerHeightMin = user.partnerHeightMin ?? undefined
+  createForm.partnerEducation = user.partnerEducation ?? undefined
+  createForm.partnerIncome = user.partnerIncome ?? undefined
+  createForm.housingRequirement = user.housingRequirement ?? undefined
+  createForm.partnerMaritalStatus = user.partnerMaritalStatus ?? undefined
+  createForm.acceptChildren = user.acceptChildren ?? undefined
+  createForm.status = user.status ?? 1
+  createForm.hometown = user.hometown || ''
+  createForm.residence = user.residence || ''
+
+  // 回填照片
+  if (user.photos && Array.isArray(user.photos)) {
+    createPhotoUrls.value = user.photos.map((p: any) => p.photoUrl)
+  }
+
+  // 回填家乡/居住地级联选择器
+  if (user.hometown) {
+    await matchCityLabel(user.hometown, 'hometown')
+  }
+  if (user.residence) {
+    await matchCityLabel(user.residence, 'residence')
+  }
 
   dialogVersion.value++
   createDialogVisible.value = true
+}
+
+/**
+ * 根据「省/市/区」字符串回填级联选择器
+ */
+async function matchCityLabel(label: string, type: 'hometown' | 'residence') {
+  const parts = label.split('/').map(s => s.trim()).filter(Boolean)
+  if (parts.length === 0) return
+
+  const provinces = type === 'hometown' ? hometownProvinces.value : residenceProvinces.value
+  const province = provinces.find(p => p.name === parts[0])
+  if (!province) return
+
+  // 设置省份
+  if (type === 'hometown') {
+    hometownProvinceId.value = province.id
+    const res = await adminSystem.getRegionChildren(province.id)
+    hometownCities.value = res.data || []
+  } else {
+    residenceProvinceId.value = province.id
+    const res = await adminSystem.getRegionChildren(province.id)
+    residenceCities.value = res.data || []
+  }
+
+  if (parts.length >= 2) {
+    const cities = type === 'hometown' ? hometownCities.value : residenceCities.value
+    const city = cities.find(c => c.name === parts[1])
+    if (city) {
+      if (type === 'hometown') {
+        hometownCityId.value = city.id
+        const res = await adminSystem.getRegionChildren(city.id)
+        hometownDistricts.value = res.data || []
+      } else {
+        residenceCityId.value = city.id
+        const res = await adminSystem.getRegionChildren(city.id)
+        residenceDistricts.value = res.data || []
+      }
+    }
+  }
+
+  if (parts.length >= 3) {
+    const districts = type === 'hometown' ? hometownDistricts.value : residenceDistricts.value
+    const district = districts.find(d => d.name === parts[2])
+    if (district) {
+      if (type === 'hometown') {
+        hometownDistrictId.value = district.id
+      } else {
+        residenceDistrictId.value = district.id
+      }
+    }
+  }
 }
 
 async function handleToggleStatus(row: User) {

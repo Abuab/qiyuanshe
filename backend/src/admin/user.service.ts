@@ -442,6 +442,7 @@ export class AdminUserService {
       vipLevel: 0,
       openid: null,
       unionId: null,
+      tags: ['后台添加'],
     })
 
     const saved = await this.userRepository.save(user)
