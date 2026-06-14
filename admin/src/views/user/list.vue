@@ -416,15 +416,11 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isReadonly" label="操作" width="280" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
-            <el-button type="info" link @click="handleEditUser(row)">编辑资料</el-button>
-            <el-button
-              type="warning"
-              link
-              @click="handleToggleStatus(row)"
-            >
+            <el-button type="info" link @click="handleEditUser(row)">编辑</el-button>
+            <el-button type="warning" link @click="handleToggleStatus(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button type="success" link @click="handleSetVip(row)">设为VIP</el-button>
