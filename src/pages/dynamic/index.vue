@@ -71,9 +71,9 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 个人简介动态 -->
-        <view v-if="item.type === 'intro' && item.introText" class="card-content intro-card">
-          <text class="intro-card-text">{{ item.introText }}</text>
+        <!-- 用户一句话简介（所有类型卡片都展示） -->
+        <view v-if="item.introText" class="intro-row">
+          <text class="intro-text">{{ item.introText }}</text>
         </view>
 
         <!-- 相册动态 -->
@@ -610,15 +610,16 @@ onMounted(() => {
   padding: 0 4rpx;
 }
 
-/* 个人简介卡片 */
-.intro-card {
-  padding: 20rpx 24rpx;
+/* 用户简介栏 */
+.intro-row {
+  margin-bottom: 20rpx;
+  padding: 16rpx 20rpx;
   background-color: #FFF8FA;
   border-radius: 10rpx;
   border-left: 4rpx solid #FF6B9D;
 }
 
-.intro-card-text {
+.intro-text {
   font-size: 26rpx;
   color: #666;
   line-height: 1.6;

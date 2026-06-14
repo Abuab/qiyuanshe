@@ -166,6 +166,10 @@ export class DynamicService implements OnModuleInit {
       qb.andWhere('dynamic.userId IN (:...followUserIds)', { followUserIds })
     }
 
+    if (currentUserId) {
+      qb.andWhere('dynamic.userId != :currentUserId', { currentUserId })
+    }
+
     const [list, total] = await qb.getManyAndCount()
 
     // 读取简介模板配置
