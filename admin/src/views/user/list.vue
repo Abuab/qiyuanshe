@@ -1325,9 +1325,8 @@ function handleView(row: User) {
 async function handleEditUser(row: User) {
   editingUserId.value = row.id
 
-  try {
-    // 先重置表单
-    Object.assign(createForm, {
+  // 先重置表单
+  Object.assign(createForm, {
     avatar: '',
     nickname: '',
     phone: '',
@@ -1373,21 +1372,25 @@ async function handleEditUser(row: User) {
   residenceCities.value = []
   residenceDistricts.value = []
 
-  await loadHometownProvinces()
-  await loadResidenceProvinces()
-
-  // 加载用户完整数据
-  let user: any = row
-  try {
-    const res = await adminUsers.detail(row.id)
-    if (res.success && res.data) {
-      user = res.data
-    }
-  } catch (e) {
-    console.error('获取用户详情失败:', e)
-  }
+  // 并行加载用户详情和城市数据，两者互不阻塞
+  const [userDetail, _] = await Promise.allSettled([
+    adminUsers.detail(row.id),
+    (async () => {
+      try { await loadHometownProvinces() } catch {}
+      try { await loadResidenceProvinces() } catch {}
+    })(),
+  ])
 
   // 回填表单字段
+  let user: any = row
+  if (userDetail.status === 'fulfilled' && userDetail.value.success && userDetail.value.data) {
+    user = userDetail.value.data
+  }
+  if (!user) {
+    ElMessage.error('未找到用户数据')
+    return
+  }
+
   createForm.avatar = user.avatar || ''
   createForm.nickname = user.nickname || ''
   createForm.phone = user.phone || ''
@@ -1426,20 +1429,16 @@ async function handleEditUser(row: User) {
     createPhotoUrls.value = user.photos.map((p: any) => p.photoUrl)
   }
 
-  // 回填家乡/居住地级联选择器
+  // 回填家乡/居住地级联选择器（失败不阻塞弹窗）
   if (user.hometown) {
-    await matchCityLabel(user.hometown, 'hometown')
+    try { await matchCityLabel(user.hometown, 'hometown') } catch {}
   }
   if (user.residence) {
-    await matchCityLabel(user.residence, 'residence')
+    try { await matchCityLabel(user.residence, 'residence') } catch {}
   }
 
   dialogVersion.value++
   createDialogVisible.value = true
-  } catch (e) {
-    console.error('加载用户资料失败:', e)
-    ElMessage.error('加载用户资料失败，请重试')
-  }
 }
 
 /**

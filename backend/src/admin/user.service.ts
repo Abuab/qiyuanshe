@@ -276,6 +276,10 @@ export class AdminUserService {
     return {
       ...safeUser,
       avatar: normalizeImageUrl(safeUser.avatar),
+      // simple-json 列兜底解析，避免 findOne 未正确反序列化
+      tags: parseSimpleJson(safeUser.tags),
+      personalityTags: parseSimpleJson(safeUser.personalityTags),
+      hopeTaTags: parseSimpleJson(safeUser.hopeTaTags),
       photos: photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) })),
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
     }
