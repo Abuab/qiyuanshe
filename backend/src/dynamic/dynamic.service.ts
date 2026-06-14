@@ -54,7 +54,7 @@ export class DynamicService {
     const tagMap = new Map<number, { personalityTags: any; hopeTaTags: any }>()
     if (userIds.length > 0) {
       const rows: any[] = await this.dataSource.query(
-        `SELECT id, personalityTags, hopeTaTags FROM user WHERE id IN (${userIds.join(',')})`,
+        `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
       )
       for (const row of rows) {
         tagMap.set(row.id, {
