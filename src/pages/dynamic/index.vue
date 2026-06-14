@@ -71,8 +71,13 @@
         </view>
 
         <!-- 动态内容区 -->
+        <!-- 用户一句话简介 -->
+        <view v-if="item.introText" class="intro-row">
+          <text class="intro-text">{{ item.introText }}</text>
+        </view>
+
         <!-- 相册动态 -->
-        <view v-if="item.type === 'photo'" class="card-content">
+        <view v-if="item.type === 'photo' && item.images && item.images.length > 0" class="card-content">
           <text class="content-text">{{ item.content || '更新了相册' }}</text>
           <view class="photo-grid">
             <view
@@ -115,6 +120,11 @@
             <text class="topic-title">{{ item.questionTitle }}</text>
             <text class="topic-arrow">›</text>
           </view>
+        </view>
+
+        <!-- 纯文字动态（旧数据兼容） -->
+        <view v-if="item.type === 'text' && item.content" class="card-content">
+          <text class="answer-text">{{ item.content }}</text>
         </view>
 
         <!-- 底部操作栏 -->
@@ -164,6 +174,7 @@ interface DynamicItem {
   height: number
   education: string
   incomeRange: string
+  introText: string
   content: string
   images: string[]
   questionId?: number
@@ -556,6 +567,21 @@ onMounted(() => {
 .card-content {
   margin-bottom: 20rpx;
   padding: 0 4rpx;
+}
+
+/* 用户一句话简介 */
+.intro-row {
+  margin-bottom: 20rpx;
+  padding: 16rpx 20rpx;
+  background-color: #FFF8FA;
+  border-radius: 10rpx;
+  border-left: 4rpx solid #FF6B9D;
+}
+
+.intro-text {
+  font-size: 26rpx;
+  color: #666;
+  line-height: 1.6;
 }
 
 .content-text {

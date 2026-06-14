@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
+import { SystemService } from '../system/system.service'
 
 @Injectable()
 export class DynamicService {
@@ -14,6 +15,7 @@ export class DynamicService {
     private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -28,7 +30,7 @@ export class DynamicService {
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
-      .where('dynamic.status = 1')
+      .where('dynamic.status IN (0, 1)')
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
@@ -42,6 +44,12 @@ export class DynamicService {
     }
 
     const [list, total] = await qb.getManyAndCount()
+
+    // 读取简介模板配置（一次性，不用每条都查）
+    const rawTemplate = await this.systemService.getConfig('intro.template')
+    const introTemplate = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
+    const introSep = (await this.systemService.getConfig('intro.separator')) || '、'
+    const introEmpty = (await this.systemService.getConfig('intro.emptyPlaceholder')) || '（暂未填写）'
 
     const formattedList = await Promise.all(
       list.map(async (item) => {
@@ -66,6 +74,23 @@ export class DynamicService {
           }
         }
 
+        // 构建用户一句话简介
+        const pt = (item.user as any)?.personalityTags
+        const ht = (item.user as any)?.hopeTaTags
+        const vals: Record<string, string[]> = { character: [], hobby: [], loveRule: [], hopeTa: [] }
+        if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
+          if (Array.isArray(pt.character)) vals.character = pt.character
+          if (Array.isArray(pt.hobby)) vals.hobby = pt.hobby
+          if (Array.isArray(pt.loveRule)) vals.loveRule = pt.loveRule
+        } else if (Array.isArray(pt)) {
+          vals.character = pt
+        }
+        if (Array.isArray(ht)) vals.hopeTa = ht
+        const introText = introTemplate.replace(/\{(\w+)\}/g, (_: string, key: string) => {
+          const tags = vals[key]
+          return tags && tags.length > 0 ? tags.join(introSep) : introEmpty
+        })
+
         return {
           id: item.id,
           type: item.type,
@@ -77,6 +102,7 @@ export class DynamicService {
           height: item.user?.height || 0,
           education: item.user?.education || '',
           incomeRange: item.user?.incomeRange || '',
+          introText,
           content: item.content,
           images: item.images || [],
           questionId: item.questionId,

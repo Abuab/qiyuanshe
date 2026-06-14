@@ -6,6 +6,7 @@ import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
 import { DynamicController } from './dynamic.controller'
 import { DynamicService } from './dynamic.service'
+import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { DynamicService } from './dynamic.service'
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
+    SystemModule,
   ],
   controllers: [DynamicController],
   providers: [DynamicService],
