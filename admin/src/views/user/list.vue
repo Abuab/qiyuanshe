@@ -1325,8 +1325,9 @@ function handleView(row: User) {
 async function handleEditUser(row: User) {
   editingUserId.value = row.id
 
-  // 先重置表单
-  Object.assign(createForm, {
+  try {
+    // 先重置表单
+    Object.assign(createForm, {
     avatar: '',
     nickname: '',
     phone: '',
@@ -1435,6 +1436,10 @@ async function handleEditUser(row: User) {
 
   dialogVersion.value++
   createDialogVisible.value = true
+  } catch (e) {
+    console.error('加载用户资料失败:', e)
+    ElMessage.error('加载用户资料失败，请重试')
+  }
 }
 
 /**

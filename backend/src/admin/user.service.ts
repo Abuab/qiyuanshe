@@ -209,6 +209,10 @@ export class AdminUserService {
     // Merge audit status from raw subqueries
     const users = entities.map((user, index) => ({
       ...user,
+      // simple-json 列在 getRawAndEntities 后可能为原始字符串，须手动解析
+      tags: parseSimpleJson(user.tags),
+      personalityTags: parseSimpleJson(user.personalityTags),
+      hopeTaTags: parseSimpleJson(user.hopeTaTags),
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
       profileAuditStatus: raw[index]?.profileAuditStatus || 'unsubmitted',
       photoAuditStatus: raw[index]?.photoAuditStatus || 'unsubmitted',
@@ -512,4 +516,22 @@ export class AdminUserService {
 
     await this.userRepository.update(id, safeData)
   }
+}
+
+/**
+ * simple-json 字段在 getRawAndEntities 后可能为原始 JSON 字符串，
+ * 需要手动解析为数组。如果已经是数组则直接返回。
+ */
+function parseSimpleJson(value: any): any[] | null {
+  if (value === null || value === undefined) return null
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      return Array.isArray(parsed) ? parsed : null
+    } catch {
+      return null
+    }
+  }
+  return null
 }
