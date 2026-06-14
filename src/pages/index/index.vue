@@ -61,7 +61,7 @@
           :duration="400"
           :current="questionSwiperIndex"
           @change="onQuestionSwiperChange"
-          :style="{ height: '120rpx' }"
+          :style="{ height: '100rpx' }"
         >
           <swiper-item v-for="q in hotQuestions" :key="q.id">
             <view class="question-slide" @tap="goToQuestionDetail(q.id)">
@@ -642,7 +642,7 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 36rpx 24rpx 32rpx;
+  padding: 20rpx 24rpx 16rpx;
   margin-bottom: 0;
 }
 
@@ -674,8 +674,8 @@ const onShareTimeline = () => {
 
 .hot-questions-card {
   background-color: #FFF8FA;
-  padding: 6rpx 20rpx 4rpx;
-  margin: 0 28rpx 16rpx;
+  padding: 10rpx 20rpx 6rpx;
+  margin: 0 28rpx 12rpx;
   border-radius: 16rpx;
 }
 
@@ -698,7 +698,7 @@ const onShareTimeline = () => {
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: bold;
   color: var(--text);
 }
@@ -717,7 +717,7 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 120rpx;
+  height: 100rpx;
   padding: 0 4rpx;
 }
 
@@ -729,14 +729,14 @@ const onShareTimeline = () => {
 
 .question-slide-title {
   font-size: 26rpx;
-  line-height: 1.5;
+  line-height: 1.4;
   color: var(--text);
   white-space: normal;
   word-break: break-all;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -763,7 +763,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 2rpx;
+  padding-top: 4rpx;
   gap: 10rpx;
 }
 
