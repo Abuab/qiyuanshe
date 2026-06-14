@@ -642,7 +642,7 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 20rpx 24rpx 16rpx;
+  padding: 36rpx 24rpx 32rpx;
   margin-bottom: 0;
 }
 
