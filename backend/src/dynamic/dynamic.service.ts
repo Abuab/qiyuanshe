@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { Repository, DataSource, In } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
@@ -169,7 +169,7 @@ export class DynamicService implements OnModuleInit {
     const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
     const userMap = new Map<number, User>()
     if (userIds.length > 0) {
-      const users = await this.userRepository.find({ where: userIds.map((id) => ({ id } as any)) })
+      const users = await this.userRepository.find({ where: { id: In(userIds) } })
       users.forEach((u) => userMap.set(u.id, u))
     }
 
