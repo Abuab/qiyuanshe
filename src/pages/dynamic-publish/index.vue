@@ -56,7 +56,7 @@
     <!-- 底部发布按钮 -->
     <view class="bottom-bar">
       <view class="publish-submit-btn" :class="{ disabled: !canPublish }" @tap="handlePublish">
-        <text>发布</text>
+        <text>{{ uploading ? '发布中...' : '发布' }}</text>
       </view>
     </view>
   </view>
@@ -220,6 +220,7 @@ const handleCancel = () => {
 
 .page-content {
   padding: 24rpx 32rpx;
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
   flex: 1;
 }
 
@@ -314,10 +315,15 @@ const handleCancel = () => {
 }
 
 .bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   border-top: 1rpx solid #f0f0f0;
   background-color: #fff;
+  z-index: 100;
 }
 
 .publish-submit-btn {
