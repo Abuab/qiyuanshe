@@ -7,6 +7,7 @@ import { ProfileVisit } from '../entities/ProfileVisit'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
+import { SystemService } from '../system/system.service'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -60,8 +61,9 @@ export class UserService {
     @InjectRepository(ProfileVisit)
       private readonly visitRepository: Repository<ProfileVisit>,
       @InjectRepository(MatchmakerComment)
-      private readonly commentRepo: Repository<MatchmakerComment>,
-    ) {}
+    private readonly commentRepo: Repository<MatchmakerComment>,
+    private readonly systemService: SystemService,
+  ) {}
 
   async findRecommend(
     tab: string,
@@ -358,46 +360,43 @@ export class UserService {
   }
 
   /**
-   * 根据用户标签拼成一句话简介：
-   * 「我是一个(性格)的人，我喜欢(爱好)，我(恋爱准则)，希望你(希望TA)」
+   * 根据用户标签 + 后台配置的模板拼成一句话简介。
+   * 默认模板：「我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}」
+   * 配置 key：intro.template / intro.separator / intro.emptyPlaceholder
    */
-  buildUserIntroText(user: User): string {
-    const parts: string[] = []
+  async buildUserIntroText(user: User): Promise<string> {
+    // 读取配置
+    const rawTemplate = await this.systemService.getConfig('intro.template')
+    const template = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
+    const sep = (await this.systemService.getConfig('intro.separator')) || '、'
+    const empty = (await this.systemService.getConfig('intro.emptyPlaceholder')) || '（暂未填写）'
 
-    const personalityTags = (user as any).personalityTags
-    if (personalityTags && Array.isArray(personalityTags) && personalityTags.length > 0) {
-      parts.push(`我是一个${personalityTags.join('、')}的人`)
-    } else {
-      // 尝试从结构化 personalityTags 中提取
-      const structured = personalityTags
-      if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
-        const allTags: string[] = []
-        if (Array.isArray(structured.character)) allTags.push(...structured.character)
-        // hobby 和 loveRule 在下面单独处理
-        if (allTags.length > 0) {
-          parts.push(`我是一个${allTags.join('、')}的人`)
-        }
-      }
+    // 提取标签值
+    const values: Record<string, string[]> = {
+      character: [],
+      hobby: [],
+      loveRule: [],
+      hopeTa: [],
     }
 
-    const personalityObj = (user as any).personalityTags
-    if (personalityObj && typeof personalityObj === 'object' && !Array.isArray(personalityObj)) {
-      const hobbies: string[] = (personalityObj as any).hobby || []
-      if (hobbies.length > 0) {
-        parts.push(`我喜欢${hobbies.join('、')}`)
-      }
-      const loveRules: string[] = (personalityObj as any).loveRule || []
-      if (loveRules.length > 0) {
-        parts.push(`我${loveRules.join('、')}`)
-      }
+    const pt = (user as any).personalityTags
+    if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
+      if (Array.isArray(pt.character)) values.character = pt.character
+      if (Array.isArray(pt.hobby)) values.hobby = pt.hobby
+      if (Array.isArray(pt.loveRule)) values.loveRule = pt.loveRule
+    } else if (Array.isArray(pt)) {
+      values.character = pt
     }
 
-    const hopeTaTags = (user as any).hopeTaTags
-    if (hopeTaTags && Array.isArray(hopeTaTags) && hopeTaTags.length > 0) {
-      parts.push(`希望你${hopeTaTags.join('、')}`)
-    }
+    const ht = (user as any).hopeTaTags
+    if (Array.isArray(ht)) values.hopeTa = ht
 
-    return parts.join('，')
+    // 变量替换
+    return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+      const tags = values[key]
+      if (tags && tags.length > 0) return tags.join(sep)
+      return empty
+    })
   }
 
   async getUserDetail(
@@ -491,7 +490,7 @@ export class UserService {
         matchmakerReviews,
         isFollowed,
         isSelf,
-        introText: this.buildUserIntroText(user),
+        introText: await this.buildUserIntroText(user),
       },
     }
   }

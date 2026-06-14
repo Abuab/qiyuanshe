@@ -106,6 +106,7 @@ export class SystemService implements OnModuleInit {
       vip: {},
       payment: {},
       audit: {},
+      intro: {},
     }
 
     for (const config of configs) {

@@ -318,6 +318,47 @@
           </el-form>
         </el-card>
       </el-tab-pane>
+
+      <el-tab-pane label="简介模板" name="intro">
+        <el-card class="config-card">
+          <el-form :model="introConfig" label-width="140px">
+            <el-form-item label="模板格式">
+              <el-input
+                v-model="introConfig.template"
+                type="textarea"
+                :rows="4"
+                placeholder="我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}"
+              />
+              <div class="form-tip">
+                可用变量：<code>{character}</code>（性格）、<code>{hobby}</code>（爱好）、<code>{loveRule}</code>（恋爱准则）、<code>{hopeTa}</code>（希望TA）
+              </div>
+            </el-form-item>
+            <el-form-item label="分隔符">
+              <el-input
+                v-model="introConfig.separator"
+                placeholder="、"
+                style="width: 120px"
+              />
+              <div class="form-tip">多选标签之间的连接符号，默认顿号「、」</div>
+            </el-form-item>
+            <el-form-item label="空值占位">
+              <el-input
+                v-model="introConfig.emptyPlaceholder"
+                placeholder="（暂未填写）"
+                style="width: 240px"
+              />
+              <div class="form-tip">某项标签为空时显示的文字</div>
+            </el-form-item>
+            <el-form-item label="预览">
+              <el-alert type="info" :closable="false" show-icon>
+                <template #title>
+                  <span class="preview-text">{{ introPreview }}</span>
+                </template>
+              </el-alert>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
 
     <div class="config-footer">
@@ -329,7 +370,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
 import { system, adminSystem } from '../../api'
@@ -384,6 +425,27 @@ const auditConfig = reactive({
   manualAuditEnabled: true,
 })
 
+const introConfig = reactive({
+  template: '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}',
+  separator: '、',
+  emptyPlaceholder: '（暂未填写）',
+})
+
+// 模拟预览：用伪数据填充模板
+const introPreview = computed(() => {
+  const demo = {
+    character: ['温柔体贴', '开朗积极'],
+    hobby: ['旅行', '美食', '看电影'],
+    loveRule: ['宁缺也毋滥', '恋爱以结婚为目的'],
+    hopeTa: ['成熟稳重', '有责任心'],
+  }
+  const values: Record<string, string> = {}
+  for (const [k, v] of Object.entries(demo)) {
+    values[k] = v.length > 0 ? v.join(introConfig.separator) : introConfig.emptyPlaceholder
+  }
+  return introConfig.template.replace(/\{(\w+)\}/g, (_, key) => values[key] || introConfig.emptyPlaceholder)
+})
+
 onMounted(async () => {
   await fetchConfig()
 })
@@ -397,6 +459,10 @@ async function fetchConfig() {
       Object.assign(vipConfig, res.data.vip || {})
       Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
+      // 简介模板
+      if (res.data.intro) {
+        Object.assign(introConfig, res.data.intro)
+      }
       // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
       logoError.value = false
     }
@@ -414,6 +480,7 @@ async function handleSave() {
       vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
+      intro: { ...introConfig },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
@@ -594,5 +661,19 @@ async function uploadCertFile(options: any) {
 :deep(.el-divider__text) {
   color: #409eff;
   font-weight: 600;
+}
+
+.preview-text {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+code {
+  background: #f0f2f5;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: #e74c3c;
 }
 </style>
