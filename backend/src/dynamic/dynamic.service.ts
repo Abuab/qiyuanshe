@@ -31,6 +31,7 @@ export class DynamicService {
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
       .where('dynamic.status IN (0, 1)')
+      .andWhere("dynamic.type != 'text'")
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

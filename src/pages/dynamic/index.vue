@@ -31,7 +31,7 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
-      :style="{ paddingTop: (44 + statusBarHeight + 80) + 'px' }"
+      :style="{ paddingTop: (44 + statusBarHeight + 46) + 'px' }"
     >
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无动态</text>
