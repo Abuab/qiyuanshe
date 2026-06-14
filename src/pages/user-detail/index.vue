@@ -26,13 +26,22 @@
           :circular="false"
         >
           <swiper-item v-for="(photo, index) in userData.photos" :key="index">
-            <image
-              class="photo-image"
-              :src="photo.url || photo"
-              mode="aspectFill"
-              @error="handleImageError"
-              @tap="previewPhoto(index)"
-            />
+            <view class="photo-wrapper" :class="{ 'photo-blur': shouldBlurPhoto && index > 0 }" @tap="previewPhoto(index)">
+              <image
+                class="photo-image"
+                :src="photo.url || photo"
+                mode="aspectFill"
+                @error="handleImageError"
+              />
+              <!-- 模糊遮罩+上传引导 -->
+              <view v-if="shouldBlurPhoto && index > 0" class="blur-guide">
+                <text class="blur-guide-title">我也想更了解你</text>
+                <text class="blur-guide-hint">请先上传你的照片吧</text>
+                <view class="upload-photo-btn" @tap.stop="goToUploadPhoto">
+                  <text>上传照片</text>
+                </view>
+              </view>
+            </view>
           </swiper-item>
         </swiper>
 
@@ -45,10 +54,11 @@
             v-for="(photo, index) in userData.photos"
             :key="index"
             class="thumbnail-item"
-            :class="{ active: currentPhotoIndex === index }"
-            @tap="currentPhotoIndex = index"
+            :class="{ active: currentPhotoIndex === index, 'thumb-blur': shouldBlurPhoto && index > 0 }"
+            @tap="handleThumbTap(index)"
           >
             <image class="thumbnail-image" :src="photo.url || photo" mode="aspectFill" @error="handleImageError" />
+            <view v-if="shouldBlurPhoto && index > 0" class="thumb-blur-cover" />
           </view>
         </view>
       </view>
@@ -348,6 +358,10 @@ const isVip = computed(() => userStore.isVip)
 /** 本地判断是否为自己，不依赖后端 isSelf 字段 */
 const isSelf = computed(() => userStore.userInfo?.id != null && userStore.userInfo.id === userId.value)
 
+// 照片模糊控制：查看者照片数（头像不算）≤ 0 时，非首张照片模糊
+const myPhotoCount = ref(0)
+const shouldBlurPhoto = computed(() => myPhotoCount.value <= 1 && !isSelf.value)
+
 onMounted(() => {
   // 激活右上角原生分享按钮（开发工具中可能不可用，加 fail 静默处理）
   uni.showShareMenu({
@@ -371,6 +385,11 @@ onMounted(() => {
   }
 
   fetchMatchmakerList()
+
+  // 获取查看者自己的照片数量（判断是否模糊）
+  if (isLoggedIn.value) {
+    fetchMyPhotoCount()
+  }
 })
 
 // 从登录页返回后刷新关注状态
@@ -537,11 +556,51 @@ const onPhotoChange = (e: any) => {
 const previewPhoto = (index: number) => {
   if (!userData.value?.photos) return
 
+  // 需要模糊的照片不可预览，引导上传
+  if (shouldBlurPhoto.value && index > 0) {
+    uni.showModal({
+      title: '提示',
+      content: '我也想更了解你，请先上传你的照片吧',
+      confirmText: '上传照片',
+      cancelText: '取消',
+      confirmColor: '#FF6B9D',
+      success: (res) => {
+        if (res.confirm) goToUploadPhoto()
+      },
+    })
+    return
+  }
+
   const urls = userData.value.photos.map((p) => p.url)
   uni.previewImage({
     current: index,
     urls,
   })
+}
+
+const handleThumbTap = (index: number) => {
+  if (shouldBlurPhoto.value && index > 0) {
+    previewPhoto(index)
+    return
+  }
+  currentPhotoIndex.value = index
+}
+
+const goToUploadPhoto = () => {
+  uni.navigateTo({
+    url: '/pages/edit-profile/index?tab=photos',
+  })
+}
+
+const fetchMyPhotoCount = async () => {
+  try {
+    const res = await request<{ list: any[] }>({
+      url: '/users/photos',
+      method: 'GET',
+    })
+    const data = res as any
+    myPhotoCount.value = data?.list?.length || 0
+  } catch { /* ignore */ }
 }
 
 const showSharePanel = () => {
@@ -853,6 +912,76 @@ const showAuthDetail = (type: string) => {
 .photo-image {
   width: 100%;
   height: 100%;
+}
+
+/* 照片模糊效果 */
+.photo-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.photo-wrapper.photo-blur .photo-image {
+  opacity: 0.25;
+}
+
+.blur-guide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 5;
+}
+
+.blur-guide-title {
+  font-size: 32rpx;
+  color: #FF6B9D;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.blur-guide-hint {
+  font-size: 26rpx;
+  color: #fff;
+  margin-bottom: 30rpx;
+}
+
+.upload-photo-btn {
+  background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
+  padding: 14rpx 50rpx;
+  border-radius: 40rpx;
+}
+
+.upload-photo-btn text {
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 缩略图模糊 */
+.thumb-blur {
+  position: relative;
+}
+
+.thumb-blur .thumbnail-image {
+  opacity: 0.3;
+}
+
+.thumb-blur-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8rpx;
+  z-index: 2;
 }
 
 .share-btn {

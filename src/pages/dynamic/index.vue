@@ -2,11 +2,25 @@
   <view class="dynamic-page">
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
-      <view class="nav-left">
-        <text class="back-icon" @tap="handleBack">←</text>
+      <view class="nav-left" @tap="goHome">
+        <text class="home-icon">🏠</text>
       </view>
       <text class="nav-title">动态</text>
-      <view class="nav-right"><text class="pub-text" @tap="goToPublish">+ 发布</text></view>
+      <view class="nav-right" />
+    </view>
+
+    <!-- 顶部标签栏 -->
+    <view class="tab-bar" :style="{ paddingTop: (44 + statusBarHeight) + 'px' }">
+      <view
+        v-for="tab in tabs"
+        :key="tab.key"
+        class="tab-item"
+        :class="{ active: currentTab === tab.key }"
+        @tap="switchTab(tab.key)"
+      >
+        <text class="tab-text">{{ tab.label }}</text>
+        <view v-if="currentTab === tab.key" class="tab-underline" />
+      </view>
     </view>
 
     <scroll-view
@@ -17,10 +31,10 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
-      :style="{ paddingTop: (44 + statusBarHeight) + 'px' }"
+      :style="{ paddingTop: (44 + statusBarHeight + 80) + 'px' }"
     >
       <view v-if="list.length === 0 && !loading" class="empty-state">
-        <text class="empty-text">暂无动态，快去发布第一条吧</text>
+        <text class="empty-text">暂无动态</text>
       </view>
 
       <view
@@ -28,120 +42,135 @@
         :key="item.id"
         class="dynamic-card"
       >
-        <!-- 顶部：头像 + 昵称 + 时间 -->
-        <view class="card-header">
+        <!-- 用户信息区 -->
+        <view class="user-row" @tap="goToUserDetail(item.userId)">
           <image
-            class="author-avatar"
+            class="user-avatar"
             :src="item.avatar || icons.common.defaultAvatar"
             mode="aspectFill"
             @error="handleImageError"
-            @tap="goToUserDetail(item.userId)"
           />
-          <view class="author-info">
-            <text class="author-name">{{ item.nickname }}</text>
-            <text class="publish-time">{{ formatTime(item.createdAt) }}</text>
-            <text v-if="item.status === 0" class="audit-badge">审核中</text>
-          </view>
-          <view v-if="myUserId && item.userId === myUserId" class="delete-btn" @tap.stop="handleDelete(item)">
-            <text class="delete-icon">×</text>
-          </view>
-        </view>
-
-        <!-- 文字内容 -->
-        <view v-if="item.content" class="card-content">
-          <text class="content-text">{{ item.content }}</text>
-        </view>
-
-        <!-- 图片网格 -->
-        <view v-if="item.images && item.images.length > 0" class="image-grid" :class="gridClass(item.images.length)">
-          <image
-            v-for="(img, idx) in item.images"
-            :key="idx"
-            class="grid-image"
-            :src="img"
-            mode="aspectFill"
-            @error="handleImageError"
-            @tap="previewImages(item.images, idx)"
-          />
-        </view>
-
-        <!-- 操作栏 -->
-        <view class="action-bar">
-          <view class="action-item" @tap="toggleLike(item)">
-            <text class="action-icon" :class="{ liked: item.isLiked }">{{ item.isLiked ? '❤️' : '🤍' }}</text>
-            <text class="action-count" v-if="item.likeCount > 0">{{ item.likeCount }}</text>
-          </view>
-          <view class="action-item" @tap="goComment(item)">
-            <text class="action-icon">💬</text>
-            <text class="action-count" v-if="item.commentCount > 0">{{ item.commentCount }}</text>
-          </view>
-          <view class="action-item" @tap="shareDynamic(item)">
-            <text class="action-icon">↗</text>
-            <text class="action-count">分享</text>
+          <view class="user-info">
+            <view class="user-name-row">
+              <text class="user-name">{{ item.nickname }}</text>
+              <view v-if="item.isRealName" class="realname-tag">
+                <text class="realname-icon">✓</text>
+                <text class="realname-text">已实名</text>
+              </view>
+            </view>
+            <view class="user-tags">
+              <text v-if="item.age">{{ item.age }}岁</text>
+              <text v-if="item.age && item.height"> | </text>
+              <text v-if="item.height">{{ item.height }}cm</text>
+              <text v-if="item.height && item.education"> | </text>
+              <text v-if="item.education">{{ item.education }}</text>
+              <text v-if="item.education && item.incomeRange"> | </text>
+              <text v-if="item.incomeRange">{{ item.incomeRange }}</text>
+            </view>
           </view>
         </view>
 
-        <!-- 点赞用户列表 -->
-        <view v-if="item.likeUsers && item.likeUsers.length > 0" class="like-users">
-          <text class="like-icon">❤️</text>
-          <text
-            v-for="(u, idx) in item.likeUsers"
-            :key="u.id"
-            class="like-user-name"
-            @tap="goToUserDetail(u.id)"
-          >
-            {{ u.nickname }}<text v-if="idx < item.likeUsers.length - 1">、</text>
-          </text>
+        <!-- 动态内容区 -->
+        <!-- 相册动态 -->
+        <view v-if="item.type === 'photo'" class="card-content">
+          <text class="content-text">{{ item.content || '更新了相册' }}</text>
+          <view class="photo-grid">
+            <view
+              v-for="(img, idx) in item.images"
+              :key="idx"
+              class="photo-item"
+              :class="{
+                'photo-blur': shouldBlur(item, idx),
+                'photo-last': idx === item.images.length - 1,
+              }"
+              :style="{ width: item.images.length === 2 ? '340rpx' : '220rpx', height: item.images.length === 2 ? '340rpx' : '220rpx' }"
+              @tap="handlePhotoTap(item, idx)"
+            >
+              <image
+                class="photo-img"
+                :src="img"
+                mode="aspectFill"
+                @error="handleImageError"
+              />
+              <!-- 毛玻璃遮罩 + 提示 -->
+              <view v-if="shouldBlur(item, idx) && idx > 0" class="blur-overlay">
+                <text class="blur-text">我也更了解你</text>
+                <text class="blur-hint">请先上传你的照片吧</text>
+                <view class="upload-btn" @tap.stop="goToUploadPhoto">
+                  <text class="upload-btn-text">上传照片</text>
+                </view>
+              </view>
+              <!-- 不透明遮罩替代 blur -->
+              <view v-if="shouldBlur(item, idx) && idx > 0" class="blur-cover" />
+            </view>
+          </view>
+        </view>
+
+        <!-- 回答动态 -->
+        <view v-if="item.type === 'answer'" class="card-content">
+          <text class="answer-text">{{ item.content }}</text>
+          <!-- 话题卡片 -->
+          <view v-if="item.questionTitle" class="topic-card" @tap="goToQuestion(item.questionId)">
+            <text class="topic-hash">#</text>
+            <text class="topic-title">{{ item.questionTitle }}</text>
+            <text class="topic-arrow">›</text>
+          </view>
+        </view>
+
+        <!-- 底部操作栏 -->
+        <view class="bottom-bar">
+          <text class="time-text">{{ formatTime(item.createdAt) }}</text>
+          <view class="action-buttons">
+            <view class="btn-hi" @tap="handleHi(item)">
+              <text class="hi-label">Hi</text>
+              <text class="hi-text">认识Ta</text>
+            </view>
+            <view class="btn-matchmaker" @tap="handleMatchmaker(item)">
+              <text class="mm-eye">👁</text>
+              <text class="mm-text">红娘牵线</text>
+            </view>
+          </view>
         </view>
       </view>
 
       <view v-if="loadingMore" class="loading-more">
         <text>加载中...</text>
       </view>
-
       <view v-if="noMore && list.length > 0" class="no-more">
         <text>没有更多了</text>
       </view>
-
-      <view class="bottom-safe"></view>
+      <view class="bottom-safe" />
     </scroll-view>
-
-    <!-- 悬浮发布按钮（移到 scroll-view 外，不受滚动影响） -->
-    <view class="fab-publish" @tap="goToPublish">
-      <text class="fab-icon">+</text>
-    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
-import { del } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
-import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 import { useImageFallback } from '@/composables/useImageFallback'
 const { handleImageError } = useImageFallback()
 
-interface LikeUser {
-  id: number
-  nickname: string
-}
-
 interface DynamicItem {
   id: number
+  type: string
   userId: number
   nickname: string
   avatar: string
+  isRealName: number
+  age: number
+  height: number
+  education: string
+  incomeRange: string
   content: string
   images: string[]
+  questionId?: number
+  questionTitle?: string
   createdAt: string
   likeCount: number
   commentCount: number
-  isLiked: boolean
-  likeUsers: LikeUser[]
-  status?: number
 }
 
 const list = ref<DynamicItem[]>([])
@@ -153,8 +182,28 @@ const page = ref(1)
 const pageSize = 10
 const statusBarHeight = ref(0)
 const userStore = useUserStore()
-
 const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
+
+// 当前登录用户的照片数量（用于判断是否模糊）
+const myPhotoCount = ref(0)
+
+const tabs = [
+  { key: 'all', label: '全部' },
+  { key: 'matchmaker', label: '红娘' },
+  { key: 'follow', label: '关注' },
+]
+const currentTab = ref('all')
+
+/** 判断是否应该模糊：查看者只有头像、没有其他照片 */
+const shouldBlur = (item: DynamicItem, imgIndex: number): boolean => {
+  // 自己的动态不模糊
+  if (item.userId === myUserId.value) return false
+  // 只有第二张及之后的才模糊
+  if (imgIndex === 0) return false
+  // 如果查看者有上传照片（>1），不模糊
+  if (myPhotoCount.value > 1) return false
+  return true
+}
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -169,13 +218,18 @@ const formatTime = (dateStr: string): string => {
   const day = Math.floor(hour / 24)
   if (day < 7) return `${day}天前`
   const d = new Date(date)
-  return `${d.getMonth() + 1}月${d.getDate()}日`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-const gridClass = (count: number): string => {
-  if (count === 1) return 'grid-1'
-  if (count === 2) return 'grid-2'
-  return 'grid-3'
+const fetchMyPhotoCount = async () => {
+  try {
+    const res = await request<{ list: any[] }>({
+      url: '/users/photos',
+      method: 'GET',
+    })
+    const data = res as any
+    myPhotoCount.value = data?.list?.length || 0
+  } catch { /* ignore */ }
 }
 
 const fetchList = async (reset = false) => {
@@ -187,16 +241,20 @@ const fetchList = async (reset = false) => {
 
   loadingMore.value = true
   try {
-    const res = await request<{ list: DynamicItem[] }>({
+    const params: Record<string, unknown> = {
+      page: page.value,
+      limit: pageSize,
+      type: currentTab.value === 'all' ? undefined : currentTab.value,
+    }
+    const res = await request<{ list: DynamicItem[]; total?: number }>({
       url: '/dynamics',
       method: 'GET',
-      data: { page: page.value, limit: pageSize } as Record<string, unknown>,
+      data: params,
     })
 
-    const data = res as unknown as { list: DynamicItem[]; total?: number } | DynamicItem[]
-    const items = Array.isArray(data) ? data : data.list || []
+    const data = res as unknown as { list: DynamicItem[]; total?: number }
+    const items = data.list || []
 
-    // 补全图片 URL
     const processed = items.map((item: DynamicItem) => ({
       ...item,
       avatar: item.avatar ? getFullImageUrl(item.avatar) : icons.common.defaultAvatar,
@@ -234,58 +292,15 @@ const onLoadMore = () => {
   fetchList(false)
 }
 
-const toggleLike = async (item: DynamicItem & { likeLoading?: boolean }) => {
-  // 不能给自己的动态点赞
-  const myId = userStore.userInfo?.id
-  if (myId && item.userId === myId) {
-    uni.showToast({ title: '不能给自己的动态点赞', icon: 'none' })
-    return
-  }
-  // 已经点过赞了
-  if (item.isLiked) {
-    uni.showToast({ title: '已经点过赞了', icon: 'none' })
-    return
-  }
-  if (item.likeLoading) return
-  item.likeLoading = true
-
-  try {
-    await request({
-      url: `/dynamics/${item.id}/like`,
-      method: 'POST',
-    } as Record<string, unknown>)
-    item.isLiked = true
-    item.likeCount++
-
-    // 刷新该动态的点赞列表
-    await refreshLikeUsers(item)
-  } catch (e) {
-    uni.showToast({ title: '点赞失败', icon: 'none' })
-  } finally {
-    item.likeLoading = false
-  }
+const switchTab = (key: string) => {
+  if (currentTab.value === key) return
+  currentTab.value = key
+  list.value = []
+  fetchList(true)
 }
 
-const refreshLikeUsers = async (item: DynamicItem) => {
-  try {
-    const res = await request<{ likeUsers: LikeUser[] }>({
-      url: `/dynamics/${item.id}/like-users`,
-      method: 'GET',
-    })
-    const data = res as unknown as { likeUsers: LikeUser[] }
-    if (data.likeUsers) {
-      item.likeUsers = data.likeUsers
-    }
-  } catch (e) {
-    // 静默
-  }
-}
-
-const previewImages = (images: string[], current: number) => {
-  uni.previewImage({
-    urls: images,
-    current,
-  })
+const goHome = () => {
+  uni.switchTab({ url: '/pages/index/index' })
 }
 
 const goToUserDetail = (userId: number) => {
@@ -294,50 +309,86 @@ const goToUserDetail = (userId: number) => {
   })
 }
 
-const goToPublish = () => {
+const goToQuestion = (questionId?: number) => {
+  if (!questionId) return
   uni.navigateTo({
-    url: '/pages/dynamic-publish/index',
+    url: `/pages/question-detail/index?id=${questionId}`,
   })
 }
 
-const shareDynamic = (item: DynamicItem) => {
-  uni.showToast({ title: '请点击右上角分享', icon: 'none' })
+const handlePhotoTap = (item: DynamicItem, idx: number) => {
+  // 如果该图片被模糊了，弹提示引导上传
+  if (shouldBlur(item, idx) && idx > 0) {
+    uni.showModal({
+      title: '提示',
+      content: '我也想更了解你，请先上传你的照片吧',
+      confirmText: '上传照片',
+      cancelText: '取消',
+      confirmColor: '#FF6B9D',
+      success: (res) => {
+        if (res.confirm) {
+          goToUploadPhoto()
+        }
+      },
+    })
+    return
+  }
+  // 正常预览
+  uni.previewImage({
+    urls: item.images,
+    current: idx,
+  })
 }
 
-const goComment = (item: DynamicItem) => {
-  uni.navigateTo({ url: `/pages/dynamic-detail/index?id=${item.id}` })
+const goToUploadPhoto = () => {
+  uni.navigateTo({
+    url: '/pages/edit-profile/index?tab=photos',
+  })
 }
 
-const handleDelete = (item: DynamicItem) => {
+const handleHi = (item: DynamicItem) => {
+  if (item.userId === myUserId.value) {
+    uni.showToast({ title: '这是你自己的动态', icon: 'none' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/chat/index?userId=${item.userId}`,
+  })
+}
+
+const handleMatchmaker = (item: DynamicItem) => {
+  if (item.userId === myUserId.value) {
+    uni.showToast({ title: '这是你自己的动态', icon: 'none' })
+    return
+  }
+  // 弹出红娘联系框逻辑
   uni.showModal({
-    title: '删除动态',
-    content: '确定要删除这条动态吗？',
-    confirmColor: '#E7412B',
+    title: '红娘牵线',
+    content: '将由红娘为您牵线搭桥，是否继续？',
+    confirmText: '联系红娘',
+    cancelText: '取消',
+    confirmColor: '#FF6B9D',
     success: async (res) => {
       if (res.confirm) {
         try {
-          await del(`/dynamics/${item.id}`)
-          list.value = list.value.filter((d) => d.id !== item.id)
-          uni.showToast({ title: '已删除', icon: 'none' })
+          await request({
+            url: '/matchmaker/request',
+            method: 'POST',
+            data: { targetUserId: item.userId } as Record<string, unknown>,
+          })
+          uni.showToast({ title: '已通知红娘，请耐心等待', icon: 'none' })
         } catch (e) {
-          uni.showToast({ title: '删除失败', icon: 'none' })
+          uni.showToast({ title: '操作失败，请重试', icon: 'none' })
         }
       }
     },
   })
 }
 
-const handleBack = () => {
-  if (getCurrentPages().length > 1) {
-    uni.navigateBack({ delta: 1 })
-  } else {
-    uni.switchTab({ url: '/pages/index/index' })
-  }
-}
-
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
+  fetchMyPhotoCount()
   fetchList(true)
 })
 </script>
@@ -345,7 +396,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .dynamic-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFF0F3 0%, #FFF5F5 25%, #FFFFFF 50%, #f5f5f5 100%);
+  background: #FFF0F3;
 }
 
 .nav-bar {
@@ -357,43 +408,77 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: transparent;
-  z-index: 100;
-  box-shadow: none;
+  background-color: #FFF0F3;
+  z-index: 101;
 }
 
-.nav-left,
+.nav-left {
+  width: 80rpx;
+  display: flex;
+  align-items: center;
+}
+
+.home-icon {
+  font-size: 40rpx;
+}
+
 .nav-right {
-  width: 120rpx;
-}
-
-.back-icon {
-  font-size: 36rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-}
-
-.pub-text {
-  font-size: 28rpx;
-  color: #FF6B9D;
-  font-weight: 500;
+  width: 80rpx;
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 36rpx;
   font-weight: bold;
   color: #333;
 }
 
+.tab-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FFF0F3;
+  z-index: 100;
+}
+
+.tab-item {
+  padding: 16rpx 40rpx;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tab-text {
+  font-size: 30rpx;
+  color: #999;
+  line-height: 1.4;
+}
+
+.tab-item.active .tab-text {
+  color: #333;
+  font-weight: 600;
+}
+
+.tab-underline {
+  width: 40rpx;
+  height: 6rpx;
+  background-color: #FF6B9D;
+  border-radius: 3rpx;
+  margin-top: 8rpx;
+}
+
 .content-scroll {
   height: 100vh;
-  padding-bottom: 160rpx;
 }
 
 .empty-state {
   display: flex;
   justify-content: center;
-  padding: 120rpx 0;
+  padding: 200rpx 0;
 }
 
 .empty-text {
@@ -403,70 +488,71 @@ onMounted(() => {
 
 .dynamic-card {
   margin: 20rpx 24rpx;
-  padding: 28rpx 24rpx;
+  padding: 28rpx 24rpx 20rpx;
   background-color: #fff;
   border-radius: 16rpx;
 }
 
-.card-header {
+/* 用户信息区 */
+.user-row {
   display: flex;
   align-items: center;
   margin-bottom: 20rpx;
 }
 
-.author-avatar {
-  width: 80rpx;
-  height: 80rpx;
+.user-avatar {
+  width: 88rpx;
+  height: 88rpx;
   border-radius: 50%;
   background-color: #f5f5f5;
   flex-shrink: 0;
 }
 
-.author-info {
-  margin-left: 16rpx;
+.user-info {
+  margin-left: 20rpx;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
-.author-name {
-  font-size: 28rpx;
+.user-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.user-name {
+  font-size: 30rpx;
   font-weight: bold;
   color: #333;
 }
 
-.publish-time {
-  font-size: 22rpx;
-  color: #999;
-  margin-top: 4rpx;
-}
-
-.audit-badge {
-  font-size: 20rpx;
-  color: #E6A23C;
-  background-color: #FDF6EC;
-  padding: 2rpx 12rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid #FAECD8;
+.realname-tag {
   margin-left: 12rpx;
-}
-
-.delete-btn {
-  margin-left: auto;
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.05);
   display: flex;
   align-items: center;
-  justify-content: center;
-
-  .delete-icon {
-    font-size: 32rpx;
-    color: #999;
-    line-height: 1;
-  }
+  padding: 2rpx 12rpx;
+  background-color: #E8F4FD;
+  border-radius: 8rpx;
 }
 
+.realname-icon {
+  font-size: 20rpx;
+  color: #409EFF;
+  margin-right: 4rpx;
+}
+
+.realname-text {
+  font-size: 20rpx;
+  color: #409EFF;
+}
+
+.user-tags {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+/* 动态内容区 */
 .card-content {
   margin-bottom: 20rpx;
   padding: 0 4rpx;
@@ -474,119 +560,197 @@ onMounted(() => {
 
 .content-text {
   font-size: 28rpx;
+  color: #555;
+  line-height: 1.7;
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.answer-text {
+  font-size: 28rpx;
   color: #333;
   line-height: 1.7;
+  margin-bottom: 16rpx;
+  display: block;
   word-break: break-all;
 }
 
-.image-grid {
+/* 图片网格 */
+.photo-grid {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-bottom: 20rpx;
-  padding: 0 4rpx;
-
-  &.grid-1 .grid-image {
-    width: 400rpx;
-    height: 400rpx;
-    border-radius: 12rpx;
-    background-color: #f5f5f5;
-  }
-
-  &.grid-2 .grid-image {
-    width: calc(50% - 4rpx);
-    height: 340rpx;
-    border-radius: 12rpx;
-    background-color: #f5f5f5;
-  }
-
-  &.grid-3 .grid-image {
-    width: calc(33.33% - 6rpx);
-    height: 220rpx;
-    border-radius: 12rpx;
-    background-color: #f5f5f5;
-  }
+  flex-wrap: nowrap;
 }
 
-.action-bar {
+.photo-item {
+  position: relative;
+  margin-right: 10rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
+  background-color: #f5f5f5;
+}
+
+.photo-item.photo-last {
+  margin-right: 0;
+}
+
+.photo-img {
+  width: 100%;
+  height: 100%;
+}
+
+.photo-blur .photo-img {
+  opacity: 0.3;
+}
+
+.blur-cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.blur-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 48rpx;
-  padding: 16rpx 4rpx 12rpx;
-  border-top: 1rpx solid #f0f0f0;
+  justify-content: center;
+  z-index: 5;
 }
 
-.action-item {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
+.blur-text {
+  font-size: 26rpx;
+  color: #FF6B9D;
+  font-weight: 600;
+  margin-bottom: 8rpx;
 }
 
-.action-icon {
-  font-size: 28rpx;
-
-  &.liked {
-    color: #FF6B9D;
-  }
-}
-
-.action-count {
-  font-size: 24rpx;
+.blur-hint {
+  font-size: 22rpx;
   color: #999;
+  margin-bottom: 20rpx;
 }
 
-.like-users {
+.upload-btn {
+  background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
+  padding: 14rpx 44rpx;
+  border-radius: 40rpx;
+}
+
+.upload-btn-text {
+  font-size: 26rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 话题卡片 */
+.topic-card {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  padding: 12rpx 4rpx 0;
+  background-color: #FFF5F5;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
 }
 
-.like-icon {
-  font-size: 22rpx;
-  margin-right: 6rpx;
+.topic-hash {
+  font-size: 36rpx;
+  color: #FF6B9D;
+  font-weight: bold;
+  margin-right: 12rpx;
 }
 
-.like-user-name {
+.topic-title {
+  font-size: 28rpx;
+  color: #333;
+  flex: 1;
+}
+
+.topic-arrow {
+  font-size: 32rpx;
+  color: #ccc;
+}
+
+/* 底部操作栏 */
+.bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20rpx;
+  border-top: 1rpx solid #f5f5f5;
+}
+
+.time-text {
   font-size: 22rpx;
+  color: #bbb;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.btn-hi {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 24rpx;
+  border-radius: 40rpx;
+  border: 2rpx solid #FF6B9D;
+  background-color: #fff;
+  margin-right: 16rpx;
+}
+
+.hi-label {
+  font-size: 24rpx;
+  color: #FF6B9D;
+  font-weight: 600;
+  margin-right: 4rpx;
+}
+
+.hi-text {
+  font-size: 24rpx;
   color: #FF6B9D;
 }
 
-.loading-more,
-.no-more {
+.btn-matchmaker {
+  display: flex;
+  align-items: center;
+  padding: 10rpx 24rpx;
+  border-radius: 40rpx;
+  background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
+}
+
+.mm-eye {
+  font-size: 24rpx;
+  margin-right: 4rpx;
+}
+
+.mm-text {
+  font-size: 24rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.loading-more {
   text-align: center;
-  padding: 32rpx 0;
+  padding: 30rpx;
   font-size: 24rpx;
   color: #999;
 }
 
-.bottom-safe {
-  height: 40rpx;
+.no-more {
+  text-align: center;
+  padding: 30rpx;
+  font-size: 24rpx;
+  color: #ccc;
 }
 
-.fab-publish {
-  position: fixed;
-  right: 40rpx;
-  bottom: calc(140rpx + env(safe-area-inset-bottom));
-  width: 100rpx;
-  height: 100rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4rpx 20rpx rgba(255, 107, 157, 0.4);
-  z-index: 100;
-
-  .fab-icon {
-    font-size: 48rpx;
-    color: #fff;
-    font-weight: bold;
-    line-height: 1;
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
+.bottom-safe {
+  height: 60rpx;
 }
 </style>

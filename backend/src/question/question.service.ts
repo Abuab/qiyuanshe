@@ -6,6 +6,7 @@ import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
 import { AnswerLike } from '../entities/AnswerLike'
 import { AuditLog } from '../entities/AuditLog'
+import { DynamicService } from '../dynamic/dynamic.service'
 
 export interface QuestionListResult {
   list: HotQuestion[]
@@ -42,6 +43,7 @@ export class QuestionService {
     private readonly answerLikeRepository: Repository<AnswerLike>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    private readonly dynamicService: DynamicService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -183,6 +185,20 @@ export class QuestionService {
       content: (content || '').substring(0, 200),
     })
     await this.auditLogRepository.save(auditLog)
+
+    // 自动生成动态：「回答了问题」
+    const answerRecord = await this.answerRepository.findOne({ where: { id: answerId } })
+    if (answerRecord) {
+      this.dynamicService.autoCreateDynamic({
+        userId,
+        type: 'answer',
+        content: answerRecord.content,
+        images: answerRecord.photos || [],
+        referenceId: answerRecord.id,
+        questionId,
+        questionTitle: question.title,
+      }).catch(() => {})
+    }
 
     return this.answerRepository.findOneOrFail({ where: { id: answerId } })
   }

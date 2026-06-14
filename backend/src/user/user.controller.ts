@@ -24,6 +24,7 @@ import { UserBlock } from '../entities/UserBlock'
 import { AuditLog } from '../entities/AuditLog'
 import { Result } from '../common/result'
 import { normalizeImageUrl } from '../common/image-url'
+import { DynamicService } from '../dynamic/dynamic.service'
 
 @Controller('users')
 export class UserController {
@@ -34,6 +35,7 @@ export class UserController {
     @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
     @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
+    private readonly dynamicService: DynamicService,
   ) {}
 
   @Get('recommend')
@@ -181,6 +183,16 @@ export class UserController {
       content: JSON.stringify({ url: body.url, photoId: saved.id }),
     })
     await this.auditLogRepo.save(auditLog)
+
+    // 自动生成动态：「更新了相册」
+    const userPhotos = await this.photoRepo.find({ where: { userId }, order: { sortOrder: 'ASC' } })
+    const photoUrls = userPhotos.map((p) => normalizeImageUrl(p.photoUrl))
+    this.dynamicService.autoCreateDynamic({
+      userId,
+      type: 'photo',
+      content: '更新了相册',
+      images: photoUrls,
+    }).catch(() => {})
 
     return Result.success(saved)
   }

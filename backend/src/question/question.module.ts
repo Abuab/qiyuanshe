@@ -8,6 +8,7 @@ import {
 } from '../entities'
 import { QuestionController, AnswerController } from './question.controller'
 import { QuestionService } from './question.service'
+import { DynamicModule } from '../dynamic/dynamic.module'
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { QuestionService } from './question.service'
       User,
       AnswerLike,
     ]),
+    DynamicModule,
   ],
   controllers: [QuestionController, AnswerController],
   providers: [QuestionService],

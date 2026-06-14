@@ -357,6 +357,49 @@ export class UserService {
     }
   }
 
+  /**
+   * 根据用户标签拼成一句话简介：
+   * 「我是一个(性格)的人，我喜欢(爱好)，我(恋爱准则)，希望你(希望TA)」
+   */
+  buildUserIntroText(user: User): string {
+    const parts: string[] = []
+
+    const personalityTags = (user as any).personalityTags
+    if (personalityTags && Array.isArray(personalityTags) && personalityTags.length > 0) {
+      parts.push(`我是一个${personalityTags.join('、')}的人`)
+    } else {
+      // 尝试从结构化 personalityTags 中提取
+      const structured = personalityTags
+      if (structured && typeof structured === 'object' && !Array.isArray(structured)) {
+        const allTags: string[] = []
+        if (Array.isArray(structured.character)) allTags.push(...structured.character)
+        // hobby 和 loveRule 在下面单独处理
+        if (allTags.length > 0) {
+          parts.push(`我是一个${allTags.join('、')}的人`)
+        }
+      }
+    }
+
+    const personalityObj = (user as any).personalityTags
+    if (personalityObj && typeof personalityObj === 'object' && !Array.isArray(personalityObj)) {
+      const hobbies: string[] = (personalityObj as any).hobby || []
+      if (hobbies.length > 0) {
+        parts.push(`我喜欢${hobbies.join('、')}`)
+      }
+      const loveRules: string[] = (personalityObj as any).loveRule || []
+      if (loveRules.length > 0) {
+        parts.push(`我${loveRules.join('、')}`)
+      }
+    }
+
+    const hopeTaTags = (user as any).hopeTaTags
+    if (hopeTaTags && Array.isArray(hopeTaTags) && hopeTaTags.length > 0) {
+      parts.push(`希望你${hopeTaTags.join('、')}`)
+    }
+
+    return parts.join('，')
+  }
+
   async getUserDetail(
     id: number,
     currentUserId?: number,
@@ -366,6 +409,7 @@ export class UserService {
       matchmakerReviews: { id: number; content: string; matchmakerName: string; createdAt: Date }[]
       isFollowed: boolean
       isSelf: boolean
+      introText: string
     }
   }> {
     const user = await this.userRepository.findOne({
@@ -447,6 +491,7 @@ export class UserService {
         matchmakerReviews,
         isFollowed,
         isSelf,
+        introText: this.buildUserIntroText(user),
       },
     }
   }
