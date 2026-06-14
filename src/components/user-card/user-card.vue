@@ -303,12 +303,12 @@ const handleClick = () => {
 /* --- 相册小图 --- */
 .photos-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .photo-thumb {
-  width: 100rpx;
-  height: 100rpx;
+  width: 80rpx;
+  height: 80rpx;
   border-radius: 8rpx;
   background-color: #f5f5f5;
   margin-right: 10rpx;
