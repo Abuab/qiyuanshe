@@ -44,6 +44,7 @@ export interface User {
   updatedAt: string
   lastLoginAt?: string
   tags?: string[]
+  openid?: string
   adminRemark?: string
   profileAuditStatus?: string
   photoAuditStatus?: string

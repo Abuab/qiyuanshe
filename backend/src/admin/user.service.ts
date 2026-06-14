@@ -234,6 +234,7 @@ export class AdminUserService {
         nickname: user.nickname,
         avatar: user.avatar,
         phone: user.phone,
+        openid: user.openid,
         gender: user.gender,
         birthYear: user.birthYear,
         height: user.height,

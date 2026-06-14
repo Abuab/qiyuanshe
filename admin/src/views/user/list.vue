@@ -412,8 +412,8 @@
         </el-table-column>
         <el-table-column label="用户标签" width="160">
           <template #default="{ row }">
-            <template v-if="row.tags && row.tags.length">
-              <el-tag v-for="tag in row.tags" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+            <template v-if="getUserTags(row).length">
+              <el-tag v-for="tag in getUserTags(row)" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
             </template>
             <span v-else class="text-muted">-</span>
           </template>
@@ -1729,17 +1729,24 @@ function ensureJsonArray(val: any): any[] {
 }
 
 function normalizeUser(user: any): any {
-  const tags = ensureJsonArray(user.tags)
-  const personalityTags = ensureJsonArray(user.personalityTags)
-  const hopeTaTags = ensureJsonArray(user.hopeTaTags)
-  // 调试：观察 API 返回的原始 tags 形状
-  console.log('[normalizeUser] id=' + user.id, 'tags=', tags, 'raw=', typeof user.tags, user.tags)
   return {
     ...user,
-    tags,
-    personalityTags,
-    hopeTaTags,
+    tags: ensureJsonArray(user.tags),
+    personalityTags: ensureJsonArray(user.personalityTags),
+    hopeTaTags: ensureJsonArray(user.hopeTaTags),
   }
+}
+
+/** 组合展示用户标签：后台添加的用户自动打标签 */
+function getUserTags(row: any): string[] {
+  const tags: string[] = []
+  const dbTags = ensureJsonArray(row.tags)
+  if (dbTags.length) tags.push(...dbTags)
+  // 无 openid 说明是后台手动添加的用户
+  if (!row.openid && !tags.includes('后台添加')) {
+    tags.push('后台添加')
+  }
+  return tags
 }
 </script>
 
