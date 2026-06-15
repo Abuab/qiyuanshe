@@ -155,12 +155,13 @@ defineExpose({
 
 .icon-tint {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 52rpx;
-  height: 52rpx;
+  bottom: -2rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10rpx;
+  height: 10rpx;
   background: #FF6681;
-  opacity: 0.4;
+  border-radius: 50%;
   z-index: 1;
   pointer-events: none;
 }
