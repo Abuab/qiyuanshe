@@ -747,7 +747,7 @@ const onShareTimeline = () => {
 }
 
 .question-slide-title {
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: bold;
   line-height: 1.4;
   color: #333333;
