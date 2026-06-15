@@ -618,14 +618,14 @@ const handleBack = () => {
 // ========== 底部按钮 ==========
 .fixed-bottom {
   position: fixed;
-  bottom: 0;
+  bottom: 120rpx;
+  z-index: 1000;
   left: 0;
   right: 0;
   padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background-color: #fff;
   box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
-  z-index: 50;
 }
 
 .agreement-inline {

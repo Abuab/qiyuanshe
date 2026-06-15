@@ -5,22 +5,7 @@
         <text class="back-icon">←</text>
       </view>
       <view class="nav-title">消息</view>
-      <view class="nav-right" @tap="handleClear">
-        <text class="clear-btn">清空</text>
-      </view>
-    </view>
-
-    <view class="cat-tabs">
-      <view
-        v-for="t in catTabs"
-        :key="t.k"
-        class="cat-tab"
-        :class="{ active: activeCat === t.k }"
-        @tap="activeCat = t.k"
-      >
-        <text>{{ t.l }}</text>
-        <view v-if="t.b > 0" class="t-badge">{{ t.b > 99 ? '99+' : t.b }}</view>
-      </view>
+      <view class="nav-right" />
     </view>
 
     <scroll-view
@@ -36,13 +21,13 @@
         <text>加载中...</text>
       </view>
 
-      <view v-if="!loading && filteredMsgs.length === 0" class="empty-tip">
+      <view v-if="!loading && messageList.length === 0" class="empty-tip">
         <text class="empty-icon">📭</text>
         <text class="empty-text">暂无消息</text>
       </view>
 
       <view
-        v-for="item in filteredMsgs"
+        v-for="item in messageList"
         :key="item.id"
         class="message-item"
         @tap="handleClick(item)"
@@ -83,7 +68,7 @@
         </view>
       </view>
 
-      <view v-if="!loading && noMore && filteredMsgs.length > 0" class="no-more-tip">
+      <view v-if="!loading && noMore && messageList.length > 0" class="no-more-tip">
         <text>没有更多了</text>
       </view>
     </scroll-view>
@@ -93,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
@@ -131,26 +116,6 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
-
-const activeCat = ref('all')
-const catTabs = ref([
-  { k: 'all', l: '全部', b: 0 },
-  { k: 'visitor', l: '访客', b: 0 },
-  { k: 'matchmaker', l: '红娘', b: 0 },
-  { k: 'vip', l: '会员', b: 0 },
-  { k: 'follow', l: '关注', b: 0 },
-])
-
-const filteredMsgs = computed(() => {
-  if (activeCat.value === 'all') return messageList.value
-  return messageList.value.filter((m: MessageItem) => {
-    const c = activeCat.value
-    return (c === 'visitor' && m.type === 'visitor')
-      || (c === 'matchmaker' && m.type === 'matchmaker')
-      || (c === 'vip' && m.type === 'system')
-      || (c === 'follow' && m.type === 'follow')
-  })
-})
 
 onMounted(() => {
   if (userStore.isLoggedIn) {
@@ -290,27 +255,6 @@ const goToChat = (item: UserMessage) => {
   })
 }
 
-const handleClear = async () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定清空所有消息吗？',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await request({
-            url: '/chat/conversations',
-            method: 'DELETE',
-          })
-          messageList.value = []
-          uni.showToast({ title: '已清空', icon: 'success' })
-        } catch (e) {
-          logger.error('clear error', e)
-        }
-      }
-    },
-  })
-}
-
 const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
 
@@ -374,11 +318,6 @@ function isImagePreview(item: UserMessage): boolean {
   color: #333;
 }
 
-.clear-btn {
-  font-size: 28rpx;
-  color: #999;
-}
-
 .nav-title {
   font-size: 32rpx;
   font-weight: bold;
@@ -387,65 +326,8 @@ function isImagePreview(item: UserMessage): boolean {
 
 .message-list {
   height: calc(100vh - 88rpx);
-  padding-top: 180rpx;
+  padding-top: 88rpx;
   padding-bottom: 120rpx;
-}
-
-.cat-tabs {
-  position: fixed;
-  top: 88rpx;
-  left: 0;
-  right: 0;
-  display: flex;
-  background: #fff;
-  border-bottom: 1rpx solid #f5f5f5;
-  z-index: 99;
-  padding: 0 16rpx;
-}
-
-.cat-tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  padding: 24rpx 0;
-  position: relative;
-
-  text {
-    font-size: 28rpx;
-    color: #666;
-  }
-
-  &.active text {
-    color: #FF6B9D;
-    font-weight: bold;
-  }
-
-  &.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40rpx;
-    height: 4rpx;
-    background: #FF6B9D;
-    border-radius: 2rpx;
-  }
-}
-
-.t-badge {
-  min-width: 28rpx;
-  height: 28rpx;
-  background: #ff4d4f;
-  color: #fff;
-  font-size: 20rpx;
-  border-radius: 14rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 6rpx;
 }
 
 .loading-tip,
