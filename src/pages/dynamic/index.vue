@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="goHome">
-        <text class="home-icon">⌂</text>
+        <image class="home-icon-img" src="/static/icons/icon-home.png" mode="aspectFit" />
       </view>
       <text class="nav-title">动态</text>
       <view class="nav-right" />
@@ -498,10 +498,9 @@ onMounted(() => {
   align-items: center;
 }
 
-.home-icon {
-  font-size: 44rpx;
-  color: #333;
-  font-weight: 300;
+.home-icon-img {
+  width: 44rpx;
+  height: 44rpx;
 }
 
 .nav-right {
