@@ -301,6 +301,10 @@ const fetchList = async (reset = false) => {
       ),
     }))
 
+    // 诊断
+    const intros = processed.map((i: any) => `u${i.userId}:${i.introText ? i.introText.slice(0,20) : 'EMPTY'}`)
+    console.log('[PAGE] intros:', intros.join(' | '))
+
     if (reset) {
       list.value = processed
     } else {
@@ -613,16 +617,17 @@ onMounted(() => {
 /* 用户简介栏 */
 .intro-row {
   margin-bottom: 20rpx;
-  padding: 16rpx 20rpx;
-  background-color: #FFF8FA;
+  padding: 20rpx 24rpx;
+  background-color: #FFF0F5;
   border-radius: 10rpx;
-  border-left: 4rpx solid #FF6B9D;
+  border-left: 6rpx solid #FF1493;
 }
 
 .intro-text {
-  font-size: 26rpx;
-  color: #666;
-  line-height: 1.6;
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.8;
+  font-weight: 500;
 }
 
 .content-text {
