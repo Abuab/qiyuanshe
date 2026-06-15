@@ -47,39 +47,44 @@
       <view class="hot-questions-card">
         <view class="section-header">
           <view class="section-title-row">
-            <text class="section-title-icon">🔥</text>
+            <text class="section-title-icon">#</text>
             <text class="section-title">热门问答</text>
           </view>
           <text class="section-more" @tap="goToQuestions">更多 ›</text>
         </view>
 
-        <swiper
-          class="question-swiper"
-          :autoplay="true"
-          :circular="true"
-          :interval="4000"
-          :duration="400"
-          :current="questionSwiperIndex"
-          @change="onQuestionSwiperChange"
-          :style="{ height: '100rpx' }"
-        >
-          <swiper-item v-for="q in hotQuestions" :key="q.id">
-            <view class="question-slide" @tap="goToQuestionDetail(q.id)">
-              <view class="question-text-area">
-                <text class="question-slide-title">{{ q.title }}</text>
+        <view class="question-content-card">
+          <swiper
+            class="question-swiper"
+            :autoplay="true"
+            :circular="true"
+            :interval="4000"
+            :duration="400"
+            :current="questionSwiperIndex"
+            @change="onQuestionSwiperChange"
+            :style="{ height: '100rpx' }"
+          >
+            <swiper-item v-for="q in hotQuestions" :key="q.id">
+              <view class="question-slide" @tap="goToQuestionDetail(q.id)">
+                <view class="question-text-area">
+                  <text class="question-slide-title">{{ q.title }}</text>
+                </view>
+                <view class="question-right">
+                  <view class="question-avatars">
+                    <image
+                      v-for="(avatar, idx) in q.avatarList.slice(0, 3)"
+                      :key="idx"
+                      class="question-avatar"
+                      :src="getFullImageUrl(avatar)"
+                      mode="aspectFill"
+                    ></image>
+                  </view>
+                  <text class="question-arrow">›</text>
+                </view>
               </view>
-              <view class="question-avatars">
-                <image
-                  v-for="(avatar, idx) in q.avatarList.slice(0, 3)"
-                  :key="idx"
-                  class="question-avatar"
-                  :src="getFullImageUrl(avatar)"
-                  mode="aspectFill"
-                ></image>
-              </view>
-            </view>
-          </swiper-item>
-        </swiper>
+            </swiper-item>
+          </swiper>
+        </view>
 
         <view class="question-dots">
           <view
@@ -676,10 +681,10 @@ const onShareTimeline = () => {
 }
 
 .hot-questions-card {
-  background-color: #FFF8FA;
-  padding: 10rpx 20rpx 6rpx;
+  background: linear-gradient(135deg, #FFF5E6 0%, #FFFAF2 40%, #FFF9E6 100%);
+  padding: 20rpx 20rpx 10rpx;
   margin: 0 28rpx 12rpx;
-  border-radius: 16rpx;
+  border-radius: 20rpx;
   border: none;
   box-shadow: none;
 }
@@ -688,8 +693,9 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0;
+  margin-bottom: 16rpx;
   line-height: 1;
+  padding: 0 4rpx;
 }
 
 .section-title-row {
@@ -698,20 +704,29 @@ const onShareTimeline = () => {
 }
 
 .section-title-icon {
-  font-size: 24rpx;
-  margin-right: 6rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #FF6681;
+  margin-right: 8rpx;
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: bold;
-  color: var(--text);
+  color: #FF6681;
 }
 
 .section-more {
   font-size: 24rpx;
-  color: #FF6B9D;
+  color: #FF6681;
   letter-spacing: 1rpx;
+}
+
+/* 内容区白色卡片 */
+.question-content-card {
+  background-color: #FFFFFF;
+  border-radius: 12rpx;
+  padding: 6rpx 16rpx;
 }
 
 .question-swiper {
@@ -723,7 +738,6 @@ const onShareTimeline = () => {
   align-items: center;
   justify-content: space-between;
   height: 100rpx;
-  padding: 0 4rpx;
 }
 
 .question-text-area {
@@ -733,9 +747,9 @@ const onShareTimeline = () => {
 }
 
 .question-slide-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   line-height: 1.4;
-  color: var(--text);
+  color: #333333;
   white-space: normal;
   word-break: break-all;
   overflow: hidden;
@@ -743,6 +757,13 @@ const onShareTimeline = () => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+}
+
+.question-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8rpx;
 }
 
 .question-avatars {
@@ -762,6 +783,13 @@ const onShareTimeline = () => {
   &:first-child {
     margin-left: 0;
   }
+}
+
+.question-arrow {
+  font-size: 36rpx;
+  color: #FF6681;
+  line-height: 1;
+  margin-left: 4rpx;
 }
 
 .question-dots {
