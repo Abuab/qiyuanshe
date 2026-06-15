@@ -1,19 +1,20 @@
 <template>
   <view class="my-page">
-    <!-- 顶部导航 -->
-    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px', height: (44 + statusBarHeight + 6) + 'px' }">
-      <view class="nav-title">我的</view>
-    </view>
+    <!-- 顶部粉色连续区域：导航 + 用户信息 -->
+    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
+      <!-- 导航 -->
+      <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+        <view class="nav-title">我的</view>
+      </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }">
-      <!-- ========== 用户信息头部卡片 ========== -->
-      <view class="profile-card" @tap="isLoggedIn ? undefined : goToLogin()">
+      <!-- 用户信息区 -->
+      <view class="profile-section" @tap="isLoggedIn ? undefined : goToLogin()">
         <!-- 未登录 -->
         <view v-if="!isLoggedIn" class="profile-row">
           <image class="profile-avatar" src="/static/default-avatar.png" mode="aspectFill" />
           <view class="profile-info">
             <text class="profile-nickname">点击登录</text>
-            <text class="profile-id">登录后享受更多服务</text>
+            <text class="profile-sub">登录后享受更多服务</text>
           </view>
           <text class="arrow">></text>
         </view>
@@ -24,8 +25,16 @@
           <view class="profile-info">
             <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
             <view class="profile-id-row">
-              <text class="profile-id">ID {{ userInfo?.id || '******' }}</text>
-              <text class="copy-id" @tap.stop="copyUserId">📋</text>
+              <text class="id-badge">ID</text>
+              <text class="id-number">{{ userInfo?.id || '******' }}</text>
+              <image
+                v-if="pageIcons.copy"
+                class="copy-icon"
+                :src="pageIcons.copy"
+                mode="aspectFit"
+                @tap.stop="copyUserId"
+              />
+              <text v-else class="copy-text" @tap.stop="copyUserId">📋</text>
             </view>
           </view>
           <view class="edit-btn" @tap.stop="goToEditProfile">
@@ -36,24 +45,26 @@
         <!-- 统计行 -->
         <view class="stats-row" v-if="isLoggedIn">
           <view class="stat-item" @tap.stop="goToFollows">
-            <text class="stat-num">{{ stats.following }}</text>
             <text class="stat-label">关注</text>
+            <text class="stat-num">{{ stats.following }}</text>
           </view>
           <view class="stat-item" @tap.stop="goToVisitors">
-            <text class="stat-num">{{ stats.followers }}</text>
             <text class="stat-label">被关注</text>
+            <text class="stat-num">{{ stats.followers }}</text>
           </view>
           <view class="stat-item" @tap.stop="showComingSoon">
-            <text class="stat-num">{{ stats.footprints }}</text>
             <text class="stat-label">足迹</text>
+            <text class="stat-num">{{ stats.footprints }}</text>
           </view>
           <view class="stat-item" @tap.stop="goToVisitors">
-            <text class="stat-num">{{ stats.viewedMe }}</text>
             <text class="stat-label">看过我</text>
+            <text class="stat-num">{{ stats.viewedMe }}</text>
           </view>
         </view>
       </view>
+    </view>
 
+    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }">
       <!-- ========== 会员卡片 ========== -->
       <view class="vip-card" @tap="isVipValid ? goToVip() : showComingSoon()">
         <view class="vip-card-left">
@@ -69,60 +80,39 @@
       <view class="auth-card" @tap="goToRealnameAuth">
         <text class="auth-label">信息认证</text>
         <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
-        <text class="arrow-pink">></text>
+        <text class="arrow">></text>
       </view>
 
-      <!-- ========== 金刚区图标网格 ========== -->
-      <view class="icon-grid">
-        <!-- 第一行 2 个 -->
-        <view class="grid-row-2">
-          <view class="grid-item large" @tap="goToQuestions">
-            <view class="grid-icon-box orange-gradient">
-              <text class="grid-icon-text">#</text>
-            </view>
-            <text class="grid-label">我的问答</text>
+      <!-- ========== 金刚区：我的问答 + 专属红娘（两个独立卡片） ========== -->
+      <view class="service-cards">
+        <view class="service-card" @tap="goToQuestions">
+          <view class="service-icon-box orange-gradient">
+            <text class="service-icon-text">#</text>
           </view>
-          <view class="grid-item large" @tap="goToMatchmaker">
-            <view class="grid-icon-box purple-gradient">
-              <text class="grid-icon-svg">👤</text>
-            </view>
-            <text class="grid-label">专属红娘</text>
+          <text class="service-label">我的问答</text>
+        </view>
+        <view class="service-card" @tap="goToMatchmaker">
+          <view class="service-icon-box purple-gradient">
+            <text class="service-icon-text">👤</text>
+          </view>
+          <text class="service-label">专属红娘</text>
+        </view>
+      </view>
+
+      <!-- ========== 工具区：7个图标网格卡片 ========== -->
+      <view class="tools-card">
+        <view class="tool-row-4">
+          <view class="tool-item" v-for="item in toolGrid7.slice(0, 4)" :key="item.key" @tap="item.handler">
+            <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
+            <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
+            <text class="tool-label">{{ item.label }}</text>
           </view>
         </view>
-
-        <!-- 第二行 4 个 -->
-        <view class="grid-row-4">
-          <view class="grid-item-small" @tap="goToPhotos">
-            <text class="grid-dark-icon">🖼</text>
-            <text class="grid-label">我的相册</text>
-          </view>
-          <view class="grid-item-small" @tap="showComingSoon">
-            <text class="grid-dark-icon">💌</text>
-            <text class="grid-label">爱情语录</text>
-          </view>
-          <view class="grid-item-small" @tap="showComingSoon">
-            <text class="grid-dark-icon">🎁</text>
-            <text class="grid-label">我的礼物</text>
-          </view>
-          <view class="grid-item-small" @tap="goToSettings">
-            <text class="grid-dark-icon">🔒</text>
-            <text class="grid-label">隐私设置</text>
-          </view>
-        </view>
-
-        <!-- 第三行 3 个 -->
-        <view class="grid-row-3">
-          <view class="grid-item-small" @tap="showComingSoon">
-            <text class="grid-dark-icon">📝</text>
-            <text class="grid-label">问题反馈</text>
-          </view>
-          <view class="grid-item-small" @tap="showComingSoon">
-            <text class="grid-dark-icon">📄</text>
-            <text class="grid-label">用户协议</text>
-          </view>
-          <view class="grid-item-small" @tap="showComingSoon">
-            <text class="grid-dark-icon">🛡</text>
-            <text class="grid-label">防骗提醒</text>
+        <view class="tool-row-3">
+          <view class="tool-item" v-for="item in toolGrid7.slice(4, 7)" :key="item.key" @tap="item.handler">
+            <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
+            <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
+            <text class="tool-label">{{ item.label }}</text>
           </view>
         </view>
       </view>
@@ -130,10 +120,11 @@
       <!-- ========== 公众号关注 ========== -->
       <view class="oa-card" @tap="showComingSoon">
         <view class="oa-avatar pink-heart">
-          <text class="oa-avatar-icon">❤️</text>
+          <image v-if="pageIcons.heartFill" class="oa-avatar-img" :src="pageIcons.heartFill" mode="aspectFit" />
+          <text v-else class="oa-avatar-icon">❤️</text>
         </view>
         <view class="oa-info">
-          <text class="oa-name">灵通相亲公众号</text>
+          <text class="oa-name">{{ appName }}公众号</text>
           <text class="oa-desc">关注后可获得账号消息通知等全功能体验</text>
         </view>
         <view class="oa-follow-btn">
@@ -143,8 +134,9 @@
 
       <!-- ========== 底部陪伴信息 ========== -->
       <view class="footer-info">
-        <text class="footer-heart">❤️</text>
-        <text class="footer-text">缘来是你已经陪伴您{{ daysSinceCreation }}天</text>
+        <image v-if="pageIcons.heartFill" class="footer-heart-img" :src="pageIcons.heartFill" mode="aspectFit" />
+        <text v-else class="footer-heart">❤️</text>
+        <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
       </view>
       <view class="footer-version">
         <text>v1.0.0</text>
@@ -160,12 +152,14 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { getBaseUrl } from '@/utils/request'
 import { icons } from '@/config/icons'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
 
@@ -187,6 +181,11 @@ const onAvatarError = () => {
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
+const appName = computed(() => systemStore.appName || '缘来是你')
+
+// 后台可配置的页面图标
+const pageIcons = computed(() => systemStore.icons?.page || {})
+
 const daysSinceCreation = computed(() => {
   if (!userStore.userInfo?.createTime) return 0
   const created = new Date(userStore.userInfo.createTime).getTime()
@@ -201,7 +200,6 @@ const stats = reactive({
   viewedMe: 0,
 })
 
-// 加载统计数据
 const loadStats = () => {
   if (!isLoggedIn.value) return
   uni.request({
@@ -231,84 +229,66 @@ const showComingSoon = () => {
   uni.showToast({ title: '该功能正在开发中', icon: 'none' })
 }
 
-const goToLogin = () => {
-  uni.navigateTo({ url: '/pages/login/index' })
-}
-
-const goToEditProfile = () => {
-  uni.navigateTo({ url: '/pages/edit-profile/index' })
-}
-
-const goToVip = () => {
-  uni.switchTab({ url: '/pages/vip/index' })
-}
-
+const goToLogin = () => uni.navigateTo({ url: '/pages/login/index' })
+const goToEditProfile = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
+const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
-  uni.navigateTo({
-    url: '/pages/my-answers/index',
-    fail: () => uni.navigateTo({ url: '/pages/questions/index' }),
-  })
+  uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
 }
+const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
+const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index' })
+const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index' })
+const goToPhotos = () => uni.navigateTo({ url: '/pages/my-photos/index' })
+const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
+const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })
 
-const goToSettings = () => {
-  uni.navigateTo({ url: '/pages/settings/index' })
-}
-
-const goToFollows = () => {
-  uni.navigateTo({ url: '/pages/my-follows/index' })
-}
-
-const goToVisitors = () => {
-  uni.navigateTo({ url: '/pages/my-visitors/index' })
-}
-
-const goToPhotos = () => {
-  uni.navigateTo({ url: '/pages/my-photos/index' })
-}
-
-const goToRealnameAuth = () => {
-  uni.navigateTo({ url: '/pages/realname-auth/index' })
-}
-
-const goToMatchmaker = () => {
-  uni.switchTab({ url: '/pages/index/index' })
-}
+// 7个工具图标，后台可通过 pageIcons[item.key] 配置图标URL
+const toolGrid7 = [
+  { key: 'myPhotos',    label: '我的相册', emoji: '🖼', handler: goToPhotos },
+  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌', handler: showComingSoon },
+  { key: 'myGifts',     label: '我的礼物', emoji: '🎁', handler: showComingSoon },
+  { key: 'privacy',     label: '隐私设置', emoji: '🔒', handler: goToSettings },
+  { key: 'feedback',    label: '问题反馈', emoji: '📝', handler: showComingSoon },
+  { key: 'userAgreement', label: '用户协议', emoji: '📄', handler: showComingSoon },
+  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡', handler: showComingSoon },
+]
 </script>
 
 <style lang="scss" scoped>
 .my-page {
   min-height: 100vh;
-  background-color: #FFF5F7;
+  background-color: #FFF8FA;
+  display: flex;
+  flex-direction: column;
+}
+
+// ========== 顶部粉色区域 ==========
+.top-pink-area {
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
 }
 
 .nav-bar {
-  height: 88rpx;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: transparent;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: none;
+  height: 88rpx;
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: bold;
   color: #333;
 }
 
-.content-scroll {
-  height: calc(100vh - 88rpx - 120rpx);
-}
-
-// ========== 用户信息卡片 ==========
-.profile-card {
-  background-color: #fff;
-  margin: 16rpx 24rpx;
-  border-radius: 16rpx;
-  padding: 24rpx;
+// ========== 用户信息区 ==========
+.profile-section {
+  padding: 24rpx 32rpx 16rpx;
 }
 
 .profile-row {
@@ -319,7 +299,7 @@ const goToMatchmaker = () => {
 .profile-avatar {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 12rpx;
+  border-radius: 14rpx;
   margin-right: 20rpx;
   background-color: #f5f5f5;
   flex-shrink: 0;
@@ -332,25 +312,48 @@ const goToMatchmaker = () => {
 
 .profile-nickname {
   display: block;
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 6rpx;
+  margin-bottom: 8rpx;
+}
+
+.profile-sub {
+  font-size: 24rpx;
+  color: #999;
 }
 
 .profile-id-row {
   display: flex;
   align-items: center;
+  gap: 8rpx;
 }
 
-.profile-id {
-  font-size: 24rpx;
-  color: #999;
+.id-badge {
+  display: inline-block;
+  font-style: italic;
+  font-size: 20rpx;
+  font-weight: bold;
+  color: #fff;
+  background-color: #999;
+  padding: 2rpx 10rpx;
+  border-radius: 4rpx;
+  line-height: 1.4;
 }
 
-.copy-id {
+.id-number {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.copy-icon {
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.6;
+}
+
+.copy-text {
   font-size: 22rpx;
-  margin-left: 8rpx;
   color: #999;
 }
 
@@ -366,31 +369,41 @@ const goToMatchmaker = () => {
   }
 }
 
+.arrow {
+  font-size: 28rpx;
+  color: #ccc;
+  margin-left: 12rpx;
+}
+
 // 统计行
 .stats-row {
   display: flex;
   justify-content: space-around;
-  margin-top: 24rpx;
-  padding-top: 20rpx;
-  border-top: 1rpx solid #f5f5f5;
+  margin-top: 20rpx;
+  padding-top: 16rpx;
 }
 
 .stat-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-}
-
-.stat-num {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 4rpx;
+  gap: 6rpx;
 }
 
 .stat-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #999;
+}
+
+.stat-num {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+// ========== 内容滚动区 ==========
+.content-scroll {
+  flex: 1;
+  background-color: #FFF8FA;
 }
 
 // ========== 会员卡片 ==========
@@ -454,83 +467,44 @@ const goToMatchmaker = () => {
   font-weight: bold;
   color: #333;
   flex-shrink: 0;
-  margin-right: 12rpx;
 }
 
 .auth-desc {
   flex: 1;
   font-size: 24rpx;
   color: #FF6681;
+  text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  margin-left: 12rpx;
 }
 
-.arrow-pink {
-  font-size: 28rpx;
-  color: #FF6681;
-  margin-left: 8rpx;
-}
-
-.arrow {
-  font-size: 28rpx;
-  color: #ccc;
-  margin-left: 8rpx;
-}
-
-// ========== 金刚区图标网格 ==========
-.icon-grid {
-  background-color: #fff;
-  margin: 0 24rpx 16rpx;
-  border-radius: 16rpx;
-  padding: 20rpx 16rpx;
-}
-
-.grid-row-2 {
+// ========== 我的问答 + 专属红娘（两个独立卡片） ==========
+.service-cards {
   display: flex;
   gap: 16rpx;
-  margin-bottom: 16rpx;
+  margin: 0 24rpx 16rpx;
 }
 
-.grid-row-4 {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 16rpx;
-  padding: 0 8rpx;
-}
-
-.grid-row-3 {
-  display: flex;
-  justify-content: space-around;
-  padding: 0 8rpx;
-}
-
-.grid-item {
+.service-card {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
-
-  &.large {
-    flex: 1;
-  }
+  padding: 20rpx 0 16rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
 }
 
-.grid-item-small {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-}
-
-.grid-icon-box {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 20rpx;
+.service-icon-box {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12rpx;
+  margin-bottom: 10rpx;
 
   &.orange-gradient {
     background: linear-gradient(135deg, #FF9F43, #FFB347);
@@ -539,26 +513,60 @@ const goToMatchmaker = () => {
   &.purple-gradient {
     background: linear-gradient(135deg, #A78BFA, #C4B5FD);
   }
-
-  .grid-icon-text {
-    font-size: 36rpx;
-    font-weight: bold;
-    color: #fff;
-  }
-
-  .grid-icon-svg {
-    font-size: 36rpx;
-    color: #fff;
-  }
 }
 
-.grid-dark-icon {
+.service-icon-text {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.service-label {
+  font-size: 22rpx;
+  color: #333;
+}
+
+// ========== 7个工具图标卡片 ==========
+.tools-card {
+  background-color: #fff;
+  margin: 0 24rpx 16rpx;
+  border-radius: 16rpx;
+  padding: 20rpx 12rpx 12rpx;
+}
+
+.tool-row-4 {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 16rpx;
+  padding: 0 4rpx;
+}
+
+.tool-row-3 {
+  display: flex;
+  justify-content: space-around;
+  padding: 0 4rpx;
+}
+
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.tool-icon-emoji {
   font-size: 40rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: 6rpx;
   filter: grayscale(1) opacity(0.7);
 }
 
-.grid-label {
+.tool-icon-img {
+  width: 40rpx;
+  height: 40rpx;
+  margin-bottom: 6rpx;
+}
+
+.tool-label {
   font-size: 22rpx;
   color: #333;
   text-align: center;
@@ -587,6 +595,11 @@ const goToMatchmaker = () => {
   &.pink-heart {
     background-color: #FF6681;
   }
+}
+
+.oa-avatar-img {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 .oa-avatar-icon {
@@ -631,8 +644,14 @@ const goToMatchmaker = () => {
 }
 
 .footer-heart {
-  font-size: 28rpx;
-  margin-right: 8rpx;
+  font-size: 26rpx;
+  margin-right: 6rpx;
+}
+
+.footer-heart-img {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 6rpx;
 }
 
 .footer-text {
