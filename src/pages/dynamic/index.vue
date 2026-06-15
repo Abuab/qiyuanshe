@@ -559,8 +559,19 @@ const handleMatchmaker = async (item: DynamicItem) => {
   showMatchmaker.value = true
 }
 
-const handleContactMatchmaker = (item: any) => {
-  // 如果有红娘信息，直接打开联系弹窗
+const handleContactMatchmaker = async (item: any) => {
+  // 先确保红娘列表已加载
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
+  // 从已加载的红娘列表中按 matchmakerId 匹配，获取完整信息（含 qrCode）
+  const matched = matchmakerList.value.find((m: any) => m.id === item.matchmakerId)
+  if (matched) {
+    selectedMatchmaker.value = matched
+    showMatchmaker.value = true
+    return
+  }
+  // 如果列表中找不到，用动态卡片数据兜底
   if (item.matchmakerId) {
     selectedMatchmaker.value = {
       id: item.matchmakerId,
@@ -569,11 +580,12 @@ const handleContactMatchmaker = (item: any) => {
       title: item.matchmakerTitle || '',
       phone: item.matchmakerPhone || '',
       wechat: item.matchmakerWechat || '',
+      qrCode: item.matchmakerQrCode || '',
     }
     showMatchmaker.value = true
     return
   }
-  // fallback: 打开红娘列表
+  // 完全没有红娘信息，打开红娘列表
   handleMatchmaker(item)
 }
 

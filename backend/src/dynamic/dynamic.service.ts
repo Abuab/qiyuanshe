@@ -187,6 +187,7 @@ export class DynamicService {
       matchmakerTitle: r.matchmaker?.title || '',
       matchmakerPhone: r.matchmaker?.phone || '',
       matchmakerWechat: r.matchmaker?.wechat || '',
+      matchmakerQrCode: r.matchmaker?.qrCode || '',
     }))
 
     return { list, total, page, limit }
