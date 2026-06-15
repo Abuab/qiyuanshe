@@ -1,10 +1,10 @@
 <template>
   <view class="my-page">
-    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px' }">
+    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px', height: (44 + statusBarHeight + 6) + 'px' }">
       <view class="nav-title">我的</view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 88rpx - 120rpx - ' + (statusBarHeight + 6) + 'px)' }">
+    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }">
       <!-- 用户信息卡片 -->
       <view class="user-card" @tap="goToLogin" v-if="!isLoggedIn">
         <image class="user-avatar" src="/static/default-avatar.png" mode="aspectFill" />

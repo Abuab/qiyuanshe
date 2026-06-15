@@ -1,6 +1,6 @@
 <template>
   <view class="message-page">
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
@@ -10,6 +10,7 @@
 
     <scroll-view
       class="message-list"
+      :style="{ paddingTop: (44 + statusBarHeight) + 'px', height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight) + 'px)' }"
       scroll-y
       enable-flex
       @scrolltolower="loadMore"
@@ -110,6 +111,7 @@ interface UserMessage {
 type MessageItem = SystemMessage | UserMessage
 
 const userStore = useUserStore()
+const statusBarHeight = ref(0)
 const messageList = ref<MessageItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
@@ -118,6 +120,8 @@ const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
   if (userStore.isLoggedIn) {
     fetchConversations()
   }
@@ -293,7 +297,6 @@ function isImagePreview(item: UserMessage): boolean {
   top: 0;
   left: 0;
   right: 0;
-  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
