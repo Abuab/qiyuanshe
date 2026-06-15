@@ -53,8 +53,11 @@ const currentPath = ref('/pages/index/index')
 const unreadCount = ref(0)
 const safeAreaBottom = ref(0)
 const iconErrorMap = ref<Record<string, boolean>>({})
+const iconRefreshKey = ref(0)
 
 const tabIconSrc = computed(() => {
+  // eslint-disable-next-line no-unused-expressions
+  iconRefreshKey.value
   const result: Record<string, string> = {}
   for (const tab of tabs) {
     const name = tab.name
@@ -65,11 +68,16 @@ const tabIconSrc = computed(() => {
       result[name] = getTabbarIcon(name, currentPath.value === tab.pagePath)
     }
   }
+  console.log('[TABBAR] icon src:', JSON.stringify(result))
   return result
 })
 
 const onIconError = (name: string) => {
   iconErrorMap.value[name] = true
+}
+
+const refreshIcons = () => {
+  iconRefreshKey.value++
 }
 
 const updateCurrentTab = () => {
@@ -105,6 +113,7 @@ onMounted(() => {
 onShow(() => {
   updateCurrentTab()
   loadUnreadCount()
+  refreshIcons()
 })
 
 defineExpose({
