@@ -722,9 +722,9 @@ const onShareTimeline = () => {
   letter-spacing: 1rpx;
 }
 
-/* 内容区白色卡片 */
+/* 内容区淡粉色卡片 */
 .question-content-card {
-  background-color: #FFFFFF;
+  background-color: #FFF0F3;
   border-radius: 12rpx;
   padding: 6rpx 16rpx;
 }
@@ -748,6 +748,7 @@ const onShareTimeline = () => {
 
 .question-slide-title {
   font-size: 28rpx;
+  font-weight: bold;
   line-height: 1.4;
   color: #333333;
   white-space: normal;
