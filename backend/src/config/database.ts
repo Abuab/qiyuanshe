@@ -9,7 +9,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
   database: process.env.DB_DATABASE || 'qiyuanshe',
   entities: [__dirname + '/../entities/*{.ts,.js}'],
   synchronize: true,
-  logging: process.env.NODE_ENV !== 'production',
+  logging: false,
   autoLoadEntities: true,
   charset: 'utf8mb4',
   timezone: '+08:00',

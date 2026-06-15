@@ -71,9 +71,9 @@
         </view>
 
         <!-- 动态内容区 -->
-        <!-- 用户一句话简介 -->
-        <view class="intro-row">
-          <text class="intro-text">{{ item.introText || '[introText empty]' }}</text>
+        <!-- 用户一句话简介（仅在有内容时显示） -->
+        <view v-if="item.introText" class="intro-row">
+          <text class="intro-text">{{ item.introText }}</text>
         </view>
 
         <!-- 相册动态 -->
@@ -300,10 +300,6 @@ const fetchList = async (reset = false) => {
         img.startsWith('http') ? img : getFullImageUrl(img),
       ),
     }))
-
-    // 诊断
-    const intros = processed.map((i: any) => `u${i.userId}:${i.introText ? i.introText.slice(0,20) : 'EMPTY'}`)
-    console.log('[PAGE] intros:', intros.join(' | '))
 
     if (reset) {
       list.value = processed
