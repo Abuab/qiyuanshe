@@ -39,7 +39,7 @@
 
       <view
         v-for="item in list"
-        :key="item.id"
+        :key="item._key"
         class="dynamic-card"
       >
         <!-- 用户信息区 -->
@@ -70,14 +70,13 @@
           </view>
         </view>
 
-        <!-- 动态内容区 -->
-        <!-- 用户一句话简介（仅在有内容时显示） -->
-        <view v-if="item.introText" class="intro-row">
+        <!-- 简介卡片：仅显示用户个人简介 -->
+        <view v-if="item._displayType === 'intro'" class="intro-row">
           <text class="intro-text">{{ item.introText }}</text>
         </view>
 
-        <!-- 相册动态 -->
-        <view v-if="item.type === 'photo' && item.images && item.images.length > 0" class="card-content">
+        <!-- 相册动态卡片 -->
+        <view v-if="item._displayType === 'photo' && item.images && item.images.length > 0" class="card-content">
           <text class="content-text">{{ item.content || '更新了相册' }}</text>
           <view class="photo-grid">
             <view
@@ -111,8 +110,8 @@
           </view>
         </view>
 
-        <!-- 回答动态 -->
-        <view v-if="item.type === 'answer'" class="card-content">
+        <!-- 回答动态卡片 -->
+        <view v-if="item._displayType === 'answer'" class="card-content">
           <text class="answer-text">{{ item.content }}</text>
           <!-- 话题卡片 -->
           <view v-if="item.questionTitle" class="topic-card" @tap="goToQuestion(item.questionId)">
@@ -123,12 +122,12 @@
         </view>
 
         <!-- 纯文字动态（旧数据兼容） -->
-        <view v-if="item.type === 'text' && item.content" class="card-content">
+        <view v-if="item._displayType === 'text' && item.content" class="card-content">
           <text class="answer-text">{{ item.content }}</text>
         </view>
 
-        <!-- 底部操作栏（intro 卡片不显示按钮） -->
-        <view v-if="item.type !== 'intro'" class="bottom-bar">
+        <!-- 底部操作栏 -->
+        <view class="bottom-bar">
           <text class="time-text">{{ formatTime(item.createdAt) }}</text>
           <view class="action-buttons">
             <view class="btn-hi" @tap="handleHi(item)">
@@ -185,6 +184,8 @@ const { handleImageError } = useImageFallback()
 interface DynamicItem {
   id: number
   type: string
+  _key: string
+  _displayType: string
   userId: number
   nickname: string
   avatar: string
@@ -301,10 +302,37 @@ const fetchList = async (reset = false) => {
       ),
     }))
 
+    // 拆分：introText 与 问答/相册 各自独立成卡
+    const flattened: any[] = []
+    for (const item of processed) {
+      const hasContent = item.content || (item.images && item.images.length > 0)
+      // A. 简介卡片
+      if (item.introText) {
+        flattened.push({
+          ...item,
+          _displayType: 'intro',
+          _key: `intro_${item.id}`,
+          content: '',
+          images: [],
+          questionId: undefined,
+          questionTitle: undefined,
+        })
+      }
+      // B. 内容卡片（问答 / 相册）
+      if (hasContent) {
+        flattened.push({
+          ...item,
+          _displayType: item.type,
+          _key: `${item.type}_${item.id}`,
+          introText: '',
+        })
+      }
+    }
+
     if (reset) {
-      list.value = processed
+      list.value = flattened
     } else {
-      list.value = [...list.value, ...processed]
+      list.value = [...list.value, ...flattened]
     }
 
     if (items.length < pageSize) {
