@@ -612,11 +612,12 @@ onMounted(() => {
 
 /* 用户简介栏 */
 .intro-row {
-  margin-bottom: 20rpx;
+  margin-bottom: 32rpx;
   padding: 20rpx 24rpx;
   background-color: #FFF0F5;
   border-radius: 10rpx;
   border-left: 6rpx solid #FF1493;
+  border-bottom: 1rpx dashed #FFB6C1;
 }
 
 .intro-text {
