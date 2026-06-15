@@ -171,6 +171,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/success-cases/index.vue'),
         meta: { title: '成功案例', requiresAuth: true },
       },
+      {
+        path: '/matchmaker-dynamics',
+        name: 'MatchmakerDynamicList',
+        component: () => import('../views/matchmaker-dynamic/index.vue'),
+        meta: { title: '红娘发布动态', requiresAuth: true },
+      },
     ],
   },
 ]

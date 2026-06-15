@@ -11,6 +11,7 @@ export { mfaApi } from './system'
 export * from './notice'
 export * from './report'
 export * from './admin-user'
+export * from './matchmaker-dynamic'
 
 export interface ApiResponse<T = any> {
   success: boolean
