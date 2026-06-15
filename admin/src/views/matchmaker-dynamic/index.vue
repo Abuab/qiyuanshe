@@ -71,15 +71,15 @@
         <el-form-item label="推荐用户" required>
           <el-select
             v-model="form.matchedUserId"
-            placeholder="请选择要推荐的会员"
+            placeholder="输入ID或昵称搜索用户"
             filterable
-            remote
-            :remote-method="searchUsers"
+            :filter-method="filterUsers"
             :loading="userSearchLoading"
             style="width:100%"
+            @visible-change="onUserSelectVisibleChange"
           >
             <el-option
-              v-for="u in userOptions"
+              v-for="u in filteredUserOptions"
               :key="u.id"
               :label="`${u.nickname} (ID:${u.id})`"
               :value="u.id"
@@ -136,6 +136,7 @@ const pagination = reactive({ page: 1, limit: 20, total: 0 })
 
 const matchmakerOptions = ref<MatchmakerOption[]>([])
 const userOptions = ref<UserOption[]>([])
+const filteredUserOptions = ref<UserOption[]>([])
 
 onMounted(() => {
   fetchList()
@@ -164,20 +165,64 @@ async function loadMatchmakers() {
   } catch (e) { console.error(e) }
 }
 
-async function searchUsers(keyword: string) {
-  if (!keyword || keyword.length < 1) {
-    userOptions.value = []
-    return
-  }
+async function loadInitialUsers() {
   userSearchLoading.value = true
   try {
-    const res = await adminUsers.list({ keyword, limit: 50, page: 1 } as any)
+    const res = await adminUsers.list({ limit: 50, page: 1 } as any)
     if (res.success && res.data) {
       const users = (res.data as any).list || []
       userOptions.value = users.map((u: any) => ({ id: u.id, nickname: u.nickname }))
+      filteredUserOptions.value = [...userOptions.value]
     }
   } catch (e) { console.error(e) }
   userSearchLoading.value = false
+}
+
+function onUserSelectVisibleChange(visible: boolean) {
+  if (visible && userOptions.value.length === 0) {
+    loadInitialUsers()
+  } else if (visible) {
+    filteredUserOptions.value = [...userOptions.value]
+  }
+}
+
+function filterUsers(keyword: string) {
+  if (!keyword) {
+    filteredUserOptions.value = [...userOptions.value]
+    return
+  }
+  userSearchLoading.value = true
+  // 本地先过滤（匹配昵称或ID）
+  const kw = keyword.toLowerCase()
+  filteredUserOptions.value = userOptions.value.filter(
+    (u) => u.nickname.toLowerCase().includes(kw) || String(u.id) === kw
+  )
+  // 同时远程搜索，结果合并去重
+  adminUsers.list({ keyword, limit: 50, page: 1 } as any).then((res) => {
+    if (res.success && res.data) {
+      const remoteUsers = (res.data as any).list || []
+      const remoteMapped = remoteUsers.map((u: any) => ({ id: u.id, nickname: u.nickname }))
+      // 合并：先加入远程结果，再追加本地未匹配
+      const merged = [...remoteMapped]
+      for (const u of userOptions.value) {
+        if (!merged.find((m) => m.id === u.id)) {
+          merged.push(u)
+        }
+      }
+      // 再次按关键词过滤
+      filteredUserOptions.value = merged.filter(
+        (u) => u.nickname.toLowerCase().includes(kw) || String(u.id) === kw
+      )
+      // 缓存新结果
+      for (const u of remoteMapped) {
+        if (!userOptions.value.find((existing) => existing.id === u.id)) {
+          userOptions.value.push(u)
+        }
+      }
+    }
+  }).finally(() => {
+    userSearchLoading.value = false
+  })
 }
 
 function openCreateDialog() {
@@ -187,7 +232,9 @@ function openCreateDialog() {
   form.matchedUserId = null
   form.remark = ''
   userOptions.value = []
+  filteredUserOptions.value = []
   showDialog.value = true
+  loadInitialUsers()
 }
 
 function openEditDialog(row: any) {

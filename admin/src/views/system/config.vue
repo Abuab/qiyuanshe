@@ -406,33 +406,6 @@
             </div>
           </div>
 
-          <el-divider content-position="left">我的页面菜单图标</el-divider>
-          <div class="icon-grid">
-            <div
-              v-for="item in menuIconList"
-              :key="item.key"
-              class="icon-upload-item"
-            >
-              <div class="icon-label">{{ item.label }}</div>
-              <div class="icon-preview-box">
-                <el-image
-                  v-if="iconConfig.menu[item.key]"
-                  :src="iconConfig.menu[item.key]"
-                  fit="contain"
-                  class="icon-preview-img"
-                />
-                <span v-else class="icon-empty">未上传</span>
-                <el-upload
-                  action="#"
-                  :http-request="(opts: any) => uploadIcon(opts, 'menu', item.key)"
-                  :show-file-list="false"
-                >
-                  <el-button size="small" link>上传图标</el-button>
-                </el-upload>
-              </div>
-            </div>
-          </div>
-
           <el-divider content-position="left">页面内图标</el-divider>
           <div class="icon-grid">
             <div
@@ -538,18 +511,6 @@ const tabbarIconList = [
   { key: 'vip', label: '会员' },
   { key: 'message', label: '消息' },
   { key: 'my', label: '我的' },
-]
-
-const menuIconList = [
-  { key: 'vipCenter', label: '会员中心' },
-  { key: 'activities', label: '我的活动' },
-  { key: 'answers', label: '我的回答' },
-  { key: 'follows', label: '我的关注' },
-  { key: 'visitors', label: '谁看过我' },
-  { key: 'photos', label: '我的照片' },
-  { key: 'realnameAuth', label: '实名认证' },
-  { key: 'help', label: '帮助与反馈' },
-  { key: 'settings', label: '设置' },
 ]
 
 const pageIconList = [

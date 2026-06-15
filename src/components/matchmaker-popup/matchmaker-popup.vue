@@ -254,8 +254,7 @@ defineExpose({ open, close })
   bottom: 0;
   left: 0;
   right: 0;
-  max-height: 60vh;
-  overflow-y: auto;
+  overflow-y: visible;
   background-color: #fff;
   border-radius: 32rpx 32rpx 0 0;
   padding: 40rpx 32rpx 60rpx;
