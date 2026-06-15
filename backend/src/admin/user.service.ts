@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Like, In, DataSource } from 'typeorm'
+import { Repository, Like, In } from 'typeorm'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
@@ -50,7 +50,6 @@ export class AdminUserService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserNotification)
     private readonly notificationRepository: Repository<UserNotification>,
-    private readonly dataSource: DataSource,
   ) {}
 
   async list(filter: UserFilter) {
@@ -586,9 +585,6 @@ export class AdminUserService {
       safeData.hopeTaTags = safeData.hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
     }
 
-    console.log(`[Admin] updateUser id=${id} safeData keys:`, Object.keys(safeData))
-    console.log(`[Admin] safeData.personalityTags =`, JSON.stringify(safeData.personalityTags), `type =`, typeof safeData.personalityTags)
-    console.log(`[Admin] safeData.hopeTaTags =`, JSON.stringify(safeData.hopeTaTags), `type =`, typeof safeData.hopeTaTags)
     // tags 同理
     if (safeData.tags && typeof safeData.tags === 'string') {
       safeData.tags = safeData.tags.split(',').map((s: string) => s.trim()).filter(Boolean)
@@ -599,9 +595,6 @@ export class AdminUserService {
     }
 
     await this.userRepository.update(id, safeData)
-    // 验证写入结果
-    const verify = await this.dataSource.query(`SELECT personalityTags, hopeTaTags FROM users WHERE id = ?`, [id])
-    console.log(`[Admin] DB verify userId=${id} personalityTags=`, JSON.stringify(verify[0]?.personalityTags), `hopeTaTags=`, JSON.stringify(verify[0]?.hopeTaTags))
   }
 }
 

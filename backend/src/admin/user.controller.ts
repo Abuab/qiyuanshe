@@ -192,9 +192,6 @@ export class AdminUserController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: any,
   ) {
-    console.log(`[Admin] PUT /admin/users/${id} body keys:`, Object.keys(body || {}))
-    console.log(`[Admin] body.personalityTags =`, JSON.stringify(body?.personalityTags), `type =`, typeof body?.personalityTags)
-    console.log(`[Admin] body.hopeTaTags =`, JSON.stringify(body?.hopeTaTags), `type =`, typeof body?.hopeTaTags)
     await this.userService.updateUser(id, body)
     return Result.success(null, '用户更新成功')
   }

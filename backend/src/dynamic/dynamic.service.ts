@@ -53,19 +53,14 @@ export class DynamicService {
     const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
     const tagMap = new Map<number, { personalityTags: any; hopeTaTags: any }>()
     if (userIds.length > 0) {
-      try {
-        const rows: any[] = await this.dataSource.query(
-          `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
-        )
-        console.log('[Dynamic] raw SQL rows:', JSON.stringify(rows))
-        for (const row of rows) {
-          const pt = this.parseJsonField(row.personalityTags)
-          const ht = this.parseJsonField(row.hopeTaTags)
-          console.log(`[Dynamic] userId=${row.id} parsed personalityTags=${JSON.stringify(pt)} hopeTaTags=${JSON.stringify(ht)}`)
-          tagMap.set(row.id, { personalityTags: pt, hopeTaTags: ht })
-        }
-      } catch (e: any) {
-        console.error('[Dynamic] raw SQL query failed:', e?.message, e?.stack)
+      const rows: any[] = await this.dataSource.query(
+        `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
+      )
+      for (const row of rows) {
+        tagMap.set(row.id, {
+          personalityTags: this.parseJsonField(row.personalityTags),
+          hopeTaTags: this.parseJsonField(row.hopeTaTags),
+        })
       }
     }
 
@@ -102,9 +97,6 @@ export class DynamicService {
         const introText = tags
           ? this.buildIntroFromTags(tags.personalityTags, tags.hopeTaTags, introTemplate, introSep)
           : ''
-        if (introText) {
-          console.log(`[Dynamic] generated introText for userId=${item.userId}: "${introText}"`)
-        }
 
         return {
           id: item.id,
