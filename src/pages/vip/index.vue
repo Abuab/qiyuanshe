@@ -132,10 +132,13 @@
       </view>
     </view>
   </view>
+
+  <tab-bar />
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import TabBar from '@/components/tab-bar/tab-bar.vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -327,6 +330,7 @@ const handleBack = () => {
 // ========== 可滚动内容 ==========
 .page-content {
   flex: 1;
+  padding-bottom: 120rpx;
 }
 
 // ========== 头部标题 + 特权 ==========

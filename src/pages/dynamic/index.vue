@@ -156,6 +156,8 @@
       <view class="bottom-safe" />
     </scroll-view>
 
+    <tab-bar />
+
     <!-- 红娘弹窗 -->
     <matchmaker-popup
       :show="showMatchmaker"
@@ -184,6 +186,7 @@ import { useUserStore } from '@/store/user'
 import { useImageFallback } from '@/composables/useImageFallback'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
 const { handleImageError } = useImageFallback()
@@ -567,7 +570,7 @@ onMounted(() => {
 }
 
 .content-scroll {
-  height: 100vh;
+  height: calc(100vh - 120rpx);
 }
 
 .empty-state {

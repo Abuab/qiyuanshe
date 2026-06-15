@@ -88,10 +88,13 @@
       </view>
     </scroll-view>
   </view>
+
+  <tab-bar />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -385,6 +388,7 @@ function isImagePreview(item: UserMessage): boolean {
 .message-list {
   height: calc(100vh - 88rpx);
   padding-top: 180rpx;
+  padding-bottom: 120rpx;
 }
 
 .cat-tabs {
