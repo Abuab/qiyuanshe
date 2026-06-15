@@ -10,6 +10,7 @@ export interface SystemConfigs {
   payment?: Record<string, any>
   audit?: Record<string, any>
   dict?: Record<string, any>
+  icon?: Record<string, any>
 }
 
 @Injectable()

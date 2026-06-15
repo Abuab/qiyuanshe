@@ -10,7 +10,7 @@
         <view class="icon-wrapper">
           <image
             class="tab-icon"
-            :src="currentPath === tab.pagePath ? tab.activeIcon : tab.defaultIcon"
+            :src="getTabbarIcon(tab.name, currentPath === tab.pagePath)"
             mode="aspectFit"
           ></image>
           <view v-if="tab.name === 'message' && unreadCount > 0" class="badge">
@@ -28,52 +28,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { icons } from '@/config/icons'
+import { useIcon } from '@/composables/useIcon'
 
 interface TabItem {
   label: string
   pagePath: string
-  defaultIcon: string
-  activeIcon: string
-  name: string
+  name: 'home' | 'dynamic' | 'vip' | 'message' | 'my'
 }
 
+const { getTabbarIcon } = useIcon()
+
 const tabs: TabItem[] = [
-  {
-    label: '首页',
-    pagePath: '/pages/index/index',
-    defaultIcon: icons.tabbar.home.default,
-    activeIcon: icons.tabbar.home.active,
-    name: 'home',
-  },
-  {
-    label: '动态',
-    pagePath: '/pages/dynamic/index',
-    defaultIcon: icons.tabbar.dynamic.default,
-    activeIcon: icons.tabbar.dynamic.active,
-    name: 'dynamic',
-  },
-  {
-    label: '会员',
-    pagePath: '/pages/vip/index',
-    defaultIcon: icons.tabbar.vip.default,
-    activeIcon: icons.tabbar.vip.active,
-    name: 'vip',
-  },
-  {
-    label: '消息',
-    pagePath: '/pages/message-list/index',
-    defaultIcon: icons.tabbar.message.default,
-    activeIcon: icons.tabbar.message.active,
-    name: 'message',
-  },
-  {
-    label: '我的',
-    pagePath: '/pages/my/index',
-    defaultIcon: icons.tabbar.my.default,
-    activeIcon: icons.tabbar.my.active,
-    name: 'my',
-  },
+  { label: '首页', pagePath: '/pages/index/index', name: 'home' },
+  { label: '动态', pagePath: '/pages/dynamic/index', name: 'dynamic' },
+  { label: '会员', pagePath: '/pages/vip/index', name: 'vip' },
+  { label: '消息', pagePath: '/pages/message-list/index', name: 'message' },
+  { label: '我的', pagePath: '/pages/my/index', name: 'my' },
 ]
 
 const currentPath = ref('/pages/index/index')

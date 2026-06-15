@@ -3,7 +3,12 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="goHome">
-        <image class="home-icon-img" src="/static/icons/icon-home.png" mode="aspectFit" />
+        <image
+          class="home-icon-img"
+          :src="dynamicHomeIcon"
+          mode="aspectFit"
+          @error="handleImageError"
+        />
       </view>
       <text class="nav-title">动态</text>
       <view class="nav-right" />
@@ -179,6 +184,8 @@ import { useUserStore } from '@/store/user'
 import { useImageFallback } from '@/composables/useImageFallback'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import { useIcon } from '@/composables/useIcon'
+import { useSystemStore } from '@/store/system'
 const { handleImageError } = useImageFallback()
 
 interface DynamicItem {
@@ -213,7 +220,14 @@ const page = ref(1)
 const pageSize = 10
 const statusBarHeight = ref(0)
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const { getPageIcon } = useIcon()
 const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
+
+// 动态页左上角返回主页图标（后台可配置）
+const dynamicHomeIcon = computed(() => {
+  return getPageIcon('dynamicHome') || '/static/icons/icon-home.png'
+})
 
 // 当前登录用户的照片数量（用于判断是否模糊）
 const myPhotoCount = ref(0)

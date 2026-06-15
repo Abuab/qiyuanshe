@@ -352,6 +352,111 @@
           </el-form>
         </el-card>
       </el-tab-pane>
+
+      <el-tab-pane label="图标配置" name="icon">
+        <el-card class="config-card">
+          <el-alert type="info" :closable="false" show-icon class="icon-tip">
+            <template #title>
+              上传 PNG 图标后小程序端实时生效；留空则使用本地默认图标。
+            </template>
+          </el-alert>
+
+          <el-divider content-position="left">底部 TabBar 图标</el-divider>
+          <div class="icon-grid">
+            <div
+              v-for="item in tabbarIconList"
+              :key="item.key"
+              class="icon-upload-item"
+            >
+              <div class="icon-label">{{ item.label }}</div>
+              <div class="icon-preview-row">
+                <div class="icon-preview-box">
+                  <el-image
+                    v-if="iconConfig.tabbar[item.key].default"
+                    :src="iconConfig.tabbar[item.key].default"
+                    fit="contain"
+                    class="icon-preview-img"
+                  />
+                  <span v-else class="icon-empty">默认</span>
+                  <el-upload
+                    action="#"
+                    :http-request="(opts: any) => uploadIcon(opts, 'tabbar', item.key, 'default')"
+                    :show-file-list="false"
+                  >
+                    <el-button size="small" link>上传默认</el-button>
+                  </el-upload>
+                </div>
+                <div class="icon-preview-box">
+                  <el-image
+                    v-if="iconConfig.tabbar[item.key].active"
+                    :src="iconConfig.tabbar[item.key].active"
+                    fit="contain"
+                    class="icon-preview-img"
+                  />
+                  <span v-else class="icon-empty active">选中</span>
+                  <el-upload
+                    action="#"
+                    :http-request="(opts: any) => uploadIcon(opts, 'tabbar', item.key, 'active')"
+                    :show-file-list="false"
+                  >
+                    <el-button size="small" link>上传选中</el-button>
+                  </el-upload>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <el-divider content-position="left">我的页面菜单图标</el-divider>
+          <div class="icon-grid">
+            <div
+              v-for="item in menuIconList"
+              :key="item.key"
+              class="icon-upload-item"
+            >
+              <div class="icon-label">{{ item.label }}</div>
+              <div class="icon-preview-box">
+                <el-image
+                  v-if="iconConfig.menu[item.key]"
+                  :src="iconConfig.menu[item.key]"
+                  fit="contain"
+                  class="icon-preview-img"
+                />
+                <span v-else class="icon-empty">未上传</span>
+                <el-upload
+                  action="#"
+                  :http-request="(opts: any) => uploadIcon(opts, 'menu', item.key)"
+                  :show-file-list="false"
+                >
+                  <el-button size="small" link>上传图标</el-button>
+                </el-upload>
+              </div>
+            </div>
+          </div>
+
+          <el-divider content-position="left">页面内图标</el-divider>
+          <div class="icon-grid">
+            <div class="icon-upload-item">
+              <div class="icon-label">动态页返回首页</div>
+              <div class="icon-preview-box">
+                <el-image
+                  v-if="iconConfig.page.dynamicHome"
+                  :src="iconConfig.page.dynamicHome"
+                  fit="contain"
+                  class="icon-preview-img"
+                />
+                <span v-else class="icon-empty">未上传</span>
+                <el-upload
+                  action="#"
+                  :http-request="(opts: any) => uploadIcon(opts, 'page', 'dynamicHome')"
+                  :show-file-list="false"
+                >
+                  <el-button size="small" link>上传图标</el-button>
+                </el-upload>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-tab-pane>
     </el-tabs>
 
     <div class="config-footer">
@@ -423,6 +528,55 @@ const introConfig = reactive({
   separator: '、',
 })
 
+const tabbarIconList = [
+  { key: 'home', label: '首页' },
+  { key: 'dynamic', label: '动态' },
+  { key: 'vip', label: '会员' },
+  { key: 'message', label: '消息' },
+  { key: 'my', label: '我的' },
+]
+
+const menuIconList = [
+  { key: 'vipCenter', label: '会员中心' },
+  { key: 'activities', label: '我的活动' },
+  { key: 'answers', label: '我的回答' },
+  { key: 'follows', label: '我的关注' },
+  { key: 'visitors', label: '谁看过我' },
+  { key: 'photos', label: '我的照片' },
+  { key: 'realnameAuth', label: '实名认证' },
+  { key: 'help', label: '帮助与反馈' },
+  { key: 'settings', label: '设置' },
+]
+
+interface TabbarIconItem {
+  default: string
+  active: string
+}
+
+const iconConfig = reactive({
+  tabbar: {
+    home: { default: '', active: '' },
+    dynamic: { default: '', active: '' },
+    vip: { default: '', active: '' },
+    message: { default: '', active: '' },
+    my: { default: '', active: '' },
+  } as Record<string, TabbarIconItem>,
+  menu: {
+    vipCenter: '',
+    activities: '',
+    answers: '',
+    follows: '',
+    visitors: '',
+    photos: '',
+    realnameAuth: '',
+    help: '',
+    settings: '',
+  } as Record<string, string>,
+  page: {
+    dynamicHome: '',
+  } as Record<string, string>,
+})
+
 // 模拟预览：与后端 buildIntroFromUser 同逻辑
 const introPreview = computed(() => {
   const demo = {
@@ -467,6 +621,12 @@ async function fetchConfig() {
       if (res.data.intro) {
         Object.assign(introConfig, res.data.intro)
       }
+      // 图标配置
+      if (res.data.icon) {
+        Object.assign(iconConfig.tabbar, res.data.icon.tabbar || {})
+        Object.assign(iconConfig.menu, res.data.icon.menu || {})
+        Object.assign(iconConfig.page, res.data.icon.page || {})
+      }
       // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
       logoError.value = false
     }
@@ -485,6 +645,11 @@ async function handleSave() {
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
       intro: { ...introConfig },
+      icon: {
+        tabbar: { ...iconConfig.tabbar },
+        menu: { ...iconConfig.menu },
+        page: { ...iconConfig.page },
+      },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
@@ -541,6 +706,29 @@ async function uploadCertFile(options: any) {
         paymentConfig.certPath = res.data.path
       } else {
         paymentConfig.keyPath = res.data.path
+      }
+      ElMessage.success('上传成功')
+    }
+  } catch (error) {
+    ElMessage.error('上传失败')
+  }
+}
+
+async function uploadIcon(
+  options: any,
+  group: 'tabbar' | 'menu' | 'page',
+  key: string,
+  subKey?: 'default' | 'active',
+) {
+  const formData = new FormData()
+  formData.append('file', options.file)
+  try {
+    const res = await adminSystem.upload(formData)
+    if (res.success && res.data?.url) {
+      if (group === 'tabbar' && subKey) {
+        iconConfig.tabbar[key][subKey] = res.data.url
+      } else {
+        iconConfig[group][key] = res.data.url
       }
       ElMessage.success('上传成功')
     }
@@ -679,5 +867,67 @@ code {
   border-radius: 3px;
   font-size: 12px;
   color: #e74c3c;
+}
+
+.icon-tip {
+  margin-bottom: 16px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.icon-upload-item {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+
+  .icon-label {
+    font-size: 14px;
+    color: #606266;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  .icon-preview-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .icon-preview-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon-preview-img {
+    width: 48px;
+    height: 48px;
+    border: 1px dashed #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+  }
+
+  .icon-empty {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+    font-size: 12px;
+    color: #c0c4cc;
+
+    &.active {
+      color: #ff6b9d;
+    }
+  }
 }
 </style>

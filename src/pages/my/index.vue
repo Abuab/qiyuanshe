@@ -36,61 +36,30 @@
 
       <!-- 功能菜单 -->
       <view class="menu-section">
-        <view class="menu-item" @tap="goToVip">
-          <text class="menu-icon">👑</text>
-          <text class="menu-text">会员中心</text>
-          <text v-if="isVipValid" class="menu-badge vip">已开通</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToActivities">
-          <text class="menu-icon">📅</text>
-          <text class="menu-text">我的活动</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToQuestions">
-          <text class="menu-icon">💬</text>
-          <text class="menu-text">我的回答</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToFollows">
-          <text class="menu-icon">❤️</text>
-          <text class="menu-text">我的关注</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToVisitors">
-          <text class="menu-icon">👁</text>
-          <text class="menu-text">谁看过我</text>
-          <text v-if="!isVipValid" class="menu-badge vip">VIP</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToPhotos">
-          <text class="menu-icon">🖼</text>
-          <text class="menu-text">我的照片</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToRealnameAuth">
-          <text class="menu-icon">🛡</text>
-          <text class="menu-text">实名认证</text>
-          <text v-if="userInfo?.isRealName" class="menu-badge real">已认证</text>
-          <text v-else class="menu-badge warn">未认证</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToHelp">
-          <text class="menu-icon">❓</text>
-          <text class="menu-text">帮助与反馈</text>
-          <text class="arrow">></text>
-        </view>
-
-        <view class="menu-item" @tap="goToSettings">
-          <text class="menu-icon">⚙️</text>
-          <text class="menu-text">设置</text>
+        <view
+          v-for="item in menuList"
+          :key="item.key"
+          class="menu-item"
+          @tap="item.handler"
+        >
+          <image
+            v-if="getMenuIcon(item.key)"
+            class="menu-icon-img"
+            :src="getMenuIcon(item.key)"
+            mode="aspectFit"
+          />
+          <text v-else class="menu-icon">{{ item.emoji }}</text>
+          <text class="menu-text">{{ item.label }}</text>
+          <template v-if="item.key === 'vipCenter' && isVipValid">
+            <text class="menu-badge vip">已开通</text>
+          </template>
+          <template v-if="item.key === 'visitors' && !isVipValid">
+            <text class="menu-badge vip">VIP</text>
+          </template>
+          <template v-if="item.key === 'realnameAuth'">
+            <text v-if="userInfo?.isRealName" class="menu-badge real">已认证</text>
+            <text v-else class="menu-badge warn">未认证</text>
+          </template>
           <text class="arrow">></text>
         </view>
       </view>
@@ -108,8 +77,10 @@ import { useUserStore } from '@/store/user'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
+import { useIcon } from '@/composables/useIcon'
 
 const userStore = useUserStore()
+const { getMenuIcon } = useIcon()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
 
@@ -185,6 +156,18 @@ const goToRealnameAuth = () => {
 const goToHelp = () => {
   uni.navigateTo({ url: '/pages/help/index' })
 }
+
+const menuList = [
+  { key: 'vipCenter', label: '会员中心', emoji: '👑', handler: goToVip },
+  { key: 'activities', label: '我的活动', emoji: '📅', handler: goToActivities },
+  { key: 'answers', label: '我的回答', emoji: '💬', handler: goToQuestions },
+  { key: 'follows', label: '我的关注', emoji: '❤️', handler: goToFollows },
+  { key: 'visitors', label: '谁看过我', emoji: '👁', handler: goToVisitors },
+  { key: 'photos', label: '我的照片', emoji: '🖼', handler: goToPhotos },
+  { key: 'realnameAuth', label: '实名认证', emoji: '🛡', handler: goToRealnameAuth },
+  { key: 'help', label: '帮助与反馈', emoji: '❓', handler: goToHelp },
+  { key: 'settings', label: '设置', emoji: '⚙️', handler: goToSettings },
+]
 </script>
 
 <style lang="scss" scoped>
@@ -306,6 +289,12 @@ const goToHelp = () => {
 
 .menu-icon {
   font-size: 36rpx;
+  margin-right: 20rpx;
+}
+
+.menu-icon-img {
+  width: 40rpx;
+  height: 40rpx;
   margin-right: 20rpx;
 }
 

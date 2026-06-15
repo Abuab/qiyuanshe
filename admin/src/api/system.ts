@@ -8,6 +8,7 @@ export interface SystemConfigs {
   payment?: Record<string, any>
   audit?: Record<string, any>
   intro?: Record<string, any>
+  icon?: Record<string, any>
 }
 
 export const system = {

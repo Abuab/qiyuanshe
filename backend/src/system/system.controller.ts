@@ -27,9 +27,56 @@ export class PublicSystemController {
       shareTitle: configs.share?.shareTitle || '栖缘社 - 遇见对的TA',
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
+      icons: this.buildIconConfig(configs.icon || {}),
     }
 
     return Result.success(result)
+  }
+
+  private buildIconConfig(raw: Record<string, any>) {
+    const fallback = (v: any) => (v ? String(v) : '')
+    const tabbar = raw.tabbar || {}
+    const menu = raw.menu || {}
+    const page = raw.page || {}
+
+    return {
+      tabbar: {
+        home: {
+          default: fallback(tabbar.home?.default),
+          active: fallback(tabbar.home?.active),
+        },
+        dynamic: {
+          default: fallback(tabbar.dynamic?.default),
+          active: fallback(tabbar.dynamic?.active),
+        },
+        vip: {
+          default: fallback(tabbar.vip?.default),
+          active: fallback(tabbar.vip?.active),
+        },
+        message: {
+          default: fallback(tabbar.message?.default),
+          active: fallback(tabbar.message?.active),
+        },
+        my: {
+          default: fallback(tabbar.my?.default),
+          active: fallback(tabbar.my?.active),
+        },
+      },
+      menu: {
+        vipCenter: fallback(menu.vipCenter),
+        activities: fallback(menu.activities),
+        answers: fallback(menu.answers),
+        follows: fallback(menu.follows),
+        visitors: fallback(menu.visitors),
+        photos: fallback(menu.photos),
+        realnameAuth: fallback(menu.realnameAuth),
+        help: fallback(menu.help),
+        settings: fallback(menu.settings),
+      },
+      page: {
+        dynamicHome: fallback(page.dynamicHome),
+      },
+    }
   }
 
   /** 获取选项字典（职业、我的特点、希望TA等） */
