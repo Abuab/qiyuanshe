@@ -157,11 +157,10 @@ defineExpose({
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 52rpx;
+  height: 52rpx;
   background: #FF6681;
   opacity: 0.4;
-  border-radius: 50%;
   z-index: 1;
   pointer-events: none;
 }
