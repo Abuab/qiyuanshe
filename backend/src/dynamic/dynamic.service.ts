@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
+import { MatchRecord } from '../entities/MatchRecord'
+import { Matchmaker } from '../entities/Matchmaker'
 import { User } from '../entities/User'
 import { SystemService } from '../system/system.service'
 
@@ -15,6 +17,10 @@ export class DynamicService {
     private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(MatchRecord)
+    private readonly matchRecordRepository: Repository<MatchRecord>,
+    @InjectRepository(Matchmaker)
+    private readonly matchmakerRepository: Repository<Matchmaker>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
   ) {}
@@ -27,6 +33,11 @@ export class DynamicService {
     type?: string,
     followUserIds?: number[],
   ) {
+    // 红娘动态：从 match_records 表查询
+    if (type === 'matchmaker') {
+      return this.getMatchmakerDynamics(page, limit, currentUserId)
+    }
+
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
@@ -124,6 +135,61 @@ export class DynamicService {
     )
 
     return { list: formattedList, total, page, limit }
+  }
+
+  /** 获取红娘动态列表（从 match_records 查询） */
+  private async getMatchmakerDynamics(
+    page: number,
+    limit: number,
+    currentUserId?: number,
+  ) {
+    const qb = this.matchRecordRepository
+      .createQueryBuilder('record')
+      .leftJoinAndSelect('record.matchmaker', 'matchmaker')
+      .leftJoinAndSelect('record.matchedUser', 'matchedUser')
+      .where('record.status != :failed', { failed: 'failed' })
+      .orderBy('record.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (currentUserId) {
+      qb.andWhere('record.userId != :currentUserId', { currentUserId })
+    }
+
+    const [records, total] = await qb.getManyAndCount()
+
+    const list = records.map((r) => ({
+      id: r.id,
+      type: 'matchmaker',
+      userId: r.userId,
+      nickname: r.matchedUser?.nickname || '',
+      avatar: r.matchedUser?.avatar || '',
+      isRealName: r.matchedUser?.isRealName || 0,
+      age: r.matchedUser?.age || 0,
+      height: r.matchedUser?.height || 0,
+      education: r.matchedUser?.education || '',
+      incomeRange: r.matchedUser?.incomeRange || '',
+      occupation: r.matchedUser?.occupation || '',
+      introText: '',
+      content: r.remark || '',
+      images: [],
+      questionId: undefined,
+      questionTitle: undefined,
+      createdAt: r.createdAt,
+      likeCount: 0,
+      commentCount: 0,
+      isLiked: false,
+      likeUsers: [],
+      // 红娘信息
+      matchmakerId: r.matchmaker?.id || 0,
+      matchmakerName: r.matchmaker?.name || '',
+      matchmakerAvatar: r.matchmaker?.avatar || '',
+      matchmakerTitle: r.matchmaker?.title || '',
+      matchmakerPhone: r.matchmaker?.phone || '',
+      matchmakerWechat: r.matchmaker?.wechat || '',
+    }))
+
+    return { list, total, page, limit }
   }
 
   /** 从 MySQL raw 字段解析 JSON（兼容字符串/已解析对象） */

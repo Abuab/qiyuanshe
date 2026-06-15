@@ -42,6 +42,75 @@
         <text class="empty-text">暂无动态</text>
       </view>
 
+      <!-- ====== 红娘动态卡片 ====== -->
+      <template v-if="currentTab === 'matchmaker'">
+        <view
+          v-for="item in list"
+          :key="item._key"
+          class="dynamic-card matchmaker-card"
+        >
+          <!-- 红娘信息区 -->
+          <view class="matchmaker-header">
+            <image
+              class="mm-avatar"
+              :src="getFullImageUrl(item.matchmakerAvatar) || icons.common.defaultAvatar"
+              mode="aspectFill"
+              @error="handleImageError"
+            />
+            <view class="mm-info">
+              <view class="mm-name-row">
+                <text class="mm-name">{{ item.matchmakerName || '红娘' }}</text>
+                <view class="mm-official-tag">
+                  <text>官方</text>
+                </view>
+              </view>
+            </view>
+            <view class="mm-contact-btn" @tap.stop="handleContactMatchmaker(item)">
+              <text>联系红娘</text>
+            </view>
+          </view>
+
+          <!-- 动态内容 -->
+          <view v-if="item.content" class="matchmaker-content">
+            <text class="mm-content-text">{{ item.content }}</text>
+          </view>
+
+          <!-- 关联用户卡片 -->
+          <view class="matchmaker-user-card" @tap="goToUserDetail(item.userId)">
+            <image
+              class="mu-avatar"
+              :src="item.avatar || icons.common.defaultAvatar"
+              mode="aspectFill"
+              @error="handleImageError"
+            />
+            <view class="mu-info">
+              <view class="mu-name-row">
+                <text class="mu-name">{{ item.nickname }}</text>
+                <view v-if="item.isRealName" class="realname-tag">
+                  <text class="realname-icon">✓</text>
+                  <text class="realname-text">已实名</text>
+                </view>
+              </view>
+              <view class="mu-tags">
+                <text v-if="item.age">{{ item.age }}岁</text>
+                <text v-if="item.age && item.height"> | </text>
+                <text v-if="item.height">{{ item.height }}cm</text>
+                <text v-if="item.height && item.education"> | </text>
+                <text v-if="item.education">{{ item.education }}</text>
+                <text v-if="item.education && item.incomeRange"> | </text>
+                <text v-if="item.incomeRange">{{ item.incomeRange }}</text>
+              </view>
+            </view>
+            <text class="mu-arrow">›</text>
+          </view>
+
+          <!-- 发布时间 -->
+          <text class="matchmaker-time">{{ formatTime(item.createdAt) }}</text>
+        </view>
+      </template>
+
+      <!-- ====== 全部/关注动态卡片 ====== -->
+      <template v-else>
       <view
         v-for="item in list"
         :key="item._key"
@@ -146,6 +215,7 @@
           </view>
         </view>
       </view>
+      </template>
 
       <view v-if="loadingMore" class="loading-more">
         <text>加载中...</text>
@@ -204,6 +274,7 @@ interface DynamicItem {
   height: number
   education: string
   incomeRange: string
+  occupation: string
   introText: string
   content: string
   images: string[]
@@ -212,6 +283,13 @@ interface DynamicItem {
   createdAt: string
   likeCount: number
   commentCount: number
+  // 红娘相关字段
+  matchmakerId?: number
+  matchmakerName?: string
+  matchmakerAvatar?: string
+  matchmakerTitle?: string
+  matchmakerPhone?: string
+  matchmakerWechat?: string
 }
 
 const list = ref<DynamicItem[]>([])
@@ -314,10 +392,35 @@ const fetchList = async (reset = false) => {
     const processed = items.map((item: DynamicItem) => ({
       ...item,
       avatar: item.avatar ? getFullImageUrl(item.avatar) : icons.common.defaultAvatar,
+      matchmakerAvatar: (item as any).matchmakerAvatar
+        ? getFullImageUrl((item as any).matchmakerAvatar)
+        : '',
       images: (item.images || []).map((img: string) =>
         img.startsWith('http') ? img : getFullImageUrl(img),
       ),
     }))
+
+    // 红娘动态不需要拆分，每一条就是一条
+    if (currentTab.value === 'matchmaker') {
+      const list2 = processed.map((item: DynamicItem) => ({
+        ...item,
+        _key: `matchmaker_${item.id}`,
+      }))
+      if (reset) {
+        list.value = list2
+      } else {
+        list.value = [...list.value, ...list2]
+      }
+      if (items.length < pageSize) {
+        noMore.value = true
+      } else {
+        page.value++
+      }
+      loading.value = false
+      loadingMore.value = false
+      isRefreshing.value = false
+      return
+    }
 
     // 拆分：introText 与 问答/相册 各自独立成卡
     const flattened: any[] = []
@@ -456,6 +559,24 @@ const handleMatchmaker = async (item: DynamicItem) => {
   showMatchmaker.value = true
 }
 
+const handleContactMatchmaker = (item: any) => {
+  // 如果有红娘信息，直接打开联系弹窗
+  if (item.matchmakerId) {
+    selectedMatchmaker.value = {
+      id: item.matchmakerId,
+      name: item.matchmakerName || '红娘',
+      avatar: item.matchmakerAvatar || '',
+      title: item.matchmakerTitle || '',
+      phone: item.matchmakerPhone || '',
+      wechat: item.matchmakerWechat || '',
+    }
+    showMatchmaker.value = true
+    return
+  }
+  // fallback: 打开红娘列表
+  handleMatchmaker(item)
+}
+
 const fetchMatchmakerList = async () => {
   try {
     const res: any = await request({ url: '/matchmakers', method: 'GET' })
@@ -493,7 +614,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .dynamic-page {
   min-height: 100vh;
-  background: #FFF0F3;
+  background: #FFF8FA;
 }
 
 .nav-bar {
@@ -505,7 +626,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: #FFF0F3;
+  background-color: transparent;
   z-index: 101;
 }
 
@@ -538,7 +659,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #FFF0F3;
+  background-color: transparent;
   z-index: 100;
 }
 
@@ -589,6 +710,130 @@ onMounted(() => {
   padding: 28rpx 24rpx 20rpx;
   background-color: #fff;
   border-radius: 16rpx;
+}
+
+/* ========== 红娘动态卡片 ========== */
+.matchmaker-card {
+  padding: 24rpx;
+}
+
+.matchmaker-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.mm-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.mm-info {
+  flex: 1;
+  margin-left: 16rpx;
+}
+
+.mm-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.mm-name {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.mm-official-tag {
+  margin-left: 10rpx;
+  padding: 2rpx 12rpx;
+  background-color: #FF6B9D;
+  border-radius: 6rpx;
+
+  text {
+    font-size: 20rpx;
+    color: #fff;
+  }
+}
+
+.mm-contact-btn {
+  padding: 10rpx 24rpx;
+  background-color: #FF6B9D;
+  border-radius: 32rpx;
+  flex-shrink: 0;
+
+  text {
+    font-size: 24rpx;
+    color: #fff;
+  }
+}
+
+.matchmaker-content {
+  margin-bottom: 16rpx;
+  padding: 0 4rpx;
+}
+
+.mm-content-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+/* 关联用户卡片 */
+.matchmaker-user-card {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 16rpx;
+  background-color: #FFF8FA;
+  border-radius: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.mu-avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background-color: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.mu-info {
+  flex: 1;
+  margin-left: 16rpx;
+  min-width: 0;
+}
+
+.mu-name-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+
+.mu-name {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.mu-tags {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.mu-arrow {
+  font-size: 32rpx;
+  color: #ccc;
+  margin-left: 8rpx;
+}
+
+.matchmaker-time {
+  font-size: 22rpx;
+  color: #bbb;
+  padding: 0 4rpx;
 }
 
 /* 用户信息区 */

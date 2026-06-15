@@ -35,7 +35,7 @@
 
         <view class="form-item">
           <text class="form-label">昵称</text>
-          <input class="form-input" v-model="form.nickname" placeholder="请输入昵称" maxlength="20" />
+          <input class="form-input disabled-input" :value="form.nickname" placeholder="昵称由系统自动生成" disabled />
         </view>
 
         <view class="form-item">
@@ -1019,17 +1019,12 @@ const previewPhoto = (idx: number) => {
 // ===== 保存 =====
 const handleSave = async () => {
   if (saving.value) return
-  if (!form.value.nickname.trim()) {
-    uni.showToast({ title: '请输入昵称', icon: 'none' })
-    return
-  }
 
   saving.value = true
   uni.showLoading({ title: '保存中...' })
 
   try {
     const data: Record<string, unknown> = {
-      nickname: form.value.nickname.trim(),
       avatar: form.value.avatar,
       gender: form.value.gender,
       birthYear: form.value.birthYear,
@@ -1235,6 +1230,10 @@ const handleBack = () => {
   color: #333;
   text-align: right;
   height: 60rpx;
+
+  &.disabled-input {
+    color: #999;
+  }
 }
 
 .form-picker {

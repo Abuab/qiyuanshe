@@ -58,7 +58,9 @@ export class AuthService {
     })
 
     if (!user) {
-      const randomNickname = `用户${Math.floor(Math.random() * 1000000)}`
+      // 生成 7 位随机数字
+      const randomSuffix = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
+      const randomNickname = `昵称${randomSuffix}`
       user = this.userRepository.create({
         openid: session.openid,
         unionId: session.unionid || '',

@@ -26,7 +26,7 @@
             <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
             <view class="profile-id-row">
               <text class="id-badge">ID</text>
-              <text class="id-number">{{ userInfo?.id || '******' }}</text>
+              <text class="id-number">{{ formattedUserId }}</text>
               <image
                 v-if="pageIcons.copy"
                 class="copy-icon"
@@ -182,6 +182,13 @@ const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
 const appName = computed(() => systemStore.appName || '缘来是你')
+
+// 格式化为7位数显示ID
+const formattedUserId = computed(() => {
+  const id = userStore.userInfo?.id
+  if (!id) return '*******'
+  return String(id).padStart(7, '0')
+})
 
 // 后台可配置的页面图标
 const pageIcons = computed(() => systemStore.icons?.page || {})
