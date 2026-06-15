@@ -72,8 +72,8 @@
 
         <!-- 动态内容区 -->
         <!-- 用户一句话简介 -->
-        <view v-if="item.introText" class="intro-row">
-          <text class="intro-text">{{ item.introText }}</text>
+        <view class="intro-row">
+          <text class="intro-text">{{ item.introText || '[introText empty]' }}</text>
         </view>
 
         <!-- 相册动态 -->
