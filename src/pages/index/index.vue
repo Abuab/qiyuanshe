@@ -605,7 +605,7 @@ const onShareTimeline = () => {
 .notice-bar {
   display: flex;
   align-items: center;
-  padding: 12rpx 32rpx 16rpx;
+  padding: 12rpx 32rpx 4rpx;
 
   .notice-swiper {
     flex: 1;
@@ -642,7 +642,7 @@ const onShareTimeline = () => {
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 36rpx 24rpx 32rpx;
+  padding: 16rpx 24rpx 32rpx;
   margin-bottom: 0;
 }
 
