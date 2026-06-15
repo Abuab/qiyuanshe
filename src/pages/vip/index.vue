@@ -286,7 +286,7 @@ const handleBack = () => {
 // ========== 全局 ==========
 .vip-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFF0F3 0%, #FFF5F5 25%, #FFFFFF 50%, #f5f5f5 100%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
   display: flex;
   flex-direction: column;
 }
