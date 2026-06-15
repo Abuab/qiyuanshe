@@ -512,8 +512,7 @@ const toolGrid7 = [
 .service-item {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  padding-left: 8rpx;
+  align-items: center;
 }
 
 .service-icon-box {
