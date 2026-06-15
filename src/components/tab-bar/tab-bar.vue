@@ -10,8 +10,8 @@
         <view class="icon-wrapper">
           <image
             class="tab-icon"
-            :src="tabIconSrc[tab.name]"
-            :key="tabIconSrc[tab.name]"
+            :src="getTabbarIcon(tab.name, currentPath === tab.pagePath)"
+            :key="iconKey(tab.name)"
             mode="aspectFit"
             @error="onIconError(tab.name)"
           ></image>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useIcon } from '@/composables/useIcon'
 import { icons as defaultIcons } from '@/config/icons'
@@ -39,7 +39,7 @@ interface TabItem {
   name: 'home' | 'dynamic' | 'vip' | 'message' | 'my'
 }
 
-const { getTabbarIcon } = useIcon()
+const { getTabbarIcon, iconConfig } = useIcon()
 
 const tabs: TabItem[] = [
   { label: '首页', pagePath: '/pages/index/index', name: 'home' },
@@ -53,31 +53,16 @@ const currentPath = ref('/pages/index/index')
 const unreadCount = ref(0)
 const safeAreaBottom = ref(0)
 const iconErrorMap = ref<Record<string, boolean>>({})
-const iconRefreshKey = ref(0)
 
-const tabIconSrc = computed(() => {
-  // eslint-disable-next-line no-unused-expressions
-  iconRefreshKey.value
-  const result: Record<string, string> = {}
-  for (const tab of tabs) {
-    const name = tab.name
-    if (iconErrorMap.value[name]) {
-      const fallback = defaultIcons.tabbar[name]
-      result[name] = currentPath.value === tab.pagePath ? fallback.active : fallback.default
-    } else {
-      result[name] = getTabbarIcon(name, currentPath.value === tab.pagePath)
-    }
-  }
-  console.log('[TABBAR] icon src:', JSON.stringify(result))
-  return result
-})
+const iconKey = (name: string) => {
+  const active = currentPath.value === tabs.find((t) => t.name === name)?.pagePath
+  const dynamic = iconConfig.value?.tabbar?.[name]
+  const dynamicUrl = active ? dynamic?.active : dynamic?.default
+  return `${name}-${active ? 'active' : 'default'}-${dynamicUrl || 'fallback'}-${iconErrorMap.value[name] ? 'error' : 'ok'}`
+}
 
 const onIconError = (name: string) => {
   iconErrorMap.value[name] = true
-}
-
-const refreshIcons = () => {
-  iconRefreshKey.value++
 }
 
 const updateCurrentTab = () => {
@@ -113,7 +98,6 @@ onMounted(() => {
 onShow(() => {
   updateCurrentTab()
   loadUnreadCount()
-  refreshIcons()
 })
 
 defineExpose({

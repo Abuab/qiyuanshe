@@ -1,4 +1,5 @@
 import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useSystemStore } from '@/store/system'
 import { icons as defaultIcons } from '@/config/icons'
 
@@ -7,8 +8,7 @@ import { icons as defaultIcons } from '@/config/icons'
  */
 export function useIcon() {
   const systemStore = useSystemStore()
-
-  const iconConfig = computed(() => systemStore.icons)
+  const { icons: iconConfig } = storeToRefs(systemStore)
 
   /** Tabbar 图标 */
   const getTabbarIcon = (name: 'home' | 'dynamic' | 'vip' | 'message' | 'my', active = false) => {
