@@ -31,7 +31,6 @@
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useIcon } from '@/composables/useIcon'
-import { icons as defaultIcons } from '@/config/icons'
 
 interface TabItem {
   label: string
@@ -56,7 +55,7 @@ const iconErrorMap = ref<Record<string, boolean>>({})
 
 const iconKey = (name: string) => {
   const active = currentPath.value === tabs.find((t) => t.name === name)?.pagePath
-  const dynamic = iconConfig.value?.tabbar?.[name]
+  const dynamic = (iconConfig.value?.tabbar as any)?.[name]
   const dynamicUrl = active ? dynamic?.active : dynamic?.default
   return `${name}-${active ? 'active' : 'default'}-${dynamicUrl || 'fallback'}-${iconErrorMap.value[name] ? 'error' : 'ok'}`
 }

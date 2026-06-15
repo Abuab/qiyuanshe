@@ -61,6 +61,7 @@ export const useSystemStore = defineStore('system', () => {
   const loadSystemConfig = async () => {
     try {
       const res = await get<SystemConfig>('/system/config')
+      console.log('[SYSTEM] config res:', JSON.stringify(res))
       if (res) {
         splashText.value = res.splashText || splashText.value
         appName.value = res.appName !== undefined ? res.appName : appName.value
@@ -68,6 +69,7 @@ export const useSystemStore = defineStore('system', () => {
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
         icons.value = res.icons || DEFAULT_ICONS
+        console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
         initialLoadDone = true
       }
