@@ -462,16 +462,17 @@ export class AdminUserService {
     // 管理员手动创建的用户默认为待审核状态(status=2)
     const status = data.status !== undefined ? data.status : 2
     
-    // 处理 personalityTags / hopeTaTags: 兼容逗号分隔字符串和数组
-    const personalityTags = Array.isArray(data.personalityTags)
-      ? data.personalityTags
-      : data.personalityTags
-        ? data.personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
-        : null
+    // 处理 personalityTags: 兼容结构化对象 / 逗号分隔字符串 / 数组
+    let personalityTags: any = null
+    if (typeof data.personalityTags === 'object' && data.personalityTags !== null) {
+      personalityTags = data.personalityTags
+    } else if (typeof data.personalityTags === 'string') {
+      personalityTags = data.personalityTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+    }
     const hopeTaTags = Array.isArray(data.hopeTaTags)
       ? data.hopeTaTags
       : data.hopeTaTags
-        ? data.hopeTaTags.split(',').map((s: string) => s.trim()).filter(Boolean)
+        ? String(data.hopeTaTags).split(',').map((s: string) => s.trim()).filter(Boolean)
         : null
 
     const user = this.userRepository.create({

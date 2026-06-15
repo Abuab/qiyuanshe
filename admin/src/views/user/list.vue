@@ -696,16 +696,42 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="我的特点">
+        <el-form-item label="性格">
           <el-select
-            v-model="createForm.personalityTagsArr"
-            placeholder="请选择我的特点标签"
+            v-model="createForm.characterTagsArr"
+            placeholder="性格标签（多选）"
             multiple
             filterable
             clearable
             style="width:100%"
           >
-            <el-option v-for="o in createDicts.personalityTags" :key="o" :label="o" :value="o" />
+            <el-option v-for="o in createDicts.characterTags" :key="o" :label="o" :value="o" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="爱好">
+          <el-select
+            v-model="createForm.hobbyTagsArr"
+            placeholder="爱好标签（多选）"
+            multiple
+            filterable
+            clearable
+            style="width:100%"
+          >
+            <el-option v-for="o in createDicts.hobbyTags" :key="o" :label="o" :value="o" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="恋爱准则">
+          <el-select
+            v-model="createForm.loveRuleTagsArr"
+            placeholder="恋爱准则（多选）"
+            multiple
+            filterable
+            clearable
+            style="width:100%"
+          >
+            <el-option v-for="o in createDicts.loveRuleTags" :key="o" :label="o" :value="o" />
           </el-select>
         </el-form-item>
 
@@ -834,6 +860,9 @@ const createDicts: Record<string, string[]> = {
   maritalStatus: ['未婚', '离异', '丧偶'],
   occupation: [],
   personalityTags: [],
+  characterTags: [] as string[],
+  hobbyTags: [] as string[],
+  loveRuleTags: [] as string[],
   hopeTaTags: [],
   whenMarry: ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然'],
   zodiac: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'],
@@ -929,6 +958,9 @@ const createForm = reactive({
   constellation: undefined as string | undefined,
   personalityTags: '',
   personalityTagsArr: [] as string[],
+  characterTagsArr: [] as string[],
+  hobbyTagsArr: [] as string[],
+  loveRuleTagsArr: [] as string[],
   hopeTaTags: '',
   hopeTaTagsArr: [] as string[],
   partnerAgeRange: undefined as string | undefined,
@@ -1047,9 +1079,13 @@ async function loadDicts() {
         const dictKey = key.replace('dict.', '')
         const parsed = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
         if (dictKey === 'personalityTags' && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          // 扁平化我的特点: character + hobby + loveRule 合并去重
+          // 结构化: {character:[...], hobby:[...], loveRule:[...]} → 拆分为三个独立数组
+          createDicts.characterTags = Array.isArray(parsed.character) ? parsed.character : []
+          createDicts.hobbyTags = Array.isArray(parsed.hobby) ? parsed.hobby : []
+          createDicts.loveRuleTags = Array.isArray(parsed.loveRule) ? parsed.loveRule : []
+          // 兼容旧的扁平化选项
           const all: string[] = []
-          for (const arr of Object.values(parsed as Record<string, string[]>)) {
+          for (const arr of [createDicts.characterTags, createDicts.hobbyTags, createDicts.loveRuleTags]) {
             all.push(...arr)
           }
           createDicts.personalityTags = [...new Set(all)]
@@ -1119,6 +1155,9 @@ async function handleCreate() {
     constellation: undefined,
     personalityTags: '',
     personalityTagsArr: [],
+    characterTagsArr: [],
+    hobbyTagsArr: [],
+    loveRuleTagsArr: [],
     hopeTaTags: '',
     hopeTaTagsArr: [],
     partnerAgeRange: undefined,
@@ -1162,14 +1201,22 @@ async function handleCreateSubmit() {
     ...createForm,
     hometown: buildCityLabel(hometownProvinceId.value, hometownCityId.value, hometownDistrictId.value),
     residence: buildResidenceLabel(residenceProvinceId.value, residenceCityId.value, residenceDistrictId.value),
-    personalityTags: createForm.personalityTagsArr.join(','),
+    personalityTags: {
+      character: createForm.characterTagsArr,
+      hobby: createForm.hobbyTagsArr,
+      loveRule: createForm.loveRuleTagsArr,
+    },
     hopeTaTags: createForm.hopeTaTagsArr.join(','),
     photoUrls: createPhotoUrls.value,
   } as any
 
   if (editingUserId.value) {
-    // Edit mode — personalityTags/hopeTaTags 直接传数组，而非逗号字符串
-    payload.personalityTags = createForm.personalityTagsArr
+    // Edit mode — hopeTaTags 直接传数组
+    payload.personalityTags = {
+      character: createForm.characterTagsArr,
+      hobby: createForm.hobbyTagsArr,
+      loveRule: createForm.loveRuleTagsArr,
+    }
     payload.hopeTaTags = createForm.hopeTaTagsArr
     editLoading.value = true
     try {
@@ -1413,6 +1460,11 @@ async function handleEditUser(row: User) {
   createForm.constellation = user.constellation ?? undefined
   createForm.personalityTagsArr = ensureJsonArray(user.personalityTags)
   createForm.personalityTags = ensureJsonArray(user.personalityTags).join(',')
+  // 结构化 personalityTags {character:[], hobby:[], loveRule:[]} 拆分回填
+  const pt = ensureJsonObject(user.personalityTags)
+  createForm.characterTagsArr = Array.isArray(pt.character) ? pt.character : (Array.isArray(pt) ? pt : [])
+  createForm.hobbyTagsArr = Array.isArray(pt.hobby) ? pt.hobby : []
+  createForm.loveRuleTagsArr = Array.isArray(pt.loveRule) ? pt.loveRule : []
   createForm.hopeTaTagsArr = ensureJsonArray(user.hopeTaTags)
   createForm.hopeTaTags = ensureJsonArray(user.hopeTaTags).join(',')
   createForm.partnerAgeRange = user.partnerAgeRange ?? undefined
@@ -1726,6 +1778,19 @@ function ensureJsonArray(val: any): any[] {
     } catch { /* ignore */ }
   }
   return []
+}
+
+/** 解析为对象（兼容 JSON 字符串），失败返回 {} */
+function ensureJsonObject(val: any): Record<string, any> {
+  if (val === null || val === undefined) return {}
+  if (typeof val === 'object' && !Array.isArray(val)) return val
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val)
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+    } catch { /* ignore */ }
+  }
+  return {}
 }
 
 function normalizeUser(user: any): any {
