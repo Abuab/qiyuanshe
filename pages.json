@@ -84,6 +84,7 @@
       "path": "pages/message-list/index",
       "style": {
         "navigationBarTitleText": "消息列表",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
     },
