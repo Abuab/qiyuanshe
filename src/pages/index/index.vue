@@ -785,9 +785,9 @@ const onShareTimeline = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24rpx 32rpx;
+  padding: 12rpx 32rpx;
   background-color: #fff;
-  margin-bottom: 20rpx;
+  margin-bottom: 8rpx;
 }
 
 .filter-tabs {
@@ -873,7 +873,7 @@ const onShareTimeline = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40rpx 0;
+  padding: 20rpx 0;
 }
 
 .loading-text,

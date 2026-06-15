@@ -144,16 +144,16 @@ const handleClick = () => {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  padding: 20rpx 24rpx;
+  padding: 12rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 8rpx;
 }
 
 /* ======== 左列 ======== */
 .card-left {
   flex-shrink: 0;
-  margin-right: 20rpx;
+  margin-right: 16rpx;
   position: relative;
 }
 
@@ -191,7 +191,7 @@ const handleClick = () => {
 .user-header {
   display: flex;
   align-items: center;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .name-section {
@@ -245,14 +245,14 @@ const handleClick = () => {
 .tags-area {
   display: flex;
   flex-direction: column;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .tags-line-1 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .tags-line-2 {
@@ -283,7 +283,7 @@ const handleClick = () => {
 .meta-row {
   display: flex;
   align-items: center;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
 }
 
 .loc-text {
