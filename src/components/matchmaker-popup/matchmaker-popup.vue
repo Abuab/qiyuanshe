@@ -47,11 +47,19 @@
         </view>
       </view>
     </view>
+
+    <!-- 离屏 Canvas 用于生成分享图 -->
+    <canvas
+      id="share-canvas"
+      type="2d"
+      class="share-canvas"
+      :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
+    ></canvas>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 
 export interface MatchmakerData {
   id: number
@@ -82,6 +90,10 @@ const emit = defineEmits<Emits>()
 const visible = ref(false)
 const avatarError = ref(false)
 const qrcodeError = ref(false)
+
+// Canvas 尺寸（px，按 2 倍图设计）
+const canvasW = ref(375)
+const canvasH = ref(580)
 
 const avatarUrl = computed(() => {
   if (avatarError.value) return '/static/default-avatar.png'
@@ -139,20 +151,89 @@ const saveQrcode = async () => {
     return
   }
 
-  uni.showLoading({ title: '保存中...' })
+  uni.showLoading({ title: '生成图片中...' })
 
   try {
-    // 本地图片路径直接用，网络图片需要先下载
-    let filePath = props.matchmaker.qrCode
-    if (filePath.startsWith('http')) {
-      const res = await uni.downloadFile({ url: filePath })
-      if (res.statusCode !== 200) throw new Error('下载失败')
-      filePath = res.tempFilePath
-    }
+    // 1. 下载头像和二维码到本地临时路径
+    const [avatarPath, qrcodePath] = await Promise.all([
+      downloadImage(avatarUrl.value),
+      downloadImage(qrcodeUrl.value),
+    ])
 
-    await uni.saveImageToPhotosAlbum({ filePath })
+    // 2. 等待下一帧确保 canvas 节点已挂载
+    await nextTick()
+
+    // 3. 获取 Canvas 2D 上下文
+    const canvasNode = await getCanvasNode()
+    if (!canvasNode) throw new Error('Canvas 节点获取失败')
+
+    const ctx = canvasNode.getContext('2d')
+    const dpr = uni.getSystemInfoSync().pixelRatio || 2
+    const w = canvasW.value
+    const h = canvasH.value
+
+    canvasNode.width = w * dpr
+    canvasNode.height = h * dpr
+    ctx.scale(dpr, dpr)
+
+    // 4. 绘制白色背景
+    ctx.fillStyle = '#FFFFFF'
+    ctx.fillRect(0, 0, w, h)
+
+    // 5. 绘制顶部信息区
+    const avatarSize = 64
+    const avatarX = 30
+    const avatarY = 40
+
+    await drawCircularImage(ctx, avatarPath, avatarX, avatarY, avatarSize)
+
+    // 昵称
+    const displayName = props.matchmaker.wechat || props.matchmaker.name || '红娘'
+    ctx.fillStyle = '#333333'
+    ctx.font = 'bold 18px sans-serif'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(displayName, avatarX + avatarSize + 16, avatarY + avatarSize / 2)
+
+    // 6. 绘制二维码（主要区域）
+    const qrSize = 260
+    const qrX = (w - qrSize) / 2
+    const qrY = avatarY + avatarSize + 40
+    const qrImg = canvasNode.createImage()
+    await new Promise<void>((resolve, reject) => {
+      qrImg.onload = () => resolve()
+      qrImg.onerror = () => reject(new Error('二维码图片加载失败'))
+      qrImg.src = qrcodePath
+    })
+    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
+
+    // 7. 绘制底部提示文字
+    const hintY = qrY + qrSize + 28
+    ctx.fillStyle = '#999999'
+    ctx.font = '13px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillText('扫一扫上面的二维码图案，加我为好友', w / 2, hintY)
+
+    // 8. 导出为图片
+    const tempFilePath = await new Promise<string>((resolve, reject) => {
+      (uni.canvasToTempFilePath as any)({
+        canvas: canvasNode,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+        destWidth: w * dpr,
+        destHeight: h * dpr,
+        fileType: 'jpg',
+        quality: 1,
+        success: (res: any) => resolve(res.tempFilePath),
+        fail: reject,
+      })
+    })
+
+    // 9. 保存到相册
+    await uni.saveImageToPhotosAlbum({ filePath: tempFilePath })
     uni.hideLoading()
-    uni.showToast({ title: '保存成功', icon: 'success' })
+    uni.showToast({ title: '已保存到相册', icon: 'success' })
   } catch (e: any) {
     uni.hideLoading()
     if (e.errMsg?.includes('auth deny')) {
@@ -162,6 +243,60 @@ const saveQrcode = async () => {
     }
     console.error('save qrcode failed', e)
   }
+}
+
+/** 下载网络图片到本地临时路径 */
+async function downloadImage(url: string): Promise<string> {
+  if (!url.startsWith('http')) return url
+  const res = await uni.downloadFile({ url })
+  if (res.statusCode !== 200) throw new Error('图片下载失败')
+  return res.tempFilePath
+}
+
+/** 获取 canvas 节点 */
+function getCanvasNode(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    // cast to avoid type issue with createSelectorQuery in <script setup>
+    const query = (uni.createSelectorQuery as any)()
+    // 需要获取组件实例来限定查询范围
+    query
+      .select('#share-canvas')
+      .fields({ node: true, size: true })
+      .exec((res: any) => {
+        if (res?.[0]?.node) {
+          resolve(res[0].node)
+        } else {
+          reject(new Error('Canvas 节点未找到'))
+        }
+      })
+  })
+}
+
+/** 绘制圆形头像 */
+function drawCircularImage(
+  ctx: any,
+  src: string,
+  x: number,
+  y: number,
+  size: number,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const img = (ctx.canvas as any).createImage()
+    img.onload = () => {
+      // 裁剪圆形
+      ctx.save()
+      ctx.beginPath()
+      const r = size / 2
+      ctx.arc(x + r, y + r, r, 0, Math.PI * 2)
+      ctx.closePath()
+      ctx.clip()
+      ctx.drawImage(img, x, y, size, size)
+      ctx.restore()
+      resolve()
+    }
+    img.onerror = () => reject(new Error('头像加载失败'))
+    img.src = src
+  })
 }
 
 const handleCall = () => {
@@ -383,5 +518,11 @@ defineExpose({
   border-radius: 44rpx;
   font-size: 30rpx;
   color: #FF6B9D;
+}
+
+.share-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
 }
 </style>
