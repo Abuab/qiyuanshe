@@ -435,19 +435,23 @@
 
           <el-divider content-position="left">页面内图标</el-divider>
           <div class="icon-grid">
-            <div class="icon-upload-item">
-              <div class="icon-label">动态页返回首页</div>
+            <div
+              v-for="item in pageIconList"
+              :key="item.key"
+              class="icon-upload-item"
+            >
+              <div class="icon-label">{{ item.label }}</div>
               <div class="icon-preview-box">
                 <el-image
-                  v-if="iconConfig.page.dynamicHome"
-                  :src="iconConfig.page.dynamicHome"
+                  v-if="iconConfig.page[item.key]"
+                  :src="iconConfig.page[item.key]"
                   fit="contain"
                   class="icon-preview-img"
                 />
                 <span v-else class="icon-empty">未上传</span>
                 <el-upload
                   action="#"
-                  :http-request="(opts: any) => uploadIcon(opts, 'page', 'dynamicHome')"
+                  :http-request="(opts: any) => uploadIcon(opts, 'page', item.key)"
                   :show-file-list="false"
                 >
                   <el-button size="small" link>上传图标</el-button>
@@ -548,6 +552,23 @@ const menuIconList = [
   { key: 'settings', label: '设置' },
 ]
 
+const pageIconList = [
+  { key: 'dynamicHome', label: '动态页返回首页' },
+  { key: 'copy', label: '复制ID图标' },
+  { key: 'heartFill', label: '心形填充(通用)' },
+  { key: 'qaIcon', label: '我的问答图标' },
+  { key: 'matchmakerIcon', label: '专属红娘图标' },
+  { key: 'oaHeart', label: '公众号心形图标' },
+  { key: 'footerHeart', label: '底部陪伴心形' },
+  { key: 'myPhotos', label: '我的相册' },
+  { key: 'loveQuotes', label: '爱情语录' },
+  { key: 'myGifts', label: '我的礼物' },
+  { key: 'privacy', label: '隐私设置' },
+  { key: 'feedback', label: '问题反馈' },
+  { key: 'userAgreement', label: '用户协议' },
+  { key: 'antiFraud', label: '防骗提醒' },
+]
+
 interface TabbarIconItem {
   default: string
   active: string
@@ -574,6 +595,19 @@ const iconConfig = reactive({
   } as Record<string, string>,
   page: {
     dynamicHome: '',
+    copy: '',
+    heartFill: '',
+    qaIcon: '',
+    matchmakerIcon: '',
+    oaHeart: '',
+    footerHeart: '',
+    myPhotos: '',
+    loveQuotes: '',
+    myGifts: '',
+    privacy: '',
+    feedback: '',
+    userAgreement: '',
+    antiFraud: '',
   } as Record<string, string>,
 })
 
