@@ -618,7 +618,7 @@ const handleBack = () => {
 // ========== 底部按钮 ==========
 .fixed-bottom {
   position: fixed;
-  bottom: 120rpx;
+  bottom: 164rpx;
   z-index: 1000;
   left: 0;
   right: 0;

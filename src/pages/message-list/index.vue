@@ -4,7 +4,7 @@
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
-      <view class="nav-title">消息</view>
+      <view class="nav-title">消息列表</view>
       <view class="nav-right" />
     </view>
 
