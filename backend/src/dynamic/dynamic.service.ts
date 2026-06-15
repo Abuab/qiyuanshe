@@ -57,10 +57,10 @@ export class DynamicService {
         `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
       )
       for (const row of rows) {
-        tagMap.set(row.id, {
-          personalityTags: this.parseJsonField(row.personalityTags),
-          hopeTaTags: this.parseJsonField(row.hopeTaTags),
-        })
+        const pt = this.parseJsonField(row.personalityTags)
+        const ht = this.parseJsonField(row.hopeTaTags)
+        if (pt || ht) console.log(`[Dynamic] userId=${row.id} raw=${JSON.stringify(row.personalityTags)} parsed=${JSON.stringify(pt)} hopeTa=${JSON.stringify(ht)}`)
+        tagMap.set(row.id, { personalityTags: pt, hopeTaTags: ht })
       }
     }
 
@@ -122,6 +122,10 @@ export class DynamicService {
         }
       }),
     )
+
+    // 诊断：打印前几条 introText
+    const intros = formattedList.map((i: any) => `u${i.userId}:${i.introText ? `"${i.introText.slice(0,30)}..."` : 'EMPTY'}`)
+    console.log('[Dynamic] response intros:', intros.slice(0, 5).join(' | '))
 
     return { list: formattedList, total, page, limit }
   }
