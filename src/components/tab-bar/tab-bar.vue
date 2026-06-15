@@ -10,8 +10,10 @@
         <view class="icon-wrapper">
           <image
             class="tab-icon"
-            :src="getTabbarIcon(tab.name, currentPath === tab.pagePath)"
+            :src="tabIconSrc[tab.name]"
+            :key="tabIconSrc[tab.name]"
             mode="aspectFit"
+            @error="onIconError(tab.name)"
           ></image>
           <view v-if="tab.name === 'message' && unreadCount > 0" class="badge">
             {{ unreadCount > 99 ? '99+' : unreadCount }}
@@ -26,9 +28,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useIcon } from '@/composables/useIcon'
+import { icons as defaultIcons } from '@/config/icons'
 
 interface TabItem {
   label: string
@@ -49,6 +52,25 @@ const tabs: TabItem[] = [
 const currentPath = ref('/pages/index/index')
 const unreadCount = ref(0)
 const safeAreaBottom = ref(0)
+const iconErrorMap = ref<Record<string, boolean>>({})
+
+const tabIconSrc = computed(() => {
+  const result: Record<string, string> = {}
+  for (const tab of tabs) {
+    const name = tab.name
+    if (iconErrorMap.value[name]) {
+      const fallback = defaultIcons.tabbar[name]
+      result[name] = currentPath.value === tab.pagePath ? fallback.active : fallback.default
+    } else {
+      result[name] = getTabbarIcon(name, currentPath.value === tab.pagePath)
+    }
+  }
+  return result
+})
+
+const onIconError = (name: string) => {
+  iconErrorMap.value[name] = true
+}
 
 const updateCurrentTab = () => {
   const pages = getCurrentPages()
