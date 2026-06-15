@@ -83,21 +83,23 @@
         <text class="arrow">></text>
       </view>
 
-      <!-- ========== 金刚区：我的问答 + 专属红娘（合并为一张卡片） ========== -->
+      <!-- ========== 金刚区：我的问答 + 专属红娘（合并为一张卡片，左对齐网格） ========== -->
       <view class="service-card">
-        <view class="service-item" @tap="goToQuestions">
-          <image v-if="pageIcons.qaIcon" class="service-icon-img" :src="pageIcons.qaIcon" mode="aspectFit" />
-          <view v-else class="service-icon-box orange-gradient">
-            <text class="service-icon-text">#</text>
+        <view class="service-grid">
+          <view class="service-item" @tap="goToQuestions">
+            <image v-if="pageIcons.qaIcon" class="service-icon-img" :src="pageIcons.qaIcon" mode="aspectFit" />
+            <view v-else class="service-icon-box orange-gradient">
+              <text class="service-icon-text">#</text>
+            </view>
+            <text class="service-label">我的问答</text>
           </view>
-          <text class="service-label">我的问答</text>
-        </view>
-        <view class="service-item" @tap="goToMatchmaker">
-          <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
-          <view v-else class="service-icon-box purple-gradient">
-            <text class="service-icon-text">👤</text>
+          <view class="service-item" @tap="goToMatchmaker">
+            <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
+            <view v-else class="service-icon-box purple-gradient">
+              <text class="service-icon-text">👤</text>
+            </view>
+            <text class="service-label">专属红娘</text>
           </view>
-          <text class="service-label">专属红娘</text>
         </view>
       </view>
 
@@ -493,21 +495,25 @@ const toolGrid7 = [
   margin-left: 12rpx;
 }
 
-// ========== 我的问答 + 专属红娘（合并为一张卡片，无分割线） ==========
+// ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
 .service-card {
-  display: flex;
   margin: 0 24rpx 16rpx;
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
+  padding: 20rpx 12rpx 16rpx;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
 
 .service-item {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 20rpx 0 16rpx;
+  align-items: flex-start;
+  padding-left: 8rpx;
 }
 
 .service-icon-box {
