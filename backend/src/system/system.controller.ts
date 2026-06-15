@@ -91,6 +91,9 @@ export class PublicSystemController {
         feedback: fallback(page.feedback),
         userAgreement: fallback(page.userAgreement),
         antiFraud: fallback(page.antiFraud),
+        // 红娘弹窗图标
+        copyIcon: fallback(page.copyIcon),
+        saveIcon: fallback(page.saveIcon),
       },
     }
   }

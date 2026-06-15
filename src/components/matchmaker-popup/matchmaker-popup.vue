@@ -1,48 +1,77 @@
 <template>
   <view v-if="visible" class="matchmaker-popup">
+    <!-- 半透明遮罩 -->
     <view class="overlay" @tap="handleClose"></view>
-    <view class="popup-card">
-      <view class="close-btn" @tap="handleClose">
-        <text>X</text>
+
+    <!-- 底部弹窗内容 -->
+    <view class="bottom-sheet" :class="{ 'sheet-visible': visible }">
+      <!-- 标题行 -->
+      <view class="sheet-header">
+        <text class="sheet-title">专属资深红娘助你脱单</text>
+        <view class="close-btn" @tap="handleClose">
+          <text class="close-icon">✕</text>
+        </view>
       </view>
 
-      <view class="header-title">专属资深红娘助你脱单</view>
-
-      <view class="matchmaker-info">
-        <view class="avatar-wrapper">
-          <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="onAvatarError" />
-        </view>
-
-        <view class="name">{{ matchmaker.name }}</view>
-        <view class="title">{{ matchmaker.title }}</view>
-
-        <view class="wechat-row" @tap="copyWechat">
-          <text class="wechat-label">微信：</text>
-          <text class="wechat-value">{{ matchmaker.wechat }}</text>
-          <text class="copy-icon">📋</text>
-        </view>
-
-        <view class="qrcode-wrapper">
+      <!-- 红娘信息区 -->
+      <view class="matchmaker-section">
+        <!-- 头像带粉边 -->
+        <view class="avatar-ring">
           <image
-            class="qrcode"
+            class="avatar-img"
+            :src="avatarUrl"
+            mode="aspectFill"
+            @error="onAvatarError"
+          />
+        </view>
+
+        <!-- 昵称（粉色粗体） -->
+        <text class="mm-name">{{ matchmaker.name }}</text>
+
+        <!-- 微信号 + 复制图标 -->
+        <view class="wechat-row" @tap="copyWechat">
+          <text class="wechat-text">微信：{{ matchmaker.wechat }}</text>
+          <image
+            v-if="pageIcons.copyIcon"
+            class="wechat-copy-icon"
+            :src="pageIcons.copyIcon"
+            mode="aspectFit"
+          />
+          <text v-else class="wechat-copy-emoji">📋</text>
+        </view>
+
+        <!-- 二维码区 -->
+        <view class="qrcode-box">
+          <image
+            class="qrcode-img"
             :src="qrcodeUrl"
             mode="widthFix"
             @error="onQrcodeError"
           />
         </view>
 
-        <view class="qrcode-tip">长按识别二维码添加红娘微信</view>
-        <view class="save-tip" @tap="saveQrcode">
-          <text class="save-icon">⬇️</text>
-          <text>或保存图片到相册</text>
+        <!-- 二维码提示文字 -->
+        <text class="qrcode-tip">长按识别二维码添加红娘微信</text>
+
+        <!-- 保存图片 -->
+        <view class="save-row" @tap="saveQrcode">
+          <image
+            v-if="pageIcons.saveIcon"
+            class="save-icon-img"
+            :src="pageIcons.saveIcon"
+            mode="aspectFit"
+          />
+          <text v-else class="save-icon-emoji">⬇️</text>
+          <text class="save-text">或保存图片到相册</text>
         </view>
       </view>
 
-      <view class="action-buttons">
-        <view class="call-btn" @tap="handleCall">
+      <!-- 按钮区 -->
+      <view class="button-section">
+        <view class="btn-call" @tap="handleCall">
           <text>打电话</text>
         </view>
-        <view class="more-btn" @tap="handleMore">
+        <view class="btn-more" @tap="handleMore">
           <text>查看更多红娘</text>
         </view>
       </view>
@@ -60,6 +89,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, nextTick } from 'vue'
+import { useSystemStore } from '@/store/system'
 
 export interface MatchmakerData {
   id: number
@@ -87,11 +117,13 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+const systemStore = useSystemStore()
+const pageIcons = computed(() => systemStore.icons?.page || {})
+
 const visible = ref(false)
 const avatarError = ref(false)
 const qrcodeError = ref(false)
 
-// Canvas 尺寸（px，按 2 倍图设计）
 const canvasW = ref(375)
 const canvasH = ref(580)
 
@@ -105,21 +137,12 @@ const qrcodeUrl = computed(() => {
   return props.matchmaker.qrCode || '/static/matchmaker.png'
 })
 
-const onAvatarError = () => {
-  avatarError.value = true
-}
+const onAvatarError = () => { avatarError.value = true }
+const onQrcodeError = () => { qrcodeError.value = true }
 
-const onQrcodeError = () => {
-  qrcodeError.value = true
-}
-
-watch(
-  () => props.show,
-  (newVal) => {
-    visible.value = newVal
-  },
-  { immediate: true }
-)
+watch(() => props.show, (newVal) => {
+  visible.value = newVal
+}, { immediate: true })
 
 const handleClose = () => {
   visible.value = false
@@ -129,20 +152,12 @@ const handleClose = () => {
 
 const copyWechat = async () => {
   if (!props.matchmaker.wechat) return
-
   try {
     await uni.setClipboardData({
       data: props.matchmaker.wechat,
-      success: () => {
-        uni.showToast({
-          title: '已复制',
-          icon: 'success',
-        })
-      },
+      success: () => { uni.showToast({ title: '已复制', icon: 'success' }) },
     })
-  } catch (e) {
-    console.error('copy failed', e)
-  }
+  } catch (e) { /* ignore */ }
 }
 
 const saveQrcode = async () => {
@@ -154,16 +169,15 @@ const saveQrcode = async () => {
   uni.showLoading({ title: '生成图片中...' })
 
   try {
-    // 1. 下载头像和二维码到本地临时路径
     const [avatarPath, qrcodePath] = await Promise.all([
       downloadImage(avatarUrl.value),
       downloadImage(qrcodeUrl.value),
     ])
 
-    // 2. 等待下一帧确保 canvas 节点已挂载
     await nextTick()
+    // 额外等待 canvas 渲染
+    await delay(200)
 
-    // 3. 获取 Canvas 2D 上下文
     const canvasNode = await getCanvasNode()
     if (!canvasNode) throw new Error('Canvas 节点获取失败')
 
@@ -176,29 +190,28 @@ const saveQrcode = async () => {
     canvasNode.height = h * dpr
     ctx.scale(dpr, dpr)
 
-    // 4. 绘制白色背景
+    // 白色背景
     ctx.fillStyle = '#FFFFFF'
     ctx.fillRect(0, 0, w, h)
 
-    // 5. 绘制顶部信息区
+    // 绘制圆形头像
     const avatarSize = 64
     const avatarX = 30
     const avatarY = 40
-
     await drawCircularImage(ctx, avatarPath, avatarX, avatarY, avatarSize)
 
-    // 昵称
+    // 绘制微信名
     const displayName = props.matchmaker.wechat || props.matchmaker.name || '红娘'
     ctx.fillStyle = '#333333'
     ctx.font = 'bold 18px sans-serif'
     ctx.textBaseline = 'middle'
     ctx.fillText(displayName, avatarX + avatarSize + 16, avatarY + avatarSize / 2)
 
-    // 6. 绘制二维码（主要区域）
+    // 绘制二维码
     const qrSize = 260
     const qrX = (w - qrSize) / 2
     const qrY = avatarY + avatarSize + 40
-    const qrImg = canvasNode.createImage()
+    const qrImg = (canvasNode as any).createImage()
     await new Promise<void>((resolve, reject) => {
       qrImg.onload = () => resolve()
       qrImg.onerror = () => reject(new Error('二维码图片加载失败'))
@@ -206,14 +219,14 @@ const saveQrcode = async () => {
     })
     ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
 
-    // 7. 绘制底部提示文字
+    // 底部分享提示
     const hintY = qrY + qrSize + 28
     ctx.fillStyle = '#999999'
     ctx.font = '13px sans-serif'
     ctx.textAlign = 'center'
     ctx.fillText('扫一扫上面的二维码图案，加我为好友', w / 2, hintY)
 
-    // 8. 导出为图片
+    // 导出图片
     const tempFilePath = await new Promise<string>((resolve, reject) => {
       (uni.canvasToTempFilePath as any)({
         canvas: canvasNode,
@@ -230,22 +243,24 @@ const saveQrcode = async () => {
       })
     })
 
-    // 9. 保存到相册
     await uni.saveImageToPhotosAlbum({ filePath: tempFilePath })
     uni.hideLoading()
     uni.showToast({ title: '已保存到相册', icon: 'success' })
   } catch (e: any) {
     uni.hideLoading()
-    if (e.errMsg?.includes('auth deny')) {
+    if (e.errMsg?.includes('auth deny') || e.errMsg?.includes('auth')) {
       uni.showToast({ title: '请授权保存图片权限', icon: 'none' })
     } else {
-      uni.showToast({ title: '保存失败', icon: 'none' })
+      uni.showToast({ title: '保存失败，请重试', icon: 'none' })
     }
     console.error('save qrcode failed', e)
   }
 }
 
-/** 下载网络图片到本地临时路径 */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function downloadImage(url: string): Promise<string> {
   if (!url.startsWith('http')) return url
   const res = await uni.downloadFile({ url })
@@ -253,12 +268,9 @@ async function downloadImage(url: string): Promise<string> {
   return res.tempFilePath
 }
 
-/** 获取 canvas 节点 */
 function getCanvasNode(): Promise<any> {
   return new Promise((resolve, reject) => {
-    // cast to avoid type issue with createSelectorQuery in <script setup>
     const query = (uni.createSelectorQuery as any)()
-    // 需要获取组件实例来限定查询范围
     query
       .select('#share-canvas')
       .fields({ node: true, size: true })
@@ -272,7 +284,6 @@ function getCanvasNode(): Promise<any> {
   })
 }
 
-/** 绘制圆形头像 */
 function drawCircularImage(
   ctx: any,
   src: string,
@@ -283,7 +294,6 @@ function drawCircularImage(
   return new Promise((resolve, reject) => {
     const img = (ctx.canvas as any).createImage()
     img.onload = () => {
-      // 裁剪圆形
       ctx.save()
       ctx.beginPath()
       const r = size / 2
@@ -303,19 +313,11 @@ const handleCall = () => {
   if (props.matchmaker.phone) {
     uni.makePhoneCall({
       phoneNumber: props.matchmaker.phone,
-      fail: () => {
-        uni.showToast({
-          title: '拨打失败',
-          icon: 'none',
-        })
-      },
+      fail: () => { uni.showToast({ title: '拨打失败', icon: 'none' }) },
     })
     emit('call', props.matchmaker.phone)
   } else {
-    uni.showToast({
-      title: '暂无电话号码',
-      icon: 'none',
-    })
+    uni.showToast({ title: '暂无电话号码', icon: 'none' })
   }
 }
 
@@ -332,10 +334,7 @@ const close = () => {
   handleClose()
 }
 
-defineExpose({
-  open,
-  close,
-})
+defineExpose({ open, close })
 </script>
 
 <style lang="scss" scoped>
@@ -346,9 +345,6 @@ defineExpose({
   right: 0;
   bottom: 0;
   z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .overlay {
@@ -357,169 +353,196 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
-.popup-card {
-  position: relative;
-  width: 85%;
-  max-width: 600rpx;
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 90vh;
+  overflow-y: auto;
   background-color: #fff;
-  border-radius: 24px;
-  padding: 40rpx 32rpx;
-  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.15);
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 40rpx 32rpx 60rpx;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out;
+
+  &.sheet-visible {
+    transform: translateY(0);
+  }
+}
+
+// ===== 标题行 =====
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 36rpx;
+}
+
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
 }
 
 .close-btn {
   position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  width: 60rpx;
-  height: 60rpx;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 56rpx;
+  height: 56rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.close-icon {
+  font-size: 32rpx;
   color: #999;
-  font-size: 36rpx;
 }
 
-.header-title {
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text, #333);
-  margin-bottom: 40rpx;
-}
-
-.matchmaker-info {
+// ===== 红娘信息区 =====
+.matchmaker-section {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.avatar-wrapper {
-  width: 160rpx;
-  height: 160rpx;
+.avatar-ring {
+  width: 128rpx;
+  height: 128rpx;
   border-radius: 50%;
+  border: 4rpx solid #FF6681;
   padding: 4rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FB0);
-  box-shadow: 0 0 20rpx rgba(255, 107, 157, 0.3);
-  margin-bottom: 24rpx;
+  margin-bottom: 16rpx;
 }
 
-.avatar {
+.avatar-img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 4rpx solid #fff;
   background-color: #f5f5f5;
 }
 
-.name {
-  font-size: 16px;
+.mm-name {
+  font-size: 32rpx;
   font-weight: bold;
-  color: #FF6B9D;
-  margin-bottom: 8rpx;
+  color: #FF6681;
+  margin-bottom: 20rpx;
 }
 
-.title {
-  font-size: 14px;
-  color: #999;
-  margin-bottom: 24rpx;
-}
-
+// ===== 微信号行 =====
 .wechat-row {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  padding: 16rpx 24rpx;
-  background-color: #f9f9f9;
+  padding: 12rpx 24rpx;
+  background-color: #F8F8F8;
   border-radius: 8rpx;
   margin-bottom: 32rpx;
 }
 
-.wechat-label {
-  font-size: 14px;
+.wechat-text {
+  font-size: 26rpx;
   color: #666;
 }
 
-.wechat-value {
-  font-size: 14px;
-  color: var(--text, #333);
+.wechat-copy-icon {
+  width: 32rpx;
+  height: 32rpx;
 }
 
-.copy-icon {
-  font-size: 28rpx;
-  margin-left: 8rpx;
+.wechat-copy-emoji {
+  font-size: 24rpx;
 }
 
-.qrcode-wrapper {
-  width: 400rpx;
-  height: 400rpx;
-  padding: 16rpx;
-  background-color: #fff;
-  border: 2rpx solid #eee;
-  border-radius: 12rpx;
-  margin-bottom: 24rpx;
+// ===== 二维码 =====
+.qrcode-box {
+  width: 68%;
+  margin-bottom: 20rpx;
 }
 
-.qrcode {
+.qrcode-img {
   width: 100%;
-  height: 100%;
+  display: block;
+  border-radius: 4rpx;
 }
 
 .qrcode-tip {
-  font-size: 14px;
+  font-size: 24rpx;
   color: #999;
   margin-bottom: 12rpx;
 }
 
-.save-tip {
+// ===== 保存行 =====
+.save-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  font-size: 12px;
-  color: #999;
+  gap: 6rpx;
   margin-bottom: 40rpx;
 }
 
-.save-icon {
-  font-size: 24rpx;
+.save-icon-img {
+  width: 28rpx;
+  height: 28rpx;
 }
 
-.action-buttons {
+.save-icon-emoji {
+  font-size: 22rpx;
+}
+
+.save-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+// ===== 按钮区 =====
+.button-section {
   display: flex;
   flex-direction: column;
-  gap: 20rpx;
+  gap: 24rpx;
+  width: 100%;
 }
 
-.call-btn {
+.btn-call {
   width: 100%;
-  height: 96rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #FF6B9D;
-  border-radius: 48rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #fff;
+  background-color: #FF6681;
+  border-radius: 44rpx;
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #fff;
+  }
 }
 
-.more-btn {
+.btn-more {
   width: 100%;
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #fff;
-  border: 2rpx solid #FF6B9D;
+  border: 2rpx solid #FF6681;
   border-radius: 44rpx;
-  font-size: 30rpx;
-  color: #FF6B9D;
+
+  text {
+    font-size: 30rpx;
+    color: #FF6681;
+  }
 }
 
+// ===== 离屏 Canvas =====
 .share-canvas {
   position: fixed;
   left: -9999px;

@@ -567,6 +567,8 @@ const pageIconList = [
   { key: 'feedback', label: '问题反馈' },
   { key: 'userAgreement', label: '用户协议' },
   { key: 'antiFraud', label: '防骗提醒' },
+  { key: 'copyIcon', label: '红娘弹窗-复制图标' },
+  { key: 'saveIcon', label: '红娘弹窗-保存图标' },
 ]
 
 interface TabbarIconItem {
@@ -608,6 +610,8 @@ const iconConfig = reactive({
     feedback: '',
     userAgreement: '',
     antiFraud: '',
+    copyIcon: '',
+    saveIcon: '',
   } as Record<string, string>,
 })
 
