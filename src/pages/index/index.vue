@@ -564,7 +564,7 @@ const onShareTimeline = () => {
 <style lang="scss" scoped>
 .index-page {
   min-height: 100vh;
-  background-color: var(--bg);
+  background-color: #FFF8FA;
   display: flex;
   flex-direction: column;
 }
@@ -575,7 +575,7 @@ const onShareTimeline = () => {
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: #FFE4EC;
+  background-color: transparent;
 }
 
 .header-content {
@@ -637,13 +637,16 @@ const onShareTimeline = () => {
   flex: 1;
   margin-top: 0;
   margin-bottom: 120rpx;
+  background-color: #FFF8FA;
+  border-top: none;
 }
 
 .quick-entry-section {
   display: flex;
   justify-content: space-around;
-  padding: 16rpx 24rpx 32rpx;
+  padding: 8rpx 24rpx 24rpx;
   margin-bottom: 0;
+  border: none;
 }
 
 .quick-entry-item {
@@ -677,6 +680,8 @@ const onShareTimeline = () => {
   padding: 10rpx 20rpx 6rpx;
   margin: 0 28rpx 12rpx;
   border-radius: 16rpx;
+  border: none;
+  box-shadow: none;
 }
 
 .section-header {
