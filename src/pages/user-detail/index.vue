@@ -11,8 +11,25 @@
         </view>
         <view class="nav-title">{{ userData.nickname || '用户' }}</view>
         <view class="nav-right">
-          <text class="more-icon" @tap="showMoreActions">⋮</text>
-          <text class="eye-icon" :class="{ active: userData.isFollowed }">{{ userData.isFollowed ? '👁' : '👁‍🗨' }}</text>
+          <!-- 右上角分享按钮 -->
+          <image
+            v-if="pageIcons.shareMoreIcon"
+            class="more-icon-img"
+            :src="pageIcons.shareMoreIcon"
+            mode="aspectFit"
+            @tap="showMoreActions"
+          />
+          <text v-else class="more-icon" @tap="showMoreActions">⋮</text>
+          <!-- 关注图标 -->
+          <image
+            v-if="pageIcons.followIcon"
+            class="follow-icon-img"
+            :src="pageIcons.followIcon"
+            mode="aspectFit"
+            :class="{ active: userData.isFollowed }"
+            @tap="toggleFollow"
+          />
+          <text v-else class="eye-icon" :class="{ active: userData.isFollowed }" @tap="toggleFollow">{{ userData.isFollowed ? '👁' : '👁‍🗨' }}</text>
         </view>
       </view>
 
@@ -46,7 +63,13 @@
         </swiper>
 
         <view class="share-btn" @tap="showSharePanel">
-          <text class="share-icon">↗</text>
+          <image
+            v-if="pageIcons.shareBtnIcon"
+            class="share-btn-img"
+            :src="pageIcons.shareBtnIcon"
+            mode="aspectFit"
+          />
+          <text v-else class="share-icon">↗</text>
         </view>
 
         <view v-if="userData.photos && userData.photos.length > 1" class="photo-thumbnails">
@@ -68,12 +91,19 @@
           <view class="name-section">
             <text class="user-name">{{ userData.nickname }}</text>
             <view class="id-tag">
-              <text class="id-label">ID:</text>
-              <text class="id-value">{{ userData.id }}</text>
+              <text class="id-badge">ID</text>
+              <text class="id-number">{{ userData.id }}</text>
             </view>
           </view>
           <view v-if="!isSelf" class="follow-btn" @tap="toggleFollow">
-            <text class="heart-icon" :class="{ filled: userData.isFollowed }">
+            <image
+              v-if="pageIcons.followIcon"
+              class="heart-icon-img"
+              :src="pageIcons.followIcon"
+              mode="aspectFit"
+              :class="{ filled: userData.isFollowed }"
+            />
+            <text v-else class="heart-icon" :class="{ filled: userData.isFollowed }">
               {{ userData.isFollowed ? '❤️' : '🤍' }}
             </text>
             <text class="follow-text">{{ userData.isFollowed ? '已关注' : '关注' }}</text>
@@ -237,12 +267,24 @@
         <view class="share-overlay" @tap="closeSharePanel"></view>
         <view class="share-content" :class="{ open: showShare }">
           <view class="share-option" @tap="shareToFriend">
-            <text class="option-icon">💬</text>
+            <image
+              v-if="pageIcons.shareFriendIcon"
+              class="option-icon-img"
+              :src="pageIcons.shareFriendIcon"
+              mode="aspectFit"
+            />
+            <text v-else class="option-icon">💬</text>
             <text class="option-text">分享给好友</text>
           </view>
           <view class="share-divider"></view>
           <view class="share-option" @tap="generatePoster">
-            <text class="option-icon">🖼</text>
+            <image
+              v-if="pageIcons.posterIcon"
+              class="option-icon-img"
+              :src="pageIcons.posterIcon"
+              mode="aspectFit"
+            />
+            <text v-else class="option-icon">🖼</text>
             <text class="option-text">生成海报</text>
           </view>
         </view>
@@ -352,6 +394,8 @@ const matchmakerList = ref<any[]>([])
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+
+const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const isVip = computed(() => userStore.isVip)
@@ -894,8 +938,18 @@ const showAuthDetail = (type: string) => {
   text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
 }
 
+.more-icon-img {
+  width: 44rpx;
+  height: 44rpx;
+}
+
 .eye-icon {
   font-size: 32rpx;
+}
+
+.follow-icon-img {
+  width: 36rpx;
+  height: 36rpx;
 }
 
 .photo-section {
@@ -1003,6 +1057,11 @@ const showAuthDetail = (type: string) => {
   color: #fff;
 }
 
+.share-btn-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
 .photo-thumbnails {
   position: absolute;
   left: 32rpx;
@@ -1063,19 +1122,23 @@ const showAuthDetail = (type: string) => {
 .id-tag {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  padding: 4rpx 12rpx;
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
+  gap: 8rpx;
 }
 
-.id-label {
+.id-badge {
+  display: inline-block;
+  font-style: italic;
   font-size: 20rpx;
-  color: #999;
+  font-weight: bold;
+  color: #fff;
+  background-color: #999;
+  padding: 2rpx 10rpx;
+  border-radius: 4rpx;
+  line-height: 1.4;
 }
 
-.id-value {
-  font-size: 20rpx;
+.id-number {
+  font-size: 26rpx;
   color: #666;
 }
 
@@ -1090,6 +1153,16 @@ const showAuthDetail = (type: string) => {
 
 .heart-icon {
   font-size: 32rpx;
+}
+
+.heart-icon-img {
+  width: 36rpx;
+  height: 36rpx;
+  opacity: 0.4;
+
+  &.filled {
+    opacity: 1;
+  }
 }
 
 .follow-text {
@@ -1426,6 +1499,11 @@ const showAuthDetail = (type: string) => {
 
 .option-icon {
   font-size: 48rpx;
+}
+
+.option-icon-img {
+  width: 48rpx;
+  height: 48rpx;
 }
 
 .option-text {

@@ -94,6 +94,12 @@ export class PublicSystemController {
         // 红娘弹窗图标
         copyIcon: fallback(page.copyIcon),
         saveIcon: fallback(page.saveIcon),
+        // 用户详情页图标
+        shareFriendIcon: fallback(page.shareFriendIcon),
+        posterIcon: fallback(page.posterIcon),
+        shareMoreIcon: fallback(page.shareMoreIcon),
+        followIcon: fallback(page.followIcon),
+        shareBtnIcon: fallback(page.shareBtnIcon),
       },
     }
   }

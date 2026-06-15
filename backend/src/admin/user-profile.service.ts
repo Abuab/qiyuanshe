@@ -180,7 +180,21 @@ export class UserProfileService {
       content: data.content || '',
       difficulty: data.difficulty || '',
     })
-    return this.reviewRepository.save(review)
+    const saved = await this.reviewRepository.save(review)
+
+    // 同时创建 match_record，使其在动态页红娘区展示
+    try {
+      const record = this.matchRecordRepository.create({
+        userId,                     // 被评价用户自己看不到这条
+        matchedUserId: userId,
+        matchmakerId: data.matchmakerId,
+        remark: data.content || '',
+        status: 'in_progress',
+      })
+      await this.matchRecordRepository.save(record)
+    } catch (e) { /* 非关键路径，不影响主流程 */ }
+
+    return saved
   }
 
   async updateReview(reviewId: number, data: { content?: string; difficulty?: string }) {

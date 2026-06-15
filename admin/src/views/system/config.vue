@@ -569,6 +569,11 @@ const pageIconList = [
   { key: 'antiFraud', label: '防骗提醒' },
   { key: 'copyIcon', label: '红娘弹窗-复制图标' },
   { key: 'saveIcon', label: '红娘弹窗-保存图标' },
+  { key: 'shareFriendIcon', label: '用户详情-分享好友图标' },
+  { key: 'posterIcon', label: '用户详情-生成海报图标' },
+  { key: 'shareMoreIcon', label: '用户详情-右上角分享图标' },
+  { key: 'followIcon', label: '用户详情-关注图标' },
+  { key: 'shareBtnIcon', label: '用户详情-分享按钮图标' },
 ]
 
 interface TabbarIconItem {
@@ -612,6 +617,11 @@ const iconConfig = reactive({
     antiFraud: '',
     copyIcon: '',
     saveIcon: '',
+    shareFriendIcon: '',
+    posterIcon: '',
+    shareMoreIcon: '',
+    followIcon: '',
+    shareBtnIcon: '',
   } as Record<string, string>,
 })
 

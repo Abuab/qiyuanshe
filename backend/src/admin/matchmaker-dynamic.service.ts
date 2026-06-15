@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { MatchRecord } from '../entities/MatchRecord'
+import { MatchmakerComment } from '../entities/MatchmakerComment'
 
 @Injectable()
 export class AdminMatchmakerDynamicService {
   constructor(
     @InjectRepository(MatchRecord)
     private readonly matchRecordRepository: Repository<MatchRecord>,
+    @InjectRepository(MatchmakerComment)
+    private readonly commentRepo: Repository<MatchmakerComment>,
   ) {}
 
   /** 获取红娘动态列表 */
@@ -51,7 +54,20 @@ export class AdminMatchmakerDynamicService {
       remark: data.remark,
       status: 'in_progress',
     })
-    return this.matchRecordRepository.save(record)
+    const saved = await this.matchRecordRepository.save(record)
+
+    // 同时创建 matchmaker_comment，保持数据一致
+    try {
+      const comment = this.commentRepo.create({
+        matchmakerId: data.matchmakerId,
+        userId: data.matchedUserId,
+        content: data.remark,
+        status: 1,
+      })
+      await this.commentRepo.save(comment)
+    } catch (e) { /* 非关键路径，不影响主流程 */ }
+
+    return saved
   }
 
   /** 更新红娘动态（编辑 remark） */

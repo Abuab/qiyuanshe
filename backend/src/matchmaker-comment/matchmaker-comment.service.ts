@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { MatchRecord } from '../entities/MatchRecord'
 
 @Injectable()
 export class MatchmakerCommentService {
   constructor(
     @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(MatchRecord)
+    private readonly matchRecordRepo: Repository<MatchRecord>,
   ) {}
 
   // 获取某会员的所有评语（含红娘信息）
@@ -31,7 +34,21 @@ export class MatchmakerCommentService {
   // 创建评语
   async create(data: { matchmakerId: number; userId: number; content: string; rating: number }) {
     const comment = this.commentRepo.create({ ...data, status: 1 })
-    return this.commentRepo.save(comment)
+    const saved = await this.commentRepo.save(comment)
+
+    // 同时创建 match_record，使其在动态页红娘区展示
+    try {
+      const record = this.matchRecordRepo.create({
+        userId: data.userId,           // 被评价用户自己看不到这条
+        matchedUserId: data.userId,
+        matchmakerId: data.matchmakerId,
+        remark: data.content,
+        status: 'in_progress',
+      })
+      await this.matchRecordRepo.save(record)
+    } catch (e) { /* 非关键路径，不影响主流程 */ }
+
+    return saved
   }
 
   // 删除评语（原始SQL物理删除）

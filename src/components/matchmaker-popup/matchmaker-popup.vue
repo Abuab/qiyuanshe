@@ -76,19 +76,11 @@
         </view>
       </view>
     </view>
-
-    <!-- 离屏 Canvas 用于生成分享图 -->
-    <canvas
-      id="share-canvas"
-      type="2d"
-      class="share-canvas"
-      :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
-    ></canvas>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed, nextTick } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 
 export interface MatchmakerData {
@@ -123,9 +115,6 @@ const pageIcons = computed(() => systemStore.icons?.page || {})
 const visible = ref(false)
 const avatarError = ref(false)
 const qrcodeError = ref(false)
-
-const canvasW = ref(375)
-const canvasH = ref(580)
 
 const avatarUrl = computed(() => {
   if (avatarError.value) return '/static/default-avatar.png'
@@ -166,147 +155,51 @@ const saveQrcode = async () => {
     return
   }
 
-  uni.showLoading({ title: '生成图片中...' })
+  uni.showLoading({ title: '保存中...' })
 
   try {
-    const [avatarPath, qrcodePath] = await Promise.all([
-      downloadImage(avatarUrl.value),
-      downloadImage(qrcodeUrl.value),
-    ])
+    // 下载二维码图片到本地
+    const qrUrl = qrcodeUrl.value
+    let localPath: string
 
-    await nextTick()
-    // 额外等待 canvas 渲染
-    await delay(200)
+    if (qrUrl.startsWith('http')) {
+      const res = await uni.downloadFile({ url: qrUrl })
+      if (res.statusCode !== 200) throw new Error('下载二维码失败')
+      localPath = res.tempFilePath
+    } else {
+      localPath = qrUrl
+    }
 
-    const canvasNode = await getCanvasNode()
-    if (!canvasNode) throw new Error('Canvas 节点获取失败')
-
-    const ctx = canvasNode.getContext('2d')
-    const dpr = uni.getSystemInfoSync().pixelRatio || 2
-    const w = canvasW.value
-    const h = canvasH.value
-
-    canvasNode.width = w * dpr
-    canvasNode.height = h * dpr
-    ctx.scale(dpr, dpr)
-
-    // 白色背景
-    ctx.fillStyle = '#FFFFFF'
-    ctx.fillRect(0, 0, w, h)
-
-    // 绘制圆形头像
-    const avatarSize = 64
-    const avatarX = 30
-    const avatarY = 40
-    await drawCircularImage(ctx, avatarPath, avatarX, avatarY, avatarSize)
-
-    // 绘制微信名
-    const displayName = props.matchmaker.wechat || props.matchmaker.name || '红娘'
-    ctx.fillStyle = '#333333'
-    ctx.font = 'bold 18px sans-serif'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(displayName, avatarX + avatarSize + 16, avatarY + avatarSize / 2)
-
-    // 绘制二维码
-    const qrSize = 260
-    const qrX = (w - qrSize) / 2
-    const qrY = avatarY + avatarSize + 40
-    const qrImg = (canvasNode as any).createImage()
-    await new Promise<void>((resolve, reject) => {
-      qrImg.onload = () => resolve()
-      qrImg.onerror = () => reject(new Error('二维码图片加载失败'))
-      qrImg.src = qrcodePath
-    })
-    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize)
-
-    // 底部分享提示
-    const hintY = qrY + qrSize + 28
-    ctx.fillStyle = '#999999'
-    ctx.font = '13px sans-serif'
-    ctx.textAlign = 'center'
-    ctx.fillText('扫一扫上面的二维码图案，加我为好友', w / 2, hintY)
-
-    // 导出图片
-    const tempFilePath = await new Promise<string>((resolve, reject) => {
-      (uni.canvasToTempFilePath as any)({
-        canvas: canvasNode,
-        x: 0,
-        y: 0,
-        width: w,
-        height: h,
-        destWidth: w * dpr,
-        destHeight: h * dpr,
-        fileType: 'jpg',
-        quality: 1,
-        success: (res: any) => resolve(res.tempFilePath),
-        fail: reject,
-      })
-    })
-
-    await uni.saveImageToPhotosAlbum({ filePath: tempFilePath })
+    await uni.saveImageToPhotosAlbum({ filePath: localPath })
     uni.hideLoading()
     uni.showToast({ title: '已保存到相册', icon: 'success' })
   } catch (e: any) {
     uni.hideLoading()
     if (e.errMsg?.includes('auth deny') || e.errMsg?.includes('auth')) {
-      uni.showToast({ title: '请授权保存图片权限', icon: 'none' })
+      // 引导授权
+      try {
+        await uni.authorize({ scope: 'scope.writePhotosAlbum' })
+        // 授权后重试一次
+        const qrUrl = qrcodeUrl.value
+        let localPath: string
+        if (qrUrl.startsWith('http')) {
+          const res = await uni.downloadFile({ url: qrUrl })
+          if (res.statusCode !== 200) throw new Error('下载二维码失败')
+          localPath = res.tempFilePath
+        } else {
+          localPath = qrUrl
+        }
+        await uni.saveImageToPhotosAlbum({ filePath: localPath })
+        uni.hideLoading()
+        uni.showToast({ title: '已保存到相册', icon: 'success' })
+      } catch {
+        uni.showToast({ title: '请授权保存图片权限', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '保存失败，请重试', icon: 'none' })
     }
     console.error('save qrcode failed', e)
   }
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-async function downloadImage(url: string): Promise<string> {
-  if (!url.startsWith('http')) return url
-  const res = await uni.downloadFile({ url })
-  if (res.statusCode !== 200) throw new Error('图片下载失败')
-  return res.tempFilePath
-}
-
-function getCanvasNode(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const query = (uni.createSelectorQuery as any)()
-    query
-      .select('#share-canvas')
-      .fields({ node: true, size: true })
-      .exec((res: any) => {
-        if (res?.[0]?.node) {
-          resolve(res[0].node)
-        } else {
-          reject(new Error('Canvas 节点未找到'))
-        }
-      })
-  })
-}
-
-function drawCircularImage(
-  ctx: any,
-  src: string,
-  x: number,
-  y: number,
-  size: number,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const img = (ctx.canvas as any).createImage()
-    img.onload = () => {
-      ctx.save()
-      ctx.beginPath()
-      const r = size / 2
-      ctx.arc(x + r, y + r, r, 0, Math.PI * 2)
-      ctx.closePath()
-      ctx.clip()
-      ctx.drawImage(img, x, y, size, size)
-      ctx.restore()
-      resolve()
-    }
-    img.onerror = () => reject(new Error('头像加载失败'))
-    img.src = src
-  })
 }
 
 const handleCall = () => {
@@ -361,7 +254,7 @@ defineExpose({ open, close })
   bottom: 0;
   left: 0;
   right: 0;
-  max-height: 90vh;
+  max-height: 60vh;
   overflow-y: auto;
   background-color: #fff;
   border-radius: 32rpx 32rpx 0 0;
@@ -442,7 +335,7 @@ defineExpose({ open, close })
   align-items: center;
   gap: 8rpx;
   padding: 12rpx 24rpx;
-  background-color: #F8F8F8;
+  background-color: #F5F5F5;
   border-radius: 8rpx;
   margin-bottom: 32rpx;
 }
@@ -463,8 +356,8 @@ defineExpose({ open, close })
 
 // ===== 二维码 =====
 .qrcode-box {
-  width: 68%;
-  margin-bottom: 20rpx;
+  width: 50%;
+  margin-bottom: 16rpx;
 }
 
 .qrcode-img {
@@ -540,12 +433,5 @@ defineExpose({ open, close })
     font-size: 30rpx;
     color: #FF6681;
   }
-}
-
-// ===== 离屏 Canvas =====
-.share-canvas {
-  position: fixed;
-  left: -9999px;
-  top: -9999px;
 }
 </style>

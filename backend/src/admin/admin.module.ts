@@ -32,6 +32,7 @@ import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
 import { ChatMessage } from '../entities/ChatMessage'
 import { UserNotification } from '../entities/UserNotification'
 import { MatchmakerReview } from '../entities/MatchmakerReview'
+import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { MatchRecord } from '../entities/MatchRecord'
 import { UserBlock } from '../entities/UserBlock'
 import { AdminJwtStrategy } from './admin-jwt.strategy'
@@ -71,6 +72,7 @@ import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
       AdminUserEntity,
       UserNotification,
       MatchmakerReview,
+      MatchmakerComment,
       MatchRecord,
       UserBlock,
       ChatMessage,

@@ -70,11 +70,6 @@
         <template #title>举报管理</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/matchmaker-comments">
-        <el-icon><Comment /></el-icon>
-        <template #title>红娘评语</template>
-      </el-menu-item>
-
       <el-menu-item v-if="isSuperAdmin || userInfo?.role === 'matchmaker'" index="/matchmaker-dynamics">
         <el-icon><Promotion /></el-icon>
         <template #title>红娘发布动态</template>
@@ -168,7 +163,6 @@ import {
   Calendar,
   Warning,
   Avatar as AvatarIcon,
-  Comment,
   Connection,
   Document,
   Star,

@@ -3,7 +3,7 @@
     <!-- 顶部粉色连续区域：导航 + 用户信息 -->
     <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
       <!-- 导航 -->
-      <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 12) + 'px' }">
         <view class="nav-title">我的</view>
       </view>
 
@@ -501,7 +501,7 @@ const toolGrid7 = [
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
-  padding: 20rpx 12rpx 16rpx;
+  padding: 28rpx 20rpx 24rpx;
 }
 
 .service-grid {
@@ -516,13 +516,13 @@ const toolGrid7 = [
 }
 
 .service-icon-box {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 16rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10rpx;
+  margin-bottom: 12rpx;
 
   &.orange-gradient {
     background: linear-gradient(135deg, #FF9F43, #FFB347);
@@ -534,20 +534,20 @@ const toolGrid7 = [
 }
 
 .service-icon-text {
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: bold;
   color: #fff;
 }
 
 .service-icon-img {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 16rpx;
-  margin-bottom: 10rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 18rpx;
+  margin-bottom: 12rpx;
 }
 
 .service-label {
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: #333;
 }
 
@@ -556,13 +556,13 @@ const toolGrid7 = [
   background-color: #fff;
   margin: 0 24rpx 16rpx;
   border-radius: 16rpx;
-  padding: 20rpx 12rpx 12rpx;
+  padding: 28rpx 20rpx 20rpx;
 }
 
 .tool-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  row-gap: 16rpx;
+  row-gap: 24rpx;
 }
 
 .tool-item {
@@ -576,19 +576,19 @@ const toolGrid7 = [
 }
 
 .tool-icon-emoji {
-  font-size: 40rpx;
-  margin-bottom: 6rpx;
+  font-size: 52rpx;
+  margin-bottom: 10rpx;
   filter: grayscale(1) opacity(0.7);
 }
 
 .tool-icon-img {
-  width: 40rpx;
-  height: 40rpx;
-  margin-bottom: 6rpx;
+  width: 52rpx;
+  height: 52rpx;
+  margin-bottom: 10rpx;
 }
 
 .tool-label {
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: #333;
   text-align: center;
 }
