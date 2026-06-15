@@ -706,14 +706,14 @@ const onShareTimeline = () => {
 .section-title-icon {
   font-size: 28rpx;
   font-weight: bold;
-  color: #FF6681;
+  color: #333333;
   margin-right: 8rpx;
 }
 
 .section-title {
   font-size: 28rpx;
   font-weight: bold;
-  color: #FF6681;
+  color: #333333;
 }
 
 .section-more {
@@ -724,7 +724,7 @@ const onShareTimeline = () => {
 
 /* 内容区淡粉色卡片 */
 .question-content-card {
-  background-color: #FFF0F3;
+  background-color: #FFF5F7;
   border-radius: 12rpx;
   padding: 6rpx 16rpx;
 }
