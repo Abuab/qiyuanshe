@@ -599,7 +599,7 @@ const onShareTimeline = () => {
 }
 
 .top-pink-area {
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
 }
 
 .notice-bar {
