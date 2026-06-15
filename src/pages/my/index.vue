@@ -83,36 +83,40 @@
         <text class="arrow">></text>
       </view>
 
-      <!-- ========== 金刚区：我的问答 + 专属红娘（两个独立卡片） ========== -->
-      <view class="service-cards">
-        <view class="service-card" @tap="goToQuestions">
-          <view class="service-icon-box orange-gradient">
+      <!-- ========== 金刚区：我的问答 + 专属红娘（合并为一张卡片） ========== -->
+      <view class="service-card">
+        <view class="service-item" @tap="goToQuestions">
+          <image v-if="pageIcons.qaIcon" class="service-icon-img" :src="pageIcons.qaIcon" mode="aspectFit" />
+          <view v-else class="service-icon-box orange-gradient">
             <text class="service-icon-text">#</text>
           </view>
           <text class="service-label">我的问答</text>
         </view>
-        <view class="service-card" @tap="goToMatchmaker">
-          <view class="service-icon-box purple-gradient">
+        <view class="service-item" @tap="goToMatchmaker">
+          <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
+          <view v-else class="service-icon-box purple-gradient">
             <text class="service-icon-text">👤</text>
           </view>
           <text class="service-label">专属红娘</text>
         </view>
       </view>
 
-      <!-- ========== 工具区：7个图标网格卡片 ========== -->
+      <!-- ========== 工具区：7个图标网格卡片（4列对齐） ========== -->
       <view class="tools-card">
-        <view class="tool-row-4">
-          <view class="tool-item" v-for="item in toolGrid7.slice(0, 4)" :key="item.key" @tap="item.handler">
-            <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
-            <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
-            <text class="tool-label">{{ item.label }}</text>
-          </view>
-        </view>
-        <view class="tool-row-3">
-          <view class="tool-item" v-for="item in toolGrid7.slice(4, 7)" :key="item.key" @tap="item.handler">
-            <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
-            <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
-            <text class="tool-label">{{ item.label }}</text>
+        <!-- 4列网格：第一行4个，第二行前3个对齐 -->
+        <view class="tool-grid">
+          <view
+            v-for="item in toolGrid7"
+            :key="item.key"
+            class="tool-item"
+            :class="{ 'tool-placeholder': item.placeholder }"
+            @tap="item.placeholder ? undefined : item.handler"
+          >
+            <template v-if="!item.placeholder">
+              <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
+              <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
+              <text class="tool-label">{{ item.label }}</text>
+            </template>
           </view>
         </view>
       </view>
@@ -120,7 +124,7 @@
       <!-- ========== 公众号关注 ========== -->
       <view class="oa-card" @tap="showComingSoon">
         <view class="oa-avatar pink-heart">
-          <image v-if="pageIcons.heartFill" class="oa-avatar-img" :src="pageIcons.heartFill" mode="aspectFit" />
+          <image v-if="pageIcons.oaHeart" class="oa-avatar-img" :src="pageIcons.oaHeart" mode="aspectFit" />
           <text v-else class="oa-avatar-icon">❤️</text>
         </view>
         <view class="oa-info">
@@ -134,7 +138,7 @@
 
       <!-- ========== 底部陪伴信息 ========== -->
       <view class="footer-info">
-        <image v-if="pageIcons.heartFill" class="footer-heart-img" :src="pageIcons.heartFill" mode="aspectFit" />
+        <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
         <text v-else class="footer-heart">❤️</text>
         <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
       </view>
@@ -190,7 +194,7 @@ const formattedUserId = computed(() => {
   return String(id).padStart(7, '0')
 })
 
-// 后台可配置的页面图标
+// 后台可配置的页面图标（通过 systemStore.icons.page 下发）
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const daysSinceCreation = computed(() => {
@@ -249,7 +253,8 @@ const goToPhotos = () => uni.navigateTo({ url: '/pages/my-photos/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
 const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })
 
-// 7个工具图标，后台可通过 pageIcons[item.key] 配置图标URL
+// 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
+// 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = [
   { key: 'myPhotos',    label: '我的相册', emoji: '🖼', handler: goToPhotos },
   { key: 'loveQuotes',  label: '爱情语录', emoji: '💌', handler: showComingSoon },
@@ -258,6 +263,7 @@ const toolGrid7 = [
   { key: 'feedback',    label: '问题反馈', emoji: '📝', handler: showComingSoon },
   { key: 'userAgreement', label: '用户协议', emoji: '📄', handler: showComingSoon },
   { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡', handler: showComingSoon },
+  { key: 'dummy',       label: '',         emoji: '',     placeholder: true, handler: () => {} },
 ]
 </script>
 
@@ -487,21 +493,21 @@ const toolGrid7 = [
   margin-left: 12rpx;
 }
 
-// ========== 我的问答 + 专属红娘（两个独立卡片） ==========
-.service-cards {
+// ========== 我的问答 + 专属红娘（合并为一张卡片，无分割线） ==========
+.service-card {
   display: flex;
-  gap: 16rpx;
   margin: 0 24rpx 16rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
 }
 
-.service-card {
+.service-item {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20rpx 0 16rpx;
-  background-color: #fff;
-  border-radius: 16rpx;
 }
 
 .service-icon-box {
@@ -528,12 +534,19 @@ const toolGrid7 = [
   color: #fff;
 }
 
+.service-icon-img {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 16rpx;
+  margin-bottom: 10rpx;
+}
+
 .service-label {
   font-size: 22rpx;
   color: #333;
 }
 
-// ========== 7个工具图标卡片 ==========
+// ========== 7个工具图标卡片（4列网格对齐） ==========
 .tools-card {
   background-color: #fff;
   margin: 0 24rpx 16rpx;
@@ -541,24 +554,20 @@ const toolGrid7 = [
   padding: 20rpx 12rpx 12rpx;
 }
 
-.tool-row-4 {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 16rpx;
-  padding: 0 4rpx;
-}
-
-.tool-row-3 {
-  display: flex;
-  justify-content: space-around;
-  padding: 0 4rpx;
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  row-gap: 16rpx;
 }
 
 .tool-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
+
+  &.tool-placeholder {
+    visibility: hidden;
+  }
 }
 
 .tool-icon-emoji {

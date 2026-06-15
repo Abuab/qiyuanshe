@@ -74,7 +74,23 @@ export class PublicSystemController {
         settings: fallback(menu.settings),
       },
       page: {
+        copy: fallback(page.copy),
+        heartFill: fallback(page.heartFill),
         dynamicHome: fallback(page.dynamicHome),
+        // 我的页面 - 问答/红娘
+        qaIcon: fallback(page.qaIcon),
+        matchmakerIcon: fallback(page.matchmakerIcon),
+        // 我的页面 - 公众号/底部心形
+        oaHeart: fallback(page.oaHeart),
+        footerHeart: fallback(page.footerHeart),
+        // 我的页面 - 7个工具图标
+        myPhotos: fallback(page.myPhotos),
+        loveQuotes: fallback(page.loveQuotes),
+        myGifts: fallback(page.myGifts),
+        privacy: fallback(page.privacy),
+        feedback: fallback(page.feedback),
+        userAgreement: fallback(page.userAgreement),
+        antiFraud: fallback(page.antiFraud),
       },
     }
   }
