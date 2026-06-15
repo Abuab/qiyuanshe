@@ -3,7 +3,12 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="goHome">
-        <text class="home-icon">🏠</text>
+        <view class="home-icon-svg">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="11" y="13" width="2" height="5" rx="1" fill="#FF6B9D"/>
+          </svg>
+        </view>
       </view>
       <text class="nav-title">动态</text>
       <view class="nav-right" />
@@ -498,8 +503,17 @@ onMounted(() => {
   align-items: center;
 }
 
-.home-icon {
-  font-size: 40rpx;
+.home-icon-svg {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-icon-svg svg {
+  width: 100%;
+  height: 100%;
 }
 
 .nav-right {
