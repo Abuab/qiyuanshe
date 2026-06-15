@@ -7,7 +7,7 @@
         class="tab-item"
         @tap="switchTab(tab.pagePath)"
       >
-        <view class="icon-wrapper">
+        <view class="icon-wrapper" :class="{ active: currentPath === tab.pagePath }">
           <image
             class="tab-icon"
             :src="getTabbarIcon(tab.name, currentPath === tab.pagePath)"
@@ -15,6 +15,7 @@
             mode="aspectFit"
             @error="onIconError(tab.name)"
           ></image>
+          <view v-if="currentPath === tab.pagePath" class="icon-tint"></view>
           <view v-if="tab.name === 'message' && unreadCount > 0" class="badge">
             {{ unreadCount > 99 ? '99+' : unreadCount }}
           </view>
@@ -152,6 +153,19 @@ defineExpose({
   display: block;
 }
 
+.icon-tint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #FF6681;
+  opacity: 0.4;
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+}
+
 .badge {
   position: absolute;
   top: -6rpx;
@@ -177,7 +191,7 @@ defineExpose({
   margin-top: 8rpx;
 
   &.active {
-    color: #FF6B9D;
+    color: #FF6681;
     font-weight: 500;
   }
 }
