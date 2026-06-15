@@ -71,8 +71,8 @@
         </view>
 
         <!-- 简介卡片：仅显示用户个人简介 -->
-        <view v-if="item._displayType === 'intro'" class="intro-row">
-          <text class="intro-text">{{ item.introText }}</text>
+        <view v-if="item._displayType === 'intro'" class="card-content">
+          <text class="answer-text">{{ item.introText }}</text>
         </view>
 
         <!-- 相册动态卡片 -->
@@ -638,22 +638,7 @@ onMounted(() => {
   padding: 0 4rpx;
 }
 
-/* 用户简介栏 */
-.intro-row {
-  margin-bottom: 32rpx;
-  padding: 20rpx 24rpx;
-  background-color: #FFF0F5;
-  border-radius: 10rpx;
-  border-left: 6rpx solid #FF1493;
-  border-bottom: 1rpx dashed #FFB6C1;
-}
 
-.intro-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.8;
-  font-weight: 500;
-}
 
 .content-text {
   font-size: 28rpx;
