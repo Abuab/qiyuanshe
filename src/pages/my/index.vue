@@ -173,7 +173,7 @@ const menuList = [
 <style lang="scss" scoped>
 .my-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
+  background-color: #FFF8FA;
   padding-bottom: 120rpx;
 }
 
