@@ -238,4 +238,20 @@ export class UserProfileService {
       { action: 'REJECT', reason },
     )
   }
+
+  async createAnswer(userId: number, questionId: number, content: string) {
+    const answer = this.answerRepository.create({
+      userId,
+      questionId,
+      content,
+      status: 1, // 管理员添加直接通过
+      likeCount: 0,
+    })
+    const saved = await this.answerRepository.save(answer)
+
+    // 更新问题的答案计数
+    await this.questionRepository.increment({ id: questionId }, 'answerCount', 1)
+
+    return saved
+  }
 }

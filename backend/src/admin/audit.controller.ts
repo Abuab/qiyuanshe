@@ -12,6 +12,7 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminAuditService } from './audit.service'
+import { NotifyChannelService } from './notify-channel.service'
 import { Result } from '../common/result'
 
 interface AuditFilter {
@@ -27,7 +28,10 @@ interface AuditFilter {
 @Roles('super_admin', 'operator')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminAuditController {
-  constructor(private readonly auditService: AdminAuditService) {}
+  constructor(
+    private readonly auditService: AdminAuditService,
+    private readonly notifyService: NotifyChannelService,
+  ) {}
 
   @Get('list')
   async list(@Query() filter: AuditFilter) {
@@ -47,6 +51,8 @@ export class AdminAuditController {
     @Body('reason') reason?: string,
   ) {
     await this.auditService.approve(id, reason)
+    // 发送图片审核通知
+    this.notifyService.sendAuditNotify('photo', `有新的图片审核已通过，审核ID: ${id}`).catch(() => {})
     return Result.success(null, '审核通过')
   }
 

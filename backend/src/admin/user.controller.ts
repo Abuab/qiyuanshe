@@ -39,6 +39,8 @@ interface UserFilter {
   carStatus?: string
   education?: string
   occupation?: string
+  minMatchCount?: number
+  maxMatchCount?: number
 }
 
 @Controller('admin/users')

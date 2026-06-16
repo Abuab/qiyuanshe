@@ -7,6 +7,7 @@ export interface SystemConfigs {
   vip?: Record<string, any>
   payment?: Record<string, any>
   audit?: Record<string, any>
+  notify?: Record<string, any>
   intro?: Record<string, any>
   icon?: Record<string, any>
 }

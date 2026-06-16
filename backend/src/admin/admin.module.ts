@@ -56,6 +56,7 @@ import { UserProfileController } from './user-profile.controller'
 import { AdminMatchmakerDynamicController } from './matchmaker-dynamic.controller'
 import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
 import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
+import { NotifyChannelService } from './notify-channel.service'
 
 @Module({
   imports: [
@@ -124,6 +125,7 @@ import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
     AdminChatService,
     UserProfileService,
     AdminMatchmakerDynamicService,
+    NotifyChannelService,
   ],
   exports: [
     AdminUserService,

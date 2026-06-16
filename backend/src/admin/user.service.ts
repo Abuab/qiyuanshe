@@ -5,6 +5,7 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
 import { AuditLog } from '../entities/AuditLog'
+import { MatchRecord } from '../entities/MatchRecord'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import * as bcrypt from 'bcrypt'
@@ -38,6 +39,8 @@ interface UserFilter {
   constellation?: string
   onlyChild?: string
   whenMarry?: string
+  minMatchCount?: number
+  maxMatchCount?: number
 }
 
 @Injectable()
@@ -51,6 +54,8 @@ export class AdminUserService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserNotification)
     private readonly notificationRepository: Repository<UserNotification>,
+    @InjectRepository(MatchRecord)
+    private readonly matchRecordRepository: Repository<MatchRecord>,
     private readonly dynamicService: DynamicService,
   ) {}
 
@@ -181,6 +186,26 @@ export class AdminUserService {
       queryBuilder.orderBy('user.createdAt', 'DESC')
     }
 
+    // Filter by match count (subquery)
+    if (filter.minMatchCount !== undefined || filter.maxMatchCount !== undefined) {
+      const matchSubQb = this.matchRecordRepository
+        .createQueryBuilder('mr2')
+        .select('mr2.userId')
+        .addSelect('COUNT(mr2.id)', 'mcnt')
+        .groupBy('mr2.userId')
+
+      if (filter.minMatchCount !== undefined) {
+        matchSubQb.having('COUNT(mr2.id) >= :minMatchCount', { minMatchCount: filter.minMatchCount })
+      }
+      if (filter.maxMatchCount !== undefined) {
+        matchSubQb.having('COUNT(mr2.id) <= :maxMatchCount', { maxMatchCount: filter.maxMatchCount })
+      }
+
+      queryBuilder
+        .innerJoin('(' + matchSubQb.getQuery() + ')', 'mfilter', 'user.id = mfilter.userId')
+        .setParameters(matchSubQb.getParameters())
+    }
+
     queryBuilder.skip(skip).take(limit)
 
     const [users, total] = await queryBuilder.getManyAndCount()
@@ -220,6 +245,21 @@ export class AdminUserService {
         if (!photoAuditMap.has(row.targetId)) {
           photoAuditMap.set(row.targetId, row.action)
         }
+      }
+    }
+
+    // Bulk query match counts
+    const matchCountMap = new Map<number, number>()
+    if (userIds.length > 0) {
+      const matchCounts = await this.matchRecordRepository
+        .createQueryBuilder('mr')
+        .select('mr.userId', 'userId')
+        .addSelect('COUNT(mr.id)', 'cnt')
+        .where('mr.userId IN (:...userIds)', { userIds })
+        .groupBy('mr.userId')
+        .getRawMany<{ userId: number; cnt: number }>();
+      for (const row of matchCounts) {
+        matchCountMap.set(Number(row.userId), Number(row.cnt))
       }
     }
 
@@ -276,6 +316,7 @@ export class AdminUserService {
         age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
         profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
         photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
+        matchCount: matchCountMap.get(user.id) || 0,
       }
     })
 
@@ -648,13 +689,13 @@ export class AdminUserService {
  * simple-json 字段在 getRawAndEntities 后可能为原始 JSON 字符串，
  * 需要手动解析为数组。如果已经是数组则直接返回。
  */
-function parseSimpleJson(value: any): any[] | null {
+function parseSimpleJson(value: any): any {
   if (value === null || value === undefined) return null
-  if (Array.isArray(value)) return value
+  if (typeof value === 'object') return value // Already parsed by TypeORM simple-json column
   if (typeof value === 'string') {
     try {
       const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? parsed : null
+      return parsed // Can be array or object
     } catch {
       return null
     }

@@ -62,6 +62,15 @@ export class UserProfileController {
     return Result.success(notification, '通知已发送')
   }
 
+  @Post(':id/answers')
+  async createAnswer(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { questionId: number; content: string },
+  ) {
+    const answer = await this.profileService.createAnswer(id, body.questionId, body.content)
+    return Result.success(answer, '回答添加成功')
+  }
+
   @Get(':id/answers')
   async getAnswers(
     @Param('id', ParseIntPipe) id: number,

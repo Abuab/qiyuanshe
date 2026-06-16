@@ -25,7 +25,7 @@
               <span class="tag-label">ID: {{ user.id }}</span>
               <span class="tag-label">{{ user.phone || '未绑定手机' }}</span>
               <el-tag v-if="user.isVip && (user.vipLevel || 0) > 0" type="warning" effect="dark">
-                {{ ['', '黄金会员', '钻石会员', '至尊VIP'][user.vipLevel || 0] }}
+                会员
               </el-tag>
               <el-tag v-if="user.status === 1" type="success">正常</el-tag>
               <el-tag v-else-if="user.status === 2" type="warning">待审核</el-tag>
@@ -103,8 +103,29 @@
           </el-tab-pane>
 
           <el-tab-pane label="我的特点" name="personality">
-            <div v-if="user.personalityTags && user.personalityTags.length" class="tag-group">
-              <el-tag v-for="tag in user.personalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+            <div v-if="hasPersonalityTags" class="personality-section">
+              <div v-if="characterTags.length > 0" class="tag-category">
+                <h4 class="category-title">性格</h4>
+                <div class="tag-group">
+                  <el-tag v-for="tag in characterTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <div v-if="hobbyTags.length > 0" class="tag-category">
+                <h4 class="category-title">爱好</h4>
+                <div class="tag-group">
+                  <el-tag v-for="tag in hobbyTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <div v-if="loveRuleTags.length > 0" class="tag-category">
+                <h4 class="category-title">恋爱准则</h4>
+                <div class="tag-group">
+                  <el-tag v-for="tag in loveRuleTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <!-- 兼容旧数据: 非结构化数组 -->
+              <div v-if="!isStructuredPersonality && flatPersonalityTags.length > 0" class="tag-group">
+                <el-tag v-for="tag in flatPersonalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+              </div>
             </div>
             <div v-else class="text-content text-muted">暂无</div>
           </el-tab-pane>
@@ -122,11 +143,6 @@
             </el-descriptions>
             <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
             <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
-          </el-tab-pane>
-
-          <el-tab-pane label="管理员备注" name="remark">
-            <el-input v-model="adminRemark" type="textarea" :rows="6" placeholder="记录用户额外信息"/>
-            <el-button type="primary" style="margin-top: 12px" :loading="remarkSaving" @click="saveRemark">保存备注</el-button>
           </el-tab-pane>
 
           <el-tab-pane label="照片墙" name="photos">
@@ -238,6 +254,9 @@
 
           <el-tab-pane label="回答记录" name="answers">
             <div v-loading="tabLoading.answers">
+              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
+                <el-button type="primary" size="small" @click="handleAddAnswer">添加回答</el-button>
+              </div>
               <el-table :data="userAnswerList" stripe v-if="userAnswerList.length > 0">
                 <el-table-column prop="id" label="回答ID" width="80" />
                 <el-table-column label="问题标题" min-width="180">
@@ -281,33 +300,6 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="匹配记录" name="matches">
-            <div v-loading="tabLoading.matches">
-              <el-table :data="matchList" stripe v-if="matchList.length > 0">
-                <el-table-column prop="id" label="记录ID" width="80" />
-                <el-table-column label="匹配对象" width="180">
-                  <template #default="{ row }">
-                    <div class="tab-user-cell" @click="$router.push(`/user/detail/${row.matchedUserId}`)" style="cursor:pointer">
-                      <el-image :src="row.matchedAvatar" fit="cover" style="width:28px;height:28px;border-radius:50%">
-                        <template #error><div style="width:28px;height:28px;background:#f5f5f5;border-radius:50%;display:flex;align-items:center;justify-content:center"><el-icon :size="14"><User /></el-icon></div></template>
-                      </el-image>
-                      <span>{{ row.matchedNickname }}</span>
-                    </div>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="matchmakerName" label="红娘" width="120" />
-                <el-table-column prop="createdAt" label="匹配时间" width="170">
-                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
-                </el-table-column>
-                <el-table-column prop="status" label="匹配状态" width="100">
-                  <template #default="{ row }">{{ getMatchStatusName(row.status) }}</template>
-                </el-table-column>
-                <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
-              </el-table>
-              <el-empty v-else description="暂无匹配记录" />
-            </div>
-          </el-tab-pane>
-
           <el-tab-pane label="红娘评价" name="matchmaker-reviews">
             <div v-loading="tabLoading.reviews">
               <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
@@ -321,9 +313,8 @@
                   <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
                 </el-table-column>
                 <el-table-column prop="difficulty" label="是否好牵线" width="120" />
-                <el-table-column v-if="!isReadonly" label="操作" width="120">
+                <el-table-column v-if="!isReadonly" label="操作" width="80">
                   <template #default="{ row }">
-                    <el-button type="primary" link size="small" @click="handleEditReview(row)">编辑</el-button>
                     <el-button type="danger" link size="small" @click="handleDeleteReview(row)">删除</el-button>
                   </template>
                 </el-table-column>
@@ -343,8 +334,7 @@
         <el-form-item label="用户">{{ user?.nickname }}</el-form-item>
         <el-form-item label="VIP等级" required>
           <el-select v-model="vipForm.level" style="width:200px">
-            <el-option label="普通用户" :value="0" /><el-option label="黄金会员" :value="1" />
-            <el-option label="钻石会员" :value="2" /><el-option label="至尊VIP" :value="3" />
+            <el-option label="普通用户" :value="0" /><el-option label="会员" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item label="有效期"><el-input-number v-model="vipForm.days" :min="1" :max="3650" /><span class="ml-10">天</span></el-form-item>
@@ -365,25 +355,57 @@
     </el-dialog>
 
     <!-- 红娘评价弹窗 -->
-    <el-dialog v-model="reviewDialogVisible" :title="editingReview ? '编辑评价' : '新增评价'" width="500px">
-      <el-form :model="reviewForm" label-width="100px">
-        <el-form-item label="评价红娘" required>
-          <el-select v-model="reviewForm.matchmakerId" style="width:200px" placeholder="请选择红娘" :disabled="!!editingReview">
+    <el-dialog v-model="reviewDialogVisible" title="新增评价" width="520px">
+      <el-form :model="reviewForm" label-width="80px">
+        <el-form-item label="选择红娘" required>
+          <el-select v-model="reviewForm.matchmakerId" placeholder="请选择红娘" filterable style="width:100%">
             <el-option v-for="m in matchmakerOptions" :key="m.id" :label="m.name" :value="m.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="评价内容">
-          <el-input v-model="reviewForm.content" type="textarea" :rows="4" placeholder="请输入评价内容" maxlength="500" show-word-limit />
-        </el-form-item>
-        <el-form-item label="是否好牵线">
-          <el-select v-model="reviewForm.difficulty" style="width:150px" placeholder="请选择">
-            <el-option label="好搞定" value="好搞定" />
-            <el-option label="不好搞定" value="不好搞定" />
-            <el-option label="一般" value="一般" />
-          </el-select>
+        <el-form-item label="评价文字" required>
+          <el-input
+            v-model="reviewForm.content"
+            type="textarea"
+            :rows="5"
+            placeholder="请输入对用户的评价内容"
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
-      <template #footer><el-button @click="reviewDialogVisible = false">取消</el-button><el-button type="primary" @click="handleReviewSubmit">确定</el-button></template>
+      <template #footer>
+        <el-button @click="reviewDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleReviewSubmit" :disabled="!reviewForm.matchmakerId || !reviewForm.content.trim()">
+          确认添加
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加回答弹窗 -->
+    <el-dialog v-model="answerDialogVisible" title="手动添加回答" width="520px">
+      <el-form :model="answerForm" label-width="80px">
+        <el-form-item label="选择问题" required>
+          <el-select v-model="answerForm.questionId" placeholder="请选择要回答的问题" filterable style="width:100%">
+            <el-option v-for="q in questionOptions" :key="q.id" :label="q.title" :value="q.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="回答内容" required>
+          <el-input
+            v-model="answerForm.content"
+            type="textarea"
+            :rows="5"
+            placeholder="请输入回答内容"
+            maxlength="1000"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="answerDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAnswerSubmit" :disabled="!answerForm.questionId || !answerForm.content.trim()" :loading="answerSubmitting">
+          确认添加
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 聊天记录弹窗 -->
@@ -483,11 +505,29 @@ const hasMateRequirement = computed(() => {
     u.partnerMaritalStatus || u.acceptChildren)
 })
 
+// 解析 personalityTags: 兼容结构化对象 {character:[], hobby:[], loveRule:[]} 和数组
+const personalityData = computed(() => {
+  const pt = user.value?.personalityTags as any
+  if (!pt) return { character: [] as string[], hobby: [] as string[], loveRule: [] as string[] }
+  if (Array.isArray(pt)) return { character: [] as string[], hobby: [] as string[], loveRule: [] as string[], _flat: pt as string[] }
+  if (typeof pt === 'object') return { character: (pt.character || []) as string[], hobby: (pt.hobby || []) as string[], loveRule: (pt.loveRule || []) as string[] }
+  return { character: [] as string[], hobby: [] as string[], loveRule: [] as string[] }
+})
+const characterTags = computed(() => personalityData.value.character)
+const hobbyTags = computed(() => personalityData.value.hobby)
+const loveRuleTags = computed(() => personalityData.value.loveRule)
+const flatPersonalityTags = computed(() => personalityData.value._flat || [])
+const isStructuredPersonality = computed(() => {
+  const pt = user.value?.personalityTags
+  return pt && typeof pt === 'object' && !Array.isArray(pt)
+})
+const hasPersonalityTags = computed(() => {
+  return characterTags.value.length > 0 || hobbyTags.value.length > 0 || loveRuleTags.value.length > 0 || flatPersonalityTags.value.length > 0
+})
+
 const loading = ref(false)
 const user = ref<UserDetail | null>(null)
 const activeTab = ref('basic')
-const adminRemark = ref('')
-const remarkSaving = ref(false)
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
@@ -495,22 +535,26 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, matches: false, reviews: false, photos: false, chat: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
 const userAnswerList = ref<any[]>([])
 const answerAuditing = reactive<Record<number, boolean>>({})
-const matchList = ref<any[]>([])
 const reviewList = ref<any[]>([])
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
 
 // Review dialog
 const reviewDialogVisible = ref(false)
-const editingReview = ref<any>(null)
-const reviewForm = reactive({ matchmakerId: null as number | null, content: '', difficulty: '' })
+const reviewForm = reactive({ matchmakerId: null as number | null, content: '' })
 const matchmakerOptions = ref<any[]>([])
+
+// Answer dialog
+const answerDialogVisible = ref(false)
+const answerSubmitting = ref(false)
+const answerForm = reactive({ questionId: null as number | null, content: '' })
+const questionOptions = ref<any[]>([])
 
 // Chat
 const chatConversations = ref<any[]>([])
@@ -531,7 +575,6 @@ async function fetchDetail() {
     const res = await adminUsers.detail(id)
     if (res.success && res.data) {
       user.value = res.data as UserDetail
-      adminRemark.value = (res.data as any).adminRemark || ''
     }
   } finally { loading.value = false }
 }
@@ -544,7 +587,6 @@ function handleTabChange(tabName: string) {
     case 'blocks': loadBlocks(); break
     case 'notifications': loadNotifications(); break
     case 'answers': loadUserAnswers(); break
-    case 'matches': loadMatches(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
@@ -624,15 +666,6 @@ async function handleRejectAnswer(row: any) {
   }
 }
 
-async function loadMatches() {
-  if (!user.value) return
-  tabLoading.matches = true
-  try {
-    const res = await adminUsers.getMatches(user.value.id)
-    if (res.success) matchList.value = res.data?.list || []
-  } catch (e) { console.error(e) }
-  finally { tabLoading.matches = false }
-}
 
 async function loadReviews() {
   if (!user.value) return
@@ -649,17 +682,6 @@ async function loadMatchmakers() {
     const res = await adminMatchmaker.list({ page: 1, limit: 100, status: 1 })
     if (res.success) matchmakerOptions.value = res.data?.list || []
   } catch (e) { console.error(e) }
-}
-
-async function saveRemark() {
-  if (!user.value) return
-  remarkSaving.value = true
-  try {
-    const res = await adminUsers.update(user.value.id, { adminRemark: adminRemark.value })
-    if (res.success) ElMessage.success('备注保存成功')
-    else ElMessage.error(res.message || '保存失败')
-  } catch (e: any) { ElMessage.error(e.message || '保存失败') }
-  finally { remarkSaving.value = false }
 }
 
 async function handleToggleStatus() {
@@ -703,21 +725,14 @@ async function handleNotifySubmit() {
   } catch (e: any) { ElMessage.error(e.message || '发送失败') }
 }
 
-// Review CRUD
-function handleAddReview() { editingReview.value = null; reviewForm.matchmakerId = null; reviewForm.content = ''; reviewForm.difficulty = ''; reviewDialogVisible.value = true }
-function handleEditReview(row: any) { editingReview.value = row; reviewForm.matchmakerId = row.matchmakerId; reviewForm.content = row.content || ''; reviewForm.difficulty = row.difficulty || ''; reviewDialogVisible.value = true }
+function handleAddReview() { reviewForm.matchmakerId = null; reviewForm.content = ''; reviewDialogVisible.value = true }
 
 async function handleReviewSubmit() {
   if (!reviewForm.matchmakerId) { ElMessage.warning('请选择红娘'); return }
   if (!user.value) return
   try {
-    if (editingReview.value) {
-      await adminUsers.updateReview(editingReview.value.id, { content: reviewForm.content, difficulty: reviewForm.difficulty })
-      ElMessage.success('评价更新成功')
-    } else {
-      await adminUsers.createReview(user.value.id, { matchmakerId: reviewForm.matchmakerId, content: reviewForm.content, difficulty: reviewForm.difficulty })
-      ElMessage.success('评价添加成功')
-    }
+    await adminUsers.createReview(user.value.id, { matchmakerId: reviewForm.matchmakerId, content: reviewForm.content })
+    ElMessage.success('评价添加成功')
     reviewDialogVisible.value = false
     loadReviews()
   } catch (e: any) { ElMessage.error(e.message || '操作失败') }
@@ -730,6 +745,40 @@ async function handleDeleteReview(row: any) {
     reviewList.value = reviewList.value.filter((r: any) => r.id !== row.id)
     ElMessage.success('删除成功')
   } catch (e) { if (e !== 'cancel') console.error(e) }
+}
+
+// Answer CRUD
+async function handleAddAnswer() {
+  answerForm.questionId = null
+  answerForm.content = ''
+  // Load questions for dropdown
+  if (questionOptions.value.length === 0) {
+    try {
+      const { adminQuestion } = await import('../../api/question')
+      const res = await adminQuestion.list({ limit: 200 })
+      if (res.success && res.data) {
+        questionOptions.value = (res.data as any).list || []
+      }
+    } catch (e) { console.error(e) }
+  }
+  answerDialogVisible.value = true
+}
+
+async function handleAnswerSubmit() {
+  if (!answerForm.questionId) { ElMessage.warning('请选择问题'); return }
+  if (!answerForm.content.trim()) { ElMessage.warning('请输入回答内容'); return }
+  if (!user.value) return
+  answerSubmitting.value = true
+  try {
+    await adminUsers.createUserAnswer(user.value.id, {
+      questionId: answerForm.questionId,
+      content: answerForm.content,
+    })
+    ElMessage.success('回答添加成功')
+    answerDialogVisible.value = false
+    loadUserAnswers()
+  } catch (e: any) { ElMessage.error(e.message || '操作失败') }
+  finally { answerSubmitting.value = false }
 }
 
 // Photo management
@@ -841,11 +890,6 @@ function getReportStatusType(status: number) { return { 0: 'warning', 1: 'succes
 
 function getAnswerStatusName(status: number) { return { 0: '待审核', 1: '已通过', 2: '已拒绝' }[status] || '未知' }
 function getAnswerStatusType(status: number) { return { 0: 'warning', 1: 'success', 2: 'danger' }[status] || 'info' }
-
-function getMatchStatusName(status: string) {
-  const map: Record<string, string> = { pending: '待定', in_progress: '进行中', success: '成功', failed: '失败' }
-  return map[status] || status
-}
 </script>
 
 <style lang="scss" scoped>
@@ -864,6 +908,7 @@ function getMatchStatusName(status: string) {
 .tab-card {
   .text-content { padding: 16px; min-height: 200px; white-space: pre-wrap; line-height: 1.8; color: #333; }
   .tag-group { padding: 16px; }
+  .personality-section { padding: 16px; .tag-category { margin-bottom: 16px; .category-title { font-size: 14px; font-weight: 600; color: #606266; margin: 0 0 8px; } } }
   .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } .photo-card { position: relative; .photo-actions { display: flex; align-items: center; gap: 6px; justify-content: center; padding-top: 6px; } } }
 }
 .tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }

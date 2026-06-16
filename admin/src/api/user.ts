@@ -89,6 +89,8 @@ export interface UserFilter {
   constellation?: string
   onlyChild?: string
   whenMarry?: string
+  minMatchCount?: number
+  maxMatchCount?: number
 }
 
 export interface UserListResponse {
@@ -176,6 +178,10 @@ export const adminUsers = {
 
   getUserAnswers(id: number, page?: number, limit?: number): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
     return request.get(`/admin/user-profiles/${id}/answers`, { params: { page, limit } })
+  },
+
+  createUserAnswer(id: number, data: { questionId: number; content: string }): Promise<ApiResponse> {
+    return request.post(`/admin/user-profiles/${id}/answers`, data)
   },
 
   approveAnswer(answerId: number): Promise<ApiResponse> {

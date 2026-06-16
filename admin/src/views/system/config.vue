@@ -130,66 +130,63 @@
       <el-tab-pane label="会员配置" name="vip">
         <el-card class="config-card">
           <el-form :model="vipConfig" label-width="160px">
-            <el-divider content-position="left">黄金会员</el-divider>
+            <el-divider content-position="left">会员套餐</el-divider>
 
-            <el-form-item label="黄金会员价格">
+            <el-form-item label="套餐名称">
+              <el-input v-model="vipConfig.packageName" placeholder="请输入套餐名称，如：月度会员" />
+            </el-form-item>
+
+            <el-form-item label="套餐价格">
               <el-input-number
-                v-model="vipConfig.goldPrice"
+                v-model="vipConfig.price"
                 :min="0"
                 :precision="2"
               />
               <span class="unit">元</span>
             </el-form-item>
 
-            <el-form-item label="黄金会员时长">
+            <el-form-item label="套餐时长">
               <el-input-number
-                v-model="vipConfig.goldDays"
+                v-model="vipConfig.days"
                 :min="1"
               />
-              <span class="unit">月</span>
+              <span class="unit">天</span>
             </el-form-item>
 
-            <el-divider content-position="left">钻石会员</el-divider>
-
-            <el-form-item label="钻石会员价格">
-              <el-input-number
-                v-model="vipConfig.diamondPrice"
-                :min="0"
-                :precision="2"
+            <el-form-item label="展示文案">
+              <el-input
+                v-model="vipConfig.displayText"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入套餐展示文案"
               />
-              <span class="unit">元</span>
             </el-form-item>
 
-            <el-form-item label="钻石会员时长">
-              <el-input-number
-                v-model="vipConfig.diamondDays"
-                :min="1"
-              />
-              <span class="unit">月</span>
-            </el-form-item>
-
-            <el-divider content-position="left">至尊VIP</el-divider>
-
-            <el-form-item label="至尊VIP价格">
-              <el-input-number
-                v-model="vipConfig.supremePrice"
-                :min="0"
-                :precision="2"
-              />
-              <span class="unit">元</span>
-            </el-form-item>
-
-            <el-form-item label="至尊VIP时长">
-              <el-input-number
-                v-model="vipConfig.supremeDays"
-                :min="1"
-              />
-              <span class="unit">月</span>
+            <el-form-item label="套餐图片">
+              <div class="upload-item">
+                <el-image
+                  v-if="vipConfig.image && !vipImageError"
+                  :src="vipConfig.image"
+                  class="logo-preview"
+                  fit="contain"
+                  @error="vipImageError = true"
+                  @load="vipImageError = false"
+                />
+                <el-upload
+                  action="#"
+                  :http-request="uploadVipImage"
+                  :show-file-list="false"
+                  accept="image/*"
+                >
+                  <el-button type="primary">上传图片</el-button>
+                </el-upload>
+                <el-button v-if="vipConfig.image" type="danger" link @click="vipConfig.image = ''">删除图片</el-button>
+              </div>
             </el-form-item>
 
             <el-divider content-position="left">其他设置</el-divider>
 
-            <el-form-item label="非VIP每日聊天限制">
+            <el-form-item label="非会员每日聊天限制">
               <el-input-number
                 v-model="vipConfig.freeChatLimit"
                 :min="0"
@@ -197,12 +194,12 @@
               <span class="unit">条/天</span>
             </el-form-item>
 
-            <el-form-item label="VIP权益说明">
+            <el-form-item label="会员权益说明">
               <el-input
                 v-model="vipConfig.vipBenefits"
                 type="textarea"
                 :rows="4"
-                placeholder="请输入VIP权益说明"
+                placeholder="请输入会员权益说明"
               />
             </el-form-item>
           </el-form>
@@ -314,6 +311,36 @@
             <el-form-item label="人工审核开关">
               <el-switch v-model="auditConfig.manualAuditEnabled" />
               <div class="form-tip">启用后AI审核结果需人工确认</div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
+
+      <el-tab-pane label="通知通道" name="notify">
+        <el-card class="config-card">
+          <el-form :model="notifyConfig" label-width="140px">
+            <el-form-item label="启用通知">
+              <el-switch v-model="notifyConfig.enabled" />
+            </el-form-item>
+            <el-form-item label="通知方式">
+              <el-select v-model="notifyConfig.channel" placeholder="请选择通知方式" style="width: 200px">
+                <el-option label="企业微信" value="wecom" />
+                <el-option label="飞书" value="feishu" />
+                <el-option label="钉钉" value="dingtalk" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="Webhook地址">
+              <el-input v-model="notifyConfig.webhookUrl" placeholder="请输入机器人Webhook地址" />
+            </el-form-item>
+            <el-form-item label="通知管理员">
+              <el-input v-model="notifyConfig.adminPhones" placeholder="管理员手机号，多个用逗号分隔" />
+            </el-form-item>
+            <el-form-item label="通知类型">
+              <el-checkbox-group v-model="notifyConfig.notifyTypes">
+                <el-checkbox label="photo" value="photo">图片审核</el-checkbox>
+                <el-checkbox label="user" value="user">用户资料审核</el-checkbox>
+                <el-checkbox label="report" value="report">举报通知</el-checkbox>
+              </el-checkbox-group>
             </el-form-item>
           </el-form>
         </el-card>
@@ -455,6 +482,7 @@ const activeTab = ref('basic')
 const saving = ref(false)
 const systemStore = useSystemStore()
 const logoError = ref(false)
+const vipImageError = ref(false)
 
 const basicConfig = reactive({
   appName: '',
@@ -473,12 +501,11 @@ const shareConfig = reactive({
 })
 
 const vipConfig = reactive({
-  goldPrice: 99,
-  goldDays: 1,
-  diamondPrice: 249,
-  diamondDays: 3,
-  supremePrice: 799,
-  supremeDays: 12,
+  packageName: '',
+  price: 99,
+  days: 30,
+  displayText: '',
+  image: '',
   freeChatLimit: 3,
   vipBenefits: '',
 })
@@ -490,6 +517,14 @@ const paymentConfig = reactive({
   keyPath: '',
   notifyUrl: 'https://api.xxx.com/payment/notify',
   testMode: false,
+})
+
+const notifyConfig = reactive({
+  enabled: false,
+  channel: 'wecom',
+  webhookUrl: '',
+  adminPhones: '',
+  notifyTypes: ['photo'] as string[],
 })
 
 const auditConfig = reactive({
@@ -535,6 +570,9 @@ const pageIconList = [
   { key: 'shareMoreIcon', label: '用户详情-右上角分享图标' },
   { key: 'followIcon', label: '用户详情-关注图标' },
   { key: 'shareBtnIcon', label: '用户详情-分享按钮图标' },
+  { key: 'realNameIcon', label: '已实名图标' },
+  { key: 'messageNotifyIcon', label: '消息-系统通知图标' },
+  { key: 'matchmakerEyeIcon', label: '红娘牵线-眼睛图标' },
 ]
 
 interface TabbarIconItem {
@@ -626,6 +664,10 @@ async function fetchConfig() {
       Object.assign(vipConfig, res.data.vip || {})
       Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
+      // 通知通道
+      if (res.data.notify) {
+        Object.assign(notifyConfig, res.data.notify)
+      }
       // 简介模板
       if (res.data.intro) {
         Object.assign(introConfig, res.data.intro)
@@ -653,6 +695,7 @@ async function handleSave() {
       vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
+      notify: { ...notifyConfig },
       intro: { ...introConfig },
       icon: {
         tabbar: { ...iconConfig.tabbar },
@@ -683,6 +726,21 @@ async function uploadLogo(options: any) {
     if (res.success && res.data?.url) {
       basicConfig.logo = res.data.url
       logoError.value = false
+      ElMessage.success('上传成功')
+    }
+  } catch (error) {
+    ElMessage.error('上传失败')
+  }
+}
+
+async function uploadVipImage(options: any) {
+  const formData = new FormData()
+  formData.append('file', options.file)
+  try {
+    const res = await adminSystem.upload(formData)
+    if (res.success && res.data?.url) {
+      vipConfig.image = res.data.url
+      vipImageError.value = false
       ElMessage.success('上传成功')
     }
   } catch (error) {

@@ -96,9 +96,7 @@
               <el-select v-model="filterForm.vipLevel" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option label="普通" :value="0" />
-                <el-option label="黄金" :value="1" />
-                <el-option label="钻石" :value="2" />
-                <el-option label="至尊" :value="3" />
+                <el-option label="会员" :value="1" />
               </el-select>
             </el-form-item>
             <el-form-item label="状态">
@@ -114,12 +112,26 @@
           <div class="filter-row">
             <el-form-item label="用户标签">
               <el-select v-model="filterForm.tags" multiple placeholder="全部" clearable style="width: 320px">
-                <el-option label="优质用户" value="优质用户" />
-                <el-option label="意向用户" value="意向用户" />
-                <el-option label="线下客户" value="线下客户" />
-                <el-option label="高活跃" value="高活跃" />
-                <el-option label="待跟进" value="待跟进" />
+                <el-option label="后台添加" value="后台添加" />
+                <el-option label="真实注册" value="真实注册" />
               </el-select>
+            </el-form-item>
+            <el-form-item label="匹配次数">
+              <el-input-number
+                v-model="filterForm.minMatchCount"
+                :min="0"
+                placeholder="最少"
+                controls-position="right"
+                style="width: 110px"
+              />
+              <span class="range-separator">—</span>
+              <el-input-number
+                v-model="filterForm.maxMatchCount"
+                :min="0"
+                placeholder="最多"
+                controls-position="right"
+                style="width: 110px"
+              />
             </el-form-item>
           </div>
           <!-- 第二行：详细筛选 -->
@@ -359,9 +371,7 @@
           <template #default="{ row }">
             <div class="vip-cell">
               <el-tag v-if="row.vipLevel === 0 || !row.isVip" type="info" size="small">普通</el-tag>
-              <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">黄金</el-tag>
-              <el-tag v-else-if="row.vipLevel === 2" type="primary" size="small">钻石</el-tag>
-              <el-tag v-else-if="row.vipLevel === 3" effect="dark" size="small">至尊</el-tag>
+              <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">会员</el-tag>
               <div v-if="row.vipLevel > 0" class="vip-expire">
                 <template v-if="row.vipExpireTime">
                   {{ formatVipExpire(row.vipExpireTime) }}
@@ -418,6 +428,11 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
+        <el-table-column prop="matchCount" label="匹配次数" width="90" sortable="custom">
+          <template #default="{ row }">
+            <span>{{ row.matchCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
         <el-table-column v-if="!isReadonly" label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
@@ -452,9 +467,7 @@
         <el-form-item label="VIP等级" required>
           <el-select v-model="vipForm.level" style="width: 200px">
             <el-option label="普通用户" :value="0" />
-            <el-option label="黄金会员" :value="1" />
-            <el-option label="钻石会员" :value="2" />
-            <el-option label="至尊VIP" :value="3" />
+            <el-option label="会员" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item label="有效期">
@@ -814,6 +827,14 @@
               </el-radio-group>
             </el-form-item>
           </el-col>
+          <el-col :span="8">
+            <el-form-item label="实名认证">
+              <el-radio-group v-model="createForm.isRealName">
+                <el-radio :label="1">已实名</el-radio>
+                <el-radio :label="0">未实名</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
       <template #footer>
@@ -900,6 +921,8 @@ const filterForm = reactive<UserFilter>({
   constellation: undefined,
   onlyChild: undefined,
   whenMarry: undefined,
+  minMatchCount: undefined,
+  maxMatchCount: undefined,
   sort: 'createdAt',
   order: 'desc',
 })
@@ -971,6 +994,7 @@ const createForm = reactive({
   partnerMaritalStatus: undefined as string | undefined,
   acceptChildren: undefined as string | undefined,
   status: 1,
+  isRealName: 0 as number,
 })
 
 const createRules = {
@@ -1168,6 +1192,7 @@ async function handleCreate() {
     partnerMaritalStatus: undefined,
     acceptChildren: undefined,
     status: 1,
+    isRealName: 0,
   })
   createPhotoUrls.value = []
   // 重置城市选择器
@@ -1331,6 +1356,8 @@ function handleReset() {
     constellation: undefined,
     onlyChild: undefined,
     whenMarry: undefined,
+    minMatchCount: undefined,
+    maxMatchCount: undefined,
   })
   dateRange.value = []
   pagination.page = 1
@@ -1408,6 +1435,7 @@ async function handleEditUser(row: User) {
     partnerMaritalStatus: undefined,
     acceptChildren: undefined,
     status: 1,
+    isRealName: 0,
   })
   createPhotoUrls.value = []
   hometownProvinceId.value = undefined
@@ -1475,6 +1503,7 @@ async function handleEditUser(row: User) {
   createForm.partnerMaritalStatus = user.partnerMaritalStatus ?? undefined
   createForm.acceptChildren = user.acceptChildren ?? undefined
   createForm.status = user.status ?? 1
+  createForm.isRealName = user.isRealName ?? 0
   createForm.hometown = user.hometown || ''
   createForm.residence = user.residence || ''
 
@@ -1797,7 +1826,7 @@ function normalizeUser(user: any): any {
   return {
     ...user,
     tags: ensureJsonArray(user.tags),
-    personalityTags: ensureJsonArray(user.personalityTags),
+    personalityTags: user.personalityTags, // Keep as-is (can be object or array)
     hopeTaTags: ensureJsonArray(user.hopeTaTags),
   }
 }
@@ -1810,6 +1839,10 @@ function getUserTags(row: any): string[] {
   // 无 openid 说明是后台手动添加的用户
   if (!row.openid && !tags.includes('后台添加')) {
     tags.push('后台添加')
+  }
+  // 有 openid 说明是真实注册用户
+  if (row.openid && !tags.includes('真实注册')) {
+    tags.push('真实注册')
   }
   return tags
 }
