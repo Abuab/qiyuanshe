@@ -144,7 +144,7 @@ const handleClick = () => {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  padding: 12rpx 24rpx;
+  padding: 10rpx 20rpx;
   background-color: #fff;
   border-radius: 16rpx;
   margin-bottom: 8rpx;
@@ -153,13 +153,13 @@ const handleClick = () => {
 /* ======== 左列 ======== */
 .card-left {
   flex-shrink: 0;
-  margin-right: 16rpx;
+  margin-right: 14rpx;
   position: relative;
 }
 
 .avatar {
-  width: 220rpx;
-  height: 220rpx;
+  width: 180rpx;
+  height: 180rpx;
   border-radius: 12rpx;
   background-color: #f5f5f5;
 }

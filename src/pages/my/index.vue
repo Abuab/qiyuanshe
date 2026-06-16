@@ -350,9 +350,9 @@ const toolGrid7 = [
   font-size: 20rpx;
   font-weight: bold;
   color: #fff;
-  background-color: #999;
-  padding: 2rpx 10rpx;
-  border-radius: 4rpx;
+  background-color: #ccc;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
   line-height: 1.4;
 }
 
@@ -410,7 +410,7 @@ const toolGrid7 = [
 }
 
 .stat-num {
-  font-size: 28rpx;
+  font-size: 36rpx;
   font-weight: bold;
   color: #333;
 }
@@ -426,7 +426,7 @@ const toolGrid7 = [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 24rpx 16rpx;
+  margin: 0 24rpx 24rpx;
   padding: 24rpx;
   background: linear-gradient(135deg, #2D2B55 0%, #4A4458 100%);
   border-radius: 16rpx;
@@ -471,7 +471,7 @@ const toolGrid7 = [
 .auth-card {
   display: flex;
   align-items: center;
-  margin: 0 24rpx 16rpx;
+  margin: 0 24rpx 24rpx;
   padding: 20rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
@@ -497,7 +497,7 @@ const toolGrid7 = [
 
 // ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
 .service-card {
-  margin: 0 24rpx 16rpx;
+  margin: 0 24rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
   overflow: hidden;
@@ -554,15 +554,15 @@ const toolGrid7 = [
 // ========== 7个工具图标卡片（4列网格对齐） ==========
 .tools-card {
   background-color: #fff;
-  margin: 0 24rpx 16rpx;
+  margin: 0 24rpx 24rpx;
   border-radius: 16rpx;
-  padding: 28rpx 20rpx 20rpx;
+  padding: 32rpx 24rpx 24rpx;
 }
 
 .tool-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  row-gap: 24rpx;
+  row-gap: 32rpx;
 }
 
 .tool-item {
@@ -576,19 +576,19 @@ const toolGrid7 = [
 }
 
 .tool-icon-emoji {
-  font-size: 52rpx;
-  margin-bottom: 10rpx;
+  font-size: 64rpx;
+  margin-bottom: 12rpx;
   filter: grayscale(1) opacity(0.7);
 }
 
 .tool-icon-img {
-  width: 52rpx;
-  height: 52rpx;
-  margin-bottom: 10rpx;
+  width: 64rpx;
+  height: 64rpx;
+  margin-bottom: 12rpx;
 }
 
 .tool-label {
-  font-size: 26rpx;
+  font-size: 28rpx;
   color: #333;
   text-align: center;
 }
@@ -597,7 +597,7 @@ const toolGrid7 = [
 .oa-card {
   display: flex;
   align-items: center;
-  margin: 0 24rpx 16rpx;
+  margin: 0 24rpx 24rpx;
   padding: 20rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
