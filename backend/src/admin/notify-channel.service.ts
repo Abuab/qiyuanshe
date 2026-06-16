@@ -120,10 +120,29 @@ export class NotifyChannelService {
 
   private async getNotifyConfig(): Promise<NotifyConfig | null> {
     try {
-      const config = await this.configRepository.findOne({ where: { configKey: 'notify' } })
-      if (!config || !config.configValue) return null
-      const parsed = typeof config.configValue === 'string' ? JSON.parse(config.configValue) : config.configValue
-      return parsed as NotifyConfig
+      const rows = await this.configRepository.find({
+        where: [
+          { configKey: 'notify.enabled' },
+          { configKey: 'notify.channel' },
+          { configKey: 'notify.webhookUrl' },
+          { configKey: 'notify.webhookUrls' },
+          { configKey: 'notify.notifyTypes' },
+        ],
+      })
+
+      const config: NotifyConfig = { enabled: false }
+      for (const row of rows) {
+        const key = row.configKey.split('.').pop()!
+        try {
+          (config as any)[key] = row.configValue ? JSON.parse(row.configValue) : row.configValue
+        } catch {
+          (config as any)[key] = row.configValue
+        }
+      }
+      // enabled 是字符串 "true"/"false"
+      config.enabled = config.enabled === true || (config.enabled as any) === 'true'
+
+      return config
     } catch {
       return null
     }
