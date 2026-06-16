@@ -848,13 +848,13 @@ onMounted(() => {
 }
 
 .mm-official-tag {
-  margin-left: 8rpx;
-  padding: 0rpx 8rpx;
+  margin-left: 6rpx;
+  padding: 0rpx 6rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
 
   text {
-    font-size: 20rpx;
+    font-size: 18rpx;
     color: #fff;
   }
 }
