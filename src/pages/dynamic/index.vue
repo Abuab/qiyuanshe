@@ -801,7 +801,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 20rpx 16rpx;
-  background-color: #FFF8FA;
+  background-color: #F5F5F5;
   border-radius: 12rpx;
   margin-bottom: 12rpx;
 }
@@ -1011,7 +1011,7 @@ onMounted(() => {
 .topic-card {
   display: flex;
   align-items: center;
-  background-color: #FFF5F5;
+  background-color: #F5F5F5;
   border-radius: 12rpx;
   padding: 20rpx 24rpx;
 }
