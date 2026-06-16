@@ -85,15 +85,6 @@
             </swiper-item>
           </swiper>
         </view>
-
-        <view class="question-dots">
-          <view
-            v-for="(_, idx) in hotQuestions"
-            :key="idx"
-            class="question-dot"
-            :class="{ active: idx === questionSwiperIndex }"
-          ></view>
-        </view>
       </view>
 
       <view class="filter-section">
@@ -682,7 +673,7 @@ const onShareTimeline = () => {
 
 .hot-questions-card {
   background: linear-gradient(135deg, #FFF5E6 0%, #FFFAF2 40%, #FFF9E6 100%);
-  padding: 20rpx 20rpx 10rpx;
+  padding: 14rpx 20rpx 10rpx;
   margin: 0 28rpx 12rpx;
   border-radius: 20rpx;
   border: none;
@@ -693,7 +684,7 @@ const onShareTimeline = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 10rpx;
   line-height: 1;
   padding: 0 4rpx;
 }
@@ -791,28 +782,6 @@ const onShareTimeline = () => {
   color: #FF6681;
   line-height: 1;
   margin-left: 4rpx;
-}
-
-.question-dots {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-top: 4rpx;
-  gap: 10rpx;
-}
-
-.question-dot {
-  width: 10rpx;
-  height: 10rpx;
-  border-radius: 50%;
-  background-color: #FFCDD6;
-  transition: all 0.3s;
-
-  &.active {
-    width: 20rpx;
-    border-radius: 5rpx;
-    background-color: #FF6B9D;
-  }
 }
 
 .filter-section {

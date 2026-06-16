@@ -191,7 +191,7 @@ const handleClick = () => {
 .user-header {
   display: flex;
   align-items: center;
-  margin-bottom: 4rpx;
+  margin-bottom: 2rpx;
 }
 
 .name-section {
@@ -213,29 +213,29 @@ const handleClick = () => {
 }
 
 .gender-tag {
-  font-size: 24rpx;
+  font-size: 22rpx;
   font-weight: bold;
-  padding: 2rpx 10rpx;
+  padding: 2rpx 8rpx;
   border-radius: 6rpx;
   flex-shrink: 0;
-  margin-left: 8rpx;
+  margin-left: 6rpx;
 }
 .gender-tag.male { color: #fff; background: #2979ff; }
 .gender-tag.female { color: #fff; background: #FF6B9D; }
 
 .real-name-badge {
   flex-shrink: 0;
-  padding: 2rpx 10rpx;
+  padding: 2rpx 8rpx;
   font-size: 20rpx;
   color: #1890ff;
   background-color: #e6f7ff;
   border-radius: 4rpx;
   line-height: 1.6;
-  margin-left: 10rpx;
+  margin-left: 8rpx;
 }
 
 .age-text {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #999;
   flex-shrink: 0;
   margin-left: auto;
@@ -245,14 +245,14 @@ const handleClick = () => {
 .tags-area {
   display: flex;
   flex-direction: column;
-  margin-bottom: 4rpx;
+  margin-bottom: 2rpx;
 }
 
 .tags-line-1 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 4rpx;
+  margin-bottom: 2rpx;
 }
 
 .tags-line-2 {
@@ -266,7 +266,7 @@ const handleClick = () => {
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
   flex-shrink: 0;
-  margin-right: 10rpx;
+  margin-right: 8rpx;
 }
 
 .tag-age { color: #FF6B9D; background-color: #FFF0F5; }
@@ -276,14 +276,14 @@ const handleClick = () => {
 .tag-dot-text {
   font-size: 22rpx;
   color: #999;
-  margin-right: 12rpx;
+  margin-right: 10rpx;
 }
 
 /* --- 位置 --- */
 .meta-row {
   display: flex;
   align-items: center;
-  margin-bottom: 4rpx;
+  margin-bottom: 2rpx;
 }
 
 .loc-text {
@@ -291,7 +291,7 @@ const handleClick = () => {
   color: #999;
   white-space: nowrap;
   flex-shrink: 0;
-  margin-right: 16rpx;
+  margin-right: 12rpx;
 }
 
 .mk-brief {
@@ -307,11 +307,11 @@ const handleClick = () => {
 }
 
 .photo-thumb {
-  width: 80rpx;
-  height: 80rpx;
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 8rpx;
   background-color: #f5f5f5;
-  margin-right: 10rpx;
-  margin-bottom: 10rpx;
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
 }
 </style>
