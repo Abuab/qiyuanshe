@@ -10,9 +10,10 @@ import { UserNoticeController } from './notice.controller'
 import { UserNotificationController } from './notification.controller'
 import { SystemModule } from '../system/system.module'
 import { DynamicModule } from '../dynamic/dynamic.module'
+import { AdminModule } from '../admin/admin.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserPhoto, Follow, Notice, Report, UserNotification, QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment]), SystemModule, DynamicModule],
+  imports: [TypeOrmModule.forFeature([User, UserPhoto, Follow, Notice, Report, UserNotification, QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment]), SystemModule, DynamicModule, AdminModule],
   controllers: [UserController, UserNoticeController, UserNotificationController],
   providers: [UserService],
   exports: [UserService],

@@ -141,6 +141,7 @@ import { NotifyLog } from '../entities/NotifyLog'
     AdminAccountService,
     RoleGuard,
     AdminChatService,
+    NotifyChannelService,
   ],
 })
 export class AdminModule {}

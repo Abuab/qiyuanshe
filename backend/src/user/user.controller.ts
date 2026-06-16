@@ -25,6 +25,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { Result } from '../common/result'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
+import { NotifyChannelService } from '../admin/notify-channel.service'
 
 @Controller('users')
 export class UserController {
@@ -36,6 +37,7 @@ export class UserController {
     @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
     private readonly dynamicService: DynamicService,
+    private readonly notifyService: NotifyChannelService,
   ) {}
 
   @Get('recommend')
@@ -183,6 +185,15 @@ export class UserController {
       content: JSON.stringify({ url: body.url, photoId: saved.id }),
     })
     await this.auditLogRepo.save(auditLog)
+
+    // 发送审核通知
+    this.notifyService.sendAuditNotify({
+      type: 'photo',
+      content: `用户 ${req.user.nickname || userId} 上传了新照片`,
+      userId,
+      userNickname: req.user.nickname || '',
+      source: 'photo_upload',
+    }).catch(() => {})
 
     // 自动生成动态：「更新了相册」（最多 3 张）
     const userPhotos = await this.photoRepo.find({ where: { userId }, order: { sortOrder: 'ASC' }, take: 3 })
