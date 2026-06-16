@@ -692,7 +692,7 @@ onMounted(() => {
   justify-content: space-between;
   padding: 0 32rpx;
   height: 44px;
-  background: #FFE4EC;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 70%, #FFF0F5 100%);
   z-index: 101;
 }
 
@@ -723,7 +723,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 12rpx 0;
-  background-color: #FFE4EC;
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF0F5 30%, #FFF8FA 100%);
 }
 
 // 固定标签栏（滚出视野后固定）
@@ -852,14 +852,12 @@ onMounted(() => {
   padding: 0rpx 6rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
-  line-height: 1;
-  display: flex;
-  align-items: center;
+  line-height: 1.3;
 
   text {
     font-size: 18rpx;
     color: #fff;
-    line-height: 1;
+    line-height: 1.3;
   }
 }
 
