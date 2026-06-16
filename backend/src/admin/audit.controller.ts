@@ -51,8 +51,27 @@ export class AdminAuditController {
     @Body('reason') reason?: string,
   ) {
     await this.auditService.approve(id, reason)
-    // 发送图片审核通知
-    this.notifyService.sendAuditNotify('photo', `有新的图片审核已通过，审核ID: ${id}`).catch(() => {})
+    // 获取审核记录详情用于通知
+    const audit = await this.auditService.getById(id)
+    if (audit) {
+      let notifyUserId = audit.targetId
+      let notifyNickname = ''
+      if (audit.targetType === 'photo') {
+        // 通过 photoId 查找 userId
+        const photoInfo = await this.auditService.getPhotoInfo(audit.targetId)
+        if (photoInfo) {
+          notifyUserId = photoInfo.userId
+          notifyNickname = photoInfo.nickname || ''
+        }
+      }
+      this.notifyService.sendAuditNotify({
+        type: 'photo',
+        content: `有新的${audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
+        userId: notifyUserId,
+        userNickname: notifyNickname,
+        source: 'photo_audit',
+      }).catch(() => {})
+    }
     return Result.success(null, '审核通过')
   }
 

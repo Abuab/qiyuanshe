@@ -119,8 +119,16 @@ export class AdminUserController {
     @Body() body: { photoUrl: string },
   ) {
     const photo = await this.userService.addPhoto(id, body.photoUrl)
+    // 获取用户昵称用于通知
+    const user = await this.userService.getUserBasicInfo(id)
     // 发送新照片上传通知
-    this.notifyService.sendAuditNotify('photo', `用户 ${id} 上传了新照片，审核ID: ${photo.id}`).catch(() => {})
+    this.notifyService.sendAuditNotify({
+      type: 'photo',
+      content: `用户 ${user?.nickname || id} 上传了新照片`,
+      userId: id,
+      userNickname: user?.nickname || '',
+      source: 'photo_upload',
+    }).catch(() => {})
     return Result.success(photo, '照片上传成功')
   }
 

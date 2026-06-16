@@ -57,6 +57,7 @@ import { AdminMatchmakerDynamicController } from './matchmaker-dynamic.controlle
 import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
 import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 import { NotifyChannelService } from './notify-channel.service'
+import { NotifyLog } from '../entities/NotifyLog'
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { NotifyChannelService } from './notify-channel.service'
       UserBlock,
       ChatMessage,
       CirclePost,
+      NotifyLog,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',

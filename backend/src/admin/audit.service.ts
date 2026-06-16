@@ -226,4 +226,17 @@ export class AdminAuditService {
       order: { createdAt: 'DESC' },
     })
   }
+
+  async getById(id: number) {
+    return this.auditLogRepository.findOne({ where: { id } })
+  }
+
+  async getPhotoInfo(photoId: number) {
+    const photo = await this.userPhotoRepository.findOne({
+      where: { id: photoId },
+      relations: ['user'],
+    })
+    if (!photo) return null
+    return { userId: photo.userId, nickname: (photo as any).user?.nickname || '' }
+  }
 }

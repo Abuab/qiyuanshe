@@ -346,6 +346,52 @@
         </el-card>
       </el-tab-pane>
 
+      <el-tab-pane label="通知日志" name="notify-log">
+        <el-card class="config-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <span>最近 20 条通知记录</span>
+            <el-button size="small" @click="loadNotifyLogs" :loading="notifyLogsLoading">刷新</el-button>
+          </div>
+          <el-table :data="notifyLogs" stripe size="small" max-height="500">
+            <el-table-column prop="id" label="ID" width="60" />
+            <el-table-column label="时间" width="160">
+              <template #default="{ row }">
+                {{ formatLogTime(row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="70">
+              <template #default="{ row }">
+                <el-tag :type="row.success ? 'success' : 'danger'" size="small">
+                  {{ row.success ? '成功' : '失败' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="通道" width="70">
+              <template #default="{ row }">
+                <span v-if="row.channel === 'wecom'">企业微信</span>
+                <span v-else-if="row.channel === 'feishu'">飞书</span>
+                <span v-else-if="row.channel === 'dingtalk'">钉钉</span>
+                <span v-else>{{ row.channel || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="来源" width="100">
+              <template #default="{ row }">
+                <el-tag size="small" type="info">{{ row.source }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="userId" label="用户ID" width="70" />
+            <el-table-column prop="userNickname" label="用户" min-width="80" />
+            <el-table-column prop="content" label="消息内容" min-width="150" show-overflow-tooltip />
+            <el-table-column label="失败原因" min-width="150" show-overflow-tooltip>
+              <template #default="{ row }">
+                <span v-if="row.errorMessage" style="color:#F56C6C;font-size:12px">{{ row.errorMessage }}</span>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-tab-pane>
+
       <el-tab-pane label="简介模板" name="intro">
         <el-card class="config-card">
           <el-form :model="introConfig" label-width="140px">
@@ -472,7 +518,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
 import { system, adminSystem } from '../../api'
@@ -541,6 +587,31 @@ const auditConfig = reactive({
   aiAuditEnabled: true,
   sensitiveWords: '',
   manualAuditEnabled: true,
+})
+
+// 通知日志
+const notifyLogs = ref<any[]>([])
+const notifyLogsLoading = ref(false)
+const loadNotifyLogs = async () => {
+  notifyLogsLoading.value = true
+  try {
+    const res = await adminSystem.getNotifyLogs()
+    if (res.success && res.data) {
+      notifyLogs.value = res.data
+    }
+  } catch { /* ignore */ }
+  finally { notifyLogsLoading.value = false }
+}
+const formatLogTime = (t: string) => {
+  if (!t) return '-'
+  const d = new Date(t)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+// 切换到通知日志 tab 时自动加载
+watch(activeTab, (val) => {
+  if (val === 'notify-log') loadNotifyLogs()
 })
 
 const introConfig = reactive({

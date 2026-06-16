@@ -387,6 +387,11 @@ export class AdminUserService {
     }
   }
 
+  async getUserBasicInfo(id: number) {
+    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'nickname'] })
+    return user
+  }
+
   async updateStatus(id: number, status: number) {
     await this.userRepository.update(id, { status })
   }

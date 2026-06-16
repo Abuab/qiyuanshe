@@ -113,6 +113,11 @@ export const adminSystem = {
   deleteSuccessCase(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/success-cases/${id}`)
   },
+
+  // 通知日志
+  getNotifyLogs(): Promise<ApiResponse<any[]>> {
+    return request.get('/admin/system/notify-logs')
+  },
 }
 
 export const mfaApi = {

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
+import { NotifyLog } from '../entities/NotifyLog'
 
 interface NotifyConfig {
   enabled?: boolean
@@ -12,6 +13,14 @@ interface NotifyConfig {
   notifyTypes?: string[]
 }
 
+export interface NotifyOptions {
+  type: string
+  content: string
+  userId?: number
+  userNickname?: string
+  source?: string
+}
+
 @Injectable()
 export class NotifyChannelService {
   private readonly logger = new Logger(NotifyChannelService.name)
@@ -19,13 +28,18 @@ export class NotifyChannelService {
   constructor(
     @InjectRepository(SystemConfig)
     private readonly configRepository: Repository<SystemConfig>,
+    @InjectRepository(NotifyLog)
+    private readonly notifyLogRepository: Repository<NotifyLog>,
   ) {}
 
-  /** 发送审核通知 - 向所有已配置 webhook 的通道发送 */
-  async sendAuditNotify(type: string, content: string) {
+  /** 发送审核通知 - 向所有已配置 webhook 的通道发送，并记录日志 */
+  async sendAuditNotify(opts: NotifyOptions) {
+    const { type, content, userId, userNickname, source } = opts
     const config = await this.getNotifyConfig()
+
     if (!config || !config.enabled) {
       this.logger.log('通知通道未启用，跳过发送')
+      await this.writeLog(type, '', false, '通知通道未启用', userId, userNickname, source || type, content)
       return
     }
 
@@ -33,6 +47,7 @@ export class NotifyChannelService {
     const types = config.notifyTypes || []
     if (!types.includes(type)) {
       this.logger.log(`通知类型 ${type} 未在配置中勾选，跳过发送`)
+      await this.writeLog(type, '', false, `通知类型 ${type} 未勾选`, userId, userNickname, source || type, content)
       return
     }
 
@@ -50,6 +65,7 @@ export class NotifyChannelService {
 
     if (channels.length === 0) {
       this.logger.warn('通知通道已启用但所有通道均未配置Webhook地址')
+      await this.writeLog(type, '', false, '未配置任何 Webhook 地址', userId, userNickname, source || type, content)
       return
     }
 
@@ -59,9 +75,46 @@ export class NotifyChannelService {
       try {
         await this.sendWebhook(ch.url, message)
         this.logger.log(`通知已发送: type=${type}, channel=${ch.name}`)
+        await this.writeLog(type, ch.name, true, '', userId, userNickname, source || type, content)
       } catch (e: any) {
         this.logger.error(`通知发送失败[${ch.name}]: ${e.message}`)
+        await this.writeLog(type, ch.name, false, e.message, userId, userNickname, source || type, content)
       }
+    }
+  }
+
+  /** 查询最近的通知日志 */
+  async getRecentLogs(limit: number = 20) {
+    return this.notifyLogRepository.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+    })
+  }
+
+  private async writeLog(
+    notifyType: string,
+    channel: string,
+    success: boolean,
+    errorMessage: string,
+    userId?: number,
+    userNickname?: string,
+    source?: string,
+    content?: string,
+  ) {
+    try {
+      const log = this.notifyLogRepository.create({
+        notifyType,
+        channel,
+        success: success ? 1 : 0,
+        errorMessage: errorMessage || null,
+        userId: userId || null,
+        userNickname: userNickname || null,
+        source: source || notifyType,
+        content: content || null,
+      })
+      await this.notifyLogRepository.save(log)
+    } catch (e: any) {
+      this.logger.error(`写入通知日志失败: ${e.message}`)
     }
   }
 
