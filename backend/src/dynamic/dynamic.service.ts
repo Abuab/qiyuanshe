@@ -43,8 +43,22 @@ export class DynamicService {
       return this.getMatchmakerDynamics(page, limit, currentUserId)
     }
 
-    // "全部" / "关注" tab：直接从 users 表读取，所有有照片的用户自动展示
-    return this.getUserDynamics(page, limit, currentUserId, type)
+    // 并行查询两个数据源：用户卡片 + 问答动态
+    const [userResult, answerResult] = await Promise.all([
+      this.getUserDynamics(page, limit, currentUserId, type),
+      this.getAnswerDynamics(page, limit, currentUserId, type),
+    ])
+
+    // 合并并按时间排序
+    const merged = [...userResult.list, ...answerResult.list].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
+
+    const offset = (page - 1) * limit
+    const sliced = merged.slice(offset, offset + limit)
+    const total = userResult.total + answerResult.total
+
+    return { list: sliced, total, page, limit }
   }
 
   /** 从 users 表直接读取用户动态（含照片、简介） */
@@ -148,6 +162,97 @@ export class DynamicService {
     })
 
     return { list, total, page, limit }
+  }
+
+  /** 从 dynamics 表查询 answer 类型的问答动态 */
+  private async getAnswerDynamics(
+    page: number,
+    limit: number,
+    currentUserId?: number,
+    type?: string,
+  ) {
+    const qb = this.dynamicRepository
+      .createQueryBuilder('dynamic')
+      .leftJoinAndSelect('dynamic.user', 'user')
+      .where("dynamic.type = 'answer'")
+      .orderBy('dynamic.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    if (currentUserId) {
+      qb.andWhere('dynamic.userId != :currentUserId', { currentUserId })
+    }
+
+    // "关注" tab：只显示当前用户关注的人的问答
+    if (type === 'follow') {
+      if (currentUserId) {
+        const follows = await this.followRepository.find({
+          where: { userId: currentUserId },
+          select: ['targetUserId'],
+        })
+        const fIds = follows.map((f) => f.targetUserId)
+        if (fIds.length === 0) {
+          return { list: [], total: 0, page, limit }
+        }
+        qb.andWhere('dynamic.userId IN (:...fIds)', { fIds })
+      } else {
+        return { list: [], total: 0, page, limit }
+      }
+    }
+
+    const [list, total] = await qb.getManyAndCount()
+
+    // 读取简介模板配置
+    const rawTemplate = await this.systemService.getConfig('intro.template')
+    const introTemplate = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
+    const introSep = (await this.systemService.getConfig('intro.separator')) || '、'
+
+    // 批量读取标签构建简介
+    const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
+    const tagMap = new Map<number, { personalityTags: any; hopeTaTags: any }>()
+    if (userIds.length > 0) {
+      const rows: any[] = await this.dataSource.query(
+        `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
+      )
+      for (const row of rows) {
+        tagMap.set(row.id, {
+          personalityTags: this.parseJsonField(row.personalityTags),
+          hopeTaTags: this.parseJsonField(row.hopeTaTags),
+        })
+      }
+    }
+
+    const formattedList = list.map((item) => {
+      const tags = tagMap.get(item.userId)
+      const introText = tags
+        ? this.buildIntroFromTags(tags.personalityTags, tags.hopeTaTags, introTemplate, introSep)
+        : ''
+
+      return {
+        id: item.id,
+        type: 'answer',
+        userId: item.userId,
+        nickname: item.user?.nickname || '',
+        avatar: item.user?.avatar || '',
+        isRealName: item.user?.isRealName || 0,
+        age: item.user?.age || 0,
+        height: item.user?.height || 0,
+        education: item.user?.education || '',
+        incomeRange: item.user?.incomeRange || '',
+        introText,
+        content: item.content,
+        images: [],
+        questionId: item.questionId,
+        questionTitle: item.questionTitle,
+        createdAt: item.createdAt,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+        isLiked: false,
+        likeUsers: [] as { id: number; nickname: string }[],
+      }
+    })
+
+    return { list: formattedList, total, page, limit }
   }
 
   /** 获取红娘动态列表（从 match_records 查询） */
