@@ -509,7 +509,7 @@
       </el-tab-pane>
     </el-tabs>
 
-    <div class="config-footer">
+    <div v-if="activeTab !== 'notify-log'" class="config-footer">
       <el-button type="primary" :loading="saving" @click="handleSave">
         保存配置
       </el-button>
