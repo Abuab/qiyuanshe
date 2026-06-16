@@ -1,48 +1,51 @@
 <template>
   <view class="index-page">
-    <!-- 顶部粉色连续区域：导航栏区域 + 通知栏 + 功能图标 -->
-    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
-      <view class="header" :style="{ paddingTop: statusBarHeight + 'px' }">
-        <view class="header-content">
-          <text class="brand-title">{{ appName }}</text>
-          <view class="header-capsule"></view>
-        </view>
-      </view>
-
-      <view v-if="showNotice && notices.length" class="notice-bar">
-        <text class="notice-icon">📢</text>
-        <swiper class="notice-swiper" vertical autoplay circular interval="3000">
-          <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
-            <text class="notice-text">{{ n.title }}</text>
-          </swiper-item>
-        </swiper>
-        <text class="notice-close" @tap.stop="closeNotice">×</text>
-      </view>
-
-      <view class="quick-entry-section">
-        <view
-          v-for="entry in quickEntries"
-          :key="entry.id"
-          class="quick-entry-item"
-          @tap="handleQuickEntry(entry)"
-        >
-          <view class="quick-entry-icon" :style="{ backgroundColor: entry.bgColor }">
-            <image class="entry-icon" :src="entry.icon" mode="aspectFit"></image>
-          </view>
-          <text class="quick-entry-text">{{ entry.name }}</text>
-        </view>
+    <!-- 顶部固定品牌卡片 -->
+    <view class="top-brand-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="header-content">
+        <text class="brand-title">{{ appName }}</text>
+        <view class="header-capsule"></view>
       </view>
     </view>
 
     <scroll-view
       class="content-scroll"
       scroll-y
-      enable-flex
+      :style="scrollViewStyle"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
+      @scroll="onScroll"
+      :scroll-top="scrollToVal"
+      :scroll-with-animation="true"
     >
+      <!-- 顶部粉色区域：通知栏 + 功能图标 -->
+      <view class="top-pink-area">
+        <view v-if="showNotice && notices.length" class="notice-bar">
+          <text class="notice-icon">📢</text>
+          <swiper class="notice-swiper" vertical autoplay circular interval="3000">
+            <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
+              <text class="notice-text">{{ n.title }}</text>
+            </swiper-item>
+          </swiper>
+          <text class="notice-close" @tap.stop="closeNotice">×</text>
+        </view>
+
+        <view class="quick-entry-section">
+          <view
+            v-for="entry in quickEntries"
+            :key="entry.id"
+            class="quick-entry-item"
+            @tap="handleQuickEntry(entry)"
+          >
+            <view class="quick-entry-icon" :style="{ backgroundColor: entry.bgColor }">
+              <image class="entry-icon" :src="entry.icon" mode="aspectFit"></image>
+            </view>
+            <text class="quick-entry-text">{{ entry.name }}</text>
+          </view>
+        </view>
+      </view>
       <!-- 热门问答轮播卡片 -->
       <view class="hot-questions-card">
         <view class="section-header">
@@ -151,6 +154,40 @@
       <text class="float-label">红娘</text>
     </view>
 
+    <!-- 一键回到顶部按钮 -->
+    <view v-if="showBackTop" class="float-backtop" @tap="scrollToTop">
+      <text class="backtop-arrow">↑</text>
+    </view>
+
+    <!-- 固定筛选栏：原始筛选栏滚出视野后固定到品牌栏下方 -->
+    <view v-if="showFixedFilter" class="filter-section-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
+      <view class="filter-tabs">
+        <view
+          v-for="tab in filterTabs"
+          :key="tab.value"
+          class="filter-tab"
+          :class="{ active: currentFilter === tab.value }"
+          @tap="switchFilter(tab.value)"
+        >
+          <text class="tab-label">{{ tab.label }}</text>
+          <view v-if="currentFilter === tab.value" class="tab-underline"></view>
+        </view>
+      </view>
+      <view class="filter-btn" @tap="goToFilter">
+        <view class="filter-icon">
+          <view class="filter-row">
+            <view class="filter-dot"></view>
+            <view class="filter-bar" style="width: 20rpx"></view>
+          </view>
+          <view class="filter-row">
+            <view class="filter-dot"></view>
+            <view class="filter-bar" style="width: 14rpx"></view>
+          </view>
+        </view>
+        <text class="filter-btn-text">筛选</text>
+      </view>
+    </view>
+
     <!-- 红娘弹窗 -->
     <matchmaker-popup
       :show="showMatchmaker"
@@ -234,6 +271,13 @@ const showNotice = ref(true)
 const notices = ref<any[]>([])
 const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
+const scrollViewStyle = computed(() => {
+  const top = (statusBarHeight.value || 20) + 44
+  return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
+})
+const showBackTop = ref(false)
+const showFixedFilter = ref(false)
+const scrollToVal = ref(0)
 // 红娘弹窗
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -420,6 +464,22 @@ const onSelectMatchmaker = (matchmaker: any) => {
   showMatchmaker.value = true
 }
 
+// 滚动事件：控制固定筛选栏和回到顶部按钮
+const onScroll = (e: any) => {
+  const top = e.detail.scrollTop
+  // 粉色区域约 280px（通知栏+功能图标），超过时显示固定筛选栏
+  showFixedFilter.value = top > 280
+  // 滚动超过 600px 时显示回到顶部按钮
+  showBackTop.value = top > 600
+}
+
+// 一键回到顶部
+const scrollToTop = () => {
+  scrollToVal.value = scrollToVal.value ? 0 : 0.001
+  showBackTop.value = false
+  showFixedFilter.value = false
+}
+
 const onFilterConfirm = (data: FilterData) => {
   applyFilter(data)
 }
@@ -559,19 +619,20 @@ const onShareTimeline = () => {
 
 <style lang="scss" scoped>
 .index-page {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #FFF8FA;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-.header {
+.top-brand-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: transparent;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
 }
 
 .header-content {
@@ -594,14 +655,19 @@ const onShareTimeline = () => {
   height: 64rpx;
 }
 
+.content-scroll {
+  background-color: #FFF8FA;
+}
+
 .top-pink-area {
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF0F5 5%, #FFF8FA 50%, #FFF8FA 100%);
+  padding-top: 16rpx;
 }
 
 .notice-bar {
   display: flex;
   align-items: center;
-  padding: 12rpx 32rpx 4rpx;
+  padding: 20rpx 32rpx 4rpx;
 
   .notice-swiper {
     flex: 1;
@@ -627,14 +693,6 @@ const onShareTimeline = () => {
   font-size: 32rpx;
   color: #999;
   padding-left: 16rpx;
-}
-
-.content-scroll {
-  flex: 1;
-  margin-top: 0;
-  margin-bottom: 120rpx;
-  background-color: #FFF8FA;
-  border-top: none;
 }
 
 .quick-entry-section {
@@ -899,7 +957,7 @@ const onShareTimeline = () => {
 }
 
 .bottom-safe-area {
-  height: 40rpx;
+  height: 160rpx;
 }
 
 // Hi红娘悬浮按钮
@@ -931,6 +989,43 @@ const onShareTimeline = () => {
     color: #F098B4;
     line-height: 1.1;
   }
+}
+
+// 一键回到顶部按钮
+.float-backtop {
+  position: fixed;
+  right: 20rpx;
+  bottom: 500rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #FFB3C6 0%, #FFD1DC 40%, #FFFFFF 100%);
+  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+
+  .backtop-arrow {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #F098B4;
+    line-height: 1;
+  }
+}
+
+// 固定筛选栏：紧贴品牌栏下方
+.filter-section-fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 32rpx;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 </style>

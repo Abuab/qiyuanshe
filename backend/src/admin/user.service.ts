@@ -6,6 +6,7 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
 import { AuditLog } from '../entities/AuditLog'
 import { normalizeImageUrl } from '../common/image-url'
+import { DynamicService } from '../dynamic/dynamic.service'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -50,6 +51,7 @@ export class AdminUserService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserNotification)
     private readonly notificationRepository: Repository<UserNotification>,
+    private readonly dynamicService: DynamicService,
   ) {}
 
   async list(filter: UserFilter) {
@@ -395,7 +397,16 @@ export class AdminUserService {
       sortOrder: 0,
       auditStatus: 1,
     })
-    return this.userPhotoRepository.save(photo)
+    const saved = await this.userPhotoRepository.save(photo)
+
+    // 自动生成照片动态
+    this.dynamicService.autoCreateDynamic({
+      userId,
+      type: 'photo',
+      images: [normalizedUrl],
+    }).catch((err) => console.error('添加照片动态失败:', err?.message || err))
+
+    return saved
   }
 
   async deletePhoto(photoId: number) {
@@ -525,6 +536,13 @@ export class AdminUserService {
         auditStatus: 1,
       }))
       await this.userPhotoRepository.insert(photos)
+
+      // 自动生成照片动态，新用户也能在动态页展示
+      this.dynamicService.autoCreateDynamic({
+        userId: saved.id,
+        type: 'photo',
+        images: data.photoUrls,
+      }).catch((err) => console.error('创建用户照片动态失败:', err?.message || err))
     }
 
     // 创建审核记录

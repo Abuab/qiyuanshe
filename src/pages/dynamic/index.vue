@@ -762,12 +762,13 @@ onMounted(() => {
 .mm-official-tag {
   margin-left: 10rpx;
   padding: 2rpx 12rpx;
-  background-color: #FF6B9D;
+  background-color: #FFD4E0;
   border-radius: 6rpx;
+  box-shadow: 0 1rpx 2rpx rgba(255, 107, 157, 0.12);
 
   text {
     font-size: 20rpx;
-    color: #fff;
+    color: #FF6B9D;
   }
 }
 
