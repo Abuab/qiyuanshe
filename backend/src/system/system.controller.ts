@@ -100,6 +100,10 @@ export class PublicSystemController {
         shareMoreIcon: fallback(page.shareMoreIcon),
         followIcon: fallback(page.followIcon),
         shareBtnIcon: fallback(page.shareBtnIcon),
+        // 动态页图标
+        mmEye: fallback(page.mmEye),
+        // 消息页图标
+        systemNotify: fallback(page.systemNotify),
       },
     }
   }

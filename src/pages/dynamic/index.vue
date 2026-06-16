@@ -1,7 +1,7 @@
 <template>
   <view class="dynamic-page">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
+    <!-- 顶部固定品牌栏 -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="goHome">
         <image
           class="home-icon-img"
@@ -14,30 +14,32 @@
       <view class="nav-right" />
     </view>
 
-    <!-- 顶部标签栏 -->
-    <view class="tab-bar" :style="{ paddingTop: (44 + statusBarHeight) + 'px' }">
-      <view
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-item"
-        :class="{ active: currentTab === tab.key }"
-        @tap="switchTab(tab.key)"
-      >
-        <text class="tab-text">{{ tab.label }}</text>
-        <view v-if="currentTab === tab.key" class="tab-underline" />
-      </view>
-    </view>
-
     <scroll-view
       class="content-scroll"
       scroll-y
-      enable-flex
+      :style="scrollViewStyle"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
-      :style="{ paddingTop: (44 + statusBarHeight + 46) + 'px' }"
+      @scroll="onScroll"
+      :scroll-top="scrollToVal"
+      :scroll-with-animation="true"
     >
+      <!-- 内联标签栏（滚动时跟随） -->
+      <view class="tab-bar-inline">
+        <view
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="tab-item"
+          :class="{ active: currentTab === tab.key }"
+          @tap="switchTab(tab.key)"
+        >
+          <text class="tab-text">{{ tab.label }}</text>
+          <view v-if="currentTab === tab.key" class="tab-underline" />
+        </view>
+      </view>
+
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无动态</text>
       </view>
@@ -209,7 +211,8 @@
               <text class="hi-text">认识Ta</text>
             </view>
             <view class="btn-matchmaker" @tap="handleMatchmaker(item)">
-              <text class="mm-eye">👁</text>
+              <image v-if="mmEyeIcon" class="mm-eye" :src="mmEyeIcon" mode="aspectFit" />
+              <text v-else class="mm-eye-fallback">👁</text>
               <text class="mm-text">红娘牵线</text>
             </view>
           </view>
@@ -226,7 +229,26 @@
       <view class="bottom-safe" />
     </scroll-view>
 
+    <!-- 固定标签栏（原位置标签栏滚出视野后固定到品牌栏下方） -->
+    <view v-if="showFixedTab" class="tab-bar-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
+      <view
+        v-for="tab in tabs"
+        :key="tab.key"
+        class="tab-item"
+        :class="{ active: currentTab === tab.key }"
+        @tap="switchTab(tab.key)"
+      >
+        <text class="tab-text">{{ tab.label }}</text>
+        <view v-if="currentTab === tab.key" class="tab-underline" />
+      </view>
+    </view>
+
     <tab-bar />
+
+    <!-- 一键回到顶部按钮 -->
+    <view v-if="showBackTop" class="float-backtop" @tap="scrollToTop">
+      <text class="backtop-arrow">↑</text>
+    </view>
 
     <!-- 红娘弹窗 -->
     <matchmaker-popup
@@ -309,6 +331,36 @@ const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
 const dynamicHomeIcon = computed(() => {
   return getPageIcon('dynamicHome') || '/static/icons/icon-home.png'
 })
+
+// 红娘牵线眼睛图标（后台可配置）
+const mmEyeIcon = computed(() => {
+  return getPageIcon('mmEye') || ''
+})
+
+// scroll-view 绝对定位样式（使 @scroll 事件生效）
+const scrollViewStyle = computed(() => {
+  const top = (statusBarHeight.value || 20) + 44
+  return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
+})
+
+// 一键回到顶部 & 固定标签栏
+const showBackTop = ref(false)
+const showFixedTab = ref(false)
+const scrollToVal = ref(0)
+
+const onScroll = (e: any) => {
+  const top = e.detail.scrollTop
+  // 内联标签栏高度约 46px，滚出视野后显示固定版
+  showFixedTab.value = top > 46
+  // 滚动超过 600px 时显示回到顶部按钮
+  showBackTop.value = top > 600
+}
+
+const scrollToTop = () => {
+  scrollToVal.value = scrollToVal.value ? 0 : 0.001
+  showBackTop.value = false
+  showFixedTab.value = false
+}
 
 // 当前登录用户的照片数量（用于判断是否模糊）
 const myPhotoCount = ref(0)
@@ -625,7 +677,8 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .dynamic-page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #FFF8FA;
 }
 
@@ -638,7 +691,8 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 32rpx;
-  background-color: transparent;
+  height: 44px;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
   z-index: 101;
 }
 
@@ -663,16 +717,27 @@ onMounted(() => {
   color: #333;
 }
 
-.tab-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+// 内联标签栏（随内容滚动）
+.tab-bar-inline {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: transparent;
-  z-index: 100;
+  padding: 12rpx 0;
+  background-color: #FFF8FA;
+}
+
+// 固定标签栏（滚出视野后固定）
+.tab-bar-fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 0;
+  background-color: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 .tab-item {
@@ -703,7 +768,30 @@ onMounted(() => {
 }
 
 .content-scroll {
-  height: calc(100vh - 120rpx);
+  // 由 scrollViewStyle computed 动态设置 absolute 定位
+}
+
+// 一键回到顶部按钮
+.float-backtop {
+  position: fixed;
+  right: 20rpx;
+  bottom: 500rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #FFB3C6 0%, #FFD1DC 40%, #FFFFFF 100%);
+  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 998;
+
+  .backtop-arrow {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #F098B4;
+    line-height: 1;
+  }
 }
 
 .empty-state {
@@ -760,15 +848,14 @@ onMounted(() => {
 }
 
 .mm-official-tag {
-  margin-left: 10rpx;
-  padding: 2rpx 12rpx;
-  background-color: #FFD4E0;
-  border-radius: 6rpx;
-  box-shadow: 0 1rpx 2rpx rgba(255, 107, 157, 0.12);
+  margin-left: 8rpx;
+  padding: 0rpx 8rpx;
+  background-color: #FF6B9D;
+  border-radius: 4rpx;
 
   text {
     font-size: 20rpx;
-    color: #FF6B9D;
+    color: #fff;
   }
 }
 
@@ -1068,6 +1155,10 @@ onMounted(() => {
   color: #FF6B9D;
   font-weight: 600;
   margin-right: 4rpx;
+  font-style: italic;
+  background-color: #FFE4EC;
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
 }
 
 .hi-text {
@@ -1084,6 +1175,12 @@ onMounted(() => {
 }
 
 .mm-eye {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 4rpx;
+}
+
+.mm-eye-fallback {
   font-size: 24rpx;
   margin-right: 4rpx;
 }

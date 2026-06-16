@@ -35,7 +35,8 @@
       >
         <view v-if="item.type === 'system'" class="system-message">
           <view class="system-icon">
-            <text>🔔</text>
+            <image v-if="systemNotifyIcon" :src="systemNotifyIcon" mode="aspectFit" class="system-icon-img" />
+            <text v-else>🔔</text>
           </view>
           <view class="message-content">
             <view class="message-header">
@@ -79,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
@@ -87,6 +88,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
+import { useIcon } from '@/composables/useIcon'
 
 interface SystemMessage {
   id: number
@@ -111,6 +113,7 @@ interface UserMessage {
 type MessageItem = SystemMessage | UserMessage
 
 const userStore = useUserStore()
+const { getPageIcon } = useIcon()
 const statusBarHeight = ref(0)
 const messageList = ref<MessageItem[]>([])
 const loading = ref(false)
@@ -118,6 +121,11 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
+
+// 系统通知图标（后台可配置）
+const systemNotifyIcon = computed(() => {
+  return getPageIcon('systemNotify') || ''
+})
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
@@ -379,6 +387,11 @@ function isImagePreview(item: UserMessage): boolean {
   text {
     font-size: 48rpx;
   }
+}
+
+.system-icon-img {
+  width: 48rpx;
+  height: 48rpx;
 }
 
 .user-avatar {
