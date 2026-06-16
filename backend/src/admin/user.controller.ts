@@ -188,11 +188,17 @@ export class AdminUserController {
   }
 
   @Put(':id')
-  async update(
+  async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: any,
   ) {
     await this.userService.updateUser(id, body)
     return Result.success(null, '用户更新成功')
+  }
+
+  @Post(':id/regenerate-dynamics')
+  async regenerateDynamics(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.userService.regenerateUserDynamics(id)
+    return Result.success(result)
   }
 }

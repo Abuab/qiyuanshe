@@ -615,6 +615,33 @@ export class AdminUserService {
 
     await this.userRepository.update(id, safeData)
   }
+
+  /** 重新生成用户照片动态（用于修复历史数据） */
+  async regenerateUserDynamics(userId: number) {
+    const photos = await this.userPhotoRepository.find({
+      where: { userId },
+      order: { sortOrder: 'ASC' },
+      take: 4,
+    })
+    if (photos.length === 0) {
+      return { success: false, message: '该用户没有照片' }
+    }
+    const photoUrls = photos.map((p) => {
+      const url = p.photoUrl
+      if (!url) return ''
+      if (url.startsWith('http')) return url
+      return url.startsWith('/') ? url : '/' + url
+    }).filter(Boolean)
+    if (photoUrls.length === 0) {
+      return { success: false, message: '照片 URL 为空' }
+    }
+    await this.dynamicService.autoCreateDynamic({
+      userId,
+      type: 'photo',
+      images: photoUrls,
+    })
+    return { success: true, message: `已生成动态，${photoUrls.length} 张照片` }
+  }
 }
 
 /**

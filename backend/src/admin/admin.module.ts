@@ -55,7 +55,7 @@ import { UserProfileService } from './user-profile.service'
 import { UserProfileController } from './user-profile.controller'
 import { AdminMatchmakerDynamicController } from './matchmaker-dynamic.controller'
 import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
-import { DynamicModule } from 'src/dynamic/dynamic.module'
+import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 
 @Module({
   imports: [
@@ -84,8 +84,8 @@ import { DynamicModule } from 'src/dynamic/dynamic.module'
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
     PassportModule,
-    DynamicModule,
-  ],
+     AppDynamicModule,
+   ],
   controllers: [
     AdminUserController,
     AdminMatchmakerController,
