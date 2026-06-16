@@ -692,7 +692,7 @@ onMounted(() => {
   justify-content: space-between;
   padding: 0 32rpx;
   height: 44px;
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+  background: #FFE4EC;
   z-index: 101;
 }
 
@@ -852,6 +852,7 @@ onMounted(() => {
   padding: 0rpx 6rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
+  line-height: 1.2;
 
   text {
     font-size: 18rpx;
