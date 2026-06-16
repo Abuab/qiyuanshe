@@ -177,21 +177,51 @@
         </view>
       </view>
 
-      <!-- 我的照片 -->
+      <!-- 个人形象展示 -->
       <view class="section-card">
-        <view class="photo-header-row">
-          <text class="section-title">我的照片</text>
-          <text class="photo-count">{{ photos.length }}/9</text>
+        <view class="photo-section-header">
+          <view class="photo-title-bar"></view>
+          <text class="photo-section-title">个人形象展示</text>
         </view>
-        <view class="photo-grid">
-          <view v-for="(p, idx) in photos" :key="p.id" class="photo-item">
-            <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-img" @tap="previewPhoto(idx)" />
-            <view v-if="p.isMain" class="main-tag">主图</view>
-            <text class="photo-del" @tap.stop="deletePhoto(p.id)">×</text>
+        <view class="photo-grid-9">
+          <!-- 第一张照片占4格 (2x2 左上角) -->
+          <view v-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
+            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
+            <view class="photo-watermark">{{ appName }}</view>
+            <view class="photo-main-label">头像/封面</view>
+            <view v-if="photos[0].auditStatus === 0" class="photo-audit-overlay-large">待审核</view>
           </view>
-          <view v-if="photos.length < 9" class="photo-add" @tap="uploadPhoto">
-            <text class="add-plus">+</text>
+          <!-- 占位 - 空的第一张 -->
+          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
+            <text class="photo-add-plus">+</text>
+            <text class="photo-add-text">添加照片</text>
           </view>
+
+          <!-- 第2-6张照片 -->
+          <template v-for="(p, idx) in remainingPhotos" :key="p.id">
+            <view class="photo-cell" @tap="previewPhoto(idx + 1)">
+              <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
+              <view class="photo-watermark">{{ appName }}</view>
+              <view v-if="p.auditStatus === 0" class="photo-audit-overlay">待审核</view>
+              <view v-if="deletePhotoIcon" class="photo-delete-icon" @tap.stop="deletePhoto(p.id)">
+                <image :src="deletePhotoIcon" mode="aspectFit" class="delete-icon-img" />
+              </view>
+              <view v-else class="photo-delete-icon-text" @tap.stop="deletePhoto(p.id)">✕</view>
+            </view>
+          </template>
+
+          <!-- 剩余空占位格 -->
+          <view
+            v-for="n in emptyCells"
+            :key="'empty-' + n"
+            class="photo-cell photo-cell-empty"
+            @tap="photos.length < 6 ? uploadPhoto() : null"
+          >
+            <text v-if="photos.length < 6" class="photo-add-plus subtle">+</text>
+          </view>
+        </view>
+        <view class="photo-section-footer">
+          <text>添加个人照片，获得更多异性关注</text>
         </view>
       </view>
 
@@ -530,6 +560,8 @@ const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
 
 const userStore = useUserStore()
+const appName = computed(() => systemStore.appName || '栖缘社')
+const deletePhotoIcon = computed(() => systemStore.deletePhotoIcon || '')
 const saving = ref(false)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -670,6 +702,17 @@ const form = ref({
 
 // 照片管理
 const photos = ref<any[]>([])
+
+// 除第一张外的其他照片
+const remainingPhotos = computed(() => photos.value.slice(1, 6))
+
+// 9宫格中剩余的空格子数（总数9 - 1个大格=5个小格可放，大格算4格，每个小格算1格）
+// 实际布局: position1占4格(cell 0-3)，后续5个位置是小格
+const emptyCells = computed(() => {
+  const smallRemaining = Math.max(0, 5 - remainingPhotos.value.length)
+  if (photos.value.length === 0) return 5  // 一张都没有，5个空小格
+  return smallRemaining
+})
 
 // ===== 弹窗状态 =====
 const showHousingPopup = ref(false)
@@ -969,7 +1012,7 @@ const fetchPhotos = async () => {
 
 const uploadPhoto = () => {
   uni.chooseImage({
-    count: 9 - photos.value.length,
+    count: 6 - photos.value.length,
     sizeType: ['compressed'],
     sourceType: ['album', 'camera'],
     success: async (res: any) => {
@@ -1500,81 +1543,168 @@ const handleBack = () => {
   }
 }
 
-/* 照片管理 */
-.photo-header-row {
+/* 个人形象展示 */
+.photo-section-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20rpx;
-
-  .section-title {
-    margin-bottom: 0;
-  }
+  margin-bottom: 10rpx;
 }
 
-.photo-count {
-  font-size: 26rpx;
-  color: #999;
+.photo-title-bar {
+  width: 6rpx;
+  height: 32rpx;
+  background: #FF6B9D;
+  border-radius: 3rpx;
+  margin-right: 12rpx;
+  font-weight: bold;
 }
 
-.photo-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
+.photo-section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #333;
 }
 
-.photo-item {
+.photo-grid-9 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 200rpx);
+  gap: 6rpx;
+}
+
+.photo-cell {
   position: relative;
-  width: calc(33.33% - 8rpx);
-  height: 220rpx;
   border-radius: 8rpx;
   overflow: hidden;
+  background: #f5f5f5;
 }
 
-.photo-img {
+.photo-cell-main {
+  grid-row: 1 / 3;
+  grid-column: 1 / 3;
+}
+
+.photo-cell-img {
   width: 100%;
   height: 100%;
 }
 
-.main-tag {
+.photo-watermark {
   position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  background: #FF6B9D;
-  color: #fff;
+  right: 16rpx;
+  bottom: 16rpx;
+  color: rgba(255, 255, 255, 0.45);
   font-size: 20rpx;
-  padding: 4rpx 12rpx;
+  text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.photo-main-label {
+  position: absolute;
+  bottom: 6rpx;
+  left: 6rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 18rpx;
+  padding: 2rpx 8rpx;
   border-radius: 4rpx;
 }
 
-.photo-del {
+.photo-audit-overlay-large {
   position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  width: 40rpx;
-  height: 40rpx;
-  background: rgba(0, 0, 0, 0.5);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #fff;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 40rpx;
   font-size: 28rpx;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 8rpx 24rpx;
+  border-radius: 8rpx;
 }
 
-.photo-add {
-  width: calc(33.33% - 8rpx);
-  height: 220rpx;
+.photo-audit-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 22rpx;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 4rpx 16rpx;
+  border-radius: 6rpx;
+}
+
+.photo-delete-icon {
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  width: 40rpx;
+  height: 40rpx;
+  z-index: 2;
+
+  .delete-icon-img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.photo-delete-icon-text {
+  position: absolute;
+  top: 6rpx;
+  right: 6rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  z-index: 2;
+}
+
+.photo-cell-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   border: 2rpx dashed #ddd;
-  border-radius: 8rpx;
+  background: #fafafa;
+}
+
+.photo-add-plus {
+  font-size: 48rpx;
+  color: #ccc;
+  line-height: 1;
+
+  &.subtle {
+    font-size: 36rpx;
+    color: #e0e0e0;
+  }
+}
+
+.photo-add-text {
+  font-size: 22rpx;
+  color: #999;
+  margin-top: 6rpx;
+}
+
+.photo-cell-empty {
+  border: 2rpx dashed #eee;
+  background: #fafafa;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.add-plus {
-  font-size: 64rpx;
-  color: #ddd;
-  line-height: 1;
+.photo-section-footer {
+  margin-top: 14rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
 }
 
 .bottom-safe {

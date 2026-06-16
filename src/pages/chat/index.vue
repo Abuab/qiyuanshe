@@ -107,9 +107,6 @@
           />
         </view>
         <view class="action-buttons">
-          <view class="action-btn" @tap="chooseImage">
-            <text>📷</text>
-          </view>
           <view
             class="send-btn"
             :class="{ disabled: !canSend }"

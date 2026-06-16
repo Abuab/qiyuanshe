@@ -64,6 +64,45 @@
               />
             </el-form-item>
 
+            <el-form-item label="红娘按钮文字">
+              <el-input
+                v-model="basicConfig.matchmakerButtonText"
+                placeholder="红娘"
+              />
+              <div class="form-tip">小程序首页右下角悬浮按钮中的文字，Hi 后面的部分</div>
+            </el-form-item>
+
+            <el-form-item label="首页快捷入口">
+              <div v-for="(name, idx) in basicConfig.quickEntryNames" :key="idx" style="margin-bottom:8px">
+                <el-input
+                  v-model="basicConfig.quickEntryNames[idx]"
+                  :placeholder="['红娘评语','最新活动','相亲圈子','我们脱单了'][idx]"
+                  style="width:200px;margin-right:8px"
+                />
+                <span style="color:#909399;font-size:12px">卡片 {{ idx + 1 }}</span>
+              </div>
+              <div class="form-tip">首页顶部四个卡片的显示名称</div>
+            </el-form-item>
+
+            <el-form-item label="删除照片图标">
+              <div class="upload-item">
+                <el-image
+                  v-if="basicConfig.deletePhotoIcon"
+                  :src="basicConfig.deletePhotoIcon"
+                  class="logo-preview"
+                  fit="contain"
+                  style="width:48px;height:48px"
+                />
+                <el-upload
+                  action="#"
+                  :http-request="(opts: any) => uploadIcon(opts, 'page', 'deletePhotoIcon', 'default')"
+                  :show-file-list="false"
+                >
+                  <el-button size="small">上传图标</el-button>
+                </el-upload>
+              </div>
+              <div class="form-tip">编辑资料页照片右上角删除按钮图标 (24x24 PNG)</div>
+            </el-form-item>
 
           </el-form>
         </el-card>
@@ -537,6 +576,9 @@ const basicConfig = reactive({
   serviceWechat: '',
   logo: '',
   aboutUs: '',
+  matchmakerButtonText: '红娘',
+  quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
+  deletePhotoIcon: '',
 })
 
 const shareConfig = reactive({

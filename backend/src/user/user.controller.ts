@@ -171,7 +171,7 @@ export class UserController {
   ) {
     const userId = req.user.userId
     const count = await this.photoRepo.count({ where: { userId } })
-    if (count >= 9) return Result.serverError('最多上传9张照片')
+    if (count >= 6) return Result.serverError('最多上传6张照片')
     const isMain = count === 0 ? 1 : 0
     const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count, auditStatus: 0 })
     const saved = await this.photoRepo.save(photo)

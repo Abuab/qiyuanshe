@@ -3,7 +3,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
-        <text class="nav-title">相亲圈子</text>
+        <text class="nav-title">{{ entryName }}</text>
         <view class="nav-right"></view>
       </view>
     </view>
@@ -21,9 +21,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
+const entryName = computed(() => systemStore.quickEntryNames?.[2] || '相亲圈子')
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)

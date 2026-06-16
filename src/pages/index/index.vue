@@ -34,7 +34,7 @@
 
         <view class="quick-entry-section">
           <view
-            v-for="entry in quickEntries"
+            v-for="entry in quickEntriesText"
             :key="entry.id"
             class="quick-entry-item"
             @tap="handleQuickEntry(entry)"
@@ -42,7 +42,7 @@
             <view class="quick-entry-icon" :style="{ backgroundColor: entry.bgColor }">
               <image class="entry-icon" :src="entry.icon" mode="aspectFit"></image>
             </view>
-            <text class="quick-entry-text">{{ entry.name }}</text>
+            <text class="quick-entry-text">{{ entry.displayName }}</text>
           </view>
         </view>
       </view>
@@ -151,7 +151,7 @@
     <!-- Hi红娘悬浮按钮 -->
     <view class="float-matchmaker" @tap="handleMatchmakerFloat">
       <text class="float-hi">Hi</text>
-      <text class="float-label">红娘</text>
+      <text class="float-label">{{ matchmakerButtonText }}</text>
     </view>
 
     <!-- 一键回到顶部按钮 -->
@@ -229,6 +229,7 @@ import { useSystemStore } from '@/store/system'
 interface QuickEntry {
   id: number
   name: string
+  displayName?: string
   icon: string
   bgColor: string
 }
@@ -250,6 +251,11 @@ const quickEntries: QuickEntry[] = [
   { id: 3, name: '相亲圈子', icon: icons.quickEntry.datingCircle, bgColor: '#EDE0FF' },
   { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF0D6' },
 ]
+
+const quickEntriesText = computed(() => {
+  const names = systemStore.quickEntryNames || []
+  return quickEntries.map((e, i) => ({ ...e, displayName: names[i] || e.name }))
+})
 
 const filterTabs: FilterTab[] = [
   { label: '活跃', value: 'active' },
@@ -291,6 +297,7 @@ const filterStore = useFilterStore()
 const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName)
+const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
@@ -380,13 +387,13 @@ const switchFilter = (value: string) => {
 }
 
 const handleQuickEntry = (entry: QuickEntry) => {
-  if (entry.name === '最新活动') {
-    uni.navigateTo({ url: '/pages/activity-list/index' })
-  } else if (entry.name === '红娘评语') {
+  if (entry.id === 1) {
     uni.navigateTo({ url: '/pages/matchmaker-reviews/index' })
-  } else if (entry.name === '相亲圈子') {
+  } else if (entry.id === 2) {
+    uni.navigateTo({ url: '/pages/activity-list/index' })
+  } else if (entry.id === 3) {
     uni.navigateTo({ url: '/pages/circles/index' })
-  } else if (entry.name === '我们脱单了') {
+  } else if (entry.id === 4) {
     uni.navigateTo({ url: '/pages/success-cases/index' })
   } else {
     showToast('功能开发中', 'none')

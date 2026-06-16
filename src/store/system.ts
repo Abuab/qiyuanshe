@@ -33,6 +33,9 @@ interface SystemConfig {
   shareTitle: string
   shareDesc: string
   matchmakers: Matchmaker[]
+  matchmakerButtonText: string
+  quickEntryNames: string[]
+  deletePhotoIcon: string
   icons: IconConfig
 }
 
@@ -53,6 +56,9 @@ export const useSystemStore = defineStore('system', () => {
   const appName = ref<string>('')
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
+  const matchmakerButtonText = ref<string>('红娘')
+  const quickEntryNames = ref<string[]>(['红娘评语', '最新活动', '相亲圈子', '我们脱单了'])
+  const deletePhotoIcon = ref<string>('')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -68,6 +74,9 @@ export const useSystemStore = defineStore('system', () => {
         shareTitle.value = res.shareTitle !== undefined ? res.shareTitle : shareTitle.value
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
+        matchmakerButtonText.value = res.matchmakerButtonText || matchmakerButtonText.value
+        quickEntryNames.value = res.quickEntryNames || quickEntryNames.value
+        deletePhotoIcon.value = res.deletePhotoIcon || ''
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -101,6 +110,9 @@ export const useSystemStore = defineStore('system', () => {
           shareTitle.value = config.shareTitle || shareTitle.value
           shareDesc.value = config.shareDesc || shareDesc.value
           matchmakers.value = config.matchmakers || matchmakers.value
+          matchmakerButtonText.value = config.matchmakerButtonText || matchmakerButtonText.value
+          quickEntryNames.value = config.quickEntryNames || quickEntryNames.value
+          deletePhotoIcon.value = config.deletePhotoIcon || ''
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -116,6 +128,9 @@ export const useSystemStore = defineStore('system', () => {
       shareTitle: shareTitle.value,
       shareDesc: shareDesc.value,
       matchmakers: matchmakers.value,
+      matchmakerButtonText: matchmakerButtonText.value,
+      quickEntryNames: quickEntryNames.value,
+      deletePhotoIcon: deletePhotoIcon.value,
       icons: icons.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -129,6 +144,9 @@ export const useSystemStore = defineStore('system', () => {
     shareTitle,
     shareDesc,
     matchmakers,
+    matchmakerButtonText,
+    quickEntryNames,
+    deletePhotoIcon,
     icons,
     dicts,
     loadSystemConfig,
