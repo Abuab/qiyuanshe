@@ -958,6 +958,7 @@ const createLoading = ref(false)
 const createAvatarUploading = ref(false)
 const createPhotoUploading = ref(false)
 const createPhotoUrls = ref<string[]>([])
+const editingOriginalPhotoUrls = ref<string[]>([])
 const createForm = reactive({
   avatar: '',
   nickname: '',
@@ -1195,6 +1196,7 @@ async function handleCreate() {
     isRealName: 0,
   })
   createPhotoUrls.value = []
+  editingOriginalPhotoUrls.value = []
   // 重置城市选择器
   hometownProvinceId.value = undefined
   hometownCityId.value = undefined
@@ -1250,6 +1252,19 @@ async function handleCreateSubmit() {
       }
       delete payload.photoUrls
       await adminUsers.update(editingUserId.value, payload)
+
+      // 新增的照片通过 addUserPhoto 上传
+      const newUrls = createPhotoUrls.value.filter(
+        (url) => !editingOriginalPhotoUrls.value.includes(url)
+      )
+      for (const url of newUrls) {
+        try {
+          await adminUsers.addUserPhoto(editingUserId.value!, url)
+        } catch (e) {
+          console.error('上传照片失败:', url, e)
+        }
+      }
+
       ElMessage.success('用户资料已更新')
       createDialogVisible.value = false
       editingUserId.value = null
@@ -1510,6 +1525,7 @@ async function handleEditUser(row: User) {
   // 回填照片
   if (user.photos && Array.isArray(user.photos)) {
     createPhotoUrls.value = user.photos.map((p: any) => p.photoUrl)
+    editingOriginalPhotoUrls.value = [...createPhotoUrls.value]
   }
 
   // 回填家乡/居住地级联选择器（失败不阻塞弹窗）
