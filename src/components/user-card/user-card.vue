@@ -23,8 +23,10 @@
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
         </view>
-        <view v-if="user.isRealName" class="real-name-badge">已实名</view>
-        <text v-if="user.age" class="age-text">{{ user.age }}岁</text>
+        <view v-if="user.isRealName" class="real-name-badge">
+          <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />
+          <text>已实名</text>
+        </view>
       </view>
 
       <view class="tags-area">
@@ -33,10 +35,8 @@
           <text v-if="user.height" class="tag-badge tag-height">{{ user.height }}cm</text>
           <text v-if="user.education" class="tag-badge tag-edu">{{ user.education }}</text>
         </view>
-        <view v-if="user.housingStatus || user.occupation || user.incomeRange" class="tags-line tags-line-2">
-          <text v-if="user.housingStatus" class="tag-dot-text">{{ user.housingStatus }}</text>
-          <text v-if="user.occupation" class="tag-dot-text">{{ user.occupation }}</text>
-          <text v-if="user.incomeRange" class="tag-dot-text">{{ user.incomeRange }}</text>
+        <view v-if="computedSecondLine.length > 0" class="tags-line tags-line-2">
+          <text class="tag-dot-text">{{ computedSecondLine.join(' · ') }}</text>
         </view>
       </view>
 
@@ -69,6 +69,7 @@
 import { computed, ref } from 'vue'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
+import { useIcon } from '@/composables/useIcon'
 
 export interface UserCardData {
   id: number
@@ -102,8 +103,21 @@ const emit = defineEmits<{
   (e: 'click', user: UserCardData): void
 }>()
 
+const { getPageIcon } = useIcon()
 const avatarError = ref(false)
 const photoFailedMap = ref<Record<string, true>>({})
+
+const realNameIcon = computed(() => {
+  return getPageIcon('realNameIcon') || ''
+})
+
+const computedSecondLine = computed(() => {
+  const parts: string[] = []
+  if (props.user.housingStatus) parts.push(props.user.housingStatus)
+  if (props.user.occupation) parts.push(props.user.occupation)
+  if (props.user.incomeRange) parts.push(props.user.incomeRange)
+  return parts
+})
 
 const avatarUrl = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
@@ -225,20 +239,21 @@ const handleClick = () => {
 
 .real-name-badge {
   flex-shrink: 0;
-  padding: 2rpx 8rpx;
+  display: flex;
+  align-items: center;
+  padding: 2rpx 10rpx;
   font-size: 20rpx;
   color: #1890ff;
   background-color: #e6f7ff;
-  border-radius: 4rpx;
+  border-radius: 20rpx;
   line-height: 1.6;
   margin-left: 8rpx;
 }
 
-.age-text {
-  font-size: 24rpx;
-  color: #999;
-  flex-shrink: 0;
-  margin-left: auto;
+.real-name-icon-img {
+  width: 24rpx;
+  height: 24rpx;
+  margin-right: 4rpx;
 }
 
 /* --- 标签区 --- */
@@ -263,8 +278,8 @@ const handleClick = () => {
 
 .tag-badge {
   font-size: 22rpx;
-  padding: 2rpx 10rpx;
-  border-radius: 6rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
   flex-shrink: 0;
   margin-right: 8rpx;
 }
@@ -275,8 +290,7 @@ const handleClick = () => {
 
 .tag-dot-text {
   font-size: 22rpx;
-  color: #999;
-  margin-right: 10rpx;
+  color: #666;
 }
 
 /* --- 位置 --- */

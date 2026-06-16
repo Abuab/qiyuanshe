@@ -1,7 +1,7 @@
 <template>
   <view class="dynamic-page">
     <!-- 顶部固定品牌栏 -->
-    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px' }">
       <view class="nav-left" @tap="goHome">
         <image
           class="home-icon-img"
@@ -230,7 +230,7 @@
     </scroll-view>
 
     <!-- 固定标签栏（原位置标签栏滚出视野后固定到品牌栏下方） -->
-    <view v-if="showFixedTab" class="tab-bar-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
+    <view v-if="showFixedTab" class="tab-bar-fixed" :style="{ top: (statusBarHeight + 50) + 'px' }">
       <view
         v-for="tab in tabs"
         :key="tab.key"
@@ -339,7 +339,7 @@ const mmEyeIcon = computed(() => {
 
 // scroll-view 绝对定位样式（使 @scroll 事件生效）
 const scrollViewStyle = computed(() => {
-  const top = (statusBarHeight.value || 20) + 44
+  const top = (statusBarHeight.value || 20) + 50
   return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
 })
 
@@ -1157,8 +1157,8 @@ onMounted(() => {
   margin-right: 4rpx;
   font-style: italic;
   background-color: #FFE4EC;
-  border-radius: 6rpx;
-  padding: 2rpx 10rpx;
+  border-radius: 20rpx;
+  padding: 4rpx 14rpx;
 }
 
 .hi-text {

@@ -104,6 +104,8 @@ export class PublicSystemController {
         mmEye: fallback(page.mmEye),
         // 消息页图标
         systemNotify: fallback(page.systemNotify),
+        // 用户卡片图标
+        realNameIcon: fallback(page.realNameIcon),
       },
     }
   }
