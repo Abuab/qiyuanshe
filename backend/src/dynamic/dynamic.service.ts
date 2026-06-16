@@ -6,6 +6,8 @@ import { DynamicLike } from '../entities/DynamicLike'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Matchmaker } from '../entities/Matchmaker'
 import { User } from '../entities/User'
+import { UserPhoto } from '../entities/UserPhoto'
+import { Follow } from '../entities/Follow'
 import { SystemService } from '../system/system.service'
 
 @Injectable()
@@ -17,6 +19,10 @@ export class DynamicService {
     private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserPhoto)
+    private readonly userPhotoRepository: Repository<UserPhoto>,
+    @InjectRepository(Follow)
+    private readonly followRepository: Repository<Follow>,
     @InjectRepository(MatchRecord)
     private readonly matchRecordRepository: Repository<MatchRecord>,
     @InjectRepository(Matchmaker)
@@ -31,110 +37,117 @@ export class DynamicService {
     limit: number,
     currentUserId?: number,
     type?: string,
-    followUserIds?: number[],
   ) {
     // 红娘动态：从 match_records 表查询
     if (type === 'matchmaker') {
       return this.getMatchmakerDynamics(page, limit, currentUserId)
     }
 
-    const qb = this.dynamicRepository
-      .createQueryBuilder('dynamic')
-      .leftJoinAndSelect('dynamic.user', 'user')
-      .where("dynamic.type IN ('photo', 'answer')")
-      .orderBy('dynamic.createdAt', 'DESC')
+    // "全部" / "关注" tab：直接从 users 表读取，所有有照片的用户自动展示
+    return this.getUserDynamics(page, limit, currentUserId, type)
+  }
+
+  /** 从 users 表直接读取用户动态（含照片、简介） */
+  private async getUserDynamics(
+    page: number,
+    limit: number,
+    currentUserId?: number,
+    type?: string,
+  ) {
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .where('user.status = :status', { status: 1 })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+      .andWhere('user.id != :adminId', { adminId: 1 })
+      .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
 
-    if (type && type !== 'all') {
-      qb.andWhere('dynamic.type = :type', { type })
-    }
-
-    if (followUserIds && followUserIds.length > 0) {
-      qb.andWhere('dynamic.userId IN (:...followUserIds)', { followUserIds })
-    }
-
     if (currentUserId) {
-      qb.andWhere('dynamic.userId != :currentUserId', { currentUserId })
+      qb.andWhere('user.id != :currentUserId', { currentUserId })
     }
 
-    const [list, total] = await qb.getManyAndCount()
-
-    // 用 raw SQL 直接读取标签列，绕过 TypeORM simple-json 解析问题
-    const userIds = [...new Set(list.map((d) => d.userId).filter(Boolean))]
-    const tagMap = new Map<number, { personalityTags: any; hopeTaTags: any }>()
-    if (userIds.length > 0) {
-      const rows: any[] = await this.dataSource.query(
-        `SELECT id, personalityTags, hopeTaTags FROM users WHERE id IN (${userIds.join(',')})`,
-      )
-      for (const row of rows) {
-        tagMap.set(row.id, {
-          personalityTags: this.parseJsonField(row.personalityTags),
-          hopeTaTags: this.parseJsonField(row.hopeTaTags),
+    // "关注" tab：只显示当前用户关注的人
+    if (type === 'follow') {
+      if (currentUserId) {
+        const follows = await this.followRepository.find({
+          where: { userId: currentUserId },
+          select: ['targetUserId'],
         })
+        const fIds = follows.map((f) => f.targetUserId)
+        if (fIds.length === 0) {
+          return { list: [], total: 0, page, limit }
+        }
+        qb.andWhere('user.id IN (:...fIds)', { fIds })
+      } else {
+        return { list: [], total: 0, page, limit }
       }
     }
+
+    const [users, total] = await qb.getManyAndCount()
+
+    if (users.length === 0) {
+      return { list: [], total, page, limit }
+    }
+
+    const userIds = users.map((u) => u.id)
 
     // 读取简介模板配置
     const rawTemplate = await this.systemService.getConfig('intro.template')
     const introTemplate = rawTemplate || '我是一个{character}的人，我喜欢{hobby}，我{loveRule}，希望你{hopeTa}'
     const introSep = (await this.systemService.getConfig('intro.separator')) || '、'
 
-    const formattedList = await Promise.all(
-      list.map(async (item) => {
-        let isLiked = false
-        let likeUsers: { id: number; nickname: string }[] = []
+    // 批量读取每个用户的前 4 张照片
+    const allPhotos = await this.userPhotoRepository
+      .createQueryBuilder('photo')
+      .where('photo.userId IN (:...userIds)', { userIds })
+      .orderBy('photo.sortOrder', 'ASC')
+      .getMany()
 
-        if (item.likeCount > 0) {
-          const likes = await this.dynamicLikeRepository.find({
-            where: { dynamicId: item.id },
-            relations: ['user'],
-            order: { createdAt: 'DESC' },
-            take: 20,
-          })
+    const photosMap = new Map<number, string[]>()
+    for (const p of allPhotos) {
+      const arr = photosMap.get(p.userId) || []
+      if (arr.length < 4) {
+        const url = p.photoUrl || ''
+        arr.push(url.startsWith('http') ? url : url.startsWith('/') ? url : '/' + url)
+      }
+      photosMap.set(p.userId, arr)
+    }
 
-          likeUsers = likes.map((l) => ({
-            id: l.userId,
-            nickname: l.user?.nickname || '',
-          }))
+    const list = users.map((user) => {
+      const personalityTags = this.parseJsonField(user.personalityTags)
+      const hopeTaTags = this.parseJsonField(user.hopeTaTags)
+      const introText = personalityTags
+        ? this.buildIntroFromTags(personalityTags, hopeTaTags, introTemplate, introSep)
+        : ''
 
-          if (currentUserId) {
-            isLiked = likes.some((l) => l.userId === currentUserId)
-          }
-        }
+      const images = photosMap.get(user.id) || []
 
-        // 用 raw SQL 加载的标签构建简介
-        const tags = tagMap.get(item.userId)
-        const introText = tags
-          ? this.buildIntroFromTags(tags.personalityTags, tags.hopeTaTags, introTemplate, introSep)
-          : ''
+      return {
+        id: user.id,
+        type: 'photo',
+        userId: user.id,
+        nickname: user.nickname || '',
+        avatar: user.avatar || '',
+        isRealName: user.isRealName || 0,
+        age: user.age || 0,
+        height: user.height || 0,
+        education: user.education || '',
+        incomeRange: user.incomeRange || '',
+        introText,
+        content: '',
+        images,
+        questionId: undefined as number | undefined,
+        questionTitle: undefined as string | undefined,
+        createdAt: user.createdAt,
+        likeCount: 0,
+        commentCount: 0,
+        isLiked: false,
+        likeUsers: [] as { id: number; nickname: string }[],
+      }
+    })
 
-        return {
-          id: item.id,
-          type: item.type,
-          userId: item.userId,
-          nickname: item.user?.nickname || '',
-          avatar: item.user?.avatar || '',
-          isRealName: item.user?.isRealName || 0,
-          age: item.user?.age || 0,
-          height: item.user?.height || 0,
-          education: item.user?.education || '',
-          incomeRange: item.user?.incomeRange || '',
-          introText,
-          content: item.content,
-          images: item.images || [],
-          questionId: item.questionId,
-          questionTitle: item.questionTitle,
-          createdAt: item.createdAt,
-          likeCount: item.likeCount,
-          commentCount: item.commentCount,
-          isLiked,
-          likeUsers,
-        }
-      }),
-    )
-
-    return { list: formattedList, total, page, limit }
+    return { list, total, page, limit }
   }
 
   /** 获取红娘动态列表（从 match_records 查询） */
