@@ -682,7 +682,7 @@ const pageIconList = [
   { key: 'shareBtnIcon', label: '用户详情-分享按钮图标' },
   { key: 'realNameIcon', label: '已实名图标' },
   { key: 'messageNotifyIcon', label: '消息-系统通知图标' },
-  { key: 'matchmakerEyeIcon', label: '红娘牵线-眼睛图标' },
+  { key: 'mmEye', label: '红娘牵线-眼睛图标' },
   { key: 'deletePhotoIcon', label: '编辑资料-删除照片图标' },
 ]
 
@@ -733,6 +733,7 @@ const iconConfig = reactive({
     followIcon: '',
     shareBtnIcon: '',
     deletePhotoIcon: '',
+    mmEye: '',
   } as Record<string, string>,
 })
 

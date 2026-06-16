@@ -150,7 +150,7 @@
 
     <!-- Hi红娘悬浮按钮 -->
     <view class="float-matchmaker" @tap="handleMatchmakerFloat">
-      <text class="float-hi">{{ matchmakerHiText }}</text>
+      <text v-if="matchmakerHiText" class="float-hi">{{ matchmakerHiText }}</text>
       <text class="float-label">{{ matchmakerButtonText }}</text>
     </view>
 

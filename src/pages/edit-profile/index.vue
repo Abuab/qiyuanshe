@@ -24,7 +24,7 @@
             <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
             <view class="photo-watermark">{{ appName }}</view>
             <view class="photo-main-label">头像/封面</view>
-            <view v-if="photos[0].auditStatus != null && photos[0].auditStatus === 0" class="photo-audit-overlay-large">待审核</view>
+            <view v-if="Number(photos[0].auditStatus) === 0" class="photo-audit-overlay-large">待审核</view>
           </view>
           <!-- 占位 - 空的第一张 -->
           <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
@@ -37,7 +37,7 @@
             <view class="photo-cell" @tap="previewPhoto(idx + 1)">
               <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
               <view class="photo-watermark">{{ appName }}</view>
-              <view v-if="p.auditStatus != null && p.auditStatus === 0" class="photo-audit-overlay">待审核</view>
+              <view v-if="Number(p.auditStatus) === 0" class="photo-audit-overlay">待审核</view>
               <image v-if="icons.page.deletePhotoIcon" class="photo-delete-icon" :src="icons.page.deletePhotoIcon" mode="aspectFit" @tap.stop="deletePhoto(p.id)" />
               <view v-else class="photo-delete-icon-text" @tap.stop="deletePhoto(p.id)">✕</view>
             </view>
@@ -55,23 +55,6 @@
         </view>
         <view class="photo-section-footer">
           <text>添加个人照片，获得更多异性关注</text>
-        </view>
-      </view>
-
-      <!-- 头像 -->
-      <view class="section-card">
-        <text class="section-title">头像</text>
-        <view class="avatar-row" @tap="chooseAvatar">
-          <image
-            class="avatar-img"
-            :src="form.avatar || '/static/default-avatar.png'"
-            mode="aspectFill"
-          />
-          <text class="avatar-tip">点击更换头像</text>
-        </view>
-        <view class="avatar-badges" v-if="form.avatarReviewStatus === 0 || form.avatarReviewStatus === 2">
-          <text v-if="form.avatarReviewStatus === 0" class="badge pending">头像审核中</text>
-          <text v-if="form.avatarReviewStatus === 2" class="badge rejected">头像已驳回</text>
         </view>
       </view>
 
