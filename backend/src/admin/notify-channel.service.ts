@@ -7,7 +7,6 @@ interface NotifyConfig {
   enabled?: boolean
   channel?: string
   webhookUrl?: string
-  adminPhones?: string
   notifyTypes?: string[]
 }
 

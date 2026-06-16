@@ -849,15 +849,15 @@ onMounted(() => {
 
 .mm-official-tag {
   margin-left: 6rpx;
-  padding: 1rpx 6rpx 2rpx;
+  padding: 0 6rpx 1rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
-  line-height: 1.1;
+  line-height: 1;
 
   text {
     font-size: 18rpx;
     color: #fff;
-    line-height: 1.1;
+    line-height: 1;
   }
 }
 

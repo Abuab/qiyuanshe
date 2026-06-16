@@ -17,6 +17,7 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminUserService } from './user.service'
+import { NotifyChannelService } from './notify-channel.service'
 import { Result } from '../common/result'
 
 interface UserFilter {
@@ -47,7 +48,10 @@ interface UserFilter {
 @Roles('super_admin', 'matchmaker', 'operator', 'readonly')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminUserController {
-  constructor(private readonly userService: AdminUserService) {}
+  constructor(
+    private readonly userService: AdminUserService,
+    private readonly notifyService: NotifyChannelService,
+  ) {}
 
   @Get()
   async list(@Query() filter: UserFilter) {
@@ -115,6 +119,8 @@ export class AdminUserController {
     @Body() body: { photoUrl: string },
   ) {
     const photo = await this.userService.addPhoto(id, body.photoUrl)
+    // 发送新照片上传通知
+    this.notifyService.sendAuditNotify('photo', `用户 ${id} 上传了新照片，审核ID: ${photo.id}`).catch(() => {})
     return Result.success(photo, '照片上传成功')
   }
 

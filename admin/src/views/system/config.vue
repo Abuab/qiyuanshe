@@ -331,9 +331,7 @@
             </el-form-item>
             <el-form-item label="Webhook地址">
               <el-input v-model="notifyConfig.webhookUrl" placeholder="请输入机器人Webhook地址" />
-            </el-form-item>
-            <el-form-item label="通知管理员">
-              <el-input v-model="notifyConfig.adminPhones" placeholder="管理员手机号，多个用逗号分隔" />
+              <div v-if="webhookHint" class="webhook-hint">{{ webhookHint }}</div>
             </el-form-item>
             <el-form-item label="通知类型">
               <el-checkbox-group v-model="notifyConfig.notifyTypes">
@@ -523,8 +521,12 @@ const notifyConfig = reactive({
   enabled: false,
   channel: 'wecom',
   webhookUrl: '',
-  adminPhones: '',
   notifyTypes: ['photo'] as string[],
+})
+const _realWebhookUrl = ref('')
+const webhookHint = computed(() => {
+  if (!_realWebhookUrl.value) return ''
+  return '当前地址: ' + _realWebhookUrl.value.slice(0, -6) + '******'
 })
 
 const auditConfig = reactive({
@@ -667,6 +669,10 @@ async function fetchConfig() {
       // 通知通道
       if (res.data.notify) {
         Object.assign(notifyConfig, res.data.notify)
+        if (notifyConfig.webhookUrl && notifyConfig.webhookUrl.length > 6) {
+          _realWebhookUrl.value = notifyConfig.webhookUrl
+          notifyConfig.webhookUrl = notifyConfig.webhookUrl.slice(0, -6) + '******'
+        }
       }
       // 简介模板
       if (res.data.intro) {
@@ -689,13 +695,18 @@ async function fetchConfig() {
 async function handleSave() {
   saving.value = true
   try {
+    // 如果 webhook 未被修改（仍以 ****** 结尾），还原真实地址
+    const webhookToSave = notifyConfig.webhookUrl.endsWith('******')
+      ? _realWebhookUrl.value
+      : notifyConfig.webhookUrl
+
     const configs = {
       basic: { ...basicConfig },
       share: { ...shareConfig },
       vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
-      notify: { ...notifyConfig },
+      notify: { ...notifyConfig, webhookUrl: webhookToSave },
       intro: { ...introConfig },
       icon: {
         tabbar: { ...iconConfig.tabbar },
@@ -705,6 +716,13 @@ async function handleSave() {
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
+      // 保存后重新脱敏显示 webhook 地址
+      if (webhookToSave && webhookToSave.length > 6) {
+        _realWebhookUrl.value = webhookToSave
+        notifyConfig.webhookUrl = webhookToSave.slice(0, -6) + '******'
+      } else {
+        _realWebhookUrl.value = webhookToSave || ''
+      }
       // 直接写入 store + localStorage，持久化，刷新也不会丢
       systemStore.setAppName(basicConfig.appName)
       ElMessage.success('配置保存成功')
@@ -834,7 +852,14 @@ async function uploadIcon(
     font-size: 12px;
     color: #909399;
     margin-top: 4px;
-    line-height: 1.4;
+  }
+
+  .webhook-hint {
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+    font-family: monospace;
+    word-break: break-all;
   }
 
   .unit {
