@@ -723,7 +723,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 12rpx 0;
-  background-color: #FFF8FA;
+  background-color: #FFE4EC;
 }
 
 // 固定标签栏（滚出视野后固定）
@@ -768,7 +768,7 @@ onMounted(() => {
 }
 
 .content-scroll {
-  // 由 scrollViewStyle computed 动态设置 absolute 定位
+  background-color: #FFF8FA;
 }
 
 // 一键回到顶部按钮
@@ -852,11 +852,14 @@ onMounted(() => {
   padding: 0rpx 6rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
-  line-height: 1.2;
+  line-height: 1;
+  display: flex;
+  align-items: center;
 
   text {
     font-size: 18rpx;
     color: #fff;
+    line-height: 1;
   }
 }
 
