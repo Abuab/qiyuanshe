@@ -150,7 +150,7 @@
 
     <!-- Hi红娘悬浮按钮 -->
     <view class="float-matchmaker" @tap="handleMatchmakerFloat">
-      <text class="float-hi">Hi</text>
+      <text class="float-hi">{{ matchmakerHiText }}</text>
       <text class="float-label">{{ matchmakerButtonText }}</text>
     </view>
 
@@ -297,6 +297,7 @@ const filterStore = useFilterStore()
 const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName)
+const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
 const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {

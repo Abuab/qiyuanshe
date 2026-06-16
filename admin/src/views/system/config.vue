@@ -65,11 +65,20 @@
             </el-form-item>
 
             <el-form-item label="红娘按钮文字">
-              <el-input
-                v-model="basicConfig.matchmakerButtonText"
-                placeholder="红娘"
-              />
-              <div class="form-tip">小程序首页右下角悬浮按钮中的文字，Hi 后面的部分</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <el-input
+                  v-model="basicConfig.matchmakerHiText"
+                  placeholder="Hi"
+                  style="width:80px"
+                />
+                <span style="color:#909399">·</span>
+                <el-input
+                  v-model="basicConfig.matchmakerButtonText"
+                  placeholder="红娘"
+                  style="width:120px"
+                />
+              </div>
+              <div class="form-tip">小程序首页右下角悬浮按钮的文字，Hi 和后面的部分分别可配</div>
             </el-form-item>
 
             <el-form-item label="首页快捷入口">
@@ -82,26 +91,6 @@
                 <span style="color:#909399;font-size:12px">卡片 {{ idx + 1 }}</span>
               </div>
               <div class="form-tip">首页顶部四个卡片的显示名称</div>
-            </el-form-item>
-
-            <el-form-item label="删除照片图标">
-              <div class="upload-item">
-                <el-image
-                  v-if="basicConfig.deletePhotoIcon"
-                  :src="basicConfig.deletePhotoIcon"
-                  class="logo-preview"
-                  fit="contain"
-                  style="width:48px;height:48px"
-                />
-                <el-upload
-                  action="#"
-                  :http-request="(opts: any) => uploadIcon(opts, 'page', 'deletePhotoIcon', 'default')"
-                  :show-file-list="false"
-                >
-                  <el-button size="small">上传图标</el-button>
-                </el-upload>
-              </div>
-              <div class="form-tip">编辑资料页照片右上角删除按钮图标 (24x24 PNG)</div>
             </el-form-item>
 
           </el-form>
@@ -576,9 +565,9 @@ const basicConfig = reactive({
   serviceWechat: '',
   logo: '',
   aboutUs: '',
+  matchmakerHiText: 'Hi',
   matchmakerButtonText: '红娘',
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
-  deletePhotoIcon: '',
 })
 
 const shareConfig = reactive({
@@ -694,6 +683,7 @@ const pageIconList = [
   { key: 'realNameIcon', label: '已实名图标' },
   { key: 'messageNotifyIcon', label: '消息-系统通知图标' },
   { key: 'matchmakerEyeIcon', label: '红娘牵线-眼睛图标' },
+  { key: 'deletePhotoIcon', label: '编辑资料-删除照片图标' },
 ]
 
 interface TabbarIconItem {
@@ -742,6 +732,7 @@ const iconConfig = reactive({
     shareMoreIcon: '',
     followIcon: '',
     shareBtnIcon: '',
+    deletePhotoIcon: '',
   } as Record<string, string>,
 })
 

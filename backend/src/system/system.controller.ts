@@ -27,9 +27,9 @@ export class PublicSystemController {
       shareTitle: configs.share?.shareTitle || '栖缘社 - 遇见对的TA',
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
+      matchmakerHiText: configs.basic?.matchmakerHiText || 'Hi',
       matchmakerButtonText: configs.basic?.matchmakerButtonText || '红娘',
       quickEntryNames: configs.basic?.quickEntryNames || ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
-      deletePhotoIcon: configs.basic?.deletePhotoIcon || '',
       icons: this.buildIconConfig(configs.icon || {}),
     }
 
@@ -109,6 +109,8 @@ export class PublicSystemController {
         systemNotify: fallback(page.systemNotify),
         // 用户卡片图标
         realNameIcon: fallback(page.realNameIcon),
+        // 编辑资料-删除照片图标
+        deletePhotoIcon: fallback(page.deletePhotoIcon),
       },
     }
   }

@@ -12,6 +12,52 @@
     </view>
 
     <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 12) + 'px', height: 'calc(100vh - 120rpx)' }">
+      <!-- 个人形象展示 -->
+      <view class="section-card">
+        <view class="photo-section-header">
+          <view class="photo-title-bar"></view>
+          <text class="photo-section-title">个人形象展示</text>
+        </view>
+        <view class="photo-grid-9">
+          <!-- 第一张照片占4格 (2x2 左上角) -->
+          <view v-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
+            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
+            <view class="photo-watermark">{{ appName }}</view>
+            <view class="photo-main-label">头像/封面</view>
+            <view v-if="photos[0].auditStatus != null && photos[0].auditStatus === 0" class="photo-audit-overlay-large">待审核</view>
+          </view>
+          <!-- 占位 - 空的第一张 -->
+          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
+            <text class="photo-add-plus">+</text>
+            <text class="photo-add-text">添加照片</text>
+          </view>
+
+          <!-- 第2-6张照片 -->
+          <template v-for="(p, idx) in remainingPhotos" :key="p.id">
+            <view class="photo-cell" @tap="previewPhoto(idx + 1)">
+              <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
+              <view class="photo-watermark">{{ appName }}</view>
+              <view v-if="p.auditStatus != null && p.auditStatus === 0" class="photo-audit-overlay">待审核</view>
+              <image v-if="icons.page.deletePhotoIcon" class="photo-delete-icon" :src="icons.page.deletePhotoIcon" mode="aspectFit" @tap.stop="deletePhoto(p.id)" />
+              <view v-else class="photo-delete-icon-text" @tap.stop="deletePhoto(p.id)">✕</view>
+            </view>
+          </template>
+
+          <!-- 剩余空占位格 -->
+          <view
+            v-for="n in emptyCells"
+            :key="'empty-' + n"
+            class="photo-cell photo-cell-empty"
+            @tap="photos.length < 6 ? uploadPhoto() : null"
+          >
+            <text v-if="photos.length < 6" class="photo-add-plus subtle">+</text>
+          </view>
+        </view>
+        <view class="photo-section-footer">
+          <text>添加个人照片，获得更多异性关注</text>
+        </view>
+      </view>
+
       <!-- 头像 -->
       <view class="section-card">
         <text class="section-title">头像</text>
@@ -174,54 +220,6 @@
             <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
             <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
-        </view>
-      </view>
-
-      <!-- 个人形象展示 -->
-      <view class="section-card">
-        <view class="photo-section-header">
-          <view class="photo-title-bar"></view>
-          <text class="photo-section-title">个人形象展示</text>
-        </view>
-        <view class="photo-grid-9">
-          <!-- 第一张照片占4格 (2x2 左上角) -->
-          <view v-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
-            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
-            <view class="photo-watermark">{{ appName }}</view>
-            <view class="photo-main-label">头像/封面</view>
-            <view v-if="photos[0].auditStatus === 0" class="photo-audit-overlay-large">待审核</view>
-          </view>
-          <!-- 占位 - 空的第一张 -->
-          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
-            <text class="photo-add-plus">+</text>
-            <text class="photo-add-text">添加照片</text>
-          </view>
-
-          <!-- 第2-6张照片 -->
-          <template v-for="(p, idx) in remainingPhotos" :key="p.id">
-            <view class="photo-cell" @tap="previewPhoto(idx + 1)">
-              <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
-              <view class="photo-watermark">{{ appName }}</view>
-              <view v-if="p.auditStatus === 0" class="photo-audit-overlay">待审核</view>
-              <view v-if="deletePhotoIcon" class="photo-delete-icon" @tap.stop="deletePhoto(p.id)">
-                <image :src="deletePhotoIcon" mode="aspectFit" class="delete-icon-img" />
-              </view>
-              <view v-else class="photo-delete-icon-text" @tap.stop="deletePhoto(p.id)">✕</view>
-            </view>
-          </template>
-
-          <!-- 剩余空占位格 -->
-          <view
-            v-for="n in emptyCells"
-            :key="'empty-' + n"
-            class="photo-cell photo-cell-empty"
-            @tap="photos.length < 6 ? uploadPhoto() : null"
-          >
-            <text v-if="photos.length < 6" class="photo-add-plus subtle">+</text>
-          </view>
-        </view>
-        <view class="photo-section-footer">
-          <text>添加个人照片，获得更多异性关注</text>
         </view>
       </view>
 
@@ -561,7 +559,7 @@ import CityPicker from '@/components/city-picker/city-picker.vue'
 
 const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
-const deletePhotoIcon = computed(() => systemStore.deletePhotoIcon || '')
+const icons = computed(() => systemStore.icons)
 const saving = ref(false)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -1701,10 +1699,10 @@ const handleBack = () => {
 }
 
 .photo-section-footer {
+  align-self: flex-start;
   margin-top: 14rpx;
-  text-align: center;
   font-size: 24rpx;
-  color: #999;
+  color: #333;
 }
 
 .bottom-safe {
