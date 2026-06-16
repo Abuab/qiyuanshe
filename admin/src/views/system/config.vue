@@ -330,7 +330,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="Webhook地址">
-              <el-input v-model="notifyConfig.webhookUrl" placeholder="请输入机器人Webhook地址" />
+              <el-input v-model="currentWebhookUrl" placeholder="请输入机器人Webhook地址" />
               <div v-if="webhookHint" class="webhook-hint">{{ webhookHint }}</div>
             </el-form-item>
             <el-form-item label="通知类型">
@@ -520,13 +520,20 @@ const paymentConfig = reactive({
 const notifyConfig = reactive({
   enabled: false,
   channel: 'wecom',
-  webhookUrl: '',
+  webhookUrls: { wecom: '', feishu: '', dingtalk: '' } as Record<string, string>,
   notifyTypes: ['photo'] as string[],
 })
-const _realWebhookUrl = ref('')
+// 当前选中通道的真实 webhook 地址（未脱敏）
+const _realWebhookByChannel = reactive<Record<string, string>>({ wecom: '', feishu: '', dingtalk: '' })
+// 当前选中通道的显示地址（可能已脱敏）
+const currentWebhookUrl = computed({
+  get: () => notifyConfig.webhookUrls[notifyConfig.channel] || '',
+  set: (val: string) => { notifyConfig.webhookUrls[notifyConfig.channel] = val },
+})
 const webhookHint = computed(() => {
-  if (!_realWebhookUrl.value) return ''
-  return '当前地址: ' + _realWebhookUrl.value.slice(0, -6) + '******'
+  const real = _realWebhookByChannel[notifyConfig.channel]
+  if (!real || real.length <= 20) return ''
+  return '当前地址: ' + real.slice(0, -20) + '*'.repeat(20)
 })
 
 const auditConfig = reactive({
@@ -668,10 +675,24 @@ async function fetchConfig() {
       Object.assign(auditConfig, res.data.audit || {})
       // 通知通道
       if (res.data.notify) {
-        Object.assign(notifyConfig, res.data.notify)
-        if (notifyConfig.webhookUrl && notifyConfig.webhookUrl.length > 6) {
-          _realWebhookUrl.value = notifyConfig.webhookUrl
-          notifyConfig.webhookUrl = notifyConfig.webhookUrl.slice(0, -6) + '******'
+        const n = res.data.notify as any
+        // 兼容旧格式：单个 webhookUrl → 迁移到当前通道
+        if (n.webhookUrl && !n.webhookUrls) {
+          n.webhookUrls = { wecom: '', feishu: '', dingtalk: '' }
+          n.webhookUrls[n.channel || 'wecom'] = n.webhookUrl
+          delete n.webhookUrl
+        }
+        Object.assign(notifyConfig, n)
+        // 脱敏各通道 webhook 地址
+        const urls = notifyConfig.webhookUrls || {}
+        for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
+          const u = urls[ch]
+          if (u && u.length > 20) {
+            _realWebhookByChannel[ch] = u
+            urls[ch] = u.slice(0, -20) + '*'.repeat(20)
+          } else {
+            _realWebhookByChannel[ch] = u || ''
+          }
         }
       }
       // 简介模板
@@ -695,10 +716,12 @@ async function fetchConfig() {
 async function handleSave() {
   saving.value = true
   try {
-    // 如果 webhook 未被修改（仍以 ****** 结尾），还原真实地址
-    const webhookToSave = notifyConfig.webhookUrl.endsWith('******')
-      ? _realWebhookUrl.value
-      : notifyConfig.webhookUrl
+    // 构建待保存的 webhookUrls：如果某通道地址以 * 结尾（未被修改），则还原真实地址
+    const webhookUrlsToSave: Record<string, string> = {}
+    for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
+      const val = notifyConfig.webhookUrls[ch] || ''
+      webhookUrlsToSave[ch] = val.endsWith('*') ? (_realWebhookByChannel[ch] || val) : val
+    }
 
     const configs = {
       basic: { ...basicConfig },
@@ -706,7 +729,7 @@ async function handleSave() {
       vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
-      notify: { ...notifyConfig, webhookUrl: webhookToSave },
+      notify: { enabled: notifyConfig.enabled, channel: notifyConfig.channel, webhookUrls: webhookUrlsToSave, notifyTypes: notifyConfig.notifyTypes },
       intro: { ...introConfig },
       icon: {
         tabbar: { ...iconConfig.tabbar },
@@ -716,12 +739,16 @@ async function handleSave() {
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
-      // 保存后重新脱敏显示 webhook 地址
-      if (webhookToSave && webhookToSave.length > 6) {
-        _realWebhookUrl.value = webhookToSave
-        notifyConfig.webhookUrl = webhookToSave.slice(0, -6) + '******'
-      } else {
-        _realWebhookUrl.value = webhookToSave || ''
+      // 保存后重新脱敏各通道 webhook 地址
+      for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
+        const u = webhookUrlsToSave[ch]
+        if (u && u.length > 20) {
+          _realWebhookByChannel[ch] = u
+          notifyConfig.webhookUrls[ch] = u.slice(0, -20) + '*'.repeat(20)
+        } else {
+          _realWebhookByChannel[ch] = u || ''
+          notifyConfig.webhookUrls[ch] = u || ''
+        }
       }
       // 直接写入 store + localStorage，持久化，刷新也不会丢
       systemStore.setAppName(basicConfig.appName)

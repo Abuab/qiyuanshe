@@ -6,6 +6,8 @@ import { SystemConfig } from '../entities/SystemConfig'
 interface NotifyConfig {
   enabled?: boolean
   channel?: string
+  webhookUrls?: Record<string, string>
+  // 兼容旧格式
   webhookUrl?: string
   notifyTypes?: string[]
 }
@@ -28,16 +30,25 @@ export class NotifyChannelService {
     const types = config.notifyTypes || []
     if (!types.includes(type)) return
 
-    if (!config.webhookUrl) {
+    const channel = config.channel || 'wecom'
+    // 优先用新格式 webhookUrls，兼容旧格式 webhookUrl
+    let webhookUrl = ''
+    if (config.webhookUrls && config.webhookUrls[channel]) {
+      webhookUrl = config.webhookUrls[channel]
+    } else if (config.webhookUrl) {
+      webhookUrl = config.webhookUrl
+    }
+
+    if (!webhookUrl) {
       this.logger.warn('通知通道已启用但未配置Webhook地址')
       return
     }
 
-    const message = this.buildMessage(config.channel || 'wecom', type, content)
+    const message = this.buildMessage(channel, type, content)
 
     try {
-      await this.sendWebhook(config.webhookUrl, message)
-      this.logger.log(`通知已发送: type=${type}, channel=${config.channel}`)
+      await this.sendWebhook(webhookUrl, message)
+      this.logger.log(`通知已发送: type=${type}, channel=${channel}`)
     } catch (e: any) {
       this.logger.error(`通知发送失败: ${e.message}`)
     }
