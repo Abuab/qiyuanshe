@@ -321,17 +321,19 @@
           <el-form :model="notifyConfig" label-width="140px">
             <el-form-item label="启用通知">
               <el-switch v-model="notifyConfig.enabled" />
+              <span class="form-tip" style="margin-left:12px">启用后，有配置 webhook 的通道均会收到通知</span>
             </el-form-item>
-            <el-form-item label="通知方式">
-              <el-select v-model="notifyConfig.channel" placeholder="请选择通知方式" style="width: 200px">
-                <el-option label="企业微信" value="wecom" />
-                <el-option label="飞书" value="feishu" />
-                <el-option label="钉钉" value="dingtalk" />
-              </el-select>
+            <el-form-item label="企业微信 Webhook">
+              <el-input v-model="notifyConfig.webhookUrls.wecom" placeholder="企业微信机器人Webhook地址" />
+              <div v-if="wecomHint" class="webhook-hint">{{ wecomHint }}</div>
             </el-form-item>
-            <el-form-item label="Webhook地址">
-              <el-input v-model="currentWebhookUrl" placeholder="请输入机器人Webhook地址" />
-              <div v-if="webhookHint" class="webhook-hint">{{ webhookHint }}</div>
+            <el-form-item label="飞书 Webhook">
+              <el-input v-model="notifyConfig.webhookUrls.feishu" placeholder="飞书机器人Webhook地址" />
+              <div v-if="feishuHint" class="webhook-hint">{{ feishuHint }}</div>
+            </el-form-item>
+            <el-form-item label="钉钉 Webhook">
+              <el-input v-model="notifyConfig.webhookUrls.dingtalk" placeholder="钉钉机器人Webhook地址" />
+              <div v-if="dingtalkHint" class="webhook-hint">{{ dingtalkHint }}</div>
             </el-form-item>
             <el-form-item label="通知类型">
               <el-checkbox-group v-model="notifyConfig.notifyTypes">
@@ -519,22 +521,19 @@ const paymentConfig = reactive({
 
 const notifyConfig = reactive({
   enabled: false,
-  channel: 'wecom',
   webhookUrls: { wecom: '', feishu: '', dingtalk: '' } as Record<string, string>,
   notifyTypes: ['photo'] as string[],
 })
 // 当前选中通道的真实 webhook 地址（未脱敏）
 const _realWebhookByChannel = reactive<Record<string, string>>({ wecom: '', feishu: '', dingtalk: '' })
-// 当前选中通道的显示地址（可能已脱敏）
-const currentWebhookUrl = computed({
-  get: () => notifyConfig.webhookUrls[notifyConfig.channel] || '',
-  set: (val: string) => { notifyConfig.webhookUrls[notifyConfig.channel] = val },
-})
-const webhookHint = computed(() => {
-  const real = _realWebhookByChannel[notifyConfig.channel]
+const wecomHint = computed(() => makeHint('wecom'))
+const feishuHint = computed(() => makeHint('feishu'))
+const dingtalkHint = computed(() => makeHint('dingtalk'))
+function makeHint(ch: string) {
+  const real = _realWebhookByChannel[ch]
   if (!real || real.length <= 20) return ''
   return '当前地址: ' + real.slice(0, -20) + '*'.repeat(20)
-})
+}
 
 const auditConfig = reactive({
   tencentSecretId: '',
@@ -729,7 +728,7 @@ async function handleSave() {
       vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
-      notify: { enabled: notifyConfig.enabled, channel: notifyConfig.channel, webhookUrls: webhookUrlsToSave, notifyTypes: notifyConfig.notifyTypes },
+      notify: { enabled: notifyConfig.enabled, webhookUrls: webhookUrlsToSave, notifyTypes: notifyConfig.notifyTypes },
       intro: { ...introConfig },
       icon: {
         tabbar: { ...iconConfig.tabbar },

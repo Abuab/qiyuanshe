@@ -5,10 +5,10 @@ import { SystemConfig } from '../entities/SystemConfig'
 
 interface NotifyConfig {
   enabled?: boolean
-  channel?: string
   webhookUrls?: Record<string, string>
   // 兼容旧格式
   webhookUrl?: string
+  channel?: string
   notifyTypes?: string[]
 }
 
@@ -21,36 +21,47 @@ export class NotifyChannelService {
     private readonly configRepository: Repository<SystemConfig>,
   ) {}
 
-  /** 发送审核通知 */
+  /** 发送审核通知 - 向所有已配置 webhook 的通道发送 */
   async sendAuditNotify(type: string, content: string) {
     const config = await this.getNotifyConfig()
-    if (!config || !config.enabled) return
-
-    // 检查是否需要通知此类型
-    const types = config.notifyTypes || []
-    if (!types.includes(type)) return
-
-    const channel = config.channel || 'wecom'
-    // 优先用新格式 webhookUrls，兼容旧格式 webhookUrl
-    let webhookUrl = ''
-    if (config.webhookUrls && config.webhookUrls[channel]) {
-      webhookUrl = config.webhookUrls[channel]
-    } else if (config.webhookUrl) {
-      webhookUrl = config.webhookUrl
-    }
-
-    if (!webhookUrl) {
-      this.logger.warn('通知通道已启用但未配置Webhook地址')
+    if (!config || !config.enabled) {
+      this.logger.log('通知通道未启用，跳过发送')
       return
     }
 
-    const message = this.buildMessage(channel, type, content)
+    // 检查是否需要通知此类型
+    const types = config.notifyTypes || []
+    if (!types.includes(type)) {
+      this.logger.log(`通知类型 ${type} 未在配置中勾选，跳过发送`)
+      return
+    }
 
-    try {
-      await this.sendWebhook(webhookUrl, message)
-      this.logger.log(`通知已发送: type=${type}, channel=${channel}`)
-    } catch (e: any) {
-      this.logger.error(`通知发送失败: ${e.message}`)
+    // 收集所有已配置 webhook 的通道
+    const channels: { name: string; url: string }[] = []
+
+    if (config.webhookUrls) {
+      for (const [ch, url] of Object.entries(config.webhookUrls)) {
+        if (url) channels.push({ name: ch, url })
+      }
+    } else if (config.webhookUrl) {
+      // 兼容旧格式
+      channels.push({ name: config.channel || 'wecom', url: config.webhookUrl })
+    }
+
+    if (channels.length === 0) {
+      this.logger.warn('通知通道已启用但所有通道均未配置Webhook地址')
+      return
+    }
+
+    // 向每个通道发送通知
+    for (const ch of channels) {
+      const message = this.buildMessage(ch.name, type, content)
+      try {
+        await this.sendWebhook(ch.url, message)
+        this.logger.log(`通知已发送: type=${type}, channel=${ch.name}`)
+      } catch (e: any) {
+        this.logger.error(`通知发送失败[${ch.name}]: ${e.message}`)
+      }
     }
   }
 
