@@ -1,21 +1,24 @@
 <template>
   <view class="vip-page">
-    <!-- 顶部导航栏 + Tab 切换 -->
+    <!-- ===== 顶部导航：两级导航栏 ===== -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
+      <!-- 第一级：当前页面标题 + 返回 -->
+      <view class="nav-level1">
         <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
-        <view class="nav-tabs">
-          <view
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="nav-tab"
-            :class="{ active: activeTab === tab.key }"
-            @tap="switchTab(tab.key)"
-          >
-            <text>{{ tab.label }}</text>
-          </view>
-        </view>
+        <text class="nav-title">{{ currentTabLabel }}</text>
         <view class="nav-right"></view>
+      </view>
+      <!-- 第二级：Tab 切换栏 -->
+      <view class="nav-level2">
+        <view
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="nav-tab"
+          :class="{ active: activeTab === tab.key }"
+          @tap="switchTab(tab.key)"
+        >
+          <text>{{ tab.label }}</text>
+        </view>
       </view>
     </view>
 
@@ -239,7 +242,7 @@ interface FeatureItem {
 
 // ===== 导航 =====
 const statusBarHeight = ref(20)
-const navBarHeightPx = ref(88) // 44px nav + 44px tabs
+const navBarHeightPx = ref(82) // 36px level1 + 46px level2
 
 const tabs = [
   { key: 'vip', label: 'VIP会员' },
@@ -247,6 +250,11 @@ const tabs = [
   { key: 'about', label: '关于我们' },
 ]
 const activeTab = ref('vip')
+
+const currentTabLabel = computed(() => {
+  const tab = tabs.find(t => t.key === activeTab.value)
+  return tab ? tab.label : 'VIP会员'
+})
 
 const selectPackage = (pkg: VipPackageItem) => {
   selectedPackageId.value = pkg.id
@@ -463,14 +471,24 @@ onMounted(() => {
   right: 0;
   z-index: 100;
   background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-.nav-bar {
+// 第一级：标题行
+.nav-level1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 44px;
+  height: 36px;
   padding: 0 16px;
+}
+
+.nav-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  flex: 1;
 }
 
 .nav-left,
@@ -485,28 +503,34 @@ onMounted(() => {
 }
 
 .back-icon {
-  font-size: 20px;
+  font-size: 18px;
   color: #333;
   font-weight: bold;
 }
 
-.nav-tabs {
+// 第二级：Tab 切换行
+.nav-level2 {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex: 1;
   justify-content: center;
+  height: 46px;
+  padding: 0 12px;
+  gap: 0;
 }
 
 .nav-tab {
-  padding: 10px 16px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   position: relative;
-  cursor: pointer;
 
   text {
-    font-size: 15px;
+    font-size: 14px;
     color: #999;
     font-weight: 500;
+    white-space: nowrap;
     transition: color 0.25s;
   }
 
@@ -519,10 +543,10 @@ onMounted(() => {
     &::after {
       content: '';
       position: absolute;
-      bottom: 4px;
+      bottom: 2px;
       left: 50%;
       transform: translateX(-50%);
-      width: 24px;
+      width: 32px;
       height: 3px;
       background: #FF6B9D;
       border-radius: 2px;
@@ -538,9 +562,8 @@ onMounted(() => {
 
 // ===== VIP 会员 - 头部特权 =====
 .header-section {
-  padding: 24px 20px;
+  padding: 20px 20px 16px;
   background: #fff;
-  margin-bottom: 12px;
 }
 
 .header-title {
@@ -582,9 +605,8 @@ onMounted(() => {
 
 // ===== 套餐选择 =====
 .packages-section {
-  padding: 20px;
+  padding: 0 20px 20px;
   background: #fff;
-  margin-bottom: 12px;
 }
 
 .section-title {
