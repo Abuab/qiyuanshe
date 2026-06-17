@@ -66,10 +66,12 @@
 
             <el-form-item label="红娘按钮文字">
               <div style="display:flex;align-items:center;gap:8px">
+                <el-switch v-model="basicConfig.matchmakerShowHi" active-text="显示Hi" inactive-text="隐藏Hi" style="--el-switch-on-color:#FF6B9D" />
                 <el-input
                   v-model="basicConfig.matchmakerHiText"
                   placeholder="Hi"
                   style="width:80px"
+                  :disabled="!basicConfig.matchmakerShowHi"
                 />
                 <span style="color:#909399">·</span>
                 <el-input
@@ -78,7 +80,7 @@
                   style="width:120px"
                 />
               </div>
-              <div class="form-tip">小程序首页右下角悬浮按钮的文字，Hi 和后面的部分分别可配</div>
+              <div class="form-tip">小程序首页右下角悬浮按钮的文字，可控制是否显示 Hi 前缀</div>
             </el-form-item>
 
             <el-form-item label="首页快捷入口">
@@ -463,6 +465,30 @@
         </el-card>
       </el-tab-pane>
 
+      <el-tab-pane label="爱情语录" name="loveQuotes">
+        <el-card class="config-card">
+          <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px">
+            <template #title>
+              配置6条爱情语录，小程序端随机展示，用户可选择一条提交保存。
+            </template>
+          </el-alert>
+          <el-form :model="loveQuotesConfig" label-width="100px">
+            <el-form-item
+              v-for="(_, idx) in loveQuotesConfig.quotes"
+              :key="idx"
+              :label="`语录 ${idx + 1}`"
+            >
+              <el-input
+                v-model="loveQuotesConfig.quotes[idx]"
+                type="textarea"
+                :rows="2"
+                :placeholder="`请输入第${idx + 1}条爱情语录`"
+              />
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
+
       <el-tab-pane label="图标配置" name="icon">
         <el-card class="config-card">
           <el-alert type="info" :closable="false" show-icon class="icon-tip">
@@ -575,6 +601,7 @@ const basicConfig = reactive({
   logo: '',
   aboutUs: '',
   matchmakerHiText: 'Hi',
+  matchmakerShowHi: true,
   matchmakerButtonText: '红娘',
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
   followEmptyText: '您还木有关注任何人~',
@@ -661,6 +688,10 @@ const introConfig = reactive({
   separator: '、',
 })
 
+const loveQuotesConfig = reactive({
+  quotes: ['', '', '', '', '', ''] as string[],
+})
+
 const tabbarIconList = [
   { key: 'home', label: '首页' },
   { key: 'dynamic', label: '动态' },
@@ -696,6 +727,11 @@ const pageIconList = [
   { key: 'mmEye', label: '红娘牵线-眼睛图标' },
   { key: 'deletePhotoIcon', label: '编辑资料-删除照片图标' },
   { key: 'followEmptyIcon', label: '关注/粉丝空状态图标' },
+  { key: 'blockListIcon', label: '隐私设置-黑名单图标' },
+  { key: 'privacyPolicyIcon', label: '隐私设置-隐私政策图标' },
+  { key: 'privacySettingIcon', label: '隐私设置图标' },
+  { key: 'deactivateIcon', label: '隐私设置-注销账号图标' },
+  { key: 'refreshIcon', label: '爱情语录-换一个图标' },
 ]
 
 interface TabbarIconItem {
@@ -747,6 +783,11 @@ const iconConfig = reactive({
     deletePhotoIcon: '',
     mmEye: '',
     followEmptyIcon: '',
+    blockListIcon: '',
+    privacyPolicyIcon: '',
+    privacySettingIcon: '',
+    deactivateIcon: '',
+    refreshIcon: '',
   } as Record<string, string>,
 })
 
@@ -816,6 +857,10 @@ async function fetchConfig() {
       if (res.data.intro) {
         Object.assign(introConfig, res.data.intro)
       }
+      // 爱情语录
+      if (res.data.loveQuotes) {
+        loveQuotesConfig.quotes = res.data.loveQuotes.quotes || ['', '', '', '', '', '']
+      }
       // 图标配置
       if (res.data.icon) {
         Object.assign(iconConfig.tabbar, res.data.icon.tabbar || {})
@@ -853,6 +898,7 @@ async function handleSave() {
         menu: { ...iconConfig.menu },
         page: { ...iconConfig.page },
       },
+      loveQuotes: { quotes: loveQuotesConfig.quotes.filter(q => q && q.trim()) },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {

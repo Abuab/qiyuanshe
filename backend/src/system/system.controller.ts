@@ -28,10 +28,12 @@ export class PublicSystemController {
       shareDesc: configs.share?.desc || '专业的婚恋匹配平台，为你找到最合适的另一半',
       matchmakers: configs.basic?.matchmakers || [],
       matchmakerHiText: configs.basic?.matchmakerHiText || 'Hi',
+      matchmakerShowHi: configs.basic?.matchmakerShowHi !== undefined ? configs.basic?.matchmakerShowHi : true,
       matchmakerButtonText: configs.basic?.matchmakerButtonText || '红娘',
       quickEntryNames: configs.basic?.quickEntryNames || ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
       followEmptyText: configs.basic?.followEmptyText || '您还木有关注任何人~',
       followerEmptyText: configs.basic?.followerEmptyText || '还木有人关注您~',
+      loveQuotes: JSON.parse(configs.loveQuotes?.quotes || '[]'),
       icons: this.buildIconConfig(configs.icon || {}),
     }
 
@@ -115,6 +117,13 @@ export class PublicSystemController {
         deletePhotoIcon: fallback(page.deletePhotoIcon),
         // 关注/粉丝空状态图标
         followEmptyIcon: fallback(page.followEmptyIcon),
+        // 隐私设置页图标
+        blockListIcon: fallback(page.blockListIcon),
+        privacyPolicyIcon: fallback(page.privacyPolicyIcon),
+        privacySettingIcon: fallback(page.privacySettingIcon),
+        deactivateIcon: fallback(page.deactivateIcon),
+        // 爱情语录图标
+        refreshIcon: fallback(page.refreshIcon),
       },
     }
   }

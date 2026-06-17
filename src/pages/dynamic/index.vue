@@ -672,6 +672,12 @@ onMounted(() => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchMyPhotoCount()
   fetchList(true)
+  // 监听来自首页"媒妁之言"跳转的红娘区切换
+  uni.$on('dynamic:switchTab', (tab: string) => {
+    if (tab === 'matchmaker') {
+      switchTab('matchmaker')
+    }
+  })
 })
 </script>
 

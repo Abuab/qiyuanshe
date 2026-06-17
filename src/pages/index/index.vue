@@ -150,7 +150,7 @@
 
     <!-- Hi红娘悬浮按钮 -->
     <view class="float-matchmaker" @tap="handleMatchmakerFloat">
-      <text v-if="matchmakerHiText" class="float-hi">{{ matchmakerHiText }}</text>
+      <text v-if="matchmakerShowHi && matchmakerHiText" class="float-hi">{{ matchmakerHiText }}</text>
       <text class="float-label">{{ matchmakerButtonText }}</text>
     </view>
 
@@ -298,6 +298,7 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName)
 const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
+const matchmakerShowHi = computed(() => systemStore.matchmakerShowHi !== false)
 const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {
@@ -389,7 +390,9 @@ const switchFilter = (value: string) => {
 
 const handleQuickEntry = (entry: QuickEntry) => {
   if (entry.id === 1) {
-    uni.navigateTo({ url: '/pages/matchmaker-reviews/index' })
+    // 跳转到动态页面的红娘区
+    uni.$emit('dynamic:switchTab', 'matchmaker')
+    uni.switchTab({ url: '/pages/dynamic/index' })
   } else if (entry.id === 2) {
     uni.navigateTo({ url: '/pages/activity-list/index' })
   } else if (entry.id === 3) {

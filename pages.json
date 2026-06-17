@@ -251,6 +251,27 @@
         "navigationBarTitleText": "关于我们",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/love-quotes/index",
+      "style": {
+        "navigationBarTitleText": "爱情语录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/privacy-settings/index",
+      "style": {
+        "navigationBarTitleText": "隐私设置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/block-list/index",
+      "style": {
+        "navigationBarTitleText": "黑名单",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

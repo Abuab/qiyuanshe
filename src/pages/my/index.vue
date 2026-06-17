@@ -247,17 +247,19 @@ const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=fol
 const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=followers' })
 const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=visitors' })
 const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
-const goToPhotos = () => uni.navigateTo({ url: '/pages/my-photos/index' })
+const goToPhotos = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
 const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })
+const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
+const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = [
   { key: 'myPhotos',    label: '我的相册', emoji: '🖼', handler: goToPhotos },
-  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌', handler: showComingSoon },
+  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌', handler: goToLoveQuotes },
   { key: 'myGifts',     label: '我的礼物', emoji: '🎁', handler: showComingSoon },
-  { key: 'privacy',     label: '隐私设置', emoji: '🔒', handler: goToSettings },
+  { key: 'privacy',     label: '隐私设置', emoji: '🔒', handler: goToPrivacySettings },
   { key: 'feedback',    label: '问题反馈', emoji: '📝', handler: showComingSoon },
   { key: 'userAgreement', label: '用户协议', emoji: '📄', handler: showComingSoon },
   { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡', handler: showComingSoon },

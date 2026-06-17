@@ -34,6 +34,7 @@ interface SystemConfig {
   shareDesc: string
   matchmakers: Matchmaker[]
   matchmakerHiText: string
+  matchmakerShowHi: boolean
   matchmakerButtonText: string
   quickEntryNames: string[]
   followEmptyText: string
@@ -59,6 +60,7 @@ export const useSystemStore = defineStore('system', () => {
   const shareTitle = ref<string>('')
   const shareDesc = ref<string>('专业的婚恋匹配平台，为你找到最合适的另一半')
   const matchmakerHiText = ref<string>('Hi')
+  const matchmakerShowHi = ref<boolean>(true)
   const matchmakerButtonText = ref<string>('红娘')
   const quickEntryNames = ref<string[]>(['红娘评语', '最新活动', '相亲圈子', '我们脱单了'])
   const followEmptyText = ref<string>('您还木有关注任何人~')
@@ -79,6 +81,7 @@ export const useSystemStore = defineStore('system', () => {
         shareDesc.value = res.shareDesc || shareDesc.value
         matchmakers.value = res.matchmakers || []
         matchmakerHiText.value = res.matchmakerHiText || matchmakerHiText.value
+        matchmakerShowHi.value = res.matchmakerShowHi !== undefined ? res.matchmakerShowHi : matchmakerShowHi.value
         matchmakerButtonText.value = res.matchmakerButtonText || matchmakerButtonText.value
         quickEntryNames.value = res.quickEntryNames || quickEntryNames.value
         followEmptyText.value = res.followEmptyText || followEmptyText.value
@@ -117,6 +120,7 @@ export const useSystemStore = defineStore('system', () => {
           shareDesc.value = config.shareDesc || shareDesc.value
           matchmakers.value = config.matchmakers || matchmakers.value
           matchmakerHiText.value = config.matchmakerHiText || matchmakerHiText.value
+          matchmakerShowHi.value = config.matchmakerShowHi !== undefined ? config.matchmakerShowHi : matchmakerShowHi.value
           matchmakerButtonText.value = config.matchmakerButtonText || matchmakerButtonText.value
           quickEntryNames.value = config.quickEntryNames || quickEntryNames.value
           followEmptyText.value = config.followEmptyText || followEmptyText.value
@@ -137,6 +141,7 @@ export const useSystemStore = defineStore('system', () => {
       shareDesc: shareDesc.value,
       matchmakers: matchmakers.value,
       matchmakerHiText: matchmakerHiText.value,
+      matchmakerShowHi: matchmakerShowHi.value,
       matchmakerButtonText: matchmakerButtonText.value,
       quickEntryNames: quickEntryNames.value,
       followEmptyText: followEmptyText.value,
@@ -155,6 +160,7 @@ export const useSystemStore = defineStore('system', () => {
     shareDesc,
     matchmakers,
     matchmakerHiText,
+    matchmakerShowHi,
     matchmakerButtonText,
     quickEntryNames,
     followEmptyText,

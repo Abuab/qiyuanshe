@@ -296,6 +296,34 @@ export class UserController {
     return this.userService.getUserStats(req.user.userId)
   }
 
+  /** 获取我的黑名单列表 */
+  @Get('my-blocks')
+  @UseGuards(JwtAuthGuard)
+  async getMyBlocks(@Request() req: any) {
+    const userId = req.user.userId
+    const blocks = await this.blockRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.blockedUser', 'u')
+      .where('b.blockerId = :userId', { userId })
+      .select([
+        'b.id', 'b.createdAt',
+        'u.id', 'u.nickname', 'u.avatar', 'u.isRealName',
+      ])
+      .orderBy('b.createdAt', 'DESC')
+      .getMany()
+
+    const list = blocks.map(b => ({
+      id: b.id,
+      blockedUserId: b.blockedUser?.id,
+      nickname: b.blockedUser?.nickname || '用户',
+      avatar: b.blockedUser?.avatar || '',
+      isRealName: b.blockedUser?.isRealName || 0,
+      createdAt: b.createdAt,
+    }))
+
+    return Result.success(list)
+  }
+
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   async getUserDetail(
@@ -363,6 +391,21 @@ export class UserController {
     } catch (error: any) {
       console.error('blockUser error:', error?.message || error)
       return Result.serverError('拉黑失败')
+    }
+  }
+
+  @Delete(':id/block')
+  @UseGuards(JwtAuthGuard)
+  async unblockUser(
+    @Param('id', ParseIntPipe) blockedUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const blockerId = req.user.userId
+      await this.blockRepo.delete({ blockerId, blockedUserId })
+      return Result.success(null, '已移出黑名单')
+    } catch (error: any) {
+      return Result.serverError('操作失败: ' + (error?.message || ''))
     }
   }
 
