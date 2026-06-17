@@ -380,6 +380,33 @@
             </div>
           </template>
         </el-table-column>
+        <el-table-column prop="profileScore" label="资料完整度" width="90" sortable="custom">
+          <template #default="{ row }">
+            <span>{{ row.profileScore ?? '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="置顶状态" width="90">
+          <template #default="{ row }">
+            <span v-if="row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()" style="color:#303133">置顶中</span>
+            <span v-else style="color:#909399">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="置顶截至" width="160">
+          <template #default="{ row }">
+            <span v-if="row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()" style="color:#303133;font-size:12px">{{ formatDate(row.pinnedExpireAt) }}</span>
+            <span v-else style="color:#909399;font-size:12px">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="manualBoostScore" label="运营加权" width="90" sortable="custom">
+          <template #default="{ row }">
+            <span :style="{ color: row.manualBoostScore > 0 ? '#303133' : '#909399' }">{{ row.manualBoostScore || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="exposurePool" label="曝光池" width="90">
+          <template #default="{ row }">
+            <span :style="{ color: row.exposurePool !== 'city' ? '#303133' : '#909399' }">{{ exposurePoolLabel(row.exposurePool) }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="注册时间" width="160" sortable="custom">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
@@ -451,7 +478,7 @@
             <span v-else>0</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isReadonly" label="操作" width="340" fixed="right">
+        <el-table-column v-if="!isReadonly" label="操作" width="400" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
             <el-button type="info" link @click="handleEditUser(row)">编辑</el-button>
@@ -460,6 +487,7 @@
             </el-button>
             <el-button type="success" link @click="handleSetVip(row)">设为VIP</el-button>
             <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button type="primary" link @click="handlePinUser(row)">手动置顶</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -534,6 +562,25 @@
           <span style="font-size:12px;color:#999">{{ item.lastViewedAt ? item.lastViewedAt.slice(0,16) : '' }}</span>
         </div>
       </div>
+    </el-dialog>
+
+    <!-- 手动置顶弹窗 -->
+    <el-dialog v-model="pinDialogVisible" title="手动置顶" width="420px">
+      <el-form :model="pinForm" label-width="120px">
+        <el-form-item label="目标用户">
+          <span>{{ pinTargetUser?.nickname }}</span>
+        </el-form-item>
+        <el-form-item label="置顶时长(小时)" required>
+          <el-input-number v-model="pinForm.durationHours" :min="1" :max="720" style="width:200px" />
+        </el-form-item>
+        <el-form-item label="手动加权分">
+          <el-input-number v-model="pinForm.boostScore" :min="0" :max="9999" placeholder="选填" style="width:200px" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pinDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePinSubmit" :loading="pinSubmitting">确定置顶</el-button>
+      </template>
     </el-dialog>
 
     <el-dialog v-model="createDialogVisible" :title="editingUserId ? '编辑用户' : '添加用户'" width="860px" destroy-on-close>
@@ -952,6 +999,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
+import { userPin } from '../../api/vip'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
@@ -1138,6 +1186,43 @@ async function handleViewDetail(row: any) {
     if (res.success) viewDetailList.value = res.data || []
   } catch { viewDetailList.value = [] }
   viewDetailLoading.value = false
+}
+
+// ===== 手动置顶 =====
+const pinDialogVisible = ref(false)
+const pinSubmitting = ref(false)
+const pinTargetUser = ref<User | null>(null)
+const pinForm = reactive({
+  durationHours: 24,
+  boostScore: 0,
+})
+
+function handlePinUser(row: User) {
+  pinTargetUser.value = row
+  pinForm.durationHours = 24
+  pinForm.boostScore = 0
+  pinDialogVisible.value = true
+}
+
+async function handlePinSubmit() {
+  if (!pinTargetUser.value) return
+  pinSubmitting.value = true
+  try {
+    await userPin.pinUser(
+      pinTargetUser.value.id,
+      pinForm.durationHours,
+      pinForm.boostScore || undefined,
+    )
+    ElMessage.success('置顶设置成功')
+    pinDialogVisible.value = false
+    fetchData()
+  } catch { ElMessage.error('置顶设置失败') }
+  pinSubmitting.value = false
+}
+
+function exposurePoolLabel(pool: string) {
+  const map: Record<string, string> = { city: '同城', province: '同省', national: '全国' }
+  return map[pool] || pool || '同城'
 }
 
 const currentUser = ref<User | null>(null)

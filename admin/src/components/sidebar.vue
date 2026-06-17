@@ -102,6 +102,14 @@
         <el-menu-item index="/payment/stats">营收统计</el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu v-if="isSuperAdmin" index="/vip">
+        <template #title>
+          <el-icon><Ticket /></el-icon>
+          <span>会员管理</span>
+        </template>
+        <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
+      </el-sub-menu>
+
       <el-sub-menu v-if="canManageActivity" index="/activity">
         <template #title>
           <el-icon><Calendar /></el-icon>
@@ -168,6 +176,7 @@ import {
   Star,
   ChatDotRound,
   Promotion,
+  Ticket,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
