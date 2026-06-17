@@ -36,6 +36,8 @@ interface SystemConfig {
   matchmakerHiText: string
   matchmakerButtonText: string
   quickEntryNames: string[]
+  followEmptyText: string
+  followerEmptyText: string
   icons: IconConfig
 }
 
@@ -59,6 +61,8 @@ export const useSystemStore = defineStore('system', () => {
   const matchmakerHiText = ref<string>('Hi')
   const matchmakerButtonText = ref<string>('红娘')
   const quickEntryNames = ref<string[]>(['红娘评语', '最新活动', '相亲圈子', '我们脱单了'])
+  const followEmptyText = ref<string>('您还木有关注任何人~')
+  const followerEmptyText = ref<string>('还木有人关注您~')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -77,6 +81,8 @@ export const useSystemStore = defineStore('system', () => {
         matchmakerHiText.value = res.matchmakerHiText || matchmakerHiText.value
         matchmakerButtonText.value = res.matchmakerButtonText || matchmakerButtonText.value
         quickEntryNames.value = res.quickEntryNames || quickEntryNames.value
+        followEmptyText.value = res.followEmptyText || followEmptyText.value
+        followerEmptyText.value = res.followerEmptyText || followerEmptyText.value
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -113,6 +119,8 @@ export const useSystemStore = defineStore('system', () => {
           matchmakerHiText.value = config.matchmakerHiText || matchmakerHiText.value
           matchmakerButtonText.value = config.matchmakerButtonText || matchmakerButtonText.value
           quickEntryNames.value = config.quickEntryNames || quickEntryNames.value
+          followEmptyText.value = config.followEmptyText || followEmptyText.value
+          followerEmptyText.value = config.followerEmptyText || followerEmptyText.value
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -131,6 +139,8 @@ export const useSystemStore = defineStore('system', () => {
       matchmakerHiText: matchmakerHiText.value,
       matchmakerButtonText: matchmakerButtonText.value,
       quickEntryNames: quickEntryNames.value,
+      followEmptyText: followEmptyText.value,
+      followerEmptyText: followerEmptyText.value,
       icons: icons.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -147,6 +157,8 @@ export const useSystemStore = defineStore('system', () => {
     matchmakerHiText,
     matchmakerButtonText,
     quickEntryNames,
+    followEmptyText,
+    followerEmptyText,
     icons,
     dicts,
     loadSystemConfig,

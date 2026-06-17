@@ -30,6 +30,8 @@ export class PublicSystemController {
       matchmakerHiText: configs.basic?.matchmakerHiText || 'Hi',
       matchmakerButtonText: configs.basic?.matchmakerButtonText || '红娘',
       quickEntryNames: configs.basic?.quickEntryNames || ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
+      followEmptyText: configs.basic?.followEmptyText || '您还木有关注任何人~',
+      followerEmptyText: configs.basic?.followerEmptyText || '还木有人关注您~',
       icons: this.buildIconConfig(configs.icon || {}),
     }
 
@@ -111,6 +113,8 @@ export class PublicSystemController {
         realNameIcon: fallback(page.realNameIcon),
         // 编辑资料-删除照片图标
         deletePhotoIcon: fallback(page.deletePhotoIcon),
+        // 关注/粉丝空状态图标
+        followEmptyIcon: fallback(page.followEmptyIcon),
       },
     }
   }

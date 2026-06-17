@@ -245,6 +245,16 @@ export class UserController {
     return this.userService.getFollowing(req.user.userId, page, limit)
   }
 
+  @Get('followers')
+  @UseGuards(JwtAuthGuard)
+  async getMyFollowers(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.userService.getFollowers(req.user.userId, page, limit)
+  }
+
   // ===== 谁看过我（访客列表） =====
 
   @Get('visitors')

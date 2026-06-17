@@ -48,7 +48,7 @@
             <text class="stat-label">关注</text>
             <text class="stat-num">{{ stats.following }}</text>
           </view>
-          <view class="stat-item" @tap.stop="goToVisitors">
+          <view class="stat-item" @tap.stop="goToFollowers">
             <text class="stat-label">被关注</text>
             <text class="stat-num">{{ stats.followers }}</text>
           </view>
@@ -249,7 +249,8 @@ const goToQuestions = () => {
   uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
 }
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
-const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index' })
+const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
+const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=followers' })
 const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index' })
 const goToPhotos = () => uni.navigateTo({ url: '/pages/my-photos/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })

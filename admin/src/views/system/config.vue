@@ -93,6 +93,15 @@
               <div class="form-tip">首页顶部四个卡片的显示名称</div>
             </el-form-item>
 
+            <el-form-item label="关注空状态文案">
+              <el-input v-model="basicConfig.followEmptyText" placeholder="我关注的为空时提示" />
+              <div class="form-tip">我关注的列表为空时展示的文字</div>
+            </el-form-item>
+            <el-form-item label="粉丝空状态文案">
+              <el-input v-model="basicConfig.followerEmptyText" placeholder="关注我的为空时提示" />
+              <div class="form-tip">粉丝列表为空时展示的文字</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -568,6 +577,8 @@ const basicConfig = reactive({
   matchmakerHiText: 'Hi',
   matchmakerButtonText: '红娘',
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
+  followEmptyText: '您还木有关注任何人~',
+  followerEmptyText: '还木有人关注您~',
 })
 
 const shareConfig = reactive({
@@ -684,6 +695,7 @@ const pageIconList = [
   { key: 'messageNotifyIcon', label: '消息-系统通知图标' },
   { key: 'mmEye', label: '红娘牵线-眼睛图标' },
   { key: 'deletePhotoIcon', label: '编辑资料-删除照片图标' },
+  { key: 'followEmptyIcon', label: '关注/粉丝空状态图标' },
 ]
 
 interface TabbarIconItem {
@@ -734,6 +746,7 @@ const iconConfig = reactive({
     shareBtnIcon: '',
     deletePhotoIcon: '',
     mmEye: '',
+    followEmptyIcon: '',
   } as Record<string, string>,
 })
 

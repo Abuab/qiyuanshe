@@ -33,6 +33,7 @@ export interface UserListItem {
   photos: string[]
   isFollowed: boolean
   matchmakerComment?: string
+  followedAt?: Date | null
 }
 
 export interface RecommendFilters {
@@ -592,6 +593,12 @@ export class UserService {
     const photosMap = await this.getPhotosMap(userIds)
     const commentsMap = await this.getCommentsMap(userIds)
 
+    // Build follow time map
+    const followedAtMap = new Map<number, Date>()
+    follows.forEach((f) => {
+      if (f.createdAt) followedAtMap.set(f.userId, f.createdAt)
+    })
+
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
       nickname: user.nickname,
@@ -608,6 +615,7 @@ export class UserService {
       photos: photosMap.get(user.id) || [],
       isFollowed: false,
       matchmakerComment: commentsMap.get(user.id) || '',
+      followedAt: followedAtMap.get(user.id) || null,
     }))
 
     return {
@@ -661,6 +669,12 @@ export class UserService {
     const photosMap = await this.getPhotosMap(userIds)
     const commentsMap = await this.getCommentsMap(userIds)
 
+    // Build follow time map (keyed by targetUserId = user id)
+    const followedAtMap = new Map<number, Date>()
+    follows.forEach((f) => {
+      if (f.createdAt) followedAtMap.set(f.targetUserId, f.createdAt)
+    })
+
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
       nickname: user.nickname,
@@ -677,6 +691,7 @@ export class UserService {
       photos: photosMap.get(user.id) || [],
       isFollowed: true,
       matchmakerComment: commentsMap.get(user.id) || '',
+      followedAt: followedAtMap.get(user.id) || null,
     }))
 
     return {
