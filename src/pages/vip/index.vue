@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: bottomBarHeight + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: (bottomBarHeight + tabBarPx) + 'px' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -179,7 +179,7 @@
     </scroll-view>
 
     <!-- 底部支付栏（仅VIP会员Tab显示） -->
-    <view v-if="activeTab === 'vip'" class="bottom-bar" :style="{ paddingBottom: 12 + tabBarPx + 'px' }">
+    <view v-if="activeTab === 'vip'" class="bottom-bar" :style="{ bottom: tabBarPx + 'px' }">
       <view class="bottom-price">
         <text class="price-label" v-if="selectedPackage">合计</text>
         <text class="price-total" v-if="selectedPackage">
@@ -415,20 +415,23 @@ async function fetchAboutConfig() {
 }
 
 // ===== 安全征婚提示 =====
-const safetyTips = ref<string[]>([])
+const safetyTips = ref<string[]>([
+  '请认准平台官方客服，谨防冒充人员',
+  '首次见面请选择公共场合，确保安全',
+  '交往过程中请勿轻易转账、借贷',
+  '如遇可疑行为请及时向平台举报',
+  '平台将对违规用户进行封禁处理',
+])
 
 async function fetchSafetyTips() {
   try {
-    const res: any = await get('/vip/safety-tips', {}, { skipToast: true } as any)
-    if (res?.tips?.length) safetyTips.value = res.tips
+    const { get: getWithoutToast } = await import('@/utils/request')
+    const res: any = await getWithoutToast('/vip/safety-tips')
+    if (res?.tips?.length) {
+      safetyTips.value = res.tips
+    }
   } catch {
-    safetyTips.value = [
-      '请认准平台官方客服，谨防冒充人员',
-      '首次见面请选择公共场合，确保安全',
-      '交往过程中请勿轻易转账、借贷',
-      '如遇可疑行为请及时向平台举报',
-      '平台将对违规用户进行封禁处理',
-    ]
+    // 保持默认值
   }
 }
 
@@ -799,16 +802,14 @@ onMounted(() => {
 // ===== 底部支付栏 =====
 .bottom-bar {
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-  z-index: 100;
+  z-index: 101;
 }
 
 .bottom-price {

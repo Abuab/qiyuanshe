@@ -798,10 +798,11 @@ export class UserService {
     const userIds = rows.map(r => Number(r.targetUserId))
     const usersMap = new Map<number, any>()
     if (userIds.length > 0) {
-      const users = await this.userRepository.find({
-        where: { id: In(userIds) },
-        select: ['id', 'nickname', 'avatar', 'birthYear', 'gender', 'occupation', 'housingStatus', 'isRealName'],
-      })
+      const users = await this.userRepository
+        .createQueryBuilder('u')
+        .select(['u.id', 'u.nickname', 'u.avatar', 'u.birthYear', 'u.gender', 'u.occupation', 'u.housingStatus', 'u.isRealName'])
+        .where('u.id IN (:...ids)', { ids: userIds })
+        .getMany()
       for (const u of users) usersMap.set(u.id, u)
     }
 
@@ -862,10 +863,11 @@ export class UserService {
     const userIds = rows.map(r => Number(r.visitorUserId))
     const usersMap = new Map<number, any>()
     if (userIds.length > 0) {
-      const users = await this.userRepository.find({
-        where: { id: In(userIds) },
-        select: ['id', 'nickname', 'avatar', 'birthYear', 'gender', 'occupation', 'housingStatus', 'isRealName'],
-      })
+      const users = await this.userRepository
+        .createQueryBuilder('u')
+        .select(['u.id', 'u.nickname', 'u.avatar', 'u.birthYear', 'u.gender', 'u.occupation', 'u.housingStatus', 'u.isRealName'])
+        .where('u.id IN (:...ids)', { ids: userIds })
+        .getMany()
       for (const u of users) usersMap.set(u.id, u)
     }
 

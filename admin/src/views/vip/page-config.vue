@@ -170,7 +170,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, toRaw } from 'vue'
 import { ElMessage } from 'element-plus'
 import { vipConfig } from '../../api/vip'
 import { adminSystem } from '../../api/system'
@@ -245,7 +245,7 @@ async function loadCustom() {
 async function saveCustom() {
   customSaving.value = true
   try {
-    await vipConfig.saveCustom({ ...customForm })
+    await vipConfig.saveCustom(JSON.parse(JSON.stringify(toRaw(customForm))))
     ElMessage.success('定制会员页配置已保存')
   } catch {
     ElMessage.error('保存失败')
@@ -276,7 +276,7 @@ async function loadAbout() {
 async function saveAbout() {
   aboutSaving.value = true
   try {
-    await vipConfig.saveAbout({ ...aboutForm })
+    await vipConfig.saveAbout(JSON.parse(JSON.stringify(toRaw(aboutForm))))
     ElMessage.success('关于我们页配置已保存')
   } catch {
     ElMessage.error('保存失败')
