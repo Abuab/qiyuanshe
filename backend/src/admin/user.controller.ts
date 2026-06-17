@@ -64,6 +64,12 @@ export class AdminUserController {
     return Result.success(data)
   }
 
+  @Get('search')
+  async searchUsers(@Query('keyword') keyword: string) {
+    const users = await this.userService.searchUsers(keyword)
+    return Result.success(users)
+  }
+
   @Get(':id')
   async detail(@Param('id', ParseIntPipe) id: number) {
     const user = await this.userService.detail(id)
@@ -204,5 +210,60 @@ export class AdminUserController {
   async regenerateDynamics(@Param('id', ParseIntPipe) id: number) {
     const result = await this.userService.regenerateUserDynamics(id)
     return Result.success(result)
+  }
+
+  // ===== 关注管理（后台手动管理用户的关注和粉丝） =====
+
+  @Get(':id/follow-stats')
+  async getFollowStats(@Param('id', ParseIntPipe) id: number) {
+    const stats = await this.userService.getUserFollowStats(id)
+    return Result.success(stats)
+  }
+
+  @Get(':id/admin-following')
+  async getUserFollowing(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    const result = await this.userService.getUserFollowingList(id, page, limit)
+    return Result.success(result)
+  }
+
+  @Get(':id/admin-followers')
+  async getUserFollowers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    const result = await this.userService.getUserFollowersList(id, page, limit)
+    return Result.success(result)
+  }
+
+  @Post(':id/admin-follow')
+  async adminAddFollow(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { targetUserId: number },
+  ) {
+    await this.userService.adminAddFollow(id, body.targetUserId)
+    return Result.success(null, '添加关注成功')
+  }
+
+  @Delete(':id/admin-follow/:targetId')
+  async adminRemoveFollow(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('targetId', ParseIntPipe) targetId: number,
+  ) {
+    await this.userService.adminRemoveFollow(id, targetId)
+    return Result.success(null, '取消关注成功')
+  }
+
+  @Post(':id/admin-follower')
+  async adminAddFollower(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { followerUserId: number },
+  ) {
+    await this.userService.adminAddFollow(body.followerUserId, id)
+    return Result.success(null, '添加粉丝成功')
   }
 }

@@ -27,38 +27,55 @@
       <!-- 加载中 -->
       <view v-if="loading" class="loading">加载中...</view>
 
-      <!-- 我关注的 - 空状态 -->
-      <view v-else-if="activeTab === 'following' && followingList.length === 0 && !loading" class="empty-block">
-        <image v-if="followEmptyIcon" :src="followEmptyIcon" mode="aspectFit" class="empty-icon" />
-        <text class="empty-text">{{ followEmptyText }}</text>
-      </view>
-
-      <!-- 关注我的 - 空状态 -->
-      <view v-else-if="activeTab === 'followers' && followerList.length === 0 && !loading" class="empty-block">
-        <image v-if="followEmptyIcon" :src="followEmptyIcon" mode="aspectFit" class="empty-icon" />
-        <text class="empty-text">{{ followerEmptyText }}</text>
-      </view>
-
-      <!-- 我关注的列表 -->
-      <view v-for="item in followingList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-        <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-        <view class="info">
-          <text class="name">{{ item.nickname || '用户' }}</text>
-          <text v-if="item.followedAt" class="follow-time">{{ formatTime(item.followedAt) }}</text>
+      <!-- 我关注的分区 -->
+      <template v-if="!loading && activeTab === 'following'">
+        <!-- 空状态 -->
+        <view v-if="followingList.length === 0" class="empty-block">
+          <image v-if="followEmptyIcon" :src="followEmptyIcon" mode="aspectFit" class="empty-icon" />
+          <text class="empty-text">{{ followEmptyText }}</text>
         </view>
-        <view class="unfollow-btn" @tap.stop="handleUnfollow(item.id)"><text>取消</text></view>
-      </view>
-
-      <!-- 关注我的列表 -->
-      <view v-for="item in followerList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-        <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-        <view class="info">
-          <text class="name">{{ item.nickname || '用户' }}</text>
-          <text v-if="item.followedAt" class="follow-time">{{ formatTime(item.followedAt) }}</text>
+        <!-- 列表 -->
+        <view v-else>
+          <view v-for="item in followingList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
+            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <view class="info">
+              <view class="name-row">
+                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text v-if="item.isRealName" class="realname-tag">已实名</text>
+              </view>
+              <text class="meta-line">{{ formatMeta(item) }}</text>
+              <text v-if="item.followedAt" class="follow-time">{{ formatTime(item.followedAt) }}</text>
+            </view>
+            <view class="unfollow-btn" @tap.stop="handleUnfollow(item.id)"><text>取消</text></view>
+          </view>
+          <view v-if="followingNoMore" class="no-more">— 没有更多了 —</view>
         </view>
-      </view>
+      </template>
 
-      <view v-if="noMore && currentList.length > 0" class="no-more">— 没有更多了 —</view>
+      <!-- 关注我的分区 -->
+      <template v-if="!loading && activeTab === 'followers'">
+        <!-- 空状态 -->
+        <view v-if="followerList.length === 0" class="empty-block">
+          <image v-if="followEmptyIcon" :src="followEmptyIcon" mode="aspectFit" class="empty-icon" />
+          <text class="empty-text">{{ followerEmptyText }}</text>
+        </view>
+        <!-- 列表 -->
+        <view v-else>
+          <view v-for="item in followerList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
+            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <view class="info">
+              <view class="name-row">
+                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text v-if="item.isRealName" class="realname-tag">已实名</text>
+              </view>
+              <text class="meta-line">{{ formatMeta(item) }}</text>
+              <text v-if="item.followedAt" class="follow-time">{{ formatTime(item.followedAt) }}</text>
+            </view>
+          </view>
+          <view v-if="followerNoMore" class="no-more">— 没有更多了 —</view>
+        </view>
+      </template>
+
       <view class="bottom-safe"></view>
     </scroll-view>
   </view>
@@ -89,9 +106,6 @@ const followerNoMore = ref(false)
 
 const followEmptyIcon = computed(() => icons.value?.page?.followEmptyIcon || '')
 
-const noMore = computed(() => (activeTab.value === 'following' ? followingNoMore.value : followerNoMore.value))
-const currentList = computed(() => (activeTab.value === 'following' ? followingList.value : followerList.value))
-
 onLoad((options) => {
   const tab = (options as any)?.tab
   if (tab === 'followers') {
@@ -105,6 +119,14 @@ onMounted(async () => {
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   await fetchList()
 })
+
+function formatMeta(item: any) {
+  const parts: string[] = []
+  if (item.age) parts.push(item.age + '岁')
+  if (item.occupation) parts.push(item.occupation)
+  if (item.housingStatus) parts.push(item.housingStatus)
+  return parts.join(' | ') || '暂无信息'
+}
 
 function formatTime(dateStr: string) {
   if (!dateStr) return ''
@@ -127,12 +149,14 @@ async function fetchList() {
   loading.value = true
   try {
     if (activeTab.value === 'following') {
-      const res = await get<any>(`/users/follows?page=${followingPage.value}&limit=20`)
+      followingPage.value = 1
+      const res = await get<any>(`/users/follows?page=1&limit=20`)
       const items = res?.list || []
       followingList.value = items
       followingNoMore.value = items.length < 20
     } else {
-      const res = await get<any>(`/users/followers?page=${followerPage.value}&limit=20`)
+      followerPage.value = 1
+      const res = await get<any>(`/users/followers?page=1&limit=20`)
       const items = res?.list || []
       followerList.value = items
       followerNoMore.value = items.length < 20
@@ -144,11 +168,12 @@ async function fetchList() {
 }
 
 function loadMore() {
-  if (noMore.value) return
   if (activeTab.value === 'following') {
+    if (followingNoMore.value) return
     followingPage.value++
     fetchMoreFollowing()
   } else {
+    if (followerNoMore.value) return
     followerPage.value++
     fetchMoreFollowers()
   }
@@ -260,24 +285,25 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
 
 .content {
   height: 100vh;
-  padding: 0 32rpx;
+  padding: 0 24rpx;
   box-sizing: border-box;
 }
 
 .follow-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   background: #fff;
   border-radius: 16rpx;
   padding: 24rpx;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
 }
 
 .avatar {
-  width: 88rpx;
-  height: 88rpx;
+  width: 96rpx;
+  height: 96rpx;
   border-radius: 50%;
   flex-shrink: 0;
+  margin-top: 4rpx;
 }
 
 .info {
@@ -286,6 +312,13 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6rpx;
 }
 
 .name {
@@ -294,16 +327,36 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
   font-weight: 500;
 }
 
+.realname-tag {
+  font-size: 20rpx;
+  color: #e7412b;
+  border: 1rpx solid #e7412b;
+  border-radius: 6rpx;
+  padding: 2rpx 8rpx;
+  margin-left: 10rpx;
+  line-height: 1.4;
+}
+
+.meta-line {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .follow-time {
   font-size: 22rpx;
   color: #999;
-  margin-top: 6rpx;
 }
 
 .unfollow-btn {
   flex-shrink: 0;
-  padding: 12rpx 28rpx;
-  background: #e7412b;
+  margin-left: 16rpx;
+  margin-top: 8rpx;
+  padding: 10rpx 28rpx;
+  background: #ff9db5;
   border-radius: 30rpx;
 }
 

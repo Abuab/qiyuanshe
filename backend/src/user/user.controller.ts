@@ -276,6 +276,12 @@ export class UserController {
     return Result.success(null, '账户已注销')
   }
 
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  async getMyStats(@Request() req: any) {
+    return this.userService.getUserStats(req.user.userId)
+  }
+
   @Get(':id')
   async getUserDetail(
     @Param('id', ParseIntPipe) id: number,

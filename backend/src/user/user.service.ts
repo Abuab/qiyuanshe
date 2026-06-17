@@ -703,6 +703,15 @@ export class UserService {
     }
   }
 
+  async getUserStats(userId: number) {
+    const [following, followers, viewedMe] = await Promise.all([
+      this.followRepository.count({ where: { userId } }),
+      this.followRepository.count({ where: { targetUserId: userId } }),
+      this.visitRepository.count({ where: { userId } }),
+    ])
+    return { following, followers, footprints: 0, viewedMe }
+  }
+
   private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
     const photos = await this.userPhotoRepository.find({
       where: { userId: In(userIds), isMain: 1 },

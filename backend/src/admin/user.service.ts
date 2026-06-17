@@ -6,6 +6,7 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
 import { AuditLog } from '../entities/AuditLog'
 import { MatchRecord } from '../entities/MatchRecord'
+import { Follow } from '../entities/Follow'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import * as bcrypt from 'bcrypt'
@@ -56,6 +57,8 @@ export class AdminUserService {
     private readonly notificationRepository: Repository<UserNotification>,
     @InjectRepository(MatchRecord)
     private readonly matchRecordRepository: Repository<MatchRecord>,
+    @InjectRepository(Follow)
+    private readonly followRepository: Repository<Follow>,
     private readonly dynamicService: DynamicService,
   ) {}
 
@@ -687,6 +690,80 @@ export class AdminUserService {
       images: photoUrls,
     })
     return { success: true, message: `已生成动态，${photoUrls.length} 张照片` }
+  }
+
+  // ===== 关注管理 =====
+
+  async getUserFollowStats(userId: number) {
+    const [following, followers] = await Promise.all([
+      this.followRepository.count({ where: { userId } }),
+      this.followRepository.count({ where: { targetUserId: userId } }),
+    ])
+    return { following, followers }
+  }
+
+  async getUserFollowingList(userId: number, page: number, limit: number) {
+    const [items, total] = await this.followRepository.findAndCount({
+      where: { userId },
+      relations: ['targetUser'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    })
+    return {
+      list: items.map(f => ({
+        id: f.id,
+        targetUserId: f.targetUserId,
+        nickname: f.targetUser?.nickname || '',
+        avatar: f.targetUser?.avatar || '',
+        createdAt: f.createdAt,
+      })),
+      total,
+    }
+  }
+
+  async getUserFollowersList(userId: number, page: number, limit: number) {
+    const [items, total] = await this.followRepository.findAndCount({
+      where: { targetUserId: userId },
+      relations: ['user'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    })
+    return {
+      list: items.map(f => ({
+        id: f.id,
+        userId: f.userId,
+        nickname: f.user?.nickname || '',
+        avatar: f.user?.avatar || '',
+        createdAt: f.createdAt,
+      })),
+      total,
+    }
+  }
+
+  async adminAddFollow(userId: number, targetUserId: number) {
+    const exists = await this.followRepository.findOne({ where: { userId, targetUserId } })
+    if (exists) return
+    await this.followRepository.save({ userId, targetUserId })
+  }
+
+  async adminRemoveFollow(userId: number, targetUserId: number) {
+    const follow = await this.followRepository.findOne({ where: { userId, targetUserId } })
+    if (!follow) return
+    await this.followRepository.remove(follow)
+  }
+
+  async searchUsers(keyword: string) {
+    if (!keyword || keyword.length < 1) return []
+    const users = await this.userRepository.find({
+      where: [
+        { nickname: Like(`%${keyword}%`), isDeleted: 0 },
+      ],
+      select: ['id', 'nickname', 'avatar'],
+      take: 20,
+    })
+    return users
   }
 }
 

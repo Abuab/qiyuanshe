@@ -227,4 +227,30 @@ export const adminUsers = {
   setMainPhoto(photoId: number): Promise<ApiResponse> {
     return request.put(`/admin/users/photos/${photoId}/main`)
   },
+
+  // 关注管理
+  getFollowStats(id: number): Promise<ApiResponse<{ following: number; followers: number }>> {
+    return request.get(`/admin/users/${id}/follow-stats`)
+  },
+  getFollowing(id: number, page = 1, limit = 50): Promise<ApiResponse<{ list: any[]; total: number }>> {
+    return request.get(`/admin/users/${id}/admin-following`, { params: { page, limit } })
+  },
+  getFollowers(id: number, page = 1, limit = 50): Promise<ApiResponse<{ list: any[]; total: number }>> {
+    return request.get(`/admin/users/${id}/admin-followers`, { params: { page, limit } })
+  },
+  addFollow(id: number, data: { targetUserId: number }): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/admin-follow`, data)
+  },
+  removeFollow(id: number, targetUserId: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}/admin-follow/${targetUserId}`)
+  },
+  addFollower(id: number, data: { followerUserId: number }): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/admin-follower`, data)
+  },
+  removeFollower(id: number, followerUserId: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}/admin-follow/${followerUserId}`)
+  },
+  searchUsers(keyword: string): Promise<ApiResponse<any[]>> {
+    return request.get('/admin/users/search', { params: { keyword } })
+  },
 }

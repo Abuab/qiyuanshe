@@ -836,6 +836,80 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <template v-if="editingUserId">
+          <el-divider content-position="left">关注管理</el-divider>
+          <div style="display:flex;gap:24px">
+            <!-- 我关注的 -->
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">我关注的 ({{ followStats.following }})</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <el-select
+                  v-model="addFollowingId"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="搜索用户昵称"
+                  :remote-method="searchFollowUsers"
+                  :loading="followSearchLoading"
+                  clearable
+                  style="flex:1"
+                >
+                  <el-option
+                    v-for="u in followSearchResults"
+                    :key="u.id"
+                    :label="u.nickname"
+                    :value="u.id"
+                  />
+                </el-select>
+                <el-button type="primary" size="small" @click="handleAddFollowing" :disabled="!addFollowingId">添加</el-button>
+              </div>
+              <div style="max-height:200px;overflow-y:auto">
+                <div v-for="f in followingFollows" :key="f.id" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0">
+                  <span style="font-size:13px">{{ f.nickname }}</span>
+                  <el-button type="danger" link size="small" @click="handleRemoveFollowing(f.targetUserId)">取消</el-button>
+                </div>
+                <div v-if="followingFollows.length === 0" style="color:#999;font-size:12px;padding:8px 0">暂无关注</div>
+              </div>
+            </div>
+            <!-- 关注我的 -->
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span style="font-weight:600;font-size:14px">关注我的 ({{ followStats.followers }})</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <el-select
+                  v-model="addFollowerId"
+                  filterable
+                  remote
+                  reserve-keyword
+                  placeholder="搜索用户昵称"
+                  :remote-method="searchFollowUsers"
+                  :loading="followSearchLoading"
+                  clearable
+                  style="flex:1"
+                >
+                  <el-option
+                    v-for="u in followSearchResults"
+                    :key="u.id"
+                    :label="u.nickname"
+                    :value="u.id"
+                  />
+                </el-select>
+                <el-button type="primary" size="small" @click="handleAddFollower" :disabled="!addFollowerId">添加</el-button>
+              </div>
+              <div style="max-height:200px;overflow-y:auto">
+                <div v-for="f in followerFollows" :key="f.id" style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0f0f0">
+                  <span style="font-size:13px">{{ f.nickname }}</span>
+                  <el-button type="danger" link size="small" @click="handleRemoveFollower(f.userId)">移除</el-button>
+                </div>
+                <div v-if="followerFollows.length === 0" style="color:#999;font-size:12px;padding:8px 0">暂无粉丝</div>
+              </div>
+            </div>
+          </div>
+        </template>
       </el-form>
       <template #footer>
         <el-button @click="createDialogVisible = false">取消</el-button>
@@ -942,6 +1016,83 @@ const createDialogVisible = ref(false)
 const dialogVersion = ref(0)
 const editingUserId = ref<number | null>(null)
 const editLoading = ref(false)
+
+// ===== 关注管理 =====
+const followStats = reactive({ following: 0, followers: 0 })
+const followingFollows = ref<any[]>([])
+const followerFollows = ref<any[]>([])
+const addFollowingId = ref<number | null>(null)
+const addFollowerId = ref<number | null>(null)
+const followSearchResults = ref<any[]>([])
+const followSearchLoading = ref(false)
+
+async function loadFollowData(userId: number) {
+  try {
+    const stats = await adminUsers.getFollowStats(userId)
+    if (stats.success) {
+      followStats.following = stats.data?.following || 0
+      followStats.followers = stats.data?.followers || 0
+    }
+  } catch {}
+  try {
+    const res = await adminUsers.getFollowing(userId)
+    if (res.success) followingFollows.value = res.data?.list || []
+  } catch {}
+  try {
+    const res = await adminUsers.getFollowers(userId)
+    if (res.success) followerFollows.value = res.data?.list || []
+  } catch {}
+}
+
+async function searchFollowUsers(query: string) {
+  if (!query || query.length < 1) { followSearchResults.value = []; return }
+  followSearchLoading.value = true
+  try {
+    const res = await adminUsers.searchUsers(query)
+    if (res.success) followSearchResults.value = res.data || []
+    else followSearchResults.value = []
+  } catch { followSearchResults.value = [] }
+  followSearchLoading.value = false
+}
+
+async function handleAddFollowing() {
+  if (!addFollowingId.value || !editingUserId.value) return
+  try {
+    await adminUsers.addFollow(editingUserId.value, { targetUserId: addFollowingId.value })
+    ElMessage.success('添加关注成功')
+    addFollowingId.value = null
+    loadFollowData(editingUserId.value)
+  } catch { ElMessage.error('添加失败') }
+}
+
+async function handleAddFollower() {
+  if (!addFollowerId.value || !editingUserId.value) return
+  try {
+    await adminUsers.addFollower(editingUserId.value, { followerUserId: addFollowerId.value })
+    ElMessage.success('添加粉丝成功')
+    addFollowerId.value = null
+    loadFollowData(editingUserId.value)
+  } catch { ElMessage.error('添加失败') }
+}
+
+async function handleRemoveFollowing(targetUserId: number) {
+  if (!editingUserId.value) return
+  try {
+    await adminUsers.removeFollow(editingUserId.value, targetUserId)
+    ElMessage.success('已取消关注')
+    loadFollowData(editingUserId.value)
+  } catch { ElMessage.error('操作失败') }
+}
+
+async function handleRemoveFollower(followerUserId: number) {
+  if (!editingUserId.value) return
+  try {
+    await adminUsers.removeFollower(editingUserId.value, followerUserId)
+    ElMessage.success('已移除粉丝')
+    loadFollowData(editingUserId.value)
+  } catch { ElMessage.error('操作失败') }
+}
+
 const currentUser = ref<User | null>(null)
 
 const vipForm = reactive({
@@ -1538,6 +1689,7 @@ async function handleEditUser(row: User) {
 
   dialogVersion.value++
   createDialogVisible.value = true
+  loadFollowData(editingUserId.value!)
 }
 
 /**
