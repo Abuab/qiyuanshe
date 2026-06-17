@@ -384,7 +384,7 @@ const aboutConfig = reactive({
 // 尝试从后台加载配置
 async function fetchCustomConfig() {
   try {
-    const res: any = await get('/vip/custom-config', {}, { skipToast: true } as any)
+    const res: any = await get('/vip/custom-config')
     if (res) {
       if (res.bannerUrl) customConfig.bannerUrl = res.bannerUrl
       if (res.suitableTitle) customConfig.suitableTitle = res.suitableTitle
@@ -399,7 +399,7 @@ async function fetchCustomConfig() {
 
 async function fetchAboutConfig() {
   try {
-    const res: any = await get('/vip/about-config', {}, { skipToast: true } as any)
+    const res: any = await get('/vip/about-config')
     if (res) {
       if (res.bannerUrl) aboutConfig.bannerUrl = res.bannerUrl
       if (res.title) aboutConfig.title = res.title
