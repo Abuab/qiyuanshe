@@ -49,6 +49,7 @@ import { UserTopCardQuota } from '../entities/UserTopCardQuota'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
+import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
@@ -91,6 +92,7 @@ import { NotifyLog } from '../entities/NotifyLog'
       UserBlock,
       ChatMessage,
       CirclePost,
+      ProfileVisit,
       NotifyLog,
     ]),
     JwtModule.register({
