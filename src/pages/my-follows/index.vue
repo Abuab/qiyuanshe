@@ -21,7 +21,7 @@
     <scroll-view
       class="content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 20) + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx + tabRowHeightPx) + 'px' }"
       @scrolltolower="loadMore"
     >
       <!-- 加载中 -->
@@ -94,6 +94,7 @@ const { appName, followEmptyText, followerEmptyText, icons } = storeToRefs(syste
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const tabRowHeightPx = ref(40)
 const activeTab = ref<'following' | 'followers'>('following')
 const loading = ref(true)
 
@@ -117,6 +118,7 @@ onMounted(async () => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+  tabRowHeightPx.value = Math.round(80 * (sysInfo.windowWidth || 375) / 750)
   await fetchList()
 })
 

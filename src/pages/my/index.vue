@@ -161,7 +161,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { getFullImageUrl } from '@/utils/common'
-import { getBaseUrl } from '@/utils/request'
+import { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
 
 const userStore = useUserStore()
@@ -213,21 +213,15 @@ const stats = reactive({
   viewedMe: 0,
 })
 
-const loadStats = () => {
+const loadStats = async () => {
   if (!isLoggedIn.value) return
-  uni.request({
-    url: getBaseUrl() + '/users/stats',
-    method: 'GET',
-    success: (res: any) => {
-      const data = res?.data
-      if (data) {
-        stats.following = data.following || 0
-        stats.followers = data.followers || 0
-        stats.footprints = data.footprints || 0
-        stats.viewedMe = data.viewedMe || 0
-      }
-    },
-  })
+  try {
+    const data = await get<any>('/users/stats')
+    stats.following = data.following || 0
+    stats.followers = data.followers || 0
+    stats.footprints = data.footprints || 0
+    stats.viewedMe = data.viewedMe || 0
+  } catch {}
 }
 
 const copyUserId = () => {
