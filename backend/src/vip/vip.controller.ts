@@ -80,4 +80,16 @@ export class VipController {
       return Result.serverError(error?.message || '置顶失败')
     }
   }
+
+  /** 定制会员页面配置 */
+  @Get('custom-config')
+  async getCustomConfig() {
+    return Result.success(await this.vipService.getCustomConfig())
+  }
+
+  /** 关于我们页面配置 */
+  @Get('about-config')
+  async getAboutConfig() {
+    return Result.success(await this.vipService.getAboutConfig())
+  }
 }

@@ -9,6 +9,7 @@ import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
 import { UserTopRecord } from '../entities/UserTopRecord'
 import { UserTopCardQuota } from '../entities/UserTopCardQuota'
+import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
 
 @Module({
@@ -19,6 +20,7 @@ import { RedisService } from '../common/redis.service'
       VipPackage,
       UserTopRecord,
       UserTopCardQuota,
+      SystemConfig,
     ]),
     ScheduleModule.forRoot(),
   ],
