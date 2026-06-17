@@ -117,6 +117,7 @@ services:
       # 服务端口
       PORT: 3000
       NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=384
     volumes:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
       - ./data/uploads:/app/uploads
@@ -139,7 +140,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    mem_limit: 512m
+    mem_limit: 768m
     cpus: 0.5
 
   # ============ 管理后台 ============
