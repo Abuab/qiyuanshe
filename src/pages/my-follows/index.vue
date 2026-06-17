@@ -269,7 +269,7 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
 }
 
 .tab-item.active {
-  color: #e7412b;
+  color: #666;
   font-weight: bold;
 }
 
@@ -281,7 +281,7 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
   transform: translateX(-50%);
   width: 48rpx;
   height: 4rpx;
-  background: #e7412b;
+  background: #ff6b9d;
   border-radius: 2rpx;
 }
 
@@ -330,13 +330,14 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
 }
 
 .realname-tag {
+  margin-left: 12rpx;
+  display: flex;
+  align-items: center;
+  padding: 2rpx 12rpx;
+  background-color: #E8F4FD;
+  border-radius: 8rpx;
   font-size: 20rpx;
-  color: #e7412b;
-  border: 1rpx solid #e7412b;
-  border-radius: 6rpx;
-  padding: 2rpx 8rpx;
-  margin-left: 10rpx;
-  line-height: 1.4;
+  color: #409EFF;
 }
 
 .meta-line {
