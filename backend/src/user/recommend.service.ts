@@ -67,6 +67,9 @@ const CACHE_TTL = {
   recommendList: 120,          // 推荐列表分页缓存 2 分钟
 }
 
+// 缓存版本号：修改推荐逻辑后递增以强制刷新所有旧缓存
+const CACHE_VERSION = 2
+
 @Injectable()
 export class RecommendService {
   // 需要关联查询的字段子集（UserListItem 所需）
@@ -496,7 +499,7 @@ export class RecommendService {
     filters?: RecommendFilters,
   ): string {
     const filterStr = filters ? JSON.stringify(filters) : ''
-    return `recommend:list:${city}:${targetGender}:p${page}s${pageSize}:u${currentUserId || 0}:${filterStr.slice(0,64)}`
+    return `v${CACHE_VERSION}:recommend:list:${city}:${targetGender}:p${page}s${pageSize}:u${currentUserId || 0}:${filterStr.slice(0,64)}`
   }
 
   private extractCity(residence: string): string {

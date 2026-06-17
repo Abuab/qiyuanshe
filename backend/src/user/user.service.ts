@@ -800,7 +800,6 @@ export class UserService {
     if (userIds.length > 0) {
       const users = await this.userRepository
         .createQueryBuilder('u')
-        .select(['u.id', 'u.nickname', 'u.avatar', 'u.birthYear', 'u.gender', 'u.occupation', 'u.housingStatus', 'u.isRealName'])
         .where('u.id IN (:...ids)', { ids: userIds })
         .getMany()
       for (const u of users) usersMap.set(u.id, u)
@@ -865,7 +864,6 @@ export class UserService {
     if (userIds.length > 0) {
       const users = await this.userRepository
         .createQueryBuilder('u')
-        .select(['u.id', 'u.nickname', 'u.avatar', 'u.birthYear', 'u.gender', 'u.occupation', 'u.housingStatus', 'u.isRealName'])
         .where('u.id IN (:...ids)', { ids: userIds })
         .getMany()
       for (const u of users) usersMap.set(u.id, u)

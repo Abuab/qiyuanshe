@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: (bottomBarHeight + tabBarPx) + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '200rpx' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -107,7 +107,7 @@
       v-if="activeTab === 'custom'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: tabBarPx + 10 + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '140rpx' }"
     >
       <!-- Banner -->
       <view class="custom-banner" v-if="customConfig.bannerUrl">
@@ -152,7 +152,7 @@
       v-if="activeTab === 'about'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: tabBarPx + 10 + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '140rpx' }"
     >
       <!-- Banner -->
       <view class="about-banner" v-if="aboutConfig.bannerUrl">
@@ -179,7 +179,7 @@
     </scroll-view>
 
     <!-- 底部支付栏（仅VIP会员Tab显示） -->
-    <view v-if="activeTab === 'vip'" class="bottom-bar" :style="{ bottom: tabBarPx + 'px' }">
+    <view v-if="activeTab === 'vip'" class="bottom-bar">
       <view class="bottom-price">
         <text class="price-label" v-if="selectedPackage">合计</text>
         <text class="price-total" v-if="selectedPackage">
@@ -270,10 +270,6 @@ const packages = ref<VipPackageItem[]>([])
 const selectedPackageId = ref<number | null>(null)
 const selectedPackage = ref<VipPackageItem | null>(null)
 const packagesLoading = ref(false)
-
-// 底部栏高度（响应式）- 支付栏自身约50px
-const bottomBarHeight = ref(140)
-const tabBarPx = ref(0) // tab-bar 实际像素高度
 
 function formatPrice(price: number): string {
   if (Number.isInteger(price)) return String(price)
@@ -449,10 +445,6 @@ async function put(url: string, data?: any) {
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  // tab-bar 高度 120rpx, 换算为实际 px: 120 * windowWidth / 750
-  tabBarPx.value = Math.round(120 * (sysInfo.windowWidth || 375) / 750)
-  // 更新底部栏高度 = 支付栏 (~50px) + tabBar高度
-  bottomBarHeight.value = Math.round(50 + tabBarPx.value)
 
   fetchPackages()
   fetchCustomConfig()
@@ -802,14 +794,17 @@ onMounted(() => {
 // ===== 底部支付栏 =====
 .bottom-bar {
   position: fixed;
+  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   padding: 12px 20px;
+  // padding-bottom 用 rpx 撑出 tab-bar 的空间，避免被遮挡
+  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-  z-index: 101;
+  z-index: 1000;
 }
 
 .bottom-price {
