@@ -10,6 +10,7 @@ import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
+import { calcProfileScore } from '../common/profile-score'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -368,6 +369,12 @@ export class AdminUserService {
         followingCount: followingCountMap.get(user.id) || 0,
         followerCount: followerCountMap.get(user.id) || 0,
         viewCount: viewCountMap.get(user.id) || 0,
+        /** 运营/推荐字段 */
+        profileScore: calcProfileScore(user),
+        manualBoostScore: user.manualBoostScore || 0,
+        exposurePool: user.exposurePool || 'city',
+        pinnedExpireAt: user.pinnedExpireAt || null,
+        lastActiveAt: user.lastActiveAt || null,
       }
     })
 

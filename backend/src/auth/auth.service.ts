@@ -7,6 +7,7 @@ import { User } from '../entities/User'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
+import { calcProfileScore } from '../common/profile-score'
 
 interface WechatSession {
   openid: string
@@ -183,6 +184,7 @@ export class AuthService {
     }
 
     Object.assign(user, dto)
+    user.profileScore = calcProfileScore(user)
     await this.userRepository.save(user)
 
     return this.sanitizeUser(user)

@@ -380,9 +380,17 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="profileScore" label="资料完整度" width="90" sortable="custom">
+        <el-table-column prop="profileScore" label="资料完整度" width="120" sortable="custom">
           <template #default="{ row }">
-            <span>{{ row.profileScore ?? '-' }}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <el-progress
+                :percentage="row.profileScore || 0"
+                :stroke-width="6"
+                :color="progressColor(row.profileScore)"
+                style="flex:1;min-width:50px"
+              />
+              <span style="font-size:12px;color:#909399;white-space:nowrap">{{ row.profileScore || 0 }}%</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="置顶状态" width="90">
@@ -1223,6 +1231,13 @@ async function handlePinSubmit() {
 function exposurePoolLabel(pool: string) {
   const map: Record<string, string> = { city: '同城', province: '同省', national: '全国' }
   return map[pool] || pool || '同城'
+}
+
+function progressColor(score: number): string {
+  if (score >= 80) return '#67C23A'
+  if (score >= 50) return '#E6A23C'
+  if (score > 0) return '#F56C6C'
+  return '#E4E7ED'
 }
 
 const currentUser = ref<User | null>(null)

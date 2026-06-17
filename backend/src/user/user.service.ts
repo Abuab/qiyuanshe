@@ -9,6 +9,7 @@ import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { SystemService } from '../system/system.service'
 import { RecommendService, RecommendFilters } from './recommend.service'
+import { calcProfileScore } from '../common/profile-score'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -707,6 +708,7 @@ export class UserService {
       }
     }
 
+    user.profileScore = calcProfileScore(user)
     await this.userRepository.save(user)
     return user
   }
