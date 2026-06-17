@@ -43,6 +43,9 @@ import { Matchmaker } from '../entities/Matchmaker'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { VipOrder } from '../entities/VipOrder'
+import { VipPackage } from '../entities/VipPackage'
+import { UserTopRecord } from '../entities/UserTopRecord'
+import { UserTopCardQuota } from '../entities/UserTopCardQuota'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
@@ -55,8 +58,12 @@ import { UserProfileService } from './user-profile.service'
 import { UserProfileController } from './user-profile.controller'
 import { AdminMatchmakerDynamicController } from './matchmaker-dynamic.controller'
 import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
+import { VipPackageController } from './vip-package.controller'
+import { VipPackageService } from './vip-package.service'
+import { VipService } from '../vip/vip.service'
 import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 import { NotifyChannelService } from './notify-channel.service'
+import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 
 @Module({
@@ -68,6 +75,9 @@ import { NotifyLog } from '../entities/NotifyLog'
       HotQuestion,
       QuestionAnswer,
       VipOrder,
+      VipPackage,
+      UserTopRecord,
+      UserTopCardQuota,
       AuditLog,
       SystemConfig,
       Notice,
@@ -108,6 +118,7 @@ import { NotifyLog } from '../entities/NotifyLog'
     AdminChatController,
     UserProfileController,
     AdminMatchmakerDynamicController,
+    VipPackageController,
   ],
   providers: [
     AdminUserService,
@@ -128,6 +139,9 @@ import { NotifyLog } from '../entities/NotifyLog'
     UserProfileService,
     AdminMatchmakerDynamicService,
     NotifyChannelService,
+    VipPackageService,
+    VipService,
+    RedisService,
   ],
   exports: [
     AdminUserService,

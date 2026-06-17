@@ -17,6 +17,7 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminUserService } from './user.service'
+import { VipService } from '../vip/vip.service'
 import { Result } from '../common/result'
 
 interface UserFilter {
@@ -49,6 +50,7 @@ interface UserFilter {
 export class AdminUserController {
   constructor(
     private readonly userService: AdminUserService,
+    private readonly vipService: VipService,
   ) {}
 
   @Get()
@@ -285,5 +287,21 @@ export class AdminUserController {
   ) {
     const result = await this.userService.getUserVisitorDetailGrouped(id)
     return Result.success(result)
+  }
+
+  // ===== 运营手动置顶 =====
+
+  @Post(':id/pin')
+  async pinUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('durationHours') durationHours: number,
+    @Body('boostScore') boostScore?: number,
+  ) {
+    try {
+      const result = await this.vipService.adminPinUser(id, durationHours || 24, boostScore)
+      return Result.success(result, '置顶设置成功')
+    } catch (error: any) {
+      return Result.serverError(error?.message || '置顶设置失败')
+    }
   }
 }

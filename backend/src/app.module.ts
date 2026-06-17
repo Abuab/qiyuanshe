@@ -51,6 +51,7 @@ import { SuccessCaseModule } from './success-case/success-case.module'
 import { MatchmakerCommentModule } from './matchmaker-comment/matchmaker-comment.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
+import { VipModule } from './vip/vip.module'
 import { RedisService } from './common/redis.service'
 
 @Global()
@@ -111,6 +112,7 @@ import { RedisService } from './common/redis.service'
     CircleModule,
     SuccessCaseModule,
     MatchmakerCommentModule,
+    VipModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],
