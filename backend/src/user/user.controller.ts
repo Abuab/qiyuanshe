@@ -264,7 +264,19 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
-    return this.userService.getVisitors(req.user.userId, page, limit)
+    return this.userService.getMyVisitorsWithCount(req.user.userId, page, limit)
+  }
+
+  // ===== 我看过谁（浏览记录） =====
+
+  @Get('my-views')
+  @UseGuards(JwtAuthGuard)
+  async getMyViews(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.userService.getMyViews(req.user.userId, page, limit)
   }
 
   // ===== 注销账户 =====

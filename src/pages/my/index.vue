@@ -52,7 +52,7 @@
             <text class="stat-label">被关注</text>
             <text class="stat-num">{{ stats.followers }}</text>
           </view>
-          <view class="stat-item" @tap.stop="showComingSoon">
+          <view class="stat-item" @tap.stop="goToFootprints">
             <text class="stat-label">足迹</text>
             <text class="stat-num">{{ stats.footprints }}</text>
           </view>
@@ -245,7 +245,8 @@ const goToQuestions = () => {
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
 const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
 const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=followers' })
-const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index' })
+const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=visitors' })
+const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
 const goToPhotos = () => uni.navigateTo({ url: '/pages/my-photos/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
 const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })

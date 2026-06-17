@@ -351,6 +351,33 @@
                   </div>
                 </div>
               </div>
+              <el-divider />
+              <div style="display:flex;gap:24px">
+                <!-- 我看过谁 -->
+                <div style="flex:1">
+                  <h4 style="margin:0 0 12px 0">我看过谁 ({{ viewData.views.length }})</h4>
+                  <div v-if="viewData.views.length === 0" style="color:#999;font-size:13px">暂无记录</div>
+                  <div v-for="v in viewData.views" :key="v.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${v.targetUserId}`)">
+                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
+                    <span style="font-size:12px;color:#999;margin-right:8px">第{{ v.viewCount }}次查看</span>
+                  </div>
+                </div>
+                <!-- 谁看过我 -->
+                <div style="flex:1">
+                  <h4 style="margin:0 0 12px 0">谁看过我 ({{ viewData.visitors.length }})</h4>
+                  <div v-if="viewData.visitors.length === 0" style="color:#999;font-size:13px">暂无记录</div>
+                  <div v-for="v in viewData.visitors" :key="v.visitorUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${v.visitorUserId}`)">
+                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
+                    <span style="font-size:12px;color:#999;margin-right:8px">看过{{ v.viewCount }}次</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -574,6 +601,7 @@ const userAnswerList = ref<any[]>([])
 const answerAuditing = reactive<Record<number, boolean>>({})
 const reviewList = ref<any[]>([])
 const followData = reactive({ following: [] as any[], followers: [] as any[] })
+const viewData = reactive({ views: [] as any[], visitors: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
 
@@ -721,12 +749,16 @@ async function loadFollowDetail() {
   if (!user.value) return
   tabLoading.follow = true
   try {
-    const [followingRes, followersRes] = await Promise.all([
+    const [followingRes, followersRes, viewsRes, visitorsRes] = await Promise.all([
       adminUsers.getFollowing(user.value.id),
       adminUsers.getFollowers(user.value.id),
+      adminUsers.getUserViewDetail(user.value.id),
+      adminUsers.getUserVisitorDetail(user.value.id),
     ])
     if (followingRes.success) followData.following = followingRes.data?.list || []
     if (followersRes.success) followData.followers = followersRes.data?.list || []
+    if (viewsRes.success) viewData.views = viewsRes.data || []
+    if (visitorsRes.success) viewData.visitors = visitorsRes.data || []
   } catch (e) { console.error(e) }
   finally { tabLoading.follow = false }
 }

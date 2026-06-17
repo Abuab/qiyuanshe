@@ -7,6 +7,7 @@ import { UserNotification } from '../entities/UserNotification'
 import { AuditLog } from '../entities/AuditLog'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
+import { ProfileVisit } from '../entities/ProfileVisit'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import * as bcrypt from 'bcrypt'
@@ -59,6 +60,8 @@ export class AdminUserService {
     private readonly matchRecordRepository: Repository<MatchRecord>,
     @InjectRepository(Follow)
     private readonly followRepository: Repository<Follow>,
+    @InjectRepository(ProfileVisit)
+    private readonly visitRepository: Repository<ProfileVisit>,
     private readonly dynamicService: DynamicService,
   ) {}
 
@@ -293,6 +296,21 @@ export class AdminUserService {
       }
     }
 
+    // Bulk query view counts (how many unique users this user has viewed)
+    const viewCountMap = new Map<number, number>()
+    if (userIds.length > 0) {
+      const viewCounts = await this.visitRepository
+        .createQueryBuilder('v')
+        .select('v.visitorUserId', 'userId')
+        .addSelect('COUNT(DISTINCT v.userId)', 'cnt')
+        .where('v.visitorUserId IN (:...userIds)', { userIds })
+        .groupBy('v.visitorUserId')
+        .getRawMany<{ userId: number; cnt: number }>()
+      for (const row of viewCounts) {
+        viewCountMap.set(Number(row.userId), Number(row.cnt))
+      }
+    }
+
     // Merge audit status from bulk queries
     const result = users.map(user => {
       // 将 simple-json 字段强制转纯 JS 数组，确保 JSON 序列化正确
@@ -349,6 +367,7 @@ export class AdminUserService {
         matchCount: matchCountMap.get(user.id) || 0,
         followingCount: followingCountMap.get(user.id) || 0,
         followerCount: followerCountMap.get(user.id) || 0,
+        viewCount: viewCountMap.get(user.id) || 0,
       }
     })
 
@@ -793,6 +812,82 @@ export class AdminUserService {
       take: 20,
     })
     return users
+  }
+
+  // ===== 浏览记录管理 =====
+
+  async getUserViewDetail(userId: number, page = 1, limit = 20) {
+    const result = await this.visitRepository
+      .createQueryBuilder('v')
+      .leftJoinAndSelect('v.user', 'targetUser')
+      .where('v.visitorUserId = :userId', { userId })
+      .orderBy('v.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany()
+
+    const total = await this.visitRepository.count({ where: { visitorUserId: userId } })
+
+    const list = result.map(v => ({
+      id: v.id,
+      targetUserId: v.userId,
+      userId: v.visitorUserId,
+      nickname: (v as any)?.user?.nickname || '',
+      avatar: (v as any)?.user?.avatar || '',
+      createdAt: v.createdAt,
+    }))
+
+    return { list, total, page, limit }
+  }
+
+  async getUserViewDetailGrouped(userId: number) {
+    const result = await this.visitRepository
+      .createQueryBuilder('v')
+      .leftJoin('v.user', 'targetUser')
+      .select('v.userId', 'targetUserId')
+      .addSelect('targetUser.nickname', 'nickname')
+      .addSelect('targetUser.avatar', 'avatar')
+      .addSelect('MAX(v.createdAt)', 'lastViewedAt')
+      .addSelect('COUNT(v.id)', 'viewCount')
+      .where('v.visitorUserId = :userId', { userId })
+      .groupBy('v.userId')
+      .addGroupBy('targetUser.nickname')
+      .addGroupBy('targetUser.avatar')
+      .orderBy('lastViewedAt', 'DESC')
+      .getRawMany()
+
+    return result.map(r => ({
+      targetUserId: Number(r.targetUserId),
+      nickname: r.nickname || '',
+      avatar: r.avatar || '',
+      lastViewedAt: r.lastViewedAt,
+      viewCount: Number(r.viewCount),
+    }))
+  }
+
+  async getUserVisitorDetailGrouped(userId: number) {
+    const result = await this.visitRepository
+      .createQueryBuilder('v')
+      .leftJoin('v.visitorUser', 'visitorUser')
+      .select('v.visitorUserId', 'visitorUserId')
+      .addSelect('visitorUser.nickname', 'nickname')
+      .addSelect('visitorUser.avatar', 'avatar')
+      .addSelect('MAX(v.createdAt)', 'lastVisitedAt')
+      .addSelect('COUNT(v.id)', 'viewCount')
+      .where('v.userId = :userId', { userId })
+      .groupBy('v.visitorUserId')
+      .addGroupBy('visitorUser.nickname')
+      .addGroupBy('visitorUser.avatar')
+      .orderBy('lastVisitedAt', 'DESC')
+      .getRawMany()
+
+    return result.map(r => ({
+      visitorUserId: Number(r.visitorUserId),
+      nickname: r.nickname || '',
+      avatar: r.avatar || '',
+      lastVisitedAt: r.lastVisitedAt,
+      viewCount: Number(r.viewCount),
+    }))
   }
 }
 

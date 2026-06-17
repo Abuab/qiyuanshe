@@ -443,6 +443,14 @@
             <span>{{ row.followerCount ?? 0 }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="viewCount" label="看过谁" width="80" sortable="custom">
+          <template #default="{ row }">
+            <el-button v-if="(row.viewCount ?? 0) > 0" link type="primary" size="small" @click="handleViewDetail(row)">
+              {{ row.viewCount ?? 0 }}
+            </el-button>
+            <span v-else>0</span>
+          </template>
+        </el-table-column>
         <el-table-column v-if="!isReadonly" label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
@@ -511,6 +519,21 @@
         <el-button @click="notifyDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleNotifySubmit">发送</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 看过谁弹窗 -->
+    <el-dialog v-model="viewDetailDialogVisible" title="浏览记录" width="500px">
+      <div v-loading="viewDetailLoading">
+        <div v-if="viewDetailList.length === 0" style="text-align:center;color:#999;padding:20px">暂无浏览记录</div>
+        <div v-for="item in viewDetailList" :key="item.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="viewDetailDialogVisible = false; $router.push(`/user/detail/${item.targetUserId}`)">
+          <el-image :src="item.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+            <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+          </el-image>
+          <span style="margin-left:12px;font-size:14px;flex:1">{{ item.nickname }}</span>
+          <span style="font-size:12px;color:#999;margin-right:12px">第{{ item.viewCount }}次查看</span>
+          <span style="font-size:12px;color:#999">{{ item.lastViewedAt ? item.lastViewedAt.slice(0,16) : '' }}</span>
+        </div>
+      </div>
     </el-dialog>
 
     <el-dialog v-model="createDialogVisible" :title="editingUserId ? '编辑用户' : '添加用户'" width="860px" destroy-on-close>
@@ -1100,6 +1123,21 @@ async function handleRemoveFollower(followerUserId: number) {
     ElMessage.success('已移除粉丝')
     loadFollowData(editingUserId.value)
   } catch { ElMessage.error('操作失败') }
+}
+
+// ===== 看过谁弹窗 =====
+const viewDetailDialogVisible = ref(false)
+const viewDetailLoading = ref(false)
+const viewDetailList = ref<any[]>([])
+
+async function handleViewDetail(row: any) {
+  viewDetailDialogVisible.value = true
+  viewDetailLoading.value = true
+  try {
+    const res = await adminUsers.getUserViewDetail(row.id)
+    if (res.success) viewDetailList.value = res.data || []
+  } catch { viewDetailList.value = [] }
+  viewDetailLoading.value = false
 }
 
 const currentUser = ref<User | null>(null)

@@ -266,4 +266,24 @@ export class AdminUserController {
     await this.userService.adminAddFollow(body.followerUserId, id)
     return Result.success(null, '添加粉丝成功')
   }
+
+  // ===== 浏览记录 =====
+
+  @Get(':id/view-detail')
+  async getUserViewDetail(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    const result = await this.userService.getUserViewDetailGrouped(id)
+    return Result.success(result)
+  }
+
+  @Get(':id/visitor-detail')
+  async getUserVisitorDetail(
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const result = await this.userService.getUserVisitorDetailGrouped(id)
+    return Result.success(result)
+  }
 }

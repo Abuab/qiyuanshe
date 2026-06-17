@@ -253,4 +253,12 @@ export const adminUsers = {
   searchUsers(keyword: string): Promise<ApiResponse<any[]>> {
     return request.get('/admin/users/search', { params: { keyword } })
   },
+
+  // 浏览记录
+  getUserViewDetail(id: number): Promise<ApiResponse<any[]>> {
+    return request.get(`/admin/users/${id}/view-detail`)
+  },
+  getUserVisitorDetail(id: number): Promise<ApiResponse<any[]>> {
+    return request.get(`/admin/users/${id}/visitor-detail`)
+  },
 }

@@ -1,77 +1,344 @@
 <template>
   <view class="page">
+    <!-- 导航栏 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
-        <text class="nav-title">谁看过我</text>
+        <text class="nav-title">{{ appName }}</text>
         <view class="nav-right"></view>
       </view>
+      <!-- 两个分区标签 -->
+      <view class="tab-row">
+        <view class="tab-item" :class="{ active: activeTab === 'visitors' }" @tap="switchTab('visitors')">
+          <text>谁看过我</text>
+        </view>
+        <view class="tab-item" :class="{ active: activeTab === 'views' }" @tap="switchTab('views')">
+          <text>我看过谁</text>
+        </view>
+      </view>
     </view>
-    <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
-      <!-- 非VIP提示 -->
-      <view v-if="!isVip" class="vip-tip">
-        <text class="vip-tip-title">开通会员查看完整访客列表</text>
-        <text class="vip-tip-desc">升级VIP，查看谁在关注你</text>
-        <button class="vip-btn" @tap="goToVip">立即开通</button>
-      </view>
+
+    <scroll-view
+      class="content"
+      scroll-y
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx + tabRowHeightPx) + 'px' }"
+      @scrolltolower="loadMore"
+    >
+      <!-- 加载中 -->
       <view v-if="loading" class="loading">加载中...</view>
-      <view v-else-if="visitors.length === 0" class="empty">暂无访客</view>
-      <view v-for="v in visitors" :key="v.id" class="visitor-card" @tap="goToUser(v.visitorUserId)">
-        <image class="avatar" :src="v.visitorUser?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
-        <text class="name">{{ v.visitorUser?.nickname || '神秘访客' }}</text>
-        <text class="time">{{ v.createdAt?.slice(0, 16) }}</text>
-      </view>
+
+      <!-- 我看过谁 -->
+      <template v-if="!loading && activeTab === 'views'">
+        <view v-if="viewList.length === 0" class="empty-block">
+          <text class="empty-text">还没有浏览过任何用户</text>
+        </view>
+        <view v-else>
+          <view v-for="item in viewList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
+            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <view class="info">
+              <view class="name-row">
+                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text v-if="item.isRealName" class="realname-tag">已实名</text>
+              </view>
+              <text class="meta-line">{{ formatMeta(item) }}</text>
+              <text class="view-count-line">第{{ item.viewCount || 1 }}次查看TA的资料</text>
+            </view>
+            <text class="time-text">{{ formatTime(item.lastViewedAt) }}</text>
+          </view>
+          <view v-if="viewNoMore" class="no-more">— 没有更多了 —</view>
+        </view>
+      </template>
+
+      <!-- 谁看过我 -->
+      <template v-if="!loading && activeTab === 'visitors'">
+        <view v-if="visitorList.length === 0" class="empty-block">
+          <text class="empty-text">还没有人看过您</text>
+        </view>
+        <view v-else>
+          <view v-for="item in visitorList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
+            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <view class="info">
+              <view class="name-row">
+                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text v-if="item.isRealName" class="realname-tag">已实名</text>
+              </view>
+              <text class="meta-line">{{ formatMeta(item) }}</text>
+              <text class="view-count-line">第{{ item.viewCount || 1 }}次查看您的资料</text>
+            </view>
+            <text class="time-text">{{ formatTime(item.lastVisitedAt) }}</text>
+          </view>
+          <view v-if="visitorNoMore" class="no-more">— 没有更多了 —</view>
+        </view>
+      </template>
+
       <view class="bottom-safe"></view>
     </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
-import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useSystemStore } from '@/store/system'
+import { storeToRefs } from 'pinia'
 
-const userStore = useUserStore()
+const systemStore = useSystemStore()
+const { appName } = storeToRefs(systemStore)
+
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const tabRowHeightPx = ref(40)
+const activeTab = ref<'views' | 'visitors'>('views')
 const loading = ref(true)
-const visitors = ref<any[]>([])
-const isVip = ref(false)
+
+const viewList = ref<any[]>([])
+const visitorList = ref<any[]>([])
+const viewPage = ref(1)
+const visitorPage = ref(1)
+const viewNoMore = ref(false)
+const visitorNoMore = ref(false)
+
+onLoad((options: any) => {
+  if (options?.tab === 'visitors') {
+    activeTab.value = 'visitors'
+  }
+})
 
 onMounted(async () => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
-  isVip.value = !!(userStore.userInfo as any)?.vipExpireAt && new Date((userStore.userInfo as any).vipExpireAt) > new Date()
-  try {
-    const res = await get<any>('/users/visitors?limit=10')
-    visitors.value = res?.list || []
-  } catch (e) { console.error(e) }
-  loading.value = false
+  tabRowHeightPx.value = Math.round(80 * (sysInfo.windowWidth || 375) / 750)
+  await fetchList()
 })
+
+function formatMeta(item: any) {
+  const parts: string[] = []
+  if (item.age) parts.push(item.age + '岁')
+  if (item.occupation) parts.push(item.occupation)
+  if (item.housingStatus) parts.push(item.housingStatus)
+  return parts.join(' | ') || '暂无信息'
+}
+
+function formatTime(dateStr: string) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${day} ${h}:${min}`
+}
+
+function switchTab(tab: 'views' | 'visitors') {
+  if (activeTab.value === tab) return
+  activeTab.value = tab
+  fetchList()
+}
+
+async function fetchList() {
+  loading.value = true
+  try {
+    if (activeTab.value === 'views') {
+      viewPage.value = 1
+      const res = await get<any>('/users/my-views?page=1&limit=20')
+      const items = res?.list || []
+      viewList.value = items
+      viewNoMore.value = items.length < 20
+    } else {
+      visitorPage.value = 1
+      const res = await get<any>('/users/visitors?page=1&limit=20')
+      const items = res?.list || []
+      visitorList.value = items
+      visitorNoMore.value = items.length < 20
+    }
+  } catch (e) {
+    console.error(e)
+  }
+  loading.value = false
+}
+
+function loadMore() {
+  if (activeTab.value === 'views') {
+    if (viewNoMore.value) return
+    viewPage.value++
+    fetchMoreViews()
+  } else {
+    if (visitorNoMore.value) return
+    visitorPage.value++
+    fetchMoreVisitors()
+  }
+}
+
+async function fetchMoreViews() {
+  try {
+    const res = await get<any>(`/users/my-views?page=${viewPage.value}&limit=20`)
+    const items = res?.list || []
+    viewList.value = viewList.value.concat(items)
+    viewNoMore.value = items.length < 20
+  } catch (e) { console.error(e) }
+}
+
+async function fetchMoreVisitors() {
+  try {
+    const res = await get<any>(`/users/visitors?page=${visitorPage.value}&limit=20`)
+    const items = res?.list || []
+    visitorList.value = visitorList.value.concat(items)
+    visitorNoMore.value = items.length < 20
+  } catch (e) { console.error(e) }
+}
 
 function handleBack() { safeNavigateBack() }
 function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?id=${id}` }) }
-function goToVip() { uni.navigateTo({ url: '/pages/vip/index' }) }
 </script>
 
 <style lang="scss" scoped>
 .page { min-height: 100vh; background: #f5f5f5; }
-.nav-wrap { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05); }
-.nav-bar { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 32rpx; }
+
+.nav-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.nav-bar {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+}
+
 .nav-left, .nav-right { width: 100rpx; }
 .back-icon { font-size: 40rpx; color: #333; }
 .nav-title { font-size: 32rpx; font-weight: bold; color: #333; }
-.content { height: 100vh; padding: 32rpx; box-sizing: border-box; }
-.vip-tip { background: linear-gradient(135deg, #fce4c8, #fdd9a6); border-radius: 16rpx; padding: 40rpx; text-align: center; margin-bottom: 24rpx; }
-.vip-tip-title { display: block; font-size: 30rpx; color: #333; font-weight: bold; }
-.vip-tip-desc { display: block; font-size: 26rpx; color: #666; margin-top: 8rpx; }
-.vip-btn { margin-top: 24rpx; background: linear-gradient(135deg, #d4a574, #c9965a); color: #fff; border-radius: 40rpx; height: 72rpx; line-height: 72rpx; font-size: 28rpx; width: 300rpx; }
-.visitor-card { display: flex; align-items: center; background: #fff; border-radius: 16rpx; padding: 24rpx; margin-bottom: 16rpx; }
-.avatar { width: 80rpx; height: 80rpx; border-radius: 50%; }
-.name { flex: 1; margin-left: 20rpx; font-size: 28rpx; color: #333; }
-.time { font-size: 24rpx; color: #999; }
-.loading, .empty { text-align: center; padding: 100rpx 0; color: #999; font-size: 28rpx; }
+
+.tab-row {
+  display: flex;
+  height: 80rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #666;
+  position: relative;
+}
+
+.tab-item.active {
+  color: #666;
+  font-weight: bold;
+}
+
+.tab-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 48rpx;
+  height: 4rpx;
+  background: #ff6b9d;
+  border-radius: 2rpx;
+}
+
+.content {
+  height: 100vh;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+}
+
+.follow-card {
+  display: flex;
+  align-items: flex-start;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  margin-left: 20rpx;
+  min-width: 0;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+}
+
+.name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.realname-tag {
+  margin-left: 12rpx;
+  display: flex;
+  align-items: center;
+  padding: 2rpx 12rpx;
+  background-color: #E8F4FD;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+  color: #409EFF;
+}
+
+.meta-line {
+  font-size: 24rpx;
+  color: #666;
+  margin-bottom: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.view-count-line {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.time-text {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 12rpx;
+  margin-top: 8rpx;
+}
+
+.loading { text-align: center; padding: 100rpx 0; color: #999; }
+.no-more { text-align: center; padding: 24rpx 0; color: #ccc; font-size: 24rpx; }
+
+.empty-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 200rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
 .bottom-safe { height: 60rpx; }
 </style>

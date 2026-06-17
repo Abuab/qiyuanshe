@@ -704,12 +704,23 @@ export class UserService {
   }
 
   async getUserStats(userId: number) {
-    const [following, followers, viewedMe] = await Promise.all([
+    const [following, followers, viewedMe, myViews] = await Promise.all([
       this.followRepository.count({ where: { userId } }),
       this.followRepository.count({ where: { targetUserId: userId } }),
-      this.visitRepository.count({ where: { userId } }),
+      this.visitRepository
+        .createQueryBuilder('v')
+        .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
+        .where('v.userId = :userId', { userId })
+        .getRawOne()
+        .then(r => Number(r?.cnt) || 0),
+      this.visitRepository
+        .createQueryBuilder('v')
+        .select('COUNT(DISTINCT v.userId)', 'cnt')
+        .where('v.visitorUserId = :userId', { userId })
+        .getRawOne()
+        .then(r => Number(r?.cnt) || 0),
     ])
-    return { following, followers, footprints: 0, viewedMe }
+    return { following, followers, footprints: myViews, viewedMe }
   }
 
   private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
@@ -878,6 +889,135 @@ export class UserService {
       pageSize,
       totalPages,
     }
+  }
+
+  // ===== 我看过谁（我浏览过的用户列表，去重+计数） =====
+  async getMyViews(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedResult<any>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+
+    // 子查询：我浏览过的每个用户的最新一次浏览时间
+    const subQuery = this.visitRepository
+      .createQueryBuilder('v')
+      .select('v.userId', 'targetUserId')
+      .addSelect('MAX(v.createdAt)', 'lastViewedAt')
+      .addSelect('COUNT(v.id)', 'viewCount')
+      .where('v.visitorUserId = :userId', { userId })
+      .groupBy('v.userId')
+
+    const total = await this.visitRepository
+      .createQueryBuilder('v')
+      .select('COUNT(DISTINCT v.userId)', 'cnt')
+      .where('v.visitorUserId = :userId', { userId })
+      .getRawOne()
+      .then(r => Number(r?.cnt) || 0)
+
+    const rows = await this.visitRepository.manager
+      .createQueryBuilder()
+      .select('sub.targetUserId', 'targetUserId')
+      .addSelect('sub.lastViewedAt', 'lastViewedAt')
+      .addSelect('sub.viewCount', 'viewCount')
+      .from(`(${subQuery.getQuery()})`, 'sub')
+      .setParameters(subQuery.getParameters())
+      .orderBy('sub.lastViewedAt', 'DESC')
+      .skip((pageNum - 1) * pageSize)
+      .take(pageSize)
+      .getRawMany()
+
+    const userIds = rows.map(r => Number(r.targetUserId))
+    const usersMap = new Map<number, any>()
+    if (userIds.length > 0) {
+      const users = await this.userRepository.find({
+        where: { id: In(userIds) },
+        select: ['id', 'nickname', 'avatar', 'birthYear', 'gender', 'occupation', 'housingStatus', 'isRealName'],
+      })
+      for (const u of users) usersMap.set(u.id, u)
+    }
+
+    const list = rows.map(r => {
+      const u = usersMap.get(Number(r.targetUserId))
+      return {
+        id: Number(r.targetUserId),
+        nickname: u?.nickname || '',
+        avatar: u?.avatar || '',
+        age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
+        occupation: u?.occupation || '',
+        housingStatus: u?.housingStatus || '',
+        isRealName: u?.isRealName || 0,
+        viewCount: Number(r.viewCount),
+        lastViewedAt: r.lastViewedAt,
+      }
+    })
+
+    return { list, total, page: pageNum, pageSize, totalPages: Math.ceil(total / pageSize) }
+  }
+
+  // ===== 谁看过我（访客列表，去重+计数） =====
+  async getMyVisitorsWithCount(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<PaginatedResult<any>> {
+    const pageNum = Math.max(1, parseInt(page as any) || 1)
+    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+
+    const subQuery = this.visitRepository
+      .createQueryBuilder('v')
+      .select('v.visitorUserId', 'visitorUserId')
+      .addSelect('MAX(v.createdAt)', 'lastVisitedAt')
+      .addSelect('COUNT(v.id)', 'viewCount')
+      .where('v.userId = :userId', { userId })
+      .groupBy('v.visitorUserId')
+
+    const total = await this.visitRepository
+      .createQueryBuilder('v')
+      .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
+      .where('v.userId = :userId', { userId })
+      .getRawOne()
+      .then(r => Number(r?.cnt) || 0)
+
+    const rows = await this.visitRepository.manager
+      .createQueryBuilder()
+      .select('sub.visitorUserId', 'visitorUserId')
+      .addSelect('sub.lastVisitedAt', 'lastVisitedAt')
+      .addSelect('sub.viewCount', 'viewCount')
+      .from(`(${subQuery.getQuery()})`, 'sub')
+      .setParameters(subQuery.getParameters())
+      .orderBy('sub.lastVisitedAt', 'DESC')
+      .skip((pageNum - 1) * pageSize)
+      .take(pageSize)
+      .getRawMany()
+
+    const userIds = rows.map(r => Number(r.visitorUserId))
+    const usersMap = new Map<number, any>()
+    if (userIds.length > 0) {
+      const users = await this.userRepository.find({
+        where: { id: In(userIds) },
+        select: ['id', 'nickname', 'avatar', 'birthYear', 'gender', 'occupation', 'housingStatus', 'isRealName'],
+      })
+      for (const u of users) usersMap.set(u.id, u)
+    }
+
+    const list = rows.map(r => {
+      const u = usersMap.get(Number(r.visitorUserId))
+      return {
+        id: Number(r.visitorUserId),
+        nickname: u?.nickname || '',
+        avatar: u?.avatar || '',
+        age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
+        occupation: u?.occupation || '',
+        housingStatus: u?.housingStatus || '',
+        isRealName: u?.isRealName || 0,
+        viewCount: Number(r.viewCount),
+        lastVisitedAt: r.lastVisitedAt,
+      }
+    })
+
+    return { list, total, page: pageNum, pageSize, totalPages: Math.ceil(total / pageSize) }
   }
 
   async deactivateAccount(userId: number): Promise<void> {
