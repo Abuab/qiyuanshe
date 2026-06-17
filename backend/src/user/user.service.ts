@@ -8,6 +8,7 @@ import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { SystemService } from '../system/system.service'
+import { RecommendService, RecommendFilters } from './recommend.service'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -36,20 +37,6 @@ export interface UserListItem {
   followedAt?: Date | null
 }
 
-export interface RecommendFilters {
-  ageMin?: number
-  ageMax?: number
-  heightMin?: number
-  heightMax?: number
-  education?: string
-  incomeRange?: string
-  maritalStatus?: string
-  isRealName?: number
-  residence?: string
-  hometown?: string
-  keyword?: string
-}
-
 @Injectable()
 export class UserService {
   constructor(
@@ -64,165 +51,43 @@ export class UserService {
       @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
     private readonly systemService: SystemService,
+    private readonly recommendService: RecommendService,
   ) {}
 
+  /**
+   * 推荐列表 - 委托给 RecommendService
+   */
   async findRecommend(
-    tab: string,
+    city: string,
     page: number = 1,
     limit: number = 10,
-    gender?: number,
+    targetGender: number,
     currentUserId?: number,
     filters?: RecommendFilters,
-  ): Promise<PaginatedResult<UserListItem>> {
-    try {
-    const pageNum = Math.max(1, parseInt(page as any) || 1)
-    const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 10))
-    
-    const queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .where('user.status = :status', { status: 1 })
-      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
-      .andWhere('user.id != :adminId', { adminId: 1 })
-
-    // 严格校验 gender 参数，避免 NaN 传入 SQL（0=未知, 1=男, 2=女）
-    if (gender !== undefined && gender !== null) {
-      const genderNum = Number(gender)
-      if (Number.isFinite(genderNum) && genderNum >= 0 && genderNum <= 2) {
-        queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
-      }
-    }
-
-    // 按性别互推：男→女，女→男
-    if (currentUserId) {
-      const currentUser = await this.userRepository.findOne({ where: { id: currentUserId }, select: ['gender'] })
-      if (currentUser) {
-        if (currentUser.gender === 1) {
-          queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 2 })
-        } else if (currentUser.gender === 2) {
-          queryBuilder.andWhere('user.gender = :forceGender', { forceGender: 1 })
-        }
-      }
-    }
-
-    // 应用筛选条件
-    if (filters) {
-      if (filters.ageMin !== undefined && filters.ageMin !== null && Number.isFinite(filters.ageMin)) {
-        const maxBirthYear = new Date().getFullYear() - filters.ageMin
-        queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
-      }
-      if (filters.ageMax !== undefined && filters.ageMax !== null && Number.isFinite(filters.ageMax)) {
-        const minBirthYear = new Date().getFullYear() - filters.ageMax
-        queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
-      }
-      if (filters.heightMin !== undefined && filters.heightMin !== null && Number.isFinite(filters.heightMin)) {
-        queryBuilder.andWhere('user.height >= :heightMin', { heightMin: filters.heightMin })
-      }
-      if (filters.heightMax !== undefined && filters.heightMax !== null && Number.isFinite(filters.heightMax)) {
-        queryBuilder.andWhere('user.height <= :heightMax', { heightMax: filters.heightMax })
-      }
-      if (filters.education) {
-        const educationLevels = ['高中', '大专', '本科', '硕士', '博士']
-        const levelIndex = educationLevels.indexOf(filters.education)
-        if (levelIndex !== -1) {
-          const allowedEducations = educationLevels.slice(levelIndex)
-          queryBuilder.andWhere('user.education IN (:...educations)', { educations: allowedEducations })
-        }
-      }
-      if (filters.incomeRange) {
-        queryBuilder.andWhere('user.incomeRange = :incomeRange', { incomeRange: filters.incomeRange })
-      }
-      if (filters.maritalStatus) {
-        queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: filters.maritalStatus })
-      }
-      if (filters.isRealName !== undefined && filters.isRealName !== null) {
-        const isRealNameNum = Number(filters.isRealName)
-        if (Number.isFinite(isRealNameNum) && (isRealNameNum === 0 || isRealNameNum === 1)) {
-          queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: isRealNameNum })
-        }
-      }
-      if (filters.residence) {
-        queryBuilder.andWhere('user.residence LIKE :residence', { residence: `%${filters.residence}%` })
-      }
-      if (filters.hometown) {
-        queryBuilder.andWhere('user.hometown LIKE :hometown', { hometown: `%${filters.hometown}%` })
-      }
-      if (filters.keyword) {
-        queryBuilder.andWhere('(user.nickname LIKE :keyword)', { keyword: `%${filters.keyword}%` })
-      }
-    }
-
-    switch (tab) {
-      case 'active':
-        queryBuilder.orderBy('user.lastLoginAt', 'DESC')
-        break
-      case 'featured':
-        queryBuilder
-          .orderBy('user.isVip', 'DESC')
-          .addOrderBy('user.lastLoginAt', 'DESC')
-        break
-      case 'verified':
-      case 'realname':
-        queryBuilder.andWhere('user.isRealName = :isRealName', { isRealName: 1 })
-        queryBuilder.orderBy('user.lastLoginAt', 'DESC')
-        break
-      case 'newest':
-        queryBuilder.orderBy('user.createdAt', 'DESC')
-        break
-      default:
-        queryBuilder.orderBy('user.lastLoginAt', 'DESC')
-    }
-
-    const total = await queryBuilder.getCount()
-    const totalPages = Math.ceil(total / pageSize)
-    const offset = (pageNum - 1) * pageSize
-
-    const users = await queryBuilder
-      .skip(offset)
-      .take(pageSize)
-      .getMany()
-
-    const followedUserIds: number[] = []
-    if (currentUserId) {
-      const follows = await this.followRepository.find({
-        where: { userId: currentUserId },
-        select: ['targetUserId'],
+  ) {
+    // 如果未指定目标性别且已登录，则自动按性别互推
+    let effectiveGender = targetGender
+    if (!effectiveGender && currentUserId) {
+      const currentUser = await this.userRepository.findOne({
+        where: { id: currentUserId },
+        select: ['gender'],
       })
-      followedUserIds.push(...follows.map((f) => f.targetUserId))
+      if (currentUser) {
+        if (currentUser.gender === 1) effectiveGender = 2      // 男→女
+        else if (currentUser.gender === 2) effectiveGender = 1 // 女→男
+      }
     }
 
-    const userIds = users.map((u) => u.id)
-    const photosMap = await this.getPhotosMap(userIds)
-    const commentsMap = await this.getCommentsMap(userIds)
+    return this.recommendService.getRecommendList(
+      city, page, limit, effectiveGender, currentUserId, filters,
+    )
+  }
 
-    const list: UserListItem[] = users.map((user) => ({
-      id: user.id,
-      nickname: user.nickname,
-      avatar: user.avatar || '',
-      age: this.calculateAge(user.birthYear),
-      height: user.height || 0,
-      education: user.education || '',
-      occupation: user.occupation || '',
-      incomeRange: user.incomeRange || '',
-      housingStatus: user.housingStatus || '',
-      isRealName: user.isRealName || 0,
-      isVip: user.isVip || 0,
-      lastLoginAt: user.lastLoginAt,
-      photos: photosMap.get(user.id) || [],
-      isFollowed: followedUserIds.includes(user.id),
-      matchmakerComment: commentsMap.get(user.id) || '',
-    }))
-
-    return {
-      list,
-      total,
-      page: pageNum,
-      pageSize,
-      totalPages,
-    }
-    } catch (error) {
-      console.error('findRecommend error:', error)
-      throw error
-    }
+  /**
+   * 用户资料更新后清除推荐缓存
+   */
+  async onProfileUpdated(userId: number): Promise<void> {
+    await this.recommendService.invalidateUserCache(userId)
   }
 
   async filterUsers(

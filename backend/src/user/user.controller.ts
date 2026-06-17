@@ -43,7 +43,7 @@ export class UserController {
   @Get('recommend')
   @UseGuards(OptionalJwtAuthGuard)
   async findRecommend(
-    @Query('tab') tab: string = 'active',
+    @Query('city') city: string = '',
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('gender') gender?: number,
@@ -62,8 +62,9 @@ export class UserController {
   ) {
     try {
       const currentUserId = req?.user?.userId
+
       return this.userService.findRecommend(
-        tab, page, limit, gender, currentUserId,
+        city, page, limit, gender ? Number(gender) : 0, currentUserId,
         { ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName, residence, hometown, keyword },
       )
     } catch (error: any) {

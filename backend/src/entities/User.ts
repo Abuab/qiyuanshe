@@ -12,6 +12,8 @@ import { UserAuth } from './UserAuth'
 import { QuestionAnswer } from './QuestionAnswer'
 import { VipOrder } from './VipOrder'
 import { ChatMessage } from './ChatMessage'
+import { UserTopRecord } from './UserTopRecord'
+import { UserTopCardQuota } from './UserTopCardQuota'
 
 @Entity('users')
 export class User {
@@ -161,6 +163,31 @@ export class User {
   @Column({ type: 'varchar', length: 10, default: 'none' })
   mfaType: string
 
+  // ===== 运营/推荐系统字段 =====
+
+  /** 手动加权分（仅后台可见，不对外暴露） */
+  @Column({ type: 'int', default: 0 })
+  manualBoostScore: number
+
+  /** 运营置顶到期时间 */
+  @Index()
+  @Column({ type: 'datetime', nullable: true })
+  pinnedExpireAt: Date | null
+
+  /** 曝光池级别: city=同城 / province=同省 / national=全国 */
+  @Index()
+  @Column({ type: 'varchar', length: 20, default: 'city' })
+  exposurePool: string
+
+  /** 最后活跃时间（浏览/发消息/更新资料等） */
+  @Index()
+  @Column({ type: 'datetime', nullable: true })
+  lastActiveAt: Date | null
+
+  /** 资料完整度分数 (0~100) */
+  @Column({ type: 'tinyint', default: 0 })
+  profileScore: number
+
   @CreateDateColumn()
   createdAt: Date
 
@@ -184,4 +211,10 @@ export class User {
 
   @OneToMany(() => ChatMessage, (message) => message.toUser)
   receivedMessages: ChatMessage[]
+
+  @OneToMany(() => UserTopRecord, (record) => record.user)
+  topRecords: UserTopRecord[]
+
+  @OneToMany(() => UserTopCardQuota, (quota) => quota.user)
+  topCardQuotas: UserTopCardQuota[]
 }
