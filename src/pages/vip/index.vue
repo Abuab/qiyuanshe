@@ -107,7 +107,7 @@
       v-if="activeTab === 'custom'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: tabBarPx + 10 + 'px' }"
     >
       <!-- Banner -->
       <view class="custom-banner" v-if="customConfig.bannerUrl">
@@ -152,7 +152,7 @@
       v-if="activeTab === 'about'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: tabBarPx + 10 + 'px' }"
     >
       <!-- Banner -->
       <view class="about-banner" v-if="aboutConfig.bannerUrl">
@@ -179,7 +179,7 @@
     </scroll-view>
 
     <!-- 底部支付栏（仅VIP会员Tab显示） -->
-    <view v-if="activeTab === 'vip'" class="bottom-bar">
+    <view v-if="activeTab === 'vip'" class="bottom-bar" :style="{ paddingBottom: 12 + tabBarPx + 'px' }">
       <view class="bottom-price">
         <text class="price-label" v-if="selectedPackage">合计</text>
         <text class="price-total" v-if="selectedPackage">
@@ -271,8 +271,9 @@ const selectedPackageId = ref<number | null>(null)
 const selectedPackage = ref<VipPackageItem | null>(null)
 const packagesLoading = ref(false)
 
-// 底部栏高度（响应式）
-const bottomBarHeight = ref(120)
+// 底部栏高度（响应式）- 支付栏自身约50px
+const bottomBarHeight = ref(140)
+const tabBarPx = ref(0) // tab-bar 实际像素高度
 
 function formatPrice(price: number): string {
   if (Number.isInteger(price)) return String(price)
@@ -445,7 +446,10 @@ async function put(url: string, data?: any) {
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navBarHeightPx.value = 44 + 44 // nav 44px + tabs 44px
+  // tab-bar 高度 120rpx, 换算为实际 px: 120 * windowWidth / 750
+  tabBarPx.value = Math.round(120 * (sysInfo.windowWidth || 375) / 750)
+  // 更新底部栏高度 = 支付栏 (~50px) + tabBar高度
+  bottomBarHeight.value = Math.round(50 + tabBarPx.value)
 
   fetchPackages()
   fetchCustomConfig()
@@ -801,7 +805,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  padding-bottom: calc(12px + 50px + env(safe-area-inset-bottom));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 100;

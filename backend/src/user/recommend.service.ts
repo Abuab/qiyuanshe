@@ -33,6 +33,7 @@ export interface RecommendListItem {
 }
 
 export interface RecommendFilters {
+  tab?: string
   ageMin?: number
   ageMax?: number
   heightMin?: number
@@ -121,12 +122,24 @@ export class RecommendService {
     }
 
     // 2. 构建基础查询（曝光池 + 城市 + 性别 + 筛选）
-    const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, filters)
+    // tab=verified → 强制实名筛选
+    const effectiveFilters = { ...filters }
+    if (filters?.tab === 'verified' && filters.isRealName === undefined) {
+      effectiveFilters.isRealName = 1
+    }
+    const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
-    const pinnedUsers = await this.getPinnedUsers(city, targetGender, currentUserId, filters)
+    const pinnedUsers = await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
 
-    // 4. 非置顶用户按推荐分排序
+    // 4. 非置顶用户排序
+    // tab=newest → 按注册时间降序；否则按推荐分
+    const isNewest = filters?.tab === 'newest'
+    const orderBy = isNewest
+      ? 'user.createdAt'
+      : this.buildScoreExpression()
+    const orderDir: 'DESC' = 'DESC'
+
     const pinnedUserIds = pinnedUsers.map(u => u.id)
     if (pinnedUserIds.length > 0) {
       baseQb.andWhere('user.id NOT IN (:...pinnedIds)', { pinnedIds: pinnedUserIds })
@@ -144,12 +157,12 @@ export class RecommendService {
     if (pageNum === 1) {
       // 第一页：前N个是置顶用户，后面补非置顶
       const needMore = Math.max(0, pageSize - pinnedUsers.length)
-      const nonPinnedPage = await baseQb
-        .orderBy(this.buildScoreExpression(), 'DESC')
-        .addOrderBy('user.lastActiveAt', 'DESC')
+      const qb = baseQb
+        .orderBy(orderBy, orderDir)
+        .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
         .skip(0)
         .take(needMore)
-        .getMany()
+      const nonPinnedPage = await qb.getMany()
       resultList = [...pinnedUsers, ...nonPinnedPage]
     } else {
       // 第二页起：置顶已走完，全是普通排序
@@ -159,17 +172,17 @@ export class RecommendService {
         // 理论上不会走到这里（置顶在第一页就耗尽了）
         const fromPinned = pinnedUsers.slice(offset, offset + pageSize)
         const remain = pageSize - fromPinned.length
-        const nonPinnedPage = await baseQb
-          .orderBy(this.buildScoreExpression(), 'DESC')
-          .addOrderBy('user.lastActiveAt', 'DESC')
+        const qb = baseQb
+          .orderBy(orderBy, orderDir)
+          .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(0)
           .take(remain)
-          .getMany()
+        const nonPinnedPage = await qb.getMany()
         resultList = [...fromPinned, ...nonPinnedPage]
       } else {
         resultList = await baseQb
-          .orderBy(this.buildScoreExpression(), 'DESC')
-          .addOrderBy('user.lastActiveAt', 'DESC')
+          .orderBy(orderBy, orderDir)
+          .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(Math.max(0, skip))
           .take(take)
           .getMany()

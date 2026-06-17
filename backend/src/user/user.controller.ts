@@ -47,6 +47,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('gender') gender?: number,
+    @Query('tab') tab?: string,
     @Query('ageMin') ageMin?: number,
     @Query('ageMax') ageMax?: number,
     @Query('heightMin') heightMin?: number,
@@ -65,7 +66,7 @@ export class UserController {
 
       return this.userService.findRecommend(
         city, page, limit, gender ? Number(gender) : 0, currentUserId,
-        { ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName, residence, hometown, keyword },
+        { tab, ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName, residence, hometown, keyword },
       )
     } catch (error: any) {
       console.error('findRecommend controller error:', error?.message || error)
@@ -296,6 +297,7 @@ export class UserController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalJwtAuthGuard)
   async getUserDetail(
     @Param('id', ParseIntPipe) id: number,
     @Request() req?: any,
