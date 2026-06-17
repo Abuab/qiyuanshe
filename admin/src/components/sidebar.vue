@@ -108,6 +108,7 @@
           <span>会员管理</span>
         </template>
         <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
+        <el-menu-item index="/vip/page-config">页面配置</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canManageActivity" index="/activity">

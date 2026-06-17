@@ -401,6 +401,58 @@ export class VipService {
     return this.defaultAboutConfig()
   }
 
+  /** 保存定制会员页配置 */
+  async saveCustomConfig(data: any) {
+    let cfg = await this.configRepo.findOne({ where: { configKey: 'vip_custom_page' } })
+    if (!cfg) {
+      cfg = this.configRepo.create({ configKey: 'vip_custom_page', configValue: '' })
+    }
+    cfg.configValue = JSON.stringify(data)
+    await this.configRepo.save(cfg)
+    return { success: true }
+  }
+
+  /** 保存关于我们页配置 */
+  async saveAboutConfig(data: any) {
+    let cfg = await this.configRepo.findOne({ where: { configKey: 'vip_about_page' } })
+    if (!cfg) {
+      cfg = this.configRepo.create({ configKey: 'vip_about_page', configValue: '' })
+    }
+    cfg.configValue = JSON.stringify(data)
+    await this.configRepo.save(cfg)
+    return { success: true }
+  }
+
+  /** 获取安全征婚提示配置 */
+  async getSafetyTipsConfig() {
+    try {
+      const cfg = await this.configRepo.findOne({ where: { configKey: 'vip_safety_tips' } })
+      if (cfg?.configValue) return JSON.parse(cfg.configValue)
+    } catch { /* fallback */ }
+    return { tips: this.defaultSafetyTips() }
+  }
+
+  /** 保存安全征婚提示配置 */
+  async saveSafetyTipsConfig(tips: string[]) {
+    let cfg = await this.configRepo.findOne({ where: { configKey: 'vip_safety_tips' } })
+    if (!cfg) {
+      cfg = this.configRepo.create({ configKey: 'vip_safety_tips', configValue: '' })
+    }
+    cfg.configValue = JSON.stringify({ tips })
+    await this.configRepo.save(cfg)
+    return { success: true }
+  }
+
+  defaultSafetyTips(): string[] {
+    return [
+      '请认准平台官方客服，谨防冒充人员',
+      '首次见面请选择公共场合，确保安全',
+      '交往过程中请勿轻易转账、借贷',
+      '如遇可疑行为请及时向平台举报',
+      '平台将对违规用户进行封禁处理',
+    ]
+  }
+
   private defaultCustomConfig() {
     return {
       bannerUrl: '',

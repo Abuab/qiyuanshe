@@ -183,6 +183,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/vip/packages.vue'),
         meta: { title: '套餐管理', requiresAuth: true },
       },
+      {
+        path: '/vip/page-config',
+        name: 'VipPageConfig',
+        component: () => import('../views/vip/page-config.vue'),
+        meta: { title: '页面配置', requiresAuth: true },
+      },
     ],
   },
 ]

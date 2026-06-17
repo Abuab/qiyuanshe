@@ -92,11 +92,7 @@
       <view class="safety-tips">
         <text class="tips-title">安全征婚提示</text>
         <view class="tips-list">
-          <text class="tip-item">1. 请认准平台官方客服，谨防冒充人员</text>
-          <text class="tip-item">2. 首次见面请选择公共场合，确保安全</text>
-          <text class="tip-item">3. 交往过程中请勿轻易转账、借贷</text>
-          <text class="tip-item">4. 如遇可疑行为请及时向平台举报</text>
-          <text class="tip-item">5. 平台将对违规用户进行封禁处理</text>
+          <text v-for="(tip, idx) in safetyTips" :key="idx" class="tip-item">{{ idx + 1 }}. {{ tip }}</text>
         </view>
       </view>
 
@@ -409,6 +405,24 @@ async function fetchAboutConfig() {
   }
 }
 
+// ===== 安全征婚提示 =====
+const safetyTips = ref<string[]>([])
+
+async function fetchSafetyTips() {
+  try {
+    const res: any = await get('/vip/safety-tips', {}, { skipToast: true } as any)
+    if (res?.tips?.length) safetyTips.value = res.tips
+  } catch {
+    safetyTips.value = [
+      '请认准平台官方客服，谨防冒充人员',
+      '首次见面请选择公共场合，确保安全',
+      '交往过程中请勿轻易转账、借贷',
+      '如遇可疑行为请及时向平台举报',
+      '平台将对违规用户进行封禁处理',
+    ]
+  }
+}
+
 function handleBack() {
   safeNavigateBack()
 }
@@ -428,6 +442,7 @@ onMounted(() => {
   fetchPackages()
   fetchCustomConfig()
   fetchAboutConfig()
+  fetchSafetyTips()
 })
 </script>
 
