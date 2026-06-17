@@ -1,7 +1,7 @@
 # 栖缘社后端服务 Dockerfile
 # 基于 Node.js 18 Alpine 镜像构建
 
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 # 生产阶段镜像
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # 安装 dumb-init、curl（用于健康检查）、su-exec（用于启动脚本切换用户）和字体包（svg-captcha 需要）
 RUN apk add --no-cache dumb-init curl su-exec fontconfig ttf-dejavu
