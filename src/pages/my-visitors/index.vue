@@ -34,7 +34,7 @@
         </view>
         <view v-else>
           <view v-for="item in viewList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="avatar" :src="resolveAvatar(item.avatar)" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -56,7 +56,7 @@
         </view>
         <view v-else>
           <view v-for="item in visitorList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="avatar" :src="resolveAvatar(item.avatar)" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -81,6 +81,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 
@@ -193,6 +194,11 @@ async function fetchMoreVisitors() {
 
 function handleBack() { safeNavigateBack() }
 function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?id=${id}` }) }
+function resolveAvatar(avatar: string) {
+  if (!avatar) return '/static/default-avatar.png'
+  if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
+  return getFullImageUrl(avatar)
+}
 </script>
 
 <style lang="scss" scoped>

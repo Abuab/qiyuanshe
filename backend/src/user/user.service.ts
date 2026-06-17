@@ -801,6 +801,7 @@ export class UserService {
       const users = await this.userRepository
         .createQueryBuilder('u')
         .where('u.id IN (:...ids)', { ids: userIds })
+        .andWhere('u.isDeleted = :isDel', { isDel: 0 })
         .getMany()
       for (const u of users) usersMap.set(u.id, u)
     }
@@ -865,6 +866,7 @@ export class UserService {
       const users = await this.userRepository
         .createQueryBuilder('u')
         .where('u.id IN (:...ids)', { ids: userIds })
+        .andWhere('u.isDeleted = :isDel', { isDel: 0 })
         .getMany()
       for (const u of users) usersMap.set(u.id, u)
     }

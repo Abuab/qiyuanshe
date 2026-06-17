@@ -133,13 +133,6 @@
       }
     },
     {
-      "path": "pages/dynamic-publish/index",
-      "style": {
-        "navigationBarTitleText": "发布动态",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/dynamic-detail/index",
       "style": {
         "navigationBarTitleText": "动态详情",

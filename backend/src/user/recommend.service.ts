@@ -356,6 +356,11 @@ export class RecommendService {
     // 应用筛选条件
     this.applyFilters(qb, filters)
 
+    // 额外确保实名筛选对置顶用户同样生效（防御性编程）
+    if (filters?.isRealName === 1) {
+      qb.andWhere('user.isRealName = :pinRn', { pinRn: 1 })
+    }
+
     qb.orderBy('user.manualBoostScore', 'DESC')
     qb.take(PIN_CONFIG.maxPinnedSlots)
 
