@@ -266,6 +266,33 @@ export class AdminUserService {
       }
     }
 
+    // Bulk query follow counts
+    const followingCountMap = new Map<number, number>()
+    const followerCountMap = new Map<number, number>()
+    if (userIds.length > 0) {
+      const followingCounts = await this.followRepository
+        .createQueryBuilder('f')
+        .select('f.userId', 'userId')
+        .addSelect('COUNT(f.id)', 'cnt')
+        .where('f.userId IN (:...userIds)', { userIds })
+        .groupBy('f.userId')
+        .getRawMany<{ userId: number; cnt: number }>()
+      for (const row of followingCounts) {
+        followingCountMap.set(Number(row.userId), Number(row.cnt))
+      }
+
+      const followerCounts = await this.followRepository
+        .createQueryBuilder('f')
+        .select('f.targetUserId', 'userId')
+        .addSelect('COUNT(f.id)', 'cnt')
+        .where('f.targetUserId IN (:...userIds)', { userIds })
+        .groupBy('f.targetUserId')
+        .getRawMany<{ userId: number; cnt: number }>()
+      for (const row of followerCounts) {
+        followerCountMap.set(Number(row.userId), Number(row.cnt))
+      }
+    }
+
     // Merge audit status from bulk queries
     const result = users.map(user => {
       // 将 simple-json 字段强制转纯 JS 数组，确保 JSON 序列化正确
@@ -320,6 +347,8 @@ export class AdminUserService {
         profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
         photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
         matchCount: matchCountMap.get(user.id) || 0,
+        followingCount: followingCountMap.get(user.id) || 0,
+        followerCount: followerCountMap.get(user.id) || 0,
       }
     })
 

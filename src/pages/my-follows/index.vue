@@ -21,7 +21,7 @@
     <scroll-view
       class="content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 80) + 'px' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx + 20) + 'px' }"
       @scrolltolower="loadMore"
     >
       <!-- 加载中 -->
@@ -356,7 +356,7 @@ function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?
   margin-left: 16rpx;
   margin-top: 8rpx;
   padding: 10rpx 28rpx;
-  background: #ff9db5;
+  background: #ff6b9d;
   border-radius: 30rpx;
 }
 

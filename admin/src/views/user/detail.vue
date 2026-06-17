@@ -322,6 +322,37 @@
               <el-empty v-else description="暂无评价记录" />
             </div>
           </el-tab-pane>
+
+          <el-tab-pane label="关注" name="follow">
+            <div v-loading="tabLoading.follow">
+              <div style="display:flex;gap:24px">
+                <!-- 我关注的 -->
+                <div style="flex:1">
+                  <h4 style="margin:0 0 12px 0">我关注的 ({{ followData.following.length }})</h4>
+                  <div v-if="followData.following.length === 0" style="color:#999;font-size:13px">暂无关注</div>
+                  <div v-for="f in followData.following" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${f.targetUserId}`)">
+                    <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ f.nickname }}</span>
+                    <span style="font-size:12px;color:#999">{{ formatDate(f.createdAt) }}</span>
+                  </div>
+                </div>
+                <!-- 关注我的 -->
+                <div style="flex:1">
+                  <h4 style="margin:0 0 12px 0">关注我的 ({{ followData.followers.length }})</h4>
+                  <div v-if="followData.followers.length === 0" style="color:#999;font-size:13px">暂无粉丝</div>
+                  <div v-for="f in followData.followers" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${f.userId}`)">
+                    <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ f.nickname }}</span>
+                    <span style="font-size:12px;color:#999">{{ formatDate(f.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </el-card>
     </div>
@@ -535,13 +566,14 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
 const userAnswerList = ref<any[]>([])
 const answerAuditing = reactive<Record<number, boolean>>({})
 const reviewList = ref<any[]>([])
+const followData = reactive({ following: [] as any[], followers: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
 
@@ -588,6 +620,7 @@ function handleTabChange(tabName: string) {
     case 'notifications': loadNotifications(); break
     case 'answers': loadUserAnswers(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
+    case 'follow': loadFollowDetail(); break
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
   }
@@ -682,6 +715,20 @@ async function loadMatchmakers() {
     const res = await adminMatchmaker.list({ page: 1, limit: 100, status: 1 })
     if (res.success) matchmakerOptions.value = res.data?.list || []
   } catch (e) { console.error(e) }
+}
+
+async function loadFollowDetail() {
+  if (!user.value) return
+  tabLoading.follow = true
+  try {
+    const [followingRes, followersRes] = await Promise.all([
+      adminUsers.getFollowing(user.value.id),
+      adminUsers.getFollowers(user.value.id),
+    ])
+    if (followingRes.success) followData.following = followingRes.data?.list || []
+    if (followersRes.success) followData.followers = followersRes.data?.list || []
+  } catch (e) { console.error(e) }
+  finally { tabLoading.follow = false }
 }
 
 async function handleToggleStatus() {

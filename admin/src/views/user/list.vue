@@ -433,6 +433,16 @@
             <span>{{ row.matchCount ?? 0 }}</span>
           </template>
         </el-table-column>
+        <el-table-column prop="followingCount" label="关注数" width="80" sortable="custom">
+          <template #default="{ row }">
+            <span>{{ row.followingCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="followerCount" label="被关注数" width="90" sortable="custom">
+          <template #default="{ row }">
+            <span>{{ row.followerCount ?? 0 }}</span>
+          </template>
+        </el-table-column>
         <el-table-column v-if="!isReadonly" label="操作" width="340" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleView(row)">详情</el-button>
@@ -849,16 +859,13 @@
                 <el-select
                   v-model="addFollowingId"
                   filterable
-                  remote
-                  reserve-keyword
-                  placeholder="搜索用户昵称"
-                  :remote-method="searchFollowUsers"
-                  :loading="followSearchLoading"
+                  placeholder="选择用户"
+                  @visible-change="onFollowSelectVisible"
                   clearable
                   style="flex:1"
                 >
                   <el-option
-                    v-for="u in followSearchResults"
+                    v-for="u in allUsers"
                     :key="u.id"
                     :label="u.nickname"
                     :value="u.id"
@@ -883,16 +890,13 @@
                 <el-select
                   v-model="addFollowerId"
                   filterable
-                  remote
-                  reserve-keyword
-                  placeholder="搜索用户昵称"
-                  :remote-method="searchFollowUsers"
-                  :loading="followSearchLoading"
+                  placeholder="选择用户"
+                  @visible-change="onFollowSelectVisible"
                   clearable
                   style="flex:1"
                 >
                   <el-option
-                    v-for="u in followSearchResults"
+                    v-for="u in allUsers"
                     :key="u.id"
                     :label="u.nickname"
                     :value="u.id"
@@ -1023,8 +1027,24 @@ const followingFollows = ref<any[]>([])
 const followerFollows = ref<any[]>([])
 const addFollowingId = ref<number | null>(null)
 const addFollowerId = ref<number | null>(null)
-const followSearchResults = ref<any[]>([])
-const followSearchLoading = ref(false)
+const allUsers = ref<any[]>([])
+let allUsersLoaded = false
+
+function onFollowSelectVisible(visible: boolean) {
+  if (visible && !allUsersLoaded) {
+    loadAllUsers()
+  }
+}
+
+async function loadAllUsers() {
+  try {
+    const res = await adminUsers.list({ page: 1, limit: 200 })
+    if (res.success) {
+      allUsers.value = (res.data?.list || []).map((u: any) => ({ id: u.id, nickname: u.nickname }))
+      allUsersLoaded = true
+    }
+  } catch {}
+}
 
 async function loadFollowData(userId: number) {
   try {
@@ -1042,17 +1062,6 @@ async function loadFollowData(userId: number) {
     const res = await adminUsers.getFollowers(userId)
     if (res.success) followerFollows.value = res.data?.list || []
   } catch {}
-}
-
-async function searchFollowUsers(query: string) {
-  if (!query || query.length < 1) { followSearchResults.value = []; return }
-  followSearchLoading.value = true
-  try {
-    const res = await adminUsers.searchUsers(query)
-    if (res.success) followSearchResults.value = res.data || []
-    else followSearchResults.value = []
-  } catch { followSearchResults.value = [] }
-  followSearchLoading.value = false
 }
 
 async function handleAddFollowing() {
