@@ -130,7 +130,13 @@ export class RecommendService {
     if (filters?.tab === 'verified' && filters.isRealName === undefined) {
       effectiveFilters.isRealName = 1
     }
+    // DEBUG: 输出筛选条件
+    console.log('[Recommend] filters:', JSON.stringify(filters))
+    console.log('[Recommend] effectiveFilters:', JSON.stringify(effectiveFilters))
+    console.log('[Recommend] effectiveFilters.isRealName =', effectiveFilters.isRealName, 'type:', typeof effectiveFilters.isRealName)
     const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
+    console.log('[Recommend] baseQb query:', baseQb.getQuery())
+    console.log('[Recommend] baseQb params:', baseQb.getParameters())
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
     const pinnedUsers = await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
@@ -363,6 +369,9 @@ export class RecommendService {
 
     qb.orderBy('user.manualBoostScore', 'DESC')
     qb.take(PIN_CONFIG.maxPinnedSlots)
+
+    console.log('[Recommend] getPinnedUsers query:', qb.getQuery())
+    console.log('[Recommend] getPinnedUsers params:', qb.getParameters())
 
     return qb.getMany()
   }
