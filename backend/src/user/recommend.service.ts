@@ -145,9 +145,14 @@ export class RecommendService {
       : this.buildScoreExpression()
     const orderDir: 'DESC' = 'DESC'
 
-    const pinnedUserIds = pinnedUsers.map(u => u.id)
-    if (pinnedUserIds.length > 0) {
-      baseQb.andWhere('user.id NOT IN (:...pinnedIds)', { pinnedIds: pinnedUserIds })
+    // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
+    if (isNewest) {
+      baseQb.andWhere('(user.pinnedExpireAt IS NULL OR user.pinnedExpireAt <= :now)', { now: new Date() })
+    } else {
+      const pinnedUserIds = pinnedUsers.map(u => u.id)
+      if (pinnedUserIds.length > 0) {
+        baseQb.andWhere('user.id NOT IN (:...pinnedIds)', { pinnedIds: pinnedUserIds })
+      }
     }
 
     // 5. 先查总数（非置顶部分）
