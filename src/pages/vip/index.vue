@@ -452,6 +452,13 @@ onMounted(() => {
   fetchAboutConfig()
   fetchSafetyTips()
 })
+
+// tabBar 页面重新进入时刷新套餐数据
+onShow(() => {
+  if (packages.value.length === 0) {
+    fetchPackages()
+  }
+})
 </script>
 
 <style lang="scss" scoped>

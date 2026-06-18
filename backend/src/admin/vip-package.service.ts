@@ -18,7 +18,7 @@ export class VipPackageService {
       skip: (page - 1) * limit,
       take: limit,
     })
-    return { list, total, page, limit }
+    return { list: this.normalizeTypes(list), total, page, limit }
   }
 
   /** 上架套餐列表（前端展示用） */
@@ -87,6 +87,15 @@ export class VipPackageService {
       const item = items.find(i => i.id === pkg.id)
       if (item) pkg.sortOrder = item.sortOrder
     }
-    return this.repo.save(packages)
+    return this.repo.save(packages).then(pkgs => this.normalizeTypes(pkgs as VipPackage[]))
+  }
+
+  /** TypeORM 可能将 BIGINT/DECIMAL 序列化为字符串，统一转为数字 */
+  private normalizeTypes(packages: VipPackage[]): VipPackage[] {
+    return packages.map(pkg => ({
+      ...pkg,
+      id: Number(pkg.id),
+      price: Number(pkg.price),
+    }))
   }
 }

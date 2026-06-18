@@ -66,10 +66,12 @@ onMounted(() => {
 const loadQuotes = async () => {
   try {
     const res: any = await get('/system/config')
-    if (res?.loveQuotes && Array.isArray(res.loveQuotes)) {
+    // loveQuotes 可能为空数组 [], 需用 length 判断而非 truthy
+    if (res?.loveQuotes && Array.isArray(res.loveQuotes) && res.loveQuotes.length > 0) {
       quotes.value = res.loveQuotes.filter((q: string) => q && q.trim())
-    } else {
-      // 默认语录
+    }
+    // 如果后端未配置或为空，使用默认语录
+    if (quotes.value.length === 0) {
       quotes.value = [
         '缘分天注定，爱情需要主动争取。',
         '最好的爱情，是彼此成就，共同成长。',
@@ -79,9 +81,7 @@ const loadQuotes = async () => {
         '愿得一人心，白首不分离。',
       ]
     }
-    if (quotes.value.length > 0) {
-      currentIndex.value = Math.floor(Math.random() * quotes.value.length)
-    }
+    currentIndex.value = Math.floor(Math.random() * quotes.value.length)
   } catch {
     quotes.value = ['缘分天注定，爱情需要主动争取。']
   }

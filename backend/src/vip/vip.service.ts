@@ -46,10 +46,16 @@ export class VipService {
   // ========================================================================
 
   async listPackages() {
-    return this.packageRepo.find({
+    const packages = await this.packageRepo.find({
       where: { status: 1, isDeleted: 0 },
       order: { sortOrder: 'DESC', id: 'ASC' },
     })
+    // TypeORM 可能将 BIGINT/DECIMAL 返回为字符串，前端需要数字类型
+    return packages.map(pkg => ({
+      ...pkg,
+      id: Number(pkg.id),
+      price: Number(pkg.price),
+    }))
   }
 
   // ========================================================================

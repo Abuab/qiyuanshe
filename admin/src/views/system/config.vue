@@ -166,85 +166,6 @@
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="会员配置" name="vip">
-        <el-card class="config-card">
-          <el-form :model="vipConfig" label-width="160px">
-            <el-divider content-position="left">会员套餐</el-divider>
-
-            <el-form-item label="套餐名称">
-              <el-input v-model="vipConfig.packageName" placeholder="请输入套餐名称，如：月度会员" />
-            </el-form-item>
-
-            <el-form-item label="套餐价格">
-              <el-input-number
-                v-model="vipConfig.price"
-                :min="0"
-                :precision="2"
-              />
-              <span class="unit">元</span>
-            </el-form-item>
-
-            <el-form-item label="套餐时长">
-              <el-input-number
-                v-model="vipConfig.days"
-                :min="1"
-              />
-              <span class="unit">天</span>
-            </el-form-item>
-
-            <el-form-item label="展示文案">
-              <el-input
-                v-model="vipConfig.displayText"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入套餐展示文案"
-              />
-            </el-form-item>
-
-            <el-form-item label="套餐图片">
-              <div class="upload-item">
-                <el-image
-                  v-if="vipConfig.image && !vipImageError"
-                  :src="vipConfig.image"
-                  class="logo-preview"
-                  fit="contain"
-                  @error="vipImageError = true"
-                  @load="vipImageError = false"
-                />
-                <el-upload
-                  action="#"
-                  :http-request="uploadVipImage"
-                  :show-file-list="false"
-                  accept="image/*"
-                >
-                  <el-button type="primary">上传图片</el-button>
-                </el-upload>
-                <el-button v-if="vipConfig.image" type="danger" link @click="vipConfig.image = ''">删除图片</el-button>
-              </div>
-            </el-form-item>
-
-            <el-divider content-position="left">其他设置</el-divider>
-
-            <el-form-item label="非会员每日聊天限制">
-              <el-input-number
-                v-model="vipConfig.freeChatLimit"
-                :min="0"
-              />
-              <span class="unit">条/天</span>
-            </el-form-item>
-
-            <el-form-item label="会员权益说明">
-              <el-input
-                v-model="vipConfig.vipBenefits"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入会员权益说明"
-              />
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-
       <el-tab-pane label="支付配置" name="payment">
         <el-card class="config-card">
           <el-form :model="paymentConfig" label-width="160px">
@@ -591,7 +512,6 @@ const activeTab = ref('basic')
 const saving = ref(false)
 const systemStore = useSystemStore()
 const logoError = ref(false)
-const vipImageError = ref(false)
 
 const basicConfig = reactive({
   appName: '',
@@ -614,17 +534,6 @@ const shareConfig = reactive({
   shareImage: '',
   posterTemplates: '[]',
 })
-
-const vipConfig = reactive({
-  packageName: '',
-  price: 99,
-  days: 30,
-  displayText: '',
-  image: '',
-  freeChatLimit: 3,
-  vipBenefits: '',
-})
-
 const paymentConfig = reactive({
   wechatMchId: '',
   wechatApiV3Key: '',
@@ -828,7 +737,6 @@ async function fetchConfig() {
     if (res.success && res.data) {
       Object.assign(basicConfig, res.data.basic || {})
       Object.assign(shareConfig, res.data.share || {})
-      Object.assign(vipConfig, res.data.vip || {})
       Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
       // 通知通道
@@ -888,7 +796,6 @@ async function handleSave() {
     const configs = {
       basic: { ...basicConfig },
       share: { ...shareConfig },
-      vip: { ...vipConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
       notify: { enabled: notifyConfig.enabled, webhookUrls: webhookUrlsToSave, notifyTypes: notifyConfig.notifyTypes },
@@ -934,21 +841,6 @@ async function uploadLogo(options: any) {
     if (res.success && res.data?.url) {
       basicConfig.logo = res.data.url
       logoError.value = false
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}
-
-async function uploadVipImage(options: any) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  try {
-    const res = await adminSystem.upload(formData)
-    if (res.success && res.data?.url) {
-      vipConfig.image = res.data.url
-      vipImageError.value = false
       ElMessage.success('上传成功')
     }
   } catch (error) {
