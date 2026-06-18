@@ -64,7 +64,8 @@ export class UserController {
     try {
       const currentUserId = req?.user?.userId
 
-      const effectiveIsRealName = isRealName !== undefined ? Number(isRealName) : undefined
+      const rn = isRealName !== undefined && isRealName !== null ? Number(isRealName) : NaN
+      const effectiveIsRealName = !Number.isNaN(rn) ? rn : undefined
       return this.userService.findRecommend(
         city, page, limit, gender ? Number(gender) : 0, currentUserId,
         { tab, ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName: effectiveIsRealName, residence, hometown, keyword },

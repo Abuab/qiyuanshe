@@ -115,7 +115,7 @@ defineExpose({
   right: 0;
   background-color: #fff;
   border-top: 1px solid #eee;
-  z-index: 999;
+  z-index: 1001;
 }
 
 .tab-bar-inner {
