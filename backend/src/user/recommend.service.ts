@@ -346,7 +346,8 @@ export class RecommendService {
   ): Promise<User[]> {
     const qb = this.baseSelectQuery()
     qb.andWhere('user.pinnedExpireAt IS NOT NULL')
-    qb.andWhere('user.pinnedExpireAt > :now', { now: new Date() })
+    // 使用 MySQL NOW() 而非 Node Date 避免时区不一致
+    qb.andWhere('user.pinnedExpireAt > NOW()')
     qb.andWhere('user.status = :status', { status: 1 })
     qb.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
 
@@ -383,7 +384,7 @@ export class RecommendService {
       .createQueryBuilder('user')
       .select('user.id')
       .where('user.pinnedExpireAt IS NOT NULL')
-      .andWhere('user.pinnedExpireAt > :now', { now: new Date() })
+      .andWhere('user.pinnedExpireAt > NOW()')
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
     const rows = await qb.getRawMany()
     return rows.map(r => Number(r.user_id))
