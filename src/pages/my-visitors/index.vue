@@ -41,7 +41,9 @@
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>
-              <text class="view-count-line">第{{ item.viewCount || 1 }}次查看TA的资料</text>
+            </view>
+            <view class="view-count-row">
+              <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看TA的资料</text>
             </view>
             <text class="time-text">{{ formatTime(item.lastViewedAt) }}</text>
           </view>
@@ -63,7 +65,9 @@
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>
-              <text class="view-count-line">第{{ item.viewCount || 1 }}次查看您的资料</text>
+            </view>
+            <view class="view-count-row">
+              <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看您的资料</text>
             </view>
             <text class="time-text">{{ formatTime(item.lastVisitedAt) }}</text>
           </view>
@@ -272,6 +276,7 @@ function resolveAvatar(avatar: string) {
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 12rpx;
+  flex-wrap: wrap;
 }
 
 .avatar {
@@ -318,9 +323,18 @@ function resolveAvatar(avatar: string) {
   white-space: nowrap;
 }
 
-.view-count-line {
-  font-size: 22rpx;
+.view-count-row {
+  width: 100%;
+  margin-top: 12rpx;
+  padding-left: 116rpx;
+  font-size: 24rpx;
   color: #999;
+}
+
+.count-num {
+  color: #FF4444;
+  font-weight: 700;
+  font-size: 28rpx;
 }
 
 .time-text {

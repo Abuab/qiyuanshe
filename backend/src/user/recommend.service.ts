@@ -555,7 +555,7 @@ export class RecommendService {
     filters?: RecommendFilters,
   ): string {
     const filterStr = filters ? JSON.stringify(filters) : ''
-    return `v${CACHE_VERSION}:recommend:list:${city}:${targetGender}:p${page}s${pageSize}:u${currentUserId || 0}:${filterStr.slice(0,64)}`
+    return `v${CACHE_VERSION}:rec:${city}:${targetGender}:p${page}s${pageSize}:u${currentUserId || 0}:${filterStr}`
   }
 
   private extractCity(residence: string): string {

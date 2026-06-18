@@ -459,7 +459,7 @@ onShow(() => {
 // ===== 全局 =====
 .vip-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFF5F7 0%, #FFFFFF 30%);
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF5F7 30%);
   display: flex;
   flex-direction: column;
 }
@@ -564,7 +564,7 @@ onShow(() => {
 // ===== VIP 会员 - 头部特权 =====
 .header-section {
   padding: 20px 20px 16px;
-  background: #fff;
+  background: #FFF0F5;
 }
 
 .header-title {
@@ -607,7 +607,7 @@ onShow(() => {
 // ===== 套餐选择 =====
 .packages-section {
   padding: 0 20px 20px;
-  background: #fff;
+  background: #FFF0F5;
 }
 
 .section-title {
@@ -630,10 +630,10 @@ onShow(() => {
 
 .package-card {
   position: relative;
-  width: 170px;
-  min-width: 170px;
+  width: 210px;
+  min-width: 210px;
   flex-shrink: 0;
-  padding: 20px 12px 16px;
+  padding: 28px 16px 20px;
   background: #fff;
   border: 2px solid #f0f0f0;
   border-radius: 12px;
@@ -721,7 +721,7 @@ onShow(() => {
 // ===== 支付方式 =====
 .payment-section {
   padding: 20px;
-  background: #fff;
+  background: #FFF0F5;
   margin-bottom: 12px;
 }
 
@@ -803,7 +803,7 @@ onShow(() => {
   align-items: center;
   padding: 12px 20px;
   // padding-bottom 用 rpx 撑出 tab-bar 的空间，避免被遮挡
-  padding-bottom: calc(120rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 1000;

@@ -205,7 +205,8 @@
       @contact="onSelectMatchmaker"
     />
 
-    <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" @confirm="onFilterConfirm" @reset="onFilterReset" />
+    <!-- 筛选面板 -->
+    <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" :initial-data="activeFilterData || undefined" @confirm="onFilterConfirm" @reset="onFilterReset" />
 
   </view>
 </template>
@@ -385,7 +386,7 @@ const onLoadMore = () => {
 const switchFilter = (value: string) => {
   if (currentFilter.value === value) return
   currentFilter.value = value
-  loadUserList(true)
+  loadUserList(true, activeFilterData.value || undefined)
 }
 
 const handleQuickEntry = (entry: QuickEntry) => {
@@ -998,8 +999,8 @@ const onShareTimeline = () => {
   }
 
   .float-label {
-    font-size: 24rpx;
-    font-weight: 600;
+    font-size: 30rpx;
+    font-weight: 700;
     color: #F098B4;
     line-height: 1.1;
   }
