@@ -4,6 +4,7 @@ import {
   Header,
 } from '@nestjs/common'
 import { SystemService } from './system.service'
+import { VipService } from '../vip/vip.service'
 import { Result } from '../common/result'
 
 /**
@@ -12,7 +13,10 @@ import { Result } from '../common/result'
  */
 @Controller('system')
 export class PublicSystemController {
-  constructor(private readonly systemService: SystemService) {}
+  constructor(
+    private readonly systemService: SystemService,
+    private readonly vipService: VipService,
+  ) {}
 
   @Get('config')
   @Header('Cache-Control', 'no-store, no-cache, max-age=0')
@@ -34,6 +38,7 @@ export class PublicSystemController {
       followEmptyText: configs.basic?.followEmptyText || '您还木有关注任何人~',
       followerEmptyText: configs.basic?.followerEmptyText || '还木有人关注您~',
       loveQuotes: Array.isArray(configs.loveQuotes?.quotes) ? configs.loveQuotes.quotes : [],
+      redLineTerm: await this.vipService.getRedLineTerm(),
       icons: this.buildIconConfig(configs.icon || {}),
     }
 

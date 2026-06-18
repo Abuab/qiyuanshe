@@ -37,6 +37,7 @@ export class VipPackageService {
       durationDays: data.durationDays || 30,
       dailyTopCards: data.dailyTopCards || 0,
       topCardValidHours: data.topCardValidHours || 24,
+      redLineCount: data.redLineCount ?? 0,
       description: data.description || '',
       features: data.features || [],
       status: data.status ?? 1,
@@ -55,6 +56,7 @@ export class VipPackageService {
     if (data.durationDays !== undefined) pkg.durationDays = data.durationDays
     if (data.dailyTopCards !== undefined) pkg.dailyTopCards = data.dailyTopCards
     if (data.topCardValidHours !== undefined) pkg.topCardValidHours = data.topCardValidHours
+    if (data.redLineCount !== undefined) pkg.redLineCount = data.redLineCount
     if (data.description !== undefined) pkg.description = data.description
     if (data.features !== undefined) pkg.features = data.features
     if (data.status !== undefined) pkg.status = data.status

@@ -73,6 +73,9 @@
                 <text class="price-symbol">¥</text>
                 <text class="price-value">{{ formatPrice(pkg.price) }}</text>
               </view>
+              <view class="card-redline" v-if="pkg.redLineCount > 0">
+                <text>含{{ pkg.redLineCount }}根{{ redLineTerm }}</text>
+              </view>
               <view class="card-features" v-if="pkg.features && pkg.features.length">
                 <text v-for="(f, i) in pkg.features" :key="i" class="feature-tag">{{ f }}</text>
               </view>
@@ -203,9 +206,11 @@ import { onShow } from '@dcloudio/uni-app'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { get, post, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 
 interface VipPackageItem {
   id: number
@@ -214,6 +219,7 @@ interface VipPackageItem {
   durationDays: number
   dailyTopCards: number
   topCardValidHours: number
+  redLineCount: number
   description: string
   features: string[]
   tagText?: string
@@ -256,6 +262,8 @@ const currentTabLabel = computed(() => {
   const tab = tabs.find(t => t.key === activeTab.value)
   return tab ? tab.label : 'VIP会员'
 })
+
+const redLineTerm = computed(() => systemStore.redLineTerm || '红线索')
 
 const selectPackage = (pkg: VipPackageItem) => {
   selectedPackageId.value = pkg.id
@@ -686,7 +694,20 @@ onShow(() => {
 .card-price {
   display: flex;
   align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.card-redline {
   margin-bottom: 10px;
+  padding: 4px 12px;
+  background: #FFF0F3;
+  border-radius: 4px;
+
+  text {
+    font-size: 12px;
+    color: #FF6B9D;
+    font-weight: 600;
+  }
 }
 
 .price-symbol {

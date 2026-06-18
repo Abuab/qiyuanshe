@@ -98,4 +98,36 @@ export class VipController {
   async getSafetyTips() {
     return Result.success(await this.vipService.getSafetyTipsConfig())
   }
+
+  // ========================================================================
+  //  红线索 API
+  // ========================================================================
+
+  /** 获取红线索状态 */
+  @Get('red-line/status')
+  @UseGuards(JwtAuthGuard)
+  async getRedLineStatus(@Request() req: any) {
+    return Result.success(await this.vipService.getRedLineStatus(req.user.userId))
+  }
+
+  /** 使用红线索解锁目标用户联系方式 */
+  @Post('red-line/use')
+  @UseGuards(JwtAuthGuard)
+  async useRedLine(
+    @Request() req: any,
+    @Body('targetUserId') targetUserId: number,
+  ) {
+    try {
+      const result = await this.vipService.useRedLine(req.user.userId, targetUserId)
+      return Result.success(result, result.alreadyUnlocked ? '您已解锁过该用户' : '解锁成功')
+    } catch (error: any) {
+      return Result.serverError(error?.message || '解锁失败')
+    }
+  }
+
+  /** 获取红线索显示名称（公开，不需登录） */
+  @Get('red-line/term')
+  async getRedLineTerm() {
+    return Result.success({ term: await this.vipService.getRedLineTerm() })
+  }
 }

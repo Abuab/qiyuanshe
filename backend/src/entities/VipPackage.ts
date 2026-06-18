@@ -38,6 +38,10 @@ export class VipPackage {
   @Column({ type: 'int', default: 24 })
   topCardValidHours: number
 
+  /** 红线索数量（套餐内赠送，用完即止，非每日重置） */
+  @Column({ type: 'int', default: 0 })
+  redLineCount: number
+
   /** 套餐文案描述（支持多行文本） */
   @Column({ type: 'text', nullable: true })
   description: string

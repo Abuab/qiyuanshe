@@ -6,8 +6,12 @@ import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
 import { UserTopRecord } from '../entities/UserTopRecord'
 import { UserTopCardQuota } from '../entities/UserTopCardQuota'
+import { UserRedLineQuota } from '../entities/UserRedLineQuota'
+import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
+
+export const RED_LINE_TERM_DEFAULT = '红线索'
 
 function generateOrderNo(): string {
   const ts = Date.now().toString(36)
@@ -36,6 +40,10 @@ export class VipService {
     private readonly topRecordRepo: Repository<UserTopRecord>,
     @InjectRepository(UserTopCardQuota)
     private readonly quotaRepo: Repository<UserTopCardQuota>,
+    @InjectRepository(UserRedLineQuota)
+    private readonly redLineQuotaRepo: Repository<UserRedLineQuota>,
+    @InjectRepository(RedLineUsage)
+    private readonly redLineUsageRepo: Repository<RedLineUsage>,
     @InjectRepository(SystemConfig)
     private readonly configRepo: Repository<SystemConfig>,
     private readonly redis: RedisService,
@@ -149,6 +157,24 @@ export class VipService {
         })
       }
       await this.quotaRepo.save(quota)
+    }
+
+    // 3.5 发放红线索额度（终身累计，非每日重置）
+    if (pkg.redLineCount > 0) {
+      let rlQuota = await this.redLineQuotaRepo.findOne({
+        where: { userId: order.userId, isDeleted: 0 },
+      })
+      if (rlQuota) {
+        rlQuota.totalQuota += pkg.redLineCount
+      } else {
+        rlQuota = this.redLineQuotaRepo.create({
+          userId: order.userId,
+          totalQuota: pkg.redLineCount,
+          usedCount: 0,
+          vipPackageId: pkg.id,
+        })
+      }
+      await this.redLineQuotaRepo.save(rlQuota)
     }
 
     // 4. 清除缓存
@@ -286,6 +312,12 @@ export class VipService {
         { isDeleted: 1 },
       )
 
+      // 清理红线索额度（会员到期后不再有效）
+      await this.redLineQuotaRepo.update(
+        { userId: user.id, isDeleted: 0 },
+        { isDeleted: 1 },
+      )
+
       // 结束进行中的置顶
       await this.topRecordRepo.update(
         { userId: user.id, status: 1 },
@@ -385,6 +417,112 @@ export class VipService {
     await this.redis.del(`recommend:score:${userId}`)
 
     return { success: true, pinnedUntil: topEndTime }
+  }
+
+  // ========================================================================
+  //  红线索系统
+  // ========================================================================
+
+  /** 获取红线索可配置的显示名称（如：红线索、钥匙、心动卡、鹊桥令） */
+  async getRedLineTerm(): Promise<string> {
+    try {
+      const cfg = await this.configRepo.findOne({ where: { configKey: 'red_line_term' } })
+      if (cfg?.configValue) return cfg.configValue.trim() || RED_LINE_TERM_DEFAULT
+    } catch { /* fallback */ }
+    return RED_LINE_TERM_DEFAULT
+  }
+
+  /** 管理员设置红线索显示名称 */
+  async setRedLineTerm(term: string) {
+    let cfg = await this.configRepo.findOne({ where: { configKey: 'red_line_term' } })
+    if (!cfg) {
+      cfg = this.configRepo.create({ configKey: 'red_line_term', configValue: term })
+    } else {
+      cfg.configValue = term
+    }
+    await this.configRepo.save(cfg)
+    return { success: true, term }
+  }
+
+  /** 查询用户红线索状态 */
+  async getRedLineStatus(userId: number) {
+    const quota = await this.redLineQuotaRepo.findOne({
+      where: { userId, isDeleted: 0 },
+    })
+    const remaining = quota ? Math.max(0, quota.totalQuota - quota.usedCount) : 0
+    const total = quota ? quota.totalQuota : 0
+    const used = quota ? quota.usedCount : 0
+    const term = await this.getRedLineTerm()
+
+    return { remaining, total, used, term }
+  }
+
+  /** 使用红线索解锁目标用户的联系方式 */
+  async useRedLine(userId: number, targetUserId: number) {
+    // 1. 校验目标用户存在且有联系方式
+    const targetUser = await this.userRepo.findOne({
+      where: { id: targetUserId, status: 1, isDeleted: 0 },
+    })
+    if (!targetUser) throw new Error('用户不存在或已注销')
+
+    const contact = targetUser.wechat || targetUser.phone
+    if (!contact) throw new Error('该用户暂未填写联系方式')
+
+    // 2. 校验是否已经解锁过（同一对用户不重复扣减）
+    const already = await this.redLineUsageRepo.findOne({
+      where: { userId, targetUserId },
+    })
+    if (already) {
+      return {
+        success: true,
+        contact,
+        note: '您已解锁过该用户的联系方式',
+        alreadyUnlocked: true,
+      }
+    }
+
+    // 3. 校验红线索额度
+    const quota = await this.redLineQuotaRepo.findOne({
+      where: { userId, isDeleted: 0 },
+    })
+    if (!quota || quota.usedCount >= quota.totalQuota) {
+      const term = await this.getRedLineTerm()
+      throw new Error(`${term}已用完，请购买会员获取更多${term}`)
+    }
+
+    // 4. 扣除额度
+    quota.usedCount += 1
+    await this.redLineQuotaRepo.save(quota)
+
+    // 5. 记录使用
+    const usage = this.redLineUsageRepo.create({
+      userId,
+      targetUserId,
+      unlockedContact: contact,
+      quotaId: quota.id,
+    })
+    await this.redLineUsageRepo.save(usage)
+
+    return {
+      success: true,
+      contact,
+      remaining: quota.totalQuota - quota.usedCount,
+    }
+  }
+
+  // ========================================================================
+  //  红线索管理员接口
+  // ========================================================================
+
+  /** 管理员查看用户的红线索使用记录 */
+  async getRedLineUsages(userId: number, page = 1, limit = 20) {
+    const [list, total] = await this.redLineUsageRepo.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+    return { list, total, page, limit }
   }
 
   // ========================================================================

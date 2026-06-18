@@ -38,6 +38,10 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string
 
+  /** 微信号（用户自行填写，红线索解锁后展示） */
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  wechat: string
+
   @Column({ type: 'tinyint', default: 0 })
   gender: number
 

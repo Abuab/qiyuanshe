@@ -666,6 +666,7 @@ export class UserService {
     // 只更新传入的非 undefined 字段
     if (dto.nickname !== undefined) user.nickname = dto.nickname
     if (dto.avatar !== undefined) user.avatar = dto.avatar
+    if (dto.wechat !== undefined) user.wechat = dto.wechat
     if (dto.gender !== undefined) user.gender = dto.gender
     if (dto.birthYear !== undefined) user.birthYear = dto.birthYear
     if (dto.height !== undefined) user.height = dto.height

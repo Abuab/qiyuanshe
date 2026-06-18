@@ -4,6 +4,8 @@ import {
   Put,
   Body,
   Param,
+  Query,
+  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
@@ -56,5 +58,28 @@ export class AdminVipConfigController {
   async saveSafetyTips(@Body() body: { tips: string[] }) {
     await this.vipService.saveSafetyTipsConfig(body.tips || [])
     return Result.success(null, '保存成功')
+  }
+
+  /** 获取红线索显示名称 */
+  @Get('red-line-term')
+  async getRedLineTerm() {
+    return Result.success({ term: await this.vipService.getRedLineTerm() })
+  }
+
+  /** 保存红线索显示名称 */
+  @Put('red-line-term')
+  async setRedLineTerm(@Body('term') term: string) {
+    await this.vipService.setRedLineTerm(term || '红线索')
+    return Result.success(null, '保存成功')
+  }
+
+  /** 查看用户红线索使用记录 */
+  @Get('red-line-usages/:userId')
+  async getRedLineUsages(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return Result.success(await this.vipService.getRedLineUsages(userId, page, limit))
   }
 }
