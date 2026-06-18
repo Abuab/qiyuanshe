@@ -204,7 +204,7 @@ export class RecommendService {
     // newest 模式下后过滤：确保置顶用户完全不出现
     if (isNewest && allPinnedIds.length > 0) {
       const pinnedIdSet = new Set(allPinnedIds)
-      resultList = resultList.filter(u => !pinnedIdSet.has(u.id))
+      resultList = resultList.filter(u => !pinnedIdSet.has(Number(u.id)))
       if (resultList.length < pageSize) {
         // 被过滤掉的位子需要补齐：跳过已取到的 + offset，再取 more
         const alreadyFetchedTotal = offset + pageSize
