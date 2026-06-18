@@ -115,7 +115,7 @@ onLoad((options) => {
 })
 
 onMounted(async () => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   tabRowHeightPx.value = Math.round(80 * (sysInfo.windowWidth || 375) / 750)

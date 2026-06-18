@@ -170,7 +170,7 @@ const avatarError = ref(false)
 const statusBarHeight = ref(20)
 
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   loadStats()
 })

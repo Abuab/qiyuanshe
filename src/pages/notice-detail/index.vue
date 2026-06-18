@@ -28,7 +28,7 @@ const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
 onMounted(async () => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

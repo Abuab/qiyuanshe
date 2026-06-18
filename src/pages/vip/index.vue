@@ -438,7 +438,7 @@ function handleBack() {
 
 // ===== 初始化 =====
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
   fetchPackages()

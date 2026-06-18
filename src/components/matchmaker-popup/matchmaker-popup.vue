@@ -69,10 +69,10 @@
       <!-- 按钮区 -->
       <view class="button-section">
         <view class="btn-call" @tap="handleCall">
-          <text>打电话</text>
+          <text class="btn-call-text">打电话</text>
         </view>
         <view class="btn-more" @tap="handleMore">
-          <text>查看更多红娘</text>
+          <text class="btn-more-text">查看更多红娘</text>
         </view>
       </view>
     </view>
@@ -411,7 +411,7 @@ defineExpose({ open, close })
   background-color: #FF6681;
   border-radius: 44rpx;
 
-  text {
+  .btn-call-text {
     font-size: 32rpx;
     font-weight: bold;
     color: #fff;
@@ -428,7 +428,7 @@ defineExpose({ open, close })
   border: 2rpx solid #FF6681;
   border-radius: 44rpx;
 
-  text {
+  .btn-more-text {
     font-size: 30rpx;
     color: #FF6681;
   }

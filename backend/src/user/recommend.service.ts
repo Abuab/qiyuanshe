@@ -218,8 +218,17 @@ export class RecommendService {
       }
     }
 
+    // 全局去重：确保无重复用户（置顶+非置顶重叠 / more补齐重叠）
+    const finalSeen = new Set<number>()
+    const finalList = resultList.filter(u => {
+      const id = Number(u.id)
+      if (finalSeen.has(id)) return false
+      finalSeen.add(id)
+      return true
+    })
+
     // 7. 丰富列表信息（照片、是否已关注、红娘评语）
-    const userIds = resultList.map(u => u.id)
+    const userIds = finalList.map(u => u.id)
     const [photosMap, commentsMap, followedIds] = await Promise.all([
       this.getPhotosMap(userIds),
       this.getCommentsMap(userIds),
@@ -230,7 +239,7 @@ export class RecommendService {
         : Promise.resolve<number[]>([]),
     ])
 
-    const list: RecommendListItem[] = resultList.map(user => ({
+    const list: RecommendListItem[] = finalList.map(user => ({
       id: user.id,
       nickname: user.nickname,
       avatar: user.avatar || '',

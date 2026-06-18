@@ -415,7 +415,7 @@ function goBack() {
 
 onMounted(() => {
   // 获取状态栏高度
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
   // 激活右上角原生分享按钮

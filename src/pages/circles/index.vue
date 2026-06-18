@@ -35,7 +35,7 @@ const loading = ref(true)
 const circles = ref<any[]>([])
 
 onMounted(async () => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   try {

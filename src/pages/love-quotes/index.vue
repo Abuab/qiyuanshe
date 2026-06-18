@@ -57,7 +57,7 @@ const currentQuote = computed(() => {
 })
 
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
 })

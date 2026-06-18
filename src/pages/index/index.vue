@@ -554,7 +554,7 @@ onMounted(() => {
   // eslint-disable-next-line no-console
   console.log('[首页] BUILD=v15-6a3f1c0')
 
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
   // 公告通知栏
