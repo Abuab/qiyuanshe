@@ -127,16 +127,21 @@ export class RecommendService {
     // 2. 构建基础查询（曝光池 + 城市 + 性别 + 筛选）
     // tab=verified → 强制实名筛选（isRealName 可能为 null/undefined/falsy）
     const effectiveFilters = { ...filters }
+    // #region debug-point d4-pinned-filter
+    console.error('[DEBUG] findRecommend raw filters:', JSON.stringify(filters))
+    console.error('[DEBUG] findRecommend filters.tab:', filters?.tab, 'filters.isRealName:', filters?.isRealName)
+    // #endregion
     const isRealNameMissing = filters.isRealName === undefined || filters.isRealName === null
     if (filters?.tab === 'verified' && isRealNameMissing) {
       effectiveFilters.isRealName = 1
     }
+    // #region debug-point d4-pinned-filter
+    console.error('[DEBUG] findRecommend isRealNameMissing:', isRealNameMissing)
+    console.error('[DEBUG] findRecommend effectiveFilters after:', JSON.stringify(effectiveFilters))
+    // #endregion
     const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
-    // #region debug-point d4-pinned-filter
-    console.error('[DEBUG] findRecommend effectiveFilters:', JSON.stringify(effectiveFilters))
-    // #endregion
     const pinnedUsers = await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
 
     // 4. 非置顶用户排序
