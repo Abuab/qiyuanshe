@@ -8,8 +8,11 @@ export interface VipPackage {
   durationDays: number
   dailyTopCards: number
   topCardValidHours: number
+  redLineCount: number
   description: string
   features: string[]
+  tagText?: string
+  tagColor?: string
   status: number
   sortOrder: number
   createdAt: string

@@ -198,7 +198,8 @@
 
       <view class="action-bar">
         <view class="reset-btn" @tap="handleReset">
-          <text class="reset-icon">🔄</text>
+          <image v-if="filterResetIcon" class="reset-icon-img" :src="filterResetIcon" mode="aspectFit" />
+          <text v-else class="reset-icon">🔄</text>
           <text>重置</text>
         </view>
         <view class="confirm-btn" @tap="handleConfirm">
@@ -211,6 +212,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
+const pageIcons = computed(() => systemStore.icons?.page || {})
+const filterResetIcon = computed(() => pageIcons.value.filterResetIcon || '')
 
 interface FilterData {
   keyword?: string
@@ -717,6 +723,11 @@ defineExpose({
 
 .reset-icon {
   font-size: 28rpx;
+}
+
+.reset-icon-img {
+  width: 32rpx;
+  height: 32rpx;
 }
 
 .confirm-btn {

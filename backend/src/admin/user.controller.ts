@@ -90,9 +90,9 @@ export class AdminUserController {
   @Put(':id/vip')
   async updateVip(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { level: number; days: number },
+    @Body() body: { level: number; days: number; packageName?: string },
   ) {
-    await this.userService.updateVip(id, body.level, body.days)
+    await this.userService.updateVip(id, body.level, body.days, body.packageName)
     return Result.success(null, 'VIP设置成功')
   }
 

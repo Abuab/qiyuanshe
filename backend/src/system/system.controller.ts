@@ -129,6 +129,7 @@ export class PublicSystemController {
         deactivateIcon: fallback(page.deactivateIcon),
         // 爱情语录图标
         refreshIcon: fallback(page.refreshIcon),
+        filterResetIcon: fallback(page.filterResetIcon),
       },
     }
   }

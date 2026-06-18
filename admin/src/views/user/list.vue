@@ -367,11 +367,11 @@
             <span>{{ row.education || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="vipLevel" label="会员等级" width="120" sortable="custom">
+        <el-table-column prop="vipLevel" label="会员等级" width="160" sortable="custom">
           <template #default="{ row }">
             <div class="vip-cell">
               <el-tag v-if="row.vipLevel === 0 || !row.isVip" type="info" size="small">普通</el-tag>
-              <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">会员</el-tag>
+              <el-tag v-else-if="row.vipLevel === 1" type="warning" size="small">{{ row.vipPackageName || '会员' }}</el-tag>
               <div v-if="row.vipLevel > 0" class="vip-expire">
                 <template v-if="row.vipExpireTime">
                   {{ formatVipExpire(row.vipExpireTime) }}
@@ -513,10 +513,21 @@
       </div>
     </div>
 
-    <el-dialog v-model="vipDialogVisible" title="调整VIP等级" width="400px">
+    <el-dialog v-model="vipDialogVisible" title="设置VIP" width="480px">
       <el-form :model="vipForm" label-width="100px">
         <el-form-item label="用户">
           <span>{{ currentUser?.nickname }}</span>
+        </el-form-item>
+        <el-form-item label="选择套餐">
+          <el-select v-model="vipForm.packageId" placeholder="选择已有套餐" style="width: 100%" clearable @change="onVipPackageChange">
+            <el-option
+              v-for="pkg in vipPackageList"
+              :key="pkg.id"
+              :label="`${pkg.name} (¥${pkg.price}/${pkg.durationDays}天)`"
+              :value="pkg.id"
+            />
+          </el-select>
+          <div class="form-tip">选择套餐后自动填充等级和有效期</div>
         </el-form-item>
         <el-form-item label="VIP等级" required>
           <el-select v-model="vipForm.level" style="width: 200px">
@@ -1007,7 +1018,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
-import { userPin } from '../../api/vip'
+import { userPin, vipPackages, VipPackage } from '../../api/vip'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
@@ -1245,7 +1256,33 @@ const currentUser = ref<User | null>(null)
 const vipForm = reactive({
   level: 0,
   days: 30,
+  packageId: null as number | null,
+  packageName: '',
 })
+
+const vipPackageList = ref<VipPackage[]>([])
+
+async function fetchVipPackages() {
+  try {
+    const res = await vipPackages.list(1, 100)
+    if (res.success && res.data) {
+      vipPackageList.value = res.data.list || []
+    }
+  } catch { /* ignore */ }
+}
+
+function onVipPackageChange(packageId: number | null) {
+  if (!packageId) {
+    vipForm.packageName = ''
+    return
+  }
+  const pkg = vipPackageList.value.find(p => p.id === packageId)
+  if (pkg) {
+    vipForm.level = 1
+    vipForm.days = pkg.durationDays
+    vipForm.packageName = pkg.name
+  }
+}
 
 const notifyForm = reactive({
   content: '',
@@ -1391,6 +1428,7 @@ onMounted(() => {
   loadDicts()
   loadHometownProvinces()
   loadResidenceProvinces()
+  fetchVipPackages()
 })
 
 async function loadDicts() {
@@ -1917,6 +1955,8 @@ function handleSetVip(row: User) {
   currentUser.value = row
   vipForm.level = row.vipLevel || 0
   vipForm.days = 30
+  vipForm.packageId = null
+  vipForm.packageName = ''
   vipDialogVisible.value = true
 }
 
@@ -1926,6 +1966,7 @@ async function handleVipSubmit() {
     const res = await adminUsers.updateVip(currentUser.value.id, {
       level: vipForm.level,
       days: vipForm.days,
+      packageName: vipForm.packageName || undefined,
     } as any)
     if (res.success) {
       ElMessage.success('VIP设置成功')

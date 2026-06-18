@@ -131,6 +131,9 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   vipExpireTime: Date
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  vipPackageName: string
+
   @Column({ type: 'tinyint', default: 2 })
   status: number
 

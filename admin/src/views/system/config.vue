@@ -647,6 +647,7 @@ const pageIconList = [
   { key: 'privacySettingIcon', label: '隐私设置图标' },
   { key: 'deactivateIcon', label: '隐私设置-注销账号图标' },
   { key: 'refreshIcon', label: '爱情语录-换一个图标' },
+  { key: 'filterResetIcon', label: '筛选面板-重置按钮图标' },
 ]
 
 interface TabbarIconItem {
@@ -703,6 +704,7 @@ const iconConfig = reactive({
     privacySettingIcon: '',
     deactivateIcon: '',
     refreshIcon: '',
+    filterResetIcon: '',
   } as Record<string, string>,
 })
 

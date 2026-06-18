@@ -354,6 +354,7 @@ export class AdminUserService {
         isVip: user.isVip,
         vipLevel: user.vipLevel,
         vipExpireTime: user.vipExpireTime,
+        vipPackageName: user.vipPackageName,
         status: user.status,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
@@ -454,18 +455,22 @@ export class AdminUserService {
     await this.userRepository.update(id, { status })
   }
 
-  async updateVip(id: number, level: number, days: number) {
+  async updateVip(id: number, level: number, days: number, packageName?: string) {
     const user = await this.userRepository.findOne({ where: { id } })
     if (!user) return
 
     const now = new Date()
     const expireTime = new Date(now.getTime() + days * 24 * 60 * 60 * 1000)
 
-    await this.userRepository.update(id, {
+    const updateData: Record<string, any> = {
       isVip: level > 0 ? 1 : 0,
       vipLevel: level,
       vipExpireTime: level > 0 ? expireTime : null,
-    })
+    }
+    if (packageName !== undefined) {
+      updateData.vipPackageName = packageName
+    }
+    await this.userRepository.update(id, updateData)
   }
 
   async resetPassword(id: number) {
