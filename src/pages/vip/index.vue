@@ -199,8 +199,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
-import { get, post } from '@/utils/request'
+import { get, post, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -433,12 +434,6 @@ async function fetchSafetyTips() {
 
 function handleBack() {
   safeNavigateBack()
-}
-
-// 提供 put 方法（request 工具未导出 put）
-async function put(url: string, data?: any) {
-  const { put: putReq } = await import('@/utils/request')
-  return putReq(url, data)
 }
 
 // ===== 初始化 =====

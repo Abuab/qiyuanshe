@@ -358,7 +358,7 @@ export class RecommendService {
     this.applyFilters(qb, filters)
 
     // 额外确保实名筛选对置顶用户同样生效（防御性编程）
-    if (filters?.isRealName === 1) {
+    if (filters?.isRealName != null && Number(filters.isRealName) === 1) {
       qb.andWhere('user.isRealName = :pinRn', { pinRn: 1 })
     }
 
@@ -458,8 +458,11 @@ export class RecommendService {
     if (filters.maritalStatus) {
       qb.andWhere('user.maritalStatus = :ms', { ms: filters.maritalStatus })
     }
-    if (filters.isRealName !== undefined && filters.isRealName !== null && (filters.isRealName === 0 || filters.isRealName === 1)) {
-      qb.andWhere('user.isRealName = :rn', { rn: filters.isRealName })
+    if (filters.isRealName !== undefined && filters.isRealName !== null) {
+      const rnVal = Number(filters.isRealName)
+      if (rnVal === 0 || rnVal === 1) {
+        qb.andWhere('user.isRealName = :rn', { rn: rnVal })
+      }
     }
     if (filters.residence) {
       qb.andWhere('user.residence LIKE :res', { res: `%${filters.residence}%` })
