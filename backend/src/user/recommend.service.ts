@@ -134,6 +134,9 @@ export class RecommendService {
     const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
+    // #region debug-point d4-pinned-filter
+    console.error('[DEBUG] findRecommend effectiveFilters:', JSON.stringify(effectiveFilters))
+    // #endregion
     const pinnedUsers = await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
 
     // 4. 非置顶用户排序
@@ -361,6 +364,11 @@ export class RecommendService {
     if (filters?.isRealName != null && Number(filters.isRealName) === 1) {
       qb.andWhere('user.isRealName = :pinRn', { pinRn: 1 })
     }
+
+    // #region debug-point d5-pinned-sql
+    console.error('[DEBUG] getPinnedUsers SQL:', qb.getSql())
+    console.error('[DEBUG] getPinnedUsers params:', qb.getParameters())
+    // #endregion
 
     qb.orderBy('user.manualBoostScore', 'DESC')
     qb.take(PIN_CONFIG.maxPinnedSlots)
