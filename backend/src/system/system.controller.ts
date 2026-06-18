@@ -33,7 +33,7 @@ export class PublicSystemController {
       quickEntryNames: configs.basic?.quickEntryNames || ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
       followEmptyText: configs.basic?.followEmptyText || '您还木有关注任何人~',
       followerEmptyText: configs.basic?.followerEmptyText || '还木有人关注您~',
-      loveQuotes: JSON.parse(configs.loveQuotes?.quotes || '[]'),
+      loveQuotes: Array.isArray(configs.loveQuotes?.quotes) ? configs.loveQuotes.quotes : [],
       icons: this.buildIconConfig(configs.icon || {}),
     }
 
