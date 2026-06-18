@@ -998,7 +998,8 @@ const onShareTimeline = () => {
   }
 
   .float-label {
-    font-size: 20rpx;
+    font-size: 24rpx;
+    font-weight: 600;
     color: #F098B4;
     line-height: 1.1;
   }
