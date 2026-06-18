@@ -982,8 +982,8 @@ const onShareTimeline = () => {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  background: linear-gradient(180deg, #FFB3C6 0%, #FFD1DC 40%, #FFFFFF 100%);
-  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
+  background: linear-gradient(135deg, #FF6B8A 0%, #FF8FA8 100%);
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 138, 0.35);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -993,15 +993,14 @@ const onShareTimeline = () => {
   .float-hi {
     font-size: 24rpx;
     font-weight: 700;
-    font-style: italic;
-    color: #F098B4;
+    color: #fff;
     line-height: 1.1;
   }
 
   .float-label {
     font-size: 30rpx;
     font-weight: 700;
-    color: #F098B4;
+    color: #fff;
     line-height: 1.1;
   }
 }
