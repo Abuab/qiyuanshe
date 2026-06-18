@@ -767,19 +767,23 @@ export class UserService {
     const pageNum = Math.max(1, parseInt(page as any) || 1)
     const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
 
-    // 子查询：我浏览过的每个用户的最新一次浏览时间
+    // 子查询：我浏览过的每个用户的最新一次浏览时间（排除已注销用户）
     const subQuery = this.visitRepository
       .createQueryBuilder('v')
       .select('v.userId', 'targetUserId')
       .addSelect('MAX(v.createdAt)', 'lastViewedAt')
       .addSelect('COUNT(v.id)', 'viewCount')
+      .innerJoin('v.user', 'u')
       .where('v.visitorUserId = :userId', { userId })
+      .andWhere('u.isDeleted = :isDel', { isDel: 0 })
       .groupBy('v.userId')
 
     const total = await this.visitRepository
       .createQueryBuilder('v')
       .select('COUNT(DISTINCT v.userId)', 'cnt')
+      .innerJoin('v.user', 'u')
       .where('v.visitorUserId = :userId', { userId })
+      .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
       .getRawOne()
       .then(r => Number(r?.cnt) || 0)
 
@@ -838,13 +842,17 @@ export class UserService {
       .select('v.visitorUserId', 'visitorUserId')
       .addSelect('MAX(v.createdAt)', 'lastVisitedAt')
       .addSelect('COUNT(v.id)', 'viewCount')
+      .innerJoin('v.visitorUser', 'u')
       .where('v.userId = :userId', { userId })
+      .andWhere('u.isDeleted = :isDel', { isDel: 0 })
       .groupBy('v.visitorUserId')
 
     const total = await this.visitRepository
       .createQueryBuilder('v')
       .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
+      .innerJoin('v.visitorUser', 'u')
       .where('v.userId = :userId', { userId })
+      .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
       .getRawOne()
       .then(r => Number(r?.cnt) || 0)
 

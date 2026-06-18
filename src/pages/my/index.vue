@@ -255,9 +255,6 @@ const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 const handleToolClick = (key: string) => {
-  // #region debug-point d1-nav
-  uni.showToast({ title: 'click:' + key, icon: 'none', duration: 800 })
-  // #endregion
   const map: Record<string, () => void> = {
     myPhotos: goToPhotos,
     loveQuotes: goToLoveQuotes,
