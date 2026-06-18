@@ -112,7 +112,7 @@
             :key="item.key"
             class="tool-item"
             :class="{ 'tool-placeholder': item.placeholder }"
-            @tap="item.placeholder ? undefined : item.handler"
+            @tap="item.placeholder ? undefined : handleToolClick(item.key)"
           >
             <template v-if="!item.placeholder">
               <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
@@ -253,17 +253,35 @@ const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })
 const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 
+// 中央分发器 - 避免 mini-program 中函数引用丢失
+const handleToolClick = (key: string) => {
+  // #region debug-point d1-nav
+  uni.showToast({ title: 'click:' + key, icon: 'none', duration: 800 })
+  // #endregion
+  const map: Record<string, () => void> = {
+    myPhotos: goToPhotos,
+    loveQuotes: goToLoveQuotes,
+    myGifts: showComingSoon,
+    privacy: goToPrivacySettings,
+    feedback: showComingSoon,
+    userAgreement: showComingSoon,
+    antiFraud: showComingSoon,
+  }
+  const fn = map[key]
+  if (fn) fn()
+}
+
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = [
-  { key: 'myPhotos',    label: '我的相册', emoji: '🖼', handler: goToPhotos },
-  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌', handler: goToLoveQuotes },
-  { key: 'myGifts',     label: '我的礼物', emoji: '🎁', handler: showComingSoon },
-  { key: 'privacy',     label: '隐私设置', emoji: '🔒', handler: goToPrivacySettings },
-  { key: 'feedback',    label: '问题反馈', emoji: '📝', handler: showComingSoon },
-  { key: 'userAgreement', label: '用户协议', emoji: '📄', handler: showComingSoon },
-  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡', handler: showComingSoon },
-  { key: 'dummy',       label: '',         emoji: '',     placeholder: true, handler: () => {} },
+  { key: 'myPhotos',    label: '我的相册', emoji: '🖼' },
+  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌' },
+  { key: 'myGifts',     label: '我的礼物', emoji: '🎁' },
+  { key: 'privacy',     label: '隐私设置', emoji: '🔒' },
+  { key: 'feedback',    label: '问题反馈', emoji: '📝' },
+  { key: 'userAgreement', label: '用户协议', emoji: '📄' },
+  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡' },
+  { key: 'dummy',       label: '',        emoji: '',      placeholder: true },
 ]
 </script>
 

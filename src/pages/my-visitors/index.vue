@@ -146,6 +146,9 @@ async function fetchList() {
     if (activeTab.value === 'views') {
       viewPage.value = 1
       const res = await get<any>('/users/my-views?page=1&limit=20')
+      // #region debug-point d3-footprint
+      console.error('[DEBUG] my-views raw:', JSON.stringify(res).substring(0, 300))
+      // #endregion
       const items = res?.list || []
       viewList.value = items
       viewNoMore.value = items.length < 20

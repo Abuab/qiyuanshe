@@ -279,8 +279,14 @@ function formatPrice(price: number): string {
 
 async function fetchPackages() {
   packagesLoading.value = true
+  // #region debug-point d2-vip-api
+  uni.showToast({ title: 'fetching packages...', icon: 'none', duration: 500 })
+  // #endregion
   try {
     const res: any = await get('/vip/packages')
+    // #region debug-point d2-vip-res
+    uni.showToast({ title: 'packages:' + JSON.stringify(res).substring(0, 30), icon: 'none', duration: 1500 })
+    // #endregion
     const list: VipPackageItem[] = res.list || res || []
     // 给套餐添加标签
     const tagConfigs = [
