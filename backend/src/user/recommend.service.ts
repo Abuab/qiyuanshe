@@ -146,11 +146,10 @@ export class RecommendService {
     const orderDir: 'DESC' = 'DESC'
 
     // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
+    // 注意：不依赖 SQL NOT IN，改用结果后过滤确保可靠性
+    let allPinnedIds: number[] = []
     if (isNewest) {
-      const allPinnedIds = await this.getPinnedUserIds()
-      if (allPinnedIds.length > 0) {
-        baseQb.andWhere('user.id NOT IN (:...allPinnedIds)', { allPinnedIds })
-      }
+      allPinnedIds = await this.getPinnedUserIds()
     } else {
       const pinnedUserIds = pinnedUsers.map(u => u.id)
       if (pinnedUserIds.length > 0) {
@@ -199,6 +198,23 @@ export class RecommendService {
           .skip(Math.max(0, skip))
           .take(take)
           .getMany()
+      }
+    }
+
+    // newest 模式下后过滤：确保置顶用户完全不出现
+    if (isNewest && allPinnedIds.length > 0) {
+      const pinnedIdSet = new Set(allPinnedIds)
+      resultList = resultList.filter(u => !pinnedIdSet.has(u.id))
+      if (resultList.length < pageSize) {
+        // 被过滤掉的位子需要补齐：跳过已取到的 + offset，再取 more
+        const alreadyFetchedTotal = offset + pageSize
+        const moreQb = baseQb
+          .orderBy(orderBy, orderDir)
+          .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
+          .skip(alreadyFetchedTotal)
+          .take(pageSize - resultList.length)
+        const more = await moreQb.getMany()
+        resultList = [...resultList, ...more]
       }
     }
 
