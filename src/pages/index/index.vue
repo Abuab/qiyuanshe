@@ -979,11 +979,11 @@ const onShareTimeline = () => {
   position: fixed;
   right: 20rpx;
   bottom: 380rpx;
-  width: 96rpx;
-  height: 96rpx;
+  width: 112rpx;
+  height: 112rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B8A 0%, #FF8FA8 100%);
-  box-shadow: 0 4rpx 12rpx rgba(255, 107, 138, 0.35);
+  background: #FF6B8A;
+  box-shadow: 0 12rpx 32rpx rgba(255, 107, 138, 0.4);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -994,6 +994,7 @@ const onShareTimeline = () => {
     font-size: 24rpx;
     font-weight: 700;
     color: #fff;
+    letter-spacing: 2rpx;
     line-height: 1.1;
   }
 
@@ -1001,6 +1002,7 @@ const onShareTimeline = () => {
     font-size: 30rpx;
     font-weight: 700;
     color: #fff;
+    letter-spacing: 2rpx;
     line-height: 1.1;
   }
 }
