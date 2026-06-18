@@ -46,6 +46,8 @@ import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
 import { UserTopRecord } from '../entities/UserTopRecord'
 import { UserTopCardQuota } from '../entities/UserTopCardQuota'
+import { UserRedLineQuota } from '../entities/UserRedLineQuota'
+import { RedLineUsage } from '../entities/RedLineUsage'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
@@ -80,6 +82,8 @@ import { NotifyLog } from '../entities/NotifyLog'
       VipPackage,
       UserTopRecord,
       UserTopCardQuota,
+      UserRedLineQuota,
+      RedLineUsage,
       AuditLog,
       SystemConfig,
       Notice,
