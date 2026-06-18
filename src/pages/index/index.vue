@@ -391,7 +391,9 @@ const switchFilter = (value: string) => {
 const handleQuickEntry = (entry: QuickEntry) => {
   if (entry.id === 1) {
     // 跳转到动态页面的红娘区
-    uni.$emit('dynamic:switchTab', 'matchmaker')
+    const app = getApp()
+    app.globalData = app.globalData || {}
+    app.globalData.dynamicTab = 'matchmaker'
     uni.switchTab({ url: '/pages/dynamic/index' })
   } else if (entry.id === 2) {
     uni.navigateTo({ url: '/pages/activity-list/index' })

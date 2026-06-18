@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
-import { put } from '@/utils/request'
+import { get, put } from '@/utils/request'
 
 const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
@@ -65,7 +65,6 @@ onMounted(() => {
 // 从系统配置加载爱情语录
 const loadQuotes = async () => {
   try {
-    const { get } = await import('@/utils/request')
     const res: any = await get('/system/config')
     if (res?.loveQuotes && Array.isArray(res.loveQuotes)) {
       quotes.value = res.loveQuotes.filter((q: string) => q && q.trim())

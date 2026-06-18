@@ -281,6 +281,7 @@ import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-l
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
+import { onShow } from '@dcloudio/uni-app'
 const { handleImageError } = useImageFallback()
 
 interface DynamicItem {
@@ -672,12 +673,15 @@ onMounted(() => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchMyPhotoCount()
   fetchList(true)
-  // 监听来自首页"媒妁之言"跳转的红娘区切换
-  uni.$on('dynamic:switchTab', (tab: string) => {
-    if (tab === 'matchmaker') {
-      switchTab('matchmaker')
-    }
-  })
+})
+
+// 监听来自首页"媒妁之言"跳转的红娘区切换（通过 globalData 传参）
+onShow(() => {
+  const app = getApp()
+  if (app?.globalData?.dynamicTab === 'matchmaker') {
+    app.globalData.dynamicTab = ''
+    switchTab('matchmaker')
+  }
 })
 </script>
 
