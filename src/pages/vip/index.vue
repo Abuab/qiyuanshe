@@ -55,33 +55,31 @@
       <!-- 套餐选择 -->
       <view class="packages-section">
         <text class="section-title">选择套餐</text>
-        <scroll-view class="packages-scroll" scroll-x :show-scrollbar="false">
-          <view class="packages-row">
-            <view
-              v-for="pkg in packages"
-              :key="pkg.id"
-              class="package-card"
-              :class="{ selected: selectedPackageId === pkg.id }"
-              @tap="selectPackage(pkg)"
-            >
-              <view class="card-tag" v-if="pkg.tagText" :style="{ background: pkg.tagColor || '#FF6B9D' }">
-                <text>{{ pkg.tagText }}</text>
-              </view>
-              <text class="card-name">{{ pkg.name }}</text>
-              <text class="card-desc">{{ pkg.description || pkg.name }}</text>
-              <view class="card-price">
-                <text class="price-symbol">¥</text>
-                <text class="price-value">{{ formatPrice(pkg.price) }}</text>
-              </view>
-              <view class="card-redline" v-if="pkg.redLineCount > 0">
-                <text>含{{ pkg.redLineCount }}根{{ redLineTerm }}</text>
-              </view>
-              <view class="card-features" v-if="pkg.features && pkg.features.length">
-                <text v-for="(f, i) in pkg.features" :key="i" class="feature-tag">{{ f }}</text>
-              </view>
+        <view class="packages-list">
+          <view
+            v-for="pkg in packages"
+            :key="pkg.id"
+            class="package-card"
+            :class="{ selected: selectedPackageId === pkg.id }"
+            @tap="selectPackage(pkg)"
+          >
+            <view class="card-tag" v-if="pkg.tagText" :style="{ background: pkg.tagColor || '#FF6B9D' }">
+              <text>{{ pkg.tagText }}</text>
+            </view>
+            <text class="card-name">{{ pkg.name }}</text>
+            <text class="card-desc">{{ pkg.description || pkg.name }}</text>
+            <view class="card-price">
+              <text class="price-symbol">¥</text>
+              <text class="price-value">{{ formatPrice(pkg.price) }}</text>
+            </view>
+            <view class="card-redline" v-if="pkg.redLineCount > 0">
+              <text>含{{ pkg.redLineCount }}根{{ redLineTerm }}</text>
+            </view>
+            <view class="card-features" v-if="pkg.features && pkg.features.length">
+              <text v-for="(f, i) in pkg.features" :key="i" class="feature-tag">{{ f }}</text>
             </view>
           </view>
-        </scroll-view>
+        </view>
       </view>
 
       <!-- 支付方式 -->
@@ -467,7 +465,7 @@ onShow(() => {
 // ===== 全局 =====
 .vip-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFF0F5 0%, #FFF5F7 30%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 100%);
   display: flex;
   flex-direction: column;
 }
@@ -479,8 +477,8 @@ onShow(() => {
   left: 0;
   right: 0;
   z-index: 100;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+  box-shadow: none;
 }
 
 // 第一级：标题行
@@ -572,7 +570,6 @@ onShow(() => {
 // ===== VIP 会员 - 头部特权 =====
 .header-section {
   padding: 20px 20px 16px;
-  background: #FFF0F5;
 }
 
 .header-title {
@@ -615,7 +612,6 @@ onShow(() => {
 // ===== 套餐选择 =====
 .packages-section {
   padding: 0 20px 20px;
-  background: #FFF0F5;
 }
 
 .section-title {
@@ -632,19 +628,18 @@ onShow(() => {
 
 .packages-row {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 16px;
   padding: 4px 0;
 }
 
 .package-card {
   position: relative;
-  width: 210px;
-  min-width: 210px;
-  flex-shrink: 0;
-  padding: 28px 16px 20px;
+  width: 100%;
+  padding: 28px 20px 24px;
   background: #fff;
   border: 2px solid #f0f0f0;
-  border-radius: 12px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -742,7 +737,6 @@ onShow(() => {
 // ===== 支付方式 =====
 .payment-section {
   padding: 20px;
-  background: #FFF0F5;
   margin-bottom: 12px;
 }
 
@@ -811,7 +805,7 @@ onShow(() => {
 }
 
 .bottom-spacer {
-  height: 40px;
+  height: 60px;
 }
 
 // ===== 底部支付栏 =====
@@ -822,9 +816,8 @@ onShow(() => {
   right: 0;
   display: flex;
   align-items: center;
-  padding: 12px 20px;
-  // padding-bottom 用 rpx 撑出 tab-bar 的空间，避免被遮挡
-  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+  padding: 16px 24px;
+  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 1000;

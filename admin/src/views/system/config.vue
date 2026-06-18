@@ -104,6 +104,11 @@
               <div class="form-tip">粉丝列表为空时展示的文字</div>
             </el-form-item>
 
+            <el-form-item label="红线索显示名称">
+              <el-input v-model="basicConfig.redLineTerm" placeholder="红线索" style="width:200px" />
+              <div class="form-tip">前台显示的红线索名称，可自定义为：钥匙、心动卡、鹊桥令等</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -526,6 +531,7 @@ const basicConfig = reactive({
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
   followEmptyText: '您还木有关注任何人~',
   followerEmptyText: '还木有人关注您~',
+  redLineTerm: '红线索',
 })
 
 const shareConfig = reactive({
@@ -777,6 +783,14 @@ async function fetchConfig() {
       }
       // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
       logoError.value = false
+
+      // 加载红线索显示名称（独立 key）
+      try {
+        const termRes = await adminSystem.getConfigByKey('red_line_term')
+        if (termRes.success && termRes.data) {
+          basicConfig.redLineTerm = termRes.data
+        }
+      } catch { /* use default */ }
     }
   } catch (error) {
     console.error(error)
@@ -809,6 +823,10 @@ async function handleSave() {
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {
+      // 单独保存红线索显示名称
+      try {
+        await adminSystem.updateConfig('red_line_term', basicConfig.redLineTerm)
+      } catch { /* non-critical */ }
       // 保存后重新脱敏各通道 webhook 地址
       for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
         const u = webhookUrlsToSave[ch]

@@ -152,6 +152,13 @@
     </scroll-view>
 
     <tab-bar />
+
+    <!-- 红娘弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmaker"
+      :matchmaker="selectedMatchmaker || {}"
+      @close="showMatchmaker = false"
+    />
   </view>
 </template>
 
@@ -160,6 +167,7 @@ import { computed, ref, onMounted, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
@@ -249,7 +257,37 @@ const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=v
 const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
 const goToPhotos = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
-const goToMatchmaker = () => uni.switchTab({ url: '/pages/index/index' })
+
+const showMatchmaker = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
+
+const goToMatchmaker = async () => {
+  // 弹出红娘联系方式弹窗
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
+  if (matchmakerList.value.length === 0) {
+    uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+    return
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
+  showMatchmaker.value = true
+}
+
+const fetchMatchmakerList = async () => {
+  try {
+    const res: any = await get('/matchmakers')
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+      avatar: getFullImageUrl(item.avatar),
+    }))
+  } catch {
+    matchmakerList.value = []
+  }
+}
 const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 

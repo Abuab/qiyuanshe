@@ -41,9 +41,9 @@
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>
-            </view>
-            <view class="view-count-row">
-              <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看TA的资料</text>
+              <view class="view-count-inline">
+                <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看TA的资料</text>
+              </view>
             </view>
             <text class="time-text">{{ formatTime(item.lastViewedAt) }}</text>
           </view>
@@ -65,9 +65,9 @@
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>
-            </view>
-            <view class="view-count-row">
-              <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看您的资料</text>
+              <view class="view-count-inline">
+                <text>第<text class="count-num">{{ item.viewCount || 1 }}</text>次查看您的资料</text>
+              </view>
             </view>
             <text class="time-text">{{ formatTime(item.lastVisitedAt) }}</text>
           </view>
@@ -271,12 +271,11 @@ function resolveAvatar(avatar: string) {
 
 .follow-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   background: #fff;
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 12rpx;
-  flex-wrap: wrap;
 }
 
 .avatar {
@@ -284,12 +283,14 @@ function resolveAvatar(avatar: string) {
   height: 96rpx;
   border-radius: 50%;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .info {
   flex: 1;
   margin-left: 20rpx;
   min-width: 0;
+  align-self: flex-start;
 }
 
 .name-row {
@@ -317,32 +318,29 @@ function resolveAvatar(avatar: string) {
 .meta-line {
   font-size: 24rpx;
   color: #666;
-  margin-bottom: 6rpx;
+  margin-bottom: 2rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.view-count-row {
-  width: 100%;
-  margin-top: 12rpx;
-  padding-left: 116rpx;
-  font-size: 24rpx;
+.view-count-inline {
+  font-size: 22rpx;
   color: #999;
 }
 
 .count-num {
   color: #FF4444;
   font-weight: 700;
-  font-size: 28rpx;
+  font-size: 26rpx;
 }
 
 .time-text {
   flex-shrink: 0;
   font-size: 22rpx;
   color: #999;
-  margin-left: 12rpx;
-  margin-top: 8rpx;
+  align-self: flex-start;
+  margin-top: 6rpx;
 }
 
 .loading { text-align: center; padding: 100rpx 0; color: #999; }

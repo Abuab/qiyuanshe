@@ -306,6 +306,7 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
     currentPage.value = 1
     noMoreData.value = false
+    loadingMore.value = false
   }
 
   if (noMoreData.value || loadingMore.value) return
