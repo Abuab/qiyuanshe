@@ -810,7 +810,7 @@ export class UserService {
         .andWhere('u.isDeleted = :isDel', { isDel: 0 })
         .andWhere('u.status = :status', { status: 1 })
         .getMany()
-      for (const u of users) usersMap.set(u.id, u)
+      for (const u of users) usersMap.set(Number(u.id), u)
     }
 
     const list = rows.map(r => {
@@ -882,7 +882,7 @@ export class UserService {
         .andWhere('u.isDeleted = :isDel', { isDel: 0 })
         .andWhere('u.status = :status', { status: 1 })
         .getMany()
-      for (const u of users) usersMap.set(u.id, u)
+      for (const u of users) usersMap.set(Number(u.id), u)
     }
 
     const list = rows.map(r => {
