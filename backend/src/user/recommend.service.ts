@@ -147,7 +147,10 @@ export class RecommendService {
 
     // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
     if (isNewest) {
-      baseQb.andWhere('(user.pinnedExpireAt IS NULL OR user.pinnedExpireAt <= :now)', { now: new Date() })
+      const allPinnedIds = await this.getPinnedUserIds()
+      if (allPinnedIds.length > 0) {
+        baseQb.andWhere('user.id NOT IN (:...allPinnedIds)', { allPinnedIds })
+      }
     } else {
       const pinnedUserIds = pinnedUsers.map(u => u.id)
       if (pinnedUserIds.length > 0) {
@@ -372,6 +375,18 @@ export class RecommendService {
     qb.take(PIN_CONFIG.maxPinnedSlots)
 
     return qb.getMany()
+  }
+
+  /** 获取所有当前置顶用户的 ID（不限制数量，用于 newest 排除） */
+  private async getPinnedUserIds(): Promise<number[]> {
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .select('user.id')
+      .where('user.pinnedExpireAt IS NOT NULL')
+      .andWhere('user.pinnedExpireAt > :now', { now: new Date() })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+    const rows = await qb.getRawMany()
+    return rows.map(r => Number(r.user_id))
   }
 
 
