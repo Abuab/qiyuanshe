@@ -433,6 +433,17 @@ export class AdminUserService {
       where: { userId: id },
       order: { sortOrder: 'ASC' },
     })
+
+    // 自动从第一张照片同步头像（历史数据兜底 + 实时同步）
+    if ((!user.avatar || !user.avatar.trim()) && photos.length > 0) {
+      const mainPhoto = photos.find(p => p.isMain === 1) || photos[0]
+      if (mainPhoto?.photoUrl) {
+        user.avatar = mainPhoto.photoUrl
+        user.updatedAt = new Date()
+        await this.userRepository.save(user)
+      }
+    }
+
     const { password, ...safeUser } = user
     return {
       ...safeUser,

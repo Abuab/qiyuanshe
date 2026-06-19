@@ -905,7 +905,7 @@ onShow(() => {
 .pay-btn {
   padding: 12px 36px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 100px;
+  border-radius: 999px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
 
   text {
@@ -922,7 +922,7 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(120rpx + 60px + env(safe-area-inset-bottom));
+  bottom: calc(120rpx + 64px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;

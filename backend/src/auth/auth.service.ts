@@ -171,6 +171,16 @@ export class AuthService {
       throw new UnauthorizedException('用户不存在')
     }
 
+    // 自动从第一张照片同步头像（历史数据兜底 + 实时同步）
+    if ((!user.avatar || !user.avatar.trim()) && user.photos?.length > 0) {
+      const mainPhoto = user.photos.find(p => p.isMain === 1) || user.photos[0]
+      if (mainPhoto?.photoUrl) {
+        user.avatar = mainPhoto.photoUrl
+        user.updatedAt = new Date()
+        await this.userRepository.save(user)
+      }
+    }
+
     return this.sanitizeUser(user, true)
   }
 
