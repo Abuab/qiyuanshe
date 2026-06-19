@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
 import { AiFeatureKey } from './types'
@@ -260,7 +260,7 @@ export class AiMatchService {
       where: {
         userId,
         callType: AiCallType.MATCH,
-        createdAt: { $gte: todayStart } as any,
+        createdAt: MoreThanOrEqual(todayStart),
       },
     })
 

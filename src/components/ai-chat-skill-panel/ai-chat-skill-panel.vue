@@ -125,8 +125,8 @@ const fetchSuggestions = async () => {
       url: `/ai/chat-skill/generate/${props.targetUserId}`,
       method: 'POST',
     })
-    if (res?.items?.length) {
-      suggestions.value = res.items.map((item: any) => ({
+    if (res?.suggestions?.length) {
+      suggestions.value = res.suggestions.map((item: any) => ({
         ...item,
         label: styleMap[item.style] || item.style || '建议',
       }))

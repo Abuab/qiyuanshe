@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
 import { AiFeatureKey } from './types'
@@ -89,7 +89,7 @@ export class AiMatchmakerService {
         where: {
           userId,
           callType: AiCallType.MATCHMAKER,
-          createdAt: { $gte: todayStart } as any,
+          createdAt: MoreThanOrEqual(todayStart),
         },
       })
 
@@ -182,7 +182,7 @@ export class AiMatchmakerService {
         where: {
           userId,
           callType: AiCallType.MATCHMAKER,
-          createdAt: { $gte: todayStart } as any,
+          createdAt: MoreThanOrEqual(todayStart),
         },
       })
       remainingRounds = Math.max(0, MATCHMAKER_FREE_DAILY_ROUNDS - used)

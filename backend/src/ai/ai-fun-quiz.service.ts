@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, MoreThanOrEqual } from 'typeorm'
 import { AiConfigService } from './ai-config.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
@@ -198,7 +198,7 @@ export class AiFunQuizService {
       where: {
         userId,
         callType: AiCallType.FUN_QUIZ,
-        createdAt: { $gte: todayStart } as any,
+        createdAt: MoreThanOrEqual(todayStart),
       },
     })
 

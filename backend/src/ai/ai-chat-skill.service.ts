@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
 import { AiFeatureKey } from './types'
@@ -241,7 +241,7 @@ export class AiChatSkillService {
       where: {
         userId,
         callType: AiCallType.CHAT_SKILL,
-        createdAt: { $gte: todayStart } as any,
+        createdAt: MoreThanOrEqual(todayStart),
       },
     })
 
