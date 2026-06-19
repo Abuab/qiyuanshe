@@ -9,10 +9,6 @@
       <scroll-view scroll-y class="guide-body" :show-scrollbar="false">
         <!-- 正确示例 -->
         <view class="guide-section">
-          <view class="section-title-row">
-            <view class="title-icon icon-check"></view>
-            <text class="section-title">以下照片可以通过审核</text>
-          </view>
           <view class="photo-row">
             <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
               <view class="example-img-wrap">

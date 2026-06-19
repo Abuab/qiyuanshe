@@ -1800,7 +1800,7 @@ onShow(async () => {
   background: rgba(60, 60, 60, 0.75);
   border-radius: 50%;
   padding: 8rpx;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
 
   .delete-icon-img {
     width: 100%;
@@ -1816,7 +1816,7 @@ onShow(async () => {
   height: 44rpx;
   border-radius: 50%;
   background: rgba(60, 60, 60, 0.75);
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
