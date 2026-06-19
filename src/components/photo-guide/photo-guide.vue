@@ -346,13 +346,14 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // 8px 灰色间隔条
 .action-gap {
   width: 100%;
-  height: 16rpx;
+  height: 8rpx;
   background: #F5F5F5;
   flex-shrink: 0;
 }
 
 // 取消按钮
 .cancel-btn {
+  height: 88rpx;
   .cancel-text {
     font-size: 30rpx;
     color: #666666;
