@@ -20,32 +20,37 @@
       @touchmove.prevent="onTouchMove"
       @touchend="onTouchEnd"
     >
-      <!-- 图片层：直接在 crop-body 内，定位在裁剪框位置，可上下拖动 -->
+      <!-- 第1层：图片，绝对定位，覆盖裁剪区域全高，可上下移动 -->
       <image
         v-if="ready"
         :src="imageSrc"
-        class="crop-img"
+        class="crop-image"
         :style="imgStyle"
       />
 
-      <!-- 四块半透明黑色遮罩 cover-view（盖在裁剪框外部，遮住图片超出部分） -->
-      <cover-view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></cover-view>
-      <cover-view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></cover-view>
-      <cover-view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></cover-view>
-      <cover-view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></cover-view>
+      <!-- 第2层：遮罩层，覆盖全区域，中间挖空（透明） -->
+      <view class="mask-layer">
+        <view class="mask-row mask-top" :style="{ height: cropTopPx + 'px' }"></view>
+        <view class="mask-row mask-middle" :style="{ height: cropSize + 'px' }">
+          <view class="mask-col mask-left" :style="{ width: cropLeftPx + 'px' }"></view>
+          <view class="mask-col mask-center" :style="{ width: cropSize + 'px' }"></view>
+          <view class="mask-col mask-right" :style="{ width: cropLeftPx + 'px' }"></view>
+        </view>
+        <view class="mask-row mask-bottom" style="flex:1"></view>
+      </view>
 
-      <!-- 裁剪框边框 + 四角标记（cover-view 盖在最上层） -->
-      <cover-view class="crop-frame" :style="{
+      <!-- 第3层：裁剪框边框 + 四角标记 -->
+      <view class="crop-frame" :style="{
         width: cropSize + 'px',
         height: cropSize + 'px',
         top: cropTopPx + 'px',
         left: cropLeftPx + 'px'
       }">
-        <cover-view class="corner corner-tl"></cover-view>
-        <cover-view class="corner corner-tr"></cover-view>
-        <cover-view class="corner corner-bl"></cover-view>
-        <cover-view class="corner corner-br"></cover-view>
-      </cover-view>
+        <view class="corner corner-tl"></view>
+        <view class="corner corner-tr"></view>
+        <view class="corner corner-bl"></view>
+        <view class="corner corner-br"></view>
+      </view>
     </view>
 
     <!-- 底部操作栏 -->
@@ -58,7 +63,7 @@
       </view>
     </view>
 
-    <!-- 隐藏 canvas 用于裁剪输出 -->
+    <!-- 隐藏 canvas -->
     <canvas
       canvas-id="cropCanvas"
       class="hidden-canvas"
@@ -71,51 +76,40 @@
 import { ref, computed, onMounted } from 'vue'
 import { getAndClearCropImageData } from '@/utils/crop-bridge'
 
-// ====== 布局尺寸 ======
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
 const imageSrc = ref('')
-const cropSize = ref(0)   // 裁剪框边长 (px)
+const cropSize = ref(0)
 const screenW = ref(375)
-const bodyH = ref(0)      // 裁剪区域可视高度
-const ready = ref(false)  // 图片加载完毕后才渲染
+const bodyH = ref(0)
+const ready = ref(false)
 
-// ====== 图片信息 ======
 let imgNaturalW = 0
 let imgNaturalH = 0
 
-// ====== 核心 transform 参数 ======
-const translateY = ref(0) // 当前 translateY (px)，允许范围 [minTranslateY, 0]
+// translateY：图片在 crop-body 内的垂直偏移 (px)，范围 [H - h, 0]
+const translateY = ref(0)
 
-// ——— 按公式1: scale = 裁剪框宽度 / 图片原始宽度 ———
+// scale = cropSize / imgNaturalW
 const scale = computed(() => cropSize.value / imgNaturalW)
 
-// ——— 按公式2: 缩放后高度 ———
+// 缩放后图片高度
 const displayH = computed(() => imgNaturalH * scale.value)
 
-// ——— 初次加载后的初始 translateY ——
-const initTranslateY = () => {
-  // 按公式5: 初始位置 = (H - h) / 2
-  translateY.value = (cropSize.value - displayH.value) / 2
-}
-
-// ——— 遮罩尺寸（裁剪框外到屏幕边缘）———
-const maskTop = computed(() => Math.max(0, Math.floor((bodyH.value - cropSize.value) / 2)))
-const maskLeft = computed(() => Math.max(0, Math.floor((screenW.value - cropSize.value) / 2)))
+// 裁剪框位置
 const cropTopPx = computed(() => Math.floor((bodyH.value - cropSize.value) / 2))
 const cropLeftPx = computed(() => Math.floor((screenW.value - cropSize.value) / 2))
 
-// ——— 图片样式：定位在裁剪框位置，transform 只控制垂直位移 ———
-// 宽度 = cropSize 填满裁剪框宽度；高度 = imgNaturalH * scale 按比例
+// 图片样式：宽度 = 裁剪框宽，高度按比例，定位在 crop-body 顶部从 cropTopPx 开始，translateY 控制位移
 const imgStyle = computed(() => {
   const w = cropSize.value
-  const h = Math.round(imgNaturalH * scale.value)
+  const h = Math.round(displayH.value)
   return `left:${cropLeftPx.value}px;top:${cropTopPx.value}px;` +
     `width:${w}px;height:${h}px;` +
     `transform:translateY(${translateY.value}px);`
 })
 
-// ====== 触摸交互（只处理垂直） ======
+// ====== 触摸交互 ======
 let touchStartY = 0
 let translateYStart = 0
 
@@ -127,23 +121,16 @@ const onTouchStart = (e: any) => {
 
 const onTouchMove = (e: any) => {
   if (!ready.value) return
-  const touch = e.touches[0]
-  // 按公式6: 只取 deltaY，完全忽略 deltaX
-  const deltaY = touch.clientY - touchStartY
+  const deltaY = (e.touches[0]?.clientY ?? 0) - touchStartY
   let newY = translateYStart + deltaY
 
-  // 按公式5: 硬边界 [H-h, 0]
   const h = displayH.value
   const H = cropSize.value
   if (h <= H) {
-    // 横图高度不足 -> 居中固定，不允许拖动
     newY = (H - h) / 2
   } else {
-    const minY = H - h   // 底部对齐
-    const maxY = 0       // 顶部对齐
-    newY = Math.max(minY, Math.min(maxY, newY))
+    newY = Math.max(H - h, Math.min(0, newY))
   }
-
   translateY.value = newY
 }
 
@@ -151,14 +138,9 @@ const onTouchEnd = () => {
   if (!ready.value) return
   const h = displayH.value
   const H = cropSize.value
-  if (h <= H) return // 无需回弹
-
-  // 按公式6: 松手后超出边界则回弹
-  if (translateY.value > 0) {
-    translateY.value = 0
-  } else if (translateY.value < (H - h)) {
-    translateY.value = H - h
-  }
+  if (h <= H) return
+  if (translateY.value > 0) translateY.value = 0
+  else if (translateY.value < H - h) translateY.value = H - h
 }
 
 // ====== 生命周期 ======
@@ -169,23 +151,18 @@ onMounted(() => {
   screenW.value = sysInfo.windowWidth || 375
   const screenH = sysInfo.windowHeight || 667
 
-  const navH = 88
-  const navPx = Math.round(navH * screenW.value / 750)
+  const navPx = Math.round(88 * screenW.value / 750)
   const bottomBarH = 64
-
   bodyH.value = screenH - navPx - statusBarHeight.value - bottomBarH - safeBottom.value
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 从 bridge 获取图片数据
   const bridgeData = getAndClearCropImageData()
   if (bridgeData) {
     imageSrc.value = bridgeData.path
     imgNaturalW = bridgeData.width
     imgNaturalH = bridgeData.height
-    initTranslateY()
     ready.value = true
   } else {
-    // 兜底：URL 参数
     const src = (() => {
       const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
       return p ? decodeURIComponent(p) : ''
@@ -197,44 +174,28 @@ onMounted(() => {
           imageSrc.value = src
           imgNaturalW = info.width
           imgNaturalH = info.height
-          initTranslateY()
           ready.value = true
         },
-        fail: () => {
-          uni.showToast({ title: '加载图片失败', icon: 'none' })
-        },
+        fail: () => uni.showToast({ title: '加载图片失败', icon: 'none' }),
       })
     }
   }
 })
 
 // ====== 按钮 ======
-const handleCancel = () => {
-  uni.navigateBack({ delta: 1 })
-}
-
-const handleReselect = () => {
-  uni.navigateBack({ delta: 1 })
-}
+const handleCancel = () => uni.navigateBack({ delta: 1 })
+const handleReselect = () => uni.navigateBack({ delta: 1 })
 
 const handleConfirm = () => {
   if (!imageSrc.value) return
-
   uni.showLoading({ title: '裁剪中...' })
 
   const cropW = cropSize.value
   const s = scale.value
-
-  // 裁剪区域在图片上的源坐标（公式推导见下方注释）
-  // 图片在 crop-box 中以 transform-origin: left top 绝对定位
-  // 显示位置: (0, translateY), 大小为 (imgNaturalW*s, imgNaturalH*s)
-  // 裁剪框可见区域: (0, 0, cropW, cropW) 在 crop-box 内
-  // 对应图片原图坐标: sx=0, sy=-translateY/s, sw=cropW/s, sh=cropW/s
   const sy = Math.round(-translateY.value / s)
   const sw = Math.round(cropW / s)
   const sh = Math.round(cropW / s)
 
-  // 边界钳位（防御性，正常拖动下 translateY 已在范围内 => sy 也应在范围内）
   const srcX = 0
   const srcY = Math.max(0, Math.min(sy, Math.max(0, imgNaturalH - sh)))
   const srcW = Math.min(sw, imgNaturalW)
@@ -246,28 +207,19 @@ const handleConfirm = () => {
     setTimeout(() => {
       uni.canvasToTempFilePath({
         canvasId: 'cropCanvas',
-        width: cropW,
-        height: cropW,
-        destWidth: cropW * 2,
-        destHeight: cropW * 2,
-        fileType: 'jpg',
-        quality: 0.9,
+        width: cropW, height: cropW,
+        destWidth: cropW * 2, destHeight: cropW * 2,
+        fileType: 'jpg', quality: 0.9,
         success: (res: any) => {
           uni.hideLoading()
-          const resultPath = res.tempFilePath
-
-          // eventChannel 通知返回页面
           try {
             const pages = getCurrentPages()
             const prevPage = pages.length >= 2 ? pages[pages.length - 2] : null
             if ((prevPage as any)?.getOpenerEventChannel) {
-              ;(prevPage as any).getOpenerEventChannel().emit('cropped', { path: resultPath })
+              ;(prevPage as any).getOpenerEventChannel().emit('cropped', { path: res.tempFilePath })
             }
-          } catch (e) {
-            console.error('eventChannel emit 失败:', e)
-          }
-
-          uni.$emit('IMAGE_CROPPED', { path: resultPath })
+          } catch (_) {}
+          uni.$emit('IMAGE_CROPPED', { path: res.tempFilePath })
           uni.navigateBack({ delta: 1 })
         },
         fail: (err: any) => {
@@ -293,9 +245,7 @@ const handleConfirm = () => {
 // ===== 顶部导航 =====
 .nav-wrap {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   z-index: 100;
   background: #1a1a1a;
 }
@@ -308,88 +258,63 @@ const handleConfirm = () => {
   padding: 0 32rpx;
 }
 
-.nav-left,
-.nav-right {
-  width: 120rpx;
-}
+.nav-left, .nav-right { width: 120rpx; }
+.nav-right { display: flex; justify-content: flex-end; }
 
-.nav-right {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.back-arrow {
-  font-size: 40rpx;
-  color: #fff;
-  font-weight: 300;
-}
-
-.cancel-text {
-  font-size: 28rpx;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.nav-title {
-  font-size: 34rpx;
-  font-weight: 600;
-  color: #fff;
-}
+.back-arrow { font-size: 40rpx; color: #fff; font-weight: 300; }
+.cancel-text { font-size: 28rpx; color: rgba(255,255,255,0.7); }
+.nav-title { font-size: 34rpx; font-weight: 600; color: #fff; }
 
 // ===== 裁剪区域 =====
 .crop-body {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #1a1a1a;
+  background: transparent;  // 不设背景色，让图片自然显示
 }
 
-// ===== 图片层 =====
-.crop-img {
+// 第1层：图片
+.crop-image {
   position: absolute;
   z-index: 1;
+  display: block;
 }
 
-// ===== 遮罩层 =====
-.crop-mask-top,
-.crop-mask-bottom,
-.crop-mask-left,
-.crop-mask-right {
+// 第2层：遮罩（中间挖空）
+.mask-layer {
   position: absolute;
-  background: rgba(0, 0, 0, 0.6);
+  top: 0; left: 0; right: 0; bottom: 0;
   z-index: 2;
   pointer-events: none;
+  display: flex;
+  flex-direction: column;
 }
 
-.crop-mask-top {
-  top: 0;
-  left: 0;
-  right: 0;
+.mask-row {
+  background: rgba(0, 0, 0, 0.6);
 }
 
-.crop-mask-bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
+.mask-middle {
+  display: flex;
+  flex-direction: row;
+  background: transparent;
 }
 
-.crop-mask-left {
-  top: 0;
-  bottom: 0;
-  left: 0;
+.mask-col {
+  background: rgba(0, 0, 0, 0.6);
 }
 
-.crop-mask-right {
-  top: 0;
-  bottom: 0;
-  right: 0;
+.mask-center {
+  background: transparent;   // 挖空区域，完全透明
 }
 
-// ===== 裁剪框边框 + 四角 =====
+// 第3层：裁剪框边框 + 四角
 .crop-frame {
   position: absolute;
   z-index: 3;
   pointer-events: none;
   border: 2px solid #07C160;
+  background: transparent;
 }
 
 .corner {
@@ -400,29 +325,25 @@ const handleConfirm = () => {
 }
 
 .corner-tl {
-  top: -4rpx;
-  left: -4rpx;
+  top: -4rpx; left: -4rpx;
   border-top: 6rpx solid #07C160;
   border-left: 6rpx solid #07C160;
 }
 
 .corner-tr {
-  top: -4rpx;
-  right: -4rpx;
+  top: -4rpx; right: -4rpx;
   border-top: 6rpx solid #07C160;
   border-right: 6rpx solid #07C160;
 }
 
 .corner-bl {
-  bottom: -4rpx;
-  left: -4rpx;
+  bottom: -4rpx; left: -4rpx;
   border-bottom: 6rpx solid #07C160;
   border-left: 6rpx solid #07C160;
 }
 
 .corner-br {
-  bottom: -4rpx;
-  right: -4rpx;
+  bottom: -4rpx; right: -4rpx;
   border-bottom: 6rpx solid #07C160;
   border-right: 6rpx solid #07C160;
 }
@@ -438,26 +359,10 @@ const handleConfirm = () => {
   flex-shrink: 0;
 }
 
-.bottom-btn {
-  text {
-    font-size: 32rpx;
-  }
-}
+.bottom-btn text { font-size: 32rpx; }
+.btn-reselect text { color: rgba(255,255,255,0.55); }
+.btn-confirm text { color: #07C160; font-weight: 600; }
 
-.btn-reselect {
-  text {
-    color: rgba(255, 255, 255, 0.55);
-  }
-}
-
-.btn-confirm {
-  text {
-    color: #07C160;
-    font-weight: 600;
-  }
-}
-
-// ===== 隐藏 canvas =====
 .hidden-canvas {
   position: fixed;
   left: -9999px;
