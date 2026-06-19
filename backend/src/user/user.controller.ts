@@ -127,6 +127,14 @@ export class UserController {
       content: JSON.stringify({ url: body.avatarUrl, type: 'avatar' }),
     })
     await this.auditLogRepo.save(auditLog)
+    // 发送即时审核通知（与照片上传流程一致）
+    this.notifyService.sendAuditNotify({
+      type: 'photo',
+      content: `用户 ${req.user.nickname || userId} 提交了头像审核`,
+      userId,
+      userNickname: req.user.nickname || '',
+      source: 'avatar_upload',
+    }).catch(() => {})
     return Result.success(null, '已提交审核')
   }
 

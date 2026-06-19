@@ -1199,8 +1199,8 @@ onShow(async () => {
     const profile = await get<any>('/auth/profile')
     if (profile) {
       userStore.updateProfile(profile)
-      // 若后台头像已更新（审核通过），同步本地并清除待审核状态
-      if (profile.avatar && profile.avatar !== form.value.avatar) {
+      // 仅在后台头像已通过审核时同步到本地（跳过待审核状态的头像，避免覆盖本地预览）
+      if (profile.avatar && form.value.avatarReviewStatus !== 0 && profile.avatar !== form.value.avatar) {
         form.value.avatar = profile.avatar
         form.value.avatarReviewStatus = 1
       }
