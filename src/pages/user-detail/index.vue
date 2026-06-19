@@ -4,292 +4,230 @@
       <text>加载中...</text>
     </view>
 
-    <template v-else-if="userData">
-      <view class="nav-bar">
+    <template v-else-if="profileData">
+      <!-- ========== 自定义导航栏 ========== -->
+      <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="nav-left" @tap="handleBack">
           <text class="back-icon">←</text>
         </view>
-        <view class="nav-title">{{ userData.nickname || '用户' }}</view>
+        <view class="nav-title">{{ profileData.top.nickname || '用户主页' }}</view>
         <view class="nav-right">
-          <!-- 右上角分享按钮 -->
-          <image
-            v-if="pageIcons.shareMoreIcon"
-            class="more-icon-img"
-            :src="pageIcons.shareMoreIcon"
-            mode="aspectFit"
-            @tap="showMoreActions"
-          />
-          <text v-else class="more-icon" @tap="showMoreActions">⋮</text>
-          <!-- 关注图标 -->
-          <image
-            v-if="pageIcons.followIcon"
-            class="follow-icon-img"
-            :src="pageIcons.followIcon"
-            mode="aspectFit"
-            :class="{ active: userData.isFollowed }"
-            @tap="toggleFollow"
-          />
-          <text v-else class="eye-icon" :class="{ active: userData.isFollowed }" @tap="toggleFollow">{{ userData.isFollowed ? '👁' : '👁‍🗨' }}</text>
+          <text class="more-icon" @tap="showMoreActions">⋮</text>
         </view>
       </view>
 
-      <view class="photo-section">
-        <swiper
-          class="photo-swiper"
-          :current="currentPhotoIndex"
-          @change="onPhotoChange"
-          :indicator-dots="false"
-          :autoplay="false"
-          :circular="false"
-        >
-          <swiper-item v-for="(photo, index) in userData.photos" :key="index">
-            <view class="photo-wrapper" :class="{ 'photo-blur': shouldBlurPhoto && index > 0 }" @tap="previewPhoto(index)">
-              <image
-                class="photo-image"
-                :src="photo.url || photo"
-                mode="aspectFill"
-                @error="handleImageError"
-              />
-              <!-- 模糊遮罩+上传引导 -->
-              <view v-if="shouldBlurPhoto && index > 0" class="blur-guide">
-                <text class="blur-guide-title">我也想更了解你</text>
-                <text class="blur-guide-hint">请先上传你的照片吧</text>
-                <view class="upload-photo-btn" @tap.stop="goToUploadPhoto">
-                  <text>上传照片</text>
-                </view>
-              </view>
-            </view>
-          </swiper-item>
-        </swiper>
-
-        <view class="share-btn" @tap="showSharePanel">
+      <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
+        <!-- ========== 1. 顶部大背景图 ========== -->
+        <view class="hero-section">
           <image
-            v-if="pageIcons.shareBtnIcon"
-            class="share-btn-img"
-            :src="pageIcons.shareBtnIcon"
-            mode="aspectFit"
+            class="hero-bg"
+            :src="profileData.top.backgroundPhoto || '/static/default-bg.png'"
+            mode="aspectFill"
           />
-          <text v-else class="share-icon">↗</text>
+          <view class="hero-gradient" />
         </view>
 
-        <view v-if="userData.photos && userData.photos.length > 1" class="photo-thumbnails">
-          <view
-            v-for="(photo, index) in userData.photos"
-            :key="index"
-            class="thumbnail-item"
-            :class="{ active: currentPhotoIndex === index, 'thumb-blur': shouldBlurPhoto && index > 0 }"
-            @tap="handleThumbTap(index)"
-          >
-            <image class="thumbnail-image" :src="photo.url || photo" mode="aspectFill" @error="handleImageError" />
-            <view v-if="shouldBlurPhoto && index > 0" class="thumb-blur-cover" />
+        <!-- ========== 头像+昵称区 ========== -->
+        <view class="profile-header-card">
+          <view class="avatar-wrapper">
+            <image
+              class="avatar-img"
+              :src="profileData.top.avatar || '/static/default-avatar.png'"
+              mode="aspectFill"
+            />
+            <view v-if="profileData.identityAuth?.items?.filter((i: any) => i.verified).length >= 2" class="verified-badge">✓</view>
           </view>
-        </view>
-      </view>
-
-      <view class="info-card">
-        <view class="name-row">
-          <view class="name-section">
-            <text class="user-name">{{ userData.nickname }}</text>
-            <view class="id-tag">
+          <view class="name-id-row">
+            <view class="name-line">
+              <text class="nickname">{{ profileData.top.nickname }}</text>
+              <view v-if="profileData.top.isSelf" class="self-tag"><text>自己</text></view>
+            </view>
+            <view class="id-line">
               <text class="id-badge">ID</text>
-              <text class="id-number">{{ userData.id }}</text>
+              <text class="id-num">{{ profileData.top.userId }}</text>
             </view>
           </view>
-          <view v-if="!isSelf" class="follow-btn" @tap="toggleFollow">
-            <image
-              v-if="pageIcons.followIcon"
-              class="heart-icon-img"
-              :src="pageIcons.followIcon"
-              mode="aspectFit"
-              :class="{ filled: userData.isFollowed }"
-            />
-            <text v-else class="heart-icon" :class="{ filled: userData.isFollowed }">
-              {{ userData.isFollowed ? '❤️' : '🤍' }}
-            </text>
-            <text class="follow-text">{{ userData.isFollowed ? '已关注' : '关注' }}</text>
-          </view>
-          <view v-else class="follow-btn edit-btn" @tap="goEditProfile">
-            <text>编辑资料</text>
+          <!-- 关注按钮 -->
+          <view v-if="!profileData.top.isSelf" class="follow-btn-area">
+            <view class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
+              <text class="follow-icon">{{ profileData.top.isFollowed ? '❤️' : '🤍' }}</text>
+              <text>{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
+            </view>
           </view>
         </view>
 
-        <view class="basic-info">
-          <text v-if="userData.age">{{ userData.age }}岁</text>
-          <text v-if="userData.age" class="dot">·</text>
-          <text v-if="userData.height">{{ userData.height }}cm</text>
-          <text v-if="userData.height" class="dot">·</text>
-          <text v-if="userData.weight">{{ userData.weight }}kg</text>
-          <text v-if="userData.weight" class="dot">·</text>
-          <text v-if="userData.education">{{ userData.education }}</text>
+        <!-- ========== 2. 基础资料区 ========== -->
+        <view class="section-card basic-section">
+          <view class="basic-line">
+            <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
+            <text v-if="profileData.basicInfo.age" class="dot">·</text>
+            <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
+            <text v-if="profileData.basicInfo.height" class="dot">·</text>
+            <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
+            <text v-if="profileData.basicInfo.weight" class="dot">·</text>
+            <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
+          </view>
+          <view class="birth-line">
+            <view v-if="profileData.basicInfo.birthDay" class="info-chip pink-chip">
+              <text class="chip-icon">🎂</text>
+              <text>{{ profileData.basicInfo.birthDay }}·{{ profileData.basicInfo.zodiac }}·{{ profileData.basicInfo.constellation }}</text>
+            </view>
+          </view>
+          <view v-if="profileData.basicInfo.occupation" class="info-chip blue-chip">
+            <text class="chip-icon">💼</text>
+            <text>{{ profileData.basicInfo.occupation }}</text>
+          </view>
+          <view class="location-row">
+            <view v-if="profileData.basicInfo.hometown" class="loc-item">
+              <text class="loc-dot blue">●</text>
+              <text class="loc-label">户籍</text>
+              <text class="loc-val">{{ profileData.basicInfo.hometown }}</text>
+            </view>
+            <view v-if="profileData.basicInfo.residence" class="loc-item">
+              <text class="loc-dot orange">●</text>
+              <text class="loc-label">现居</text>
+              <text class="loc-val">{{ profileData.basicInfo.residence }}</text>
+            </view>
+          </view>
         </view>
 
-        <view class="tag-row">
-          <view v-if="userData.birthYear" class="tag pink-tag">
-            <text class="tag-icon">🎂</text>
-            <text>{{ userData.birthYear }}年·{{ userData.zodiac || '' }}·{{ userData.constellation || '' }}</text>
+        <!-- ========== 3. 身份认证区 ========== -->
+        <view class="section-card auth-section">
+          <view class="section-title-bar">
+            <text class="section-title">身份认证</text>
+            <text class="section-hint">点亮的为已认证</text>
           </view>
-          <view v-if="userData.occupation" class="tag blue-tag">
-            <text class="tag-icon">💼</text>
-            <text>{{ userData.occupation }}</text>
-          </view>
-        </view>
-
-        <view class="address-row">
-          <view v-if="userData.hometown" class="address-item">
-            <text class="address-icon blue">📍</text>
-            <text class="address-label">户籍</text>
-            <text class="address-value">{{ userData.hometown }}</text>
-          </view>
-          <view v-if="userData.residence" class="address-item">
-            <text class="address-icon orange">📍</text>
-            <text class="address-label">现居</text>
-            <text class="address-value">{{ userData.residence }}</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="auth-section">
-        <view class="section-header">
-          <view class="section-title">
-            <text class="shield-icon">🛡</text>
-            <text>身份认证</text>
-          </view>
-          <text class="auth-tip">点亮的为已认证</text>
-        </view>
-
-        <scroll-view class="auth-scroll" scroll-x>
-          <view class="auth-items">
-            <view class="auth-item" @tap="showAuthDetail('realname')">
-              <view class="auth-icon" :class="{ verified: userData.isRealName }">
-                <text>{{ userData.isRealName ? '✓' : '—' }}</text>
+          <scroll-view class="auth-scroll" scroll-x :show-scrollbar="false">
+            <view class="auth-items">
+              <view
+                v-for="item in profileData.identityAuth.items"
+                :key="item.type"
+                class="auth-item"
+                @tap="onAuthTap(item)"
+              >
+                <view class="auth-circle" :class="{ on: item.verified }">
+                  <text>{{ item.verified ? '✓' : '—' }}</text>
+                </view>
+                <text class="auth-name">{{ item.label }}</text>
               </view>
-              <text class="auth-label">实名</text>
             </view>
-            <view class="auth-item" @tap="showAuthDetail('education')">
-              <view class="auth-icon" :class="{ verified: userData.education }">
-                <text>{{ userData.education ? '✓' : '—' }}</text>
-              </view>
-              <text class="auth-label">学历</text>
-            </view>
-            <view class="auth-item" @tap="showAuthDetail('housing')">
-              <view class="auth-icon" :class="{ verified: userData.housingStatus }">
-                <text>{{ userData.housingStatus ? '✓' : '—' }}</text>
-              </view>
-              <text class="auth-label">房</text>
-            </view>
-            <view class="auth-item" @tap="showAuthDetail('car')">
-              <view class="auth-icon" :class="{ verified: userData.carStatus }">
-                <text>{{ userData.carStatus ? '✓' : '—' }}</text>
-              </view>
-              <text class="auth-label">车</text>
-            </view>
-            <view class="auth-item" @tap="showAuthDetail('commitment')">
-              <view class="auth-icon" :class="{ verified: hasCommitment }">
-                <text>{{ hasCommitment ? '✓' : '—' }}</text>
-              </view>
-              <text class="auth-label">单身承诺</text>
-            </view>
-            <view class="auth-item" @tap="showAuthDetail('marital')">
-              <view class="auth-icon" :class="{ verified: userData.maritalStatus }">
-                <text>{{ userData.maritalStatus ? '✓' : '—' }}</text>
-              </view>
-              <text class="auth-label">婚况</text>
+          </scroll-view>
+        </view>
+
+        <!-- ========== 4. 关于我区 ========== -->
+        <view class="section-card about-section">
+          <text class="section-title">关于我</text>
+          <view v-if="profileData.aboutMe.tags?.length" class="tag-cloud">
+            <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="sys-tag">
+              <text>{{ tag.name }}</text>
             </view>
           </view>
-        </scroll-view>
-      </view>
-
-      <view class="about-section">
-        <view class="section-header">
-          <view class="section-title">
-            <text class="book-icon">📖</text>
-            <text>关于我</text>
+          <view v-if="profileData.aboutMe.aiProfileText" class="ai-profile-block">
+            <view class="ai-label">
+              <text class="ai-dot">✨</text>
+              <text class="ai-label-text">AI印象</text>
+            </view>
+            <text class="ai-text">{{ profileData.aboutMe.aiProfileText }}</text>
+          </view>
+          <view v-else-if="!profileData.aboutMe.tags?.length && !profileData.aboutMe.aiProfileText" class="empty-hint">
+            <text>TA还没填写介绍哦～</text>
           </view>
         </view>
 
-        <view class="tag-group">
-          <view v-if="userData.incomeRange" class="info-tag">{{ userData.incomeRange }}</view>
-          <view v-if="userData.housingStatus" class="info-tag">{{ userData.housingStatus }}</view>
-          <view v-if="userData.carStatus" class="info-tag">{{ userData.carStatus }}</view>
-          <view v-if="userData.maritalStatus" class="info-tag">{{ userData.maritalStatus }}</view>
-          <view v-if="userData.isOnlyChild === 1" class="info-tag">独生子女</view>
-          <view v-if="userData.marriagePlan" class="info-tag">{{ userData.marriagePlan }}</view>
-        </view>
-
-      </view>
-
-      <view v-if="userData.mateRequirement" class="requirement-section">
-        <view class="section-header">
-          <view class="section-title">
-            <text class="heart-icon-small">💕</text>
-            <text>择偶要求</text>
+        <!-- ========== AI缘分分析入口卡片 ========== -->
+        <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-match-entry" @tap="openAiMatch">
+          <view class="entry-ring left-ring" />
+          <view class="entry-ring right-ring" />
+          <view class="entry-content">
+            <view class="entry-icon-wrap">
+              <text class="entry-icon">💞</text>
+            </view>
+            <view class="entry-info">
+              <text class="entry-title">AI缘分分析</text>
+              <text class="entry-desc">测测你们缘分契合度</text>
+            </view>
+            <text class="entry-arrow">→</text>
           </view>
         </view>
 
-        <view class="intro-content">
-          <text class="intro-text" :class="{ collapsed: !showFullRequirement }">{{ userData.mateRequirement }}</text>
-          <view v-if="requirementTooLong" class="expand-btn" @tap="showFullRequirement = !showFullRequirement">
-            <text>{{ showFullRequirement ? '收起' : '展开' }}</text>
+        <!-- ========== 5. Ta希望你区 ========== -->
+        <view class="section-card hope-section">
+          <text class="section-title">Ta希望你</text>
+          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags">
+            <view v-for="pt in profileData.hopeTa.partnerTags" :key="pt.label" class="partner-tag">
+              <text class="pt-label">{{ pt.label }}：</text>
+              <text class="pt-val">{{ pt.value }}</text>
+            </view>
+          </view>
+          <view v-if="profileData.hopeTa.aiHopeText" class="ai-hope-block">
+            <view class="ai-label">
+              <text class="ai-dot">✨</text>
+              <text class="ai-label-text">AI期望解读</text>
+            </view>
+            <text class="ai-text">{{ profileData.hopeTa.aiHopeText }}</text>
+          </view>
+          <view v-if="!profileData.hopeTa.partnerTags?.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
+            <text>TA还没填写期待哦～</text>
           </view>
         </view>
-      </view>
 
-      <view v-if="userData.matchmakerReviews && userData.matchmakerReviews.length > 0" class="review-section">
-        <view class="section-header">
-          <view class="section-title">
-            <text class="heart-icon-small">📝</text>
-            <text>红娘评语</text>
+        <!-- ========== 6. 互动区 ========== -->
+        <view class="section-card interaction-section">
+          <view v-if="profileData.interaction.giftCount > 0" class="interact-item" @tap="goGifts">
+            <text class="interact-emoji">🎁</text>
+            <text class="interact-text">已收到 {{ profileData.interaction.giftCount }} 个礼物</text>
+          </view>
+          <view class="interact-row">
+            <view class="interact-item" @tap="shareProfile">
+              <text class="interact-emoji">📤</text>
+              <text class="interact-text">介绍给好友</text>
+            </view>
+            <view class="interact-item warn" @tap="reportUser">
+              <text class="interact-emoji">🚩</text>
+              <text class="interact-text">举报/拉黑</text>
+            </view>
           </view>
         </view>
-        <view v-for="review in userData.matchmakerReviews" :key="review.id" class="review-item">
-          <view class="review-header">
-            <text class="review-author">{{ review.matchmakerName }}</text>
-            <text class="review-time">{{ formatReviewTime(review.createdAt) }}</text>
-          </view>
-          <text class="review-content">{{ review.content }}</text>
-        </view>
-      </view>
 
-      <view class="bottom-safe-area"></view>
+        <view class="bottom-spacer" />
+      </scroll-view>
 
-      <view class="action-bar">
-        <view class="action-btn primary-btn" @tap="handleChat">
-          <text class="btn-icon">💬</text>
-          <text>想认识Ta</text>
+      <!-- ========== 7. 底部固定操作栏 ========== -->
+      <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+        <view class="bb-btn contact-btn" @tap="handleContact">
+          <text class="bb-icon">👋</text>
+          <text>{{ profileData.bottomBar.contactText }}</text>
         </view>
-        <view class="action-btn secondary-btn" @tap="showMatchmakerPopup">
-          <text class="btn-icon">👁</text>
-          <text>红娘牵线</text>
+        <view class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
+          <text class="bb-icon">🎯</text>
+          <text>{{ profileData.bottomBar.matchmakerText }}</text>
         </view>
       </view>
 
-      <view v-if="showShare" class="share-panel">
-        <view class="share-overlay" @tap="closeSharePanel"></view>
-        <view class="share-content" :class="{ open: showShare }">
-          <view class="share-option" @tap="shareToFriend">
-            <image
-              v-if="pageIcons.shareFriendIcon"
-              class="option-icon-img"
-              :src="pageIcons.shareFriendIcon"
-              mode="aspectFit"
-            />
-            <text v-else class="option-icon">💬</text>
-            <text class="option-text">分享给好友</text>
+      <!-- ========== 举报弹窗 ========== -->
+      <view v-if="showReportSheet" class="report-sheet">
+        <view class="sheet-overlay" @tap="showReportSheet = false" />
+        <view class="sheet-content">
+          <view class="sheet-title">举报{{ profileData.top.nickname }}</view>
+          <view v-for="r in reportReasons" :key="r" class="sheet-item" @tap="onReport(r)">
+            <text>{{ r }}</text>
           </view>
-          <view class="share-divider"></view>
-          <view class="share-option" @tap="generatePoster">
-            <image
-              v-if="pageIcons.posterIcon"
-              class="option-icon-img"
-              :src="pageIcons.posterIcon"
-              mode="aspectFit"
-            />
-            <text v-else class="option-icon">🖼</text>
-            <text class="option-text">生成海报</text>
+          <view class="sheet-cancel" @tap="showReportSheet = false">
+            <text>取消</text>
           </view>
         </view>
       </view>
 
+      <!-- ========== AI缘分分析弹窗 ========== -->
+      <ai-match-popup
+        v-if="showAiMatchPopup"
+        :show="showAiMatchPopup"
+        :target-user-id="userId"
+        :target-nickname="profileData.top.nickname"
+        @update:show="showAiMatchPopup = $event"
+      />
+
+      <!-- ========== 红娘弹窗 ========== -->
       <matchmaker-popup
         :show="showMatchmaker"
         :matchmaker="selectedMatchmaker"
@@ -297,7 +235,6 @@
         @close="showMatchmaker = false"
         @more="openMatchmakerList"
       />
-
       <matchmaker-list-popup
         :show="showMatchmakerList"
         :matchmakers="matchmakerList"
@@ -305,21 +242,6 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
-
-      <!-- 单身承诺签署弹窗 -->
-      <view v-if="showCommitPopup" class="commit-popup">
-        <view class="commit-overlay" @tap="showCommitPopup = false"></view>
-        <view class="commit-card">
-          <view class="commit-title">单身承诺</view>
-          <text class="commit-text">本人承诺：目前在法律及事实上均为单身状态，无配偶、无恋人，自愿签署本承诺书，并对所填写信息的真实性负责。</text>
-          <view class="commit-actions">
-            <text class="commit-cancel" @tap="showCommitPopup = false">取消</text>
-            <view class="commit-confirm" @tap="signCommitment">
-              <text>同意并签署</text>
-            </view>
-          </view>
-        </view>
-      </view>
     </template>
 
     <view v-else class="empty-container">
@@ -337,497 +259,188 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
-import { useImageFallback } from '@/composables/useImageFallback'
-const { handleImageError } = useImageFallback()
-
-interface PhotoItem {
-  id?: number
-  url: string
-  sortOrder?: number
-}
-
-interface UserDetailData {
-  id: number
-  nickname: string
-  avatar: string
-  gender: number
-  birthYear: number
-  age: number
-  height: number
-  weight: number
-  education: string
-  occupation: string
-  incomeRange: string
-  housingStatus: string
-  carStatus: string
-  maritalStatus: string
-  hometown: string
-  residence: string
-  mateRequirement: string
-  isRealName: number
-  isVip: number
-  isFollowed: boolean
-  isSelf: boolean
-  photos: PhotoItem[]
-  matchmakerReviews?: { id: number; content: string; matchmakerName: string; createdAt: string }[]
-  zodiac?: string
-  constellation?: string
-  isOnlyChild?: number
-  marriagePlan?: string
-}
-
-const userId = ref<number>(0)
-const loading = ref(true)
-const userData = ref<UserDetailData | null>(null)
-const currentPhotoIndex = ref(0)
-const showFullRequirement = ref(false)
-const requirementTooLong = ref(false)
-const showShare = ref(false)
-const showMatchmaker = ref(false)
-const showMatchmakerList = ref(false)
-const showCommitPopup = ref(false)
-const hasCommitment = ref(false)
-const followLoading = ref(false)
-const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
 
-const pageIcons = computed(() => systemStore.icons?.page || {})
+const userId = ref(0)
+const loading = ref(true)
+const profileData = ref<any>(null)
+const showAiMatchPopup = ref(false)
+const showMatchmaker = ref(false)
+const showMatchmakerList = ref(false)
+const showReportSheet = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
+const followLoading = ref(false)
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
-const isVip = computed(() => userStore.isVip)
-/** 本地判断是否为自己，不依赖后端 isSelf 字段 */
-const isSelf = computed(() => userStore.userInfo?.id != null && userStore.userInfo.id === userId.value)
+const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
 
-// 照片模糊控制：查看者照片数（头像不算）≤ 0 时，非首张照片模糊
-const myPhotoCount = ref(0)
-const shouldBlurPhoto = computed(() => myPhotoCount.value <= 1 && !isSelf.value)
+/** 底部安全区：iOS=34, 安卓=12 近似 */
+const safeAreaBottom = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
+})
+
+const reportReasons = ['虚假信息', '冒充他人', '骚扰谩骂', '广告营销', '色情低俗', '其他']
 
 onMounted(() => {
-  // 激活右上角原生分享按钮（开发工具中可能不可用，加 fail 静默处理）
-  uni.showShareMenu({
-    withShareTicket: true,
-    menus: ['shareAppMessage', 'shareTimeline'],
-    fail: () => {
-      // showShareMenu 在开发工具中 ban，静默忽略
-      console.log('[分享]showShareMenu 开发工具跳过')
-    },
-  })
-
+  uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
   const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const options = (currentPage as any)?.options || {}
-
-  if (options.id) {
-    userId.value = parseInt(options.id)
-    fetchUserDetail()
+  const opts = (pages[pages.length - 1] as any)?.options || {}
+  if (opts.id) {
+    userId.value = parseInt(opts.id)
+    fetchProfileDetail()
   } else {
     loading.value = false
   }
-
   fetchMatchmakerList()
-
-  // 获取查看者自己的照片数量（判断是否模糊）
-  if (isLoggedIn.value) {
-    fetchMyPhotoCount()
-  }
 })
 
-// 从登录页返回后刷新关注状态
 onShow(() => {
-  if (userId.value && isLoggedIn.value && userData.value) {
-    fetchFollowStatus()
+  if (userId.value && isLoggedIn.value && profileData.value) {
+    refreshFollowStatus()
   }
 })
 
-/** 单独查询关注状态（从登录页返回时刷新） */
-const fetchFollowStatus = async () => {
-  if (!userId.value || !isLoggedIn.value) return
+const refreshFollowStatus = async () => {
   try {
-    const res = await request<{ isFollowed: boolean }>({
-      url: `/users/${userId.value}/follow-status`,
-      method: 'GET',
-    })
-    if (userData.value && typeof res === 'object' && res !== null) {
-      userData.value.isFollowed = (res as any).isFollowed ?? false
+    const res = await request({ url: `/users/${userId.value}/follow-status`, method: 'GET' })
+    if (profileData.value && res) {
+      profileData.value.top.isFollowed = (res as any).isFollowed ?? false
     }
-  } catch (err) {
-    // 静默失败，不影响主流程
-  }
+  } catch { /* ignore */ }
 }
 
-const onShareAppMessage = () => {
-  if (!userData.value) return {}
-  return {
-    title: `${userData.value.nickname}的个人主页 - ${systemStore.appName}`,
-    path: `/pages/user-detail/index?id=${userData.value.id}`,
-    imageUrl: userData.value.avatar || '/static/default-avatar.png',
-  }
-}
+const onShareAppMessage = () => ({
+  title: `${profileData.value?.top?.nickname || ''}的个人主页`,
+  path: `/pages/user-detail/index?id=${userId.value}`,
+  imageUrl: profileData.value?.top?.avatar || '',
+})
 
-const fetchUserDetail = async () => {
+const fetchProfileDetail = async () => {
+  loading.value = true
   try {
-    loading.value = true
     const res = await request({
-      url: `/users/${userId.value}`,
+      url: `/users/${userId.value}/detail`,
       method: 'GET',
     })
-
-    const rawUser = res.user || res
-
-    if (rawUser) {
-      // 处理图片URL：相对路径拼完整URL
-      rawUser.avatar = getFullImageUrl(rawUser.avatar) || '/static/default-avatar.png'
-      if (rawUser.photos) {
-        rawUser.photos = rawUser.photos.map((p: any) => ({
-          ...p,
-          url: getFullImageUrl(typeof p === 'string' ? p : p.url),
-        }))
-      }
-
-      userData.value = rawUser as UserDetailData
-
-      if (userData.value.birthYear) {
-        userData.value.zodiac = getZodiac(userData.value.birthYear)
-        userData.value.constellation = getConstellation(userData.value.birthYear)
-      }
-
-      if (userData.value.mateRequirement && userData.value.mateRequirement.length > 150) {
-        requirementTooLong.value = true
-      }
+    profileData.value = res
+    // 头像/背景图补全
+    if (profileData.value) {
+      profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || '/static/default-avatar.png'
+      profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
-  } catch (e) {
-    console.error('fetch user detail error', e)
-    uni.showToast({
-      title: '获取用户信息失败',
-      icon: 'none',
-    })
+  } catch {
+    uni.showToast({ title: '获取用户信息失败', icon: 'none' })
   } finally {
     loading.value = false
   }
 }
 
 const fetchMatchmakerList = async () => {
-  // eslint-disable-next-line no-console
-  console.log('[红娘] fetchMatchmakerList 开始调用')
-
   try {
-    const res = await request({
-      url: '/matchmakers',
-      method: 'GET',
-      timeout: 15000,
-    })
-
-    // eslint-disable-next-line no-console
-    console.log('[红娘] API 返回类型:', typeof res, '是否为数组:', Array.isArray(res))
-    // eslint-disable-next-line no-console
-    console.log('[红娘] API 返回原始数据:', JSON.stringify(res).substring(0, 500))
-
-    const rawList: any[] = Array.isArray(res) ? res : (res?.list || res?.data?.list || res?.data || [])
-    // eslint-disable-next-line no-console
-    console.log('[红娘] rawList 长度:', rawList.length)
-
-    matchmakerList.value = rawList.map((item: any, index: number) => {
-      // eslint-disable-next-line no-console
-      console.log(`[红娘] 第${index}条 keys:`, Object.keys(item))
-      // eslint-disable-next-line no-console
-      console.log(`[红娘] 第${index}条 原始:`, JSON.stringify(item).substring(0, 300))
-
-      const resolvedQrCode = getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || item.QRCode)
-      const resolvedAvatar = getFullImageUrl(item.avatar || item.avatarUrl)
-      // eslint-disable-next-line no-console
-      console.log(`[红娘] 第${index}条 qrCode:`, resolvedQrCode, 'avatar:', resolvedAvatar)
-
-      return { ...item, avatar: resolvedAvatar, qrCode: resolvedQrCode }
-    })
-
-    // eslint-disable-next-line no-console
-    console.log('[红娘] 最终 matchmakerList:', JSON.stringify(matchmakerList.value).substring(0, 500))
-  } catch (e: any) {
-    // eslint-disable-next-line no-console
-    console.log('[红娘] 接口调用失败，使用 Mock 数据', e?.message || e)
+    const res = await request({ url: '/matchmakers', method: 'GET', timeout: 15000 })
+    const rawList = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      avatar: getFullImageUrl(item.avatar || item.avatarUrl),
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+    }))
+  } catch {
     matchmakerList.value = [
-      {
-        id: 1,
-        name: '小红娘',
-        avatar: '/static/default-avatar.png',
-        title: '资深红娘',
-        wechat: 'hongniang001',
-        phone: '15703592518',
-        qrCode: '/static/matchmaker.png',
-        description: '10年婚恋服务经验',
-      },
-      {
-        id: 2,
-        name: '李老师',
-        avatar: '/static/default-avatar.png',
-        title: '金牌红娘',
-        wechat: 'hongniang002',
-        phone: '15703592518',
-        qrCode: '/static/matchmaker.png',
-        description: '专业配对，成功率98%',
-      },
+      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
   }
 }
 
-const getZodiac = (year: number): string => {
-  const zodiacs = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
-  return zodiacs[(year - 1900) % 12]
-}
+const handleBack = () => safeNavigateBack()
 
-const getConstellation = (birthYear: number): string => {
-  return '星座'
-}
-
-const formatReviewTime = (dateStr: string): string => {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-const handleBack = () => {
-  safeNavigateBack()
-}
-
-const onPhotoChange = (e: any) => {
-  currentPhotoIndex.value = e.detail.current
-}
-
-const previewPhoto = (index: number) => {
-  if (!userData.value?.photos) return
-
-  // 需要模糊的照片不可预览，引导上传
-  if (shouldBlurPhoto.value && index > 0) {
-    uni.showModal({
-      title: '提示',
-      content: '我也想更了解你，请先上传你的照片吧',
-      confirmText: '上传照片',
-      cancelText: '取消',
-      confirmColor: '#FF6B9D',
-      success: (res) => {
-        if (res.confirm) goToUploadPhoto()
-      },
-    })
-    return
-  }
-
-  const urls = userData.value.photos.map((p) => p.url)
-  uni.previewImage({
-    current: index,
-    urls,
-  })
-}
-
-const handleThumbTap = (index: number) => {
-  if (shouldBlurPhoto.value && index > 0) {
-    previewPhoto(index)
-    return
-  }
-  currentPhotoIndex.value = index
-}
-
-const goToUploadPhoto = () => {
-  uni.navigateTo({
-    url: '/pages/edit-profile/index?tab=photos',
-  })
-}
-
-const fetchMyPhotoCount = async () => {
-  try {
-    const res = await request<{ list: any[] }>({
-      url: '/users/photos',
-      method: 'GET',
-    })
-    const data = res as any
-    myPhotoCount.value = data?.list?.length || 0
-  } catch { /* ignore */ }
-}
-
-const showSharePanel = () => {
-  showShare.value = true
-}
-
-const closeSharePanel = () => {
-  showShare.value = false
-}
-
-const shareToFriend = () => {
-  closeSharePanel()
-  // 引导用户使用右上角原生分享按钮
-  // 开发工具中 showShareMenu 可能不可用，真机预览正常
-  // #ifdef MP-WEIXIN
-  uni.showToast({
-    title: '请点击右上角「···」分享给好友',
-    icon: 'none',
-    duration: 2000,
-  })
-  // #endif
-}
-
-const generatePoster = () => {
-  closeSharePanel()
-  uni.navigateTo({
-    url: `/pages/poster/index?userId=${userId.value}`,
-  })
+const onAuthTap = (item: any) => {
+  uni.showModal({ title: item.label, content: item.verified ? '已认证' : '未认证', showCancel: false })
 }
 
 const toggleFollow = async () => {
-  if (isSelf.value) {
-    uni.showToast({ title: '不能关注自己', icon: 'none' })
-    return
-  }
-  // 未登录 → 跳转登录页
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
-    setTimeout(() => {
-      uni.navigateTo({
-        url: `/pages/login/index`
-      })
-    }, 1000)
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
     return
   }
-
-  if (!userData.value || followLoading.value) return
+  if (!profileData.value || followLoading.value) return
   followLoading.value = true
-
-  const isFollowed = userData.value.isFollowed
-  const method = isFollowed ? 'DELETE' : 'POST'
-  const actionText = isFollowed ? '取消关注' : '关注'
-
-  uni.showLoading({ title: (isFollowed ? '取消中...' : '关注中...'), mask: true })
-
+  const followed = profileData.value.top.isFollowed
   try {
-    await request({
-      url: `/users/${userId.value}/follow`,
-      method,
-    } as any)
-
-    userData.value.isFollowed = !isFollowed
-
-    uni.hideLoading()
-    uni.showToast({
-      title: `${actionText}成功`,
-      icon: 'success',
-      duration: 1500,
-    })
-  } catch (err: unknown) {
-    const error = err as Error
-    console.error('toggleFollow error:', error.message)
-    uni.hideLoading()
-
-    // 业务异常提示
-    const bizErrors: Record<string, string> = {
-      '不能关注自己': '不能关注自己哦',
-      '已关注该用户': '已关注该用户',
-      '未关注该用户': '尚未关注该用户，无法取消',
-      '用户不存在': '该用户不存在',
-    }
-
-    for (const [key, msg] of Object.entries(bizErrors)) {
-      if (error.message?.includes(key)) {
-        uni.showToast({ title: msg, icon: 'none', duration: 2000 })
-        return
-      }
-    }
-
-    // 401 由 request.ts 统一处理，不重复 toast
-    if (error.message !== 'Unauthorized') {
-      uni.showToast({ title: `${actionText}失败，请重试`, icon: 'none' })
-    }
+    await request({ url: `/users/${userId.value}/follow`, method: followed ? 'DELETE' : 'POST' })
+    profileData.value.top.isFollowed = !followed
+    uni.showToast({ title: followed ? '已取消关注' : '关注成功', icon: 'success', duration: 1500 })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   } finally {
     followLoading.value = false
   }
 }
 
-const goEditProfile = () => {
-  uni.navigateTo({ url: '/pages/edit-profile/index' })
-}
-
-const handleChat = () => {
-  // 未登录 → 跳转登录页
+const openAiMatch = () => {
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none', duration: 1500 })
-    setTimeout(() => {
-      uni.navigateTo({ url: '/pages/login/index' })
-    }, 1000)
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
     return
   }
+  showAiMatchPopup.value = true
+}
 
-  // 非 VIP → 跳转会员页（tabBar 页面必须用 switchTab）
-  if (!isVip.value) {
+const handleContact = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    return
+  }
+  if (!userStore.isVip) {
     uni.switchTab({ url: '/pages/vip/index' })
     return
   }
-
-  // 已登录且 VIP → 进入聊天
-  uni.navigateTo({
-    url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(userData.value?.nickname || '')}`,
-  })
+  uni.navigateTo({ url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(profileData.value.top.nickname || '')}` })
 }
 
 const showMatchmakerPopup = () => {
-  // 如果红娘列表为空，填充Mock数据确保弹窗能打开
-  if (!matchmakerList.value || matchmakerList.value.length === 0) {
-    // eslint-disable-next-line no-console
-    console.log('[红娘] 列表为空，使用 Mock 数据')
-    matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
-    ]
+  if (!matchmakerList.value.length) {
+    matchmakerList.value = [{ id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' }]
   }
   selectedMatchmaker.value = matchmakerList.value[0]
-  // eslint-disable-next-line no-console
-  console.log('[红娘] 选中红娘 qrCode:', selectedMatchmaker.value.qrCode, 'avatar:', selectedMatchmaker.value.avatar)
   showMatchmaker.value = true
 }
+const openMatchmakerList = () => { showMatchmaker.value = false; showMatchmakerList.value = true }
+const onSelectMatchmaker = (m: any) => { showMatchmakerList.value = false; selectedMatchmaker.value = m; setTimeout(() => { showMatchmaker.value = true }, 300) }
 
-const openMatchmakerList = () => {
-  showMatchmaker.value = false
-  showMatchmakerList.value = true
-}
-
-const onSelectMatchmaker = (matchmaker: any) => {
-  showMatchmakerList.value = false
-  selectedMatchmaker.value = matchmaker
-  setTimeout(() => {
-    showMatchmaker.value = true
-  }, 300)
-}
-
-const signCommitment = async () => {
-  try {
-    await request({ url: '/users/commitment', method: 'POST' } as any)
-    hasCommitment.value = true
-    showCommitPopup.value = false
-    uni.showToast({ title: '签署成功', icon: 'success' })
-  } catch (e) {
-    uni.showToast({ title: '签署失败', icon: 'none' })
-  }
+const shareProfile = () => {
+  uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
 }
 
 const showMoreActions = () => {
-  const items = ['分享主页', '举报用户']
-  if (!isSelf.value) items.push('拉黑')
   uni.showActionSheet({
-    itemList: items,
+    itemList: ['分享主页', '举报用户', '拉黑'],
     success: (res) => {
-      if (res.tapIndex === 0) shareToFriend()
-      else if (res.tapIndex === 1) {
-        uni.navigateTo({ url: `/pages/report/index?userId=${userId.value}&type=user` })
-      } else {
-        blockUser()
-      }
+      if (res.tapIndex === 0) shareProfile()
+      else if (res.tapIndex === 1) showReportSheet.value = true
+      else blockUser()
     },
   })
 }
 
+const reportUser = () => { showReportSheet.value = true }
+const onReport = (reason: string) => {
+  request({ url: `/reports`, method: 'POST', data: { targetUserId: userId.value, type: 'user', reason } })
+    .then(() => uni.showToast({ title: '举报已提交', icon: 'success' }))
+    .catch(() => uni.showToast({ title: '举报失败', icon: 'none' }))
+  showReportSheet.value = false
+}
 const blockUser = () => {
   uni.showModal({
     title: '确认拉黑',
-    content: '拉黑后将不再看到该用户的动态和消息',
+    content: '拉黑后将不再看到TA的动态和消息',
     success: (res) => {
       if (res.confirm) {
         request({ url: `/users/${userId.value}/block`, method: 'POST' })
@@ -837,762 +450,225 @@ const blockUser = () => {
     },
   })
 }
-
-const showAuthDetail = (type: string) => {
-  let title = ''
-  let content = ''
-
-  switch (type) {
-    case 'realname':
-      title = '实名认证'
-      content = userData.value?.isRealName ? '已通过实名认证' : '未认证'
-      break
-    case 'education':
-      title = '学历认证'
-      content = userData.value?.education || '未认证'
-      break
-    case 'housing':
-      title = '房产认证'
-      content = userData.value?.housingStatus || '未认证'
-      break
-    case 'car':
-      title = '车辆认证'
-      content = userData.value?.carStatus || '未认证'
-      break
-    case 'commitment':
-      if (isSelf.value && !hasCommitment.value) {
-        showCommitPopup.value = true
-        return
-      }
-      title = '单身承诺'
-      content = hasCommitment.value ? '已签署单身承诺书' : '未签署'
-      break
-    case 'marital':
-      title = '婚姻状况'
-      content = userData.value?.maritalStatus || '未认证'
-      break
-  }
-
-  uni.showModal({
-    title,
-    content,
-    showCancel: false,
-  })
-}
+const goGifts = () => uni.showToast({ title: '礼物功能开发中', icon: 'none' })
 </script>
 
 <style lang="scss" scoped>
+$pink: #FF6B8A;
+$pink-light: #FF8FA8;
+$purple: #7C3AED;
+$bg: #F5F5F5;
+$card-bg: #FFFFFF;
+$text: #1A1A1A;
+$text-secondary: #666666;
+$text-hint: #999999;
+
 .user-detail-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding-bottom: 180rpx;
+  background: $bg;
+  position: relative;
+}
+.loading-container, .empty-container {
+  display: flex; align-items: center; justify-content: center; height: 100vh;
+  font-size: 28rpx; color: $text-hint;
 }
 
-.loading-container,
-.empty-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  font-size: 28rpx;
-  color: #999;
-}
-
+// ===== 导航栏 =====
 .nav-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: transparent;
-  z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
+}
+.nav-left, .nav-right { display: flex; align-items: center; gap: 24rpx; }
+.back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
+.nav-title { font-size: 32rpx; font-weight: bold; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
+.more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
+
+// ===== 滚动区域 =====
+.page-scroll { height: calc(100vh - 88rpx); }
+
+// ===== 1. 顶部大图 =====
+.hero-section {
+  position: relative; width: 100%; height: 520rpx; overflow: hidden;
+}
+.hero-bg { width: 100%; height: 100%; }
+.hero-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 320rpx;
+  background: linear-gradient(transparent, rgba(0,0,0,0.55));
 }
 
-.nav-left,
-.nav-right {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
+// ===== 头像卡片 =====
+.profile-header-card {
+  position: relative; z-index: 10;
+  background: $card-bg; border-radius: 24rpx 24rpx 0 0;
+  margin-top: -80rpx; padding: 0 32rpx 24rpx;
+  display: flex; align-items: flex-end;
 }
-
-.back-icon {
-  font-size: 40rpx;
-  color: #fff;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+.avatar-wrapper {
+  position: relative; margin-top: -48rpx; margin-right: 20rpx; flex-shrink: 0;
 }
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #fff;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+.avatar-img {
+  width: 120rpx; height: 120rpx; border-radius: 50%;
+  border: 4rpx solid #fff; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.12);
 }
-
-.more-icon {
-  font-size: 40rpx;
-  color: #fff;
-  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.3);
+.verified-badge {
+  position: absolute; right: -2rpx; bottom: -2rpx;
+  width: 36rpx; height: 36rpx; border-radius: 50%;
+  background: #4CAF50; color: #fff; font-size: 22rpx;
+  display: flex; align-items: center; justify-content: center;
+  border: 3rpx solid #fff;
 }
-
-.more-icon-img {
-  width: 44rpx;
-  height: 44rpx;
+.name-id-row { flex: 1; min-width: 0; }
+.name-line { display: flex; align-items: center; gap: 12rpx; margin-bottom: 6rpx; }
+.nickname { font-size: 36rpx; font-weight: bold; color: $text; }
+.self-tag {
+  font-size: 20rpx; color: $pink; background: rgba($pink, 0.08);
+  padding: 2rpx 12rpx; border-radius: 8rpx;
 }
-
-.eye-icon {
-  font-size: 32rpx;
-}
-
-.follow-icon-img {
-  width: 36rpx;
-  height: 36rpx;
-}
-
-.photo-section {
-  position: relative;
-  height: 45vh;
-  background-color: #000;
-}
-
-.photo-swiper {
-  width: 100%;
-  height: 100%;
-}
-
-.photo-image {
-  width: 100%;
-  height: 100%;
-}
-
-/* 照片模糊效果 */
-.photo-wrapper {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.photo-wrapper.photo-blur .photo-image {
-  opacity: 0.25;
-}
-
-.blur-guide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
-  z-index: 5;
-}
-
-.blur-guide-title {
-  font-size: 32rpx;
-  color: #FF6B9D;
-  font-weight: 600;
-  margin-bottom: 12rpx;
-}
-
-.blur-guide-hint {
-  font-size: 26rpx;
-  color: #fff;
-  margin-bottom: 30rpx;
-}
-
-.upload-photo-btn {
-  background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
-  padding: 14rpx 50rpx;
-  border-radius: 40rpx;
-}
-
-.upload-photo-btn text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 500;
-}
-
-/* 缩略图模糊 */
-.thumb-blur {
-  position: relative;
-}
-
-.thumb-blur .thumbnail-image {
-  opacity: 0.3;
-}
-
-.thumb-blur-cover {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.25);
-  border-radius: 8rpx;
-  z-index: 2;
-}
-
-.share-btn {
-  position: absolute;
-  top: 120rpx;
-  right: 32rpx;
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.share-icon {
-  font-size: 36rpx;
-  color: #fff;
-}
-
-.share-btn-img {
-  width: 40rpx;
-  height: 40rpx;
-}
-
-.photo-thumbnails {
-  position: absolute;
-  left: 32rpx;
-  bottom: 32rpx;
-  display: flex;
-  gap: 12rpx;
-  z-index: 10;
-}
-
-.thumbnail-item {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 8rpx;
-  border: 4rpx solid transparent;
-  overflow: hidden;
-  opacity: 0.6;
-  transition: all 0.2s;
-
-  &.active {
-    border-color: #FF6B9D;
-    opacity: 1;
-  }
-}
-
-.thumbnail-image {
-  width: 100%;
-  height: 100%;
-}
-
-.info-card {
-  background-color: #fff;
-  border-radius: 24rpx 24rpx 0 0;
-  margin-top: -24rpx;
-  padding: 32rpx;
-  position: relative;
-  z-index: 20;
-}
-
-.name-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20rpx;
-}
-
-.name-section {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.user-name {
-  font-size: 40rpx;
-  font-weight: bold;
-  color: var(--text, #333);
-}
-
-.id-tag {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
+.id-line { display: flex; align-items: center; gap: 8rpx; }
 .id-badge {
-  display: inline-block;
-  font-style: italic;
-  font-size: 20rpx;
-  font-weight: bold;
-  color: #fff;
-  background-color: #999;
-  padding: 2rpx 10rpx;
-  border-radius: 4rpx;
-  line-height: 1.4;
+  font-style: italic; font-weight: bold; font-size: 20rpx; color: #fff;
+  background: $text-hint; padding: 2rpx 10rpx; border-radius: 4rpx;
 }
-
-.id-number {
-  font-size: 26rpx;
-  color: #666;
-}
-
+.id-num { font-size: 24rpx; color: $text-hint; }
+.follow-btn-area { flex-shrink: 0; }
 .follow-btn {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 12rpx 24rpx;
-  background-color: #FFF0F3;
-  border-radius: 32rpx;
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 14rpx 28rpx; border-radius: 40rpx;
+  background: #FFF0F3; font-size: 26rpx; color: $pink;
+  &.followed { background: #FFE0E8; }
 }
+.follow-icon { font-size: 28rpx; }
 
-.heart-icon {
-  font-size: 32rpx;
+// ===== 分区卡片通用 =====
+.section-card {
+  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 28rpx;
 }
-
-.heart-icon-img {
-  width: 36rpx;
-  height: 36rpx;
-  opacity: 0.4;
-
-  &.filled {
-    opacity: 1;
-  }
-}
-
-.follow-text {
-  font-size: 24rpx;
-  color: #FF6B9D;
-}
-
-.basic-info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 20rpx;
-}
-
-.dot {
-  margin: 0 8rpx;
-  color: #ddd;
-}
-
-.tag-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-bottom: 20rpx;
-}
-
-.tag {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  padding: 8rpx 16rpx;
-  border-radius: 16rpx;
-  font-size: 24rpx;
-}
-
-.pink-tag {
-  background-color: #FFF0F3;
-  color: #FF6B9D;
-}
-
-.blue-tag {
-  background-color: #EEF4FF;
-  color: #4A90E2;
-}
-
-.tag-icon {
-  font-size: 24rpx;
-}
-
-.address-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24rpx;
-}
-
-.address-item {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.address-icon {
-  font-size: 28rpx;
-}
-
-.address-icon.blue {
-  color: #4A90E2;
-}
-
-.address-icon.orange {
-  color: #FF9500;
-}
-
-.address-label {
-  font-size: 24rpx;
-  color: #999;
-}
-
-.address-value {
-  font-size: 24rpx;
-  color: var(--text, #333);
-}
-
-.auth-section {
-  background-color: #fff;
-  padding: 24rpx 32rpx;
-  margin-top: 16rpx;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24rpx;
-}
-
 .section-title {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: var(--text, #333);
+  font-size: 30rpx; font-weight: bold; color: $text; margin-bottom: 20rpx;
+}
+.section-title-bar {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx;
+}
+.section-hint { font-size: 22rpx; color: $text-hint; }
+
+// ===== 2. 基础资料 =====
+.basic-line { display: flex; align-items: center; flex-wrap: wrap; font-size: 28rpx; color: $text-secondary; margin-bottom: 18rpx; }
+.dot { margin: 0 8rpx; color: #ddd; }
+.birth-line { margin-bottom: 14rpx; }
+.info-chip {
+  display: inline-flex; align-items: center; gap: 8rpx;
+  padding: 8rpx 20rpx; border-radius: 20rpx; font-size: 24rpx; margin-bottom: 14rpx; margin-right: 14rpx;
+}
+.pink-chip { background: #FFF0F3; color: $pink; }
+.blue-chip { background: #EEF4FF; color: #4A90E2; }
+.chip-icon { font-size: 24rpx; }
+.location-row { display: flex; flex-wrap: wrap; gap: 28rpx; }
+.loc-item { display: flex; align-items: center; gap: 8rpx; }
+.loc-dot { font-size: 20rpx; }
+.loc-dot.blue { color: #4A90E2; }
+.loc-dot.orange { color: #FF9500; }
+.loc-label { font-size: 22rpx; color: $text-hint; }
+.loc-val { font-size: 24rpx; color: $text; }
+
+// ===== 3. 身份认证 =====
+.auth-scroll { white-space: nowrap; }
+.auth-items { display: flex; gap: 40rpx; padding: 8rpx 0; }
+.auth-item { display: flex; flex-direction: column; align-items: center; gap: 12rpx; flex-shrink: 0; }
+.auth-circle {
+  width: 72rpx; height: 72rpx; border-radius: 50%;
+  background: #E8E8E8; display: flex; align-items: center; justify-content: center;
+  font-size: 30rpx; color: #999;
+  &.on { background: #4A90E2; color: #fff; }
+}
+.auth-name { font-size: 22rpx; color: $text-hint; }
+
+// ===== 4. 关于我 =====
+.tag-cloud { display: flex; flex-wrap: wrap; gap: 14rpx; margin-bottom: 22rpx; }
+.sys-tag {
+  padding: 10rpx 22rpx; background: #F5F5F5; border-radius: 18rpx;
+  font-size: 24rpx; color: $text-secondary;
+}
+.ai-profile-block, .ai-hope-block {
+  background: #FAFAFA; border-radius: 16rpx; padding: 20rpx; margin-top: 6rpx;
+}
+.ai-label { display: flex; align-items: center; gap: 8rpx; margin-bottom: 10rpx; }
+.ai-dot { font-size: 24rpx; }
+.ai-label-text { font-size: 22rpx; color: $pink; font-weight: 500; }
+.ai-text { font-size: 26rpx; color: $text-secondary; line-height: 1.6; }
+.empty-hint { font-size: 24rpx; color: #ccc; text-align: center; padding: 20rpx 0; }
+
+// ===== AI缘分入口卡片 =====
+.ai-match-entry {
+  position: relative; margin: 0 24rpx 16rpx; padding: 24rpx 28rpx;
+  background: linear-gradient(135deg, rgba($pink, 0.06), rgba($pink-light, 0.12));
+  border: 2rpx solid rgba($pink, 0.35); border-radius: 20rpx;
+  overflow: hidden;
+}
+.entry-ring {
+  position: absolute; width: 120rpx; height: 120rpx; border-radius: 50%;
+  border: 2rpx solid rgba($pink, 0.15);
+  &.left-ring { top: -60rpx; left: -40rpx; }
+  &.right-ring { bottom: -60rpx; right: -40rpx; }
+}
+.entry-content { display: flex; align-items: center; gap: 20rpx; position: relative; z-index: 1; }
+.entry-icon-wrap {
+  width: 72rpx; height: 72rpx; border-radius: 50%;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  display: flex; align-items: center; justify-content: center;
+}
+.entry-icon { font-size: 36rpx; }
+.entry-info { flex: 1; }
+.entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
+.entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
+.entry-arrow { font-size: 36rpx; color: $pink; }
+
+// ===== 5. Ta希望你 =====
+.partner-tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 22rpx; }
+.partner-tag {
+  padding: 10rpx 22rpx; background: #E3F2FD; border-radius: 18rpx;
+  font-size: 24rpx; color: #1565C0;
 }
 
-.shield-icon,
-.book-icon,
-.heart-icon-small {
-  font-size: 32rpx;
+// ===== 6. 互动区 =====
+.interact-row { display: flex; gap: 56rpx; margin-top: 20rpx; }
+.interact-item {
+  display: flex; align-items: center; gap: 10rpx;
+  padding: 12rpx 0;
+  &.warn { margin-left: auto; }
 }
+.interact-emoji { font-size: 32rpx; }
+.interact-text { font-size: 26rpx; color: $text-secondary; }
 
-.auth-tip {
-  font-size: 24rpx;
-  color: #999;
+// ===== 底部空白 =====
+.bottom-spacer { height: 180rpx; }
+
+// ===== 7. 底部操作栏 =====
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  display: flex; gap: 20rpx; padding: 16rpx 24rpx;
+  background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0,0,0,0.05);
 }
-
-.auth-scroll {
-  white-space: nowrap;
+.bb-btn {
+  flex: 1; height: 92rpx; display: flex; align-items: center; justify-content: center; gap: 10rpx;
+  border-radius: 50rpx; font-size: 30rpx; font-weight: bold; color: #fff;
 }
+.contact-btn { background: linear-gradient(135deg, $pink, $pink-light); }
+.matchmaker-btn { background: linear-gradient(135deg, $purple, #A78BFA); }
+.bb-icon { font-size: 32rpx; }
 
-.auth-items {
-  display: flex;
-  gap: 32rpx;
-  padding: 8rpx 0;
+// ===== 举报弹窗 =====
+.report-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; }
+.sheet-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
+.sheet-content {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #fff; border-radius: 24rpx 24rpx 0 0;
+  padding: 40rpx 32rpx; padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
-
-.auth-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12rpx;
-  flex-shrink: 0;
+.sheet-title { font-size: 32rpx; font-weight: bold; text-align: center; color: $text; margin-bottom: 32rpx; }
+.sheet-item {
+  padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text;
+  border-bottom: 1rpx solid #F0F0F0;
 }
-
-.auth-icon {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background-color: #ddd;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  color: #fff;
-
-  &.verified {
-    background-color: #4A90E2;
-  }
-}
-
-.auth-label {
-  font-size: 24rpx;
-  color: #666;
-}
-
-.about-section,
-.requirement-section {
-  background-color: #fff;
-  padding: 24rpx 32rpx;
-  margin-top: 16rpx;
-}
-
-.tag-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
-
-.info-tag {
-  padding: 8rpx 20rpx;
-  background-color: #f5f5f5;
-  border-radius: 16rpx;
-  font-size: 26rpx;
-  color: #666;
-}
-
-.intro-content {
-  position: relative;
-}
-
-.intro-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-all;
-
-  &.collapsed {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 6;
-    overflow: hidden;
-  }
-}
-
-.expand-btn {
-  text-align: right;
-  margin-top: 12rpx;
-
-  text {
-    font-size: 26rpx;
-    color: #FF6B9D;
-  }
-}
-
-.review-section {
-  background-color: #fff;
-  padding: 24rpx 32rpx;
-  margin-top: 16rpx;
-}
-
-.review-item {
-  padding: 16rpx 0;
-  border-bottom: 1rpx solid #f5f5f5;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.review-header {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  margin-bottom: 8rpx;
-}
-
-.review-author {
-  font-size: 26rpx;
-  font-weight: 500;
-  color: #FF6B9D;
-}
-
-.review-time {
-  font-size: 22rpx;
-  color: #ccc;
-  margin-left: auto;
-}
-
-.review-content {
-  font-size: 26rpx;
-  color: #333;
-  line-height: 1.6;
-}
-
-.bottom-safe-area {
-  height: 120rpx;
-}
-
-.action-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  gap: 24rpx;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background-color: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.05);
-  z-index: 100;
-}
-
-.action-btn {
-  flex: 1;
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  border-radius: 48rpx;
-  font-size: 30rpx;
-  font-weight: bold;
-}
-
-.primary-btn {
-  background-color: #FF6B9D;
-  color: #fff;
-}
-
-.secondary-btn {
-  background-color: #722ED1;
-  color: #fff;
-}
-
-.btn-icon {
-  font-size: 32rpx;
-}
-
-.share-panel {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-}
-
-.share-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.share-content {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: #fff;
-  border-radius: 24rpx 24rpx 0 0;
-  padding: 48rpx 32rpx;
-  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
-  transform: translateY(100%);
-  transition: transform 0.3s ease-out;
-
-  &.open {
-    transform: translateY(0);
-  }
-}
-
-.share-option {
-  display: flex;
-  align-items: center;
-  gap: 24rpx;
-  padding: 24rpx 0;
-}
-
-.option-icon {
-  font-size: 48rpx;
-}
-
-.option-icon-img {
-  width: 48rpx;
-  height: 48rpx;
-}
-
-.option-text {
-  font-size: 30rpx;
-  color: var(--text, #333);
-}
-
-.share-divider {
-  height: 1rpx;
-  background-color: #eee;
-}
-
-// ========== 单身承诺弹窗 ==========
-.commit-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 200;
-}
-
-.commit-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.commit-card {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 600rpx;
-  background-color: #fff;
-  border-radius: 24rpx;
-  padding: 48rpx 40rpx;
-}
-
-.commit-title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
-  text-align: center;
-  margin-bottom: 32rpx;
-}
-
-.commit-text {
-  font-size: 28rpx;
-  color: #666;
-  line-height: 1.8;
-  display: block;
-  margin-bottom: 40rpx;
-}
-
-.commit-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.commit-cancel {
-  font-size: 28rpx;
-  color: #999;
-  padding: 16rpx 32rpx;
-}
-
-.commit-confirm {
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 40rpx;
-  padding: 16rpx 40rpx;
-
-  text {
-    font-size: 28rpx;
-    color: #fff;
-    font-weight: 500;
-  }
-}
-
-.edit-btn {
-  background-color: #f5f5f5;
-  border: 2rpx solid #ddd;
-
-  text {
-    color: #666;
-    font-size: 26rpx;
-  }
-}
+.sheet-cancel { padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text-hint; margin-top: 16rpx; }
 </style>

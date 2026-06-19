@@ -21,6 +21,7 @@ import { AiFunQuizService } from './ai-fun-quiz.service'
 import { AiProfileGenService } from './ai-profile-gen.service'
 import { AdminAiController } from './admin-ai.controller'
 import { AdminAiBlacklistController } from './admin-ai-blacklist.controller'
+import { AdminAiSafetyAuditController } from './admin-ai-safety-audit.controller'
 import { PublicAiController } from './public-ai.controller'
 import { AiMatchController } from './ai-match.controller'
 import { AiChatSkillController } from './ai-chat-skill.controller'
@@ -37,7 +38,7 @@ import { RedisService } from '../common/redis.service'
     User, UserTagSelection, QuestionAnswer, ChatMessage,
   ])],
   controllers: [
-    AdminAiController, AdminAiBlacklistController, PublicAiController,
+    AdminAiController, AdminAiBlacklistController, AdminAiSafetyAuditController, PublicAiController,
     AiMatchController, AiChatSkillController, AiMatchmakerController,
     AiFunQuizController, AiProfileGenController,
   ],

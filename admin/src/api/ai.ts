@@ -52,4 +52,24 @@ export const adminAi = {
   getSwitchLogs(page = 1, limit = 20): Promise<ApiResponse<SwitchLogData>> {
     return request.get('/admin/ai/switch-logs', { params: { page, limit } })
   },
+
+  /** 获取安全审核列表 */
+  getSafetyAudits(params: Record<string, any>): Promise<ApiResponse> {
+    return request.get('/admin/ai/safety-audits', { params })
+  },
+
+  /** 获取安全审核统计 */
+  getSafetyAuditStats(): Promise<ApiResponse> {
+    return request.get('/admin/ai/safety-audits/stats')
+  },
+
+  /** 更新单条安全审核 */
+  updateSafetyAudit(id: number, data: Record<string, any>): Promise<ApiResponse> {
+    return request.put(`/admin/ai/safety-audits/${id}`, data)
+  },
+
+  /** 批量更新安全审核 */
+  batchUpdateSafetyAudit(data: Record<string, any>): Promise<ApiResponse> {
+    return request.put('/admin/ai/safety-audits/batch', data)
+  },
 }

@@ -129,6 +129,7 @@
         <el-menu-item index="/agreement">协议管理</el-menu-item>
         <el-menu-item index="/system/dict">选项配置</el-menu-item>
         <el-menu-item index="/system/ai-switch">AI功能开关</el-menu-item>
+        <el-menu-item index="/ai/safety-audit">内容安全审核</el-menu-item>
       </el-sub-menu>
     </el-menu>
 

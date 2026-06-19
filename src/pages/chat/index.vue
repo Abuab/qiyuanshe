@@ -92,7 +92,16 @@
     </view>
 
     <view class="input-area" :style="{ paddingBottom: (16 + keyboardHeight + safeAreaBottom) + 'px' }">
+      <!-- 防骗提醒横幅 -->
+      <view class="anti-fraud-banner">
+        <text>⚠️ 请勿轻信转账、投资、借款等要求，遇到请立即举报</text>
+      </view>
       <view class="input-wrapper">
+        <!-- AI帮回按钮 -->
+        <view class="ai-help-btn" @tap="openAiSkillPanel">
+          <text class="ai-help-icon">✨</text>
+          <text class="ai-help-text">AI帮回</text>
+        </view>
         <view class="input-box">
           <input
             v-model="inputContent"
@@ -117,6 +126,14 @@
         </view>
       </view>
     </view>
+
+    <!-- AI帮回半层面板 -->
+    <ai-chat-skill-panel
+      :show="showAiSkillPanel"
+      :target-user-id="toUserId"
+      @update:show="showAiSkillPanel = $event"
+      @send="onAiSkillSend"
+    />
   </view>
 </template>
 
@@ -129,6 +146,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
 import { useImageFallback } from '@/composables/useImageFallback'
+import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
 
 interface ChatMessage {
@@ -159,6 +177,7 @@ const scrollIntoView = ref('')
 const keyboardHeight = ref(0)
 const safeAreaBottom = ref(0)
 const showVipLimit = ref(false)
+const showAiSkillPanel = ref(false)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -511,6 +530,19 @@ const closeVipLimit = () => {
   showVipLimit.value = false
 }
 
+const openAiSkillPanel = () => {
+  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
+    showVipLimit.value = true
+    return
+  }
+  showAiSkillPanel.value = true
+}
+
+const onAiSkillSend = (text: string) => {
+  inputContent.value = text
+  handleSend()
+}
+
 const startPolling = () => {
   stopPolling()
   pollTimer = setInterval(async () => {
@@ -713,6 +745,21 @@ const handleBack = () => {
   padding-bottom: 0;
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
+
+.anti-fraud-banner {
+  padding: 12rpx 16rpx; margin-bottom: 8rpx;
+  background: #FFF8E1; border-radius: 10rpx;
+  font-size: 22rpx; color: #F57F17; text-align: center;
+}
+
+.ai-help-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 80rpx; height: 68rpx; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(#FF6B8A, 0.08), rgba(#FF8FA8, 0.12));
+  border-radius: 16rpx;
+}
+.ai-help-icon { font-size: 28rpx; }
+.ai-help-text { font-size: 20rpx; color: #FF6B8A; font-weight: 500; }
 
 .input-wrapper {
   display: flex;
