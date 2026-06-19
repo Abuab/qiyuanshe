@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -8,6 +8,8 @@ import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
 import { calcProfileScore } from '../common/profile-score'
+
+import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 
 interface WechatSession {
   openid: string
@@ -191,6 +193,14 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('用户不存在')
+    }
+
+    // 未成年人保护：设置出生年份时校验年龄
+    if (dto.birthYear !== undefined) {
+      const age = new Date().getFullYear() - dto.birthYear
+      if (age < MIN_REGISTER_AGE) {
+        throw new ForbiddenException(UNDERAGE_REJECT_MESSAGE)
+      }
     }
 
     Object.assign(user, dto)
