@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '200rpx' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '260rpx' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -829,9 +829,9 @@ onShow(() => {
 
 .tips-title {
   display: block;
-  font-size: 14px;
-  font-weight: 700;
-  color: #666;
+  font-size: 16px;
+  font-weight: 800;
+  color: #333;
   margin-bottom: 10px;
 }
 
@@ -842,8 +842,9 @@ onShow(() => {
 }
 
 .tip-item {
-  font-size: 12px;
-  color: #999;
+  font-size: 14px;
+  color: #555;
+  font-weight: 500;
   line-height: 1.6;
 }
 
@@ -854,16 +855,15 @@ onShow(() => {
 // ===== 底部支付栏 =====
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
   padding: 12px 24px;
-  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-  z-index: 1002;
+  z-index: 1000;
 }
 
 .bottom-price {
@@ -915,19 +915,19 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(60px + env(safe-area-inset-bottom));
+  bottom: calc(100rpx + 48px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;
   padding: 6px 24px 6px;
   background: #FFF8FA;
-  z-index: 1003;
+  z-index: 999;
   white-space: nowrap;
 
   text {
     font-size: 26rpx;
-    color: #666;
-    font-weight: 500;
+    color: #FF6B9D;
+    font-weight: 600;
   }
 }
 

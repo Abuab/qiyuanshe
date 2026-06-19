@@ -204,9 +204,9 @@ const avatarSrc = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
   const url = getFullImageUrl(userStore.userInfo?.avatar)
   if (!url) return icons.common.defaultAvatar
-  // 加版本参数避免微信/浏览器缓存旧头像
+  // 加版本参数避免微信缓存旧头像（updatedAt 兜底用当前时间戳）
   const sep = url.includes('?') ? '&' : '?'
-  const v = userStore.userInfo?.updatedAt || ''
+  const v = userStore.userInfo?.updatedAt || Date.now()
   return url + sep + 'v=' + encodeURIComponent(v)
 })
 

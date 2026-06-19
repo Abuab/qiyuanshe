@@ -179,9 +179,10 @@ export class UserController {
     const count = await this.photoRepo.count({ where: { userId } })
     if (count >= 6) return Result.serverError('最多上传6张照片')
 
-    // 第一张照片自动设为头像
+    // 第一张照片自动设为头像，并更新更新时间（repo.update 不触发 @UpdateDateColumn）
     if (count === 0) {
-      await this.userRepo.update(userId, { avatar: body.url })
+      const now = new Date()
+      await this.userRepo.update(userId, { avatar: body.url, updatedAt: now })
     }
 
     const isMain = count === 0 ? 1 : 0
@@ -230,10 +231,11 @@ export class UserController {
     await this.photoRepo.update({ userId, isMain: 1 }, { isMain: 0 })
     await this.photoRepo.update({ id, userId }, { isMain: 1 })
 
-    // 设为主图时同步更新用户头像
+    // 设为主图时同步更新用户头像，并更新 updatedAt
     const mainPhoto = await this.photoRepo.findOne({ where: { id, userId } })
     if (mainPhoto?.photoUrl) {
-      await this.userRepo.update(userId, { avatar: mainPhoto.photoUrl })
+      const now = new Date()
+      await this.userRepo.update(userId, { avatar: mainPhoto.photoUrl, updatedAt: now })
     }
 
     return Result.success(null, '已设置主图')
