@@ -103,6 +103,13 @@
       }
     },
     {
+      "path": "pages/image-crop/index",
+      "style": {
+        "navigationBarTitleText": "裁剪图片",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/activity-list/index",
       "style": {
         "navigationBarTitleText": "活动",

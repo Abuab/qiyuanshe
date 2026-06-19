@@ -25,6 +25,9 @@
             <view class="photo-watermark">{{ appName }}</view>
             <view class="photo-main-label">头像/封面</view>
             <view v-if="Number(photos[0].auditStatus) === 0" class="photo-audit-overlay-large">待审核</view>
+            <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
+              <text>更换头像</text>
+            </view>
           </view>
           <!-- 占位 - 空的第一张 -->
           <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
@@ -844,6 +847,47 @@ const chooseAvatar = () => {
   })
 }
 
+/** 更换头像（带裁剪） */
+const chooseAvatarWithCrop = () => {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['original'],
+    sourceType: ['album', 'camera'],
+    success: (res) => {
+      const tempPath = res.tempFilePaths[0]
+      // 导航到裁剪页
+      uni.navigateTo({
+        url: '/pages/image-crop/index?src=' + encodeURIComponent(tempPath) + '&type=avatar',
+        events: {
+          // 裁剪完成后通过事件回调接收结果
+          cropped: (data: { path: string }) => {
+            handleCroppedAvatar(data.path)
+          },
+        },
+      })
+    },
+  })
+}
+
+/** 处理裁剪后的头像上传 */
+const handleCroppedAvatar = async (filePath: string) => {
+  uni.showLoading({ title: '上传中...' })
+  try {
+    const uploadRes = await uploadImage(filePath)
+    form.value.avatar = uploadRes.url
+    await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl: uploadRes.url } } as any)
+    form.value.avatarReviewStatus = 0
+    uni.showToast({ title: '已提交审核', icon: 'success' })
+  } catch (err: unknown) {
+    const error = err as Error
+    console.error('头像上传失败:', error)
+    const msg = error.message === 'Unauthorized' ? '请先登录' : '上传失败，请重试'
+    uni.showToast({ title: msg, icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
 // ===== Picker 事件 =====
 const onBirthYearChange = (e: { detail: { value: number } }) => {
   form.value.birthYear = parseInt(birthYearOptions[e.detail.value])
@@ -1628,6 +1672,7 @@ const handleBack = () => {
   width: 40rpx;
   height: 40rpx;
   z-index: 2;
+  filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.3));
 
   .delete-icon-img {
     width: 100%;
@@ -1641,14 +1686,35 @@ const handleBack = () => {
   right: 6rpx;
   width: 40rpx;
   height: 40rpx;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
   border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
   z-index: 2;
+
+  text {
+    color: #fff;
+    font-size: 24rpx;
+  }
+}
+
+// ===== 更换头像胶囊按钮 =====
+.photo-change-avatar {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  background: rgba(#FF6B9D, 0.85);
+  border-radius: 999px;
+  padding: 6rpx 20rpx;
+  z-index: 3;
+
+  text {
+    font-size: 22rpx;
+    color: #fff;
+    font-weight: 500;
+  }
 }
 
 .photo-cell-add {

@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '260rpx' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '300rpx' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -862,15 +862,15 @@ onShow(() => {
 // ===== 底部支付栏（深色椭圆形风格） =====
 .bottom-bar {
   position: fixed;
-  bottom: 120rpx;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
   left: 24rpx;
   right: 24rpx;
   display: flex;
   align-items: center;
-  padding: 12px 20px 12px 24px;
+  padding: 14px 24px;
   background: #2d2d2d;
   border-radius: 999px;
-  z-index: 1000;
+  z-index: 1002;
 }
 
 .bottom-price {
@@ -922,18 +922,21 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(120rpx + 50px + env(safe-area-inset-bottom));
-  left: 0;
-  right: 0;
+  bottom: calc(120rpx + 64px + env(safe-area-inset-bottom));
+  left: 32rpx;
+  right: 32rpx;
   text-align: center;
-  padding: 8px 24px 8px;
-  background: transparent;
-  z-index: 999;
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12rpx;
+  z-index: 1003;
 
   text {
     font-size: 28rpx;
     color: #FF6B9D;
     font-weight: 600;
+    text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.5);
   }
 }
 
