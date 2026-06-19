@@ -162,6 +162,8 @@ onMounted(() => {
         // movable-view 初始位置居中对齐裁剪框
         movableX.value = Math.round((screenW.value - movableW.value) / 2)
         movableY.value = Math.round((bodyH.value - movableH.value) / 2)
+        currentX.value = movableX.value
+        currentY.value = movableY.value
       },
       fail: () => {
         uni.showToast({ title: '加载图片失败', icon: 'none' })
@@ -171,49 +173,17 @@ onMounted(() => {
 })
 
 const onMove = (e: any) => {
-  const newY = e.detail.y || 0
-  clampVertical(newY)
+  // 仅记录原始位置，不做 clamping（避免与原生 movable-view 冲突产生回弹）
+  currentY.value = e.detail.y || 0
+  // direction="vertical" 时 X 不变，但仍记录以防万一
+  currentX.value = e.detail.x ?? currentX.value
 }
 
 const onScale = (e: any) => {
   currentScale.value = e.detail.scale || 1
-  const s = currentScale.value
-  // 缩放从中心扩展，保持水平居中对齐裁剪框
-  currentX.value = (screenW.value - movableW.value * s) / 2
-  movableX.value = Math.round(currentX.value)
-
-  // 钳位 Y
-  const newY = e.detail.y || 0
-  clampVertical(newY)
-}
-
-/** 钳位 Y 坐标，确保图片始终覆盖裁剪框（顶部不外露、底部不外露） */
-const clampVertical = (newY: number) => {
-  const s = currentScale.value
-  const cropTop = (bodyH.value - cropSize.value) / 2
-  const cropBottom = cropTop + cropSize.value
-  const containerH = movableH.value
-
-  // 图片视觉范围（缩放从中心扩展）
-  const visualTop = newY - (s - 1) * containerH / 2
-
-  // 允许的 Y 范围：图片必须覆盖整个裁剪框
-  const maxY = cropTop + (s - 1) * containerH / 2    // visualTop = cropTop 时
-  const minY = cropBottom - containerH * (s + 1) / 2  // visualBottom = cropBottom 时
-
-  // 自然边界 (movable-area 内)
-  const natMax = areaH.value - containerH * s
-
-  let clamped = newY
-  if (minY <= maxY) {
-    clamped = Math.max(minY, Math.min(maxY, newY))
-  }
-  clamped = Math.max(0, Math.min(natMax, clamped))
-
-  currentY.value = clamped
-  if (Math.abs(clamped - movableY.value) > 0.5) {
-    movableY.value = Math.round(clamped)
-  }
+  // 仅记录，不写回 movableX/movableY 避免回弹
+  currentY.value = e.detail.y || 0
+  currentX.value = e.detail.x ?? currentX.value
 }
 
 const handleCancel = () => {
@@ -376,17 +346,20 @@ const handleConfirm = () => {
   top: 0;
   left: 0;
   z-index: 1;
+  background: transparent;
 }
 
 .crop-movable {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
 }
 
 .crop-image {
   width: 100%;
   height: 100%;
+  background: transparent;
 }
 
 // 遮罩层（四块，盖住裁剪框外的区域）

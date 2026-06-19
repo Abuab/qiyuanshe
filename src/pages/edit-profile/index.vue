@@ -1087,10 +1087,20 @@ const fetchPhotos = async () => {
 }
 
 const uploadPhoto = () => {
+  uni.showActionSheet({
+    itemList: ['从相册中选取', '拍摄'],
+    success: (res: any) => {
+      const sourceType: ('album' | 'camera')[] = res.tapIndex === 0 ? ['album'] : ['camera']
+      doUploadPhoto(sourceType)
+    },
+  })
+}
+
+const doUploadPhoto = (sourceType: ('album' | 'camera')[]) => {
   uni.chooseImage({
     count: 6 - photos.value.length,
     sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
+    sourceType,
     success: async (res: any) => {
       const files = res.tempFiles || res.tempFilePaths || []
       uni.showLoading({ title: '上传中...' })
@@ -1152,9 +1162,11 @@ const handleSave = async () => {
   uni.showLoading({ title: '保存中...' })
 
   try {
-    // 头像自动同步：使用主图（第一张照片），确保上传照片后头像即时生效
-    const mainPhoto = photos.value.find((p: any) => Number(p.isMain) === 1) || photos.value[0]
-    const avatarToSave = mainPhoto ? (mainPhoto.photoUrl || mainPhoto.url) : form.value.avatar
+    // 头像：如果当前有刚上传待审核的头像（avatarReviewStatus===0），保留它
+    // 否则从照片列表中取主图
+    const avatarToSave = (form.value.avatarReviewStatus === 0 && form.value.avatar)
+      ? form.value.avatar
+      : ((photos.value.find((p: any) => Number(p.isMain) === 1) || photos.value[0]) as any)?.photoUrl || ((photos.value.find((p: any) => Number(p.isMain) === 1) || photos.value[0]) as any)?.url || form.value.avatar
 
     const data: Record<string, unknown> = {
       avatar: avatarToSave,
@@ -1192,6 +1204,9 @@ const handleSave = async () => {
       // 确保标签数组始终以数组形式存入 store，无论后端返回什么
       personalityTags: form.value.personalityTags,
       hopeTaTags: form.value.hopeTaTags,
+      // 保存后保持头像审核状态
+      avatar: form.value.avatarReviewStatus === 0 ? form.value.avatar : (result as any)?.avatar,
+      avatarReviewStatus: form.value.avatarReviewStatus,
     })
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
