@@ -4,6 +4,8 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { AiCallLog } from '../entities/AiCallLog'
 import { AiMatchReport } from '../entities/AiMatchReport'
+import { AiFunQuizReport } from '../entities/AiFunQuizReport'
+import { AiUserProfile } from '../entities/AiUserProfile'
 import { ContentSafetyAudit } from '../entities/ContentSafetyAudit'
 import { User } from '../entities/User'
 import { UserTagSelection } from '../entities/UserTagSelection'
@@ -14,26 +16,33 @@ import { AiSafetyService } from './ai-safety.service'
 import { AiMatchService } from './ai-match.service'
 import { AiChatSkillService } from './ai-chat-skill.service'
 import { AiMatchmakerService } from './ai-matchmaker.service'
+import { AiFunQuizService } from './ai-fun-quiz.service'
+import { AiProfileGenService } from './ai-profile-gen.service'
 import { AdminAiController } from './admin-ai.controller'
 import { PublicAiController } from './public-ai.controller'
 import { AiMatchController } from './ai-match.controller'
 import { AiChatSkillController } from './ai-chat-skill.controller'
 import { AiMatchmakerController } from './ai-matchmaker.controller'
+import { AiFunQuizController } from './ai-fun-quiz.controller'
+import { AiProfileGenController } from './ai-profile-gen.controller'
 import { RedisService } from '../common/redis.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([
     SystemConfig, AiFeatureSwitchLog, AiCallLog, AiMatchReport,
+    AiFunQuizReport, AiUserProfile,
     ContentSafetyAudit,
     User, UserTagSelection, QuestionAnswer, ChatMessage,
   ])],
   controllers: [
     AdminAiController, PublicAiController,
     AiMatchController, AiChatSkillController, AiMatchmakerController,
+    AiFunQuizController, AiProfileGenController,
   ],
   providers: [
     AiConfigService, AiSafetyService,
     AiMatchService, AiChatSkillService, AiMatchmakerService,
+    AiFunQuizService, AiProfileGenService,
     RedisService,
   ],
   exports: [AiConfigService],
