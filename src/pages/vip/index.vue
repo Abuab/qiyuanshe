@@ -859,57 +859,58 @@ onShow(() => {
   height: 60px;
 }
 
-// ===== 底部支付栏（深色椭圆形风格） =====
+// ===== 底部支付栏（深色椭圆形风格，紧凑包裹文字） =====
 .bottom-bar {
   position: fixed;
   bottom: calc(120rpx + env(safe-area-inset-bottom));
-  left: 24rpx;
-  right: 24rpx;
-  display: flex;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
   align-items: center;
-  padding: 10px 28px;
+  padding: 8px 20px;
+  gap: 12px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;
+  white-space: nowrap;
 }
 
 .bottom-price {
-  flex: 1;
   display: flex;
   align-items: baseline;
-  gap: 6px;
+  gap: 2px;
 }
 
 .price-label {
-  font-size: 14px;
+  font-size: 13px;
   color: #fff;
 }
 
 .price-total {
-  font-size: 14px;
+  font-size: 13px;
   color: #fff;
 }
 
 .price-symbol-small {
-  font-size: 16px;
+  font-size: 15px;
   color: #fff;
   font-weight: 700;
 }
 
 .price-number {
-  font-size: 28px;
+  font-size: 24px;
   color: #fff;
   font-weight: 800;
 }
 
 .pay-btn {
-  padding: 10px 32px;
+  padding: 8px 18px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
 
   text {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 700;
     color: #fff;
   }
@@ -923,14 +924,15 @@ onShow(() => {
 .bottom-hint {
   position: fixed;
   bottom: calc(120rpx + 58px + env(safe-area-inset-bottom));
-  left: 48rpx;
-  right: 48rpx;
+  left: 50%;
+  transform: translateX(-50%);
   text-align: center;
-  padding: 12px 36px;
+  padding: 10px 24px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
   border-radius: 999px;
   z-index: 1003;
+  white-space: nowrap;
 
   text {
     font-size: 28rpx;

@@ -150,9 +150,9 @@ onMounted(() => {
         movableW.value = Math.round(w)
         movableH.value = Math.round(h)
 
-        // movable-area 做成可视区域的 3 倍，给图片充足拖动空间
-        areaW.value = Math.max(screenW.value * 2, cropSize.value * 4)
-        areaH.value = Math.max(bodyH.value * 2, cropSize.value * 4)
+        // movable-area 做成可视区域的 4 倍，给图片充足拖动空间，确保图片可完全穿过裁剪框
+        areaW.value = Math.max(screenW.value * 4, cropSize.value * 8)
+        areaH.value = Math.max(bodyH.value * 4, cropSize.value * 8)
 
         // movable-area 居中，使其中心 = 裁剪框中心
         areaLeft.value = Math.round((screenW.value - areaW.value) / 2)
@@ -249,20 +249,16 @@ const handleConfirm = () => {
           const prevPage = pages.length >= 2 ? pages[pages.length - 2] : null
 
           // 方式1：eventChannel
-          let emitted = false
           try {
             if ((prevPage as any)?.getOpenerEventChannel) {
               ;(prevPage as any).getOpenerEventChannel().emit('cropped', { path: resultPath })
-              emitted = true
             }
           } catch (e) {
             console.error('eventChannel emit 失败:', e)
           }
 
-          // 方式2：全局事件（备用）
-          if (!emitted) {
-            uni.$emit('IMAGE_CROPPED', { path: resultPath })
-          }
+          // 方式2：全局事件（双通道兜底，确保事件一定被接收）
+          uni.$emit('IMAGE_CROPPED', { path: resultPath })
 
           uni.navigateBack({ delta: 1 })
         },

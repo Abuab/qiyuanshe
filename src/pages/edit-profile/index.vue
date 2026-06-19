@@ -1742,12 +1742,12 @@ onUnmounted(() => {
 }
 
 .photo-add-plus {
-  font-size: 48rpx;
+  font-size: 72rpx;
   color: #ccc;
   line-height: 1;
 
   &.subtle {
-    font-size: 36rpx;
+    font-size: 56rpx;
     color: #e0e0e0;
   }
 }
