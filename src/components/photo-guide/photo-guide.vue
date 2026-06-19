@@ -57,17 +57,11 @@
       <!-- 底部按钮区 -->
       <view class="guide-actions">
         <view class="action-btn" @tap="handleCamera">
-          <view class="action-row">
-            <text class="action-icon-camera"></text>
-            <text class="action-text">相机</text>
-          </view>
+          <text class="action-text">相机</text>
         </view>
         <view class="action-sep"></view>
         <view class="action-btn" @tap="handleAlbum">
-          <view class="action-row">
-            <text class="action-icon-album"></text>
-            <text class="action-text">从相册中选取</text>
-          </view>
+          <text class="action-text">从相册中选取</text>
         </view>
         <view class="action-gap"></view>
         <view class="action-btn cancel-btn" @tap="handleCancel">
@@ -158,12 +152,11 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   align-items: flex-end;
 }
 
-// ===== Bottom Sheet =====
+// ===== Bottom Sheet（自适应高度，不设最大高度） =====
 .photo-guide-sheet {
   width: 100%;
-  max-height: 80vh;
   background: #fff;
-  border-radius: 40rpx 40rpx 0 0;  // ~20px
+  border-radius: 40rpx 40rpx 0 0;
   display: flex;
   flex-direction: column;
   animation: slideUp 0.25s ease-out;
@@ -181,16 +174,15 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 }
 
 .guide-tip {
-  font-size: 28rpx;   // 14px
+  font-size: 28rpx;
   color: #999999;
   line-height: 1.5;
 }
 
 // ===== 可滚动主体 =====
 .guide-body {
-  flex: 1;
   padding: 0 32rpx;
-  max-height: 55vh;
+  max-height: 400rpx;
 }
 
 .guide-section {
@@ -254,12 +246,13 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 .photo-scroll {
   width: 100%;
   white-space: nowrap;
+  overflow-x: auto;
 }
 
 .photo-scroll-inner {
   display: inline-flex;
-  gap: 20rpx;  // 10px
-  padding: 0 4rpx;  // 整体 padding 已在 guide-body 32rpx 基础上
+  gap: 20rpx;
+  padding-right: 32rpx;  // 16px 右侧留白，确保最后一张图不截断
 }
 
 .example-card {
@@ -270,10 +263,10 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 }
 
 .example-img-wrap {
-  width: 200rpx;   // ~100px
-  height: 260rpx;  // ~130px
-  border-radius: 24rpx;  // ~12px
-  overflow: hidden;
+  width: 200rpx;
+  height: 260rpx;
+  border-radius: 24rpx;
+  overflow: visible;  // 允许标记超出图片边界完整显示
   position: relative;
   background: #f5f5f5;
 }
@@ -281,17 +274,18 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 .example-img {
   width: 100%;
   height: 100%;
+  border-radius: 24rpx;
 }
 
-// ===== 右下角标记（约 1/3 在图片外） =====
+// ===== 右下角标记 =====
 .img-mark {
   position: absolute;
-  bottom: -10rpx;
-  right: -10rpx;
+  right: 8px;
+  bottom: 8px;
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  z-index: 2;
+  z-index: 5;
 }
 
 .mark-good {
@@ -327,7 +321,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 // ===== 标签文字 =====
 .example-label {
-  font-size: 24rpx;  // 12px
+  font-size: 24rpx;
   margin-top: 10rpx;
   text-align: center;
   white-space: normal;
@@ -349,13 +343,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 .action-btn {
   width: 100%;
-  height: 112rpx;  // 56px
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-row {
+  height: 112rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,52 +352,6 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 .action-text {
   font-size: 32rpx;
   color: #333333;
-}
-
-// 相机图标（CSS 绘制简化相机形状）
-.action-icon-camera {
-  display: inline-block;
-  width: 36rpx;
-  height: 30rpx;
-  margin-right: 12rpx;
-  border: 3rpx solid #333;
-  border-radius: 6rpx;
-  position: relative;
-  background: #fff;
-  &::after {
-    content: '';
-    position: absolute;
-    top: -8rpx;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 16rpx;
-    height: 8rpx;
-    background: #333;
-    border-radius: 4rpx 4rpx 0 0;
-  }
-}
-
-// 相册图标（CSS 绘制简化图片/相册形状）
-.action-icon-album {
-  display: inline-block;
-  width: 34rpx;
-  height: 30rpx;
-  margin-right: 12rpx;
-  border: 3rpx solid #333;
-  border-radius: 6rpx;
-  position: relative;
-  &::before {
-    content: '';
-    position: absolute;
-    bottom: -4rpx;
-    right: -4rpx;
-    width: 14rpx;
-    height: 12rpx;
-    border: 3rpx solid #333;
-    border-radius: 3rpx;
-    background: #333;
-    z-index: 1;
-  }
 }
 
 // 按钮间 1px 分隔线
@@ -423,7 +365,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // 8px 灰色间隔条
 .action-gap {
   width: 100%;
-  height: 16rpx;  // ~8px
+  height: 16rpx;
   background: #F5F5F5;
   flex-shrink: 0;
 }
