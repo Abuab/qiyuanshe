@@ -867,7 +867,7 @@ onShow(() => {
   right: 24rpx;
   display: flex;
   align-items: center;
-  padding: 14px 24px;
+  padding: 10px 28px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;
@@ -903,7 +903,7 @@ onShow(() => {
 }
 
 .pay-btn {
-  padding: 12px 36px;
+  padding: 10px 32px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
@@ -922,14 +922,14 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(120rpx + 64px + env(safe-area-inset-bottom));
-  left: 32rpx;
-  right: 32rpx;
+  bottom: calc(120rpx + 58px + env(safe-area-inset-bottom));
+  left: 48rpx;
+  right: 48rpx;
   text-align: center;
-  padding: 12px 24px;
+  padding: 12px 36px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
-  border-radius: 12rpx;
+  border-radius: 999px;
   z-index: 1003;
 
   text {
