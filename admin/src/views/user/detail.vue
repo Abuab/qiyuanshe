@@ -636,7 +636,14 @@ onMounted(() => { fetchDetail() })
 // 监听路由参数变化（同页面不同用户跳转时重新加载）
 watch(() => route.params.id, (newId) => {
   if (newId) {
-    tabDataLoaded && Object.keys(tabDataLoaded).forEach(k => delete tabDataLoaded[k])
+    // 重置 Tab 到首页 + 清除缓存数据
+    activeTab.value = 'basic'
+    Object.keys(tabDataLoaded).forEach(k => delete tabDataLoaded[k])
+    // 清除关注/浏览列表旧数据
+    followData.following = []
+    followData.followers = []
+    viewData.views = []
+    viewData.visitors = []
     fetchDetail()
   }
 })
