@@ -290,6 +290,74 @@
         </el-card>
       </el-tab-pane>
 
+      <el-tab-pane label="照片审核规则" name="photoAudit">
+        <el-card class="config-card">
+          <el-form :model="photoAuditConfig" label-width="160px">
+            <el-form-item label="审核严格等级">
+              <el-radio-group v-model="photoAuditConfig.strictLevel">
+                <el-radio value="loose">宽松</el-radio>
+                <el-radio value="normal">标准</el-radio>
+                <el-radio value="strict">严格</el-radio>
+              </el-radio-group>
+              <div class="form-tip">宽松：仅过滤明显违规；标准：大部分情况人工复核；严格：所有照片都需人工审核</div>
+            </el-form-item>
+
+            <el-form-item label="AI自动审核">
+              <el-switch v-model="photoAuditConfig.aiAutoAudit" />
+              <div class="form-tip">启用后照片上传时自动调用AI审核</div>
+            </el-form-item>
+
+            <el-form-item label="人工复核">
+              <el-switch v-model="photoAuditConfig.manualReview" />
+              <div class="form-tip">AI审核通过后仍需人工确认</div>
+            </el-form-item>
+
+            <el-divider content-position="left">不合格原因标签</el-divider>
+            <div class="form-tip" style="margin-bottom:12px">配置照片审核不通过的原因标签，小程序端引导页展示</div>
+
+            <el-form-item label="衣着不当">
+              <div style="display:flex;align-items:center;gap:12px">
+                <el-switch v-model="photoAuditConfig.rejectTags.clothing.enabled" />
+                <el-input v-model="photoAuditConfig.rejectTags.clothing.label" placeholder="衣着不当" style="width:200px" />
+                <el-input v-model="photoAuditConfig.rejectTags.clothing.tip" placeholder="如赤膊、过于暴露" style="width:300px" />
+              </div>
+            </el-form-item>
+
+            <el-form-item label="模糊遮挡">
+              <div style="display:flex;align-items:center;gap:12px">
+                <el-switch v-model="photoAuditConfig.rejectTags.blurry.enabled" />
+                <el-input v-model="photoAuditConfig.rejectTags.blurry.label" placeholder="模糊遮挡" style="width:200px" />
+                <el-input v-model="photoAuditConfig.rejectTags.blurry.tip" placeholder="如戴口罩、墨镜、模糊" style="width:300px" />
+              </div>
+            </el-form-item>
+
+            <el-form-item label="非人物照">
+              <div style="display:flex;align-items:center;gap:12px">
+                <el-switch v-model="photoAuditConfig.rejectTags.nonHuman.enabled" />
+                <el-input v-model="photoAuditConfig.rejectTags.nonHuman.label" placeholder="非人物照" style="width:200px" />
+                <el-input v-model="photoAuditConfig.rejectTags.nonHuman.tip" placeholder="如宠物、风景、卡通" style="width:300px" />
+              </div>
+            </el-form-item>
+
+            <el-form-item label="无正脸">
+              <div style="display:flex;align-items:center;gap:12px">
+                <el-switch v-model="photoAuditConfig.rejectTags.noFrontFace.enabled" />
+                <el-input v-model="photoAuditConfig.rejectTags.noFrontFace.label" placeholder="无正脸" style="width:200px" />
+                <el-input v-model="photoAuditConfig.rejectTags.noFrontFace.tip" placeholder="如背影、侧脸过度、仅身体" style="width:300px" />
+              </div>
+            </el-form-item>
+
+            <el-form-item label="网络照片">
+              <div style="display:flex;align-items:center;gap:12px">
+                <el-switch v-model="photoAuditConfig.rejectTags.webPic.enabled" />
+                <el-input v-model="photoAuditConfig.rejectTags.webPic.label" placeholder="网络照片" style="width:200px" />
+                <el-input v-model="photoAuditConfig.rejectTags.webPic.tip" placeholder="如明星照、网图、带水印的下载图" style="width:300px" />
+              </div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
+
       <el-tab-pane label="通知通道" name="notify">
         <el-card class="config-card">
           <el-form :model="notifyConfig" label-width="140px">
@@ -583,6 +651,19 @@ const auditConfig = reactive({
   manualAuditEnabled: true,
 })
 
+const photoAuditConfig = reactive({
+  strictLevel: 'normal',
+  aiAutoAudit: true,
+  manualReview: false,
+  rejectTags: {
+    clothing: { enabled: true, label: '衣着不当', tip: '如赤膊、过于暴露' },
+    blurry: { enabled: true, label: '模糊遮挡', tip: '如戴口罩、墨镜、模糊' },
+    nonHuman: { enabled: true, label: '非人物照', tip: '如宠物、风景、卡通' },
+    noFrontFace: { enabled: true, label: '无正脸', tip: '如背影、侧脸过度、仅身体' },
+    webPic: { enabled: true, label: '网络照片', tip: '如明星照、网图、带水印的下载图' },
+  },
+})
+
 // 通知日志
 const notifyLogs = ref<any[]>([])
 const notifyLogsLoading = ref(false)
@@ -796,6 +877,19 @@ async function fetchConfig() {
       // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
       logoError.value = false
 
+      // 照片审核规则
+      if (res.data.photoAudit) {
+        Object.assign(photoAuditConfig, res.data.photoAudit)
+        // 深合并 rejectTags（避免嵌套对象被整体替换）
+        if (res.data.photoAudit.rejectTags) {
+          for (const [key, val] of Object.entries(res.data.photoAudit.rejectTags)) {
+            if (photoAuditConfig.rejectTags[key as keyof typeof photoAuditConfig.rejectTags]) {
+              Object.assign(photoAuditConfig.rejectTags[key as keyof typeof photoAuditConfig.rejectTags], val)
+            }
+          }
+        }
+      }
+
       // 加载红线索显示名称（独立 key）
       try {
         const termRes = await adminSystem.getConfigByKey('red_line_term')
@@ -832,6 +926,7 @@ async function handleSave() {
         page: { ...iconConfig.page },
       },
       loveQuotes: { quotes: loveQuotesConfig.quotes.filter(q => q && q.trim()) },
+      photoAudit: { ...photoAuditConfig, rejectTags: JSON.parse(JSON.stringify(photoAuditConfig.rejectTags)) },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {

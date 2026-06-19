@@ -21,7 +21,12 @@
 
         <!-- 已登录 -->
         <view v-else class="profile-row">
-          <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" @error="onAvatarError" :key="avatarSrc" />
+          <view class="avatar-wrap">
+            <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" @error="onAvatarError" :key="avatarSrc" />
+            <view v-if="userInfo?.avatarReviewStatus === 0" class="avatar-review-overlay">
+              <text>待审核</text>
+            </view>
+          </view>
           <view class="profile-info">
             <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
             <view class="profile-id-row">
@@ -401,13 +406,36 @@ const toolGrid7 = [
   align-items: center;
 }
 
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+
 .profile-avatar {
   width: 100rpx;
   height: 100rpx;
   border-radius: 14rpx;
-  margin-right: 20rpx;
   background-color: #f5f5f5;
-  flex-shrink: 0;
+}
+
+.avatar-review-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 34%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0 14rpx 14rpx;
+
+  text {
+    font-size: 18rpx;
+    color: #fff;
+    font-weight: 500;
+  }
 }
 
 .profile-info {

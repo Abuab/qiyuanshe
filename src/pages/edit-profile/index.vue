@@ -39,7 +39,7 @@
             </view>
           </view>
           <!-- 占位 - 空的第一张 -->
-          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
+          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="showPhotoGuide = true">
             <text class="photo-add-plus">+</text>
             <text class="photo-add-text">添加照片</text>
           </view>
@@ -539,6 +539,14 @@
       </view>
     </view>
   </view>
+
+  <!-- 照片上传引导弹窗 -->
+  <PhotoGuide
+    v-model:visible="showPhotoGuide"
+    @camera="onGuideCamera"
+    @album="onGuideAlbum"
+    @cancel="showPhotoGuide = false"
+  />
 </template>
 
 <script setup lang="ts">
@@ -552,11 +560,13 @@ import { getFullImageUrl } from '@/utils/common'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
+import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 
 const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
 const icons = computed(() => systemStore.icons)
 const saving = ref(false)
+const showPhotoGuide = ref(false)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 
@@ -864,13 +874,28 @@ const chooseAvatar = () => {
 
 /** 更换头像（带裁剪） */
 const chooseAvatarWithCrop = () => {
+  showPhotoGuide.value = true
+}
+
+/** 引导弹窗 - 相机 */
+const onGuideCamera = () => {
+  pickAndCropAvatar('camera')
+}
+
+/** 引导弹窗 - 相册 */
+const onGuideAlbum = () => {
+  pickAndCropAvatar('album')
+}
+
+const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
   uni.chooseImage({
     count: 1,
     sizeType: ['original'],
-    sourceType: ['album', 'camera'],
+    sourceType: [sourceType],
     success: (res) => {
       const tempPath = res.tempFilePaths[0]
-      // 导航到裁剪页
+      // 通过 storage 传递临时图片路径（避免 URL 编码导致 getImageInfo 失败）
+      uni.setStorageSync('crop_avatar_src', tempPath)
       uni.navigateTo({
         url: '/pages/image-crop/index?src=' + encodeURIComponent(tempPath) + '&type=avatar',
         events: {

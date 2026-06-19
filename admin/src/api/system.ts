@@ -11,6 +11,7 @@ export interface SystemConfigs {
   intro?: Record<string, any>
   icon?: Record<string, any>
   loveQuotes?: Record<string, any>
+  photoAudit?: Record<string, any>
 }
 
 export const system = {

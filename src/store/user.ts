@@ -7,6 +7,7 @@ interface UserInfo {
   id: number
   nickname: string
   avatar: string
+  avatarReviewStatus?: number
   phone?: string
   gender?: number
   birthYear?: number
@@ -96,6 +97,7 @@ export const useUserStore = defineStore('user', () => {
     const updates: Partial<UserInfo> = {}
     if (typeof data.nickname === 'string') updates.nickname = data.nickname
     if (typeof data.avatar === 'string') updates.avatar = data.avatar
+    if (typeof data.avatarReviewStatus === 'number') updates.avatarReviewStatus = data.avatarReviewStatus
     if (typeof data.updatedAt === 'string') updates.updatedAt = data.updatedAt
     if (typeof data.gender === 'number') updates.gender = data.gender
     if (typeof data.birthYear === 'number') updates.birthYear = data.birthYear
