@@ -863,11 +863,11 @@ onShow(() => {
 .bottom-bar {
   position: fixed;
   bottom: calc(120rpx + env(safe-area-inset-bottom));
-  left: 24rpx;
-  right: 24rpx;
-  display: flex;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
   align-items: center;
-  padding: 10px 28px;
+  padding: 10px 24px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;
@@ -903,7 +903,7 @@ onShow(() => {
 }
 
 .pay-btn {
-  padding: 10px 32px;
+  padding: 8px 28px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
@@ -923,13 +923,10 @@ onShow(() => {
 .bottom-hint {
   position: fixed;
   bottom: calc(120rpx + 58px + env(safe-area-inset-bottom));
-  left: 48rpx;
-  right: 48rpx;
-  text-align: center;
-  padding: 12px 36px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  border-radius: 999px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
   z-index: 1003;
 
   text {
@@ -937,6 +934,11 @@ onShow(() => {
     color: #FF6B9D;
     font-weight: 600;
     text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border-radius: 999px;
+    padding: 10px 28px;
+    display: inline-block;
   }
 }
 

@@ -91,9 +91,10 @@ const currentX = ref(0)
 const currentY = ref(0)
 let imgNaturalW = 0
 let imgNaturalH = 0
+let bodyH = 0 // 可视裁剪区域高度（不含导航栏和底部栏）
 
-// 遮罩动态边长
-const maskTop = computed(() => Math.max(0, Math.floor((areaH.value - cropSize.value) / 2)))
+// 遮罩动态边长（基于可视区域 bodyH）
+const maskTop = computed(() => Math.max(0, Math.floor((bodyH - cropSize.value) / 2)))
 const maskLeft = computed(() => Math.max(0, Math.floor((areaW.value - cropSize.value) / 2)))
 
 onMounted(() => {
@@ -112,9 +113,11 @@ onMounted(() => {
   // 裁剪框边长：屏幕宽度的80%
   cropSize.value = Math.round(screenW * 0.8)
 
-  // movable-area 覆盖整个屏幕（扣除导航栏和底部栏）
+  // movable-area 宽度 = 屏幕宽，高度 = 裁剪框 + 大量上下拖动空间
   areaW.value = screenW
-  areaH.value = screenH - navPx - statusBarHeight.value - bottomBarH - safeBottom.value
+  bodyH = screenH - navPx - statusBarHeight.value - bottomBarH - safeBottom.value
+  // 让 movable-area 足够大，图片可上下大幅拖动（3倍裁剪框高度）
+  areaH.value = Math.max(bodyH, cropSize.value * 3)
 
   // 获取图片路径
   const pages = getCurrentPages()
@@ -128,25 +131,30 @@ onMounted(() => {
         imgNaturalW = info.width
         imgNaturalH = info.height
 
-        // 图片初始显示尺寸：按 movable-area 区域填充
-        // 取短边至少填满裁剪框
-        const minDisplay = cropSize.value * 1.6 // 初始放大1.6倍便于裁剪
-        let w: number, h: number
+        // 图片宽度撑满裁剪框（适配缩放后裁剪），高度按比例
+        const displayW = cropSize.value
         const ratio = imgNaturalW / imgNaturalH
+        let w: number, h: number
         if (ratio >= 1) {
-          // 横图：按高度定
-          h = minDisplay
-          w = h * ratio
-        } else {
-          // 竖图：按宽度定
-          w = minDisplay
+          // 横图：宽度撑满裁剪框
+          w = displayW
           h = w / ratio
+        } else {
+          // 竖图：宽度撑满裁剪框，高度会超过裁剪框，可上下拖动
+          w = displayW
+          h = w / ratio
+        }
+        // 保证至少比裁剪框高一些，否则无法上下拖动
+        if (h < cropSize.value * 1.2) {
+          h = cropSize.value * 1.2
+          w = h * ratio
         }
         movableW.value = Math.round(w)
         movableH.value = Math.round(h)
 
-        // 初始位置：居中
+        // 初始位置：水平居中，垂直将图片中部对齐裁剪框中部
         movableX.value = Math.round((areaW.value - w) / 2)
+        // area 中心 = crop 中心 = bodyH/2, 让图片中心对齐该处
         movableY.value = Math.round((areaH.value - h) / 2)
       },
     })
@@ -189,15 +197,10 @@ const handleConfirm = () => {
   let offsetInsideX = (displayW - fillW) / 2
   let offsetInsideY = (displayH - fillH) / 2
 
-  // movable-view 在 movable-area 中的居中位置
-  const areaCenterX = areaW.value / 2
-  const areaCenterY = areaH.value / 2
-  const cropCenterX = areaCenterX
-  const cropCenterY = areaCenterY
-
-  // 当前 movable-view 的中心位置
-  const moveCenterX = currentX.value + (displayW * s) / 2
-  const moveCenterY = currentY.value + (displayH * s) / 2
+  // 裁剪框在可视区域中居中，其 Y 中心 = bodyH/2
+  // movable-area 和 crop-body 同坐标系（top=0），所以 cropCenterY = bodyH/2
+  const cropCenterX = areaW.value / 2
+  const cropCenterY = bodyH / 2
 
   // 裁剪框左上角在 movable-view 坐标系中的位置
   const cropLeftInMovable = (cropCenterX - cropW / 2 - currentX.value) / s
