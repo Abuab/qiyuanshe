@@ -557,7 +557,7 @@ import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
-import { setCropImagePath } from '@/utils/crop-bridge'
+import { setCropImageData } from '@/utils/crop-bridge'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
@@ -895,15 +895,44 @@ const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
     sourceType: [sourceType],
     success: (res) => {
       const tempPath = res.tempFilePaths[0]
-      // 通过模块级变量传递路径，绕过 URL 编码 / storage / globalData 所有不可靠渠道
-      setCropImagePath(tempPath)
-      uni.navigateTo({
-        url: '/pages/image-crop/index',
-        events: {
-          // 裁剪完成后通过事件回调接收结果
-          cropped: (data: { path: string }) => {
-            handleCroppedAvatar(data.path)
-          },
+      // 在 chooseImage 后立即获取图片尺寸（此时临时文件确定可读）
+      uni.getImageInfo({
+        src: tempPath,
+        success: (info) => {
+          setCropImageData(tempPath, info.width, info.height)
+          uni.navigateTo({
+            url: '/pages/image-crop/index',
+            events: {
+              cropped: (data: { path: string }) => {
+                handleCroppedAvatar(data.path)
+              },
+            },
+          })
+        },
+        fail: () => {
+          // 兜底：压缩后再试
+          uni.compressImage({
+            src: tempPath,
+            quality: 90,
+            success: (cr) => {
+              uni.getImageInfo({
+                src: cr.tempFilePath,
+                success: (info2) => {
+                  setCropImageData(cr.tempFilePath, info2.width, info2.height)
+                  uni.navigateTo({
+                    url: '/pages/image-crop/index',
+                    events: {
+                      cropped: (data: { path: string }) => {
+                        handleCroppedAvatar(data.path)
+                      },
+                    },
+                  })
+                },
+                fail: () => uni.showToast({ title: '图片无法识别', icon: 'none' }),
+              })
+            },
+            fail: () => uni.showToast({ title: '图片无法识别', icon: 'none' }),
+          })
         },
       })
     },

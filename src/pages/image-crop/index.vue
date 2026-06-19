@@ -86,7 +86,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { getAndClearCropImagePath } from '@/utils/crop-bridge'
+import { getAndClearCropImageData } from '@/utils/crop-bridge'
 
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
@@ -131,45 +131,38 @@ onMounted(() => {
   // 裁剪框边长：屏幕宽度的 80%
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 获取图片：模块变量（主要渠道），兜底 URL 参数解码
-  const src = getAndClearCropImagePath() || (() => {
-    const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
-    return p ? decodeURIComponent(p) : ''
-  })()
+  // 获取图片：模块变量（已含路径+尺寸），兜底 URL 参数
+  const bridgeData = getAndClearCropImageData()
+  let src: string
+  if (bridgeData) {
+    src = bridgeData.path
+    imgNaturalW = bridgeData.width
+    imgNaturalH = bridgeData.height
+  } else {
+    src = (() => {
+      const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
+      return p ? decodeURIComponent(p) : ''
+    })()
+  }
   if (src) {
     imageSrc.value = src
-    uni.getImageInfo({
-      src: imageSrc.value,
-      success: (info) => {
-        imgNaturalW = info.width
-        imgNaturalH = info.height
-
-        // movable-view 尺寸 = 图片以 aspectFill 填满 cropSize 的容器
-        const displayW = cropSize.value
-        const ratio = imgNaturalW / imgNaturalH
-        let w = displayW
-        let h = displayW / ratio
-        if (Math.abs(ratio - 1) < 0.01) {
-          h = displayW
-          w = displayW
-        }
-        movableW.value = Math.round(w)
-        movableH.value = Math.round(h)
-
-        // movable-area 与裁剪区域等大，不超出可视范围（微信原生组件无法被遮罩覆盖）
-        areaW.value = screenW.value
-        areaH.value = bodyH.value
-
-        // movable-view 初始位置居中对齐裁剪框
-        movableX.value = Math.round((screenW.value - movableW.value) / 2)
-        movableY.value = Math.round((bodyH.value - movableH.value) / 2)
-        currentX.value = movableX.value
-        currentY.value = movableY.value
-      },
-      fail: () => {
-        uni.showToast({ title: '加载图片失败', icon: 'none' })
-      },
-    })
+    if (bridgeData) {
+      // 已有尺寸，直接初始化布局
+      initCropLayout()
+    } else {
+      // 兜底：走 getImageInfo
+      uni.getImageInfo({
+        src: src,
+        success: (info) => {
+          imgNaturalW = info.width
+          imgNaturalH = info.height
+          initCropLayout()
+        },
+        fail: () => {
+          uni.showToast({ title: '加载图片失败', icon: 'none' })
+        },
+      })
+    }
   }
 })
 
@@ -178,6 +171,28 @@ const onMove = (e: any) => {
   currentY.value = e.detail.y || 0
   // direction="vertical" 时 X 不变，但仍记录以防万一
   currentX.value = e.detail.x ?? currentX.value
+}
+
+/** 根据已获取的图片尺寸初始化裁剪布局 */
+const initCropLayout = () => {
+  const displayW = cropSize.value
+  const ratio = imgNaturalW / imgNaturalH
+  let w = displayW
+  let h = displayW / ratio
+  if (Math.abs(ratio - 1) < 0.01) {
+    h = displayW
+    w = displayW
+  }
+  movableW.value = Math.round(w)
+  movableH.value = Math.round(h)
+
+  areaW.value = screenW.value
+  areaH.value = bodyH.value
+
+  movableX.value = Math.round((screenW.value - movableW.value) / 2)
+  movableY.value = Math.round((bodyH.value - movableH.value) / 2)
+  currentX.value = movableX.value
+  currentY.value = movableY.value
 }
 
 const onScale = (e: any) => {
