@@ -33,12 +33,14 @@ const typeMap: Record<string, string> = {
   user: 'USER_AGREEMENT',
   privacy: 'PRIVACY_POLICY',
   vip: 'VIP_AGREEMENT',
+  selfDiscipline: 'SELF_DISCIPLINE_STATEMENT',
 }
 
 const titleMap: Record<string, string> = {
   user: '用户协议',
   privacy: '隐私政策',
   vip: '会员服务协议',
+  selfDiscipline: '平台自律声明',
 }
 
 onMounted(async () => {

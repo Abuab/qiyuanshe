@@ -30,6 +30,15 @@
           <text class="menu-arrow">></text>
         </view>
 
+        <view class="menu-row" @tap="goToSelfDiscipline">
+          <view class="menu-left">
+            <image v-if="pageIcons.selfDisciplineIcon" class="menu-icon" :src="pageIcons.selfDisciplineIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">📋</text>
+            <text class="menu-label">平台自律声明</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+
         <view class="menu-row" @tap="goToPrivacySettings">
           <view class="menu-left">
             <image v-if="pageIcons.privacySettingIcon" class="menu-icon" :src="pageIcons.privacySettingIcon" mode="aspectFit" />
@@ -102,7 +111,11 @@ const goToBlockList = () => {
 }
 
 const goToAgreement = () => {
-  uni.navigateTo({ url: '/pages/agreement/index' })
+  uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
+}
+
+const goToSelfDiscipline = () => {
+  uni.navigateTo({ url: '/pages/agreement/index?type=selfDiscipline' })
 }
 
 const goToPrivacySettings = () => {

@@ -128,6 +128,7 @@ export class PublicSystemController {
         privacyPolicyIcon: fallback(page.privacyPolicyIcon),
         privacySettingIcon: fallback(page.privacySettingIcon),
         deactivateIcon: fallback(page.deactivateIcon),
+        selfDisciplineIcon: fallback(page.selfDisciplineIcon),
         // 爱情语录图标
         refreshIcon: fallback(page.refreshIcon),
         filterResetIcon: fallback(page.filterResetIcon),

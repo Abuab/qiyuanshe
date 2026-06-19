@@ -3,7 +3,7 @@ import type { ApiResponse } from './request'
 
 export interface Agreement {
   id: number
-  type: 'USER_AGREEMENT' | 'PRIVACY_POLICY'
+  type: 'USER_AGREEMENT' | 'PRIVACY_POLICY' | 'VIP_AGREEMENT' | 'SELF_DISCIPLINE_STATEMENT'
   title: string
   content: string
   isActive: number
