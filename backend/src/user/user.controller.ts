@@ -19,6 +19,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserBlock } from '../entities/UserBlock'
 import { AuditLog } from '../entities/AuditLog'
@@ -33,6 +34,7 @@ export class UserController {
     private readonly userService: UserService,
     @InjectRepository(Report) private reportRepo: Repository<Report>,
     @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
+    @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
     @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
@@ -176,6 +178,12 @@ export class UserController {
     const userId = req.user.userId
     const count = await this.photoRepo.count({ where: { userId } })
     if (count >= 6) return Result.serverError('最多上传6张照片')
+
+    // 第一张照片自动设为头像
+    if (count === 0) {
+      await this.userRepo.update(userId, { avatar: body.url })
+    }
+
     const isMain = count === 0 ? 1 : 0
     const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count, auditStatus: 0 })
     const saved = await this.photoRepo.save(photo)
@@ -221,6 +229,13 @@ export class UserController {
     const userId = req.user.userId
     await this.photoRepo.update({ userId, isMain: 1 }, { isMain: 0 })
     await this.photoRepo.update({ id, userId }, { isMain: 1 })
+
+    // 设为主图时同步更新用户头像
+    const mainPhoto = await this.photoRepo.findOne({ where: { id, userId } })
+    if (mainPhoto?.photoUrl) {
+      await this.userRepo.update(userId, { avatar: mainPhoto.photoUrl })
+    }
+
     return Result.success(null, '已设置主图')
   }
 

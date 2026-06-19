@@ -720,8 +720,9 @@ onShow(() => {
 }
 
 .card-desc {
-  font-size: 12px;
-  color: #999;
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
   text-align: center;
   margin-bottom: 12px;
   line-height: 1.5;
@@ -858,10 +859,11 @@ onShow(() => {
   right: 0;
   display: flex;
   align-items: center;
-  padding: calc(12px + env(safe-area-inset-bottom)) 24px 12px;
+  padding: 12px 24px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-  z-index: 1000;
+  z-index: 1002;
 }
 
 .bottom-price {
@@ -913,18 +915,19 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(65px + env(safe-area-inset-bottom));
+  bottom: calc(60px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;
-  padding: 6px 24px 10px;
+  padding: 6px 24px 6px;
   background: #FFF8FA;
-  z-index: 1001;
+  z-index: 1003;
   white-space: nowrap;
 
   text {
-    font-size: 24rpx;
-    color: #FF6B9D;
+    font-size: 26rpx;
+    color: #666;
+    font-weight: 500;
   }
 }
 
