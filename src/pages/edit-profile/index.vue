@@ -1794,12 +1794,12 @@ onShow(async () => {
   position: absolute;
   top: 0;
   right: 0;
-  width: 52rpx;
-  height: 44rpx;
+  width: 36rpx;
+  height: 36rpx;
   z-index: 2;
   background: rgba(60, 60, 60, 0.75);
-  border-radius: 0 12rpx 0 12rpx;
-  padding: 8rpx;
+  border-radius: 0 8rpx 0 8rpx;
+  padding: 6rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
 
   .delete-icon-img {
@@ -1812,9 +1812,9 @@ onShow(async () => {
   position: absolute;
   top: 0;
   right: 0;
-  width: 52rpx;
-  height: 44rpx;
-  border-radius: 0 12rpx 0 12rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 0 8rpx 0 8rpx;
   background: rgba(60, 60, 60, 0.75);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
   display: flex;
