@@ -10,7 +10,7 @@
       <!-- 顶部信息卡片 -->
       <el-card class="header-card">
         <div class="user-header">
-          <el-image :src="user.avatar" fit="cover" style="width: 100px; height: 100px; border-radius: 50%" :key="user.avatar">
+          <el-image :src="avatarCacheSrc" fit="cover" style="width: 100px; height: 100px; border-radius: 50%" :key="avatarCacheSrc">
             <template #error>
               <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
                 <el-icon :size="48"><User /></el-icon>
@@ -497,7 +497,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
@@ -632,6 +632,22 @@ const userChatMsgLoading = ref(false)
 const tabDataLoaded: Record<string, boolean> = {}
 
 onMounted(() => { fetchDetail() })
+
+// 监听路由参数变化（同页面不同用户跳转时重新加载）
+watch(() => route.params.id, (newId) => {
+  if (newId) {
+    tabDataLoaded && Object.keys(tabDataLoaded).forEach(k => delete tabDataLoaded[k])
+    fetchDetail()
+  }
+})
+
+// 头像 URL 加版本参数避免浏览器/微信缓存旧图
+const avatarCacheSrc = computed(() => {
+  const url = user.value?.avatar
+  if (!url) return ''
+  const sep = url.includes('?') ? '&' : '?'
+  return url + sep + 'v=' + (user.value?.updatedAt || Date.now())
+})
 
 async function fetchDetail() {
   loading.value = true

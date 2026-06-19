@@ -21,7 +21,7 @@
 
         <!-- 已登录 -->
         <view v-else class="profile-row">
-          <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" @error="onAvatarError" />
+          <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" @error="onAvatarError" :key="avatarSrc" />
           <view class="profile-info">
             <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
             <view class="profile-id-row">
