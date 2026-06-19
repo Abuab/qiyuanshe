@@ -13,21 +13,14 @@
             <view class="title-icon icon-check"></view>
             <text class="section-title">以下照片可以通过审核</text>
           </view>
-          <scroll-view scroll-x class="photo-scroll" :show-scrollbar="false">
-            <view class="photo-scroll-inner">
-              <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
-                <view class="example-img-wrap">
-                  <image
-                    :src="item.src"
-                    mode="aspectFill"
-                    class="example-img"
-                  />
-                  <view class="img-mark mark-good"></view>
-                </view>
-                <text class="example-label good-label">{{ item.label }}</text>
+          <view class="photo-row">
+            <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
+              <view class="example-img-wrap">
+                <image :src="item.src" mode="aspectFill" class="example-img" />
+                <view class="img-mark mark-good"></view>
               </view>
             </view>
-          </scroll-view>
+          </view>
         </view>
 
         <!-- 不合格示例 -->
@@ -36,21 +29,14 @@
             <view class="title-icon icon-cross"></view>
             <text class="section-title">以下照片不能通过审核</text>
           </view>
-          <scroll-view scroll-x class="photo-scroll" :show-scrollbar="false">
-            <view class="photo-scroll-inner">
-              <view class="example-card" v-for="(item, idx) in badExamples" :key="'bad-' + idx">
-                <view class="example-img-wrap">
-                  <image
-                    :src="item.src"
-                    mode="aspectFill"
-                    class="example-img"
-                  />
-                  <view class="img-mark mark-bad"></view>
-                </view>
-                <text class="example-label bad-label">{{ item.label }}</text>
+          <view class="photo-row">
+            <view class="example-card" v-for="(item, idx) in badExamples" :key="'bad-' + idx">
+              <view class="example-img-wrap">
+                <image :src="item.src" mode="aspectFill" class="example-img" />
+                <view class="img-mark mark-bad"></view>
               </view>
             </view>
-          </scroll-view>
+          </view>
         </view>
       </scroll-view>
 
@@ -169,12 +155,12 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 // ===== 顶部提示 =====
 .guide-header {
-  padding: 24rpx 32rpx 16rpx;
+  padding: 20rpx 32rpx 12rpx;
   text-align: center;
 }
 
 .guide-tip {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #999999;
   line-height: 1.4;
 }
@@ -182,31 +168,31 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // ===== 可滚动主体 =====
 .guide-body {
   padding: 0 32rpx;
-  max-height: 520rpx;
+  max-height: 680rpx;
 }
 
 .guide-section {
-  margin-bottom: 20rpx;
+  margin-bottom: 16rpx;
 }
 
 // ===== 段落标题 =====
 .section-title-row {
   display: flex;
   align-items: center;
-  margin-bottom: 14rpx;
+  margin-bottom: 10rpx;
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #333333;
 }
 
 .title-icon {
-  width: 32rpx;
-  height: 32rpx;
+  width: 28rpx;
+  height: 28rpx;
   border-radius: 50%;
-  margin-right: 10rpx;
+  margin-right: 8rpx;
   flex-shrink: 0;
   position: relative;
 }
@@ -216,12 +202,12 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   &::after {
     content: '';
     position: absolute;
-    top: 7rpx;
-    left: 12rpx;
-    width: 7rpx;
-    height: 12rpx;
+    top: 6rpx;
+    left: 10rpx;
+    width: 6rpx;
+    height: 10rpx;
     border: solid #fff;
-    border-width: 0 3rpx 3rpx 0;
+    border-width: 0 2rpx 2rpx 0;
     transform: rotate(45deg);
   }
 }
@@ -234,38 +220,29 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 12rpx;
-    height: 3rpx;
+    width: 10rpx;
+    height: 2rpx;
     background: #fff;
   }
   &::before { transform: translate(-50%, -50%) rotate(45deg); }
   &::after { transform: translate(-50%, -50%) rotate(-45deg); }
 }
 
-// ===== 横向滚动图片区 =====
-.photo-scroll {
-  width: 100%;
-  white-space: nowrap;
-  overflow-x: auto;
-}
-
-.photo-scroll-inner {
-  display: inline-flex;
-  gap: 16rpx;
-  padding-right: 32rpx;
+// ===== 图片行（flex 自动换行，不放横向滚动） =====
+.photo-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10rpx;
 }
 
 .example-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   flex-shrink: 0;
 }
 
 .example-img-wrap {
-  width: 160rpx;
-  height: 210rpx;
-  border-radius: 20rpx;
+  width: 128rpx;
+  height: 166rpx;
+  border-radius: 16rpx;
   overflow: visible;
   position: relative;
   background: #f5f5f5;
@@ -274,16 +251,16 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 .example-img {
   width: 100%;
   height: 100%;
-  border-radius: 20rpx;
+  border-radius: 16rpx;
 }
 
 // ===== 右下角标记 =====
 .img-mark {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 36rpx;
-  height: 36rpx;
+  right: 6px;
+  bottom: 6px;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
   z-index: 5;
 }
@@ -293,12 +270,12 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   &::after {
     content: '';
     position: absolute;
-    top: 8rpx;
-    left: 13rpx;
-    width: 7rpx;
-    height: 12rpx;
+    top: 7rpx;
+    left: 11rpx;
+    width: 6rpx;
+    height: 10rpx;
     border: solid #fff;
-    border-width: 0 3rpx 3rpx 0;
+    border-width: 0 2rpx 2rpx 0;
     transform: rotate(45deg);
   }
 }
@@ -311,34 +288,18 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 12rpx;
-    height: 3rpx;
+    width: 10rpx;
+    height: 2rpx;
     background: #fff;
   }
   &::before { transform: translate(-50%, -50%) rotate(45deg); }
   &::after { transform: translate(-50%, -50%) rotate(-45deg); }
 }
 
-// ===== 标签文字 =====
-.example-label {
-  font-size: 22rpx;
-  margin-top: 8rpx;
-  text-align: center;
-  white-space: normal;
-}
-
-.good-label {
-  color: #07C160;
-}
-
-.bad-label {
-  color: #999999;
-}
-
 // ===== 底部按钮区 =====
 .guide-actions {
   flex-shrink: 0;
-  margin-top: 12rpx;
+  margin-top: 8rpx;
 }
 
 .action-btn {
