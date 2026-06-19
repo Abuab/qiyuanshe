@@ -1,69 +1,77 @@
 <template>
   <view class="photo-guide-overlay" v-if="visible" @tap="handleCancel">
-    <view class="photo-guide-sheet" @tap.stop :style="{ paddingBottom: 'calc(24rpx + ' + safeBottom + 'px)' }">
+    <view class="photo-guide-sheet" @tap.stop :style="{ paddingBottom: safeBottom + 'px' }">
       <!-- 顶部提示 -->
       <view class="guide-header">
-        <text class="guide-title">上传本人清晰正面照，会收获更多喜欢</text>
+        <text class="guide-tip">上传本人清晰正面照，会收获更多喜欢</text>
       </view>
 
-      <scroll-view scroll-y class="guide-scroll" :show-scrollbar="false">
-        <!-- 合格示例 -->
+      <scroll-view scroll-y class="guide-body" :show-scrollbar="false">
+        <!-- 正确示例 -->
         <view class="guide-section">
           <view class="section-title-row">
-            <view class="icon-check-green"></view>
-            <text class="section-title green">以下照片可以通过审核</text>
+            <view class="title-icon icon-check"></view>
+            <text class="section-title">以下照片可以通过审核</text>
           </view>
-          <view class="photo-row">
-            <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
-              <view class="example-img-wrap good">
-                <image
-                  :src="item.src || defaultGoodPlaceholder"
-                  mode="aspectFill"
-                  class="example-img"
-                />
-                <view class="mark-mark mark-good"></view>
+          <scroll-view scroll-x class="photo-scroll" :show-scrollbar="false">
+            <view class="photo-scroll-inner">
+              <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
+                <view class="example-img-wrap">
+                  <image
+                    :src="item.src"
+                    mode="aspectFill"
+                    class="example-img"
+                  />
+                  <view class="img-mark mark-good"></view>
+                </view>
+                <text class="example-label good-label">{{ item.label }}</text>
               </view>
-              <text class="example-label green">{{ item.label }}</text>
             </view>
-          </view>
+          </scroll-view>
         </view>
 
         <!-- 不合格示例 -->
         <view class="guide-section">
           <view class="section-title-row">
-            <view class="icon-cross-red"></view>
-            <text class="section-title red">以下照片不能通过审核</text>
+            <view class="title-icon icon-cross"></view>
+            <text class="section-title">以下照片不能通过审核</text>
           </view>
-          <view class="photo-row multi-row">
-            <view class="example-card" v-for="(item, idx) in badExamples" :key="'bad-' + idx">
-              <view class="example-img-wrap bad">
-                <image
-                  :src="item.src || defaultBadPlaceholder"
-                  mode="aspectFill"
-                  class="example-img"
-                />
-                <view class="mark-mark mark-bad"></view>
+          <scroll-view scroll-x class="photo-scroll" :show-scrollbar="false">
+            <view class="photo-scroll-inner">
+              <view class="example-card" v-for="(item, idx) in badExamples" :key="'bad-' + idx">
+                <view class="example-img-wrap">
+                  <image
+                    :src="item.src"
+                    mode="aspectFill"
+                    class="example-img"
+                  />
+                  <view class="img-mark mark-bad"></view>
+                </view>
+                <text class="example-label bad-label">{{ item.label }}</text>
               </view>
-              <text class="example-label red">{{ item.label }}</text>
             </view>
-          </view>
+          </scroll-view>
         </view>
       </scroll-view>
 
-      <!-- 底部按钮 -->
+      <!-- 底部按钮区 -->
       <view class="guide-actions">
-        <view class="action-btn camera-btn" @tap="handleCamera">
-          <text class="action-icon">📷</text>
-          <text class="action-text">相机</text>
+        <view class="action-btn" @tap="handleCamera">
+          <view class="action-row">
+            <text class="action-icon-camera"></text>
+            <text class="action-text">相机</text>
+          </view>
         </view>
-        <view class="action-divider"></view>
-        <view class="action-btn album-btn" @tap="handleAlbum">
-          <text class="action-icon">🖼️</text>
-          <text class="action-text">从相册中选取</text>
+        <view class="action-sep"></view>
+        <view class="action-btn" @tap="handleAlbum">
+          <view class="action-row">
+            <text class="action-icon-album"></text>
+            <text class="action-text">从相册中选取</text>
+          </view>
         </view>
-        <view class="action-divider"></view>
+        <view class="action-gap"></view>
         <view class="action-btn cancel-btn" @tap="handleCancel">
-          <text class="action-text">取消</text>
+          <text class="cancel-text">取消</text>
         </view>
       </view>
     </view>
@@ -93,23 +101,32 @@ const emit = defineEmits<{
 
 const safeBottom = ref(0)
 
-// 默认占位图（用纯色块+文字代替，方便后续替换真实素材）
-const defaultGoodPlaceholder = ref('')
-const defaultBadPlaceholder = ref('')
+// 占位图 URL（开发期使用 picsum 占位，上线前替换为真实素材）
+const GOOD_PLACEHOLDERS = [
+  'https://picsum.photos/seed/good1/200/260',
+  'https://picsum.photos/seed/good2/200/260',
+  'https://picsum.photos/seed/good3/200/260',
+]
+const BAD_PLACEHOLDERS = [
+  'https://picsum.photos/seed/bad1/200/260',
+  'https://picsum.photos/seed/bad2/200/260',
+  'https://picsum.photos/seed/bad3/200/260',
+  'https://picsum.photos/seed/bad4/200/260',
+  'https://picsum.photos/seed/bad5/200/260',
+]
 
-// 默认示例数据（可替换为实际图片路径）
 const defaultGoodExamples: ExampleItem[] = [
-  { src: '', label: '光线充足' },
-  { src: '', label: '五官清晰' },
-  { src: '', label: '正面照' },
+  { src: GOOD_PLACEHOLDERS[0], label: '光线充足' },
+  { src: GOOD_PLACEHOLDERS[1], label: '五官清晰' },
+  { src: GOOD_PLACEHOLDERS[2], label: '正面照' },
 ]
 
 const defaultBadExamples: ExampleItem[] = [
-  { src: '', label: '衣着不当' },
-  { src: '', label: '模糊遮挡' },
-  { src: '', label: '非人物照' },
-  { src: '', label: '无正脸' },
-  { src: '', label: '网络照片' },
+  { src: BAD_PLACEHOLDERS[0], label: '衣着不当' },
+  { src: BAD_PLACEHOLDERS[1], label: '模糊遮挡' },
+  { src: BAD_PLACEHOLDERS[2], label: '非人物照' },
+  { src: BAD_PLACEHOLDERS[3], label: '无正脸' },
+  { src: BAD_PLACEHOLDERS[4], label: '网络照片' },
 ]
 
 const goodExamples = computed(() =>
@@ -120,43 +137,33 @@ const badExamples = computed(() =>
   (props.badExamples && props.badExamples.length > 0) ? props.badExamples : defaultBadExamples
 )
 
-// 获取安全区
 try {
   const sys = uni.getSystemInfoSync()
   safeBottom.value = sys.safeAreaInsets?.bottom || 0
 } catch (_) {}
 
-const handleCamera = () => {
-  emit('camera')
-  emit('update:visible', false)
-}
-
-const handleAlbum = () => {
-  emit('album')
-  emit('update:visible', false)
-}
-
-const handleCancel = () => {
-  emit('cancel')
-  emit('update:visible', false)
-}
+const handleCamera = () => { emit('camera'); emit('update:visible', false) }
+const handleAlbum = () => { emit('album'); emit('update:visible', false) }
+const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 </script>
 
 <style lang="scss" scoped>
+// ===== 遮罩 =====
 .photo-guide-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 9999;
   display: flex;
   align-items: flex-end;
 }
 
+// ===== Bottom Sheet =====
 .photo-guide-sheet {
   width: 100%;
   max-height: 80vh;
   background: #fff;
-  border-radius: 32rpx 32rpx 0 0;
+  border-radius: 40rpx 40rpx 0 0;  // ~20px
   display: flex;
   flex-direction: column;
   animation: slideUp 0.25s ease-out;
@@ -167,54 +174,58 @@ const handleCancel = () => {
   to { transform: translateY(0); }
 }
 
+// ===== 顶部提示 =====
 .guide-header {
-  padding: 28rpx 32rpx 18rpx;
+  padding: 32rpx 32rpx 20rpx;
   text-align: center;
 }
 
-.guide-title {
-  font-size: 28rpx;
-  color: #999;
-  font-weight: 400;
+.guide-tip {
+  font-size: 28rpx;   // 14px
+  color: #999999;
+  line-height: 1.5;
 }
 
-.guide-scroll {
+// ===== 可滚动主体 =====
+.guide-body {
   flex: 1;
-  padding: 0 24rpx;
-  max-height: 50vh;
+  padding: 0 32rpx;
+  max-height: 55vh;
 }
 
 .guide-section {
   margin-bottom: 28rpx;
 }
 
+// ===== 段落标题 =====
 .section-title-row {
   display: flex;
   align-items: center;
-  margin-bottom: 16rpx;
+  margin-bottom: 18rpx;
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 600;
-
-  &.green { color: #07C160; }
-  &.red { color: #FA5151; }
+  color: #333333;
 }
 
-.icon-check-green {
-  width: 32rpx;
-  height: 32rpx;
+.title-icon {
+  width: 36rpx;
+  height: 36rpx;
   border-radius: 50%;
-  background: #07C160;
-  margin-right: 10rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
   position: relative;
+}
 
+.icon-check {
+  background: #07C160;
   &::after {
     content: '';
     position: absolute;
-    top: 6rpx;
-    left: 11rpx;
+    top: 8rpx;
+    left: 14rpx;
     width: 8rpx;
     height: 14rpx;
     border: solid #fff;
@@ -223,14 +234,8 @@ const handleCancel = () => {
   }
 }
 
-.icon-cross-red {
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: 50%;
-  background: #FA5151;
-  margin-right: 10rpx;
-  position: relative;
-
+.icon-cross {
+  background: #FF4D4F;
   &::before,
   &::after {
     content: '';
@@ -241,47 +246,36 @@ const handleCancel = () => {
     height: 3rpx;
     background: #fff;
   }
-
   &::before { transform: translate(-50%, -50%) rotate(45deg); }
   &::after { transform: translate(-50%, -50%) rotate(-45deg); }
 }
 
-.photo-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
+// ===== 横向滚动图片区 =====
+.photo-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
 
-  &.multi-row {
-    .example-card {
-      width: calc((100% - 32rpx) / 3);
-    }
-  }
+.photo-scroll-inner {
+  display: inline-flex;
+  gap: 20rpx;  // 10px
+  padding: 0 4rpx;  // 整体 padding 已在 guide-body 32rpx 基础上
 }
 
 .example-card {
-  width: calc((100% - 32rpx) / 3);
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .example-img-wrap {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  border-radius: 12rpx;
+  width: 200rpx;   // ~100px
+  height: 260rpx;  // ~130px
+  border-radius: 24rpx;  // ~12px
   overflow: hidden;
   position: relative;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.good {
-    border: 3rpx solid #07C160;
-  }
-  &.bad {
-    border: 3rpx solid #FA5151;
-  }
+  background: #f5f5f5;
 }
 
 .example-img {
@@ -289,104 +283,156 @@ const handleCancel = () => {
   height: 100%;
 }
 
-// 占位图 pattern
-.example-img-wrap .example-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .ph-icon {
-    width: 60rpx;
-    height: 60rpx;
-    opacity: 0.2;
-  }
-}
-
-.mark-mark {
+// ===== 右下角标记（约 1/3 在图片外） =====
+.img-mark {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
-  width: 36rpx;
-  height: 36rpx;
+  bottom: -10rpx;
+  right: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
+  z-index: 2;
+}
 
-  &.mark-good {
-    background: #07C160;
-    &::after {
-      content: '';
-      position: absolute;
-      top: 7rpx;
-      left: 13rpx;
-      width: 8rpx;
-      height: 14rpx;
-      border: solid #fff;
-      border-width: 0 3rpx 3rpx 0;
-      transform: rotate(45deg);
-    }
-  }
-
-  &.mark-bad {
-    background: #FA5151;
-    &::before,
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 14rpx;
-      height: 3rpx;
-      background: #fff;
-    }
-    &::before { transform: translate(-50%, -50%) rotate(45deg); }
-    &::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.mark-good {
+  background: #07C160;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 9rpx;
+    left: 15rpx;
+    width: 8rpx;
+    height: 14rpx;
+    border: solid #fff;
+    border-width: 0 3rpx 3rpx 0;
+    transform: rotate(45deg);
   }
 }
 
+.mark-bad {
+  background: #FF4D4F;
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14rpx;
+    height: 3rpx;
+    background: #fff;
+  }
+  &::before { transform: translate(-50%, -50%) rotate(45deg); }
+  &::after { transform: translate(-50%, -50%) rotate(-45deg); }
+}
+
+// ===== 标签文字 =====
 .example-label {
-  font-size: 20rpx;
-  margin-top: 8rpx;
+  font-size: 24rpx;  // 12px
+  margin-top: 10rpx;
   text-align: center;
-
-  &.green { color: #07C160; }
-  &.red { color: #FA5151; }
+  white-space: normal;
 }
 
-// 底部按钮
+.good-label {
+  color: #07C160;
+}
+
+.bad-label {
+  color: #999999;
+}
+
+// ===== 底部按钮区 =====
 .guide-actions {
-  display: flex;
-  align-items: center;
-  border-top: 1rpx solid #eee;
-  margin-top: 12rpx;
+  flex-shrink: 0;
+  margin-top: 16rpx;
 }
 
 .action-btn {
-  flex: 1;
+  width: 100%;
+  height: 112rpx;  // 56px
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 24rpx 0;
 }
 
-.action-icon {
-  font-size: 40rpx;
-  margin-bottom: 6rpx;
+.action-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-text {
-  font-size: 26rpx;
-  color: #333;
+  font-size: 32rpx;
+  color: #333333;
 }
 
-.cancel-btn .action-text {
-  color: #999;
+// 相机图标（CSS 绘制简化相机形状）
+.action-icon-camera {
+  display: inline-block;
+  width: 36rpx;
+  height: 30rpx;
+  margin-right: 12rpx;
+  border: 3rpx solid #333;
+  border-radius: 6rpx;
+  position: relative;
+  background: #fff;
+  &::after {
+    content: '';
+    position: absolute;
+    top: -8rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16rpx;
+    height: 8rpx;
+    background: #333;
+    border-radius: 4rpx 4rpx 0 0;
+  }
 }
 
-.action-divider {
-  width: 1rpx;
-  height: 60rpx;
-  background: #eee;
+// 相册图标（CSS 绘制简化图片/相册形状）
+.action-icon-album {
+  display: inline-block;
+  width: 34rpx;
+  height: 30rpx;
+  margin-right: 12rpx;
+  border: 3rpx solid #333;
+  border-radius: 6rpx;
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: -4rpx;
+    right: -4rpx;
+    width: 14rpx;
+    height: 12rpx;
+    border: 3rpx solid #333;
+    border-radius: 3rpx;
+    background: #333;
+    z-index: 1;
+  }
+}
+
+// 按钮间 1px 分隔线
+.action-sep {
+  width: 100%;
+  height: 1px;
+  background: #E5E5E5;
+  flex-shrink: 0;
+}
+
+// 8px 灰色间隔条
+.action-gap {
+  width: 100%;
+  height: 16rpx;  // ~8px
+  background: #F5F5F5;
+  flex-shrink: 0;
+}
+
+// 取消按钮
+.cancel-btn {
+  .cancel-text {
+    font-size: 32rpx;
+    color: #666666;
+  }
 }
 </style>
