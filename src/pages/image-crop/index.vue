@@ -14,40 +14,37 @@
     </view>
 
     <!-- 裁剪区域 -->
-    <view class="crop-body">
-      <!-- movable-area：超大区域，居中放置，允许图片大幅拖动 -->
-      <movable-area
-        class="crop-movable-area"
+    <view
+      class="crop-body"
+      @touchstart.prevent="onTouchStart"
+      @touchmove.prevent="onTouchMove"
+      @touchend="onTouchEnd"
+    >
+      <!-- 图片层（在 crop-box 内，通过 transform 定位） -->
+      <view
+        class="crop-box"
+        v-if="ready"
         :style="{
-          width: areaW + 'px',
-          height: areaH + 'px'
+          width: cropSize + 'px',
+          height: cropSize + 'px',
+          top: cropTopPx + 'px',
+          left: cropLeftPx + 'px',
         }"
       >
-        <movable-view
-          class="crop-movable"
-          :style="{ width: movableW + 'px', height: movableH + 'px' }"
-          direction="vertical"
-          :x="movableX"
-          :y="movableY"
-          @change="onMove"
-          :inertia="false"
-        >
-          <image
-            :src="imageSrc"
-            mode="aspectFill"
-            class="crop-image"
-            :style="{ width: movableW + 'px', height: movableH + 'px' }"
-          />
-        </movable-view>
-      </movable-area>
+        <image
+          :src="imageSrc"
+          class="crop-img"
+          :style="imgStyle"
+        />
+      </view>
 
-      <!-- 四块 cover-view 遮罩盖住裁剪框外部（cover-view 可覆盖原生 movable-area） -->
+      <!-- 四块半透明黑色遮罩 cover-view（盖在裁剪框外部） -->
       <cover-view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></cover-view>
       <cover-view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></cover-view>
       <cover-view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></cover-view>
       <cover-view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></cover-view>
 
-      <!-- 裁剪框（cover-view 盖在 movable-area 上方） -->
+      <!-- 裁剪框边框 + 四角标记（cover-view 盖在最上层） -->
       <cover-view class="crop-frame" :style="{
         width: cropSize + 'px',
         height: cropSize + 'px',
@@ -84,30 +81,93 @@
 import { ref, computed, onMounted } from 'vue'
 import { getAndClearCropImageData } from '@/utils/crop-bridge'
 
+// ====== 布局尺寸 ======
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
 const imageSrc = ref('')
-const cropSize = ref(0)    // 裁剪框边长 (px)
+const cropSize = ref(0)   // 裁剪框边长 (px)
 const screenW = ref(375)
-const bodyH = ref(0)       // 裁剪区域可视高度
-const areaW = ref(0)       // movable-area 宽度（= screenW）
-const areaH = ref(0)       // movable-area 高度（= bodyH）
-const movableW = ref(0)
-const movableH = ref(0)
-const movableX = ref(0)
-const movableY = ref(0)
-const currentX = ref(0)
-const currentY = ref(0)
+const bodyH = ref(0)      // 裁剪区域可视高度
+const ready = ref(false)  // 图片加载完毕后才渲染
+
+// ====== 图片信息 ======
 let imgNaturalW = 0
 let imgNaturalH = 0
 
-// 遮罩大小 = 裁剪框外到屏幕边缘的距离
+// ====== 核心 transform 参数 ======
+const translateY = ref(0) // 当前 translateY (px)，允许范围 [minTranslateY, 0]
+
+// ——— 按公式1: scale = 裁剪框宽度 / 图片原始宽度 ———
+const scale = computed(() => cropSize.value / imgNaturalW)
+
+// ——— 按公式2: 缩放后高度 ———
+const displayH = computed(() => imgNaturalH * scale.value)
+
+// ——— 初次加载后的初始 translateY ——
+const initTranslateY = () => {
+  // 按公式5: 初始位置 = (H - h) / 2
+  translateY.value = (cropSize.value - displayH.value) / 2
+}
+
+// ——— 遮罩尺寸（裁剪框外到屏幕边缘）———
 const maskTop = computed(() => Math.max(0, Math.floor((bodyH.value - cropSize.value) / 2)))
 const maskLeft = computed(() => Math.max(0, Math.floor((screenW.value - cropSize.value) / 2)))
-// 裁剪框绝对定位坐标
 const cropTopPx = computed(() => Math.floor((bodyH.value - cropSize.value) / 2))
 const cropLeftPx = computed(() => Math.floor((screenW.value - cropSize.value) / 2))
 
+// ——— 图片样式：transform-origin: left top + transform ———
+const imgStyle = computed(() => {
+  return `width:${imgNaturalW}px;height:${imgNaturalH}px;` +
+    `transform:translate3d(0,${translateY.value}px,0) scale(${scale.value});transform-origin:0 0;`
+})
+
+// ====== 触摸交互（只处理垂直） ======
+let touchStartY = 0
+let translateYStart = 0
+
+const onTouchStart = (e: any) => {
+  const touch = e.touches[0]
+  touchStartY = touch.clientY
+  translateYStart = translateY.value
+}
+
+const onTouchMove = (e: any) => {
+  if (!ready.value) return
+  const touch = e.touches[0]
+  // 按公式6: 只取 deltaY，完全忽略 deltaX
+  const deltaY = touch.clientY - touchStartY
+  let newY = translateYStart + deltaY
+
+  // 按公式5: 硬边界 [H-h, 0]
+  const h = displayH.value
+  const H = cropSize.value
+  if (h <= H) {
+    // 横图高度不足 -> 居中固定，不允许拖动
+    newY = (H - h) / 2
+  } else {
+    const minY = H - h   // 底部对齐
+    const maxY = 0       // 顶部对齐
+    newY = Math.max(minY, Math.min(maxY, newY))
+  }
+
+  translateY.value = newY
+}
+
+const onTouchEnd = () => {
+  if (!ready.value) return
+  const h = displayH.value
+  const H = cropSize.value
+  if (h <= H) return // 无需回弹
+
+  // 按公式6: 松手后超出边界则回弹
+  if (translateY.value > 0) {
+    translateY.value = 0
+  } else if (translateY.value < (H - h)) {
+    translateY.value = H - h
+  }
+}
+
+// ====== 生命周期 ======
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
@@ -115,43 +175,36 @@ onMounted(() => {
   screenW.value = sysInfo.windowWidth || 375
   const screenH = sysInfo.windowHeight || 667
 
-  // 导航栏 + 底部栏高度
   const navH = 88
   const navPx = Math.round(navH * screenW.value / 750)
   const bottomBarH = 64
 
-  // 可视裁剪区域高度
   bodyH.value = screenH - navPx - statusBarHeight.value - bottomBarH - safeBottom.value
-
-  // 裁剪框边长：屏幕宽度的 80%
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 获取图片：模块变量（已含路径+尺寸），兜底 URL 参数
+  // 从 bridge 获取图片数据
   const bridgeData = getAndClearCropImageData()
-  let src: string
   if (bridgeData) {
-    src = bridgeData.path
+    imageSrc.value = bridgeData.path
     imgNaturalW = bridgeData.width
     imgNaturalH = bridgeData.height
+    initTranslateY()
+    ready.value = true
   } else {
-    src = (() => {
+    // 兜底：URL 参数
+    const src = (() => {
       const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
       return p ? decodeURIComponent(p) : ''
     })()
-  }
-  if (src) {
-    imageSrc.value = src
-    if (bridgeData) {
-      // 已有尺寸，直接初始化布局
-      initCropLayout()
-    } else {
-      // 兜底：走 getImageInfo
+    if (src) {
       uni.getImageInfo({
-        src: src,
+        src,
         success: (info) => {
+          imageSrc.value = src
           imgNaturalW = info.width
           imgNaturalH = info.height
-          initCropLayout()
+          initTranslateY()
+          ready.value = true
         },
         fail: () => {
           uni.showToast({ title: '加载图片失败', icon: 'none' })
@@ -161,33 +214,7 @@ onMounted(() => {
   }
 })
 
-const onMove = (e: any) => {
-  currentY.value = e.detail.y || 0
-  currentX.value = e.detail.x ?? currentX.value
-}
-
-/** 根据已获取的图片尺寸初始化裁剪布局 */
-const initCropLayout = () => {
-  // 图片以填充宽度为基准显示在 movable-view 中，高度按比例
-  const displayW = cropSize.value
-  const ratio = imgNaturalW / imgNaturalH
-  const w = displayW
-  const h = displayW / ratio
-
-  movableW.value = Math.round(w)
-  movableH.value = Math.round(h)
-
-  areaW.value = screenW.value
-  areaH.value = bodyH.value
-
-  // X: 居中对齐裁剪框
-  movableX.value = Math.round((screenW.value - movableW.value) / 2)
-  // Y: 图片垂直居中于裁剪区域
-  movableY.value = Math.round((bodyH.value - movableH.value) / 2)
-  currentX.value = movableX.value
-  currentY.value = movableY.value
-}
-
+// ====== 按钮 ======
 const handleCancel = () => {
   uni.navigateBack({ delta: 1 })
 }
@@ -202,37 +229,25 @@ const handleConfirm = () => {
   uni.showLoading({ title: '裁剪中...' })
 
   const cropW = cropSize.value
-  const containerW = movableW.value
-  const containerH = movableH.value
+  const s = scale.value
 
-  // 图片以 aspectFill 填充 movable-view 时的渲染尺寸和偏移（无缩放，s=1）
-  const fillScale = Math.max(containerW / imgNaturalW, containerH / imgNaturalH)
-  const renderedW = imgNaturalW * fillScale
-  const renderedH = imgNaturalH * fillScale
-  const offsetInsideX = (containerW - renderedW) / 2
-  const offsetInsideY = (containerH - renderedH) / 2
+  // 裁剪区域在图片上的源坐标（公式推导见下方注释）
+  // 图片在 crop-box 中以 transform-origin: left top 绝对定位
+  // 显示位置: (0, translateY), 大小为 (imgNaturalW*s, imgNaturalH*s)
+  // 裁剪框可见区域: (0, 0, cropW, cropW) 在 crop-box 内
+  // 对应图片原图坐标: sx=0, sy=-translateY/s, sw=cropW/s, sh=cropW/s
+  const sy = Math.round(-translateY.value / s)
+  const sw = Math.round(cropW / s)
+  const sh = Math.round(cropW / s)
 
-  // 图片在当前坐标系的视觉位置
-  const imgVisualLeft = currentX.value + offsetInsideX
-  const imgVisualTop = currentY.value + offsetInsideY
+  // 边界钳位（防御性，正常拖动下 translateY 已在范围内 => sy 也应在范围内）
+  const srcX = 0
+  const srcY = Math.max(0, Math.min(sy, Math.max(0, imgNaturalH - sh)))
+  const srcW = Math.min(sw, imgNaturalW)
+  const srcH = Math.min(sh, imgNaturalH - srcY)
 
-  // 裁剪框在 crop-body 中居中
-  const cropLeft = (screenW.value - cropW) / 2
-  const cropTop = (bodyH.value - cropW) / 2
-
-  // 裁剪框相对于显示图片的偏移
-  const relX = cropLeft - imgVisualLeft
-  const relY = cropTop - imgVisualTop
-
-  // 映射回原图像素坐标
-  const sx = Math.round(relX / renderedW * imgNaturalW)
-  const sy = Math.round(relY / renderedH * imgNaturalH)
-  const sw = Math.round(cropW / renderedW * imgNaturalW)
-  const sh = Math.round(cropW / renderedH * imgNaturalH)
-
-  // 裁剪到 canvas
   const ctx = uni.createCanvasContext('cropCanvas')
-  ctx.drawImage(imageSrc.value, sx, sy, sw, sh, 0, 0, cropW, cropW)
+  ctx.drawImage(imageSrc.value, srcX, srcY, srcW, srcH, 0, 0, cropW, cropW)
   ctx.draw(false, () => {
     setTimeout(() => {
       uni.canvasToTempFilePath({
@@ -246,11 +261,11 @@ const handleConfirm = () => {
         success: (res: any) => {
           uni.hideLoading()
           const resultPath = res.tempFilePath
-          const pages = getCurrentPages()
-          const prevPage = pages.length >= 2 ? pages[pages.length - 2] : null
 
           // eventChannel 通知返回页面
           try {
+            const pages = getCurrentPages()
+            const prevPage = pages.length >= 2 ? pages[pages.length - 2] : null
             if ((prevPage as any)?.getOpenerEventChannel) {
               ;(prevPage as any).getOpenerEventChannel().emit('cropped', { path: resultPath })
             }
@@ -258,9 +273,7 @@ const handleConfirm = () => {
             console.error('eventChannel emit 失败:', e)
           }
 
-          // 全局事件兜底
           uni.$emit('IMAGE_CROPPED', { path: resultPath })
-
           uni.navigateBack({ delta: 1 })
         },
         fail: (err: any) => {
@@ -336,29 +349,20 @@ const handleConfirm = () => {
   background: #1a1a1a;
 }
 
-// movable-area 与 crop-body 等大，从 (0,0) 开始
-.crop-movable-area {
+// ===== 裁剪框容器 =====
+.crop-box {
+  position: absolute;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.crop-img {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 1;
-  background: transparent;
 }
 
-.crop-movable {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-}
-
-.crop-image {
-  width: 100%;
-  height: 100%;
-  background: transparent;
-}
-
-// 遮罩层（四块，盖住裁剪框外的区域）
+// ===== 遮罩层 =====
 .crop-mask-top,
 .crop-mask-bottom,
 .crop-mask-left,
@@ -393,7 +397,7 @@ const handleConfirm = () => {
   right: 0;
 }
 
-// 裁剪框 — 绝对居中（位置由 cropLeftPx/cropTopPx 计算）
+// ===== 裁剪框边框 + 四角 =====
 .crop-frame {
   position: absolute;
   z-index: 3;
@@ -401,7 +405,6 @@ const handleConfirm = () => {
   border: 2px solid #07C160;
 }
 
-// 四角标记
 .corner {
   position: absolute;
   width: 24rpx;
