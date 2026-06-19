@@ -72,6 +72,11 @@ export const useSystemStore = defineStore('system', () => {
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
+  /** AI功能开关配置 */
+  const aiMasterEnabled = ref<boolean>(true)
+  const aiFeatures = ref<Record<string, boolean>>({})
+  let aiConfigLoadedAt = 0
+  const AI_CONFIG_CACHE_MS = 5 * 60 * 1000 // 5分钟缓存过期
   let initialLoadDone = false
 
   const loadSystemConfig = async () => {
@@ -139,6 +144,47 @@ export const useSystemStore = defineStore('system', () => {
         console.error('[SystemStore] Failed to parse system config:', e)
       }
     }
+
+    // 从本地缓存恢复 AI 开关（过期后会重新请求）
+    const aiCached = uni.getStorageSync('aiFeatureConfig')
+    if (aiCached) {
+      try {
+        const parsed = JSON.parse(aiCached)
+        aiMasterEnabled.value = parsed.masterEnabled !== undefined ? parsed.masterEnabled : true
+        aiFeatures.value = parsed.features || {}
+        aiConfigLoadedAt = parsed._ts || 0
+      } catch { /* ignore */ }
+    }
+  }
+
+  /** 加载 AI 功能开关配置（带5分钟缓存） */
+  const loadAiFeatureConfig = async () => {
+    const now = Date.now()
+    if (now - aiConfigLoadedAt < AI_CONFIG_CACHE_MS && aiConfigLoadedAt > 0) {
+      return // 缓存未过期，直接使用
+    }
+    try {
+      const res = await get<any>('/ai/feature-config')
+      if (res) {
+        aiMasterEnabled.value = res.masterEnabled !== undefined ? res.masterEnabled : true
+        aiFeatures.value = res.features || {}
+        aiConfigLoadedAt = now
+        // 缓存到本地 storage
+        uni.setStorageSync('aiFeatureConfig', JSON.stringify({
+          masterEnabled: aiMasterEnabled.value,
+          features: aiFeatures.value,
+          _ts: now,
+        }))
+      }
+    } catch (e) {
+      console.error('[SystemStore] Failed to load AI feature config:', e)
+    }
+  }
+
+  /** 检查某个 AI 功能是否可用 */
+  const isAiFeatureEnabled = (featureKey: string): boolean => {
+    if (!aiMasterEnabled.value) return false
+    return aiFeatures.value[featureKey] === true
   }
 
   const saveToStorage = () => {
@@ -182,5 +228,9 @@ export const useSystemStore = defineStore('system', () => {
     loadSystemConfig,
     loadDicts,
     saveToStorage,
+    loadAiFeatureConfig,
+    isAiFeatureEnabled,
+    aiMasterEnabled,
+    aiFeatures,
   }
 })

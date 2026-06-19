@@ -106,6 +106,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '选项配置', requiresAuth: true },
       },
       {
+        path: '/system/ai-switch',
+        name: 'AiSwitch',
+        component: () => import('../views/ai/switch.vue'),
+        meta: { title: 'AI功能开关', requiresAuth: true },
+      },
+      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),

@@ -69,6 +69,7 @@ import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 import { NotifyChannelService } from './notify-channel.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
+import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { NotifyLog } from '../entities/NotifyLog'
       CirclePost,
       ProfileVisit,
       NotifyLog,
+      AiFeatureSwitchLog,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',

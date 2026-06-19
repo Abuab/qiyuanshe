@@ -39,6 +39,7 @@ import {
   AiUserProfile,
   AiCallLog,
   ContentSafetyAudit,
+  AiFeatureSwitchLog,
 } from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -57,6 +58,7 @@ import { RegionModule } from './region/region.module'
 import { CircleModule } from './circle/circle.module'
 import { SuccessCaseModule } from './success-case/success-case.module'
 import { MatchmakerCommentModule } from './matchmaker-comment/matchmaker-comment.module'
+import { AiModule } from './ai/ai.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
@@ -106,6 +108,7 @@ import { RedisService } from './common/redis.service'
       AiUserProfile,
       AiCallLog,
       ContentSafetyAudit,
+      AiFeatureSwitchLog,
     ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
@@ -129,6 +132,7 @@ import { RedisService } from './common/redis.service'
     SuccessCaseModule,
     MatchmakerCommentModule,
     VipModule,
+    AiModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],
