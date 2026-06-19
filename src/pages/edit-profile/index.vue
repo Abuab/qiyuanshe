@@ -533,7 +533,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
@@ -738,6 +738,11 @@ const confirmPersonalityPicker = () => {
 
 // ===== 初始化 =====
 onMounted(async () => {
+  // 监听裁剪完成事件（备用通道）
+  uni.$on('IMAGE_CROPPED', (data: any) => {
+    if (data?.path) handleCroppedAvatar(data.path)
+  })
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
@@ -871,16 +876,22 @@ const chooseAvatarWithCrop = () => {
 
 /** 处理裁剪后的头像上传 */
 const handleCroppedAvatar = async (filePath: string) => {
+  console.log('[编辑资料] 收到裁剪结果, path:', filePath)
+  if (!filePath) {
+    uni.showToast({ title: '裁剪结果无效', icon: 'none' })
+    return
+  }
   uni.showLoading({ title: '上传中...' })
   try {
     const uploadRes = await uploadImage(filePath)
+    console.log('[编辑资料] 上传成功:', uploadRes)
     form.value.avatar = uploadRes.url
     await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl: uploadRes.url } } as any)
     form.value.avatarReviewStatus = 0
     uni.showToast({ title: '已提交审核', icon: 'success' })
   } catch (err: unknown) {
     const error = err as Error
-    console.error('头像上传失败:', error)
+    console.error('[编辑资料] 头像上传失败:', error)
     const msg = error.message === 'Unauthorized' ? '请先登录' : '上传失败，请重试'
     uni.showToast({ title: msg, icon: 'none' })
   } finally {
@@ -1152,6 +1163,10 @@ const handleSave = async () => {
 const handleBack = () => {
   uni.navigateBack({ delta: 1 })
 }
+
+onUnmounted(() => {
+  uni.$off('IMAGE_CROPPED')
+})
 </script>
 
 <style lang="scss" scoped>
