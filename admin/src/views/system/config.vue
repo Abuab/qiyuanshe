@@ -109,6 +109,15 @@
               <div class="form-tip">前台显示的红线名称，可自定义为：钥匙、心动卡、鹊桥令等</div>
             </el-form-item>
 
+            <el-form-item label="会员卡片轮播文案">
+              <div v-for="(txt, idx) in basicConfig.vipCardTexts" :key="idx" style="margin-bottom:6px">
+                <el-input v-model="basicConfig.vipCardTexts[idx]" :placeholder="['限时特惠，尊享VIP特权','每日签到领金币，解锁更多功能','开通VIP，优先匹配心仪TA'][idx]" style="width:100%">
+                  <template #append>{{ idx + 1 }}</template>
+                </el-input>
+              </div>
+              <div class="form-tip">我的页会员卡片栏轮播展示的文字（3条）</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -532,6 +541,7 @@ const basicConfig = reactive({
   followEmptyText: '您还木有关注任何人~',
   followerEmptyText: '还木有人关注您~',
   redLineTerm: '红线',
+  vipCardTexts: ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'],
 })
 
 const shareConfig = reactive({

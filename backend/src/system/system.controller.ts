@@ -39,6 +39,7 @@ export class PublicSystemController {
       followerEmptyText: configs.basic?.followerEmptyText || '还木有人关注您~',
       loveQuotes: Array.isArray(configs.loveQuotes?.quotes) ? configs.loveQuotes.quotes : [],
       redLineTerm: await this.vipService.getRedLineTerm(),
+      vipCardTexts: configs.basic?.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'],
       icons: this.buildIconConfig(configs.icon || {}),
     }
 

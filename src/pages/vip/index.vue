@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '200rpx' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '120rpx' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -816,8 +816,8 @@ onShow(() => {
   right: 0;
   display: flex;
   align-items: center;
-  padding: 16px 24px;
-  padding-bottom: calc(220rpx + env(safe-area-inset-bottom));
+  padding: 12px 24px;
+  padding-bottom: calc(10rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 1000;

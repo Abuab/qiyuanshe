@@ -66,12 +66,22 @@
 
     <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }">
       <!-- ========== 会员卡片 ========== -->
-      <view class="vip-card" @tap="isVipValid ? goToVip() : showComingSoon()">
+      <view class="vip-card" @tap="goToVip">
         <view class="vip-card-left">
           <text class="vip-card-title">{{ isVipValid ? '会员已开通' : '尚未开通会员' }}</text>
-          <text class="vip-card-desc">会员权益：金币，给心意TA赠送礼物</text>
+          <view class="vip-card-carousel">
+            <text class="vip-card-desc">{{ vipCardTexts[currentCarouselIdx] }}</text>
+          </view>
+          <view class="vip-card-dots" v-if="vipCardTexts.length > 1">
+            <view
+              v-for="(_, idx) in vipCardTexts"
+              :key="idx"
+              class="vip-card-dot"
+              :class="{ active: idx === currentCarouselIdx }"
+            />
+          </view>
         </view>
-        <view class="vip-card-btn">
+        <view class="vip-card-btn" :class="{ active: isVipValid }">
           <text>{{ isVipValid ? '已开通' : '开通服务' }}</text>
         </view>
       </view>
@@ -163,7 +173,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, reactive } from 'vue'
+import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
@@ -177,10 +187,25 @@ const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
 
+// 会员卡片轮播
+const vipCardTexts = computed(() => systemStore.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
+const currentCarouselIdx = ref(0)
+let carouselTimer: ReturnType<typeof setInterval> | null = null
+
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   loadStats()
+  // 启动会员卡片轮播（3秒切换一次）
+  if (vipCardTexts.value.length > 1) {
+    carouselTimer = setInterval(() => {
+      currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
+    }, 3000)
+  }
+})
+
+onUnmounted(() => {
+  if (carouselTimer) clearInterval(carouselTimer)
 })
 
 const avatarSrc = computed(() => {
@@ -501,6 +526,28 @@ const toolGrid7 = [
   color: rgba(255, 255, 255, 0.7);
 }
 
+.vip-card-carousel {
+  min-height: 32rpx;
+  overflow: hidden;
+}
+
+.vip-card-dots {
+  display: flex;
+  gap: 6rpx;
+  margin-top: 8rpx;
+}
+
+.vip-card-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+
+  &.active {
+    background: rgba(255, 255, 255, 0.9);
+  }
+}
+
 .vip-card-btn {
   width: 120rpx;
   height: 120rpx;
@@ -515,6 +562,14 @@ const toolGrid7 = [
     font-size: 24rpx;
     color: #333;
     font-weight: bold;
+  }
+
+  &.active {
+    background: rgba(255, 255, 255, 0.25);
+
+    text {
+      color: #fff;
+    }
   }
 }
 
