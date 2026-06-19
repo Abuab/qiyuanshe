@@ -86,6 +86,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { getAndClearCropImagePath } from '@/utils/crop-bridge'
 
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
@@ -130,10 +131,11 @@ onMounted(() => {
   // 裁剪框边长：屏幕宽度的 80%
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 获取图片：从 app.globalData 读取（绕过 URL 编码和 storage 的不可靠性）
-  const app = getApp() as any
-  const src = app?.globalData?.cropImageSrc || ''
-  if (app?.globalData) delete app.globalData.cropImageSrc
+  // 获取图片：模块变量（主要渠道），兜底 URL 参数解码
+  const src = getAndClearCropImagePath() || (() => {
+    const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
+    return p ? decodeURIComponent(p) : ''
+  })()
   if (src) {
     imageSrc.value = src
     uni.getImageInfo({

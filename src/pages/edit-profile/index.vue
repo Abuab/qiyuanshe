@@ -557,6 +557,7 @@ import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
+import { setCropImagePath } from '@/utils/crop-bridge'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
@@ -894,9 +895,8 @@ const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
     sourceType: [sourceType],
     success: (res) => {
       const tempPath = res.tempFilePaths[0]
-      // 通过 app.globalData 传递图片路径（避免 URL 编码/长度限制导致 getImageInfo 失败）
-      const app = getApp() as any
-      app.globalData.cropImageSrc = tempPath
+      // 通过模块级变量传递路径，绕过 URL 编码 / storage / globalData 所有不可靠渠道
+      setCropImagePath(tempPath)
       uni.navigateTo({
         url: '/pages/image-crop/index',
         events: {
