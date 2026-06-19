@@ -530,10 +530,11 @@
           <div class="form-tip">选择套餐后自动填充等级和有效期</div>
         </el-form-item>
         <el-form-item label="VIP等级" required>
-          <el-select v-model="vipForm.level" style="width: 200px">
+          <el-select v-model="vipForm.level" style="width: 200px" :disabled="!!vipForm.packageId">
             <el-option label="普通用户" :value="0" />
             <el-option label="会员" :value="1" />
           </el-select>
+          <div v-if="vipForm.packageId" class="form-tip">已选择套餐，等级自动锁定为会员</div>
         </el-form-item>
         <el-form-item label="有效期">
           <el-input-number v-model="vipForm.days" :min="1" :max="3650" />
