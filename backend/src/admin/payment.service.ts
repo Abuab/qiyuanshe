@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Raw } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
+import { VipPackage } from '../entities/VipPackage'
 import { User } from '../entities/User'
 
 interface OrderFilter {
@@ -22,6 +23,8 @@ export class AdminPaymentService {
     private readonly orderRepository: Repository<VipOrder>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(VipPackage)
+    private readonly packageRepository: Repository<VipPackage>,
   ) {}
 
   async orders(filter: OrderFilter) {
@@ -97,10 +100,35 @@ export class AdminPaymentService {
   }
 
   async refund(orderId: number, reason: string) {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } })
+    const order = await this.orderRepository.findOne({ where: { id: orderId }, relations: ['package'] })
     if (!order) return
 
     await this.orderRepository.update(orderId, { status: 2 })
+
+    // 退费后扣减用户会员到期时间
+    if (order.userId && order.package) {
+      const user = await this.userRepository.findOne({ where: { id: order.userId } })
+      if (user && user.vipExpireTime) {
+        const expireDate = new Date(user.vipExpireTime)
+        const durationMs = (order.package.durationDays || 30) * 24 * 60 * 60 * 1000
+        const newExpire = new Date(expireDate.getTime() - durationMs)
+        const now = new Date()
+
+        if (newExpire <= now) {
+          // 到期日已过 → 取消VIP
+          await this.userRepository.update(order.userId, {
+            isVip: 0,
+            vipLevel: 0,
+            vipExpireTime: null,
+            vipPackageName: '',
+          })
+        } else {
+          await this.userRepository.update(order.userId, {
+            vipExpireTime: newExpire,
+          })
+        }
+      }
+    }
   }
 
   async getStats(params: { timeRange?: string; startDate?: string; endDate?: string }) {

@@ -859,17 +859,17 @@ onShow(() => {
   height: 60px;
 }
 
-// ===== 底部支付栏（深色风格） =====
+// ===== 底部支付栏（深色椭圆形风格） =====
 .bottom-bar {
   position: fixed;
   bottom: 120rpx;
-  left: 0;
-  right: 0;
+  left: 24rpx;
+  right: 24rpx;
   display: flex;
   align-items: center;
-  padding: 14px 24px;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  padding: 12px 20px 12px 24px;
   background: #2d2d2d;
+  border-radius: 999px;
   z-index: 1000;
 }
 
@@ -922,16 +922,16 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(120rpx + 64px + env(safe-area-inset-bottom));
+  bottom: calc(120rpx + 50px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;
   padding: 8px 24px 8px;
-  background: #3a3a3a;
+  background: transparent;
   z-index: 999;
 
   text {
-    font-size: 24rpx;
+    font-size: 28rpx;
     color: #FF6B9D;
     font-weight: 600;
   }

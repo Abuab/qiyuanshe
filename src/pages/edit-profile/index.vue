@@ -1048,8 +1048,12 @@ const handleSave = async () => {
   uni.showLoading({ title: '保存中...' })
 
   try {
+    // 头像自动同步：使用主图（第一张照片），确保上传照片后头像即时生效
+    const mainPhoto = photos.value.find((p: any) => Number(p.isMain) === 1) || photos.value[0]
+    const avatarToSave = mainPhoto ? (mainPhoto.photoUrl || mainPhoto.url) : form.value.avatar
+
     const data: Record<string, unknown> = {
-      avatar: form.value.avatar,
+      avatar: avatarToSave,
       gender: form.value.gender,
       birthYear: form.value.birthYear,
       height: form.value.height ? Number(form.value.height) : undefined,
