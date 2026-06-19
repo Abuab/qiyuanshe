@@ -288,9 +288,11 @@ export class AuthService {
       isVip: user.isVip,
       vipLevel: user.vipLevel,
       vipExpireTime: user.vipExpireTime,
+      vipPackageName: user.vipPackageName || '',
       status: user.status,
       lastLoginAt: user.lastLoginAt,
       createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     }
 
     if (includePhone) {

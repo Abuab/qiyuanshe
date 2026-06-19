@@ -27,7 +27,7 @@
       v-if="activeTab === 'vip'"
       class="tab-content"
       scroll-y
-      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '120rpx' }"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '200rpx' }"
     >
       <!-- 头部特权 -->
       <view class="header-section">
@@ -288,13 +288,14 @@ const vipActionButtonText = computed(() => {
 })
 const vipActionHint = computed(() => {
   if (!userStore.isVipValid) return ''
+  const pkgLabel = currentVipName.value || '会员'
   if (!selectedPackage.value) {
-    return '当前为' + currentVipName.value + '，可续期或选择更长套餐升级'
+    return '当前为' + pkgLabel + '，可续期或选择更长套餐升级'
   }
   if (selectedPackage.value.durationDays <= currentVipDays.value) {
-    return '当前为' + currentVipName.value + '，续期后有效期将延长'
+    return '当前为' + pkgLabel + '，续期后有效期将延长'
   }
-  return '当前为' + currentVipName.value + '，升级为新套餐后将按新套餐生效'
+  return '当前为' + pkgLabel + '，升级为新套餐后将按新套餐生效'
 })
 
 const selectPackage = (pkg: VipPackageItem) => {
@@ -476,22 +477,32 @@ function handleBack() {
   safeNavigateBack()
 }
 
-// ===== 初始化 =====
-onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
+const fetchPackagesAndProfile = async () => {
+  await fetchPackages()
+  // 刷新用户信息以获取最新 vipPackageName
+  if (userStore.isLoggedIn) {
+    try {
+      const res: any = await get('/auth/profile')
+      if (res) {
+        userStore.updateProfile({ ...res, vipPackageName: res.vipPackageName || '' })
+      }
+    } catch (_) { /* 忽略 */ }
+  }
+}
 
-  fetchPackages()
+// ===== 生命周期 =====
+onMounted(() => {
+  const systemInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = systemInfo.statusBarHeight || 20
+
+  fetchPackagesAndProfile()
   fetchCustomConfig()
   fetchAboutConfig()
   fetchSafetyTips()
 })
 
-// tabBar 页面重新进入时刷新套餐数据
 onShow(() => {
-  if (packages.value.length === 0) {
-    fetchPackages()
-  }
+  fetchPackagesAndProfile()
 })
 </script>
 
@@ -713,11 +724,8 @@ onShow(() => {
   color: #999;
   text-align: center;
   margin-bottom: 12px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4;
+  line-height: 1.5;
+  word-break: break-all;
 }
 
 .card-price {
@@ -850,8 +858,7 @@ onShow(() => {
   right: 0;
   display: flex;
   align-items: center;
-  padding: 12px 24px;
-  padding-bottom: calc(10rpx + env(safe-area-inset-bottom));
+  padding: calc(12px + env(safe-area-inset-bottom)) 24px 12px;
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 1000;
@@ -906,16 +913,17 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(60px + env(safe-area-inset-bottom));
+  bottom: calc(65px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;
-  padding: 6px 24px;
+  padding: 6px 24px 10px;
   background: #FFF8FA;
-  z-index: 999;
+  z-index: 1001;
+  white-space: nowrap;
 
   text {
-    font-size: 22rpx;
+    font-size: 24rpx;
     color: #FF6B9D;
   }
 }

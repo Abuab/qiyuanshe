@@ -96,6 +96,7 @@ export const useUserStore = defineStore('user', () => {
     const updates: Partial<UserInfo> = {}
     if (typeof data.nickname === 'string') updates.nickname = data.nickname
     if (typeof data.avatar === 'string') updates.avatar = data.avatar
+    if (typeof data.updatedAt === 'string') updates.updatedAt = data.updatedAt
     if (typeof data.gender === 'number') updates.gender = data.gender
     if (typeof data.birthYear === 'number') updates.birthYear = data.birthYear
     if (typeof data.height === 'number') updates.height = data.height
