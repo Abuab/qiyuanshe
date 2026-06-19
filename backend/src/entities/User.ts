@@ -34,6 +34,10 @@ export class User {
   @Column({ type: 'varchar', length: 500, default: '' })
   avatar: string
 
+  /** 头像审核状态: 0=待审核, 1=已通过, 2=已拒绝, null=无审核 */
+  @Column({ type: 'tinyint', nullable: true, default: null })
+  avatarReviewStatus: number
+
   @Index({ unique: true })
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone: string

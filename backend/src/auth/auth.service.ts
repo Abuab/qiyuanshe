@@ -268,6 +268,7 @@ export class AuthService {
       id: user.id,
       nickname: user.nickname,
       avatar: user.avatar,
+      avatarReviewStatus: user.avatarReviewStatus,
       gender: user.gender,
       birthYear: user.birthYear,
       height: user.height,

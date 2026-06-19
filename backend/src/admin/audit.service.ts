@@ -124,12 +124,14 @@ export class AdminAuditService {
     if (audit.targetType === 'photo' && audit.targetId) {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 1 })
     } else if (audit.targetType === 'avatar' && audit.targetId) {
-      // 头像审核通过：从 content 中解析 url 并更新到 user.avatar
+      // 头像审核通过：从 content 中解析 url 并更新到 user.avatar，同时清除待审核状态
       try {
         const data = JSON.parse(audit.content || '{}')
+        const updates: Record<string, any> = { avatarReviewStatus: 1 }
         if (data.url) {
-          await this.userRepository.update(audit.targetId, { avatar: data.url })
+          updates.avatar = data.url
         }
+        await this.userRepository.update(audit.targetId, updates)
       } catch { /* content 非 JSON 时跳过 */ }
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 1 })
@@ -207,6 +209,9 @@ export class AdminAuditService {
 
     if (audit.targetType === 'photo' && audit.targetId) {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 2 })
+    } else if (audit.targetType === 'avatar' && audit.targetId) {
+      // 头像审核拒绝：标记为已拒绝状态
+      await this.userRepository.update(audit.targetId, { avatarReviewStatus: 2 })
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 2 })
     } else if (audit.targetType === 'user_create' && audit.targetId) {

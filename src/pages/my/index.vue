@@ -69,7 +69,16 @@
       </view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }">
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      enable-flex
+      refresher-enabled
+      :refresher-triggered="refreshingVisible"
+      refresher-threshold="80"
+      @refresherrefresh="onRefresherRefresh"
+      :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }"
+    >
       <!-- ========== 会员卡片 ========== -->
       <view class="vip-card" @tap="goToVip">
         <view class="vip-card-left">
@@ -184,6 +193,7 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
+const refreshingVisible = ref(false)  // 下拉刷新状态
 
 // 会员卡片轮播
 const vipCardTexts = computed(() => systemStore.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
@@ -204,9 +214,14 @@ onMounted(() => {
 
 onShow(() => {
   loadStats()
-  // 刷新用户头像等最新信息
   refreshProfile()
 })
+
+const onRefresherRefresh = async () => {
+  refreshingVisible.value = true
+  await Promise.all([refreshProfile(), loadStats()])
+  refreshingVisible.value = false
+}
 
 onUnmounted(() => {
   if (carouselTimer) clearInterval(carouselTimer)

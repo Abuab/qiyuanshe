@@ -98,6 +98,8 @@ export const useUserStore = defineStore('user', () => {
     if (typeof data.nickname === 'string') updates.nickname = data.nickname
     if (typeof data.avatar === 'string') updates.avatar = data.avatar
     if (typeof data.avatarReviewStatus === 'number') updates.avatarReviewStatus = data.avatarReviewStatus
+    // 后端返回 null 时也清除审核状态（新用户或从未提交审核的头像）
+    if ('avatarReviewStatus' in data && data.avatarReviewStatus === null) updates.avatarReviewStatus = 1
     if (typeof data.updatedAt === 'string') updates.updatedAt = data.updatedAt
     if (typeof data.gender === 'number') updates.gender = data.gender
     if (typeof data.birthYear === 'number') updates.birthYear = data.birthYear

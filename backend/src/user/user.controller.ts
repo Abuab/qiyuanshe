@@ -127,6 +127,8 @@ export class UserController {
       content: JSON.stringify({ url: body.avatarUrl, type: 'avatar' }),
     })
     await this.auditLogRepo.save(auditLog)
+    // 标记头像为待审核状态
+    await this.userRepo.update(userId, { avatarReviewStatus: 0, avatar: body.avatarUrl })
     // 发送即时审核通知（与照片上传流程一致）
     this.notifyService.sendAuditNotify({
       type: 'photo',
