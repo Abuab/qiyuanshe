@@ -30,11 +30,7 @@
           :x="movableX"
           :y="movableY"
           @change="onMove"
-          :scale="true"
-          :scale-min="1"
-          :scale-max="4"
-          @scale="onScale"
-          :inertia="true"
+          :inertia="false"
         >
           <image
             :src="imageSrc"
@@ -100,7 +96,6 @@ const movableW = ref(0)
 const movableH = ref(0)
 const movableX = ref(0)
 const movableY = ref(0)
-const currentScale = ref(1)
 const currentX = ref(0)
 const currentY = ref(0)
 let imgNaturalW = 0
@@ -167,39 +162,30 @@ onMounted(() => {
 })
 
 const onMove = (e: any) => {
-  // 仅记录原始位置，不做 clamping（避免与原生 movable-view 冲突产生回弹）
   currentY.value = e.detail.y || 0
-  // direction="vertical" 时 X 不变，但仍记录以防万一
   currentX.value = e.detail.x ?? currentX.value
 }
 
 /** 根据已获取的图片尺寸初始化裁剪布局 */
 const initCropLayout = () => {
+  // 图片以填充宽度为基准显示在 movable-view 中，高度按比例
   const displayW = cropSize.value
   const ratio = imgNaturalW / imgNaturalH
-  let w = displayW
-  let h = displayW / ratio
-  if (Math.abs(ratio - 1) < 0.01) {
-    h = displayW
-    w = displayW
-  }
+  const w = displayW
+  const h = displayW / ratio
+
   movableW.value = Math.round(w)
   movableH.value = Math.round(h)
 
   areaW.value = screenW.value
   areaH.value = bodyH.value
 
+  // X: 居中对齐裁剪框
   movableX.value = Math.round((screenW.value - movableW.value) / 2)
+  // Y: 图片垂直居中于裁剪区域
   movableY.value = Math.round((bodyH.value - movableH.value) / 2)
   currentX.value = movableX.value
   currentY.value = movableY.value
-}
-
-const onScale = (e: any) => {
-  currentScale.value = e.detail.scale || 1
-  // 仅记录，不写回 movableX/movableY 避免回弹
-  currentY.value = e.detail.y || 0
-  currentX.value = e.detail.x ?? currentX.value
 }
 
 const handleCancel = () => {
@@ -216,39 +202,33 @@ const handleConfirm = () => {
   uni.showLoading({ title: '裁剪中...' })
 
   const cropW = cropSize.value
-  const s = currentScale.value
   const containerW = movableW.value
   const containerH = movableH.value
 
-  // 图片以 aspectFill 填充 movable-view 时的渲染尺寸和偏移
+  // 图片以 aspectFill 填充 movable-view 时的渲染尺寸和偏移（无缩放，s=1）
   const fillScale = Math.max(containerW / imgNaturalW, containerH / imgNaturalH)
   const renderedW = imgNaturalW * fillScale
   const renderedH = imgNaturalH * fillScale
   const offsetInsideX = (containerW - renderedW) / 2
   const offsetInsideY = (containerH - renderedH) / 2
 
-  // 图片在 crop-body 坐标系中的视觉位置
-  // movable-view 缩放从中心扩展，因此视觉左/上 = 原始位置 - 扩展量的一半
-  const imgVisualLeft = currentX.value - (s - 1) * containerW / 2 + offsetInsideX * s
-  const imgVisualTop = currentY.value - (s - 1) * containerH / 2 + offsetInsideY * s
+  // 图片在当前坐标系的视觉位置
+  const imgVisualLeft = currentX.value + offsetInsideX
+  const imgVisualTop = currentY.value + offsetInsideY
 
   // 裁剪框在 crop-body 中居中
-  const cropCenterX = screenW.value / 2
-  const cropCenterY = bodyH.value / 2
-  const cropLeft = cropCenterX - cropW / 2
-  const cropTop = cropCenterY - cropW / 2
+  const cropLeft = (screenW.value - cropW) / 2
+  const cropTop = (bodyH.value - cropW) / 2
 
   // 裁剪框相对于显示图片的偏移
   const relX = cropLeft - imgVisualLeft
   const relY = cropTop - imgVisualTop
 
   // 映射回原图像素坐标
-  const displayImgW = renderedW * s
-  const displayImgH = renderedH * s
-  const sx = Math.round(relX / displayImgW * imgNaturalW)
-  const sy = Math.round(relY / displayImgH * imgNaturalH)
-  const sw = Math.round(cropW / displayImgW * imgNaturalW)
-  const sh = Math.round(cropW / displayImgH * imgNaturalH)
+  const sx = Math.round(relX / renderedW * imgNaturalW)
+  const sy = Math.round(relY / renderedH * imgNaturalH)
+  const sw = Math.round(cropW / renderedW * imgNaturalW)
+  const sh = Math.round(cropW / renderedH * imgNaturalH)
 
   // 裁剪到 canvas
   const ctx = uni.createCanvasContext('cropCanvas')
