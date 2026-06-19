@@ -1722,12 +1722,15 @@ onShow(async () => {
 
 .photo-delete-icon {
   position: absolute;
-  top: 6rpx;
-  right: 6rpx;
-  width: 40rpx;
-  height: 40rpx;
+  top: 2rpx;
+  right: 2rpx;
+  width: 44rpx;
+  height: 44rpx;
   z-index: 2;
-  filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.3));
+  background: rgba(60, 60, 60, 0.75);
+  border-radius: 50%;
+  padding: 8rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.45);
 
   .delete-icon-img {
     width: 100%;
@@ -1737,13 +1740,13 @@ onShow(async () => {
 
 .photo-delete-icon-text {
   position: absolute;
-  top: 6rpx;
-  right: 6rpx;
-  width: 40rpx;
-  height: 40rpx;
+  top: 2rpx;
+  right: 2rpx;
+  width: 44rpx;
+  height: 44rpx;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.35);
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.25);
+  background: rgba(60, 60, 60, 0.75);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1782,12 +1785,12 @@ onShow(async () => {
 }
 
 .photo-add-plus {
-  font-size: 72rpx;
+  font-size: 90rpx;
   color: #ccc;
   line-height: 1;
 
   &.subtle {
-    font-size: 56rpx;
+    font-size: 72rpx;
     color: #e0e0e0;
   }
 }

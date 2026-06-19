@@ -26,7 +26,7 @@
         <movable-view
           class="crop-movable"
           :style="{ width: movableW + 'px', height: movableH + 'px' }"
-          direction="all"
+          direction="vertical"
           :x="movableX"
           :y="movableY"
           @change="onMove"
@@ -45,19 +45,24 @@
         </movable-view>
       </movable-area>
 
-      <!-- 四块半透明遮罩盖住裁剪框外部 -->
-      <view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></view>
-      <view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></view>
-      <view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></view>
-      <view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></view>
+      <!-- 四块 cover-view 遮罩盖住裁剪框外部（cover-view 可覆盖原生 movable-area） -->
+      <cover-view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></cover-view>
+      <cover-view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></cover-view>
+      <cover-view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></cover-view>
+      <cover-view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></cover-view>
 
-      <!-- 裁剪框（居中） -->
-      <view class="crop-frame" :style="{ width: cropSize + 'px', height: cropSize + 'px' }">
-        <view class="corner corner-tl"></view>
-        <view class="corner corner-tr"></view>
-        <view class="corner corner-bl"></view>
-        <view class="corner corner-br"></view>
-      </view>
+      <!-- 裁剪框（cover-view 盖在 movable-area 上方） -->
+      <cover-view class="crop-frame" :style="{
+        width: cropSize + 'px',
+        height: cropSize + 'px',
+        top: cropTopPx + 'px',
+        left: cropLeftPx + 'px'
+      }">
+        <cover-view class="corner corner-tl"></cover-view>
+        <cover-view class="corner corner-tr"></cover-view>
+        <cover-view class="corner corner-bl"></cover-view>
+        <cover-view class="corner corner-br"></cover-view>
+      </cover-view>
     </view>
 
     <!-- 底部操作栏 -->
@@ -103,6 +108,9 @@ let imgNaturalH = 0
 // 遮罩大小 = 裁剪框外到屏幕边缘的距离
 const maskTop = computed(() => Math.max(0, Math.floor((bodyH.value - cropSize.value) / 2)))
 const maskLeft = computed(() => Math.max(0, Math.floor((screenW.value - cropSize.value) / 2)))
+// 裁剪框绝对定位坐标
+const cropTopPx = computed(() => Math.floor((bodyH.value - cropSize.value) / 2))
+const cropLeftPx = computed(() => Math.floor((screenW.value - cropSize.value) / 2))
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
@@ -162,14 +170,49 @@ onMounted(() => {
 })
 
 const onMove = (e: any) => {
-  currentX.value = e.detail.x || 0
-  currentY.value = e.detail.y || 0
+  const newY = e.detail.y || 0
+  clampVertical(newY)
 }
 
 const onScale = (e: any) => {
   currentScale.value = e.detail.scale || 1
-  currentX.value = e.detail.x || 0
-  currentY.value = e.detail.y || 0
+  const s = currentScale.value
+  // 缩放从中心扩展，保持水平居中对齐裁剪框
+  currentX.value = (screenW.value - movableW.value * s) / 2
+  movableX.value = Math.round(currentX.value)
+
+  // 钳位 Y
+  const newY = e.detail.y || 0
+  clampVertical(newY)
+}
+
+/** 钳位 Y 坐标，确保图片始终覆盖裁剪框（顶部不外露、底部不外露） */
+const clampVertical = (newY: number) => {
+  const s = currentScale.value
+  const cropTop = (bodyH.value - cropSize.value) / 2
+  const cropBottom = cropTop + cropSize.value
+  const containerH = movableH.value
+
+  // 图片视觉范围（缩放从中心扩展）
+  const visualTop = newY - (s - 1) * containerH / 2
+
+  // 允许的 Y 范围：图片必须覆盖整个裁剪框
+  const maxY = cropTop + (s - 1) * containerH / 2    // visualTop = cropTop 时
+  const minY = cropBottom - containerH * (s + 1) / 2  // visualBottom = cropBottom 时
+
+  // 自然边界 (movable-area 内)
+  const natMax = areaH.value - containerH * s
+
+  let clamped = newY
+  if (minY <= maxY) {
+    clamped = Math.max(minY, Math.min(maxY, newY))
+  }
+  clamped = Math.max(0, Math.min(natMax, clamped))
+
+  currentY.value = clamped
+  if (Math.abs(clamped - movableY.value) > 0.5) {
+    movableY.value = Math.round(clamped)
+  }
 }
 
 const handleCancel = () => {
@@ -380,12 +423,9 @@ const handleConfirm = () => {
   right: 0;
 }
 
-// 裁剪框 — 绝对居中
+// 裁剪框 — 绝对居中（位置由 cropLeftPx/cropTopPx 计算）
 .crop-frame {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   z-index: 3;
   pointer-events: none;
   border: 2px solid #07C160;

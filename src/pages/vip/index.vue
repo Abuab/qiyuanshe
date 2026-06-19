@@ -868,7 +868,7 @@ onShow(() => {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  gap: 56px;
+  gap: 70px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;
