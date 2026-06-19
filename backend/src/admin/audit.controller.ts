@@ -57,15 +57,16 @@ export class AdminAuditController {
       let notifyUserId = audit.targetId
       let notifyNickname = ''
       if (audit.targetType === 'photo') {
-        // 通过 photoId 查找 userId
         const photoInfo = await this.auditService.getPhotoInfo(audit.targetId)
         if (photoInfo) {
           notifyUserId = photoInfo.userId
           notifyNickname = photoInfo.nickname || ''
         }
       }
+      // avatar 审核也走 photo 通知通道（后台通知类型配置中为 photo）
+      const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
       this.notifyService.sendAuditNotify({
-        type: audit.targetType,
+        type: notifyType,
         content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
         userId: notifyUserId,
         userNickname: notifyNickname,

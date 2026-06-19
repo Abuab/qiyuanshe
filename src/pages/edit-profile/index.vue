@@ -29,6 +29,16 @@
               <text>更换头像</text>
             </view>
           </view>
+          <!-- 无照片但有头像时，显示头像 -->
+          <view v-else-if="form.avatar" class="photo-cell photo-cell-main" @tap="previewAvatar">
+            <image :src="getFullImageUrl(form.avatar)" mode="aspectFill" class="photo-cell-img" />
+            <view class="photo-watermark">{{ appName }}</view>
+            <view class="photo-main-label">头像/封面</view>
+            <view v-if="form.avatarReviewStatus === 0" class="photo-audit-overlay-large">待审核</view>
+            <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
+              <text>更换头像</text>
+            </view>
+          </view>
           <!-- 占位 - 空的第一张 -->
           <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="uploadPhoto">
             <text class="photo-add-plus">+</text>
@@ -1099,6 +1109,15 @@ const previewPhoto = (idx: number) => {
     current: idx,
     urls: photos.value.map((p: any) => getFullImageUrl(p.photoUrl || p.url)),
   })
+}
+
+const previewAvatar = () => {
+  if (form.value.avatar) {
+    uni.previewImage({
+      current: 0,
+      urls: [getFullImageUrl(form.value.avatar)],
+    })
+  }
 }
 
 // ===== 保存 =====

@@ -867,8 +867,8 @@ onShow(() => {
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  padding: 6px 14px;
-  gap: 20px;
+  padding: 4px 10px;
+  gap: 30px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;
@@ -878,33 +878,33 @@ onShow(() => {
 .bottom-price {
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: 4px;
 }
 
 .price-label {
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
 }
 
 .price-total {
-  font-size: 13px;
+  font-size: 14px;
   color: #fff;
 }
 
 .price-symbol-small {
-  font-size: 15px;
+  font-size: 16px;
   color: #fff;
   font-weight: 700;
 }
 
 .price-number {
-  font-size: 24px;
+  font-size: 26px;
   color: #fff;
   font-weight: 800;
 }
 
 .pay-btn {
-  padding: 8px 18px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   border-radius: 999px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
@@ -927,7 +927,7 @@ onShow(() => {
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
-  padding: 10px 24px;
+  padding: 6px 12px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
   border-radius: 999px;
@@ -935,7 +935,7 @@ onShow(() => {
   white-space: nowrap;
 
   text {
-    font-size: 28rpx;
+    font-size: 26rpx;
     color: #FF6B9D;
     font-weight: 600;
     text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.5);

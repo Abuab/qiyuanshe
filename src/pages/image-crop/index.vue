@@ -47,13 +47,7 @@
         </movable-view>
       </movable-area>
 
-      <!-- 半透明遮罩层（四块，挖空裁剪框） -->
-      <view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></view>
-      <view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></view>
-      <view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></view>
-      <view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></view>
-
-      <!-- 裁剪框边框 + 四角标 -->
+      <!-- 裁剪框边框 + 四角标，box-shadow 遮盖外部区域 -->
       <view class="crop-frame" :style="{ width: cropSize + 'px', height: cropSize + 'px' }">
         <view class="corner corner-tl"></view>
         <view class="corner corner-tr"></view>
@@ -355,53 +349,13 @@ const handleConfirm = () => {
   height: 100%;
 }
 
-// 遮罩层（四块）
-.crop-mask-top,
-.crop-mask-bottom,
-.crop-mask-left,
-.crop-mask-right {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.crop-mask-top {
-  top: 0;
-  left: 0;
-  right: 0;
-}
-
-.crop-mask-bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
-.crop-mask-left {
-  top: 0;
-  bottom: 0;
-  left: 0;
-}
-
-.crop-mask-right {
-  top: 0;
-  bottom: 0;
-  right: 0;
-}
-
-// 裁剪框（居中 via flex）
-.crop-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+// 使用 box-shadow 覆盖整个裁剪区域外部的遮罩
 .crop-frame {
   position: absolute;
   z-index: 3;
   pointer-events: none;
   border: 2px solid #07C160;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
 }
 
 // 四角标记
