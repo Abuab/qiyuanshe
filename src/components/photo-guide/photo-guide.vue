@@ -37,6 +37,9 @@
               </view>
             </view>
           </view>
+          <view class="bad-labels-row">
+            <text class="bad-label" v-for="(item, idx) in badExamples" :key="'blabel-' + idx">{{ item.label }}</text>
+          </view>
         </view>
       </scroll-view>
 
@@ -168,7 +171,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // ===== 可滚动主体 =====
 .guide-body {
   padding: 0 32rpx;
-  max-height: 680rpx;
+  max-height: 800rpx;
 }
 
 .guide-section {
@@ -296,10 +299,27 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   &::after { transform: translate(-50%, -50%) rotate(-45deg); }
 }
 
-// ===== 底部按钮区 =====
+// ===== 不合格图片下方描述文字 =====
+.bad-labels-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10rpx;
+  margin-top: 8rpx;
+}
+
+.bad-label {
+  width: 128rpx;
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #999999;
+  text-align: center;
+}
+
+// ===== 底部按钮区（上方分割线） =====
 .guide-actions {
   flex-shrink: 0;
   margin-top: 8rpx;
+  border-top: 1px solid #E5E5E5;
 }
 
 .action-btn {
