@@ -51,7 +51,6 @@ export class AdminAuditController {
     @Body('reason') reason?: string,
   ) {
     await this.auditService.approve(id, reason)
-    // 获取审核记录详情用于通知
     const audit = await this.auditService.getById(id)
     if (audit) {
       let notifyUserId = audit.targetId
@@ -62,8 +61,14 @@ export class AdminAuditController {
           notifyUserId = photoInfo.userId
           notifyNickname = photoInfo.nickname || ''
         }
+      } else if (audit.targetType === 'avatar') {
+        // 头像审核：targetId 即 userId，查用户昵称
+        const userInfo = await this.auditService.getUserInfo(audit.targetId)
+        if (userInfo) {
+          notifyNickname = userInfo.nickname || ''
+        }
       }
-      // avatar 审核也走 photo 通知通道（后台通知类型配置中为 photo）
+      // avatar 审核也走 photo 通知通道
       const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
       this.notifyService.sendAuditNotify({
         type: notifyType,
@@ -82,6 +87,31 @@ export class AdminAuditController {
     @Body('reason') reason: string,
   ) {
     await this.auditService.reject(id, reason)
+    const audit = await this.auditService.getById(id)
+    if (audit) {
+      let notifyUserId = audit.targetId
+      let notifyNickname = ''
+      if (audit.targetType === 'photo') {
+        const photoInfo = await this.auditService.getPhotoInfo(audit.targetId)
+        if (photoInfo) {
+          notifyUserId = photoInfo.userId
+          notifyNickname = photoInfo.nickname || ''
+        }
+      } else if (audit.targetType === 'avatar') {
+        const userInfo = await this.auditService.getUserInfo(audit.targetId)
+        if (userInfo) {
+          notifyNickname = userInfo.nickname || ''
+        }
+      }
+      const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
+      this.notifyService.sendAuditNotify({
+        type: notifyType,
+        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已被拒绝${reason ? `，原因：${reason}` : ''}，审核ID: ${id}`,
+        userId: notifyUserId,
+        userNickname: notifyNickname,
+        source: `${audit.targetType}_audit`,
+      }).catch(() => {})
+    }
     return Result.success(null, '已拒绝')
   }
 

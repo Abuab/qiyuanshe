@@ -47,7 +47,13 @@
         </movable-view>
       </movable-area>
 
-      <!-- 裁剪框边框 + 四角标，box-shadow 遮盖外部区域 -->
+      <!-- 四块半透明遮罩盖住裁剪框外部 -->
+      <view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></view>
+      <view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></view>
+      <view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></view>
+      <view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></view>
+
+      <!-- 裁剪框（居中） -->
       <view class="crop-frame" :style="{ width: cropSize + 'px', height: cropSize + 'px' }">
         <view class="corner corner-tl"></view>
         <view class="corner corner-tr"></view>
@@ -144,12 +150,12 @@ onMounted(() => {
         movableW.value = Math.round(w)
         movableH.value = Math.round(h)
 
-        // movable-area 需要足够大，使得缩放到 4x 后图片仍可在裁剪框内自由拖动
-        // 4x 缩放后 movable-view 最大 = cropSize * 4，area 需为其 4 倍以上确保全方向拖动
+        // movable-area 刚好容下 4x 缩放后的图片 + 裁剪框宽度，
+        // 确保图片任意位置都可对齐到裁剪框内。不宜过大以防图片飞出可见区域。
         const maxScale = 4
         const maxDisplaySize = cropSize.value * maxScale
-        areaW.value = Math.max(screenW.value * 8, maxDisplaySize * 4)
-        areaH.value = Math.max(bodyH.value * 8, maxDisplaySize * 4)
+        areaW.value = Math.max(screenW.value, maxDisplaySize + cropSize.value)
+        areaH.value = Math.max(bodyH.value, maxDisplaySize + cropSize.value)
 
         // movable-area 居中，使其中心 = 裁剪框中心
         areaLeft.value = Math.round((screenW.value - areaW.value) / 2)
@@ -349,13 +355,50 @@ const handleConfirm = () => {
   height: 100%;
 }
 
-// 使用 box-shadow 覆盖整个裁剪区域外部的遮罩
+// 遮罩层（四块，盖住裁剪框外的区域）
+.crop-mask-top,
+.crop-mask-bottom,
+.crop-mask-left,
+.crop-mask-right {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.crop-mask-top {
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.crop-mask-bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.crop-mask-left {
+  top: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.crop-mask-right {
+  top: 0;
+  bottom: 0;
+  right: 0;
+}
+
+// 裁剪框 — 绝对居中
 .crop-frame {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   z-index: 3;
   pointer-events: none;
   border: 2px solid #07C160;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
 }
 
 // 四角标记

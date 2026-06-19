@@ -247,4 +247,10 @@ export class AdminAuditService {
     if (!photo) return null
     return { userId: photo.userId, nickname: (photo as any).user?.nickname || '' }
   }
+
+  async getUserInfo(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) return null
+    return { nickname: user.nickname || '' }
+  }
 }

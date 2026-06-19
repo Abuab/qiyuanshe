@@ -19,22 +19,21 @@
           <text class="photo-section-title">个人形象展示</text>
         </view>
         <view class="photo-grid-9">
-          <!-- 第一张照片占4格 (2x2 左上角) -->
-          <view v-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
-            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
-            <view class="photo-watermark">{{ appName }}</view>
-            <view class="photo-main-label">头像/封面</view>
-            <view v-if="Number(photos[0].auditStatus) === 0" class="photo-audit-overlay-large">待审核</view>
-            <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
-              <text>更换头像</text>
-            </view>
-          </view>
-          <!-- 无照片但有头像时，显示头像 -->
-          <view v-else-if="form.avatar" class="photo-cell photo-cell-main" @tap="previewAvatar">
+          <!-- 第一张照片占4格 — 优先显示头像，无头像时显示第一张照片 -->
+          <view v-if="form.avatar" class="photo-cell photo-cell-main" @tap="previewAvatar">
             <image :src="getFullImageUrl(form.avatar)" mode="aspectFill" class="photo-cell-img" />
             <view class="photo-watermark">{{ appName }}</view>
             <view class="photo-main-label">头像/封面</view>
             <view v-if="form.avatarReviewStatus === 0" class="photo-audit-overlay-large">待审核</view>
+            <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
+              <text>更换头像</text>
+            </view>
+          </view>
+          <view v-else-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
+            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
+            <view class="photo-watermark">{{ appName }}</view>
+            <view class="photo-main-label">头像/封面</view>
+            <view v-if="Number(photos[0].auditStatus) === 0" class="photo-audit-overlay-large">待审核</view>
             <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
               <text>更换头像</text>
             </view>
@@ -1200,8 +1199,11 @@ onShow(async () => {
     const profile = await get<any>('/auth/profile')
     if (profile) {
       userStore.updateProfile(profile)
-      form.value.avatar = profile.avatar || form.value.avatar
-      form.value.avatarReviewStatus = profile.avatarReviewStatus ?? form.value.avatarReviewStatus
+      // 若后台头像已更新（审核通过），同步本地并清除待审核状态
+      if (profile.avatar && profile.avatar !== form.value.avatar) {
+        form.value.avatar = profile.avatar
+        form.value.avatarReviewStatus = 1
+      }
     }
   } catch (_) { /* 静默更新 */ }
 })
