@@ -20,10 +20,13 @@
       @touchmove.prevent="onTouchMove"
       @touchend="onTouchEnd"
     >
-      <!-- 图片层（在 crop-box 内，通过 transform 定位） -->
+      <!-- 底层遮罩：半透明黑色，覆盖整个裁剪区域 -->
+      <view class="crop-overlay-mask"></view>
+
+      <!-- 裁剪框容器（正方形，overflow:hidden，绿色边框） -->
       <view
-        class="crop-box"
         v-if="ready"
+        class="crop-box"
         :style="{
           width: cropSize + 'px',
           height: cropSize + 'px',
@@ -31,31 +34,19 @@
           left: cropLeftPx + 'px',
         }"
       >
+        <!-- 图片：裁剪框容器的直接子元素 -->
         <image
           :src="imageSrc"
           class="crop-img"
           :style="imgStyle"
         />
+
+        <!-- 四角标记：在裁剪框容器内，图片上层 -->
+        <view class="corner corner-tl"></view>
+        <view class="corner corner-tr"></view>
+        <view class="corner corner-bl"></view>
+        <view class="corner corner-br"></view>
       </view>
-
-      <!-- 四块半透明黑色遮罩 cover-view（盖在裁剪框外部） -->
-      <cover-view class="crop-mask-top" :style="{ height: maskTop + 'px' }"></cover-view>
-      <cover-view class="crop-mask-bottom" :style="{ height: maskTop + 'px' }"></cover-view>
-      <cover-view class="crop-mask-left" :style="{ width: maskLeft + 'px' }"></cover-view>
-      <cover-view class="crop-mask-right" :style="{ width: maskLeft + 'px' }"></cover-view>
-
-      <!-- 裁剪框边框 + 四角标记（cover-view 盖在最上层） -->
-      <cover-view class="crop-frame" :style="{
-        width: cropSize + 'px',
-        height: cropSize + 'px',
-        top: cropTopPx + 'px',
-        left: cropLeftPx + 'px'
-      }">
-        <cover-view class="corner corner-tl"></cover-view>
-        <cover-view class="corner corner-tr"></cover-view>
-        <cover-view class="corner corner-bl"></cover-view>
-        <cover-view class="corner corner-br"></cover-view>
-      </cover-view>
     </view>
 
     <!-- 底部操作栏 -->
@@ -88,40 +79,39 @@ const imageSrc = ref('')
 const cropSize = ref(0)   // 裁剪框边长 (px)
 const screenW = ref(375)
 const bodyH = ref(0)      // 裁剪区域可视高度
-const ready = ref(false)  // 图片加载完毕后才渲染
+const ready = ref(false)
 
 // ====== 图片信息 ======
 let imgNaturalW = 0
 let imgNaturalH = 0
 
-// ====== 核心 transform 参数 ======
-const translateY = ref(0) // 当前 translateY (px)，允许范围 [minTranslateY, 0]
+// ====== 核心参数 ======
+// translateY：图片在 crop-box 内的垂直偏移 (px)，范围 [H - h, 0]
+const translateY = ref(0)
 
-// ——— 按公式1: scale = 裁剪框宽度 / 图片原始宽度 ———
+// 按公式1: scale = cropSize / imgNaturalW
 const scale = computed(() => cropSize.value / imgNaturalW)
 
-// ——— 按公式2: 缩放后高度 ———
+// 按公式2: 缩放后图片高度 = 原始高度 × scale
+// 图片 width:100% 时渲染宽度 = cropSize，高度 = imgNaturalH * (cropSize / imgNaturalW)
 const displayH = computed(() => imgNaturalH * scale.value)
 
-// ——— 初次加载后的初始 translateY ——
+// 初始 translateY：(H - h) / 2 （垂直居中）
 const initTranslateY = () => {
-  // 按公式5: 初始位置 = (H - h) / 2
   translateY.value = (cropSize.value - displayH.value) / 2
 }
 
-// ——— 遮罩尺寸（裁剪框外到屏幕边缘）———
-const maskTop = computed(() => Math.max(0, Math.floor((bodyH.value - cropSize.value) / 2)))
-const maskLeft = computed(() => Math.max(0, Math.floor((screenW.value - cropSize.value) / 2)))
+// 裁剪框定位
 const cropTopPx = computed(() => Math.floor((bodyH.value - cropSize.value) / 2))
 const cropLeftPx = computed(() => Math.floor((screenW.value - cropSize.value) / 2))
 
-// ——— 图片样式：transform-origin: left top + transform ———
+// 图片样式：width:100% 填满容器宽度，通过 translateY 上下移动
+// 不使用 transform:scale()，避免小程序 overflow:hidden 对 scale 裁剪失效
 const imgStyle = computed(() => {
-  return `width:${imgNaturalW}px;height:${imgNaturalH}px;` +
-    `transform:translate3d(0,${translateY.value}px,0) scale(${scale.value});transform-origin:0 0;`
+  return `width:100%;height:auto;transform:translateY(${translateY.value}px);`
 })
 
-// ====== 触摸交互（只处理垂直） ======
+// ====== 触摸交互（只处理垂直方向 deltaY） ======
 let touchStartY = 0
 let translateYStart = 0
 
@@ -134,17 +124,17 @@ const onTouchStart = (e: any) => {
 const onTouchMove = (e: any) => {
   if (!ready.value) return
   const touch = e.touches[0]
-  // 按公式6: 只取 deltaY，完全忽略 deltaX
+  // 只取 deltaY，完全忽略 deltaX（绝对禁止左右移动）
   const deltaY = touch.clientY - touchStartY
   let newY = translateYStart + deltaY
 
-  // 按公式5: 硬边界 [H-h, 0]
   const h = displayH.value
   const H = cropSize.value
   if (h <= H) {
-    // 横图高度不足 -> 居中固定，不允许拖动
+    // 横图高度不足 → 固定居中，不允许拖动
     newY = (H - h) / 2
   } else {
+    // 硬边界: translateY ∈ [H - h, 0]
     const minY = H - h   // 底部对齐
     const maxY = 0       // 顶部对齐
     newY = Math.max(minY, Math.min(maxY, newY))
@@ -157,9 +147,9 @@ const onTouchEnd = () => {
   if (!ready.value) return
   const h = displayH.value
   const H = cropSize.value
-  if (h <= H) return // 无需回弹
+  if (h <= H) return
 
-  // 按公式6: 松手后超出边界则回弹
+  // 超出边界回弹
   if (translateY.value > 0) {
     translateY.value = 0
   } else if (translateY.value < (H - h)) {
@@ -182,7 +172,6 @@ onMounted(() => {
   bodyH.value = screenH - navPx - statusBarHeight.value - bottomBarH - safeBottom.value
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 从 bridge 获取图片数据
   const bridgeData = getAndClearCropImageData()
   if (bridgeData) {
     imageSrc.value = bridgeData.path
@@ -191,7 +180,6 @@ onMounted(() => {
     initTranslateY()
     ready.value = true
   } else {
-    // 兜底：URL 参数
     const src = (() => {
       const p = (getCurrentPages().slice(-1)[0] as any)?.options?.src
       return p ? decodeURIComponent(p) : ''
@@ -231,16 +219,15 @@ const handleConfirm = () => {
   const cropW = cropSize.value
   const s = scale.value
 
-  // 裁剪区域在图片上的源坐标（公式推导见下方注释）
-  // 图片在 crop-box 中以 transform-origin: left top 绝对定位
-  // 显示位置: (0, translateY), 大小为 (imgNaturalW*s, imgNaturalH*s)
-  // 裁剪框可见区域: (0, 0, cropW, cropW) 在 crop-box 内
-  // 对应图片原图坐标: sx=0, sy=-translateY/s, sw=cropW/s, sh=cropW/s
+  // 图片渲染: width:100% (即 cropW px) 在容器中，高度 auto
+  // translateY = 图片顶部相对于容器顶部的偏移
+  // 可见区域从容器顶部 (0) 到容器底部 (cropW)
+  // 对应原图: 1 渲染像素 = imgNaturalW / cropW 原图像素
+  // sy = -translateY 的像素数 * (imgNaturalW / cropW) = -translateY / scale
   const sy = Math.round(-translateY.value / s)
   const sw = Math.round(cropW / s)
   const sh = Math.round(cropW / s)
 
-  // 边界钳位（防御性，正常拖动下 translateY 已在范围内 => sy 也应在范围内）
   const srcX = 0
   const srcY = Math.max(0, Math.min(sy, Math.max(0, imgNaturalH - sh)))
   const srcW = Math.min(sw, imgNaturalW)
@@ -261,8 +248,6 @@ const handleConfirm = () => {
         success: (res: any) => {
           uni.hideLoading()
           const resultPath = res.tempFilePath
-
-          // eventChannel 通知返回页面
           try {
             const pages = getCurrentPages()
             const prevPage = pages.length >= 2 ? pages[pages.length - 2] : null
@@ -272,7 +257,6 @@ const handleConfirm = () => {
           } catch (e) {
             console.error('eventChannel emit 失败:', e)
           }
-
           uni.$emit('IMAGE_CROPPED', { path: resultPath })
           uni.navigateBack({ delta: 1 })
         },
@@ -346,70 +330,43 @@ const handleConfirm = () => {
   flex: 1;
   position: relative;
   overflow: hidden;
+  background: #000;
+}
+
+// 底层遮罩：覆盖整个裁剪区域，半透明黑色
+// 裁剪框容器在其上层，只有裁剪框内的图片可见
+.crop-overlay-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+// 裁剪框容器：正方形，overflow: hidden，绿色边框
+.crop-box {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  border: 2px solid #07C160;
   background: #1a1a1a;
 }
 
-// ===== 裁剪框容器 =====
-.crop-box {
-  position: absolute;
-  z-index: 1;
-  overflow: hidden;
-}
-
+// 图片：裁剪框容器的直接子元素，width 100%，translateY 上下移动
 .crop-img {
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
-// ===== 遮罩层 =====
-.crop-mask-top,
-.crop-mask-bottom,
-.crop-mask-left,
-.crop-mask-right {
-  position: absolute;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.crop-mask-top {
-  top: 0;
-  left: 0;
-  right: 0;
-}
-
-.crop-mask-bottom {
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
-
-.crop-mask-left {
-  top: 0;
-  bottom: 0;
-  left: 0;
-}
-
-.crop-mask-right {
-  top: 0;
-  bottom: 0;
-  right: 0;
-}
-
-// ===== 裁剪框边框 + 四角 =====
-.crop-frame {
-  position: absolute;
-  z-index: 3;
-  pointer-events: none;
-  border: 2px solid #07C160;
-}
-
+// 四角标记：在裁剪框容器内，在最上层
 .corner {
   position: absolute;
   width: 24rpx;
   height: 24rpx;
-  z-index: 4;
+  z-index: 10;
 }
 
 .corner-tl {
