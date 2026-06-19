@@ -775,7 +775,7 @@ export class AdminUserService {
         id: f.id,
         targetUserId: f.targetUserId,
         nickname: f.targetUser?.nickname || '',
-        avatar: f.targetUser?.avatar || '',
+        avatar: normalizeImageUrl(f.targetUser?.avatar),
         createdAt: f.createdAt,
       })),
       total,
@@ -795,7 +795,7 @@ export class AdminUserService {
         id: f.id,
         userId: f.userId,
         nickname: f.user?.nickname || '',
-        avatar: f.user?.avatar || '',
+        avatar: normalizeImageUrl(f.user?.avatar),
         createdAt: f.createdAt,
       })),
       total,
@@ -845,7 +845,7 @@ export class AdminUserService {
       targetUserId: v.userId,
       userId: v.visitorUserId,
       nickname: (v as any)?.user?.nickname || '',
-      avatar: (v as any)?.user?.avatar || '',
+      avatar: normalizeImageUrl((v as any)?.user?.avatar),
       createdAt: v.createdAt,
     }))
 
@@ -871,7 +871,7 @@ export class AdminUserService {
     return result.map(r => ({
       targetUserId: Number(r.targetUserId),
       nickname: r.nickname || '',
-      avatar: r.avatar || '',
+      avatar: normalizeImageUrl(r.avatar),
       lastViewedAt: r.lastViewedAt,
       viewCount: Number(r.viewCount),
     }))
@@ -896,7 +896,7 @@ export class AdminUserService {
     return result.map(r => ({
       visitorUserId: Number(r.visitorUserId),
       nickname: r.nickname || '',
-      avatar: r.avatar || '',
+      avatar: normalizeImageUrl(r.avatar),
       lastVisitedAt: r.lastVisitedAt,
       viewCount: Number(r.viewCount),
     }))

@@ -10,7 +10,7 @@
       <!-- 顶部信息卡片 -->
       <el-card class="header-card">
         <div class="user-header">
-          <el-image :src="user.avatar" fit="cover" style="width: 100px; height: 100px; border-radius: 50%">
+          <el-image :src="user.avatar" fit="cover" style="width: 100px; height: 100px; border-radius: 50%" :key="user.avatar">
             <template #error>
               <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
                 <el-icon :size="48"><User /></el-icon>
@@ -330,7 +330,7 @@
                 <div style="flex:1">
                   <h4 style="margin:0 0 12px 0">我关注的 ({{ followData.following.length }})</h4>
                   <div v-if="followData.following.length === 0" style="color:#999;font-size:13px">暂无关注</div>
-                  <div v-for="f in followData.following" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${f.targetUserId}`)">
+                  <div v-for="f in followData.following" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(f.targetUserId)">
                     <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
@@ -342,7 +342,7 @@
                 <div style="flex:1">
                   <h4 style="margin:0 0 12px 0">关注我的 ({{ followData.followers.length }})</h4>
                   <div v-if="followData.followers.length === 0" style="color:#999;font-size:13px">暂无粉丝</div>
-                  <div v-for="f in followData.followers" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${f.userId}`)">
+                  <div v-for="f in followData.followers" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(f.userId)">
                     <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
@@ -357,7 +357,7 @@
                 <div style="flex:1">
                   <h4 style="margin:0 0 12px 0">我看过谁 ({{ viewData.views.length }})</h4>
                   <div v-if="viewData.views.length === 0" style="color:#999;font-size:13px">暂无记录</div>
-                  <div v-for="v in viewData.views" :key="v.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${v.targetUserId}`)">
+                  <div v-for="v in viewData.views" :key="v.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.targetUserId)">
                     <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
@@ -369,7 +369,7 @@
                 <div style="flex:1">
                   <h4 style="margin:0 0 12px 0">谁看过我 ({{ viewData.visitors.length }})</h4>
                   <div v-if="viewData.visitors.length === 0" style="color:#999;font-size:13px">暂无记录</div>
-                  <div v-for="v in viewData.visitors" :key="v.visitorUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="$router.push(`/user/detail/${v.visitorUserId}`)">
+                  <div v-for="v in viewData.visitors" :key="v.visitorUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.visitorUserId)">
                     <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
@@ -498,7 +498,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
 import { adminUsers, adminMatchmaker } from '../../api'
@@ -552,8 +552,13 @@ interface UserDetail {
 }
 
 const route = useRoute()
+const router = useRouter()
 const adminStore = useAdminStore()
 const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+
+function goToUserDetail(userId: number) {
+  router.push(`/user/detail/${userId}`)
+}
 
 const hasMateRequirement = computed(() => {
   const u = user.value

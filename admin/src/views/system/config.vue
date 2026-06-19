@@ -104,9 +104,9 @@
               <div class="form-tip">粉丝列表为空时展示的文字</div>
             </el-form-item>
 
-            <el-form-item label="红线索显示名称">
-              <el-input v-model="basicConfig.redLineTerm" placeholder="红线索" style="width:200px" />
-              <div class="form-tip">前台显示的红线索名称，可自定义为：钥匙、心动卡、鹊桥令等</div>
+            <el-form-item label="红线显示名称">
+              <el-input v-model="basicConfig.redLineTerm" placeholder="红线" style="width:200px" />
+              <div class="form-tip">前台显示的红线名称，可自定义为：钥匙、心动卡、鹊桥令等</div>
             </el-form-item>
 
           </el-form>
@@ -531,7 +531,7 @@ const basicConfig = reactive({
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
   followEmptyText: '您还木有关注任何人~',
   followerEmptyText: '还木有人关注您~',
-  redLineTerm: '红线索',
+  redLineTerm: '红线',
 })
 
 const shareConfig = reactive({

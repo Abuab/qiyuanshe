@@ -66,7 +66,7 @@ export const useSystemStore = defineStore('system', () => {
   const quickEntryNames = ref<string[]>(['红娘评语', '最新活动', '相亲圈子', '我们脱单了'])
   const followEmptyText = ref<string>('您还木有关注任何人~')
   const followerEmptyText = ref<string>('还木有人关注您~')
-  const redLineTerm = ref<string>('红线索')
+  const redLineTerm = ref<string>('红线')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})

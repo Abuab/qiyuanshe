@@ -48,6 +48,11 @@
             {{ row.topCardValidHours }}小时
           </template>
         </el-table-column>
+        <el-table-column label="红线数" width="80">
+          <template #default="{ row }">
+            {{ row.redLineCount || 0 }}次
+          </template>
+        </el-table-column>
         <el-table-column prop="sortOrder" label="排序" width="70" />
         <el-table-column prop="status" label="状态" width="90">
           <template #default="{ row }">
@@ -84,7 +89,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="editingId ? '编辑套餐' : '创建套餐'"
-      width="560px"
+      width="600px"
       destroy-on-close
     >
       <el-form
@@ -105,6 +110,7 @@
                 :precision="2"
                 :step="1"
                 placeholder="元"
+                controls-position="right"
                 style="width:100%"
               />
             </el-form-item>
@@ -116,6 +122,7 @@
                 :min="1"
                 :max="3650"
                 placeholder="天"
+                controls-position="right"
                 style="width:100%"
               />
             </el-form-item>
@@ -128,6 +135,7 @@
                 v-model="formData.dailyTopCards"
                 :min="0"
                 :max="99"
+                controls-position="right"
                 style="width:100%"
               />
             </el-form-item>
@@ -138,21 +146,39 @@
                 v-model="formData.topCardValidHours"
                 :min="1"
                 :max="720"
+                controls-position="right"
                 style="width:100%"
               />
               <span style="margin-left:4px;color:#909399">小时</span>
             </el-form-item>
           </el-col>
         </el-row>
-        <el-form-item label="排序权重">
-          <el-input-number
-            v-model="formData.sortOrder"
-            :min="0"
-            :max="9999"
-            placeholder="越大越靠前"
-            style="width:200px"
-          />
-        </el-form-item>
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="赠送红线数">
+              <el-input-number
+                v-model="formData.redLineCount"
+                :min="0"
+                :max="999"
+                controls-position="right"
+                style="width:100%"
+              />
+              <span style="margin-left:4px;color:#909399">次（终身累计）</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="排序权重">
+              <el-input-number
+                v-model="formData.sortOrder"
+                :min="0"
+                :max="9999"
+                placeholder="越大越靠前"
+                controls-position="right"
+                style="width:100%"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
         <el-form-item label="是否上架">
           <el-switch
             v-model="formData.statusChecked"
@@ -164,9 +190,9 @@
           <el-input
             v-model="formData.description"
             type="textarea"
-            :rows="3"
+            :rows="5"
             placeholder="套餐详细介绍..."
-            maxlength="200"
+            maxlength="500"
             show-word-limit
           />
         </el-form-item>
@@ -239,6 +265,7 @@ const formData = reactive({
   durationDays: 30,
   dailyTopCards: 0,
   topCardValidHours: 24,
+  redLineCount: 0,
   sortOrder: 0,
   statusChecked: 1,
   description: '',
@@ -278,6 +305,7 @@ function handleCreate() {
   formData.durationDays = 30
   formData.dailyTopCards = 0
   formData.topCardValidHours = 24
+  formData.redLineCount = 0
   formData.sortOrder = 0
   formData.statusChecked = 1
   formData.description = ''
@@ -292,6 +320,7 @@ function handleEdit(row: VipPackage & { statusChecked: number }) {
   formData.durationDays = row.durationDays
   formData.dailyTopCards = row.dailyTopCards
   formData.topCardValidHours = row.topCardValidHours
+  formData.redLineCount = row.redLineCount || 0
   formData.sortOrder = row.sortOrder
   formData.statusChecked = row.status
   formData.description = row.description || ''
@@ -311,6 +340,7 @@ async function handleSubmit() {
         durationDays: formData.durationDays,
         dailyTopCards: formData.dailyTopCards,
         topCardValidHours: formData.topCardValidHours,
+        redLineCount: formData.redLineCount,
         sortOrder: formData.sortOrder,
         status: formData.statusChecked,
         description: formData.description,

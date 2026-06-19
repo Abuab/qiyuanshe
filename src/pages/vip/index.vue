@@ -261,7 +261,7 @@ const currentTabLabel = computed(() => {
   return tab ? tab.label : 'VIP会员'
 })
 
-const redLineTerm = computed(() => systemStore.redLineTerm || '红线索')
+const redLineTerm = computed(() => systemStore.redLineTerm || '红线')
 
 const selectPackage = (pkg: VipPackageItem) => {
   selectedPackageId.value = pkg.id

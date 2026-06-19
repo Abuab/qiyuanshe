@@ -11,7 +11,7 @@ import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
 
-export const RED_LINE_TERM_DEFAULT = '红线索'
+export const RED_LINE_TERM_DEFAULT = '红线'
 
 function generateOrderNo(): string {
   const ts = Date.now().toString(36)
