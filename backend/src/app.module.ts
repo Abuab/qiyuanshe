@@ -31,6 +31,14 @@ import {
   Circle,
   CirclePost,
   SuccessCase,
+  UserRedLineQuota,
+  RedLineUsage,
+  UserRedLineUsageRecord,
+  UserSystemTag,
+  UserTagSelection,
+  AiUserProfile,
+  AiCallLog,
+  ContentSafetyAudit,
 } from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -90,6 +98,14 @@ import { RedisService } from './common/redis.service'
       Circle,
       CirclePost,
       SuccessCase,
+      UserRedLineQuota,
+      RedLineUsage,
+      UserRedLineUsageRecord,
+      UserSystemTag,
+      UserTagSelection,
+      AiUserProfile,
+      AiCallLog,
+      ContentSafetyAudit,
     ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
