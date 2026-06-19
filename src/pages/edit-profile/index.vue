@@ -894,10 +894,11 @@ const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
     sourceType: [sourceType],
     success: (res) => {
       const tempPath = res.tempFilePaths[0]
-      // 通过 storage 传递临时图片路径（避免 URL 编码导致 getImageInfo 失败）
-      uni.setStorageSync('crop_avatar_src', tempPath)
+      // 通过 app.globalData 传递图片路径（避免 URL 编码/长度限制导致 getImageInfo 失败）
+      const app = getApp() as any
+      app.globalData.cropImageSrc = tempPath
       uni.navigateTo({
-        url: '/pages/image-crop/index?src=' + encodeURIComponent(tempPath) + '&type=avatar',
+        url: '/pages/image-crop/index',
         events: {
           // 裁剪完成后通过事件回调接收结果
           cropped: (data: { path: string }) => {

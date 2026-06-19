@@ -130,14 +130,10 @@ onMounted(() => {
   // 裁剪框边长：屏幕宽度的 80%
   cropSize.value = Math.round(screenW.value * 0.8)
 
-  // 获取图片（优先从 storage 读原始路径，兜底从 URL 参数解码）
-  const pages = getCurrentPages()
-  const page = pages[pages.length - 1] as any
-  const storageSrc = uni.getStorageSync('crop_avatar_src')
-  uni.removeStorageSync('crop_avatar_src')
-  const paramSrc = page?.options?.src
-  // storage 路径始终是原始的；URL 参数经过了 encodeURIComponent，需要解码
-  const src = storageSrc || (paramSrc ? decodeURIComponent(paramSrc) : '')
+  // 获取图片：从 app.globalData 读取（绕过 URL 编码和 storage 的不可靠性）
+  const app = getApp() as any
+  const src = app?.globalData?.cropImageSrc || ''
+  if (app?.globalData) delete app.globalData.cropImageSrc
   if (src) {
     imageSrc.value = src
     uni.getImageInfo({
