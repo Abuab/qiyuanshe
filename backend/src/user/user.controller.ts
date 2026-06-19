@@ -14,6 +14,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserService } from './user.service'
+import { UserProfileDetailService } from './user-profile-detail.service'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
@@ -32,6 +33,7 @@ import { NotifyChannelService } from '../admin/notify-channel.service'
 export class UserController {
   constructor(
     private readonly userService: UserService,
+    private readonly profileDetailService: UserProfileDetailService,
     @InjectRepository(Report) private reportRepo: Repository<Report>,
     @InjectRepository(QuestionAnswer) private answerRepo: Repository<QuestionAnswer>,
     @InjectRepository(User) private userRepo: Repository<User>,
@@ -367,6 +369,18 @@ export class UserController {
       if (error.getStatus) throw error
       return Result.notFound(error?.message || '用户不存在')
     }
+  }
+
+  /** 新版用户详情页完整数据（对标竞品飘飘个人主页，7分区结构） */
+  @Get(':id/detail')
+  @UseGuards(OptionalJwtAuthGuard)
+  async getUserProfileDetail(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req?: any,
+  ) {
+    const currentUserId = req?.user?.userId
+    const data = await this.profileDetailService.getUserProfileDetail(id, currentUserId)
+    return Result.success(data)
   }
 
   @Post(':id/follow')
