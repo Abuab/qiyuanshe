@@ -72,16 +72,8 @@
           <view class="vip-card-carousel">
             <text class="vip-card-desc">{{ vipCardTexts[currentCarouselIdx] }}</text>
           </view>
-          <view class="vip-card-dots" v-if="vipCardTexts.length > 1">
-            <view
-              v-for="(_, idx) in vipCardTexts"
-              :key="idx"
-              class="vip-card-dot"
-              :class="{ active: idx === currentCarouselIdx }"
-            />
-          </view>
         </view>
-        <view class="vip-card-btn" :class="{ active: isVipValid }">
+        <view class="vip-card-btn">
           <text>{{ isVipValid ? '已开通' : '开通服务' }}</text>
         </view>
       </view>
@@ -210,7 +202,12 @@ onUnmounted(() => {
 
 const avatarSrc = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
-  return getFullImageUrl(userStore.userInfo?.avatar) || icons.common.defaultAvatar
+  const url = getFullImageUrl(userStore.userInfo?.avatar)
+  if (!url) return icons.common.defaultAvatar
+  // 加版本参数避免微信/浏览器缓存旧头像
+  const sep = url.includes('?') ? '&' : '?'
+  const v = userStore.userInfo?.updatedAt || ''
+  return url + sep + 'v=' + encodeURIComponent(v)
 })
 
 const onAvatarError = () => {
@@ -511,6 +508,7 @@ const toolGrid7 = [
 .vip-card-left {
   flex: 1;
   min-width: 0;
+  padding-left: 8rpx;
 }
 
 .vip-card-title {
@@ -531,23 +529,6 @@ const toolGrid7 = [
   overflow: hidden;
 }
 
-.vip-card-dots {
-  display: flex;
-  gap: 6rpx;
-  margin-top: 8rpx;
-}
-
-.vip-card-dot {
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-
-  &.active {
-    background: rgba(255, 255, 255, 0.9);
-  }
-}
-
 .vip-card-btn {
   width: 120rpx;
   height: 120rpx;
@@ -562,14 +543,6 @@ const toolGrid7 = [
     font-size: 24rpx;
     color: #333;
     font-weight: bold;
-  }
-
-  &.active {
-    background: rgba(255, 255, 255, 0.25);
-
-    text {
-      color: #fff;
-    }
   }
 }
 

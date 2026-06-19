@@ -497,7 +497,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
@@ -634,7 +634,7 @@ const tabDataLoaded: Record<string, boolean> = {}
 onMounted(() => { fetchDetail() })
 
 // 监听路由参数变化（同页面不同用户跳转时重新加载）
-watch(() => route.params.id, (newId) => {
+watch(() => route.params.id, async (newId) => {
   if (newId) {
     // 重置 Tab 到首页 + 清除缓存数据
     activeTab.value = 'basic'
@@ -644,16 +644,17 @@ watch(() => route.params.id, (newId) => {
     followData.followers = []
     viewData.views = []
     viewData.visitors = []
+    await nextTick()
     fetchDetail()
   }
 })
 
-// 头像 URL 加版本参数避免浏览器/微信缓存旧图
+// 头像 URL 加版本参数避免浏览器缓存旧图
 const avatarCacheSrc = computed(() => {
   const url = user.value?.avatar
   if (!url) return ''
   const sep = url.includes('?') ? '&' : '?'
-  return url + sep + 'v=' + (user.value?.updatedAt || Date.now())
+  return url + sep + 't=' + (user.value?.updatedAt || Date.now())
 })
 
 async function fetchDetail() {

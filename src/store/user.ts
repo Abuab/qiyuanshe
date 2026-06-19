@@ -36,9 +36,12 @@ interface UserInfo {
   personalityTags?: string[]
   hopeTaTags?: string[]
   isVip?: boolean
-  isRealName?: boolean
+  vipLevel?: number
   vipExpireTime?: string
+  vipPackageName?: string
+  isRealName?: boolean
   createTime?: string
+  updatedAt?: string
 }
 
 export const useUserStore = defineStore('user', () => {

@@ -182,7 +182,7 @@
     <!-- 底部支付栏（仅VIP会员Tab显示） -->
     <view v-if="activeTab === 'vip'" class="bottom-bar">
       <view class="bottom-price">
-        <text class="price-label" v-if="selectedPackage">合计</text>
+        <text class="price-label" v-if="selectedPackage">{{ vipActionLabel }}</text>
         <text class="price-total" v-if="selectedPackage">
           <text class="price-symbol-small">¥</text>
           <text class="price-number">{{ formatPrice(selectedPackage.price) }}</text>
@@ -190,8 +190,11 @@
         <text class="price-total" v-else>请选择套餐</text>
       </view>
       <view class="pay-btn" :class="{ disabled: !selectedPackage }" @tap="handlePay">
-        <text>确认支付</text>
+        <text>{{ vipActionButtonText }}</text>
       </view>
+    </view>
+    <view v-if="activeTab === 'vip' && vipActionHint" class="bottom-hint">
+      <text>{{ vipActionHint }}</text>
     </view>
 
     <tab-bar />
@@ -262,6 +265,37 @@ const currentTabLabel = computed(() => {
 })
 
 const redLineTerm = computed(() => systemStore.redLineTerm || '红线')
+
+// VIP 续期/升级判断
+const currentVipName = computed(() => userStore.userInfo?.vipPackageName || '')
+const currentVipDays = computed(() => {
+  if (!userStore.isVipValid) return 0
+  // 从套餐列表中查找当前套餐的天数
+  const pkg = packages.value.find(p => p.name === currentVipName.value)
+  return pkg ? pkg.durationDays : 0
+})
+const vipActionLabel = computed(() => {
+  if (!userStore.isVipValid) return '合计'
+  if (!selectedPackage.value) return '续期/升级'
+  if (selectedPackage.value.durationDays <= currentVipDays.value) return '续期'
+  return '升级套餐'
+})
+const vipActionButtonText = computed(() => {
+  if (!userStore.isVipValid) return '确认支付'
+  if (!selectedPackage.value) return '选择套餐'
+  if (selectedPackage.value.durationDays <= currentVipDays.value) return '确认续期'
+  return '确认升级'
+})
+const vipActionHint = computed(() => {
+  if (!userStore.isVipValid) return ''
+  if (!selectedPackage.value) {
+    return '当前为' + currentVipName.value + '，可续期或选择更长套餐升级'
+  }
+  if (selectedPackage.value.durationDays <= currentVipDays.value) {
+    return '当前为' + currentVipName.value + '，续期后有效期将延长'
+  }
+  return '当前为' + currentVipName.value + '，升级为新套餐后将按新套餐生效'
+})
 
 const selectPackage = (pkg: VipPackageItem) => {
   selectedPackageId.value = pkg.id
@@ -867,6 +901,22 @@ onShow(() => {
   &.disabled {
     background: #ccc;
     box-shadow: none;
+  }
+}
+
+.bottom-hint {
+  position: fixed;
+  bottom: calc(60px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 6px 24px;
+  background: #FFF8FA;
+  z-index: 999;
+
+  text {
+    font-size: 22rpx;
+    color: #FF6B9D;
   }
 }
 
