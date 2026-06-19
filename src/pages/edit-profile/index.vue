@@ -1792,13 +1792,13 @@ onShow(async () => {
 
 .photo-delete-icon {
   position: absolute;
-  top: 2rpx;
-  right: 2rpx;
-  width: 44rpx;
+  top: 0;
+  right: 0;
+  width: 52rpx;
   height: 44rpx;
   z-index: 2;
   background: rgba(60, 60, 60, 0.75);
-  border-radius: 50%;
+  border-radius: 0 12rpx 0 12rpx;
   padding: 8rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
 
@@ -1810,11 +1810,11 @@ onShow(async () => {
 
 .photo-delete-icon-text {
   position: absolute;
-  top: 2rpx;
-  right: 2rpx;
-  width: 44rpx;
+  top: 0;
+  right: 0;
+  width: 52rpx;
   height: 44rpx;
-  border-radius: 50%;
+  border-radius: 0 12rpx 0 12rpx;
   background: rgba(60, 60, 60, 0.75);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4), 0 4rpx 8rpx rgba(0, 0, 0, 0.3);
   display: flex;
