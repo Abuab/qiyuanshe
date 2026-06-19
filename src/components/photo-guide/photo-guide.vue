@@ -169,44 +169,44 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 // ===== 顶部提示 =====
 .guide-header {
-  padding: 32rpx 32rpx 20rpx;
+  padding: 24rpx 32rpx 16rpx;
   text-align: center;
 }
 
 .guide-tip {
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #999999;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 // ===== 可滚动主体 =====
 .guide-body {
   padding: 0 32rpx;
-  max-height: 400rpx;
+  max-height: 520rpx;
 }
 
 .guide-section {
-  margin-bottom: 28rpx;
+  margin-bottom: 20rpx;
 }
 
 // ===== 段落标题 =====
 .section-title-row {
   display: flex;
   align-items: center;
-  margin-bottom: 18rpx;
+  margin-bottom: 14rpx;
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 600;
   color: #333333;
 }
 
 .title-icon {
-  width: 36rpx;
-  height: 36rpx;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
-  margin-right: 12rpx;
+  margin-right: 10rpx;
   flex-shrink: 0;
   position: relative;
 }
@@ -216,10 +216,10 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   &::after {
     content: '';
     position: absolute;
-    top: 8rpx;
-    left: 14rpx;
-    width: 8rpx;
-    height: 14rpx;
+    top: 7rpx;
+    left: 12rpx;
+    width: 7rpx;
+    height: 12rpx;
     border: solid #fff;
     border-width: 0 3rpx 3rpx 0;
     transform: rotate(45deg);
@@ -234,7 +234,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 14rpx;
+    width: 12rpx;
     height: 3rpx;
     background: #fff;
   }
@@ -251,8 +251,8 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 .photo-scroll-inner {
   display: inline-flex;
-  gap: 20rpx;
-  padding-right: 32rpx;  // 16px 右侧留白，确保最后一张图不截断
+  gap: 16rpx;
+  padding-right: 32rpx;
 }
 
 .example-card {
@@ -263,10 +263,10 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 }
 
 .example-img-wrap {
-  width: 200rpx;
-  height: 260rpx;
-  border-radius: 24rpx;
-  overflow: visible;  // 允许标记超出图片边界完整显示
+  width: 160rpx;
+  height: 210rpx;
+  border-radius: 20rpx;
+  overflow: visible;
   position: relative;
   background: #f5f5f5;
 }
@@ -274,7 +274,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 .example-img {
   width: 100%;
   height: 100%;
-  border-radius: 24rpx;
+  border-radius: 20rpx;
 }
 
 // ===== 右下角标记 =====
@@ -282,8 +282,8 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   position: absolute;
   right: 8px;
   bottom: 8px;
-  width: 40rpx;
-  height: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
   border-radius: 50%;
   z-index: 5;
 }
@@ -293,10 +293,10 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   &::after {
     content: '';
     position: absolute;
-    top: 9rpx;
-    left: 15rpx;
-    width: 8rpx;
-    height: 14rpx;
+    top: 8rpx;
+    left: 13rpx;
+    width: 7rpx;
+    height: 12rpx;
     border: solid #fff;
     border-width: 0 3rpx 3rpx 0;
     transform: rotate(45deg);
@@ -311,7 +311,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 14rpx;
+    width: 12rpx;
     height: 3rpx;
     background: #fff;
   }
@@ -321,8 +321,8 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 
 // ===== 标签文字 =====
 .example-label {
-  font-size: 24rpx;
-  margin-top: 10rpx;
+  font-size: 22rpx;
+  margin-top: 8rpx;
   text-align: center;
   white-space: normal;
 }
@@ -338,19 +338,19 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // ===== 底部按钮区 =====
 .guide-actions {
   flex-shrink: 0;
-  margin-top: 16rpx;
+  margin-top: 12rpx;
 }
 
 .action-btn {
   width: 100%;
-  height: 112rpx;
+  height: 100rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .action-text {
-  font-size: 32rpx;
+  font-size: 30rpx;
   color: #333333;
 }
 
@@ -373,7 +373,7 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
 // 取消按钮
 .cancel-btn {
   .cancel-text {
-    font-size: 32rpx;
+    font-size: 30rpx;
     color: #666666;
   }
 }
