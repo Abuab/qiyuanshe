@@ -867,8 +867,8 @@ onShow(() => {
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  padding: 8px 20px;
-  gap: 12px;
+  padding: 6px 14px;
+  gap: 20px;
   background: #2d2d2d;
   border-radius: 999px;
   z-index: 1002;

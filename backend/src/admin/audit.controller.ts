@@ -65,11 +65,11 @@ export class AdminAuditController {
         }
       }
       this.notifyService.sendAuditNotify({
-        type: 'photo',
-        content: `有新的${audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
+        type: audit.targetType,
+        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
         userId: notifyUserId,
         userNickname: notifyNickname,
-        source: 'photo_audit',
+        source: `${audit.targetType}_audit`,
       }).catch(() => {})
     }
     return Result.success(null, '审核通过')

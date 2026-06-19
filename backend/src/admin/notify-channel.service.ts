@@ -151,6 +151,7 @@ export class NotifyChannelService {
   private buildMessage(channel: string, type: string, content: string): any {
     const typeLabel: Record<string, string> = {
       photo: '图片审核',
+      avatar: '头像审核',
       user: '用户资料审核',
       report: '举报通知',
     }

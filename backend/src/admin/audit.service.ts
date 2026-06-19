@@ -123,6 +123,14 @@ export class AdminAuditService {
 
     if (audit.targetType === 'photo' && audit.targetId) {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 1 })
+    } else if (audit.targetType === 'avatar' && audit.targetId) {
+      // 头像审核通过：从 content 中解析 url 并更新到 user.avatar
+      try {
+        const data = JSON.parse(audit.content || '{}')
+        if (data.url) {
+          await this.userRepository.update(audit.targetId, { avatar: data.url })
+        }
+      } catch { /* content 非 JSON 时跳过 */ }
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 1 })
     } else if (audit.targetType === 'user' && audit.targetId) {

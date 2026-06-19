@@ -534,6 +534,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
@@ -885,9 +886,14 @@ const handleCroppedAvatar = async (filePath: string) => {
   try {
     const uploadRes = await uploadImage(filePath)
     console.log('[编辑资料] 上传成功:', uploadRes)
-    form.value.avatar = uploadRes.url
-    await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl: uploadRes.url } } as any)
+    const avatarUrl = uploadRes.url
+    form.value.avatar = avatarUrl
     form.value.avatarReviewStatus = 0
+    // 立即本地预览：更新 store 并在照片列表首位插入裁剪头像
+    userStore.updateProfile({ avatar: avatarUrl, avatarReviewStatus: 0 })
+    // 刷新照片列表以获取最新数据
+    await fetchPhotos()
+    await request({ url: '/users/avatar-review', method: 'POST', data: { avatarUrl } } as any)
     uni.showToast({ title: '已提交审核', icon: 'success' })
   } catch (err: unknown) {
     const error = err as Error
@@ -1166,6 +1172,19 @@ const handleBack = () => {
 
 onUnmounted(() => {
   uni.$off('IMAGE_CROPPED')
+})
+
+// 每次页面显示时刷新照片和用户信息（审核回来后头像可能已更新）
+onShow(async () => {
+  await fetchPhotos()
+  try {
+    const profile = await get<any>('/auth/profile')
+    if (profile) {
+      userStore.updateProfile(profile)
+      form.value.avatar = profile.avatar || form.value.avatar
+      form.value.avatarReviewStatus = profile.avatarReviewStatus ?? form.value.avatarReviewStatus
+    }
+  } catch (_) { /* 静默更新 */ }
 })
 </script>
 

@@ -150,9 +150,12 @@ onMounted(() => {
         movableW.value = Math.round(w)
         movableH.value = Math.round(h)
 
-        // movable-area 做成可视区域的 4 倍，给图片充足拖动空间，确保图片可完全穿过裁剪框
-        areaW.value = Math.max(screenW.value * 4, cropSize.value * 8)
-        areaH.value = Math.max(bodyH.value * 4, cropSize.value * 8)
+        // movable-area 需要足够大，使得缩放到 4x 后图片仍可在裁剪框内自由拖动
+        // 4x 缩放后 movable-view 最大 = cropSize * 4，area 需为其 4 倍以上确保全方向拖动
+        const maxScale = 4
+        const maxDisplaySize = cropSize.value * maxScale
+        areaW.value = Math.max(screenW.value * 8, maxDisplaySize * 4)
+        areaH.value = Math.max(bodyH.value * 8, maxDisplaySize * 4)
 
         // movable-area 居中，使其中心 = 裁剪框中心
         areaLeft.value = Math.round((screenW.value - areaW.value) / 2)
