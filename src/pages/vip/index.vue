@@ -479,12 +479,19 @@ function handleBack() {
 
 const fetchPackagesAndProfile = async () => {
   await fetchPackages()
-  // 刷新用户信息以获取最新 vipPackageName
+  // 刷新用户信息以获取最新 vipPackageName 和 VIP 状态
   if (userStore.isLoggedIn) {
     try {
       const res: any = await get('/auth/profile')
       if (res) {
+        // 先更新 userInfo（含 vipPackageName、avatar、updatedAt）
         userStore.updateProfile({ ...res, vipPackageName: res.vipPackageName || '' })
+        // 同步更新 VIP 状态 ref，确保 isVipValid 生效
+        userStore.updateUserInfo({
+          isVip: !!res.isVip,
+          vipExpireTime: res.vipExpireTime || '',
+          vipPackageName: res.vipPackageName || '',
+        })
       }
     } catch (_) { /* 忽略 */ }
   }
@@ -852,17 +859,17 @@ onShow(() => {
   height: 60px;
 }
 
-// ===== 底部支付栏 =====
+// ===== 底部支付栏（深色风格） =====
 .bottom-bar {
   position: fixed;
-  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  bottom: 120rpx;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
-  padding: 12px 24px;
-  background: #fff;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  padding: 14px 24px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  background: #2d2d2d;
   z-index: 1000;
 }
 
@@ -870,35 +877,35 @@ onShow(() => {
   flex: 1;
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  gap: 6px;
 }
 
 .price-label {
-  font-size: 13px;
-  color: #999;
+  font-size: 14px;
+  color: #fff;
 }
 
 .price-total {
-  font-size: 13px;
-  color: #999;
+  font-size: 14px;
+  color: #fff;
 }
 
 .price-symbol-small {
   font-size: 16px;
-  color: #FF6B9D;
+  color: #fff;
   font-weight: 700;
 }
 
 .price-number {
-  font-size: 24px;
-  color: #FF6B9D;
+  font-size: 28px;
+  color: #fff;
   font-weight: 800;
 }
 
 .pay-btn {
-  padding: 12px 32px;
+  padding: 12px 36px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 24px;
+  border-radius: 100px;
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.35);
 
   text {
@@ -908,24 +915,23 @@ onShow(() => {
   }
 
   &.disabled {
-    background: #ccc;
+    background: #666;
     box-shadow: none;
   }
 }
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(100rpx + 48px + env(safe-area-inset-bottom));
+  bottom: calc(120rpx + 60px + env(safe-area-inset-bottom));
   left: 0;
   right: 0;
   text-align: center;
-  padding: 6px 24px 6px;
-  background: #FFF8FA;
+  padding: 8px 24px 8px;
+  background: #3a3a3a;
   z-index: 999;
-  white-space: nowrap;
 
   text {
-    font-size: 26rpx;
+    font-size: 24rpx;
     color: #FF6B9D;
     font-weight: 600;
   }

@@ -166,6 +166,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
@@ -194,6 +195,12 @@ onMounted(() => {
       currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
     }, 3000)
   }
+})
+
+onShow(() => {
+  loadStats()
+  // 刷新用户头像等最新信息
+  refreshProfile()
 })
 
 onUnmounted(() => {
@@ -242,6 +249,16 @@ const stats = reactive({
   footprints: 0,
   viewedMe: 0,
 })
+
+const refreshProfile = async () => {
+  if (!isLoggedIn.value) return
+  try {
+    const res: any = await get('/auth/profile')
+    if (res) {
+      userStore.updateProfile(res)
+    }
+  } catch {}
+}
 
 const loadStats = async () => {
   if (!isLoggedIn.value) return
