@@ -61,11 +61,11 @@ export class AiProviderConfigService {
       }
     }
 
-    await this.redis.set(PROVIDER_LIST_CACHE_KEY, JSON.stringify(snapshots), 0)
+    await this.redis.set(PROVIDER_LIST_CACHE_KEY, JSON.stringify(snapshots))
     this.logger.log(`[Provider] 已同步 ${snapshots.length} 个启用的 Provider 到 Redis`)
 
     // 设置默认策略
-    await this.redis.set(PROVIDER_STRATEGY_KEY, this.currentStrategy, 0)
+    await this.redis.set(PROVIDER_STRATEGY_KEY, this.currentStrategy)
   }
 
   // ==================== CRUD ====================
@@ -203,7 +203,7 @@ export class AiProviderConfigService {
   /** 切换策略 */
   async setStrategy(strategy: LoadBalanceStrategy, operatorId?: number): Promise<void> {
     this.currentStrategy = strategy
-    await this.redis.set(PROVIDER_STRATEGY_KEY, strategy, 0)
+    await this.redis.set(PROVIDER_STRATEGY_KEY, strategy)
     this.logger.log(`[Provider] ${operatorId ? `管理员${operatorId}` : '系统'} 切换策略: ${strategy}`)
   }
 
