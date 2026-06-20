@@ -73,12 +73,10 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="默认" width="80" align="center">
+        <el-table-column label="默认" width="70" align="center">
           <template #default="{ row }">
-            <el-radio
-              :model-value="row.isDefault === 1"
-              @change="() => onSetDefault(row)"
-            />
+            <el-icon v-if="row.isDefault === 1" color="#67C23A" :size="20"><CircleCheckFilled /></el-icon>
+            <el-icon v-else color="#C0C4CC" :size="20" style="cursor: pointer" @click="onSetDefault(row)"><CircleCheck /></el-icon>
           </template>
         </el-table-column>
         <el-table-column label="权重" width="100" align="center">
@@ -235,7 +233,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh } from '@element-plus/icons-vue'
+import { Plus, Refresh, CircleCheck, CircleCheckFilled } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { aiProviderApi, type ProviderConfigVO, type LoadBalanceStrategy } from '../../../api/ai-provider'
 
