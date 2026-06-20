@@ -4,24 +4,17 @@
     <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
       <!-- 导航 -->
       <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 12) + 'px' }">
-        <view class="nav-left" @tap="goToHome">
-          <text class="home-icon">🏠</text>
-          <view class="home-dot" />
-        </view>
-        <text class="nav-title">个人中心</text>
-        <view class="nav-right" />
+        <view class="nav-title">我的</view>
       </view>
 
       <!-- 用户信息区 -->
-      <view class="profile-section" @tap="handleProfileTap">
+      <view class="profile-section" @tap="isLoggedIn ? undefined : goToLogin()">
         <!-- 未登录 -->
         <view v-if="!isLoggedIn" class="profile-row">
-          <view class="avatar-placeholder">
-            <text class="avatar-placeholder-icon">👤</text>
-          </view>
+          <image class="profile-avatar" src="/static/default-avatar.png" mode="aspectFill" />
           <view class="profile-info">
-            <text class="profile-nickname">注册/登录</text>
-            <text class="profile-sub">登录后即可体验更多服务</text>
+            <text class="profile-nickname">点击登录</text>
+            <text class="profile-sub">登录后享受更多服务</text>
           </view>
           <text class="arrow">></text>
         </view>
@@ -39,7 +32,13 @@
             <view class="profile-id-row">
               <text class="id-badge">ID</text>
               <text class="id-number">{{ formattedUserId }}</text>
-              <image v-if="pageIcons.copy" class="copy-icon" :src="pageIcons.copy" mode="aspectFit" @tap.stop="copyUserId" />
+              <image
+                v-if="pageIcons.copy"
+                class="copy-icon"
+                :src="pageIcons.copy"
+                mode="aspectFit"
+                @tap.stop="copyUserId"
+              />
               <text v-else class="copy-text" @tap.stop="copyUserId">📋</text>
             </view>
           </view>
@@ -49,22 +48,22 @@
         </view>
 
         <!-- 统计行 -->
-        <view class="stats-row">
-          <view class="stat-item" @tap.stop="handleStatTap('following')">
+        <view class="stats-row" v-if="isLoggedIn">
+          <view class="stat-item" @tap.stop="goToFollows">
             <text class="stat-label">关注</text>
-            <text class="stat-num">{{ isLoggedIn ? stats.following : 0 }}</text>
+            <text class="stat-num">{{ stats.following }}</text>
           </view>
-          <view class="stat-item" @tap.stop="handleStatTap('followers')">
+          <view class="stat-item" @tap.stop="goToFollowers">
             <text class="stat-label">被关注</text>
-            <text class="stat-num">{{ isLoggedIn ? stats.followers : 0 }}</text>
+            <text class="stat-num">{{ stats.followers }}</text>
           </view>
-          <view class="stat-item" @tap.stop="handleStatTap('footprints')">
+          <view class="stat-item" @tap.stop="goToFootprints">
             <text class="stat-label">足迹</text>
-            <text class="stat-num">{{ isLoggedIn ? stats.footprints : 0 }}</text>
+            <text class="stat-num">{{ stats.footprints }}</text>
           </view>
-          <view class="stat-item" @tap.stop="handleStatTap('viewedMe')">
+          <view class="stat-item" @tap.stop="goToVisitors">
             <text class="stat-label">看过我</text>
-            <text class="stat-num">{{ isLoggedIn ? stats.viewedMe : 0 }}</text>
+            <text class="stat-num">{{ stats.viewedMe }}</text>
           </view>
         </view>
       </view>
@@ -81,11 +80,11 @@
       :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }"
     >
       <!-- ========== 会员卡片 ========== -->
-      <view class="vip-card" @tap="handleVipTap">
+      <view class="vip-card" @tap="goToVip">
         <view class="vip-card-left">
           <text class="vip-card-title">{{ isVipValid ? '会员已开通' : '尚未开通会员' }}</text>
           <view class="vip-card-carousel">
-            <text class="vip-card-desc">{{ isVipValid ? vipCardTexts[currentCarouselIdx] : '会员权益：牵线，享受红娘牵线服务' }}</text>
+            <text class="vip-card-desc">{{ vipCardTexts[currentCarouselIdx] }}</text>
           </view>
         </view>
         <view class="vip-card-btn">
@@ -94,29 +93,29 @@
       </view>
 
       <!-- ========== 信息认证 ========== -->
-      <view class="auth-card" @tap="handleAuthTap">
+      <view class="auth-card" @tap="goToRealnameAuth">
         <text class="auth-label">信息认证</text>
-        <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去完成实名认证，获取真诚与信任！' }}</text>
-        <text class="arrow auth-arrow">></text>
+        <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
+        <text class="arrow">></text>
       </view>
 
-      <!-- ========== 金刚区：我的问答 + AI红娘 + 专属红娘 ========== -->
+      <!-- ========== 金刚区：我的问答 + AI红娘 + 专属红娘（合并为一张卡片，左对齐网格） ========== -->
       <view class="service-card">
         <view class="service-grid">
-          <view class="service-item" @tap="handleFeatureTap('questions')">
+          <view class="service-item" @tap="goToQuestions">
             <image v-if="pageIcons.qaIcon" class="service-icon-img" :src="pageIcons.qaIcon" mode="aspectFit" />
             <view v-else class="service-icon-box orange-gradient">
               <text class="service-icon-text">#</text>
             </view>
             <text class="service-label">我的问答</text>
           </view>
-          <view class="service-item" @tap="handleFeatureTap('aiMatchmaker')">
+          <view class="service-item" @tap="goToAiMatchmaker">
             <view class="service-icon-box pink-gradient">
               <text class="service-icon-text">💝</text>
             </view>
             <text class="service-label">AI 红娘</text>
           </view>
-          <view class="service-item" @tap="handleFeatureTap('matchmaker')">
+          <view class="service-item" @tap="goToMatchmaker">
             <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
             <view v-else class="service-icon-box purple-gradient">
               <text class="service-icon-text">👤</text>
@@ -126,8 +125,9 @@
         </view>
       </view>
 
-      <!-- ========== 工具区：7个图标网格卡片 ========== -->
+      <!-- ========== 工具区：7个图标网格卡片（4列对齐） ========== -->
       <view class="tools-card">
+        <!-- 4列网格：第一行4个，第二行前3个对齐 -->
         <view class="tool-grid">
           <view
             v-for="item in toolGrid7"
@@ -160,7 +160,7 @@
         </view>
       </view>
 
-      <!-- ========== 底部信息 ========== -->
+      <!-- ========== 底部陪伴信息 ========== -->
       <view class="footer-info">
         <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
         <text v-else class="footer-heart">❤️</text>
@@ -169,19 +169,11 @@
       <view class="footer-version">
         <text>v1.0.0</text>
       </view>
-      <view class="bottom-safe-area" />
+
+      <view class="bottom-safe-area"></view>
     </scroll-view>
 
     <tab-bar />
-
-    <!-- 协议弹窗 -->
-    <protocol-popup
-      :show="showProtocolPopup"
-      @update:show="showProtocolPopup = $event"
-      @agree="onProtocolAgreeFromMy"
-      @close="showProtocolPopup = false"
-      @navigate="handleProtocolNavigate"
-    />
 
     <!-- 红娘弹窗 -->
     <matchmaker-popup
@@ -199,7 +191,6 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
-import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
@@ -208,8 +199,7 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
-const refreshingVisible = ref(false)
-const showProtocolPopup = ref(false)
+const refreshingVisible = ref(false)  // 下拉刷新状态
 
 // 会员卡片轮播
 const vipCardTexts = computed(() => systemStore.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
@@ -219,7 +209,8 @@ let carouselTimer: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  if (userStore.isLoggedIn) loadStats()
+  loadStats()
+  // 启动会员卡片轮播（3秒切换一次）
   if (vipCardTexts.value.length > 1) {
     carouselTimer = setInterval(() => {
       currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
@@ -228,17 +219,13 @@ onMounted(() => {
 })
 
 onShow(() => {
-  if (userStore.isLoggedIn) {
-    loadStats()
-    refreshProfile()
-  }
+  loadStats()
+  refreshProfile()
 })
 
 const onRefresherRefresh = async () => {
   refreshingVisible.value = true
-  if (userStore.isLoggedIn) {
-    await Promise.all([refreshProfile(), loadStats()])
-  }
+  await Promise.all([refreshProfile(), loadStats()])
   refreshingVisible.value = false
 }
 
@@ -250,40 +237,57 @@ const avatarSrc = computed(() => {
   if (avatarError.value) return icons.common.defaultAvatar
   const url = getFullImageUrl(userStore.userInfo?.avatar)
   if (!url) return icons.common.defaultAvatar
+  // 加版本参数避免微信缓存旧头像（updatedAt 兜底用当前时间戳）
   const sep = url.includes('?') ? '&' : '?'
   const v = userStore.userInfo?.updatedAt || Date.now()
   return url + sep + 'v=' + encodeURIComponent(v)
 })
 
-const onAvatarError = () => { avatarError.value = true }
+const onAvatarError = () => {
+  avatarError.value = true
+}
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
-const appName = computed(() => systemStore.appName || '栖缘社')
+const appName = computed(() => systemStore.appName || '缘来是你')
+
+// 格式化为7位数显示ID
 const formattedUserId = computed(() => {
   const id = userStore.userInfo?.id
   if (!id) return '*******'
   return String(id).padStart(7, '0')
 })
+
+// 后台可配置的页面图标（通过 systemStore.icons.page 下发）
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const daysSinceCreation = computed(() => {
   if (!userStore.userInfo?.createTime) return 0
   const created = new Date(userStore.userInfo.createTime).getTime()
-  return Math.max(0, Math.floor((Date.now() - created) / 86400000))
+  const now = Date.now()
+  return Math.max(0, Math.floor((now - created) / 86400000))
 })
 
-const stats = reactive({ following: 0, followers: 0, footprints: 0, viewedMe: 0 })
+const stats = reactive({
+  following: 0,
+  followers: 0,
+  footprints: 0,
+  viewedMe: 0,
+})
 
 const refreshProfile = async () => {
+  if (!isLoggedIn.value) return
   try {
     const res: any = await get('/auth/profile')
-    if (res) userStore.updateProfile(res)
+    if (res) {
+      userStore.updateProfile(res)
+    }
   } catch {}
 }
 
 const loadStats = async () => {
+  if (!isLoggedIn.value) return
   try {
     const data = await get<any>('/users/stats')
     stats.following = data.following || 0
@@ -293,110 +297,49 @@ const loadStats = async () => {
   } catch {}
 }
 
-// ========== 未登录拦截 ==========
-const requireAuth = (action: () => void) => {
-  if (!isLoggedIn.value) {
-    // 检查是否已同意协议
-    if (uni.getStorageSync('hasAgreedProtocol')) {
-      // 已同意协议，直接跳转登录页
-      uni.navigateTo({ url: '/pages/login/index' })
-    } else {
-      // 显示协议弹窗
-      showProtocolPopup.value = true
-    }
-    return
-  }
-  action()
-}
-
-const onProtocolAgreeFromMy = () => {
-  // 协议同意后跳转登录页
-  uni.navigateTo({ url: '/pages/login/index' })
-}
-
-const handleProtocolNavigate = (url: string) => {
-  uni.navigateTo({ url })
-}
-
-// ========== 点击处理（统一拦截） ==========
-const handleProfileTap = () => requireAuth(() => goToEditProfile())
-const handleVipTap = () => {
-  if (!isLoggedIn.value) {
-    requireAuth(() => {})
-    return
-  }
-  uni.switchTab({ url: '/pages/vip/index' })
-}
-const handleAuthTap = () => requireAuth(() => goToRealnameAuth())
-const handleStatTap = (key: string) => requireAuth(() => {
-  if (key === 'following') goToFollows()
-  else if (key === 'followers') goToFollowers()
-  else if (key === 'footprints') goToFootprints()
-  else if (key === 'viewedMe') goToVisitors()
-})
-const handleFeatureTap = (key: string) => requireAuth(() => {
-  if (key === 'questions') goToQuestions()
-  else if (key === 'aiMatchmaker') goToAiMatchmaker()
-  else if (key === 'matchmaker') goToMatchmaker()
-})
-
 const copyUserId = () => {
   if (!userStore.userInfo?.id) return
-  uni.setClipboardData({ data: String(userStore.userInfo.id), success: () => uni.showToast({ title: '已复制', icon: 'success' }) })
+  uni.setClipboardData({
+    data: String(userStore.userInfo.id),
+    success: () => uni.showToast({ title: '已复制', icon: 'success' }),
+  })
 }
 
 const handleOfficialAccount = () => {
+  // 跳转公众号关注引导页（小程序需关联公众号后使用 official-account 组件）
   uni.showToast({ title: '请前往微信搜索并关注公众号', icon: 'none' })
 }
 
-const showComingSoon = () => { uni.showToast({ title: '该功能正在开发中', icon: 'none' }) }
-const goToHome = () => uni.switchTab({ url: '/pages/index/index' })
+const showComingSoon = () => {
+  uni.showToast({ title: '该功能正在开发中', icon: 'none' })
+}
+
+const goToLogin = () => uni.navigateTo({ url: '/pages/login/index' })
 const goToEditProfile = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
+const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
   uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
 }
-const goToAiMatchmaker = () => uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
+const goToAiMatchmaker = () => {
+  uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
+}
+const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
 const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
 const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=followers' })
 const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=visitors' })
 const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
 const goToPhotos = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
 const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
-const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
-const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 
-const handleToolClick = (key: string) => {
-  const map: Record<string, () => void> = {
-    myPhotos: goToPhotos,
-    loveQuotes: goToLoveQuotes,
-    myGifts: showComingSoon,
-    privacy: goToPrivacySettings,
-    feedback: showComingSoon,
-    userAgreement: showComingSoon,
-    antiFraud: showComingSoon,
-  }
-  const fn = map[key]
-  if (fn) requireAuth(fn)
-}
-
-const toolGrid7 = [
-  { key: 'myPhotos', label: '我的相册', emoji: '🖼' },
-  { key: 'loveQuotes', label: '爱情语录', emoji: '💌' },
-  { key: 'myGifts', label: '我的礼物', emoji: '🎁' },
-  { key: 'privacy', label: '隐私设置', emoji: '🔒' },
-  { key: 'feedback', label: '问题反馈', emoji: '📝' },
-  { key: 'userAgreement', label: '用户协议', emoji: '📄' },
-  { key: 'antiFraud', label: '防骗提醒', emoji: '🛡' },
-  { key: 'dummy', label: '', emoji: '', placeholder: true },
-]
-
-// ========== 红娘弹窗 ==========
 const showMatchmaker = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
 const goToMatchmaker = async () => {
-  if (matchmakerList.value.length === 0) await fetchMatchmakerList()
+  // 弹出红娘联系方式弹窗
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
   if (matchmakerList.value.length === 0) {
     uni.showToast({ title: '暂无红娘信息', icon: 'none' })
     return
@@ -414,14 +357,48 @@ const fetchMatchmakerList = async () => {
       qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
       avatar: getFullImageUrl(item.avatar),
     }))
-  } catch { matchmakerList.value = [] }
+  } catch {
+    matchmakerList.value = []
+  }
 }
+const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
+const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
+
+// 中央分发器 - 避免 mini-program 中函数引用丢失
+const handleToolClick = (key: string) => {
+  const map: Record<string, () => void> = {
+    myPhotos: goToPhotos,
+    loveQuotes: goToLoveQuotes,
+    myGifts: showComingSoon,
+    privacy: goToPrivacySettings,
+    feedback: showComingSoon,
+    userAgreement: showComingSoon,
+    antiFraud: showComingSoon,
+  }
+  const fn = map[key]
+  if (fn) fn()
+}
+
+// 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
+// 后台可通过 pageIcons[item.key] 配置图标URL
+const toolGrid7 = [
+  { key: 'myPhotos',    label: '我的相册', emoji: '🖼' },
+  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌' },
+  { key: 'myGifts',     label: '我的礼物', emoji: '🎁' },
+  { key: 'privacy',     label: '隐私设置', emoji: '🔒' },
+  { key: 'feedback',    label: '问题反馈', emoji: '📝' },
+  { key: 'userAgreement', label: '用户协议', emoji: '📄' },
+  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡' },
+  { key: 'dummy',       label: '',        emoji: '',      placeholder: true },
+]
 </script>
 
 <style lang="scss" scoped>
 .my-page {
-  min-height: 100vh; background-color: #FFF8FA;
-  display: flex; flex-direction: column;
+  min-height: 100vh;
+  background-color: #FFF8FA;
+  display: flex;
+  flex-direction: column;
 }
 
 // ========== 顶部粉色区域 ==========
@@ -430,163 +407,448 @@ const fetchMatchmakerList = async () => {
 }
 
 .nav-bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: transparent;
-  display: flex; align-items: center; justify-content: center;
-  height: 88rpx; padding: 0 32rpx;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
 }
-.nav-left {
-  width: 80rpx; flex-shrink: 0;
-  position: relative;
+
+.nav-title {
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
 }
-.home-icon { font-size: 40rpx; }
-.home-dot {
-  position: absolute; top: 4rpx; right: 16rpx;
-  width: 14rpx; height: 14rpx; border-radius: 50%;
-  background: #FF4D4F;
-}
-.nav-title { font-size: 34rpx; font-weight: bold; color: #333; }
-.nav-right { width: 80rpx; flex-shrink: 0; }
 
 // ========== 用户信息区 ==========
-.profile-section { padding: 24rpx 32rpx 16rpx; }
-.profile-row { display: flex; align-items: center; }
-
-// 未登录占位头像
-.avatar-placeholder {
-  width: 100rpx; height: 100rpx; border-radius: 50%;
-  background: #E5E5E5;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; margin-right: 20rpx;
+.profile-section {
+  padding: 24rpx 32rpx 16rpx;
 }
-.avatar-placeholder-icon { font-size: 48rpx; opacity: 0.4; }
 
-// 已登录头像
-.avatar-wrap { position: relative; flex-shrink: 0; margin-right: 20rpx; }
+.profile-row {
+  display: flex;
+  align-items: center;
+}
+
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+
 .profile-avatar {
-  width: 100rpx; height: 100rpx; border-radius: 14rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 14rpx;
   background-color: #f5f5f5;
 }
+
 .avatar-review-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 34%;
-  background: rgba(0,0,0,0.5);
-  display: flex; align-items: center; justify-content: center;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 34%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 0 0 14rpx 14rpx;
-  text { font-size: 18rpx; color: #fff; font-weight: 500; }
+
+  text {
+    font-size: 18rpx;
+    color: #fff;
+    font-weight: 500;
+  }
 }
 
-.profile-info { flex: 1; min-width: 0; }
-.profile-nickname { display: block; font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
-.profile-sub { display: block; font-size: 24rpx; color: #999; margin-top: 4rpx; }
-.profile-id-row { display: flex; align-items: center; margin-top: 4rpx; }
-.id-badge { font-size: 20rpx; background: #333; color: #fff; border-radius: 4rpx; padding: 2rpx 8rpx; margin-right: 8rpx; }
-.id-number { font-size: 26rpx; color: #666; }
-.copy-icon { width: 28rpx; height: 28rpx; margin-left: 8rpx; }
-.copy-text { font-size: 24rpx; margin-left: 8rpx; }
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
 
-.arrow { font-size: 36rpx; color: #CCC; margin-left: 8rpx; }
+.profile-nickname {
+  display: block;
+  font-size: 34rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.profile-sub {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.profile-id-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.id-badge {
+  display: inline-block;
+  font-style: italic;
+  font-size: 20rpx;
+  font-weight: bold;
+  color: #fff;
+  background-color: #ccc;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
+  line-height: 1.4;
+}
+
+.id-number {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.copy-icon {
+  width: 28rpx;
+  height: 28rpx;
+  opacity: 0.6;
+}
+
+.copy-text {
+  font-size: 22rpx;
+  color: #999;
+}
+
 .edit-btn {
-  background: #FFF0F5; border-radius: 24rpx;
-  padding: 10rpx 20rpx; flex-shrink: 0; margin-left: 12rpx;
-  text { font-size: 22rpx; color: #FF6B8A; }
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FF6B9D, #FF8FB0);
+  border-radius: 32rpx;
+  flex-shrink: 0;
+
+  text {
+    font-size: 24rpx;
+    color: #fff;
+  }
 }
 
-// ========== 统计行 ==========
-.stats-row { display: flex; justify-content: space-around; padding: 20rpx 0 0; }
-.stat-item { display: flex; flex-direction: column; align-items: center; }
-.stat-label { font-size: 22rpx; color: #999; margin-bottom: 4rpx; }
-.stat-num { font-size: 32rpx; font-weight: bold; color: #1A1A1A; }
+.arrow {
+  font-size: 28rpx;
+  color: #ccc;
+  margin-left: 12rpx;
+}
+
+// 统计行
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20rpx;
+  padding-top: 16rpx;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.stat-num {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+}
 
 // ========== 内容滚动区 ==========
-.content-scroll { padding: 0 24rpx; }
+.content-scroll {
+  flex: 1;
+  background-color: #FFF8FA;
+}
 
 // ========== 会员卡片 ==========
 .vip-card {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 24rpx 28rpx; margin-bottom: 16rpx;
-  background: linear-gradient(135deg, #2D2D6B, #4A4A9E);
-  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 24rpx 24rpx;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #2D2B55 0%, #4A4458 100%);
+  border-radius: 16rpx;
 }
-.vip-card-left { flex: 1; min-width: 0; }
-.vip-card-title { font-size: 28rpx; font-weight: bold; color: #fff; display: block; margin-bottom: 6rpx; }
-.vip-card-desc { font-size: 22rpx; color: rgba(255,255,255,0.7); }
+
+.vip-card-left {
+  flex: 1;
+  min-width: 0;
+  padding-left: 8rpx;
+}
+
+.vip-card-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 6rpx;
+}
+
+.vip-card-desc {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.vip-card-carousel {
+  min-height: 32rpx;
+  overflow: hidden;
+}
+
 .vip-card-btn {
-  background: rgba(255,255,255,0.15); border-radius: 32rpx;
-  padding: 12rpx 28rpx; flex-shrink: 0; margin-left: 16rpx;
-  text { font-size: 24rpx; color: #fff; font-weight: 500; }
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background-color: #FFF8E7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  text {
+    font-size: 24rpx;
+    color: #333;
+    font-weight: bold;
+  }
 }
 
 // ========== 信息认证 ==========
 .auth-card {
-  display: flex; align-items: center;
-  background: #fff; border-radius: 16rpx;
-  padding: 28rpx 28rpx; margin-bottom: 16rpx;
+  display: flex;
+  align-items: center;
+  margin: 0 24rpx 24rpx;
+  padding: 20rpx 24rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
 }
-.auth-label { font-size: 28rpx; font-weight: 600; color: #1A1A1A; flex-shrink: 0; }
-.auth-desc { flex: 1; font-size: 24rpx; color: #FF6B8A; margin: 0 16rpx; text-align: right; }
-.auth-arrow { font-size: 28rpx; color: #FF6B8A; flex-shrink: 0; }
 
-// ========== 服务网格 ==========
+.auth-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.auth-desc {
+  flex: 1;
+  font-size: 24rpx;
+  color: #FF6681;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: 12rpx;
+}
+
+// ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
 .service-card {
-  background: #fff; border-radius: 16rpx;
-  padding: 24rpx 20rpx; margin-bottom: 16rpx;
+  margin: 0 24rpx 24rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  padding: 28rpx 20rpx 24rpx;
 }
-.service-grid { display: flex; justify-content: space-around; }
-.service-item { display: flex; flex-direction: column; align-items: center; }
-.service-icon-img { width: 64rpx; height: 64rpx; }
-.service-icon-box {
-  width: 64rpx; height: 64rpx; border-radius: 18rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-.orange-gradient { background: linear-gradient(135deg, #FF9A56, #FFB88C); }
-.pink-gradient { background: linear-gradient(135deg, #FF6B8A, #FF8FA8); }
-.purple-gradient { background: linear-gradient(135deg, #A78BFA, #C4B5FD); }
-.service-icon-text { font-size: 36rpx; color: #fff; }
-.service-label { font-size: 24rpx; color: #333; margin-top: 10rpx; }
 
-// ========== 工具网格 ==========
-.tools-card {
-  background: #fff; border-radius: 16rpx;
-  padding: 24rpx 20rpx; margin-bottom: 16rpx;
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
-.tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24rpx 0; }
-.tool-item { display: flex; flex-direction: column; align-items: center; }
-.tool-placeholder { visibility: hidden; }
-.tool-icon-img { width: 56rpx; height: 56rpx; }
-.tool-icon-emoji { font-size: 44rpx; }
-.tool-label { font-size: 22rpx; color: #666; margin-top: 8rpx; }
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.service-icon-box {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
+
+  &.orange-gradient {
+    background: linear-gradient(135deg, #FF9F43, #FFB347);
+  }
+
+  &.purple-gradient {
+    background: linear-gradient(135deg, #A78BFA, #C4B5FD);
+  }
+
+  &.pink-gradient {
+    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  }
+}
+
+.service-icon-text {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.service-icon-img {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 18rpx;
+  margin-bottom: 12rpx;
+}
+
+.service-label {
+  font-size: 26rpx;
+  color: #333;
+}
+
+// ========== 7个工具图标卡片（4列网格对齐） ==========
+.tools-card {
+  background-color: #fff;
+  margin: 0 24rpx 24rpx;
+  border-radius: 16rpx;
+  padding: 32rpx 24rpx 24rpx;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  row-gap: 32rpx;
+}
+
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  &.tool-placeholder {
+    visibility: hidden;
+  }
+}
+
+.tool-icon-emoji {
+  font-size: 64rpx;
+  margin-bottom: 12rpx;
+  filter: grayscale(1) opacity(0.7);
+}
+
+.tool-icon-img {
+  width: 64rpx;
+  height: 64rpx;
+  margin-bottom: 12rpx;
+}
+
+.tool-label {
+  font-size: 28rpx;
+  color: #333;
+  text-align: center;
+}
 
 // ========== 公众号卡片 ==========
 .oa-card {
-  display: flex; align-items: center;
-  margin-bottom: 24rpx; padding: 20rpx 24rpx;
-  background: #fff; border-radius: 16rpx;
-}
-.oa-avatar {
-  width: 72rpx; height: 72rpx; border-radius: 50%;
-  flex-shrink: 0; margin-right: 20rpx;
-  display: flex; align-items: center; justify-content: center;
-  &.pink-heart { background-color: #FF6681; }
-}
-.oa-avatar-img { width: 40rpx; height: 40rpx; }
-.oa-avatar-icon { font-size: 36rpx; }
-.oa-info { flex: 1; min-width: 0; }
-.oa-name { font-size: 28rpx; font-weight: 600; color: #333; display: block; }
-.oa-desc { font-size: 22rpx; color: #999; margin-top: 4rpx; display: block; }
-.oa-follow-btn {
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 24rpx; padding: 10rpx 28rpx; flex-shrink: 0; margin-left: 16rpx;
-  text { font-size: 24rpx; color: #fff; font-weight: 500; }
+  display: flex;
+  align-items: center;
+  margin: 0 24rpx 24rpx;
+  padding: 20rpx 24rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
 }
 
-.footer-info {
-  display: flex; align-items: center; justify-content: center;
-  padding: 20rpx 0 4rpx;
+.oa-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.pink-heart {
+    background-color: #FF6681;
+  }
 }
-.footer-heart-img { width: 28rpx; height: 28rpx; margin-right: 8rpx; }
-.footer-heart { font-size: 24rpx; margin-right: 8rpx; }
-.footer-text { font-size: 22rpx; color: #BDBDBD; }
-.footer-version { display: flex; justify-content: center; padding: 4rpx 0 20rpx; }
-.footer-version text { font-size: 20rpx; color: #CCC; }
-.bottom-safe-area { height: 40rpx; }
+
+.oa-avatar-img {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.oa-avatar-icon {
+  font-size: 36rpx;
+}
+
+.oa-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.oa-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.oa-desc {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.oa-follow-btn {
+  padding: 12rpx 28rpx;
+  background-color: #FF6681;
+  border-radius: 32rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #fff;
+  }
+}
+
+// ========== 底部信息 ==========
+.footer-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx 0 8rpx;
+}
+
+.footer-heart {
+  font-size: 26rpx;
+  margin-right: 6rpx;
+}
+
+.footer-heart-img {
+  width: 28rpx;
+  height: 28rpx;
+  margin-right: 6rpx;
+}
+
+.footer-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.footer-version {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 20rpx;
+
+  text {
+    font-size: 22rpx;
+    color: #ccc;
+  }
+}
+
+.bottom-safe-area {
+  height: 40rpx;
+}
 </style>

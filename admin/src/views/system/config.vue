@@ -135,25 +135,6 @@
               <div class="form-tip" style="margin-left:12px">控制"我的"页面底部和系统消息页顶部的公众号关注提示横幅</div>
             </el-form-item>
 
-            <el-form-item label="登录页插画">
-              <div class="upload-item">
-                <el-image
-                  v-if="basicConfig.loginIllustration"
-                  :src="basicConfig.loginIllustration"
-                  fit="contain"
-                  style="width:200px;height:140px;border-radius:8px;background:#FFF0F5"
-                />
-                <el-upload
-                  action="#"
-                  :http-request="uploadLoginIllustration"
-                  :show-file-list="false"
-                >
-                  <el-button type="primary" size="small">上传插画</el-button>
-                </el-upload>
-                <div class="form-tip" style="margin-top:4px">建议尺寸 750×600px，粉色系情侣插画</div>
-              </div>
-            </el-form-item>
-
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -649,7 +630,6 @@ const basicConfig = reactive({
   matchmakerSafetyLabel: '内容提示',
   matchmakerSafetyBoundaryLabel: '安全提醒',
   showOfficialAccountPrompt: true,
-  loginIllustration: '',
 })
 
 const shareConfig = reactive({
@@ -1024,20 +1004,6 @@ async function uploadShareImage(options: any) {
     const res = await adminSystem.upload(formData)
     if (res.success && res.data?.url) {
       shareConfig.shareImage = res.data.url
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}
-
-async function uploadLoginIllustration(options: any) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  try {
-    const res = await adminSystem.upload(formData)
-    if (res.success && res.data?.url) {
-      basicConfig.loginIllustration = res.data.url
       ElMessage.success('上传成功')
     }
   } catch (error) {

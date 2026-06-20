@@ -5,20 +5,11 @@
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
-      <text class="nav-title">{{ nickname }}</text>
-      <!-- 右侧仅留胶囊按钮安全区域，不放置任何按钮 -->
+      <view class="nav-center" @tap="goToProfile">
+        <text class="nav-title">{{ nickname }}</text>
+      </view>
+      <!-- 右侧仅留胶囊按钮安全区域 -->
       <view class="nav-right" />
-    </view>
-
-    <!-- 二级菜单栏 -->
-    <view class="sub-nav-bar">
-      <view class="sub-nav-left" @tap="goToProfile">
-        <image class="sub-avatar" :src="otherAvatar" mode="aspectFill" />
-        <text class="sub-nickname">{{ nickname }}</text>
-      </view>
-      <view class="sub-nav-menu" @tap="openSubMenu">
-        <text class="sub-menu-dots">...</text>
-      </view>
     </view>
 
     <!-- 消息列表 -->
@@ -122,7 +113,6 @@
         <!-- AI帮回 -->
         <view class="ai-btn" @tap="openAiSkillPanel">
           <text class="ai-btn-icon">✨</text>
-          <text class="ai-btn-text">AI帮回</text>
         </view>
 
         <!-- 输入框 -->
@@ -492,30 +482,6 @@ const openAiSkillPanel = () => {
 
 const onAiSkillSend = (text: string) => { inputContent.value = text; handleSend() }
 
-const openSubMenu = () => {
-  uni.showActionSheet({
-    itemList: ['查看个人资料', '清空聊天记录', '举报', '取消'],
-    success: (res) => {
-      if (res.tapIndex === 0) goToProfile()
-      else if (res.tapIndex === 1) clearChat()
-      else if (res.tapIndex === 2) reportUser()
-    },
-  })
-}
-
-const clearChat = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定清空聊天记录吗？此操作不可恢复',
-    success: (modalRes) => {
-      if (modalRes.confirm) {
-        messages.value = []
-        uni.showToast({ title: '已清空', icon: 'success' })
-      }
-    },
-  })
-}
-
 const handleBack = () => safeNavigateBack()
 </script>
 
@@ -538,49 +504,22 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 .nav-bar {
   flex-shrink: 0;
   display: flex; align-items: center;
-  height: 88rpx; padding: 0 16rpx; box-sizing: content-box;
+  height: 88rpx; padding: 0 32rpx; box-sizing: content-box;
   background: linear-gradient(135deg, $pink, $pink-light);
   z-index: 100;
 }
-.nav-left {
-  width: 88rpx; flex-shrink: 0;
-  display: flex; align-items: center;
-}
+.nav-left { width: 80rpx; flex-shrink: 0; }
 .back-icon { font-size: 44rpx; color: #fff; font-weight: bold; }
+.nav-center {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
 .nav-title {
-  flex: 1; text-align: center;
   font-size: 34rpx; font-weight: 600; color: #fff;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .nav-right {
   width: $nav-right-width; flex-shrink: 0;
-}
-
-// ==================== 二级菜单栏 ====================
-.sub-nav-bar {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 80rpx; padding: 0 32rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #E5E5E5;
-}
-.sub-nav-left {
-  display: flex; align-items: center;
-}
-.sub-avatar {
-  width: 64rpx; height: 64rpx; border-radius: 50%;
-  flex-shrink: 0; margin-right: 16rpx;
-  background: #F5F5F5;
-}
-.sub-nickname {
-  font-size: 28rpx; font-weight: 600; color: #1A1A1A;
-}
-.sub-nav-menu {
-  width: 64rpx; height: 64rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-.sub-menu-dots {
-  font-size: 40rpx; color: #333; font-weight: bold; letter-spacing: 4rpx;
 }
 
 // ==================== 消息列表 ====================
@@ -713,14 +652,12 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 }
 
 .ai-btn {
-  flex-shrink: 0;
-  display: flex; align-items: center; gap: 8rpx;
-  padding: 8rpx 20rpx;
-  background: rgba($pink, 0.1);
-  border-radius: 999rpx;
+  width: 68rpx; height: 68rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba($pink, 0.08), rgba($pink-light, 0.12));
+  border-radius: 50%;
 }
-.ai-btn-icon { font-size: 32rpx; }
-.ai-btn-text { font-size: 24rpx; color: $pink; font-weight: 500; white-space: nowrap; }
+.ai-btn-icon { font-size: 36rpx; }
 
 .input-box {
   flex: 1; height: 68rpx;
