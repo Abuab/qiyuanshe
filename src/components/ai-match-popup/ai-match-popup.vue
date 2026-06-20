@@ -79,17 +79,17 @@
           </view>
 
           <!-- AI 分析文字 -->
-          <view v-if="report.analysisText" class="analysis-block">
+          <view v-if="report.analysis" class="analysis-block">
             <text class="analysis-label">✨ AI 分析</text>
-            <text class="analysis-text">{{ report.analysisText }}</text>
+            <text class="analysis-text">{{ report.analysis }}</text>
           </view>
 
           <!-- 建议 -->
-          <view v-if="report.adviceList?.length" class="advice-block">
+          <view v-if="report.advice?.length" class="advice-block">
             <text class="advice-label">💡 相处建议</text>
-            <view v-for="(advice, i) in report.adviceList" :key="i" class="advice-item">
+            <view v-for="(adv, i) in report.advice" :key="i" class="advice-item">
               <text class="advice-num">{{ i + 1 }}</text>
-              <text class="advice-text">{{ advice }}</text>
+              <text class="advice-text">{{ adv }}</text>
             </view>
           </view>
 
@@ -122,8 +122,8 @@ interface AiMatchReport {
   valuesScore: number
   lifestyleScore: number
   futurePlanScore: number
-  analysisText: string
-  adviceList: string[]
+  analysis: string
+  advice: string[]
   reviewStatus: string
   errorCode?: string
 }

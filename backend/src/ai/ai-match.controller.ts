@@ -48,7 +48,7 @@ export class AiMatchController {
   }
 
   /**
-   * 查询与目标用户的已有报告（不触发新分析，仅返回缓存）
+   * 查询与目标用户的已有缓存报告（只读，不触发新分析）
    * GET /ai/match/report/:targetUserId
    */
   @Get('report/:targetUserId')
@@ -56,7 +56,10 @@ export class AiMatchController {
     @Req() req: any,
     @Param('targetUserId', ParseIntPipe) targetUserId: number,
   ) {
-    const data = await this.aiMatchService.analyze(req.user.id, targetUserId)
+    const data = await this.aiMatchService.getCachedReport(req.user.id, targetUserId)
+    if (!data) {
+      return Result.success(null, '暂无分析报告')
+    }
     return Result.success(data)
   }
 }

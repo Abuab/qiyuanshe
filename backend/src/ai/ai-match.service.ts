@@ -271,6 +271,24 @@ export class AiMatchService {
     }
   }
 
+  /**
+   * 查询缓存报告（只读，不触发新分析，不创建AiCallLog）
+   */
+  async getCachedReport(userId: number, targetUserId: number): Promise<MatchReportResponse | null> {
+    const cached = await this.matchReportRepo.findOne({
+      where: { userId, targetUserId },
+      order: { updatedAt: 'DESC' },
+    })
+    if (!cached) return null
+
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000
+    const age = Date.now() - new Date(cached.createdAt).getTime()
+    if (age >= sevenDaysMs) return null
+
+    const quota = await this.getQuota(userId)
+    return this.buildResponse(cached, true, quota.remaining)
+  }
+
   // ==================== 内部方法 ====================
 
   private async buildUserSnapshot(userId: number): Promise<MatchUserSnapshot> {

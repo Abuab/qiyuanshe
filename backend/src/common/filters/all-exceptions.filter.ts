@@ -27,17 +27,24 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse
+        code = status
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, any>
-        message = responseObj.message || exception.message
-        code = responseObj.code || status
+        // NestJS 将 BadRequestException({ code, message }) 包装为 { message: { code, message } }
+        // 此处展平：优先使用内层 message 字符串
+        if (typeof responseObj.message === 'object' && responseObj.message !== null) {
+          message = responseObj.message?.message || exception.message
+        } else {
+          message = responseObj.message || exception.message
+        }
+        code = typeof responseObj.code === 'number' ? responseObj.code : status
       }
     } else if (exception instanceof Error) {
       message = exception.message
       this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack)
     }
 
-    const result = Result.error(message, code || status)
+    const result = Result.error(message, code)
 
     response.header('Access-Control-Allow-Origin', '*')
     response.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')

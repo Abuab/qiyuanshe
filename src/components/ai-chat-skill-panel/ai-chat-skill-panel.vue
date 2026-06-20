@@ -127,8 +127,9 @@ const fetchSuggestions = async () => {
     })
     if (res?.suggestions?.length) {
       suggestions.value = res.suggestions.map((item: any) => ({
-        ...item,
+        style: item.style,
         label: styleMap[item.style] || item.style || '建议',
+        text: item.content || '',
       }))
       status.value = 'done'
     } else {
