@@ -62,4 +62,17 @@ export class AiMatchController {
     }
     return Result.success(data)
   }
+
+  /**
+   * 一键提醒对方完善资料
+   * POST /ai/match/remind/:targetUserId
+   */
+  @Post('remind/:targetUserId')
+  async remindTarget(
+    @Req() req: any,
+    @Param('targetUserId', ParseIntPipe) targetUserId: number,
+  ) {
+    const data = await this.aiMatchService.remindTargetToCompleteProfile(req.user.id, targetUserId)
+    return Result.success(data, data.sent ? '已提醒' : '24小时内已提醒过，请稍后再试')
+  }
 }

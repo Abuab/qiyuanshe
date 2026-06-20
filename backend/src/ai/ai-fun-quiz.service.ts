@@ -154,7 +154,6 @@ export class AiFunQuizService {
       rawResult = this.buildFallbackResult(userConstellation, taConstellation)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog)
-      throw new BadRequestException('AI服务暂时不可用，请稍后重试')
     }
 
     savedCallLog.responseMs = Date.now() - startMs

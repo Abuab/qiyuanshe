@@ -19,16 +19,20 @@
       <!-- 无资格 -->
       <view v-else-if="status === 'ineligible'" class="ineligible-block">
         <text class="large-emoji">🔒</text>
-        <text class="block-title">{{ errorMsg }}</text>
+        <text class="block-title">{{ ineligibleTitle }}</text>
         <view v-if="errorReasons.length" class="reasons-list">
           <view v-for="(r, i) in errorReasons" :key="i" class="reason-item">
             <text class="reason-dot">•</text>
             <text class="reason-text">{{ r }}</text>
           </view>
         </view>
-        <text class="block-desc">完善资料后即可解锁AI缘分分析</text>
-        <view class="block-btn" @tap="goImproveProfile">
+        <text v-if="hasMyIssue" class="block-desc">完善资料后即可解锁AI缘分分析</text>
+        <text v-if="hasTaIssue" class="block-desc">提醒对方完善资料，一起解锁缘分分析</text>
+        <view v-if="hasMyIssue" class="block-btn" @tap="goImproveProfile">
           <text>去完善资料</text>
+        </view>
+        <view v-if="hasTaIssue" class="block-btn remind-btn" @tap="remindTarget">
+          <text>{{ remindSent ? '已发送提醒' : '一键提醒对方完善资料' }}</text>
         </view>
       </view>
 
@@ -119,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 
@@ -151,6 +155,19 @@ const status = ref<'idle' | 'loading' | 'done' | 'ineligible' | 'error'>('idle')
 const report = ref<AiMatchReport | null>(null)
 const errorMsg = ref('')
 const errorReasons = ref<string[]>([])
+const remindSent = ref(false)
+
+/** 判断是否自己的资料有问题 */
+const hasMyIssue = computed(() => errorReasons.value.some((r) => r.startsWith('您')))
+/** 判断是否对方的资料有问题 */
+const hasTaIssue = computed(() => errorReasons.value.some((r) => r.startsWith('对方')))
+
+/** 根据 incomplete 情况生成标题 */
+const ineligibleTitle = computed(() => {
+  if (hasMyIssue.value && hasTaIssue.value) return '双方资料均不完整'
+  if (hasTaIssue.value) return '对方资料不完整'
+  return '资料完整度不足'
+})
 
 watch(() => props.show, async (val) => {
   if (val) {
@@ -210,6 +227,24 @@ const goImproveProfile = () => {
   setTimeout(() => {
     uni.navigateTo({ url: '/pages/edit-profile/index' })
   }, 300)
+}
+
+const remindTarget = async () => {
+  if (remindSent.value) return
+  try {
+    const res: any = await request({
+      url: `/ai/match/remind/${props.targetUserId}`,
+      method: 'POST',
+    })
+    if (res?.sent) {
+      remindSent.value = true
+      uni.showToast({ title: '已提醒对方完善资料', icon: 'success' })
+    } else {
+      uni.showToast({ title: '24小时内已提醒过，请稍后再试', icon: 'none' })
+    }
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
+  }
 }
 
 const goChat = () => {
@@ -301,6 +336,10 @@ $pink-light: #FF8FA8;
   padding: 20rpx 60rpx; border-radius: 40rpx;
   background: linear-gradient(135deg, $pink, $pink-light);
   font-size: 28rpx; color: #fff;
+  margin-bottom: 16rpx;
+}
+.remind-btn {
+  background: linear-gradient(135deg, #4A90E2, #7C3AED);
 }
 
 .reasons-list {

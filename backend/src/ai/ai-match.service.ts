@@ -13,6 +13,7 @@ import { UserTagSelection } from '../entities/UserTagSelection'
 import { UserSystemTag } from '../entities/UserSystemTag'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { HotQuestion } from '../entities/HotQuestion'
+import { UserNotification } from '../entities/UserNotification'
 import { buildMatchPrompt } from './ai-match.prompt'
 import {
   MatchUserSnapshot,
@@ -42,6 +43,8 @@ export class AiMatchService {
     private readonly matchReportRepo: Repository<AiMatchReport>,
     @InjectRepository(AiCallLog)
     private readonly callLogRepo: Repository<AiCallLog>,
+    @InjectRepository(UserNotification)
+    private readonly notifyRepo: Repository<UserNotification>,
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
@@ -291,6 +294,49 @@ export class AiMatchService {
 
     const quota = await this.getQuota(userId)
     return this.buildResponse(cached, true, quota.remaining)
+  }
+
+  /**
+   * 一键提醒对方完善资料（发送系统通知）
+   */
+  async remindTargetToCompleteProfile(userId: number, targetUserId: number): Promise<{ sent: boolean }> {
+    const eligibility = await this.checkEligibility(userId, targetUserId)
+
+    // 只有对方资料不完整时才发提醒
+    const taReasons = eligibility.reasons.filter((r) => r.startsWith('对方'))
+    if (taReasons.length === 0) {
+      throw new BadRequestException('对方资料已完整，无需提醒')
+    }
+
+    // 检查 24 小时内是否已发送过提醒（防骚扰）
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const recentNotify = await this.notifyRepo.findOne({
+      where: {
+        userId: targetUserId,
+        senderType: 'profile_remind',
+        senderId: userId,
+      },
+      order: { createdAt: 'DESC' },
+    })
+    if (recentNotify && recentNotify.createdAt > oneDayAgo) {
+      return { sent: false }
+    }
+
+    // 获取发送方昵称
+    const sender = await this.userRepo.findOne({ where: { id: userId } })
+    const senderName = sender?.nickname || '一位用户'
+
+    // 发送系统通知给目标用户
+    const notification = this.notifyRepo.create({
+      userId: targetUserId,
+      title: `${senderName} 提醒你完善资料`,
+      content: `${senderName} 想和你进行AI缘分分析，但你的个人资料还不够完整。完善后即可解锁缘分匹配哦～`,
+      senderType: 'profile_remind',
+      senderId: userId,
+    })
+    await this.notifyRepo.save(notification)
+
+    return { sent: true }
   }
 
   // ==================== 内部方法 ====================

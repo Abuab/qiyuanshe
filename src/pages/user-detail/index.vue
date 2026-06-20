@@ -798,7 +798,7 @@ $text-hint: #999999;
   width: 56rpx; height: 56rpx; border-radius: 50%; background: #F5F5F5;
   display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #999;
 }
-.funquiz-body { padding: 0 32rpx 32rpx; }
+.funquiz-body { flex: 1; overflow: hidden; padding: 0 32rpx 32rpx; }
 .funquiz-desc { font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block; }
 .funquiz-field { margin-bottom: 24rpx; }
 .funquiz-label { font-size: 26rpx; color: #333; margin-bottom: 10rpx; display: block; }
@@ -811,6 +811,7 @@ $text-hint: #999999;
   margin-top: 20rpx; padding: 24rpx 0; border-radius: 40rpx;
   background: linear-gradient(135deg, $pink, $pink-light);
   font-size: 30rpx; color: #fff; font-weight: bold;
+  width: 100%; box-sizing: border-box;
   &.disabled { opacity: 0.5; }
   &.secondary { background: #F5F5F5; color: #666; margin-top: 0; }
 }
