@@ -323,7 +323,7 @@
             </scroll-view>
             <!-- 重新测试按钮固定在底部 -->
             <view class="funquiz-footer">
-              <view class="funquiz-btn funquiz-retry-btn" @tap="funQuizResult = null; funQuizBirthday = { userBirthDay: '', taBirthDay: '' }">
+              <view class="funquiz-btn funquiz-retry-btn" @tap="retryFunQuiz">
                 <text>重新测试</text>
               </view>
             </view>
@@ -361,6 +361,7 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
@@ -513,6 +514,20 @@ const openFunQuiz = () => {
     return
   }
   funQuizResult.value = null
+  // 自动填入当前用户的生日（如有）
+  const myBirthYear = userStore.userInfo?.birthYear
+  if (myBirthYear) {
+    funQuizBirthday.value.userBirthDay = `${myBirthYear}-01-01`
+  } else {
+    funQuizBirthday.value.userBirthDay = ''
+  }
+  // 自动填入对方用户的生日（如有）
+  const taBirthDay = profileData.value?.basicInfo?.birthDay
+  if (taBirthDay && typeof taBirthDay === 'string' && taBirthDay.length >= 4) {
+    funQuizBirthday.value.taBirthDay = taBirthDay
+  } else {
+    funQuizBirthday.value.taBirthDay = ''
+  }
   showFunQuizPopup.value = true
 }
 
@@ -527,12 +542,37 @@ const submitFunQuiz = async () => {
       url: '/ai/fun-quiz/generate',
       method: 'POST',
       data: funQuizBirthday.value,
+      timeout: 30000,
+      skipToast: true,
     })
     funQuizResult.value = res
   } catch (e: any) {
-    uni.showToast({ title: e?.data?.message || e?.message || '生成失败', icon: 'none' })
+    logger.error('[funQuiz] 生成失败:', e?.message || e)
+    uni.showToast({
+      title: '缘分正在生成中，请稍后再试～',
+      icon: 'none',
+      duration: 2000,
+    })
   } finally {
     funQuizLoading.value = false
+  }
+}
+
+const retryFunQuiz = () => {
+  funQuizResult.value = null
+  // 重新自动填入当前用户的生日（如有）
+  const myBirthYear = userStore.userInfo?.birthYear
+  if (myBirthYear) {
+    funQuizBirthday.value.userBirthDay = `${myBirthYear}-01-01`
+  } else {
+    funQuizBirthday.value.userBirthDay = ''
+  }
+  // 重新自动填入对方用户的生日（如有）
+  const taBirthDay = profileData.value?.basicInfo?.birthDay
+  if (taBirthDay && typeof taBirthDay === 'string' && taBirthDay.length >= 4) {
+    funQuizBirthday.value.taBirthDay = taBirthDay
+  } else {
+    funQuizBirthday.value.taBirthDay = ''
   }
 }
 
@@ -801,7 +841,8 @@ $text-hint: #999999;
   background: rgba(0,0,0,0.45); display: flex; align-items: flex-end;
 }
 .funquiz-panel {
-  width: 100%; max-height: 80vh; background: #fff;
+  width: 100%; max-height: 80vh;
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 100%);
   border-radius: 32rpx 32rpx 0 0;
   display: flex; flex-direction: column;
   box-sizing: border-box;
@@ -857,8 +898,9 @@ $text-hint: #999999;
 .funquiz-footer {
   padding: 16rpx 32rpx 24rpx;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #F0F0F0;
+  border-top: 1rpx solid #FFE4E9;
   flex-shrink: 0;
+  background: #fff;
 }
 
 .fq-result-header {
@@ -883,7 +925,7 @@ $text-hint: #999999;
   max-width: 100%; overflow-wrap: break-word; word-break: break-word;
 }
 .fq-node {
-  padding: 16rpx 20rpx; background: #FAFAFA; border-radius: 12rpx; margin-bottom: 12rpx;
+  padding: 16rpx 20rpx; background: #FFF5F7; border-radius: 12rpx; margin-bottom: 12rpx;
   max-width: 100%; overflow-wrap: break-word; box-sizing: border-box;
 }
 .fq-node-day { font-size: 24rpx; color: $pink; font-weight: bold; margin-bottom: 4rpx; display: block; }

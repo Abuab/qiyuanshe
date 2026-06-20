@@ -279,17 +279,18 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
   width: 100vw; height: 100vh;
   display: flex; flex-direction: column;
   background: #F8F8F8;
+  overflow: hidden;
 }
 
 // ==================== 导航栏 ====================
 .nav-bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32rpx; height: 88rpx; box-sizing: content-box;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
 }
 .nav-bar-placeholder {
-  height: 88rpx; flex-shrink: 0;
+  display: none;
 }
 .nav-left, .nav-right {
   display: flex; align-items: center;
@@ -318,11 +319,12 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 // ==================== 聊天区域 ====================
 .chat-scroll {
-  flex: 1; overflow-y: auto;
-  // padding 对 scroll-view 子元素边界可能截断，改用内层容器
+  flex: 1; min-height: 0;
+  // scroll-view 自己处理滚动，不要设 overflow
 }
 .chat-inner {
-  padding: 24rpx 32rpx;
+  padding: 24rpx 40rpx 32rpx;
+  box-sizing: border-box;
 }
 
 // 欢迎语
@@ -342,13 +344,15 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 }
 
 .bubble {
-  // 用户气泡最宽 70%，防止右侧截断
   max-width: 70%; padding: 20rpx 28rpx; border-radius: 24rpx;
   overflow: hidden; display: inline-block;
+  word-break: break-word; overflow-wrap: break-word;
+  box-sizing: border-box;
   &.user {
     background: linear-gradient(135deg, $pink, $pink-light); color: #fff;
     border-bottom-right-radius: 6rpx;
     align-self: flex-end;
+    margin-right: 0;
   }
   &.ai {
     background: #fff; color: #333;
@@ -392,6 +396,8 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 // ==================== 底部区域 ====================
 .bottom-area {
+  flex-shrink: 0;
+  z-index: 10;
   background: #fff; border-top: 1rpx solid #F0F0F0;
   padding: 12rpx 24rpx 0;
 }

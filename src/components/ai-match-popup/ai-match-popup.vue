@@ -47,67 +47,69 @@
 
       <!-- 结果 -->
       <view v-else-if="status === 'done' && report" class="result-block">
-        <scroll-view class="result-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-          <!-- 总分 -->
-          <view class="score-section">
-            <view class="score-circle" :style="{ borderColor: getScoreColor(report.overallScore) }">
-              <text class="score-num">{{ report.overallScore }}</text>
-              <text class="score-unit">分</text>
+        <view class="result-scroll">
+          <view class="result-inner">
+            <!-- 总分 -->
+            <view class="score-section">
+              <view class="score-circle">
+                <text class="score-num">{{ report.overallScore }}</text>
+                <text class="score-unit">分</text>
+              </view>
+              <text class="score-label">缘分契合度</text>
             </view>
-            <text class="score-label">缘分契合度</text>
-          </view>
 
-          <!-- 三维度 -->
-          <view class="dimensions">
-            <view class="dim-item">
-              <view class="dim-bar-wrap">
-                <text class="dim-label">价值观</text>
-                <text class="dim-val">{{ report.valuesScore }}分</text>
+            <!-- 三维度 -->
+            <view class="dimensions">
+              <view class="dim-item">
+                <view class="dim-bar-wrap">
+                  <text class="dim-label">价值观</text>
+                  <view class="dim-track">
+                    <view class="dim-fill dim-fill-values" :style="{ width: (report.valuesScore || 0) + '%' }" />
+                  </view>
+                  <text class="dim-val">{{ report.valuesScore }}分</text>
+                </view>
               </view>
-              <view class="dim-track">
-                <view class="dim-fill" :style="{ width: (report.valuesScore || 0) + '%', background: '#FF6B8A' }" />
+              <view class="dim-item">
+                <view class="dim-bar-wrap">
+                  <text class="dim-label">生活方式</text>
+                  <view class="dim-track">
+                    <view class="dim-fill dim-fill-lifestyle" :style="{ width: (report.lifestyleScore || 0) + '%' }" />
+                  </view>
+                  <text class="dim-val">{{ report.lifestyleScore }}分</text>
+                </view>
+              </view>
+              <view class="dim-item">
+                <view class="dim-bar-wrap">
+                  <text class="dim-label">未来规划</text>
+                  <view class="dim-track">
+                    <view class="dim-fill dim-fill-future" :style="{ width: (report.futurePlanScore || 0) + '%' }" />
+                  </view>
+                  <text class="dim-val">{{ report.futurePlanScore }}分</text>
+                </view>
               </view>
             </view>
-            <view class="dim-item">
-              <view class="dim-bar-wrap">
-                <text class="dim-label">生活方式</text>
-                <text class="dim-val">{{ report.lifestyleScore }}分</text>
-              </view>
-              <view class="dim-track">
-                <view class="dim-fill" :style="{ width: (report.lifestyleScore || 0) + '%', background: '#4A90E2' }" />
-              </view>
-            </view>
-            <view class="dim-item">
-              <view class="dim-bar-wrap">
-                <text class="dim-label">未来规划</text>
-                <text class="dim-val">{{ report.futurePlanScore }}分</text>
-              </view>
-              <view class="dim-track">
-                <view class="dim-fill" :style="{ width: (report.futurePlanScore || 0) + '%', background: '#7C3AED' }" />
-              </view>
-            </view>
-          </view>
 
-          <!-- AI 分析文字 -->
-          <view v-if="report.analysis" class="analysis-block">
-            <text class="analysis-label">✨ AI 分析</text>
-            <text class="analysis-text">{{ report.analysis }}</text>
-          </view>
+            <!-- AI 分析文字 -->
+            <view v-if="report.analysis" class="analysis-block">
+              <text class="analysis-label">✨ AI 分析</text>
+              <text class="analysis-text">{{ report.analysis }}</text>
+            </view>
 
-          <!-- 建议 -->
-          <view v-if="report.advice?.length" class="advice-block">
-            <text class="advice-label">💡 相处建议</text>
-            <view v-for="(adv, i) in report.advice" :key="i" class="advice-item">
-              <text class="advice-num">{{ i + 1 }}</text>
-              <text class="advice-text">{{ adv }}</text>
+            <!-- 建议 -->
+            <view v-if="report.advice?.length" class="advice-block">
+              <text class="advice-label">💡 相处建议</text>
+              <view v-for="(adv, i) in report.advice" :key="i" class="advice-item">
+                <text class="advice-num">{{ i + 1 }}</text>
+                <text class="advice-text">{{ adv }}</text>
+              </view>
+            </view>
+
+            <!-- 内容审核中 -->
+            <view v-if="report.reviewStatus === 'pending'" class="review-notice">
+              <text>⏳ 内容审核中，审核通过后展示</text>
             </view>
           </view>
-
-          <!-- 内容审核中 -->
-          <view v-if="report.reviewStatus === 'pending'" class="review-notice">
-            <text>⏳ 内容审核中，审核通过后展示</text>
-          </view>
-        </scroll-view>
+        </view>
 
         <view class="panel-footer">
           <view class="footer-btn chat-btn" @tap="goChat">
@@ -283,12 +285,6 @@ const goChat = () => {
   }, 300)
 }
 
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return '#FF6B8A'
-  if (score >= 60) return '#FF9500'
-  return '#4A90E2'
-}
-
 function nextTick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 30))
 }
@@ -307,6 +303,9 @@ onMounted(() => {
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
+$pink-lighter: #FFB6C1;
+$pink-bg: #FFF5F7;
+$pink-border: #FFE4E9;
 
 .ai-match-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999;
@@ -316,8 +315,10 @@ $pink-light: #FF8FA8;
 
 .ai-match-panel {
   width: 100%; max-height: 85vh;
-  background: #fff; border-radius: 32rpx 32rpx 0 0;
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 100%);
+  border-radius: 32rpx 32rpx 0 0;
   display: flex; flex-direction: column;
+  box-sizing: border-box;
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   &.slideUp { transform: translateY(0); }
@@ -326,6 +327,8 @@ $pink-light: #FF8FA8;
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 32rpx 32rpx 20rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 .panel-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
 .close-btn {
@@ -354,7 +357,7 @@ $pink-light: #FF8FA8;
 }
 .large-emoji { font-size: 72rpx; margin-bottom: 24rpx; }
 .block-title { font-size: 30rpx; color: #1A1A1A; font-weight: bold; margin-bottom: 12rpx; line-height: 1.5; }
-.block-desc { font-size: 26rpx; color: #999; margin-bottom: 40rpx; }
+.block-desc { font-size: 26rpx; color: #999; margin-bottom: 40rpx; max-width: 100%; word-break: break-word; }
 .block-btn {
   padding: 20rpx 60rpx; border-radius: 40rpx;
   background: linear-gradient(135deg, $pink, $pink-light);
@@ -368,70 +371,163 @@ $pink-light: #FF8FA8;
 .reasons-list {
   width: 100%; padding: 16rpx 24rpx; margin-bottom: 16rpx;
   background: #FFF8F0; border-radius: 12rpx; text-align: left;
+  box-sizing: border-box;
 }
 .reason-item { display: flex; gap: 8rpx; margin-bottom: 8rpx; }
-.reason-dot { font-size: 26rpx; color: #FF9500; line-height: 1.6; }
-.reason-text { font-size: 26rpx; color: #666; line-height: 1.6; }
+.reason-dot { font-size: 26rpx; color: #FF9500; line-height: 1.6; flex-shrink: 0; }
+.reason-text { font-size: 26rpx; color: #666; line-height: 1.6; flex: 1; word-break: break-word; }
 
 // ===== 结果 =====
-.result-block { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.result-scroll { flex: 1; padding: 0 32rpx; }
+.result-block {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
+}
+.result-scroll {
+  flex: 1; min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+.result-inner {
+  padding: 0 32rpx 16rpx;
+  box-sizing: border-box;
+}
 
+// 总分区域
 .score-section {
-  display: flex; flex-direction: column; align-items: center; padding: 20rpx 0 32rpx;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24rpx 0 32rpx;
+  box-sizing: border-box;
 }
 .score-circle {
   width: 160rpx; height: 160rpx; border-radius: 50%;
-  border: 6rpx solid; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; margin-bottom: 16rpx;
+  border: 6rpx solid transparent;
+  background-image: linear-gradient(#FFF0F5, #FFF0F5),
+    linear-gradient(135deg, $pink, $pink-light);
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  margin-bottom: 16rpx;
 }
-.score-num { font-size: 56rpx; font-weight: bold; color: #1A1A1A; }
+.score-num { font-size: 56rpx; font-weight: bold; color: $pink; }
 .score-unit { font-size: 24rpx; color: #999; }
 .score-label { font-size: 26rpx; color: #666; }
 
-.dimensions { padding: 0 0 24rpx; }
-.dim-item { margin-bottom: 20rpx; }
-.dim-bar-wrap { display: flex; justify-content: space-between; margin-bottom: 8rpx; }
-.dim-label { font-size: 26rpx; color: #333; }
-.dim-val { font-size: 24rpx; color: #999; }
+// 维度进度条
+.dimensions {
+  padding: 0 0 24rpx;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.dim-item {
+  margin-bottom: 20rpx;
+  max-width: 100%;
+}
+.dim-bar-wrap {
+  display: flex; align-items: center; gap: 12rpx;
+  margin-bottom: 6rpx;
+  max-width: 100%;
+}
+.dim-label {
+  font-size: 26rpx; color: #333; flex-shrink: 0; width: 75rpx;
+}
 .dim-track {
-  height: 10rpx; background: #F0F0F0; border-radius: 5rpx; overflow: hidden;
+  flex: 1; height: 12rpx; background: $pink-border;
+  border-radius: 6rpx; overflow: hidden;
+  max-width: 100%;
 }
-.dim-fill { height: 100%; border-radius: 5rpx; transition: width 0.6s ease; }
+.dim-fill {
+  height: 100%; border-radius: 6rpx; transition: width 0.6s ease;
+}
+.dim-fill-values { background: $pink; }
+.dim-fill-lifestyle { background: $pink-light; }
+.dim-fill-future { background: $pink-lighter; }
+.dim-val {
+  font-size: 24rpx; color: #999; flex-shrink: 0; width: 55rpx; text-align: right;
+}
 
-.analysis-block, .advice-block {
-  padding: 24rpx 0; border-top: 1rpx solid #F0F0F0;
+// AI 分析卡片
+.analysis-block {
+  margin-bottom: 20rpx;
+  background: #fff;
+  border: 1rpx solid $pink-border;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 138, 0.1);
+  box-sizing: border-box;
+  max-width: 100%;
 }
-.analysis-label, .advice-label {
-  font-size: 26rpx; font-weight: bold; color: #333; margin-bottom: 14rpx; display: block;
+.analysis-label {
+  font-size: 26rpx; font-weight: bold; color: #333;
+  margin-bottom: 12rpx; display: block;
 }
 .analysis-text {
   font-size: 26rpx; color: #666; line-height: 1.7;
+  word-break: break-word; overflow-wrap: break-word;
+  max-width: 100%;
 }
-.advice-item { display: flex; gap: 12rpx; margin-bottom: 12rpx; }
+
+// 相处建议卡片
+.advice-block {
+  margin-bottom: 20rpx;
+  background: #fff;
+  border: 1rpx solid $pink-border;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 138, 0.1);
+  box-sizing: border-box;
+  max-width: 100%;
+}
+.advice-label {
+  font-size: 26rpx; font-weight: bold; color: #333;
+  margin-bottom: 14rpx; display: block;
+}
+.advice-item {
+  display: flex; gap: 12rpx; margin-bottom: 12rpx;
+  max-width: 100%;
+  &:last-child { margin-bottom: 0; }
+}
 .advice-num {
   width: 36rpx; height: 36rpx; border-radius: 50%;
   background: linear-gradient(135deg, $pink, $pink-light);
-  color: #fff; font-size: 22rpx; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 22rpx;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; margin-top: 4rpx;
 }
-.advice-text { font-size: 26rpx; color: #666; line-height: 1.6; flex: 1; }
+.advice-text {
+  font-size: 26rpx; color: #666; line-height: 1.6;
+  flex: 1; word-break: break-word; overflow-wrap: break-word;
+  max-width: 100%;
+}
 
 .review-notice {
   padding: 20rpx; background: #FFF8E1; border-radius: 12rpx;
   font-size: 24rpx; color: #F57F17; text-align: center; margin: 16rpx 0;
+  box-sizing: border-box;
 }
 
+// 底部按钮
 .panel-footer {
-  display: flex; gap: 20rpx; padding: 20rpx 32rpx;
+  display: flex; gap: 20rpx;
+  padding: 20rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #F0F0F0;
+  border-top: 1rpx solid $pink-border;
+  background: #fff;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 .footer-btn {
   flex: 1; height: 88rpx; border-radius: 44rpx;
   display: flex; align-items: center; justify-content: center;
   font-size: 30rpx; font-weight: bold;
 }
-.chat-btn { background: linear-gradient(135deg, $pink, $pink-light); color: #fff; }
-.close-footer { background: #F5F5F5; color: #666; }
+.chat-btn {
+  background: linear-gradient(135deg, $pink, $pink-light); color: #fff;
+}
+.close-footer {
+  background: #F5F5F5; color: #666;
+  border: 1rpx solid #EEE;
+}
 </style>
