@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { AiProviderSelector } from './ai-provider-selector.service'
+import { AiProviderConfigService } from './ai-provider-config.service'
 
 /**
- * 统一 AI API 调用服务
+ * 统一 AI API 调用服务（多 Provider 版）
  *
- * 支持 OpenRouter / OpenAI / DeepSeek / Qwen 等兼容 OpenAI 协议的厂商。
- * 配置从环境变量读取：
- * - AI_API_KEY      (必填) API Key
- * - AI_MODEL        模型名，默认 openai/gpt-4o-mini
- * - AI_API_BASE     API 基础 URL，默认 https://openrouter.ai/api/v1
- * - AI_REQUEST_TIMEOUT 超时毫秒，默认 30000
+ * 从 AiProviderSelector 获取可用的 Provider，动态调用不同厂商的 API。
+ * 所有厂商需兼容 OpenAI Chat Completions 协议。
  *
  * 用法：
  *   const result = await aiApi.call({ prompt: '...' })
@@ -16,49 +14,51 @@ import { Injectable, Logger } from '@nestjs/common'
  */
 
 interface AiCallOptions {
-  /** 文本 prompt（将自动包装为单条 user message） */
   prompt?: string
-  /** 消息数组（支持 system/user/assistant 多轮对话） */
   messages?: { role: 'system' | 'user' | 'assistant'; content: string }[]
-  /** 期望 JSON 响应（会自动加上"请只返回 JSON"指令） */
   responseJson?: boolean
-  /** 最大输出 token 数 */
   maxTokens?: number
-  /** 温度 */
   temperature?: number
+}
+
+/** 调用结果 */
+export interface AiCallResult {
+  content: string
+  providerId: number
+  providerName: string
+  model: string
+  inputTokens: number
+  outputTokens: number
+  durationMs: number
 }
 
 @Injectable()
 export class AiApiService {
   private readonly logger = new Logger(AiApiService.name)
-  private readonly apiKey: string
-  private readonly model: string
-  private readonly apiBase: string
   private readonly timeout: number
 
-  constructor() {
-    this.apiKey = process.env.AI_API_KEY || ''
-    this.model = process.env.AI_MODEL || 'openai/gpt-4o-mini'
-    this.apiBase = process.env.AI_API_BASE || 'https://openrouter.ai/api/v1'
+  constructor(
+    private readonly selector: AiProviderSelector,
+    private readonly configService: AiProviderConfigService,
+  ) {
     this.timeout = parseInt(process.env.AI_REQUEST_TIMEOUT || '30000', 10)
-
-    if (!this.apiKey) {
-      this.logger.warn(
-        '⚠️  AI_API_KEY 未配置！所有 AI 调用将返回 fallback 结果。请在 .env 中设置 AI_API_KEY。',
-      )
-    } else {
-      this.logger.log(`AI API 已配置: model=${this.model}, base=${this.apiBase}`)
-    }
   }
 
   /**
-   * 调用 AI 大模型
+   * 调用 AI 大模型（多 Provider 自动选择）
    */
   async call(options: AiCallOptions): Promise<string> {
-    const hasKey = !!this.apiKey
+    const result = await this.callWithMeta(options)
+    return result.content
+  }
 
-    if (!hasKey) {
-      this.logger.warn('AI_API_KEY 未配置，跳过真实调用')
+  /**
+   * 调用 AI 并返回元数据（Provider/Token/耗时等）
+   */
+  async callWithMeta(options: AiCallOptions): Promise<AiCallResult> {
+    const provider = await this.selector.select()
+    if (!provider) {
+      this.logger.warn('没有可用的 AI Provider，使用降级模式')
       throw new Error('AI_API_KEY_NOT_CONFIGURED')
     }
 
@@ -72,7 +72,6 @@ export class AiApiService {
       throw new Error('必须提供 prompt 或 messages')
     }
 
-    // JSON 模式：追加指令
     if (options.responseJson) {
       const lastMsg = messages[messages.length - 1]
       messages[messages.length - 1] = {
@@ -84,18 +83,22 @@ export class AiApiService {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), this.timeout)
 
+    const startMs = Date.now()
+
     try {
-      const url = `${this.apiBase}/chat/completions`
-      this.logger.log(`AI 调用: model=${this.model}, messages=${messages.length}条`)
+      const url = `${provider.apiBase}/chat/completions`
+      this.logger.log(
+        `AI 调用: [${provider.displayName}] model=${provider.modelName}, messages=${messages.length}条`,
+      )
 
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${provider.apiKeyPlain}`,
         },
         body: JSON.stringify({
-          model: this.model,
+          model: provider.modelName,
           messages,
           max_tokens: options.maxTokens ?? 800,
           temperature: options.temperature ?? 0.7,
@@ -103,38 +106,61 @@ export class AiApiService {
         signal: controller.signal,
       })
 
+      const durationMs = Date.now() - startMs
+
       if (!response.ok) {
         const errText = await response.text().catch(() => '')
-        this.logger.error(`AI API 返回错误 ${response.status}: ${errText.slice(0, 200)}`)
+        this.logger.error(
+          `[${provider.displayName}] API 返回错误 ${response.status}: ${errText.slice(0, 200)}`,
+        )
+        await this.selector.recordFailure(provider.id)
         throw new Error(`AI_API_ERROR:${response.status}`)
       }
 
       const data = await response.json()
       const content = data?.choices?.[0]?.message?.content as string
+      const inputTokens = data?.usage?.prompt_tokens || 0
+      const outputTokens = data?.usage?.completion_tokens || 0
 
       if (!content) {
-        this.logger.error('AI API 返回空内容')
+        this.logger.error(`[${provider.displayName}] API 返回空内容`)
+        await this.selector.recordFailure(provider.id)
         throw new Error('AI_API_EMPTY_RESPONSE')
       }
 
-      this.logger.log(`AI 调用成功: ${content.length} 字符`)
-      return content
+      await this.selector.recordSuccess(provider.id)
+      this.logger.log(
+        `[${provider.displayName}] 调用成功: ${content.length}字符, ${inputTokens}+${outputTokens} tokens, ${durationMs}ms`,
+      )
+
+      return {
+        content,
+        providerId: provider.id,
+        providerName: provider.displayName,
+        model: provider.modelName,
+        inputTokens,
+        outputTokens,
+        durationMs,
+      }
     } catch (e: any) {
       if (e.name === 'AbortError') {
-        this.logger.error(`AI API 超时 (${this.timeout}ms)`)
+        this.logger.error(`[${provider.displayName}] API 超时 (${this.timeout}ms)`)
+        await this.selector.recordFailure(provider.id)
         throw new Error('AI_API_TIMEOUT')
       }
       if (e.message?.startsWith('AI_API_')) throw e
       if (e.message === 'AI_API_KEY_NOT_CONFIGURED') throw e
-      this.logger.error(`AI API 网络异常: ${e?.message}`)
+      this.logger.error(`[${provider.displayName}] API 网络异常: ${e?.message}`)
+      await this.selector.recordFailure(provider.id)
       throw new Error('AI_API_NETWORK_ERROR')
     } finally {
       clearTimeout(timer)
     }
   }
 
-  /** 检查是否已配置 API Key */
-  isConfigured(): boolean {
-    return !!this.apiKey
+  /** 检查是否有可用 Provider */
+  async isConfigured(): Promise<boolean> {
+    const provider = await this.selector.select()
+    return !!provider
   }
 }

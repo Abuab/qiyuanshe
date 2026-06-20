@@ -141,7 +141,7 @@ export class AiProfileGenService {
     let rawResult: { summary: string; content: string }
 
     try {
-      if (this.aiApiService.isConfigured()) {
+      if (await this.aiApiService.isConfigured()) {
         const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
         rawResult = this.parseJsonResponse(aiResponse)
       } else {

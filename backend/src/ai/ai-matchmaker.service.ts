@@ -128,7 +128,7 @@ export class AiMatchmakerService {
     let reply: string
 
     try {
-      if (this.aiApiService.isConfigured()) {
+      if (await this.aiApiService.isConfigured()) {
         reply = await this.aiApiService.call({
           messages: [
             { role: 'system', content: MATCHMAKER_SYSTEM_PROMPT },
