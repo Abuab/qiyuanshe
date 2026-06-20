@@ -20,6 +20,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR
     let message = '服务器内部错误'
     let code = 500
+    let errorData: any = undefined
 
     if (exception instanceof HttpException) {
       status = exception.getStatus()
@@ -30,10 +31,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         code = status
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, any>
-        // NestJS 将 BadRequestException({ code, message }) 包装为 { message: { code, message } }
+        // NestJS 将 BadRequestException({ code, message, reasons }) 包装为 { message: { code, message, reasons } }
         // 此处展平：优先使用内层 message 字符串
         if (typeof responseObj.message === 'object' && responseObj.message !== null) {
-          message = responseObj.message?.message || exception.message
+          const inner = responseObj.message as Record<string, any>
+          message = inner.message || exception.message
+          // 透传业务层自定义字段（如 reasons, code 等）给前端
+          if (inner.reasons) errorData = { reasons: inner.reasons }
+          if (typeof inner.code === 'string') code = status
         } else {
           message = responseObj.message || exception.message
         }
@@ -44,7 +49,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack)
     }
 
-    const result = Result.error(message, code)
+    const result = Result.error(message, code, errorData)
 
     response.header('Access-Control-Allow-Origin', '*')
     response.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')

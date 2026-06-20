@@ -13,8 +13,8 @@ export class Result<T = any> {
     return new Result<T>(200, message, data)
   }
 
-  static error(message: string, code: number = 500): Result<void> {
-    return new Result<void>(code, message)
+  static error(message: string, code: number = 500, data?: any): Result<void> {
+    return new Result<void>(code, message, data)
   }
 
   static unauthorized(message: string = '未授权'): Result<void> {

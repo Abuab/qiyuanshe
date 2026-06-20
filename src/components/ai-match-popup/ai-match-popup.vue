@@ -20,9 +20,15 @@
       <view v-else-if="status === 'ineligible'" class="ineligible-block">
         <text class="large-emoji">🔒</text>
         <text class="block-title">{{ errorMsg }}</text>
-        <text class="block-desc">如果你也完成了问答，就能解锁分析</text>
-        <view class="block-btn" @tap="close">
-          <text>我知道了</text>
+        <view v-if="errorReasons.length" class="reasons-list">
+          <view v-for="(r, i) in errorReasons" :key="i" class="reason-item">
+            <text class="reason-dot">•</text>
+            <text class="reason-text">{{ r }}</text>
+          </view>
+        </view>
+        <text class="block-desc">完善资料后即可解锁AI缘分分析</text>
+        <view class="block-btn" @tap="goImproveProfile">
+          <text>去完善资料</text>
         </view>
       </view>
 
@@ -144,6 +150,7 @@ const animating = ref(false)
 const status = ref<'idle' | 'loading' | 'done' | 'ineligible' | 'error'>('idle')
 const report = ref<AiMatchReport | null>(null)
 const errorMsg = ref('')
+const errorReasons = ref<string[]>([])
 
 watch(() => props.show, async (val) => {
   if (val) {
@@ -180,11 +187,14 @@ const loadReport = async () => {
     }
   } catch (e: any) {
     const msg = e?.message || e?.data?.message || ''
+    const reasons: string[] = e?.data?.reasons || []
+
     if (msg.includes('次数') || msg.includes('用完') || msg.includes('限流') || msg.includes('ULIMITED') || msg.includes('LIMITED')) {
-      errorMsg.value = msg || '今日次数已用完，开通会员享更多次数'
+      errorMsg.value = '今日分析次数已用完'
       status.value = 'ineligible'
-    } else if (msg.includes('资格') || msg.includes('无权') || msg.includes('问答')) {
-      errorMsg.value = '你还需要完成更多问答才能解锁分析'
+    } else if (msg.includes('资料') || msg.includes('标签') || msg.includes('问答') || msg.includes('资格') || msg.includes('无权') || reasons.length > 0) {
+      errorMsg.value = '资料完整度不足'
+      errorReasons.value = reasons.length > 0 ? reasons : ['请完善个人资料并完成至少3个标签选择和3条问答']
       status.value = 'ineligible'
     } else {
       errorMsg.value = msg || '网络异常，请重试'
@@ -194,6 +204,13 @@ const loadReport = async () => {
 }
 
 const retry = () => loadReport()
+
+const goImproveProfile = () => {
+  close()
+  setTimeout(() => {
+    uni.navigateTo({ url: '/pages/my/profile/index' })
+  }, 300)
+}
 
 const goChat = () => {
   close()
@@ -285,6 +302,14 @@ $pink-light: #FF8FA8;
   background: linear-gradient(135deg, $pink, $pink-light);
   font-size: 28rpx; color: #fff;
 }
+
+.reasons-list {
+  width: 100%; padding: 16rpx 24rpx; margin-bottom: 16rpx;
+  background: #FFF8F0; border-radius: 12rpx; text-align: left;
+}
+.reason-item { display: flex; gap: 8rpx; margin-bottom: 8rpx; }
+.reason-dot { font-size: 26rpx; color: #FF9500; line-height: 1.6; }
+.reason-text { font-size: 26rpx; color: #666; line-height: 1.6; }
 
 // ===== 结果 =====
 .result-block { flex: 1; display: flex; flex-direction: column; overflow: hidden; }

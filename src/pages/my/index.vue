@@ -99,7 +99,7 @@
         <text class="arrow">></text>
       </view>
 
-      <!-- ========== 金刚区：我的问答 + 专属红娘（合并为一张卡片，左对齐网格） ========== -->
+      <!-- ========== 金刚区：我的问答 + AI红娘 + 专属红娘（合并为一张卡片，左对齐网格） ========== -->
       <view class="service-card">
         <view class="service-grid">
           <view class="service-item" @tap="goToQuestions">
@@ -108,6 +108,12 @@
               <text class="service-icon-text">#</text>
             </view>
             <text class="service-label">我的问答</text>
+          </view>
+          <view class="service-item" @tap="goToAiMatchmaker">
+            <view class="service-icon-box pink-gradient">
+              <text class="service-icon-text">💝</text>
+            </view>
+            <text class="service-label">AI 红娘</text>
           </view>
           <view class="service-item" @tap="goToMatchmaker">
             <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
@@ -308,6 +314,9 @@ const goToEditProfile = () => uni.navigateTo({ url: '/pages/edit-profile/index' 
 const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
   uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
+}
+const goToAiMatchmaker = () => {
+  uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
 }
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
 const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
@@ -669,6 +678,10 @@ const toolGrid7 = [
 
   &.purple-gradient {
     background: linear-gradient(135deg, #A78BFA, #C4B5FD);
+  }
+
+  &.pink-gradient {
+    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
   }
 }
 

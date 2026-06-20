@@ -328,7 +328,9 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
           if (!skipToast) {
             uni.showToast({ title: bizMsg, icon: 'none', duration: 2000 })
           }
-          reject(new Error(bizMsg))
+          const err = new Error(bizMsg) as Error & { data?: any }
+          err.data = result.data
+          reject(err)
         }
       },
       fail: (err: any) => {
