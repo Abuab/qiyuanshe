@@ -21,14 +21,14 @@ export enum ChatOpAction {
  * 聊天操作日志（审计用，保留90天）
  */
 @Entity('chat_operation_logs')
-@Index(['operatorId', 'createdAt'])
-@Index(['targetUserId', 'createdAt'])
+@Index('idx_oplog_op_time', ['operatorId', 'createdAt'])
+@Index('idx_oplog_target_time', ['targetUserId', 'createdAt'])
 export class ChatOperationLog {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number
 
   /** 运营人员 ID */
-  @Index()
+  @Index('idx_oplog_op')
   @Column({ type: 'bigint' })
   operatorId: number
 
@@ -41,7 +41,7 @@ export class ChatOperationLog {
   action: ChatOpAction
 
   /** 被监控/操作的目标用户 ID */
-  @Index()
+  @Index('idx_oplog_target')
   @Column({ type: 'bigint', nullable: true })
   targetUserId: number | null
 

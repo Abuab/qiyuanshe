@@ -27,14 +27,14 @@ export enum MonitorStatus {
  * 记录运营人员对某个用户进行聊天监控的起止时间和状态
  */
 @Entity('chat_monitor_sessions')
-@Index(['targetUserId'])
-@Index(['operatorId', 'status'])
+@Index('idx_monitor_target', ['targetUserId'])
+@Index('idx_monitor_op_status', ['operatorId', 'status'])
 export class ChatMonitorSession {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number
 
   /** 运营人员 ID */
-  @Index()
+  @Index('idx_monitor_op')
   @Column({ type: 'bigint' })
   operatorId: number
 
@@ -43,7 +43,7 @@ export class ChatMonitorSession {
   operator: AdminUser
 
   /** 被监控用户 ID */
-  @Index()
+  @Index('idx_monitor_target_user')
   @Column({ type: 'bigint' })
   targetUserId: number
 
