@@ -130,6 +130,8 @@
         <el-menu-item index="/system/dict">选项配置</el-menu-item>
         <el-menu-item index="/system/ai-switch">AI功能开关</el-menu-item>
         <el-menu-item index="/ai/safety-audit">内容安全审核</el-menu-item>
+        <el-menu-item index="/ai/provider">AI Provider管理</el-menu-item>
+        <el-menu-item index="/ai/call-logs">AI调用日志</el-menu-item>
       </el-sub-menu>
     </el-menu>
 

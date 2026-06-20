@@ -118,6 +118,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '内容安全审核', requiresAuth: true },
       },
       {
+        path: '/ai/provider',
+        name: 'AiProvider',
+        component: () => import('../views/ai/provider/index.vue'),
+        meta: { title: 'AI Provider管理', requiresAuth: true },
+      },
+      {
+        path: '/ai/call-logs',
+        name: 'AiCallLogs',
+        component: () => import('../views/ai/provider/call-logs.vue'),
+        meta: { title: 'AI调用日志', requiresAuth: true },
+      },
+      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),
