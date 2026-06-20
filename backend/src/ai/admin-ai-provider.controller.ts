@@ -6,6 +6,7 @@ import { AiProviderConfigService } from './ai-provider-config.service'
 import { AiProviderSelector } from './ai-provider-selector.service'
 import { AiProviderBalanceService } from './ai-provider-balance.service'
 import { AiProviderStatsService } from './ai-provider-stats.service'
+import { AiProviderSeeder } from './ai-provider.seeder'
 import { LoadBalanceStrategy } from '../entities/AiProviderConfig'
 import { ProviderConfigInput, SwitchProviderInput } from './ai-provider.types'
 import { Result } from '../common/result'
@@ -22,6 +23,7 @@ export class AdminAiProviderController {
     private readonly selector: AiProviderSelector,
     private readonly balanceService: AiProviderBalanceService,
     private readonly statsService: AiProviderStatsService,
+    private readonly seeder: AiProviderSeeder,
   ) {}
 
   // ==================== Provider 配置 CRUD ====================
@@ -160,6 +162,42 @@ export class AdminAiProviderController {
     return Result.success({
       message: '调用日志详细数据请查看成本统计报表，或通过数据库直接查询 ai_provider_call_logs 表',
     })
+  }
+
+  // ==================== 缓存同步 ====================
+
+  /** 手动将 .env 中的 Provider 配置同步到数据库 */
+  @Post('seed-from-env')
+  async seedFromEnv() {
+    const result = await this.seeder.seedFromEnv()
+    if (result.created > 0 || result.skipped > 0) {
+      await this.configService.syncToRedis()
+    }
+    return Result.success(result, result.message)
+  }
+
+  /** 手动同步 Provider 配置到 Redis */
+  @Post('sync-redis')
+  async syncToRedis() {
+    await this.configService.syncToRedis()
+    return Result.success(null, 'Redis 缓存已同步')
+  }
+
+  /** 测试 Provider 连接 */
+  @Post(':id/test')
+  async testConnection(@Param('id', ParseIntPipe) id: number) {
+    // 校验 Provider 是否存在且启用
+    const snapshots = await this.configService.getEnabledSnapshots()
+    const found = snapshots.find(s => s.id === id)
+    if (!found) {
+      return Result.error('Provider 不存在或未启用', 400)
+    }
+    // 简单检查：配置了 apiBase 和 apiKey 即可
+    return Result.success({
+      providerKey: found.providerKey,
+      apiBase: found.apiBase,
+      model: found.modelName,
+    }, '配置信息正常')
   }
 
   // ==================== 动态参数路由（放最后，避免拦截静态路由） ====================

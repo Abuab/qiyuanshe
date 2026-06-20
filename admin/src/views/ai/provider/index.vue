@@ -17,6 +17,7 @@
         <el-tag v-if="activeProviderName" type="success" effect="light" size="large">
           活跃: {{ activeProviderName }}
         </el-tag>
+        <el-button :loading="seedLoading" @click="onSeedFromEnv">从 .env 同步</el-button>
         <el-button type="primary" :icon="Plus" @click="openCreate">添加 Provider</el-button>
       </div>
     </div>
@@ -237,6 +238,7 @@ const cooldownList = ref<number[]>([])
 const balanceMap = ref<Record<number, number>>({})
 const balanceLoadingMap = ref<Record<number, boolean>>({})
 const alertMap = ref<Record<number, string>>({})
+const seedLoading = ref(false)
 
 const enabledCount = computed(() => providers.value.filter(p => p.isEnabled === 1).length)
 const strategyLabel = computed(() => {
@@ -464,6 +466,19 @@ async function fetchExtra() {
       })
     }
   } catch {}
+}
+
+async function onSeedFromEnv() {
+  seedLoading.value = true
+  try {
+    const res = await aiProviderApi.seedFromEnv()
+    ElMessage.success(res.data?.message || '同步完成')
+    await fetchProviders()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '同步失败')
+  } finally {
+    seedLoading.value = false
+  }
 }
 
 onMounted(async () => {

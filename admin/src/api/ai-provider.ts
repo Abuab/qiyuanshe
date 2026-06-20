@@ -108,6 +108,11 @@ export const aiProviderApi = {
     return request.post('/admin/ai/provider/sync-redis')
   },
 
+  /** 从 .env 同步 Provider 到数据库 */
+  seedFromEnv(): Promise<ApiResponse<{ created: number; skipped: number; message: string }>> {
+    return request.post('/admin/ai/provider/seed-from-env')
+  },
+
   /** 测试连接 */
   testConnection(id: number): Promise<ApiResponse> {
     return request.post(`/admin/ai/provider/${id}/test`)
