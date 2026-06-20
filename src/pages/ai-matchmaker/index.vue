@@ -9,7 +9,7 @@
       <view class="nav-right" />
     </view>
 
-    <!-- 剩余次数提示（免费用户） -->
+    <!-- 剩余次数提示 -->
     <view v-if="remainingRounds !== null && remainingRounds <= 3" class="quota-bar">
       <text class="quota-text">今日免费咨询剩余 {{ remainingRounds }} 轮</text>
     </view>
@@ -28,21 +28,16 @@
         <text class="welcome-emoji">💝</text>
         <text class="welcome-title">Hi~ 我是你的AI红娘</text>
         <text class="welcome-desc">恋爱困惑、约会建议、相处技巧...尽管问我</text>
-        <view class="quick-qs-container">
-          <text class="quick-qs-label">你可以试着问我：</text>
-          <view
-            v-for="(q, i) in quickQuestions"
-            :key="i"
-            class="quick-q-item"
-            @tap="sendQuick(q)"
-          >
-            <text>{{ q }}</text>
-          </view>
-        </view>
       </view>
 
       <!-- 消息气泡 -->
-      <view v-for="(msg, i) in messages" :key="i" :id="'msg-' + i" class="msg-row" :class="msg.role">
+      <view
+        v-for="(msg, i) in messages"
+        :key="i"
+        :id="'msg-' + i"
+        class="msg-row"
+        :class="msg.role"
+      >
         <view class="bubble" :class="msg.role">
           <text class="bubble-text">{{ msg.content }}</text>
         </view>
@@ -68,8 +63,21 @@
       <view id="msg-bottom" class="msg-bottom-spacer" />
     </scroll-view>
 
-    <!-- 底部输入栏 -->
-    <view class="bottom-input-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+    <!-- 底部区域 -->
+    <view class="bottom-area" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+      <!-- 快捷问题横向滚动 -->
+      <scroll-view class="quick-bar" :scroll-x="true" :show-scrollbar="false">
+        <view class="quick-bar-inner">
+          <text
+            v-for="(q, i) in quickQuestions"
+            :key="i"
+            class="quick-tag"
+            @tap="sendQuick(q)"
+          >{{ q }}</text>
+        </view>
+      </scroll-view>
+
+      <!-- 输入框行 -->
       <view class="input-row">
         <input
           class="input-field"
@@ -88,20 +96,19 @@
           <text>发送</text>
         </view>
       </view>
-      <view class="bottom-tools">
-        <view class="tool-item" @tap="clearChat">
-          <text>重置对话</text>
-        </view>
+
+      <!-- 重置对话 -->
+      <view class="reset-row" @tap="clearChat">
+        <text class="reset-icon">↻</text>
+        <text class="reset-text">重置对话</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import request from '@/utils/request'
-
-const statusBarHeight = ref(0)
 
 interface Message {
   role: 'user' | 'ai'
@@ -115,15 +122,16 @@ const typing = ref(false)
 const remainingRounds = ref<number | null>(null)
 const scrollToId = ref('')
 const quickQuestions = ref<string[]>([])
+const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
-
-const historyLoaded = ref(false)
 
 onMounted(async () => {
   try {
+    // #ifdef MP-WEIXIN
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
     safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
+    // #endif
   } catch {}
 
   await Promise.all([
@@ -146,15 +154,11 @@ const loadHistory = async () => {
     const res: any = await request({ url: '/ai/matchmaker/history', method: 'GET' })
     if (res?.messages?.length) {
       messages.value = res.messages
-      remainingRounds.value = res.remainingRounds
     }
     if (res?.remainingRounds !== undefined) {
       remainingRounds.value = res.remainingRounds
     }
-  } catch {
-    // 无历史记录
-  }
-  historyLoaded.value = true
+  } catch {}
   scrollToBottom()
 }
 
@@ -164,7 +168,16 @@ const loadQuickQuestions = async () => {
     if (Array.isArray(res)) {
       quickQuestions.value = res
     }
-  } catch {}
+  } catch {
+    // 后端不返回时使用默认问题
+    quickQuestions.value = [
+      '第一次约会去哪',
+      '怎么开场聊天',
+      '对方冷淡怎么办',
+      '约会穿搭建议',
+      '怎么判断对方真心',
+    ]
+  }
 }
 
 const sendQuick = (q: string) => {
@@ -197,7 +210,7 @@ const sendText = async () => {
         remainingRounds.value = res.remainingRounds
       }
     }
-  } catch (e: any) {
+  } catch {
     messages.value.push({
       role: 'ai',
       content: '红娘正在忙，请稍后再试～',
@@ -210,13 +223,9 @@ const sendText = async () => {
 const clearChat = async () => {
   try {
     await request({ url: '/ai/matchmaker/context', method: 'DELETE' })
-    messages.value = []
-    await loadHistory()
-    uni.showToast({ title: '对话已重置', icon: 'none', duration: 1500 })
-  } catch {
-    messages.value = []
-    uni.showToast({ title: '对话已重置', icon: 'none', duration: 1500 })
-  }
+  } catch {}
+  messages.value = []
+  uni.showToast({ title: '对话已重置', icon: 'none', duration: 1500 })
 }
 
 const scrollToBottom = () => {
@@ -230,6 +239,7 @@ const scrollToBottom = () => {
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
+$nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 .ai-matchmaker-page {
   width: 100vw; height: 100vh;
@@ -237,23 +247,34 @@ $pink-light: #FF8FA8;
   background: #F8F8F8;
 }
 
-// 导航栏
+// ==================== 导航栏 ====================
 .nav-bar {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center;
   padding: 0 32rpx 16rpx;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
 }
-.nav-left { width: 80rpx; }
+.nav-left {
+  flex-shrink: 0; width: 80rpx;
+}
 .back-icon { font-size: 36rpx; color: #fff; }
-.nav-title { font-size: 34rpx; color: #fff; font-weight: bold; }
-.nav-right { width: 80rpx; }
+.nav-title {
+  flex: 1; text-align: center;
+  font-size: 34rpx; color: #fff; font-weight: bold;
+  // 向左偏移，避开右侧胶囊按钮
+  margin-right: $nav-right-width;
+}
+.nav-right {
+  flex-shrink: 0; width: $nav-right-width;
+}
 
+// ==================== 配额提示 ====================
 .quota-bar {
   padding: 12rpx 32rpx; background: #FFF8F0;
   text-align: center;
 }
 .quota-text { font-size: 24rpx; color: #FF9500; }
 
+// ==================== 聊天区域 ====================
 .chat-scroll {
   flex: 1; overflow-y: auto;
   padding: 24rpx 32rpx;
@@ -262,27 +283,13 @@ $pink-light: #FF8FA8;
 // 欢迎语
 .welcome-block {
   display: flex; flex-direction: column; align-items: center;
-  padding: 60rpx 0;
+  padding: 80rpx 0;
 }
 .welcome-emoji { font-size: 80rpx; margin-bottom: 20rpx; }
 .welcome-title { font-size: 36rpx; font-weight: bold; color: #1A1A1A; margin-bottom: 12rpx; }
-.welcome-desc { font-size: 26rpx; color: #999; margin-bottom: 48rpx; }
+.welcome-desc { font-size: 26rpx; color: #999; }
 
-.quick-qs-container {
-  width: 100%;
-}
-.quick-qs-label {
-  font-size: 24rpx; color: #999; margin-bottom: 16rpx; display: block; text-align: center;
-}
-.quick-q-item {
-  margin-bottom: 16rpx; padding: 20rpx 28rpx;
-  background: linear-gradient(135deg, #FFF0F3, #FFF);
-  border: 1rpx solid rgba(255, 107, 138, 0.2);
-  border-radius: 20rpx;
-  font-size: 28rpx; color: $pink; text-align: center;
-}
-
-// 消息行
+// ==================== 消息气泡 ====================
 .msg-row {
   margin-bottom: 24rpx; display: flex; flex-direction: column;
   &.user { align-items: flex-end; }
@@ -290,8 +297,8 @@ $pink-light: #FF8FA8;
 }
 
 .bubble {
-  max-width: 80%; padding: 18rpx 24rpx; border-radius: 24rpx;
-  word-break: break-all; overflow-wrap: break-word;
+  // 用户气泡最宽 70%，防止右侧截断
+  max-width: 70%; padding: 20rpx 28rpx; border-radius: 24rpx;
   &.user {
     background: linear-gradient(135deg, $pink, $pink-light); color: #fff;
     border-bottom-right-radius: 6rpx;
@@ -302,16 +309,23 @@ $pink-light: #FF8FA8;
     box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
   }
 }
-.bubble-text { font-size: 28rpx; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
+.bubble-text {
+  font-size: 28rpx; line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
 
+// ==================== 安全标签 ====================
 .safety-tag {
   margin-top: 8rpx; padding: 4rpx 16rpx; border-radius: 20rpx;
   background: #FFF8E1; font-size: 22rpx; color: #F57F17;
   &.warn { background: #FFE4E4; color: #E53935; }
 }
 
-// 打字动画
-.typing-bubble { padding: 24rpx 32rpx; }
+// ==================== 打字动画 ====================
+.typing-bubble { padding: 24rpx 36rpx; }
 .typing-dots { display: flex; gap: 8rpx; }
 .dot {
   width: 12rpx; height: 12rpx; border-radius: 50%; background: #CCC;
@@ -327,12 +341,35 @@ $pink-light: #FF8FA8;
 
 .msg-bottom-spacer { height: 20rpx; }
 
-// 底部输入
-.bottom-input-bar {
+// ==================== 底部区域 ====================
+.bottom-area {
   background: #fff; border-top: 1rpx solid #F0F0F0;
-  padding: 16rpx 24rpx;
+  padding: 12rpx 24rpx 0;
 }
-.input-row { display: flex; align-items: center; gap: 16rpx; }
+
+// 快捷问题横向滚动
+.quick-bar {
+  white-space: nowrap;
+  margin-bottom: 12rpx;
+}
+.quick-bar-inner {
+  display: flex; gap: 16rpx;
+  padding: 4rpx 0;
+}
+.quick-tag {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx; border-radius: 36rpx;
+  background: #FFF0F3; border: 1rpx solid rgba(255, 107, 138, 0.25);
+  font-size: 24rpx; color: $pink; white-space: nowrap;
+  transition: all 0.2s;
+  &:active { background: rgba(255, 107, 138, 0.1); }
+}
+
+// 输入行
+.input-row {
+  display: flex; align-items: center; gap: 16rpx;
+  padding-bottom: 4rpx;
+}
 .input-field {
   flex: 1; height: 72rpx; padding: 0 24rpx;
   background: #F5F5F5; border-radius: 36rpx;
@@ -346,8 +383,16 @@ $pink-light: #FF8FA8;
   font-size: 28rpx; color: #fff;
   &.disabled { opacity: 0.5; }
 }
-.bottom-tools { display: flex; justify-content: center; padding-top: 12rpx; }
-.tool-item {
-  padding: 8rpx 24rpx; font-size: 22rpx; color: #999;
+
+// 重置按钮
+.reset-row {
+  display: flex; align-items: center; justify-content: center;
+  padding: 10rpx 0 12rpx;
+}
+.reset-icon {
+  font-size: 24rpx; color: #BDBDBD; margin-right: 6rpx;
+}
+.reset-text {
+  font-size: 22rpx; color: #BDBDBD;
 }
 </style>
