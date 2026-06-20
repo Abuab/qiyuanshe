@@ -44,6 +44,8 @@ interface SystemConfig {
   icons: IconConfig
   matchmakerSafetyLabel: string
   matchmakerSafetyBoundaryLabel: string
+  showOfficialAccountPrompt: boolean
+  loginIllustration: string
 }
 
 const DEFAULT_ICONS: IconConfig = {
@@ -73,6 +75,8 @@ export const useSystemStore = defineStore('system', () => {
   const vipCardTexts = ref<string[]>(['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
   const matchmakerSafetyLabel = ref<string>('内容提示')
   const matchmakerSafetyBoundaryLabel = ref<string>('安全提醒')
+  const showOfficialAccountPrompt = ref<boolean>(true)
+  const loginIllustration = ref<string>('')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -103,6 +107,8 @@ export const useSystemStore = defineStore('system', () => {
         vipCardTexts.value = res.vipCardTexts || vipCardTexts.value
         matchmakerSafetyLabel.value = res.matchmakerSafetyLabel || matchmakerSafetyLabel.value
         matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
+        showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
+        loginIllustration.value = res.loginIllustration || loginIllustration.value
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -146,6 +152,8 @@ export const useSystemStore = defineStore('system', () => {
           vipCardTexts.value = config.vipCardTexts || vipCardTexts.value
           matchmakerSafetyLabel.value = config.matchmakerSafetyLabel || matchmakerSafetyLabel.value
           matchmakerSafetyBoundaryLabel.value = config.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
+          showOfficialAccountPrompt.value = config.showOfficialAccountPrompt !== undefined ? config.showOfficialAccountPrompt : showOfficialAccountPrompt.value
+          loginIllustration.value = config.loginIllustration || loginIllustration.value
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -212,6 +220,8 @@ export const useSystemStore = defineStore('system', () => {
       vipCardTexts: vipCardTexts.value,
       matchmakerSafetyLabel: matchmakerSafetyLabel.value,
       matchmakerSafetyBoundaryLabel: matchmakerSafetyBoundaryLabel.value,
+      showOfficialAccountPrompt: showOfficialAccountPrompt.value,
+      loginIllustration: loginIllustration.value,
       icons: icons.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -235,6 +245,8 @@ export const useSystemStore = defineStore('system', () => {
     vipCardTexts,
     matchmakerSafetyLabel,
     matchmakerSafetyBoundaryLabel,
+    showOfficialAccountPrompt,
+    loginIllustration,
     icons,
     dicts,
     loadSystemConfig,

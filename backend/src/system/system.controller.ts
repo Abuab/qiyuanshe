@@ -44,6 +44,10 @@ export class PublicSystemController {
       // AI 红娘安全提示标签（后台可配置）
       matchmakerSafetyLabel: configs.matchmaker?.safetyLabel || '内容提示',
       matchmakerSafetyBoundaryLabel: configs.matchmaker?.safetyBoundaryLabel || '安全提醒',
+      // 公众号关注提示开关（运营配置）
+      showOfficialAccountPrompt: configs.basic?.showOfficialAccountPrompt !== false,
+      // 登录页插画（管理后台可配置）
+      loginIllustration: configs.basic?.loginIllustration || '',
     }
 
     return Result.success(result)

@@ -7,11 +7,6 @@
     <!-- 筛选区 -->
     <el-card shadow="never" class="filter-card">
       <el-form :inline="true" :model="filterForm" size="default">
-        <el-form-item label="Provider">
-          <el-select v-model="filterForm.providerId" placeholder="全部" clearable style="width: 140px">
-            <el-option v-for="p in providerOptions" :key="p.id" :label="p.displayName" :value="p.id" />
-          </el-select>
-        </el-form-item>
         <el-form-item label="功能类型">
           <el-select v-model="filterForm.callType" placeholder="全部" clearable style="width: 140px">
             <el-option v-for="c in callTypeOptions" :key="c.value" :label="c.label" :value="c.value" />
@@ -21,7 +16,6 @@
           <el-select v-model="filterForm.status" placeholder="全部" clearable style="width: 120px">
             <el-option label="成功" value="success" />
             <el-option label="失败" value="failed" />
-            <el-option label="超时" value="timeout" />
           </el-select>
         </el-form-item>
         <el-form-item label="用户ID">
@@ -54,24 +48,24 @@
             <div class="expand-content">
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item label="请求摘要">{{ row.requestSummary || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="响应摘要">{{ row.responseSummary || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="安全标记">{{ row.responseSummary || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="错误信息" :span="2">{{ row.errorMessage || '-' }}</el-descriptions-item>
               </el-descriptions>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column label="Provider" min-width="110">
+        <el-table-column label="用户" width="120">
           <template #default="{ row }">
-            <el-tag size="small" type="primary">{{ row.providerName }}</el-tag>
+            <span>{{ row.userNickname || '-' }}</span>
+            <span style="color:#999;font-size:12px"> (ID:{{ row.userId }})</span>
           </template>
         </el-table-column>
-        <el-table-column label="功能类型" width="120">
+        <el-table-column label="功能类型" width="110">
           <template #default="{ row }">
             {{ callTypeMap[row.callType] || row.callType }}
           </template>
         </el-table-column>
-        <el-table-column prop="userId" label="用户ID" width="80" />
         <el-table-column label="输入Token" width="100">
           <template #default="{ row }">{{ row.inputTokens ?? '-' }}</template>
         </el-table-column>
@@ -120,15 +114,16 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Download } from '@element-plus/icons-vue'
-import { aiProviderApi, type ProviderConfigVO } from '../../../api/ai-provider'
+import { aiProviderApi } from '../../../api/ai-provider'
 
 interface LogItem {
   id: number
   providerName: string
   callType: string
   userId: number
-  inputTokens: number
-  outputTokens: number
+  userNickname: string
+  inputTokens: number | null
+  outputTokens: number | null
   durationMs: number
   status: string
   requestSummary: string
@@ -140,10 +135,8 @@ interface LogItem {
 const logs = ref<LogItem[]>([])
 const loading = ref(false)
 const exportLoading = ref(false)
-const providerOptions = ref<ProviderConfigVO[]>([])
 
 const filterForm = reactive({
-  providerId: undefined as number | undefined,
   callType: undefined as string | undefined,
   status: undefined as string | undefined,
   userId: undefined as number | undefined,
@@ -185,7 +178,6 @@ async function onSearch() {
       page: pagination.page,
       limit: pagination.limit,
     }
-    if (filterForm.providerId) params.providerId = filterForm.providerId
     if (filterForm.callType) params.callType = filterForm.callType
     if (filterForm.status) params.status = filterForm.status
     if (filterForm.userId) params.userId = filterForm.userId
@@ -205,7 +197,6 @@ async function onSearch() {
 }
 
 function onReset() {
-  filterForm.providerId = undefined
   filterForm.callType = undefined
   filterForm.status = undefined
   filterForm.userId = undefined
@@ -219,7 +210,6 @@ async function onExport() {
   exportLoading.value = true
   try {
     const params: Record<string, any> = { limit: 10000 }
-    if (filterForm.providerId) params.providerId = filterForm.providerId
     if (filterForm.callType) params.callType = filterForm.callType
     if (filterForm.status) params.status = filterForm.status
     if (filterForm.userId) params.userId = filterForm.userId
@@ -235,15 +225,12 @@ async function onExport() {
       return
     }
     // 生成 CSV
-    const headers = ['ID', 'Provider', '功能类型', '用户ID', '输入Token', '输出Token', '总Token', '耗时ms', '状态', '时间', '错误信息']
+    const headers = ['ID', '用户昵称', '用户ID', '功能类型', '耗时ms', '状态', '时间', '错误信息']
     const rows = items.map((r: LogItem) => [
       r.id,
-      r.providerName || '',
-      callTypeMap[r.callType] || r.callType || '',
+      r.userNickname || '-',
       r.userId || '',
-      r.inputTokens ?? '',
-      r.outputTokens ?? '',
-      (r.inputTokens ?? 0) + (r.outputTokens ?? 0),
+      callTypeMap[r.callType] || r.callType || '',
       r.durationMs ?? '',
       statusMap[r.status] || r.status || '',
       r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN') : '',
@@ -272,16 +259,7 @@ function onExpand(row: any, expandedRows: any[]) {
   // expand 不需要额外操作
 }
 
-/** 加载 Provider 列表供筛选使用 */
-async function loadProviders() {
-  try {
-    const res = await aiProviderApi.getList()
-    providerOptions.value = res.data ?? []
-  } catch {}
-}
-
 onMounted(async () => {
-  await loadProviders()
   await onSearch()
 })
 </script>

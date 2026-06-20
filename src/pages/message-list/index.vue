@@ -33,14 +33,18 @@
         class="message-item"
         @tap="handleClick(item)"
       >
-        <view v-if="item.type === 'system'" class="system-message">
-          <view class="system-icon">
+        <!-- 系统消息聚合入口 -->
+        <view v-if="item.type === 'systemAggregate'" class="system-message aggregate">
+          <view class="system-icon pink-heart-icon">
             <image v-if="systemNotifyIcon" :src="systemNotifyIcon" mode="aspectFit" class="system-icon-img" />
-            <text v-else>🔔</text>
+            <text v-else>💕</text>
           </view>
           <view class="message-content">
             <view class="message-header">
-              <text class="message-title">系统通知</text>
+              <view class="title-row">
+                <text class="message-title">系统消息</text>
+                <view class="official-tag"><text>官方</text></view>
+              </view>
               <text class="message-time">{{ formatTime(item.createdAt) }}</text>
             </view>
             <text class="message-preview">{{ item.content }}</text>
@@ -90,9 +94,9 @@ import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useIcon } from '@/composables/useIcon'
 
-interface SystemMessage {
+interface SystemAggregate {
   id: number
-  type: 'system'
+  type: 'systemAggregate'
   content: string
   createdAt: string
   unreadCount: number
@@ -110,7 +114,7 @@ interface UserMessage {
   unreadCount: number
 }
 
-type MessageItem = SystemMessage | UserMessage
+type MessageItem = SystemAggregate | UserMessage
 
 const userStore = useUserStore()
 const { getPageIcon } = useIcon()
@@ -152,7 +156,7 @@ const fetchConversations = async (isRefresh = false) => {
 
     loading.value = true
 
-    // 并行获取聊天会话 + 系统通知
+    // 并行获取聊天会话 + 系统通知未读数
     const [chatRes, notifyRes] = await Promise.all([
       request({
         url: '/chat/conversations',
@@ -162,31 +166,36 @@ const fetchConversations = async (isRefresh = false) => {
       request({
         url: '/notifications',
         method: 'GET',
-        data: { page: 1, limit: 99 },
+        data: { page: 1, limit: 1 },
       }).catch(() => ({ data: { list: [], unreadCount: 0 } })),
     ])
 
-    const chatList = (chatRes.list || []).map((item: any) => ({
+    const chatList = ((chatRes as any).list || []).map((item: any) => ({
       ...item,
-      type: 'user',
+      type: 'user' as const,
     }))
 
-    const notifyData = notifyRes?.data || notifyRes || {}
-    const notifyList: SystemMessage[] = ((notifyData.list || []) as any[]).map((n: any) => ({
-      id: n.id,
-      type: 'system' as const,
-      content: `[${n.title || '系统通知'}] ${n.content}`,
-      createdAt: n.createdAt,
-      unreadCount: n.isRead === 0 ? 1 : 0,
-    }))
+    const notifyData: any = (notifyRes as any)?.data || (notifyRes as any) || {}
+    const notifyUnread = notifyData.unreadCount || 0
+    const lastNotify = (notifyData.list && notifyData.list.length > 0) ? notifyData.list[0] : null
+
+    // 构建聚合的系统消息入口
+    const systemAggregate: SystemAggregate | null = {
+      id: -1,
+      type: 'systemAggregate' as const,
+      content: lastNotify
+        ? `[${lastNotify.title || '系统消息'}] ${lastNotify.content || ''}`
+        : '暂无系统消息',
+      createdAt: lastNotify?.createdAt || new Date().toISOString(),
+      unreadCount: notifyUnread,
+    }
 
     // 更新未读数
-    const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0)
-      + (notifyData.unreadCount || 0)
+    const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
     uni.setStorageSync('unreadMessageCount', totalUnread)
 
-    // 合并：通知在前，聊天在后
-    const mergedList = [...notifyList, ...chatList]
+    // 合并：系统消息入口在前，聊天在后
+    const mergedList: MessageItem[] = [systemAggregate, ...chatList]
 
     if (isRefresh) {
       messageList.value = mergedList
@@ -229,36 +238,9 @@ const handleBack = () => {
 }
 
 const handleClick = (item: MessageItem) => {
-  if (item.type === 'system') {
-    showSystemDetail(item)
+  if (item.type === 'systemAggregate') {
+    uni.navigateTo({ url: '/pages/system-messages/index' })
   }
-}
-
-const showSystemDetail = (item: SystemMessage) => {
-  uni.showModal({
-    title: '系统通知',
-    content: item.content,
-    showCancel: false,
-    success: async () => {
-      // 标记已读
-      try {
-        await request({
-          url: `/notifications/${item.id}/read`,
-          method: 'PUT',
-        })
-        // 从列表中移除该条目的未读数
-        const idx = messageList.value.findIndex((m) => m.id === item.id)
-        if (idx !== -1) {
-          messageList.value[idx] = { ...messageList.value[idx], unreadCount: 0 }
-        }
-        // 重新计算并保存未读总数
-        const totalUnread = messageList.value.reduce((sum: number, m: MessageItem) => sum + m.unreadCount, 0)
-        uni.setStorageSync('unreadMessageCount', totalUnread)
-      } catch {
-        // 静默
-      }
-    },
-  })
 }
 
 const goToChat = (item: UserMessage) => {
@@ -384,6 +366,10 @@ function isImagePreview(item: UserMessage): boolean {
   margin-right: 20rpx;
   flex-shrink: 0;
 
+  &.pink-heart-icon {
+    background-color: #FFE4EC;
+  }
+
   text {
     font-size: 48rpx;
   }
@@ -412,6 +398,24 @@ function isImagePreview(item: UserMessage): boolean {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8rpx;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.official-tag {
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+
+  text {
+    font-size: 20rpx;
+    color: #fff;
+    font-weight: 500;
+  }
 }
 
 .message-title {

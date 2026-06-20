@@ -287,6 +287,13 @@
         "navigationBarTitleText": "AI 红娘",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/system-messages/index",
+      "style": {
+        "navigationBarTitleText": "系统消息",
+        "navigationStyle": "custom"
+      }
     }
   ],
   "globalStyle": {

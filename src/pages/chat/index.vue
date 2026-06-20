@@ -5,15 +5,19 @@
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
-      <view class="nav-center" @tap="goToProfile">
-        <text class="nav-title">{{ nickname }}</text>
+      <text class="nav-title">{{ nickname }}</text>
+      <!-- 右侧仅留胶囊按钮安全区域，不放置任何按钮 -->
+      <view class="nav-right" />
+    </view>
+
+    <!-- 二级菜单栏 -->
+    <view class="sub-nav-bar">
+      <view class="sub-nav-left" @tap="goToProfile">
+        <image class="sub-avatar" :src="otherAvatar" mode="aspectFill" />
+        <text class="sub-nickname">{{ nickname }}</text>
       </view>
-      <view class="nav-right" @tap="showMenu = true">
-        <view class="more-icon-wrap">
-          <view class="more-dot" />
-          <view class="more-dot" />
-          <view class="more-dot" />
-        </view>
+      <view class="sub-nav-menu" @tap="openSubMenu">
+        <text class="sub-menu-dots">...</text>
       </view>
     </view>
 
@@ -64,8 +68,9 @@
               :src="otherAvatar"
               mode="aspectFill"
               @error="handleImageError"
+              @tap="goToProfile"
             />
-            <view class="bubble other">
+            <view class="bubble other" @longpress="handleLongPress(msg)">
               <image
                 v-if="isImageMessage(msg)"
                 :src="resolveMessageImage(msg.content)"
@@ -80,7 +85,7 @@
 
           <!-- 自己消息（无头像） -->
           <view v-else class="msg-row mine">
-            <view class="bubble mine">
+            <view class="bubble mine" @longpress="handleLongPress(msg)">
               <image
                 v-if="isImageMessage(msg)"
                 :src="resolveMessageImage(msg.content)"
@@ -117,6 +122,7 @@
         <!-- AI帮回 -->
         <view class="ai-btn" @tap="openAiSkillPanel">
           <text class="ai-btn-icon">✨</text>
+          <text class="ai-btn-text">AI帮回</text>
         </view>
 
         <!-- 输入框 -->
@@ -153,31 +159,6 @@
         <text class="vip-desc">开通会员即可无限畅聊</text>
         <view class="vip-btn" @tap="goToVip"><text>立即开通</text></view>
         <view class="vip-close" @tap="closeVipLimit"><text>稍后再说</text></view>
-      </view>
-    </view>
-
-    <!-- 右上角菜单（底部弹出） -->
-    <view v-if="showMenu" class="menu-overlay" @tap="showMenu = false">
-      <view class="menu-sheet" @tap.stop>
-        <view class="menu-header">
-          <view class="menu-handle" />
-        </view>
-        <view class="menu-item" @tap="onMenuTap('profile')">
-          <text>查看个人资料</text>
-        </view>
-        <view class="menu-divider" />
-        <view class="menu-item" @tap="onMenuTap('clear')">
-          <text>清空聊天记录</text>
-        </view>
-        <view class="menu-divider" />
-        <view class="menu-item danger" @tap="onMenuTap('report')">
-          <text>举报</text>
-        </view>
-        <view class="menu-gap" />
-        <view class="menu-item cancel" @tap="showMenu = false">
-          <text>取消</text>
-        </view>
-        <view class="menu-safe" />
       </view>
     </view>
 
@@ -233,7 +214,6 @@ const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const showVipLimit = ref(false)
 const showAiSkillPanel = ref(false)
-const showMenu = ref(false)
 const showFraudBanner = ref(true)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
@@ -406,31 +386,40 @@ const handleInput = () => {
 }
 
 // ---- 菜单 ----
-const onMenuTap = (action: string) => {
-  showMenu.value = false
-  if (action === 'profile') goToProfile()
-  else if (action === 'clear') clearChat()
-  else if (action === 'report') reportUser()
+const handleLongPress = (msg: ChatMessage) => {
+  const items = msg.isMine
+    ? ['复制', '删除', '举报']
+    : ['复制', '举报']
+
+  uni.showActionSheet({
+    itemList: items,
+    success: (res) => {
+      const action = items[res.tapIndex]
+      if (action === '复制') {
+        uni.setClipboardData({ data: msg.content, success: () => uni.showToast({ title: '已复制', icon: 'success' }) })
+      } else if (action === '删除') {
+        uni.showModal({
+          title: '提示',
+          content: '确定删除这条消息吗？',
+          success: async (modalRes) => {
+            if (modalRes.confirm) {
+              try {
+                await request({ url: `/chat/messages/${msg.id}`, method: 'DELETE' })
+                messages.value = messages.value.filter((m) => m.id !== msg.id)
+                uni.showToast({ title: '已删除', icon: 'success' })
+              } catch { uni.showToast({ title: '删除失败', icon: 'none' }) }
+            }
+          },
+        })
+      } else if (action === '举报') {
+        reportUser()
+      }
+    },
+  })
 }
 
 const goToProfile = () => {
   uni.navigateTo({ url: `/pages/user-detail/index?id=${toUserId.value}` })
-}
-
-const clearChat = () => {
-  uni.showModal({
-    title: '提示',
-    content: '确定清空聊天记录吗？',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await request({ url: `/chat/conversations/${toUserId.value}`, method: 'DELETE' })
-          messages.value = []
-          uni.showToast({ title: '已清空', icon: 'success' })
-        } catch (e) { logger.error('clear chat error', e) }
-      }
-    },
-  })
 }
 
 const reportUser = () => {
@@ -503,6 +492,30 @@ const openAiSkillPanel = () => {
 
 const onAiSkillSend = (text: string) => { inputContent.value = text; handleSend() }
 
+const openSubMenu = () => {
+  uni.showActionSheet({
+    itemList: ['查看个人资料', '清空聊天记录', '举报', '取消'],
+    success: (res) => {
+      if (res.tapIndex === 0) goToProfile()
+      else if (res.tapIndex === 1) clearChat()
+      else if (res.tapIndex === 2) reportUser()
+    },
+  })
+}
+
+const clearChat = () => {
+  uni.showModal({
+    title: '提示',
+    content: '确定清空聊天记录吗？此操作不可恢复',
+    success: (modalRes) => {
+      if (modalRes.confirm) {
+        messages.value = []
+        uni.showToast({ title: '已清空', icon: 'success' })
+      }
+    },
+  })
+}
+
 const handleBack = () => safeNavigateBack()
 </script>
 
@@ -520,34 +533,54 @@ $bg: #F5F5F5;
 }
 
 // ==================== 导航栏 ====================
+$nav-right-width: 190rpx; // 微信胶囊按钮安全间距
+
 .nav-bar {
   flex-shrink: 0;
   display: flex; align-items: center;
-  height: 88rpx; padding: 0 24rpx; box-sizing: content-box;
-  background: #fff;
-  box-shadow: 0 1rpx 0 rgba(0,0,0,0.06);
+  height: 88rpx; padding: 0 16rpx; box-sizing: content-box;
+  background: linear-gradient(135deg, $pink, $pink-light);
   z-index: 100;
 }
-.nav-left { width: 80rpx; flex-shrink: 0; }
-.back-icon { font-size: 44rpx; color: #333; }
-.nav-center {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+.nav-left {
+  width: 88rpx; flex-shrink: 0;
+  display: flex; align-items: center;
 }
+.back-icon { font-size: 44rpx; color: #fff; font-weight: bold; }
 .nav-title {
-  font-size: 34rpx; font-weight: 600; color: #1A1A1A;
+  flex: 1; text-align: center;
+  font-size: 34rpx; font-weight: 600; color: #fff;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .nav-right {
-  width: 80rpx; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: flex-end;
+  width: $nav-right-width; flex-shrink: 0;
 }
-.more-icon-wrap {
-  display: flex; flex-direction: column; gap: 4rpx;
-  padding: 8rpx;
+
+// ==================== 二级菜单栏 ====================
+.sub-nav-bar {
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 80rpx; padding: 0 32rpx;
+  background: #fff;
+  border-bottom: 1rpx solid #E5E5E5;
 }
-.more-dot {
-  width: 8rpx; height: 8rpx; border-radius: 50%; background: #999;
+.sub-nav-left {
+  display: flex; align-items: center;
+}
+.sub-avatar {
+  width: 64rpx; height: 64rpx; border-radius: 50%;
+  flex-shrink: 0; margin-right: 16rpx;
+  background: #F5F5F5;
+}
+.sub-nickname {
+  font-size: 28rpx; font-weight: 600; color: #1A1A1A;
+}
+.sub-nav-menu {
+  width: 64rpx; height: 64rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+.sub-menu-dots {
+  font-size: 40rpx; color: #333; font-weight: bold; letter-spacing: 4rpx;
 }
 
 // ==================== 消息列表 ====================
@@ -680,12 +713,14 @@ $bg: #F5F5F5;
 }
 
 .ai-btn {
-  width: 68rpx; height: 68rpx; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, rgba($pink, 0.08), rgba($pink-light, 0.12));
-  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8rpx;
+  padding: 8rpx 20rpx;
+  background: rgba($pink, 0.1);
+  border-radius: 999rpx;
 }
-.ai-btn-icon { font-size: 36rpx; }
+.ai-btn-icon { font-size: 32rpx; }
+.ai-btn-text { font-size: 24rpx; color: $pink; font-weight: 500; white-space: nowrap; }
 
 .input-box {
   flex: 1; height: 68rpx;
@@ -728,42 +763,4 @@ $bg: #F5F5F5;
 }
 .vip-close { text { font-size: 26rpx; color: #BDBDBD; } }
 
-// ==================== 底部菜单 ====================
-.menu-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;
-  background: rgba(0,0,0,0.4);
-  display: flex; align-items: flex-end;
-}
-.menu-sheet {
-  width: 100%; background: #fff;
-  border-radius: 40rpx 40rpx 0 0;
-  overflow: hidden;
-}
-.menu-header {
-  display: flex; justify-content: center;
-  padding: 20rpx 0 12rpx;
-}
-.menu-handle {
-  width: 64rpx; height: 8rpx; border-radius: 4rpx; background: #E0E0E0;
-}
-.menu-item {
-  height: 112rpx;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32rpx; color: #1A1A1A;
-  &:active { background: #F5F5F5; }
-  &.danger { color: #FF4D4F; }
-  &.cancel {
-    font-weight: 500;
-    &:active { background: #F5F5F5; }
-  }
-}
-.menu-divider {
-  height: 1rpx; background: #E5E5E5; margin: 0 32rpx;
-}
-.menu-gap {
-  height: 16rpx; background: #F5F5F5;
-}
-.menu-safe {
-  height: env(safe-area-inset-bottom);
-}
 </style>

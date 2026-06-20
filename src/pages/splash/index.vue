@@ -15,13 +15,6 @@
         <view class="dot"></view>
       </view>
     </view>
-
-    <protocol-popup
-      :show="showProtocol"
-      @update:show="showProtocol = $event"
-      @agree="handleProtocolAgree"
-      @close="handleProtocolClose"
-    />
   </view>
 </template>
 
@@ -29,24 +22,17 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
-import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
 
 const splashText = ref('正在为您寻找心仪的对象...')
-const showProtocol = ref(false)
 let navigationTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   await systemStore.loadSystemConfig()
   splashText.value = systemStore.splashText || '正在为您寻找心仪的对象...'
-
-  if (!userStore.isLoggedIn) {
-    showProtocol.value = true
-  } else {
-    startMainNavigation()
-  }
+  startMainNavigation()
 })
 
 onUnmounted(() => {
@@ -56,31 +42,11 @@ onUnmounted(() => {
   }
 })
 
-const handleProtocolAgree = () => {
-  showProtocol.value = false
-  // 记录用户已同意协议
-  uni.setStorageSync('protocolAgreed', true)
-  startMainNavigation()
-}
-
-const handleProtocolClose = () => {
-  showProtocol.value = false
-  startMainNavigation()
-}
-
 const startMainNavigation = () => {
   navigationTimer = setTimeout(() => {
-    const isLoggedIn = userStore.isLoggedIn
-
-    if (isLoggedIn) {
-      uni.switchTab({
-        url: '/pages/index/index',
-      })
-    } else {
-      uni.reLaunch({
-        url: '/pages/login/index',
-      })
-    }
+    uni.switchTab({
+      url: '/pages/index/index',
+    })
   }, 500)
 }
 </script>
