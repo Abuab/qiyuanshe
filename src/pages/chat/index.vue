@@ -1,15 +1,23 @@
 <template>
   <view class="chat-page">
-    <view class="nav-bar">
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
-      <view class="nav-title">{{ nickname }}</view>
-      <view class="nav-right" @tap="showMore">
-        <text class="more-icon">...</text>
+      <view class="nav-center" @tap="goToProfile">
+        <text class="nav-title">{{ nickname }}</text>
+      </view>
+      <view class="nav-right" @tap="showMenu = true">
+        <view class="more-icon-wrap">
+          <view class="more-dot" />
+          <view class="more-dot" />
+          <view class="more-dot" />
+        </view>
       </view>
     </view>
 
+    <!-- 消息列表 -->
     <scroll-view
       class="message-list"
       scroll-y
@@ -21,110 +29,155 @@
       :refresher-triggered="loadingMore"
       @refresherrefresh="onRefresh"
     >
-      <view class="message-top-spacer" />
-      <view v-if="loading" class="loading-tip">
-        <text>加载中...</text>
-      </view>
+      <view class="msg-list-inner">
+        <view class="msg-top-spacer" />
 
-      <view
-        v-for="(msg, index) in messages"
-        :key="msg.id"
-        :id="`msg-${msg.id}`"
-        class="message-wrapper"
-      >
-        <view v-if="showTimeDivider(index)" class="time-divider">
-          <text>{{ formatDate(msg.createdAt) }}</text>
+        <!-- 加载中 -->
+        <view v-if="loading" class="sys-tip"><text>加载中...</text></view>
+
+        <!-- 空状态 -->
+        <view v-if="!loading && messages.length === 0" class="empty-state">
+          <text class="empty-emoji">💬</text>
+          <text class="empty-text">还没有消息，主动打个招呼吧~</text>
         </view>
 
-        <view v-if="msg.type === 'system'" class="system-message">
-          <text>{{ msg.content }}</text>
-        </view>
+        <!-- 消息列表 -->
+        <view
+          v-for="(msg, index) in messages"
+          :key="msg.id"
+          :id="'msg-' + msg.id"
+        >
+          <!-- 时间戳 -->
+          <view v-if="showTimeDivider(index)" class="time-divider">
+            <view class="time-badge"><text>{{ formatDate(msg.createdAt) }}</text></view>
+          </view>
 
-        <view v-else :class="['chat-message', msg.isMine ? 'mine' : 'other']">
-          <image
-            v-if="!msg.isMine"
-            class="avatar"
-            :src="otherAvatar"
-            mode="aspectFill"
-            lazy-load
-            @error="handleImageError"
-          />
-          <view class="bubble" :class="msg.isMine ? 'mine' : 'other'">
+          <!-- 系统消息 -->
+          <view v-if="msg.type === 'system'" class="sys-tip">
+            <text>{{ msg.content }}</text>
+          </view>
+
+          <!-- 对方消息 -->
+          <view v-else-if="!msg.isMine" class="msg-row other">
             <image
-              v-if="isImageMessage(msg)"
-              :src="resolveMessageImage(msg.content)"
-              mode="widthFix"
-              class="message-image"
-              @tap="previewMessageImage(msg)"
-              lazy-load
+              class="avatar"
+              :src="otherAvatar"
+              mode="aspectFill"
               @error="handleImageError"
             />
-            <text v-else>{{ msg.content }}</text>
+            <view class="bubble other">
+              <image
+                v-if="isImageMessage(msg)"
+                :src="resolveMessageImage(msg.content)"
+                mode="widthFix"
+                class="msg-img"
+                @tap="previewMessageImage(msg)"
+                @error="handleImageError"
+              />
+              <text v-else class="bubble-text">{{ msg.content }}</text>
+            </view>
           </view>
-          <image
-            v-if="msg.isMine"
-            class="avatar"
-            :src="myDisplayAvatar"
-            mode="aspectFill"
-            lazy-load
-            @error="handleImageError"
-          />
+
+          <!-- 自己消息（无头像） -->
+          <view v-else class="msg-row mine">
+            <view class="bubble mine">
+              <image
+                v-if="isImageMessage(msg)"
+                :src="resolveMessageImage(msg.content)"
+                mode="widthFix"
+                class="msg-img"
+                @tap="previewMessageImage(msg)"
+                @error="handleImageError"
+              />
+              <text v-else class="bubble-text">{{ msg.content }}</text>
+            </view>
+          </view>
         </view>
-      </view>
 
-      <view v-if="!loading && noMore" class="no-more-tip">
-        <text>没有更多消息了</text>
-      </view>
+        <!-- 加载更多 -->
+        <view v-if="!loading && noMore && messages.length > 0" class="sys-tip">
+          <text>没有更多消息了</text>
+        </view>
 
-      <view id="bottom" style="height: 1rpx;"></view>
+        <view id="msg-bottom" class="msg-bottom-spacer" />
+      </view>
     </scroll-view>
 
-    <view v-if="showVipLimit" class="vip-limit-popup">
-      <view class="vip-limit-content">
-        <text class="vip-limit-title">今日消息已用完</text>
-        <text class="vip-limit-desc">开通会员即可无限畅聊</text>
-        <view class="vip-limit-btn" @tap="goToVip">
-          <text>立即开通</text>
-        </view>
-        <view class="vip-limit-close" @tap="closeVipLimit">
-          <text>稍后再说</text>
+    <!-- 底部输入区域 -->
+    <view class="input-area" :style="{ paddingBottom: (keyboardHeight + safeAreaBottom) + 'px' }">
+      <!-- 防骗横幅 -->
+      <view v-if="showFraudBanner" class="fraud-banner">
+        <text class="fraud-text">⚠️ 请勿轻信转账、投资、借款等要求</text>
+        <view class="fraud-close" @tap="showFraudBanner = false">
+          <text>✕</text>
         </view>
       </view>
-    </view>
 
-    <view class="input-area" :style="{ paddingBottom: (16 + keyboardHeight + safeAreaBottom) + 'px' }">
-      <!-- 防骗提醒横幅 -->
-      <view class="anti-fraud-banner">
-        <text>⚠️ 请勿轻信转账、投资、借款等要求，遇到请立即举报</text>
-      </view>
-      <view class="input-wrapper">
-        <!-- AI帮回按钮 -->
-        <view class="ai-help-btn" @tap="openAiSkillPanel">
-          <text class="ai-help-icon">✨</text>
-          <text class="ai-help-text">AI帮回</text>
+      <view class="input-row">
+        <!-- AI帮回 -->
+        <view class="ai-btn" @tap="openAiSkillPanel">
+          <text class="ai-btn-icon">✨</text>
         </view>
+
+        <!-- 输入框 -->
         <view class="input-box">
           <input
             v-model="inputContent"
-            class="message-input"
+            class="input-field"
             type="text"
             confirm-type="send"
             :placeholder="placeholder"
+            :adjust-position="false"
             @focus="handleFocus"
             @blur="handleBlur"
             @input="handleInput"
             @confirm="handleSend"
           />
         </view>
-        <view class="action-buttons">
-          <view
-            class="send-btn"
-            :class="{ disabled: !canSend }"
-            @tap="handleSend"
-          >
-            <text>发送</text>
-          </view>
+
+        <!-- 发送按钮 -->
+        <view
+          class="send-btn"
+          :class="{ disabled: !canSend }"
+          @tap="handleSend"
+        >
+          <text>发送</text>
         </view>
+      </view>
+    </view>
+
+    <!-- VIP限制弹窗 -->
+    <view v-if="showVipLimit" class="vip-overlay" @tap="closeVipLimit">
+      <view class="vip-popup" @tap.stop>
+        <text class="vip-title">今日消息已用完</text>
+        <text class="vip-desc">开通会员即可无限畅聊</text>
+        <view class="vip-btn" @tap="goToVip"><text>立即开通</text></view>
+        <view class="vip-close" @tap="closeVipLimit"><text>稍后再说</text></view>
+      </view>
+    </view>
+
+    <!-- 右上角菜单（底部弹出） -->
+    <view v-if="showMenu" class="menu-overlay" @tap="showMenu = false">
+      <view class="menu-sheet" @tap.stop>
+        <view class="menu-header">
+          <view class="menu-handle" />
+        </view>
+        <view class="menu-item" @tap="onMenuTap('profile')">
+          <text>查看个人资料</text>
+        </view>
+        <view class="menu-divider" />
+        <view class="menu-item" @tap="onMenuTap('clear')">
+          <text>清空聊天记录</text>
+        </view>
+        <view class="menu-divider" />
+        <view class="menu-item danger" @tap="onMenuTap('report')">
+          <text>举报</text>
+        </view>
+        <view class="menu-gap" />
+        <view class="menu-item cancel" @tap="showMenu = false">
+          <text>取消</text>
+        </view>
+        <view class="menu-safe" />
       </view>
     </view>
 
@@ -176,41 +229,43 @@ const noMore = ref(false)
 const scrollTop = ref(0)
 const scrollIntoView = ref('')
 const keyboardHeight = ref(0)
+const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const showVipLimit = ref(false)
 const showAiSkillPanel = ref(false)
+const showMenu = ref(false)
+const showFraudBanner = ref(true)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const POLL_INTERVAL = 3000
 
-const canSend = computed(() => {
-  return inputContent.value.trim().length > 0
-})
+const canSend = computed(() => inputContent.value.trim().length > 0)
 
 const otherAvatar = computed(() => getFullImageUrl(avatar.value) || '/static/default-avatar.png')
 const myDisplayAvatar = computed(() => getFullImageUrl(myAvatar.value) || '/static/default-avatar.png')
 
 const placeholder = computed(() => {
-  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
-    return '今日消息已用完'
-  }
+  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) return '今日消息已用完'
   return '输入消息...'
 })
 
 onMounted(() => {
-  const pages = getCurrentPages()
+  try {
+    // #ifdef MP-WEIXIN
+    const sysInfo = uni.getSystemInfoSync()
+    statusBarHeight.value = sysInfo.statusBarHeight || 0
+    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
+    // #endif
+  } catch {}
 
-  // 获取安全区域底部高度
-  const windowInfo = uni.getWindowInfo()
-  safeAreaBottom.value = windowInfo.safeAreaInsets?.bottom || 0
+  const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}
 
   toUserId.value = parseInt(options.userId) || 0
   nickname.value = decodeURIComponent(options.nickname || '聊天')
   avatar.value = decodeURIComponent(options.avatar || '')
-
   myAvatar.value = userStore.userInfo?.avatar || ''
 
   fetchMessages()
@@ -224,41 +279,23 @@ onUnmounted(() => {
 
 const fetchMessages = async (isLoadMore = false) => {
   if (loading.value) return
-
   try {
-    if (isLoadMore) {
-      loadingMore.value = true
-    } else {
-      loading.value = true
-    }
+    if (isLoadMore) { loadingMore.value = true } else { loading.value = true }
 
-    const res = await request({
+    const res: any = await request({
       url: '/chat/messages',
       method: 'GET',
-      data: {
-        userId: toUserId.value,
-        page: page.value,
-        limit,
-      },
+      data: { userId: toUserId.value, page: page.value, limit },
     })
-
-    const list = res.list || []
-
+    const list: ChatMessage[] = res?.list || []
     if (isLoadMore) {
       messages.value.unshift(...list.reverse())
     } else {
       messages.value = list.reverse()
     }
-
-    if (list.length < limit) {
-      noMore.value = true
-    }
-
+    if (list.length < limit) noMore.value = true
     page.value++
-
-    nextTick(() => {
-      scrollToBottom()
-    })
+    nextTick(() => scrollToBottom())
   } catch (e) {
     logger.error('fetch messages error', e)
   } finally {
@@ -268,18 +305,13 @@ const fetchMessages = async (isLoadMore = false) => {
 }
 
 const loadMore = () => {
-  if (!loadingMore.value && !noMore.value) {
-    fetchMessages(true)
-  }
+  if (!loadingMore.value && !noMore.value) fetchMessages(true)
 }
 
-const onRefresh = () => {
-  fetchMessages(true)
-}
+const onRefresh = () => fetchMessages(true)
 
 const handleSend = async () => {
   if (!canSend.value) return
-
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
     showVipLimit.value = true
     return
@@ -292,15 +324,11 @@ const handleSend = async () => {
     await request({
       url: '/chat/messages',
       method: 'POST',
-      data: {
-        toUserId: toUserId.value,
-        content,
-        type: 'text',
-      },
+      data: { toUserId: toUserId.value, content, type: 'text' },
       skipToast: true,
     })
 
-    const newMessage: ChatMessage = {
+    messages.value.push({
       id: Date.now(),
       fromUserId: userStore.userInfo?.id || 0,
       toUserId: toUserId.value,
@@ -309,153 +337,57 @@ const handleSend = async () => {
       isRead: 1,
       createdAt: new Date().toISOString(),
       isMine: true,
-    }
-
-    messages.value.push(newMessage)
-    todayMessageCount.value++
-
-    nextTick(() => {
-      scrollToBottom()
     })
+    todayMessageCount.value++
+    nextTick(() => scrollToBottom())
   } catch (e: any) {
     logger.error('send message error', e)
     inputContent.value = content
-
-    // 弹出后端返回的具体错误信息
-    const errMsg = e.message || '发送失败'
+    const errMsg = e?.message || '发送失败'
     uni.showToast({ title: errMsg, icon: 'none', duration: 2000 })
-
-    // 仅「今日消息用完」时弹 VIP 引导
     if (errMsg && (errMsg.includes('消息已用完') || errMsg.includes('开通会员'))) {
       showVipLimit.value = true
     }
   }
 }
 
-const chooseImage = async () => {
-  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
-    showVipLimit.value = true
-    return
-  }
-
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: async (res) => {
-      const tempFilePath = res.tempFilePaths[0]
-
-      try {
-        uni.showLoading({ title: '上传中...' })
-
-        const uploadRes = await uploadImage(tempFilePath)
-
-        await request({
-          url: '/chat/messages',
-          method: 'POST',
-          data: {
-            toUserId: toUserId.value,
-            content: uploadRes.url,
-            type: 'image',
-          },
-          skipToast: true,
-        })
-
-        const newMessage: ChatMessage = {
-          id: Date.now(),
-          fromUserId: userStore.userInfo?.id || 0,
-          toUserId: toUserId.value,
-          content: uploadRes.url,
-          type: 'image',
-          isRead: 1,
-          createdAt: new Date().toISOString(),
-          isMine: true,
-        }
-
-        messages.value.push(newMessage)
-        todayMessageCount.value++
-
-        nextTick(() => {
-          scrollToBottom()
-        })
-      } catch (e) {
-        logger.error('upload error', e)
-        if (e.message !== 'Unauthorized') {
-          uni.showToast({ title: '发送失败', icon: 'none' })
-        }
-      } finally {
-        uni.hideLoading()
-      }
-    },
-  })
-}
-
-const markAsRead = async () => {
-  try {
-    await request({
-      url: `/chat/messages/${toUserId.value}/read`,
-      method: 'PUT',
-    })
-  } catch (e) {
-    logger.error('mark as read error', e)
-  }
-}
-
 const scrollToBottom = () => {
   nextTick(() => {
-    scrollIntoView.value = 'bottom'
+    scrollIntoView.value = 'msg-bottom'
   })
 }
 
+// ---- 时间分割线 ----
 const showTimeDivider = (index: number): boolean => {
   if (index === 0) return true
-
-  const currentMsg = messages.value[index]
-  const prevMsg = messages.value[index - 1]
-
-  const currentDate = new Date(currentMsg.createdAt)
-  const prevDate = new Date(prevMsg.createdAt)
-
-  return currentDate.toDateString() !== prevDate.toDateString()
+  const cur = new Date(messages.value[index].createdAt)
+  const prev = new Date(messages.value[index - 1].createdAt)
+  return cur.toDateString() !== prev.toDateString()
 }
 
 const formatDate = (timeStr: string): string => {
-  const date = new Date(timeStr)
+  const d = new Date(timeStr)
   const now = new Date()
-
-  if (date.toDateString() === now.toDateString()) {
-    return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  if (d.toDateString() === now.toDateString()) {
+    return `今天 ${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
-
-  return `${date.getMonth() + 1}-${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-const previewImage = (url: string) => {
-  uni.previewImage({
-    urls: [url],
-    current: url,
-  })
-}
-
-/** 检测图片扩展名 */
+// ---- 图片消息 ----
 const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i
-
-/** 判断消息是否应显示为图片 */
 function isImageMessage(msg: ChatMessage): boolean {
   if (msg.type === 'image') return true
-  // fallback: content 是图片 URL 也当作图片渲染
   return IMAGE_EXT_RE.test(msg.content || '')
 }
 
-/** 确保图片 URL 是完整路径 */
 function resolveMessageImage(content: string): string {
   if (!content) return ''
   if (content.startsWith('http://') || content.startsWith('https://') || content.startsWith('wxfile://')) return content
-  // 相对路径补全
   return getServerBaseUrl() + (content.startsWith('/') ? '' : '/') + content
 }
 
-/** 预览消息图片 */
 function previewMessageImage(msg: ChatMessage) {
   uni.previewImage({
     urls: [resolveMessageImage(msg.content)],
@@ -463,16 +395,9 @@ function previewMessageImage(msg: ChatMessage) {
   })
 }
 
-const handleFocus = () => {
-  nextTick(() => {
-    scrollToBottom()
-  })
-}
-
-const handleBlur = () => {
-  keyboardHeight.value = 0
-}
-
+// ---- 输入框事件 ----
+const handleFocus = () => nextTick(() => scrollToBottom())
+const handleBlur = () => { keyboardHeight.value = 0 }
 const handleInput = () => {
   if (inputContent.value.length > 500) {
     inputContent.value = inputContent.value.substring(0, 500)
@@ -480,23 +405,16 @@ const handleInput = () => {
   }
 }
 
-const showMore = () => {
-  uni.showActionSheet({
-    itemList: ['查看个人资料', '清空聊天记录', '举报'],
-    success: (res) => {
-      if (res.tapIndex === 0) {
-        goToProfile()
-      } else if (res.tapIndex === 1) {
-        clearChat()
-      }
-    },
-  })
+// ---- 菜单 ----
+const onMenuTap = (action: string) => {
+  showMenu.value = false
+  if (action === 'profile') goToProfile()
+  else if (action === 'clear') clearChat()
+  else if (action === 'report') reportUser()
 }
 
 const goToProfile = () => {
-  uni.navigateTo({
-    url: `/pages/user-detail/index?id=${toUserId.value}`,
-  })
+  uni.navigateTo({ url: `/pages/user-detail/index?id=${toUserId.value}` })
 }
 
 const clearChat = () => {
@@ -506,398 +424,346 @@ const clearChat = () => {
     success: async (res) => {
       if (res.confirm) {
         try {
-          await request({
-            url: `/chat/conversations/${toUserId.value}`,
-            method: 'DELETE',
-          })
+          await request({ url: `/chat/conversations/${toUserId.value}`, method: 'DELETE' })
           messages.value = []
           uni.showToast({ title: '已清空', icon: 'success' })
-        } catch (e) {
-          logger.error('clear chat error', e)
-        }
+        } catch (e) { logger.error('clear chat error', e) }
       }
     },
   })
 }
 
-const goToVip = () => {
-  showVipLimit.value = false
-  uni.switchTab({
-    url: '/pages/vip/index',
+const reportUser = () => {
+  uni.showActionSheet({
+    itemList: ['骚扰', '诈骗', '虚假资料', '其他'],
+    success: (res) => {
+      const reasons = ['骚扰', '诈骗', '虚假资料', '其他']
+      const reason = reasons[res.tapIndex] || '其他'
+      uni.showModal({
+        title: '确认举报',
+        content: `确定以"${reason}"为由举报该用户吗？`,
+        success: async (modalRes) => {
+          if (modalRes.confirm) {
+            try {
+              await request({ url: `/reports`, method: 'POST', data: { targetUserId: toUserId.value, reason } })
+              uni.showToast({ title: '已举报，我们会尽快处理', icon: 'success' })
+            } catch {
+              uni.showToast({ title: '举报失败，请稍后重试', icon: 'none' })
+            }
+          }
+        },
+      })
+    },
   })
 }
 
-const closeVipLimit = () => {
-  showVipLimit.value = false
+// ---- 已读 ----
+const markAsRead = async () => {
+  try { await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' }) } catch {}
 }
 
-const openAiSkillPanel = () => {
-  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
-    showVipLimit.value = true
-    return
-  }
-  showAiSkillPanel.value = true
-}
-
-const onAiSkillSend = (text: string) => {
-  inputContent.value = text
-  handleSend()
-}
-
+// ---- 轮询 ----
 const startPolling = () => {
   stopPolling()
   pollTimer = setInterval(async () => {
     try {
-      const res = await request({
+      const res: any = await request({
         url: '/chat/messages/poll',
         method: 'GET',
-        data: {
-          userId: toUserId.value,
-          afterId: messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0,
-        },
+        data: { userId: toUserId.value, afterId: messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0 },
         skipToast: true,
       })
-
-      const newMessages = res.list || []
-      if (newMessages.length > 0) {
-        const existingIds = new Set(messages.value.map(m => m.id))
-        const uniqueNewMessages = newMessages.filter((m: ChatMessage) => !existingIds.has(m.id))
-        if (uniqueNewMessages.length > 0) {
-          messages.value.push(...uniqueNewMessages)
-          nextTick(() => {
-            scrollToBottom()
-          })
+      const newMsgs: ChatMessage[] = res?.list || []
+      if (newMsgs.length > 0) {
+        const ids = new Set(messages.value.map(m => m.id))
+        const unique = newMsgs.filter(m => !ids.has(m.id))
+        if (unique.length > 0) {
+          messages.value.push(...unique)
+          nextTick(() => scrollToBottom())
         }
       }
-    } catch (e: any) {
-      // 轮询接口未部署，首次失败即停止（避免无限 404）
+    } catch {
       stopPolling()
     }
   }, POLL_INTERVAL)
 }
 
 const stopPolling = () => {
-  if (pollTimer) {
-    clearInterval(pollTimer)
-    pollTimer = null
-  }
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
 }
 
-const handleBack = () => {
-  safeNavigateBack()
+// ---- VIP ----
+const goToVip = () => { showVipLimit.value = false; uni.switchTab({ url: '/pages/vip/index' }) }
+const closeVipLimit = () => { showVipLimit.value = false }
+
+const openAiSkillPanel = () => {
+  if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) { showVipLimit.value = true; return }
+  showAiSkillPanel.value = true
 }
+
+const onAiSkillSend = (text: string) => { inputContent.value = text; handleSend() }
+
+const handleBack = () => safeNavigateBack()
 </script>
 
 <style lang="scss" scoped>
+$pink: #FF6B8A;
+$pink-light: #FF8FA8;
+$bg: #F5F5F5;
+
+// ==================== 页面 ====================
 .chat-page {
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
+  width: 100vw; height: 100vh;
+  display: flex; flex-direction: column;
+  background: $bg;
   overflow: hidden;
 }
 
+// ==================== 导航栏 ====================
 .nav-bar {
   flex-shrink: 0;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: #fff;
+  display: flex; align-items: center;
+  height: 88rpx; padding: 0 24rpx; box-sizing: content-box;
+  background: #fff;
+  box-shadow: 0 1rpx 0 rgba(0,0,0,0.06);
   z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
-
-.nav-left,
-.nav-right {
-  width: 100rpx;
-}
-
-.back-icon {
-  font-size: 40rpx;
-  color: #333;
-}
-
-.nav-title {
-  flex: 1;
-  text-align: center;
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+.nav-left { width: 80rpx; flex-shrink: 0; }
+.back-icon { font-size: 44rpx; color: #333; }
+.nav-center {
+  flex: 1; display: flex; align-items: center; justify-content: center;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+.nav-title {
+  font-size: 34rpx; font-weight: 600; color: #1A1A1A;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.nav-right {
+  width: 80rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.more-icon-wrap {
+  display: flex; flex-direction: column; gap: 4rpx;
+  padding: 8rpx;
+}
+.more-dot {
+  width: 8rpx; height: 8rpx; border-radius: 50%; background: #999;
 }
 
-.more-icon {
-  font-size: 40rpx;
-  color: #333;
-}
-
+// ==================== 消息列表 ====================
 .message-list {
-  flex: 1;
-  padding: 0 40rpx;
-  min-height: 0;
+  flex: 1; min-height: 0;
+}
+.msg-list-inner {
+  padding: 0 32rpx;
 }
 
-.loading-tip,
-.no-more-tip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32rpx 0;
-  font-size: 24rpx;
-  color: #999;
+.msg-top-spacer { height: 16rpx; }
+.msg-bottom-spacer { height: 40rpx; }
+
+// 系统提示 / 空状态
+.sys-tip {
+  display: flex; justify-content: center;
+  padding: 24rpx 0;
+  text { font-size: 24rpx; color: #BDBDBD; }
 }
 
-.message-wrapper {
-  margin-bottom: 24rpx;
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 120rpx 32rpx;
 }
+.empty-emoji { font-size: 80rpx; margin-bottom: 24rpx; }
+.empty-text { font-size: 28rpx; color: #BDBDBD; }
 
+// 时间分割线
 .time-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 24rpx 0;
-
-  text {
-    font-size: 22rpx;
-    color: #999;
-    background-color: #E0E0E0;
-    padding: 8rpx 24rpx;
-    border-radius: 32rpx;
-  }
+  display: flex; justify-content: center;
+  padding: 20rpx 0 16rpx;
+}
+.time-badge {
+  background: #E0E0E0; border-radius: 8rpx;
+  padding: 6rpx 20rpx;
+  text { font-size: 22rpx; color: #999; }
 }
 
-.system-message {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text {
-    font-size: 24rpx;
-    color: #999;
-  }
-}
-
-.chat-message {
-  display: flex;
-  align-items: flex-end;
+// ==================== 消息行 ====================
+.msg-row {
+  margin-bottom: 8rpx;
+  display: flex; align-items: flex-start;
+  box-sizing: border-box;
 
   &.mine {
-    flex-direction: row-reverse;
+    justify-content: flex-end;
   }
-
   &.other {
-    flex-direction: row;
+    justify-content: flex-start;
   }
 }
+// 说话人切换加间距（js 侧无法感知 .msg-row 不切换，但基本够用）
 
+// 头像
 .avatar {
-  width: 76rpx;
-  height: 76rpx;
-  border-radius: 50%;
+  width: 72rpx; height: 72rpx;
+  border-radius: 8rpx;
   flex-shrink: 0;
+  margin-top: 4rpx;
 }
 
+// 气泡
 .bubble {
-  max-width: 68%;
-  padding: 20rpx 28rpx;
-  border-radius: 24rpx;
+  max-width: 70%;
+  padding: 18rpx 24rpx;
+  border-radius: 16rpx;
   word-break: break-word;
   overflow-wrap: break-word;
   box-sizing: border-box;
+  display: inline-block;
+  overflow: hidden;
 
+  // 对方：白色 / 左对齐
   &.other {
-    background-color: #fff;
-    border-bottom-left-radius: 6rpx;
+    background: #fff;
+    border-top-left-radius: 4rpx;
     margin-left: 16rpx;
-    box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
-
-    text {
-      font-size: 28rpx;
-      color: #333;
-      line-height: 1.5;
-    }
+    box-shadow: 0 1rpx 4rpx rgba(0,0,0,0.04);
   }
 
+  // 自己：粉色 / 右对齐
   &.mine {
-    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-    border-bottom-right-radius: 6rpx;
-    margin-right: 16rpx;
-
-    text {
-      font-size: 28rpx;
-      color: #fff;
-      line-height: 1.5;
-    }
+    background: linear-gradient(135deg, $pink, $pink-light);
+    border-top-right-radius: 4rpx;
   }
 }
 
-.message-image {
-  max-width: 400rpx;
-  border-radius: 8rpx;
+.bubble-text {
+  font-size: 28rpx; line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  display: block;
+  .bubble.other & { color: #333; }
+  .bubble.mine &  { color: #fff; }
 }
 
-.message-top-spacer { height: 24rpx; flex-shrink: 0; }
-.message-bottom-spacer { height: 24rpx; flex-shrink: 0; }
+// 图片消息
+.msg-img {
+  max-width: 360rpx; border-radius: 8rpx; display: block;
+}
 
+// ==================== 底部输入区域 ====================
 .input-area {
   flex-shrink: 0;
+  background: #fff;
+  border-top: 1rpx solid #E5E5E5;
   z-index: 10;
-  background-color: #fff;
-  padding: 8rpx 24rpx 0;
-  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
-.anti-fraud-banner {
-  padding: 12rpx 16rpx; margin-bottom: 8rpx;
-  background: #FFF8E1; border-radius: 10rpx;
-  font-size: 22rpx; color: #F57F17; text-align: center;
+// 防骗横幅
+.fraud-banner {
+  display: flex; align-items: center;
+  margin: 12rpx 24rpx 0;
+  padding: 12rpx 20rpx;
+  background: #FFF8E1; border-radius: 12rpx;
+}
+.fraud-text { flex: 1; font-size: 22rpx; color: #F57F17; }
+.fraud-close {
+  width: 36rpx; height: 36rpx; display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; color: #999; flex-shrink: 0;
+  margin-left: 12rpx;
 }
 
-.ai-help-btn {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  width: 80rpx; height: 68rpx; flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(#FF6B8A, 0.08), rgba(#FF8FA8, 0.12));
-  border-radius: 16rpx;
+// 输入行
+.input-row {
+  display: flex; align-items: center;
+  padding: 12rpx 24rpx;
+  gap: 16rpx;
 }
-.ai-help-icon { font-size: 28rpx; }
-.ai-help-text { font-size: 20rpx; color: #FF6B8A; font-weight: 500; }
 
-.input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
+.ai-btn {
+  width: 68rpx; height: 68rpx; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba($pink, 0.08), rgba($pink-light, 0.12));
+  border-radius: 50%;
 }
+.ai-btn-icon { font-size: 36rpx; }
 
 .input-box {
-  flex: 1;
-  background-color: #f5f5f5;
-  border-radius: 24rpx;
-  padding: 4rpx 16rpx;
-  display: flex;
-  align-items: center;
-  height: 68rpx;
+  flex: 1; height: 68rpx;
+  background: #F5F5F5; border-radius: 34rpx;
+  display: flex; align-items: center;
+  padding: 0 24rpx;
 }
-
-.message-input {
-  width: 100%;
-  height: 60rpx;
-  font-size: 28rpx;
-  color: #333;
-  line-height: 60rpx;
-}
-
-.action-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.action-btn {
-  width: 60rpx;
-  height: 60rpx;
-  background-color: #f5f5f5;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-
-  text {
-    font-size: 32rpx;
-  }
+.input-field {
+  width: 100%; height: 68rpx;
+  font-size: 28rpx; color: #333; line-height: 68rpx;
 }
 
 .send-btn {
-  height: 60rpx;
-  padding: 0 28rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 30rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-
-  text {
-    font-size: 26rpx;
-    font-weight: bold;
-    color: #fff;
-  }
-
-  &.disabled {
-    background-color: #ccc;
-
-    text {
-      color: #fff;
-    }
-  }
+  width: 120rpx; height: 68rpx; border-radius: 34rpx;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  display: flex; align-items: center; justify-content: center;
+  text { font-size: 28rpx; color: #fff; font-weight: 600; }
+  &.disabled { opacity: 0.45; }
 }
 
-.vip-limit-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+// ==================== VIP弹窗 ====================
+.vip-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1100;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
 }
-
-.vip-limit-content {
-  width: 600rpx;
-  background-color: #fff;
-  border-radius: 24rpx;
-  padding: 48rpx;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.vip-popup {
+  width: 560rpx; background: #fff; border-radius: 24rpx;
+  padding: 48rpx 40rpx; display: flex; flex-direction: column; align-items: center;
 }
-
-.vip-limit-title {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 16rpx;
+.vip-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; margin-bottom: 12rpx; }
+.vip-desc { font-size: 26rpx; color: #999; margin-bottom: 36rpx; }
+.vip-btn {
+  width: 100%; height: 88rpx; border-radius: 44rpx;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20rpx;
+  text { font-size: 30rpx; color: #fff; font-weight: 600; }
 }
+.vip-close { text { font-size: 26rpx; color: #BDBDBD; } }
 
-.vip-limit-desc {
-  font-size: 28rpx;
-  color: #666;
-  margin-bottom: 40rpx;
+// ==================== 底部菜单 ====================
+.menu-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: flex-end;
 }
-
-.vip-limit-btn {
-  width: 100%;
-  height: 88rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24rpx;
-
-  text {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #fff;
+.menu-sheet {
+  width: 100%; background: #fff;
+  border-radius: 40rpx 40rpx 0 0;
+  overflow: hidden;
+}
+.menu-header {
+  display: flex; justify-content: center;
+  padding: 20rpx 0 12rpx;
+}
+.menu-handle {
+  width: 64rpx; height: 8rpx; border-radius: 4rpx; background: #E0E0E0;
+}
+.menu-item {
+  height: 112rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32rpx; color: #1A1A1A;
+  &:active { background: #F5F5F5; }
+  &.danger { color: #FF4D4F; }
+  &.cancel {
+    font-weight: 500;
+    &:active { background: #F5F5F5; }
   }
 }
-
-.vip-limit-close {
-  text-align: center;
-
-  text {
-    font-size: 28rpx;
-    color: #999;
-  }
+.menu-divider {
+  height: 1rpx; background: #E5E5E5; margin: 0 32rpx;
+}
+.menu-gap {
+  height: 16rpx; background: #F5F5F5;
+}
+.menu-safe {
+  height: env(safe-area-inset-bottom);
 }
 </style>
