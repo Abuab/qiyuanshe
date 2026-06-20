@@ -1,58 +1,304 @@
 <template>
   <view class="page">
+    <!-- 顶部导航栏 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
+        <view class="nav-left" @tap="handleBack">
+          <text class="back-icon">←</text>
+        </view>
         <text class="nav-title">实名认证</text>
-        <view class="nav-right"></view>
+        <!-- 右侧留给微信原生胶囊按钮 -->
+        <view class="nav-right" />
       </view>
     </view>
-    <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
-      <view class="auth-card">
-        <view class="status-icon">{{ isAuthed ? '✅' : '🔒' }}</view>
-        <text class="status-text">{{ isAuthed ? '已实名认证' : '未实名认证' }}</text>
-        <text class="status-desc">{{ isAuthed ? '您的账号已通过实名认证' : '实名认证后可享受更多服务，提高交友可信度' }}</text>
-        <button v-if="!isAuthed" class="auth-btn" @tap="handleAuth">立即认证</button>
+
+    <!-- 页面内容区 -->
+    <scroll-view
+      class="content"
+      scroll-y
+      :enhanced="true"
+      :show-scrollbar="false"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
+    >
+      <!-- ========== 头部区域 ========== -->
+      <view class="header">
+        <view class="header-left">
+          <text class="header-title">完善认证</text>
+          <text class="header-desc">获取专属认证标识，更受异性信任，牵手成功率更高</text>
+        </view>
+        <view class="header-right">
+          <view class="shield-icon-box">
+            <text class="shield-shape">🛡️</text>
+            <text class="shield-check">✓</text>
+            <text class="shield-ribbon">✦</text>
+          </view>
+        </view>
       </view>
+
+      <!-- ========== 认证列表 ========== -->
+      <view class="card-list">
+        <!-- 第1项：实名认证 -->
+        <view class="auth-card" @tap="handleItemTap('realname')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #4A90D9;">
+              <text class="card-icon-text">🪪</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">实名认证</text>
+              <text class="card-desc">腾讯实名认证，远离骗子与婚托</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去认证</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+
+        <!-- 第2项：单身承诺 -->
+        <view class="auth-card" @tap="handleItemTap('single')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #FF9500;">
+              <text class="card-icon-text">💗</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">单身承诺</text>
+              <text class="card-desc">单身承诺，真心诚信寻找爱情</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去签署</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+
+        <!-- 第3项：学历认证 -->
+        <view class="auth-card" @tap="handleItemTap('education')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #FFCC00;">
+              <text class="card-icon-text">🎓</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">学历认证</text>
+              <text class="card-desc">支持毕业证、学信网截图等认证方式</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去认证</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+
+        <!-- 第4项：房产认证 -->
+        <view class="auth-card" @tap="handleItemTap('house')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #4CD964;">
+              <text class="card-icon-text">🏠</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">房产认证</text>
+              <text class="card-desc">让你的优势被更多人发现</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去认证</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+
+        <!-- 第5项：车产认证 -->
+        <view class="auth-card" @tap="handleItemTap('car')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #5AC8FA;">
+              <text class="card-icon-text">🏠</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">车产认证</text>
+              <text class="card-desc">让你的优势被更多人发现</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去认证</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+
+        <!-- 第6项：到店认证 -->
+        <view class="auth-card" @tap="handleItemTap('store')">
+          <view class="card-left">
+            <view class="card-icon" style="background: #FF3B30;">
+              <text class="card-icon-text">🏪</text>
+            </view>
+            <view class="card-text">
+              <text class="card-title">到店认证</text>
+              <text class="card-desc">让我们更了解你，更好地为你服务</text>
+            </view>
+          </view>
+          <view class="card-right">
+            <text class="card-action">去认证</text>
+            <text class="card-arrow">></text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 底部留白 -->
+      <view class="bottom-spacer" />
     </scroll-view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
-const userStore = useUserStore()
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
-const isAuthed = ref(false)
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
-  isAuthed.value = !!(userStore.userInfo as any)?.isRealName
 })
 
-function handleBack() { safeNavigateBack() }
-function handleAuth() {
-  // 获取微信手机号授权
-  uni.showToast({ title: '请使用微信一键认证', icon: 'none' })
+function handleBack() {
+  safeNavigateBack()
+}
+
+function handleItemTap(type: string) {
+  uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #f5f5f5; }
-.nav-wrap { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff; }
-.nav-bar { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 32rpx; }
-.nav-left, .nav-right { width: 100rpx; }
-.back-icon { font-size: 40rpx; color: #333; }
-.nav-title { font-size: 32rpx; font-weight: bold; color: #333; }
-.content { height: 100vh; padding: 32rpx; box-sizing: border-box; }
-.auth-card { background: #fff; border-radius: 16rpx; padding: 60rpx 40rpx; text-align: center; }
-.status-icon { font-size: 80rpx; margin-bottom: 24rpx; }
-.status-text { display: block; font-size: 34rpx; font-weight: bold; color: #333; }
-.status-desc { display: block; font-size: 26rpx; color: #999; margin-top: 16rpx; line-height: 1.6; }
-.auth-btn { margin-top: 40rpx; background: #e7412b; color: #fff; border-radius: 40rpx; height: 80rpx; line-height: 80rpx; font-size: 30rpx; width: 400rpx; }
+// ===== 全局 =====
+.page {
+  min-height: 100vh;
+  background: #FFF5F7;
+}
+
+// ===== 导航栏 =====
+.nav-wrap {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #E5E5E5;
+}
+.nav-bar {
+  height: 88rpx; display: flex; align-items: center;
+  justify-content: space-between; padding: 0 32rpx;
+}
+.nav-left {
+  width: 100rpx; display: flex; align-items: center;
+}
+.back-icon {
+  font-size: 40rpx; color: #333;
+}
+.nav-title {
+  font-size: 32rpx; font-weight: 600; color: #333;
+  position: absolute; left: 50%; transform: translateX(-50%);
+}
+.nav-right {
+  width: 100rpx;
+}
+
+// ===== 内容区 =====
+.content {
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+// ===== 头部区域 =====
+.header {
+  display: flex; align-items: center;
+  padding: 48rpx 32rpx;
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F8 100%);
+  margin: 0;
+}
+.header-left {
+  flex: 1; display: flex; flex-direction: column;
+}
+.header-title {
+  font-size: 56rpx; font-weight: bold; color: #333;
+  margin-bottom: 16rpx;
+}
+.header-desc {
+  font-size: 28rpx; color: #999; line-height: 1.6;
+  max-width: 440rpx;
+}
+.header-right {
+  flex-shrink: 0; margin-left: 24rpx;
+}
+.shield-icon-box {
+  width: 160rpx; height: 160rpx; display: flex;
+  align-items: center; justify-content: center;
+  position: relative;
+}
+.shield-shape {
+  font-size: 120rpx; position: relative; z-index: 1;
+}
+.shield-check {
+  position: absolute; top: 20rpx; right: 16rpx;
+  font-size: 36rpx; color: #4CD964; z-index: 2;
+  font-weight: bold;
+}
+.shield-ribbon {
+  position: absolute; bottom: 8rpx; right: 4rpx;
+  font-size: 32rpx; color: #FFD700; z-index: 2;
+  transform: rotate(-15deg);
+}
+
+// ===== 认证卡片列表 =====
+.card-list {
+  padding: 24rpx 32rpx 0;
+}
+
+.auth-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff; border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+  transition: opacity 0.15s;
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.card-left {
+  display: flex; align-items: center; flex: 1; min-width: 0;
+}
+
+.card-icon {
+  width: 80rpx; height: 80rpx; border-radius: 20rpx;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-right: 24rpx;
+}
+.card-icon-text {
+  font-size: 40rpx;
+}
+
+.card-text {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column;
+}
+.card-title {
+  font-size: 32rpx; font-weight: bold; color: #333;
+  margin-bottom: 8rpx;
+}
+.card-desc {
+  font-size: 26rpx; color: #999; line-height: 1.5;
+}
+
+.card-right {
+  display: flex; align-items: center; flex-shrink: 0; margin-left: 16rpx;
+}
+.card-action {
+  font-size: 28rpx; color: #FF6B8A;
+}
+.card-arrow {
+  font-size: 28rpx; color: #CCC; margin-left: 8rpx;
+}
+
+// ===== 底部留白 =====
+.bottom-spacer {
+  height: 60rpx;
+}
 </style>
