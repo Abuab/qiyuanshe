@@ -21,6 +21,8 @@ import {
   PartnerTag,
   InteractionSection,
   BottomBarSection,
+  PhotoItem,
+  PhotoGuidanceConfig,
   UserProfileDetailResponse,
 } from './user-profile-detail.types'
 
@@ -107,6 +109,49 @@ export class UserProfileDetailService {
     const aiFunQuizEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.FUN_QUIZ)
     const aiProfileGenEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.PROFILE_GEN)
 
+    // 加载当前用户的照片数量（用于判断是否触发上传引导）
+    let myPhotoCount = 0
+    if (currentUserId && !isSelf) {
+      myPhotoCount = await this.photoRepo.count({ where: { userId: currentUserId } })
+    }
+
+    // 照片引导文案配置
+    const photoGuidance: PhotoGuidanceConfig = {
+      loginPromptText: '登录后即可查看全部照片~',
+      loginButtonText: '去登录',
+      uploadPromptText: '上传你的照片，探索更多可能~',
+      uploadButtonText: '上传照片',
+      minPhotoThreshold: 1,
+    }
+
+    // 构建照片列表（含权限控制）
+    const photoItems: PhotoItem[] = photos.slice(0, 10).map((p, i) => {
+      const isFirst = i === 0
+      const canView = !!currentUserId || isFirst
+      return {
+        url: p.photoUrl,
+        isFirst,
+        needLogin: !canView,
+        isBlurred: !canView,
+      }
+    })
+
+    // 已登录但照片不足时，自己的照片需要额外场景（对方非首张也需要模糊）
+    const hasEnoughPhotos = !currentUserId || myPhotoCount > photoGuidance.minPhotoThreshold
+    if (currentUserId && !isSelf && myPhotoCount <= photoGuidance.minPhotoThreshold) {
+      for (const item of photoItems) {
+        if (!item.isFirst) {
+          item.needLogin = false
+          item.isBlurred = true
+        }
+      }
+    } else if (hasEnoughPhotos) {
+      // 照片充足：全部清晰
+      for (const item of photoItems) {
+        item.isBlurred = false
+      }
+    }
+
     return {
       top: this.buildTop(user, photos, isSelf, !!isFollowed, followCount, followerCount),
       basicInfo: this.buildBasicInfo(user),
@@ -118,6 +163,9 @@ export class UserProfileDetailService {
       showAiMatchEntry: !isSelf && aiMatchEnabled,
       showAiFunQuizEntry: !isSelf && aiFunQuizEnabled,
       showAiProfileGenEntry: isSelf && aiProfileGenEnabled,
+      photos: photoItems,
+      myPhotoCount,
+      photoGuidance,
     }
   }
 

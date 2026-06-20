@@ -27,6 +27,31 @@
           <view class="hero-gradient" />
         </view>
 
+        <!-- ========== 照片缩略图栏 ========== -->
+        <view class="photos-strip" v-if="profileData.photos?.length">
+          <scroll-view class="photos-scroll" scroll-x :show-scrollbar="false" :enhanced="true">
+            <view class="photos-inner">
+              <view
+                v-for="(photo, index) in profileData.photos"
+                :key="index"
+                class="photo-thumb"
+                :class="{ 'photo-active': index === 0, 'photo-blur': photo.isBlurred || photo.needLogin }"
+                @tap="onPhotoTap(Number(index))"
+              >
+                <image
+                  class="thumb-img"
+                  :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
+                  mode="aspectFill"
+                  :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(8px)' } : {}"
+                />
+                <view v-if="photo.needLogin || photo.isBlurred" class="photo-lock-overlay">
+                  <text class="lock-icon">🔒</text>
+                </view>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+
         <!-- ========== 头像+昵称区 ========== -->
         <view class="profile-header-card">
           <view class="avatar-wrapper">
@@ -331,6 +356,44 @@
         </view>
       </view>
 
+      <!-- ========== 登录引导弹窗（未登录点击非首张照片） ========== -->
+      <view v-if="showLoginPrompt" class="photo-prompt-overlay" @tap="showLoginPrompt = false">
+        <view class="photo-prompt-dialog" @tap.stop>
+          <text class="prompt-text">{{ (profileData?.photoGuidance?.loginPromptText) || '登录后即可查看全部照片~' }}</text>
+          <view class="prompt-btn" @tap="handlePhotoLogin">
+            <text>{{ (profileData?.photoGuidance?.loginButtonText) || '去登录' }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- ========== 上传引导弹窗（已登录但照片不足，点击他人非首张照片） ========== -->
+      <view v-if="showUploadPrompt" class="photo-prompt-overlay" @tap="showUploadPrompt = false">
+        <view class="photo-prompt-dialog upload-dialog" @tap.stop>
+          <!-- 顶部装饰图标 -->
+          <view class="upload-icons">
+            <text class="upload-deco deco-camera">📷</text>
+            <text class="upload-deco deco-photo">🖼️</text>
+            <text class="upload-deco deco-star">✨</text>
+          </view>
+          <text class="prompt-text upload-text">{{ (profileData?.photoGuidance?.uploadPromptText) || '上传你的照片，探索更多可能~' }}</text>
+          <view class="prompt-btn upload-btn" @tap="handleUploadPhoto">
+            <text>{{ (profileData?.photoGuidance?.uploadButtonText) || '上传照片' }}</text>
+          </view>
+          <!-- 底部：当前用户自己的照片缩略图 -->
+          <view class="my-photos-preview" v-if="myPhotos?.length">
+            <text class="my-photos-label">我的照片</text>
+            <view class="my-photos-row">
+              <image
+                class="my-thumb"
+                :src="getFullImageUrl(myPhotos[0]) || '/static/default-avatar.png'"
+                mode="aspectFill"
+              />
+              <view v-if="myPhotos.length <= 1" class="my-thumb my-thumb-empty" />
+            </view>
+          </view>
+        </view>
+      </view>
+
       <!-- ========== 红娘弹窗 ========== -->
       <matchmaker-popup
         :show="showMatchmaker"
@@ -380,6 +443,11 @@ const showReportSheet = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
+
+// 照片引导弹窗
+const showLoginPrompt = ref(false)
+const showUploadPrompt = ref(false)
+const myPhotos = ref<string[]>([])
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
@@ -468,6 +536,38 @@ const fetchMatchmakerList = async () => {
 }
 
 const handleBack = () => safeNavigateBack()
+
+// ===== 照片点击逻辑 =====
+const onPhotoTap = (index: number) => {
+  const photo = profileData.value?.photos?.[index]
+  if (!photo) return
+
+  if (photo.needLogin) {
+    showLoginPrompt.value = true
+    return
+  }
+
+  if (photo.isBlurred) {
+    showUploadPrompt.value = true
+    return
+  }
+
+  // 已登录且照片充足：预览大图
+  uni.previewImage({
+    urls: profileData.value.photos.map((p: any) => getFullImageUrl(p.url)),
+    current: index,
+  })
+}
+
+const handlePhotoLogin = () => {
+  showLoginPrompt.value = false
+  uni.navigateTo({ url: '/pages/login/index' })
+}
+
+const handleUploadPhoto = () => {
+  showUploadPrompt.value = false
+  uni.navigateTo({ url: '/pages/edit-profile/index' })
+}
 
 const onAuthTap = (item: any) => {
   uni.showModal({ title: item.label, content: item.verified ? '已认证' : '未认证', showCancel: false })
@@ -698,6 +798,32 @@ $text-hint: #999999;
   position: absolute; bottom: 0; left: 0; right: 0; height: 320rpx;
   background: linear-gradient(transparent, rgba(0,0,0,0.55));
 }
+
+// ===== 照片缩略图栏 =====
+.photos-strip {
+  position: relative; z-index: 11;
+  background: $card-bg; padding: 16rpx 24rpx; margin-top: -52rpx;
+  border-radius: 24rpx 24rpx 0 0;
+}
+.photos-scroll { width: 100%; }
+.photos-inner {
+  display: flex; gap: 16rpx; flex-wrap: nowrap;
+}
+.photo-thumb {
+  flex-shrink: 0; width: 120rpx; height: 120rpx; border-radius: 16rpx;
+  overflow: hidden; position: relative;
+  border: 4rpx solid #E8E8E8; transition: border-color 0.2s;
+  &.photo-active { border-color: $pink; }
+  &.photo-blur { border-color: #E0E0E0; }
+}
+.thumb-img {
+  width: 100%; height: 100%; display: block;
+}
+.photo-lock-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.15);
+}
+.lock-icon { font-size: 40rpx; }
 
 // ===== 头像卡片 =====
 .profile-header-card {
@@ -982,4 +1108,56 @@ $text-hint: #999999;
   border-bottom: 1rpx solid #F0F0F0;
 }
 .sheet-cancel { padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text-hint; margin-top: 16rpx; }
+
+// ===== 照片引导弹窗 =====
+.photo-prompt-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.photo-prompt-dialog {
+  width: 640rpx; background: #fff; border-radius: 24rpx;
+  padding: 48rpx 40rpx 40rpx;
+  display: flex; flex-direction: column; align-items: center;
+}
+.prompt-text {
+  font-size: 28rpx; color: #666; text-align: center; line-height: 1.6;
+  margin-bottom: 32rpx;
+}
+.prompt-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 320rpx; height: 80rpx; border-radius: 999px;
+  background: $pink;
+  font-size: 28rpx; color: #fff; font-weight: bold;
+}
+
+// 上传弹窗
+.upload-dialog { padding: 40rpx 36rpx 32rpx; }
+.upload-icons {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12rpx; margin-bottom: 24rpx;
+}
+.upload-deco { font-size: 44rpx; }
+.upload-text { color: #333; font-size: 30rpx; margin-bottom: 28rpx; }
+.upload-btn { width: 400rpx; height: 96rpx; font-size: 30rpx; }
+
+.my-photos-preview {
+  margin-top: 32rpx; width: 100%; padding-top: 24rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
+.my-photos-label { font-size: 24rpx; color: #999; display: block; text-align: center; margin-bottom: 16rpx; }
+.my-photos-row {
+  display: flex; gap: 12rpx; justify-content: center;
+}
+.my-thumb {
+  width: 100rpx; height: 100rpx; border-radius: 12rpx; background: #F5F5F5;
+  border: 3rpx solid $pink;
+}
+.my-thumb-empty {
+  background: #F0F0F0; border-color: #E0E0E0;
+  display: flex; align-items: center; justify-content: center;
+  &::after { content: '+'; font-size: 36rpx; color: #CCC; }
+}
 </style>

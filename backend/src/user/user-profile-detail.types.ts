@@ -142,6 +142,18 @@ export interface BottomBarSection {
 
 // ===================== 完整返回结构 =====================
 
+/** 单张照片信息（含权限控制） */
+export interface PhotoItem {
+  /** 照片 URL */
+  url: string
+  /** 是否首张照片 */
+  isFirst: boolean
+  /** 是否需要登录才能查看 */
+  needLogin: boolean
+  /** 是否已模糊 */
+  isBlurred: boolean
+}
+
 /** 用户详情页完整数据 */
 export interface UserProfileDetailResponse {
   /** 顶部区域 */
@@ -164,4 +176,24 @@ export interface UserProfileDetailResponse {
   showAiFunQuizEntry: boolean
   /** 是否有 AI 个人印象生成入口 */
   showAiProfileGenEntry: boolean
+  /** 照片列表（含权限控制） */
+  photos: PhotoItem[]
+  /** 当前登录用户照片数量（用于判断上传引导） */
+  myPhotoCount: number
+  /** 照片引导提示文案配置 */
+  photoGuidance: PhotoGuidanceConfig
+}
+
+/** 照片区引导配置 */
+export interface PhotoGuidanceConfig {
+  /** 未登录提示文字 */
+  loginPromptText: string
+  /** 登录按钮文字 */
+  loginButtonText: string
+  /** 上传照片提示文字 */
+  uploadPromptText: string
+  /** 上传按钮文字 */
+  uploadButtonText: string
+  /** 最少照片数量阈值 */
+  minPhotoThreshold: number
 }

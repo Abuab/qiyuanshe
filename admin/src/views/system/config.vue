@@ -155,6 +155,25 @@
               <div class="form-tip">登录页面顶部的插画，建议尺寸 750px x 600px，留空使用默认插画</div>
             </el-form-item>
 
+            <el-divider content-position="left">照片区引导文案</el-divider>
+
+            <el-form-item label="未登录提示文字">
+              <el-input v-model="basicConfig.photoGuidanceLoginPrompt" placeholder="登录后即可查看全部照片~" style="max-width:400px" />
+            </el-form-item>
+            <el-form-item label="登录按钮文字">
+              <el-input v-model="basicConfig.photoGuidanceLoginBtn" placeholder="去登录" style="max-width:200px" />
+            </el-form-item>
+            <el-form-item label="上传引导提示文字">
+              <el-input v-model="basicConfig.photoGuidanceUploadPrompt" placeholder="上传你的照片，探索更多可能~" style="max-width:400px" />
+            </el-form-item>
+            <el-form-item label="上传按钮文字">
+              <el-input v-model="basicConfig.photoGuidanceUploadBtn" placeholder="上传照片" style="max-width:200px" />
+            </el-form-item>
+            <el-form-item label="最少照片张数阈值">
+              <el-input-number v-model="basicConfig.photoGuidanceMinCount" :min="0" :max="10" />
+              <div class="form-tip" style="margin-left:12px">当前用户照片数 ≤ 此值时查看他人照片触发上传引导</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -651,6 +670,11 @@ const basicConfig = reactive({
   matchmakerSafetyBoundaryLabel: '安全提醒',
   showOfficialAccountPrompt: true,
   loginPageIllustration: '',
+  photoGuidanceLoginPrompt: '登录后即可查看全部照片~',
+  photoGuidanceLoginBtn: '去登录',
+  photoGuidanceUploadPrompt: '上传你的照片，探索更多可能~',
+  photoGuidanceUploadBtn: '上传照片',
+  photoGuidanceMinCount: 1,
 })
 
 const shareConfig = reactive({

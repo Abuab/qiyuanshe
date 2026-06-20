@@ -48,6 +48,12 @@ export class PublicSystemController {
       showOfficialAccountPrompt: configs.basic?.showOfficialAccountPrompt !== false,
       // 登录页插画配置
       loginPageIllustration: configs.basic?.loginPageIllustration || '',
+      // 照片区引导文案配置
+      photoGuidanceLoginPrompt: configs.basic?.photoGuidanceLoginPrompt || '登录后即可查看全部照片~',
+      photoGuidanceLoginBtn: configs.basic?.photoGuidanceLoginBtn || '去登录',
+      photoGuidanceUploadPrompt: configs.basic?.photoGuidanceUploadPrompt || '上传你的照片，探索更多可能~',
+      photoGuidanceUploadBtn: configs.basic?.photoGuidanceUploadBtn || '上传照片',
+      photoGuidanceMinCount: Number(configs.basic?.photoGuidanceMinCount ?? 1),
     }
 
     return Result.success(result)
