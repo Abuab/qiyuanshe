@@ -507,6 +507,13 @@ const funQuizBirthday = ref({ userBirthDay: '', taBirthDay: '' })
 const funQuizLoading = ref(false)
 const funQuizResult = ref<any>(null)
 
+/** 从 birthDay 字符串（如 "1990年"）中提取年份，转成 YYYY-01-01 格式 */
+const extractBirthYear = (birthDay?: string): number | null => {
+  if (!birthDay || typeof birthDay !== 'string') return null
+  const match = birthDay.match(/(\d{4})/)
+  return match ? parseInt(match[1], 10) : null
+}
+
 const openFunQuiz = () => {
   if (!isLoggedIn.value) {
     uni.showToast({ title: '请先登录', icon: 'none' })
@@ -523,11 +530,8 @@ const openFunQuiz = () => {
   }
   // 自动填入对方用户的生日（如有）
   const taBirthDay = profileData.value?.basicInfo?.birthDay
-  if (taBirthDay && typeof taBirthDay === 'string' && taBirthDay.length >= 4) {
-    funQuizBirthday.value.taBirthDay = taBirthDay
-  } else {
-    funQuizBirthday.value.taBirthDay = ''
-  }
+  const taYear = extractBirthYear(taBirthDay)
+  funQuizBirthday.value.taBirthDay = taYear ? `${taYear}-01-01` : ''
   showFunQuizPopup.value = true
 }
 
@@ -568,12 +572,9 @@ const retryFunQuiz = () => {
     funQuizBirthday.value.userBirthDay = ''
   }
   // 重新自动填入对方用户的生日（如有）
-  const taBirthDay = profileData.value?.basicInfo?.birthDay
-  if (taBirthDay && typeof taBirthDay === 'string' && taBirthDay.length >= 4) {
-    funQuizBirthday.value.taBirthDay = taBirthDay
-  } else {
-    funQuizBirthday.value.taBirthDay = ''
-  }
+  const taBirthDay2 = profileData.value?.basicInfo?.birthDay
+  const taYear2 = extractBirthYear(taBirthDay2)
+  funQuizBirthday.value.taBirthDay = taYear2 ? `${taYear2}-01-01` : ''
 }
 
 const profileGenLoading = ref(false)

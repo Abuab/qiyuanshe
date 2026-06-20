@@ -21,6 +21,7 @@
       :refresher-triggered="loadingMore"
       @refresherrefresh="onRefresh"
     >
+      <view class="message-top-spacer" />
       <view v-if="loading" class="loading-tip">
         <text>加载中...</text>
       </view>
@@ -593,10 +594,11 @@ const handleBack = () => {
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .nav-bar {
-  position: fixed;
+  flex-shrink: 0;
   top: 0;
   left: 0;
   right: 0;
@@ -638,8 +640,8 @@ const handleBack = () => {
 
 .message-list {
   flex: 1;
-  padding: 108rpx 24rpx 108rpx;
-  height: calc(100vh - 88rpx);
+  padding: 0 40rpx;
+  min-height: 0;
 }
 
 .loading-tip,
@@ -696,36 +698,42 @@ const handleBack = () => {
 }
 
 .avatar {
-  width: 80rpx;
-  height: 80rpx;
+  width: 76rpx;
+  height: 76rpx;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .bubble {
-  max-width: 70%;
-  padding: 20rpx 24rpx;
-  margin: 0 16rpx;
-  border-radius: 16rpx;
+  max-width: 68%;
+  padding: 20rpx 28rpx;
+  border-radius: 24rpx;
   word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 
   &.other {
     background-color: #fff;
-    border-bottom-left-radius: 8rpx;
+    border-bottom-left-radius: 6rpx;
+    margin-left: 16rpx;
+    box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
 
     text {
-      font-size: 30rpx;
+      font-size: 28rpx;
       color: #333;
+      line-height: 1.5;
     }
   }
 
   &.mine {
-    background-color: #FF6B9D;
-    border-bottom-right-radius: 8rpx;
+    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+    border-bottom-right-radius: 6rpx;
+    margin-right: 16rpx;
 
     text {
-      font-size: 30rpx;
+      font-size: 28rpx;
       color: #fff;
+      line-height: 1.5;
     }
   }
 }
@@ -735,14 +743,14 @@ const handleBack = () => {
   border-radius: 8rpx;
 }
 
+.message-top-spacer { height: 24rpx; flex-shrink: 0; }
+.message-bottom-spacer { height: 24rpx; flex-shrink: 0; }
+
 .input-area {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
+  z-index: 10;
   background-color: #fff;
-  padding: 8rpx 24rpx;
-  padding-bottom: 0;
+  padding: 8rpx 24rpx 0;
   box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
