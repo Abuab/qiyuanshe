@@ -162,8 +162,8 @@
         </view>
       </view>
 
-      <!-- ========== 底部陪伴信息 ========== -->
-      <view class="footer-info">
+      <!-- ========== 底部陪伴信息（仅登录后显示） ========== -->
+      <view v-if="isLoggedIn" class="footer-info">
         <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
         <text v-else class="footer-heart">❤️</text>
         <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
@@ -324,6 +324,7 @@ const goToQuestions = () => {
   uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
 }
 const goToAiMatchmaker = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
   uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
 }
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
@@ -332,7 +333,10 @@ const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=f
 const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=visitors' })
 const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
 const goToPhotos = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
-const goToRealnameAuth = () => uni.navigateTo({ url: '/pages/realname-auth/index' })
+const goToRealnameAuth = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
+  uni.navigateTo({ url: '/pages/realname-auth/index' })
+}
 
 const showMatchmaker = ref(false)
 const selectedMatchmaker = ref<any>(null)

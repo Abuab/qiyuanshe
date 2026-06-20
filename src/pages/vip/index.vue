@@ -261,10 +261,15 @@ const tabs = computed(() => {
       { key: 'vip', label: 'VIP会员' },
       { key: 'custom', label: '定制会员' },
     )
+  } else {
+    // 未登录也展示定制会员
+    list.unshift(
+      { key: 'custom', label: '定制会员' },
+    )
   }
   return list
 })
-const activeTab = ref(userStore.isLoggedIn ? 'vip' : 'about')
+const activeTab = ref(userStore.isLoggedIn ? 'vip' : 'custom')
 
 const currentTabLabel = computed(() => {
   const tab = tabs.value.find(t => t.key === activeTab.value)

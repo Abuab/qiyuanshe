@@ -66,7 +66,8 @@ export class UserService {
     currentUserId?: number,
     filters?: RecommendFilters,
   ) {
-    // 如果未指定目标性别且已登录，则自动按性别互推
+    // 未登录用户：显示所有性别（不限制）
+    // 已登录但未指定性别：自动按性别互推（男→女，女→男）
     let effectiveGender = targetGender
     if (!effectiveGender && currentUserId) {
       const currentUser = await this.userRepository.findOne({
