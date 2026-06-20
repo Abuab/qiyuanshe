@@ -176,6 +176,15 @@ export class AdminAiProviderController {
     return Result.success(result, result.message)
   }
 
+  /** 诊断：查看 .env 中读取到的 Provider 原始配置（Key 脱敏） */
+  @Get('diagnose-env')
+  async diagnoseEnv() {
+    const diag = this.seeder.getEnvDiagnostic()
+    // 同时查一下 DB 中已有的 Provider
+    const dbProviders = await this.configService.getAll()
+    return Result.success({ envValues: diag, dbProviders: dbProviders.length })
+  }
+
   /** 手动同步 Provider 配置到 Redis */
   @Post('sync-redis')
   async syncToRedis() {

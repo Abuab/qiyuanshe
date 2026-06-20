@@ -234,7 +234,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { aiProviderApi, type ProviderConfigVO, type LoadBalanceStrategy } from '../../../api/ai-provider'
@@ -487,7 +487,17 @@ async function onSeedFromEnv() {
   seedLoading.value = true
   try {
     const res = await aiProviderApi.seedFromEnv()
-    ElMessage.success(res.data?.message || '同步完成')
+    const data = res.data
+    const msg = data?.message || '同步完成'
+    if (data?.detail?.length) {
+      ElMessageBox.alert(
+        data.detail.join('<br>'),
+        msg,
+        { dangerouslyUseHTMLString: true, confirmButtonText: '知道了' },
+      )
+    } else {
+      ElMessage.success(msg)
+    }
     await fetchProviders()
   } catch (e: any) {
     ElMessage.error(e?.message || '同步失败')

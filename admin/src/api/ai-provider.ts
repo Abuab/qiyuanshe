@@ -109,8 +109,13 @@ export const aiProviderApi = {
   },
 
   /** 从 .env 同步 Provider 到数据库 */
-  seedFromEnv(): Promise<ApiResponse<{ created: number; skipped: number; message: string }>> {
+  seedFromEnv(): Promise<ApiResponse<{ created: number; skipped: number; message: string; detail: string[] }>> {
     return request.post('/admin/ai/provider/seed-from-env')
+  },
+
+  /** 诊断 .env 配置 */
+  diagnoseEnv(): Promise<ApiResponse<{ envValues: Record<string, string>; dbProviders: number }>> {
+    return request.get('/admin/ai/provider/diagnose-env')
   },
 
   /** 测试连接 */
