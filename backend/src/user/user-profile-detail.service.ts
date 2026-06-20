@@ -104,6 +104,8 @@ export class UserProfileDetailService {
 
     // AI 开关状态（决定是否展示入口）
     const aiMatchEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.MATCH)
+    const aiFunQuizEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.FUN_QUIZ)
+    const aiProfileGenEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.PROFILE_GEN)
 
     return {
       top: this.buildTop(user, photos, isSelf, !!isFollowed, followCount, followerCount),
@@ -114,6 +116,8 @@ export class UserProfileDetailService {
       interaction: { giftCount: 0, canShare: true, shareTitle: `来看看${user.nickname || 'TA'}的个人主页` },
       bottomBar: this.buildBottomBar(isSelf, false),
       showAiMatchEntry: !isSelf && aiMatchEnabled,
+      showAiFunQuizEntry: !isSelf && aiFunQuizEnabled,
+      showAiProfileGenEntry: isSelf && aiProfileGenEnabled,
     }
   }
 

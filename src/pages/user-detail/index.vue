@@ -129,6 +129,17 @@
             </view>
             <text class="ai-text">{{ profileData.aboutMe.aiProfileText }}</text>
           </view>
+          <!-- AI个人印象生成入口（仅自己） -->
+          <view v-if="profileData.top.isSelf && profileData.showAiProfileGenEntry" class="ai-profile-gen-entry" @tap="refreshProfileGen">
+            <view class="entry-icon-wrap sm">
+              <text class="entry-icon">✨</text>
+            </view>
+            <view class="entry-info">
+              <text class="entry-title">{{ profileData.aboutMe.aiProfileText ? '刷新AI印象' : '生成AI印象' }}</text>
+              <text class="entry-desc">AI帮你总结个人魅力标签</text>
+            </view>
+            <text class="entry-arrow">→</text>
+          </view>
           <view v-else-if="!profileData.aboutMe.tags?.length && !profileData.aboutMe.aiProfileText" class="empty-hint">
             <text>TA还没填写介绍哦～</text>
           </view>
@@ -145,6 +156,22 @@
             <view class="entry-info">
               <text class="entry-title">AI缘分分析</text>
               <text class="entry-desc">测测你们缘分契合度</text>
+            </view>
+            <text class="entry-arrow">→</text>
+          </view>
+        </view>
+
+        <!-- ========== AI趣味缘分测试入口卡片 ========== -->
+        <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-match-entry fun-quiz-entry" @tap="openFunQuiz">
+          <view class="entry-ring left-ring" />
+          <view class="entry-ring right-ring" />
+          <view class="entry-content">
+            <view class="entry-icon-wrap">
+              <text class="entry-icon">🔮</text>
+            </view>
+            <view class="entry-info">
+              <text class="entry-title">AI趣味测试</text>
+              <text class="entry-desc">看星座生肖契合密码</text>
             </view>
             <text class="entry-arrow">→</text>
           </view>
@@ -227,6 +254,68 @@
         @update:show="showAiMatchPopup = $event"
       />
 
+      <!-- ========== AI趣味测试弹窗 ========== -->
+      <view v-if="showFunQuizPopup" class="funquiz-overlay" @tap="showFunQuizPopup = false">
+        <view class="funquiz-panel" @tap.stop>
+          <view class="funquiz-header">
+            <text class="funquiz-title">AI趣味缘分测试</text>
+            <view class="funquiz-close" @tap="showFunQuizPopup = false"><text>✕</text></view>
+          </view>
+          <scroll-view v-if="!funQuizResult" class="funquiz-body" scroll-y>
+            <text class="funquiz-desc">输入你和{{ profileData.top.nickname }}的生日，AI会为你们生成一份趣味缘分密码报告</text>
+            <view class="funquiz-field">
+              <text class="funquiz-label">我的生日</text>
+              <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.userBirthDay = e.detail.value">
+                <view class="funquiz-picker">{{ funQuizBirthday.userBirthDay || '点击选择' }}</view>
+              </picker>
+            </view>
+            <view class="funquiz-field">
+              <text class="funquiz-label">TA的生日</text>
+              <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.taBirthDay = e.detail.value">
+                <view class="funquiz-picker">{{ funQuizBirthday.taBirthDay || '点击选择' }}</view>
+              </picker>
+            </view>
+            <view class="funquiz-btn" :class="{ disabled: funQuizLoading }" @tap="submitFunQuiz">
+              <text>{{ funQuizLoading ? '生成中...' : '开始测试' }}</text>
+            </view>
+          </scroll-view>
+          <template v-else>
+            <scroll-view class="funquiz-body" scroll-y>
+              <view class="fq-result-header">
+                <text class="fq-zodiac">{{ funQuizResult.userZodiac }} · {{ funQuizResult.userConstellation }}</text>
+                <text class="fq-vs">💞</text>
+                <text class="fq-zodiac">{{ funQuizResult.taZodiac }} · {{ funQuizResult.taConstellation }}</text>
+              </view>
+              <view class="fq-keywords">
+                <text v-for="(k, i) in funQuizResult.keywords" :key="i" class="fq-keyword">{{ k }}</text>
+              </view>
+              <view class="fq-section">
+                <text class="fq-section-title">性格互补分析</text>
+                <text class="fq-section-text">{{ funQuizResult.personalityAnalysis }}</text>
+              </view>
+              <view class="fq-section">
+                <text class="fq-section-title">相处模式建议</text>
+                <text class="fq-section-text">{{ funQuizResult.relationshipAdvice }}</text>
+              </view>
+              <view v-if="funQuizResult.timeNodes?.length" class="fq-section">
+                <text class="fq-section-title">未来趣味节点</text>
+                <view v-for="(n, i) in funQuizResult.timeNodes" :key="i" class="fq-node">
+                  <text class="fq-node-day">{{ n.day }}</text>
+                  <text class="fq-node-title">{{ n.title }}</text>
+                  <text class="fq-node-desc">{{ n.desc }}</text>
+                </view>
+              </view>
+              <view class="fq-disclaimer">仅供娱乐参考，珍惜真实相处时光</view>
+            </scroll-view>
+            <view class="funquiz-footer">
+              <view class="funquiz-btn secondary" @tap="funQuizResult = null; funQuizBirthday = { userBirthDay: '', taBirthDay: '' }">
+                <text>重新测试</text>
+              </view>
+            </view>
+          </template>
+        </view>
+      </view>
+
       <!-- ========== 红娘弹窗 ========== -->
       <matchmaker-popup
         :show="showMatchmaker"
@@ -286,6 +375,11 @@ const safeAreaBottom = computed(() => {
 })
 
 const reportReasons = ['虚假信息', '冒充他人', '骚扰谩骂', '广告营销', '色情低俗', '其他']
+
+const today = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
 
 onMounted(() => {
   uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
@@ -390,6 +484,58 @@ const openAiMatch = () => {
     return
   }
   showAiMatchPopup.value = true
+}
+
+const showFunQuizPopup = ref(false)
+const funQuizBirthday = ref({ userBirthDay: '', taBirthDay: '' })
+const funQuizLoading = ref(false)
+const funQuizResult = ref<any>(null)
+
+const openFunQuiz = () => {
+  if (!isLoggedIn.value) {
+    uni.showToast({ title: '请先登录', icon: 'none' })
+    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    return
+  }
+  funQuizResult.value = null
+  showFunQuizPopup.value = true
+}
+
+const submitFunQuiz = async () => {
+  if (!funQuizBirthday.value.userBirthDay || !funQuizBirthday.value.taBirthDay) {
+    uni.showToast({ title: '请填写双方的出生日期', icon: 'none' })
+    return
+  }
+  funQuizLoading.value = true
+  try {
+    const res: any = await request({
+      url: '/ai/fun-quiz/generate',
+      method: 'POST',
+      data: funQuizBirthday.value,
+    })
+    funQuizResult.value = res
+  } catch (e: any) {
+    uni.showToast({ title: e?.data?.message || e?.message || '生成失败', icon: 'none' })
+  } finally {
+    funQuizLoading.value = false
+  }
+}
+
+const profileGenLoading = ref(false)
+const refreshProfileGen = async () => {
+  profileGenLoading.value = true
+  try {
+    const res: any = await request({ url: '/ai/profile-gen/refresh', method: 'POST' })
+    if (res?.personaText) {
+      profileData.value.aboutMe.aiProfileText = res.personaText
+    }
+    uni.showToast({ title: 'AI印象已生成', icon: 'success' })
+    await fetchProfileDetail()
+  } catch (e: any) {
+    uni.showToast({ title: e?.data?.message || '生成失败，请完善资料后重试', icon: 'none' })
+  } finally {
+    profileGenLoading.value = false
+  }
 }
 
 const handleContact = () => {
@@ -622,6 +768,78 @@ $text-hint: #999999;
 .entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
 .entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
 .entry-arrow { font-size: 36rpx; color: $pink; }
+
+// AI个人印象生成入口行内样式
+.ai-profile-gen-entry {
+  display: flex; align-items: center; gap: 16rpx;
+  margin-top: 20rpx; padding: 20rpx;
+  background: rgba($pink, 0.05); border: 1rpx solid rgba($pink, 0.2); border-radius: 16rpx;
+  .entry-icon-wrap.sm { width: 56rpx; height: 56rpx; }
+  .entry-icon { font-size: 28rpx; }
+  .entry-title { font-size: 26rpx; }
+  .entry-desc { font-size: 22rpx; }
+}
+
+// ===== AI趣味测试弹窗 =====
+.funquiz-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999;
+  background: rgba(0,0,0,0.45); display: flex; align-items: flex-end;
+}
+.funquiz-panel {
+  width: 100%; max-height: 80vh; background: #fff;
+  border-radius: 32rpx 32rpx 0 0; display: flex; flex-direction: column;
+}
+.funquiz-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 32rpx 32rpx 20rpx;
+}
+.funquiz-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
+.funquiz-close {
+  width: 56rpx; height: 56rpx; border-radius: 50%; background: #F5F5F5;
+  display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #999;
+}
+.funquiz-body { padding: 0 32rpx 32rpx; }
+.funquiz-desc { font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block; }
+.funquiz-field { margin-bottom: 24rpx; }
+.funquiz-label { font-size: 26rpx; color: #333; margin-bottom: 10rpx; display: block; }
+.funquiz-picker {
+  padding: 20rpx 24rpx; background: #F5F5F5; border-radius: 12rpx;
+  font-size: 28rpx; color: #333;
+}
+.funquiz-btn {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 20rpx; padding: 24rpx 0; border-radius: 40rpx;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  font-size: 30rpx; color: #fff; font-weight: bold;
+  &.disabled { opacity: 0.5; }
+  &.secondary { background: #F5F5F5; color: #666; margin-top: 0; }
+}
+.funquiz-footer { padding: 16rpx 32rpx 24rpx; border-top: 1rpx solid #F0F0F0; }
+
+.fq-result-header {
+  display: flex; align-items: center; justify-content: center; gap: 16rpx;
+  padding: 20rpx 0 28rpx;
+}
+.fq-zodiac { font-size: 26rpx; color: #666; }
+.fq-vs { font-size: 32rpx; }
+.fq-keywords {
+  display: flex; justify-content: center; gap: 16rpx; padding-bottom: 28rpx;
+}
+.fq-keyword {
+  padding: 10rpx 24rpx; border-radius: 28rpx;
+  background: linear-gradient(135deg, #FFF0F3, #FFE8EC);
+  font-size: 24rpx; color: $pink;
+}
+.fq-section { padding-bottom: 24rpx; }
+.fq-section-title { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; }
+.fq-section-text { font-size: 26rpx; color: #666; line-height: 1.7; }
+.fq-node {
+  padding: 16rpx 20rpx; background: #FAFAFA; border-radius: 12rpx; margin-bottom: 12rpx;
+}
+.fq-node-day { font-size: 24rpx; color: $pink; font-weight: bold; margin-bottom: 4rpx; display: block; }
+.fq-node-title { font-size: 26rpx; color: #333; margin-bottom: 4rpx; display: block; }
+.fq-node-desc { font-size: 24rpx; color: #999; }
+.fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
 
 // ===== 5. Ta希望你 =====
 .partner-tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 22rpx; }

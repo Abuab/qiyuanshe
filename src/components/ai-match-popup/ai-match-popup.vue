@@ -208,7 +208,7 @@ const retry = () => loadReport()
 const goImproveProfile = () => {
   close()
   setTimeout(() => {
-    uni.navigateTo({ url: '/pages/my/profile/index' })
+    uni.navigateTo({ url: '/pages/edit-profile/index' })
   }, 300)
 }
 

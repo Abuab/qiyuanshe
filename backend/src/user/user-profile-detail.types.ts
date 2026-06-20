@@ -160,4 +160,8 @@ export interface UserProfileDetailResponse {
   bottomBar: BottomBarSection
   /** 是否有 AI 缘分分析入口 */
   showAiMatchEntry: boolean
+  /** 是否有 AI 趣味缘分测试入口 */
+  showAiFunQuizEntry: boolean
+  /** 是否有 AI 个人印象生成入口 */
+  showAiProfileGenEntry: boolean
 }
