@@ -113,11 +113,6 @@ export const aiProviderApi = {
     return request.post('/admin/ai/provider/seed-from-env')
   },
 
-  /** 诊断 .env 配置 */
-  diagnoseEnv(): Promise<ApiResponse<{ envValues: Record<string, string>; dbProviders: number }>> {
-    return request.get('/admin/ai/provider/diagnose-env')
-  },
-
   /** 测试连接 */
   testConnection(id: number): Promise<ApiResponse> {
     return request.post(`/admin/ai/provider/${id}/test`)

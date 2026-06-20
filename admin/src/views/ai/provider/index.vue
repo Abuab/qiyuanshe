@@ -81,7 +81,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="权重" width="80" align="center">
+        <el-table-column label="权重" width="100" align="center">
           <template #default="{ row }">
             <el-input-number
               :model-value="row.weight"
@@ -89,12 +89,12 @@
               :max="100"
               size="small"
               controls-position="right"
-              style="width: 80px"
+              style="width: 100%"
               @change="(val: number | undefined) => onWeightChange(row, val)"
             />
           </template>
         </el-table-column>
-        <el-table-column label="优先级" width="80" align="center">
+        <el-table-column label="优先级" width="100" align="center">
           <template #default="{ row }">
             <el-input-number
               :model-value="row.priority"
@@ -102,7 +102,7 @@
               :max="999"
               size="small"
               controls-position="right"
-              style="width: 80px"
+              style="width: 100%"
               @change="(val: number | undefined) => onPriorityChange(row, val)"
             />
           </template>
@@ -449,12 +449,6 @@ async function fetchProviders() {
     // 活跃 Provider = 第一个启用的
     const first = providers.value.find(p => p.isEnabled === 1)
     activeProviderName.value = first?.displayName || '无'
-    if (providers.value.length === 0) {
-      console.warn('[AI Provider] 获取到 0 个 Provider，请：\n'
-        + '1. 确认服务器 .env 已配置真实 API Key（不是占位符）\n'
-        + '2. 点击「从 .env 同步」按钮\n'
-        + '3. 查看服务器终端 Seeder 日志')
-    }
   } catch (e: any) {
     ElMessage.error(e?.message || '加载失败')
   } finally {
@@ -536,4 +530,12 @@ onMounted(async () => {
 
 .balance-cell { display: flex; align-items: center; gap: 8px; }
 .balance-val { font-size: 13px; color: #606266; }
+
+/* 修复 el-input-number 的上下箭头在表格列中被裁剪 */
+:deep(.el-input-number) {
+  width: 100%;
+}
+:deep(.el-input-number .el-input__wrapper) {
+  padding-right: 33px;
+}
 </style>

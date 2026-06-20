@@ -59,27 +59,6 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
     }
   }
 
-  /** 诊断：读取当前 .env 中所有 Provider 原始值（Key 脱敏） */
-  getEnvDiagnostic(): Record<string, string> {
-    const diag: Record<string, string> = {}
-    for (const def of AiProviderSeeder.PROVIDER_DEFS) {
-      const prefix = def.envPrefix
-      const rawKey = process.env[`${prefix}_API_KEY`] || '(未设置)'
-      const rawBase = process.env[`${prefix}_API_BASE`] || '(未设置)'
-      const rawModel = process.env[`${prefix}_MODEL_NAME`] || '(未设置)'
-      const rawEnabled = process.env[`${prefix}_ENABLED`] || '(未设置)'
-      diag[`${prefix}_ENABLED`] = rawEnabled
-      diag[`${prefix}_API_KEY`] = maskKey(rawKey)
-      diag[`${prefix}_API_KEY_length`] = String(rawKey.length)
-      diag[`${prefix}_API_BASE_raw`] = rawBase
-      diag[`${prefix}_API_BASE_cleaned`] = cleanEnvValue(rawBase)
-      diag[`${prefix}_MODEL_NAME`] = rawModel
-    }
-    diag['AI_DEFAULT_PROVIDER'] = process.env.AI_DEFAULT_PROVIDER || '(未设置)'
-    diag['AI_ENCRYPT_KEY'] = process.env.AI_ENCRYPT_KEY ? '***已设置' : '(未设置)'
-    return diag
-  }
-
   /** 从 .env 同步 Provider 到 DB + Redis */
   async seedFromEnv(): Promise<{ created: number; skipped: number; message: string; detail: string[] }> {
     let created = 0
