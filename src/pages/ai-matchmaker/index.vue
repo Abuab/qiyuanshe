@@ -133,7 +133,12 @@ onMounted(async () => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  const pages = getCurrentPages()
+  if (pages.length <= 1) {
+    uni.switchTab({ url: '/pages/index/index' })
+  } else {
+    uni.navigateBack()
+  }
 }
 
 const loadHistory = async () => {
@@ -286,6 +291,7 @@ $pink-light: #FF8FA8;
 
 .bubble {
   max-width: 80%; padding: 18rpx 24rpx; border-radius: 24rpx;
+  word-break: break-all; overflow-wrap: break-word;
   &.user {
     background: linear-gradient(135deg, $pink, $pink-light); color: #fff;
     border-bottom-right-radius: 6rpx;
@@ -296,7 +302,7 @@ $pink-light: #FF8FA8;
     box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
   }
 }
-.bubble-text { font-size: 28rpx; line-height: 1.6; white-space: pre-wrap; }
+.bubble-text { font-size: 28rpx; line-height: 1.6; white-space: pre-wrap; word-break: break-all; }
 
 .safety-tag {
   margin-top: 8rpx; padding: 4rpx 16rpx; border-radius: 20rpx;
@@ -334,7 +340,7 @@ $pink-light: #FF8FA8;
 }
 .input-placeholder { color: #BDBDBD; }
 .send-btn {
-  width: 120rpx; height: 72rpx; border-radius: 36rpx;
+  flex-shrink: 0; width: 100rpx; height: 72rpx; border-radius: 36rpx;
   background: linear-gradient(135deg, $pink, $pink-light);
   display: flex; align-items: center; justify-content: center;
   font-size: 28rpx; color: #fff;

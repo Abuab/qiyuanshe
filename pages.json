@@ -1,13 +1,6 @@
 {
   "pages": [
     {
-      "path": "pages/ai-matchmaker/index",
-      "style": {
-        "navigationBarTitleText": "AI 红娘",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/splash/index",
       "style": {
         "navigationBarTitleText": "",
@@ -284,6 +277,13 @@
       "path": "pages/block-list/index",
       "style": {
         "navigationBarTitleText": "黑名单",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ai-matchmaker/index",
+      "style": {
+        "navigationBarTitleText": "AI 红娘",
         "navigationStyle": "custom"
       }
     }
