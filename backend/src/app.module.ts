@@ -64,6 +64,7 @@ import { SuccessCaseModule } from './success-case/success-case.module'
 import { MatchmakerCommentModule } from './matchmaker-comment/matchmaker-comment.module'
 import { AiModule } from './ai/ai.module'
 import { QuickQuestionModule } from './quick-question/quick-question.module'
+import { AgreementLogStorageModule } from './agreement-log-storage/agreement-log-storage.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
@@ -143,9 +144,10 @@ import { RedisService } from './common/redis.service'
     VipModule,
     AiModule,
     QuickQuestionModule,
+    AgreementLogStorageModule,
   ],
   controllers: [HealthController],
   providers: [RedisService],
-  exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule],
+  exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}

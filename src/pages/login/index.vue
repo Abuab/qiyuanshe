@@ -131,6 +131,12 @@ const checkLogin = () => {
 const handleAgree = () => {
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
+  // 上报同意记录到后端
+  post('/api/user/agreement', {
+    agreementType: 'USER_AGREEMENT',
+    version: '1.0',
+    action: 'agree',
+  }).catch(() => {})
 }
 
 const handleDisagree = () => {

@@ -100,6 +100,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '协议管理', requiresAuth: true },
       },
       {
+        path: '/agreement-log-storage',
+        name: 'AgreementLogStorage',
+        component: () => import('../views/agreement-log-storage/index.vue'),
+        meta: { title: '协议同意记录存储配置', requiresAuth: true },
+      },
+      {
         path: '/system/dict',
         name: 'DictConfig',
         component: () => import('../views/system/dict.vue'),
