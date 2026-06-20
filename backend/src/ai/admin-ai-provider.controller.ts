@@ -41,45 +41,6 @@ export class AdminAiProviderController {
     return Result.success(data, 'Provider 已添加')
   }
 
-  /** 编辑 Provider */
-  @Put(':id')
-  async updateProvider(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() input: Partial<ProviderConfigInput>,
-    @Req() req: any,
-  ) {
-    const operatorId = req.user?.id
-    const data = await this.configService.update(id, input, operatorId)
-    return Result.success(data, 'Provider 已更新')
-  }
-
-  /** 删除 Provider（软删除） */
-  @Delete(':id')
-  async deleteProvider(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    const operatorId = req.user?.id
-    await this.configService.remove(id, operatorId)
-    return Result.success(null, 'Provider 已删除')
-  }
-
-  /** 设为默认 Provider */
-  @Put(':id/set-default')
-  async setDefaultProvider(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
-    const operatorId = req.user?.id
-    await this.configService.setDefault(id, operatorId)
-    return Result.success(null, '已设为默认 Provider')
-  }
-
-  // ==================== 同步 Redis ====================
-
-  /** 手动同步所有 Provider 配置到 Redis */
-  @Post('sync-redis')
-  async syncToRedis() {
-    await this.configService.syncToRedis()
-    return Result.success(null, 'Redis 缓存已同步')
-  }
-
-  // ==================== 负载均衡策略 ====================
-
   /** 获取当前负载均衡策略 */
   @Get('strategy')
   async getStrategy() {
@@ -196,11 +157,38 @@ export class AdminAiProviderController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
-    // 按需引入 Repository（由 Controller 所在 Module 注入）
-    // 此处通过 statsService 间接查询
-    // 简化实现：返回提示说明调用日志通过成本统计接口获取
     return Result.success({
       message: '调用日志详细数据请查看成本统计报表，或通过数据库直接查询 ai_provider_call_logs 表',
     })
+  }
+
+  // ==================== 动态参数路由（放最后，避免拦截静态路由） ====================
+
+  /** 编辑 Provider */
+  @Put(':id')
+  async updateProvider(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() input: Partial<ProviderConfigInput>,
+    @Req() req: any,
+  ) {
+    const operatorId = req.user?.id
+    const data = await this.configService.update(id, input, operatorId)
+    return Result.success(data, 'Provider 已更新')
+  }
+
+  /** 删除 Provider（软删除） */
+  @Delete(':id')
+  async deleteProvider(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const operatorId = req.user?.id
+    await this.configService.remove(id, operatorId)
+    return Result.success(null, 'Provider 已删除')
+  }
+
+  /** 设为默认 Provider */
+  @Put(':id/set-default')
+  async setDefaultProvider(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    const operatorId = req.user?.id
+    await this.configService.setDefault(id, operatorId)
+    return Result.success(null, '已设为默认 Provider')
   }
 }
