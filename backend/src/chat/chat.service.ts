@@ -1,9 +1,10 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common'
+import { Injectable, ForbiddenException, NotFoundException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
+import { ChatMonitorGateway } from './chat-monitor.gateway'
 
 @Injectable()
 export class ChatService {
@@ -59,6 +60,8 @@ export class ChatService {
     private readonly messageRepository: Repository<ChatMessage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Optional()
+    private readonly monitorGateway?: ChatMonitorGateway,
   ) {}
 
   async sendMessage(userId: number, dto: SendMessageDto): Promise<ChatMessage> {
@@ -102,6 +105,20 @@ export class ChatService {
     })
 
     const saved = await this.messageRepository.save(message)
+
+    // 通知监控该用户的管理员（实时推送）
+    if (this.monitorGateway) {
+      this.monitorGateway.notifyAdmin(userId, {
+        id: saved.id,
+        fromUserId: saved.fromUserId,
+        toUserId: saved.toUserId,
+        content: saved.content,
+        type: saved.type,
+        isProxy: saved.isProxy,
+        proxyName: saved.proxyName || null,
+        createdAt: saved.createdAt?.toISOString(),
+      })
+    }
 
     // 非VIP用户发送成功后更新缓存计数，避免并发绕过限制
     if (!isVip) {

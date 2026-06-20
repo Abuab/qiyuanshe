@@ -30,6 +30,8 @@ import { Notice } from '../entities/Notice'
 import { Report } from '../entities/Report'
 import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
 import { ChatMessage } from '../entities/ChatMessage'
+import { ChatMonitorSession } from '../entities/ChatMonitorSession'
+import { ChatOperationLog } from '../entities/ChatOperationLog'
 import { UserNotification } from '../entities/UserNotification'
 import { MatchmakerReview } from '../entities/MatchmakerReview'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
@@ -55,6 +57,8 @@ import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
+import { ChatMonitorService } from '../chat/chat-monitor.service'
+import { ChatMonitorGateway } from '../chat/chat-monitor.gateway'
 import { AdminAccountService } from './admin-account.service'
 import { RoleGuard } from './role.guard'
 import { UserProfileService } from './user-profile.service'
@@ -96,6 +100,8 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
       MatchRecord,
       UserBlock,
       ChatMessage,
+      ChatMonitorSession,
+      ChatOperationLog,
       CirclePost,
       ProfileVisit,
       NotifyLog,
@@ -146,6 +152,8 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
     AdminAccountService,
     RoleGuard,
     AdminChatService,
+    ChatMonitorService,
+    ChatMonitorGateway,
     UserProfileService,
     AdminMatchmakerDynamicService,
     NotifyChannelService,

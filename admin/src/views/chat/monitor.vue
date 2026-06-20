@@ -1,211 +1,459 @@
 <template>
-  <div class="chat-monitor">
-    <div class="page-header">
-      <h2 class="page-title">聊天监控</h2>
-    </div>
-
-    <div class="card">
-      <div class="search-bar">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索用户昵称"
-          clearable
-          style="width: 280px"
-          @keyup.enter="handleSearch"
+  <div class="chat-monitor-page">
+    <!-- 顶部栏 -->
+    <div class="monitor-header">
+      <div class="header-left">
+        <el-button link @click="$router.push('/user/list')">
+          <el-icon><ArrowLeft /></el-icon> 返回用户列表
+        </el-button>
+        <h2 class="page-title">
+          聊天监控
+          <el-tag v-if="targetUser" type="warning" size="small" style="margin-left:8px">
+            {{ targetUser.nickname }} (ID:{{ targetUser.id }})
+          </el-tag>
+        </h2>
+      </div>
+      <div class="header-right">
+        <el-button
+          v-if="!monitoring"
+          type="success"
+          :loading="monitorLoading"
+          size="small"
+          @click="startMonitor"
         >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
-      </div>
-
-      <el-table :data="tableData" v-loading="loading" stripe>
-        <el-table-column label="用户A" min-width="180">
-          <template #default="{ row }">
-            <div class="user-cell">
-              <el-image :src="row.fromAvatar" fit="cover" class="avatar" style="width:36px;height:36px;border-radius:50%">
-                <template #error><div class="avatar-placeholder"><el-icon :size="18"><User /></el-icon></div></template>
-              </el-image>
-              <span class="nickname link" @click="goUserDetail(row.fromUserId)">{{ row.fromNickname }}</span>
-              <span class="user-id">#{{ row.fromUserId }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="用户B" min-width="180">
-          <template #default="{ row }">
-            <div class="user-cell">
-              <el-image :src="row.toAvatar" fit="cover" class="avatar" style="width:36px;height:36px;border-radius:50%">
-                <template #error><div class="avatar-placeholder"><el-icon :size="18"><User /></el-icon></div></template>
-              </el-image>
-              <span class="nickname link" @click="goUserDetail(row.toUserId)">{{ row.toNickname }}</span>
-              <span class="user-id">#{{ row.toUserId }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="最新消息" min-width="250">
-          <template #default="{ row }">
-            <span class="last-msg">{{ row.messageType === 'image' ? '[图片]' : row.lastMessage }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="时间" width="160">
-          <template #default="{ row }">
-            {{ formatDate(row.lastTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="openChat(row)">查看聊天</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.limit"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="fetchList"
-          @current-change="fetchList"
-        />
+          开始监控
+        </el-button>
+        <template v-else>
+          <el-tag type="success" size="small">监控中</el-tag>
+          <el-button type="warning" size="small" style="margin-left:8px" @click="endMonitor">结束监控</el-button>
+        </template>
       </div>
     </div>
 
-    <!-- 聊天详情弹窗 -->
-    <el-dialog
-      v-model="chatDialogVisible"
-      :title="chatDialogTitle"
-      width="700px"
-      top="5vh"
-      destroy-on-close
-    >
-      <template #header="{ close, titleId, titleClass }">
-        <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-          <span :id="titleId" :class="titleClass">{{ chatDialogTitle }}</span>
-          <el-button type="primary" size="small" @click="exportChat">导出聊天记录</el-button>
+    <!-- 搜索栏 -->
+    <div class="search-bar" style="margin-bottom:16px">
+      <el-input
+        v-model="targetUserIdInput"
+        placeholder="输入用户ID后回车"
+        clearable
+        style="width:260px"
+        @keyup.enter="switchTarget"
+      >
+        <template #prefix><el-icon><Search /></el-icon></template>
+      </el-input>
+      <el-button type="primary" size="small" style="margin-left:8px" @click="switchTarget">查看用户</el-button>
+      <el-tag v-if="lockMessage" type="danger" size="small" style="margin-left:12px">{{ lockMessage }}</el-tag>
+    </div>
+
+    <!-- 主体区域 -->
+    <div class="monitor-body" v-loading="monitorLoading">
+      <!-- 左侧会话列表 -->
+      <div class="session-panel">
+        <div class="panel-title">会话列表</div>
+        <div class="session-list">
+          <div
+            v-for="conv in conversations"
+            :key="conv.userId"
+            class="session-item"
+            :class="{ active: activePeer?.userId === conv.userId }"
+            @click="selectSession(conv)"
+          >
+            <el-image :src="getAvatarUrl(conv.avatar)" fit="cover" class="session-avatar">
+              <template #error><div class="avatar-placeholder"><el-icon :size="18"><User /></el-icon></div></template>
+            </el-image>
+            <div class="session-info">
+              <div class="session-name">{{ conv.nickname }}</div>
+              <div class="session-msg">{{ conv.messageType === 'image' ? '[图片]' : (conv.lastMessage || '暂无消息') }}</div>
+            </div>
+            <div class="session-time">{{ formatTimeShort(conv.lastTime) }}</div>
+          </div>
+          <div v-if="conversations.length === 0 && !conversationLoading" class="empty-sessions">
+            暂无会话
+          </div>
         </div>
+      </div>
+
+      <!-- 右侧聊天区域 -->
+      <div class="chat-panel">
+        <template v-if="!activePeer">
+          <div class="chat-empty">
+            <el-icon :size="48" color="#ccc"><ChatDotRound /></el-icon>
+            <p>选择左侧会话查看聊天记录</p>
+          </div>
+        </template>
+        <template v-else>
+          <!-- 聊天头部 -->
+          <div class="chat-header">
+            <span class="chat-peer-name">
+              {{ targetUser?.nickname || '用户' }} ↔ {{ activePeer.nickname }}
+              <el-tag v-if="activePeer.userId === toUserIdToMonitor" type="success" size="small" effect="plain" style="margin-left:8px">聊天对象</el-tag>
+            </span>
+            <span v-if="monitoring" class="ws-status" :class="{ connected: wsConnected }">
+              {{ wsConnected ? '实时连接中' : '连接断开' }}
+            </span>
+          </div>
+
+          <!-- 消息列表 -->
+          <div class="chat-messages" ref="msgContainerRef">
+            <div v-if="messageLoading" class="msg-loading">
+              <el-icon class="is-loading"><Loading /></el-icon>
+            </div>
+            <div v-else-if="messages.length === 0" class="msg-empty">暂无聊天记录</div>
+            <div
+              v-for="msg in messages"
+              :key="msg.id"
+              class="msg-item"
+              :class="{
+                'msg-from-target': msg.fromUserId === targetUserId,
+                'msg-proxy': msg.isProxy === 1,
+              }"
+            >
+              <!-- 代发标记 -->
+              <span v-if="msg.isProxy === 1" class="proxy-tag">代发</span>
+              <div class="msg-bubble">
+                <div class="msg-meta">
+                  <span class="msg-sender">{{ msg.fromUserId === targetUserId ? targetUser?.nickname || '用户' : activePeer.nickname }}</span>
+                  <span class="msg-time">{{ formatTime(msg.createdAt) }}</span>
+                </div>
+                <div class="msg-content">
+                  <el-image v-if="msg.type === 'image'" :src="resolveImage(msg.content)" style="max-width:200px;max-height:200px;border-radius:8px" fit="contain" :preview-src-list="[resolveImage(msg.content)]" />
+                  <template v-else>{{ msg.content }}</template>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分页 -->
+          <div class="chat-pagination" v-if="messageTotal > pageSize">
+            <el-pagination
+              v-model:current-page="messagePage"
+              :page-size="pageSize"
+              :total="messageTotal"
+              layout="prev, pager, next"
+              small
+              background
+              @current-change="fetchMessages"
+            />
+          </div>
+
+          <!-- 底部输入框（仅监控中可用） -->
+          <div class="chat-input-area" v-if="monitoring">
+            <el-input
+              v-model="proxyContent"
+              placeholder="以该用户身份发送消息..."
+              maxlength="500"
+              show-word-limit
+              @keyup.enter.exact="handleProxySend"
+            >
+              <template #append>
+                <el-button
+                  type="primary"
+                  :disabled="!proxyContent.trim()"
+                  :loading="proxySending"
+                  @click="handleProxySend"
+                >
+                  发送
+                </el-button>
+              </template>
+            </el-input>
+          </div>
+          <div class="chat-input-area chat-input-disabled" v-else>
+            <el-input
+              disabled
+              placeholder="请先开始监控后再代发消息"
+            />
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 代发确认弹窗 -->
+    <el-dialog v-model="confirmVisible" title="确认代发消息" width="420px">
+      <p style="margin:0;line-height:1.8">
+        确认以 <strong>{{ targetUser?.nickname }}</strong> 的身份发送以下消息？
+      </p>
+      <div style="background:#f5f5f5;border-radius:8px;padding:12px;margin-top:12px;color:#333">
+        {{ pendingContent }}
+      </div>
+      <template #footer>
+        <el-button @click="confirmVisible = false">取消</el-button>
+        <el-button type="primary" @click="doProxySend">确认发送</el-button>
       </template>
-      <div class="chat-messages" v-loading="messageLoading">
-        <div v-if="messages.length === 0 && !messageLoading" class="empty-chat">
-          暂无聊天记录
-        </div>
-        <div
-          v-for="msg in messages"
-          :key="msg.id"
-          class="message-item"
-          :class="{ 'is-mine': msg.fromUserId === chatFromUser }"
-        >
-          <div class="msg-meta">
-            <span class="msg-sender">{{ msg.fromUserId === chatFromUser ? chatFromName : chatToName }}</span>
-            <span class="msg-time">{{ formatDate(msg.createdAt) }}</span>
-          </div>
-          <div class="msg-bubble">
-            <el-image v-if="msg.type === 'image'" :src="msg.content" style="max-width:200px;max-height:200px;border-radius:8px" fit="contain" :preview-src-list="[msg.content]" />
-            <template v-else>{{ msg.content }}</template>
-          </div>
-        </div>
-      </div>
-      <div class="chat-pagination" v-if="messageTotal > messageLimit">
-        <el-pagination
-          v-model:current-page="messagePage"
-          :page-size="messageLimit"
-          :total="messageTotal"
-          layout="prev, pager, next"
-          small
-          @current-change="fetchMessages"
-        />
-      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Search, User } from '@element-plus/icons-vue'
-import { formatDate } from '../../utils/date'
+import { Search, User, ChatDotRound, ArrowLeft, Loading } from '@element-plus/icons-vue'
 import { adminChat, type ChatConversation, type ChatMessageItem } from '../../api/chat'
+import { useAdminStore } from '../../store/admin'
 
+const route = useRoute()
 const router = useRouter()
+const adminStore = useAdminStore()
 
-const loading = ref(false)
-const keyword = ref('')
-const tableData = ref<ChatConversation[]>([])
-const pagination = ref({ page: 1, limit: 20, total: 0 })
+// ===== 目标用户 =====
+const targetUserId = ref(0)
+const targetUserIdInput = ref('')
+const targetUser = ref<{ id: number; nickname: string } | null>(null)
+const lockMessage = ref('')
+const monitoring = ref(false)
+const monitorLoading = ref(false)
 
-// 聊天弹窗
-const chatDialogVisible = ref(false)
-const chatDialogTitle = ref('')
-const chatFromUser = ref(0)
-const chatToUser = ref(0)
-const chatFromName = ref('')
-const chatToName = ref('')
+// ===== WebSocket =====
+const wsRef = ref<WebSocket | null>(null)
+const wsConnected = ref(false)
+let wsHeartbeatTimer: ReturnType<typeof setInterval> | null = null
+
+// ===== 会话列表 =====
+const conversations = ref<any[]>([])
+const conversationLoading = ref(false)
+
+// ===== 聊天 =====
+const activePeer = ref<any>(null)
 const messages = ref<ChatMessageItem[]>([])
 const messageLoading = ref(false)
 const messagePage = ref(1)
-const messageLimit = 50
+const pageSize = 50
 const messageTotal = ref(0)
+const msgContainerRef = ref<HTMLElement | null>(null)
 
-onMounted(() => { fetchList() })
+// ===== 代发 =====
+const proxyContent = ref('')
+const proxySending = ref(false)
+const confirmVisible = ref(false)
+const pendingContent = ref('')
 
-async function fetchList() {
-  loading.value = true
+// 需要监控 targetUserId 与哪个 peerUserId 的聊天
+const toUserIdToMonitor = ref(0)
+
+const getAvatarUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return (import.meta.env.VITE_API_BASE_URL || '') + url
+}
+
+const resolveImage = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http') || url.startsWith('wxfile')) return url
+  return (import.meta.env.VITE_API_BASE_URL || '') + url
+}
+
+// ===== 初始化 =====
+onMounted(() => {
+  const uid = route.query.userId
+  const nickname = route.query.nickname
+  if (uid) {
+    targetUserId.value = Number(uid)
+    targetUserIdInput.value = String(uid)
+    targetUser.value = { id: Number(uid), nickname: decodeURIComponent(String(nickname || '用户')) }
+    loadConversations()
+  }
+})
+
+onUnmounted(() => {
+  disconnectWs()
+})
+
+// ===== 搜索切换用户 =====
+async function switchTarget() {
+  const val = targetUserIdInput.value.trim()
+  if (!val) return
+  const id = Number(val)
+  if (!Number.isInteger(id) || id <= 0) {
+    ElMessage.warning('请输入有效用户ID')
+    return
+  }
+  if (monitoring.value) {
+    ElMessage.warning('请先结束当前监控')
+    return
+  }
+  targetUserId.value = id
+  targetUser.value = { id, nickname: `用户${id}` }
+  lockMessage.value = ''
+  activePeer.value = null
+  messages.value = []
+  await loadConversations()
+}
+
+// ===== 监控操作 =====
+async function startMonitor() {
+  if (!targetUserId.value) {
+    ElMessage.warning('请先选择一个用户')
+    return
+  }
+  monitorLoading.value = true
   try {
-    const res = await adminChat.getAllConversations({
-      page: pagination.value.page,
-      limit: pagination.value.limit,
-      keyword: keyword.value || undefined,
-    })
+    const res = await adminChat.startMonitor(targetUserId.value)
+    if (res.success) {
+      monitoring.value = true
+      lockMessage.value = ''
+      connectWs()
+      ElMessage.success('监控已开始')
+    } else {
+      lockMessage.value = res.message || '无法开始监控'
+    }
+  } catch (e: any) {
+    const msg = e?.response?.data?.message || e?.message || '开始监控失败'
+    lockMessage.value = msg
+    ElMessage.error(msg)
+  } finally {
+    monitorLoading.value = false
+  }
+}
+
+async function endMonitor() {
+  monitorLoading.value = true
+  try {
+    await adminChat.endMonitor(targetUserId.value)
+    monitoring.value = false
+    disconnectWs()
+    ElMessage.success('监控已结束')
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '结束监控失败')
+  } finally {
+    monitorLoading.value = false
+  }
+}
+
+// ===== WebSocket =====
+function connectWs() {
+  disconnectWs()
+
+  const token = adminStore.token
+  if (!token) {
+    ElMessage.error('未获取到登录凭证')
+    return
+  }
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const host = location.host
+  const url = `${protocol}//${host}/ws/chat`
+
+  try {
+    const ws = new WebSocket(url)
+    wsRef.value = ws
+
+    ws.onopen = () => {
+      wsConnected.value = true
+      // 认证
+      ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data)
+        const { event: evt, data } = payload
+
+        if (evt === 'auth_success') {
+          // 订阅目标用户的消息
+          ws.send(JSON.stringify({
+            event: 'subscribe',
+            data: { targetUserId: targetUserId.value },
+          }))
+        } else if (evt === 'subscribed') {
+          console.log('[WS] 已订阅用户', data.targetUserId)
+        } else if (evt === 'new_message') {
+          handleWsMessage(data)
+        } else if (evt === 'monitor_locked') {
+          lockMessage.value = data.message
+          ElMessage.warning(data.message)
+        } else if (evt === 'auth_error') {
+          ElMessage.error(data.message || 'WebSocket 认证失败')
+          disconnectWs()
+        }
+      } catch {}
+    }
+
+    ws.onclose = () => {
+      wsConnected.value = false
+      wsRef.value = null
+    }
+
+    ws.onerror = () => {
+      wsConnected.value = false
+    }
+
+    // 心跳
+    wsHeartbeatTimer = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ event: 'ping', data: {} }))
+      }
+    }, 25000)
+  } catch {
+    ElMessage.error('WebSocket 连接失败')
+  }
+}
+
+function disconnectWs() {
+  if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null }
+  if (wsRef.value) {
+    wsRef.value.close()
+    wsRef.value = null
+    wsConnected.value = false
+  }
+}
+
+function handleWsMessage(data: any) {
+  // 只处理当前正在查看的会话消息
+  if (!activePeer.value) return
+  const peerId = activePeer.value.userId
+  const isRelevant =
+    (data.fromUserId === targetUserId.value && data.toUserId === peerId) ||
+    (data.fromUserId === peerId && data.toUserId === targetUserId.value)
+
+  if (isRelevant) {
+    // 避免重复消息
+    if (!messages.value.some((m) => m.id === data.id)) {
+      messages.value.push(data)
+      nextTick(() => scrollToBottom())
+    }
+  }
+}
+
+// ===== 会话列表 =====
+async function loadConversations() {
+  if (!targetUserId.value) return
+  conversationLoading.value = true
+  try {
+    const res = await adminChat.getUserConversations(targetUserId.value, 1, 100)
     if (res.success && res.data) {
-      tableData.value = res.data.list || []
-      pagination.value.total = res.data.total || 0
+      conversations.value = res.data.list || []
     }
   } catch {
     ElMessage.error('获取会话列表失败')
   } finally {
-    loading.value = false
+    conversationLoading.value = false
   }
 }
 
-function handleSearch() {
-  pagination.value.page = 1
-  fetchList()
-}
-
-function handleReset() {
-  keyword.value = ''
-  pagination.value.page = 1
-  fetchList()
-}
-
-function openChat(row: ChatConversation) {
-  chatFromUser.value = row.fromUserId
-  chatToUser.value = row.toUserId
-  chatFromName.value = row.fromNickname
-  chatToName.value = row.toNickname
-  chatDialogTitle.value = `${row.fromNickname} ↔ ${row.toNickname} 聊天记录`
+function selectSession(conv: any) {
+  activePeer.value = conv
+  toUserIdToMonitor.value = conv.userId
   messagePage.value = 1
   messages.value = []
-  chatDialogVisible.value = true
   fetchMessages()
 }
 
+// ===== 聊天记录 =====
 async function fetchMessages() {
+  if (!activePeer.value || !targetUserId.value) return
   messageLoading.value = true
   try {
     const res = await adminChat.getMessages(
-      chatFromUser.value,
-      chatToUser.value,
+      targetUserId.value,
+      activePeer.value.userId,
       messagePage.value,
-      messageLimit,
+      pageSize,
     )
     if (res.success && res.data) {
-      messages.value = res.data.list || []
+      const list = res.data.list || []
+      messages.value = messagePage.value === 1 ? list : list
       messageTotal.value = res.data.total || 0
+      nextTick(() => scrollToBottom())
     }
   } catch {
     ElMessage.error('获取聊天记录失败')
@@ -214,86 +462,351 @@ async function fetchMessages() {
   }
 }
 
-function goUserDetail(userId: number) {
-  router.push(`/user/detail/${userId}`)
+function scrollToBottom() {
+  nextTick(() => {
+    const el = msgContainerRef.value
+    if (el) el.scrollTop = el.scrollHeight
+  })
 }
 
-function exportChat() {
-  if (messages.value.length === 0) {
-    ElMessage.warning('暂无聊天记录可导出')
-    return
+// ===== 代发 =====
+function handleProxySend() {
+  const content = proxyContent.value.trim()
+  if (!content) return
+  pendingContent.value = content
+  confirmVisible.value = true
+}
+
+async function doProxySend() {
+  if (!activePeer.value) return
+  proxySending.value = true
+  try {
+    const res = await adminChat.proxySend(
+      targetUserId.value,
+      activePeer.value.userId,
+      pendingContent.value,
+    )
+    if (res.success) {
+      proxyContent.value = ''
+      ElMessage.success('消息已代发')
+      confirmVisible.value = false
+    } else {
+      ElMessage.error(res.message || '发送失败')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || e?.message || '发送失败')
+  } finally {
+    proxySending.value = false
   }
-  const lines = messages.value.map((m) => {
-    const from = m.fromUserId === chatFromUser.value ? chatFromName.value : chatToName.value
-    return `[${formatDate(m.createdAt)}] ${from}: ${m.content}`
-  })
-  const text = lines.join('\n')
-  const blob = new Blob(['\uFEFF' + text], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${chatFromName.value}_${chatToName.value}_聊天记录.txt`
-  a.click()
-  URL.revokeObjectURL(url)
-  ElMessage.success('导出成功')
+}
+
+// ===== 时间格式化 =====
+function formatTime(dt: string) {
+  if (!dt) return ''
+  try { return new Date(dt).toLocaleString('zh-CN') } catch { return dt }
+}
+
+function formatTimeShort(dt: string) {
+  if (!dt) return ''
+  try {
+    const d = new Date(dt)
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    if (d.toDateString() === now.toDateString()) {
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+    return `${d.getMonth() + 1}/${d.getDate()}`
+  } catch { return dt }
 }
 </script>
 
 <style lang="scss" scoped>
-.chat-monitor {
-  .page-header { margin-bottom: 16px; }
-  .page-title { font-size: 20px; font-weight: 600; margin: 0; }
-  .card { background: #fff; border-radius: 8px; padding: 20px; }
+.chat-monitor-page {
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
 
-  .search-bar {
-    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+.monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  flex-shrink: 0;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
-  .user-cell {
-    display: flex; align-items: center; gap: 8px;
-    .avatar-placeholder {
-      width: 36px; height: 36px; border-radius: 50%; background: #f0f0f0;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .nickname {
+  .page-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.monitor-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+// ===== 左侧会话列表 =====
+.session-panel {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e5e5;
+  display: flex;
+  flex-direction: column;
+
+  .panel-title {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .session-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .empty-sessions {
+    text-align: center;
+    color: #999;
+    padding: 40px 0;
+    font-size: 13px;
+  }
+}
+
+.session-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 10px;
+
+  &:hover {
+    background: #f5f7fa;
+  }
+
+  &.active {
+    background: #ecf5ff;
+  }
+
+  .session-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .session-info {
+    flex: 1;
+    min-width: 0;
+
+    .session-name {
+      font-size: 14px;
       font-weight: 500;
-      &.link { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }
+      color: #333;
     }
-    .user-id { color: #999; font-size: 12px; }
+
+    .session-msg {
+      font-size: 12px;
+      color: #999;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 150px;
+    }
   }
 
-  .last-msg {
-    color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; display: inline-block;
+  .session-time {
+    font-size: 11px;
+    color: #c0c4cc;
+    flex-shrink: 0;
+  }
+}
+
+.avatar-placeholder {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// ===== 右侧聊天区域 =====
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ccc;
+  gap: 12px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+
+  .chat-peer-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
   }
 
-  .pagination-wrapper { margin-top: 16px; display: flex; justify-content: flex-end; }
+  .ws-status {
+    font-size: 12px;
+    color: #e6a23c;
+
+    &.connected {
+      color: #67c23a;
+    }
+  }
 }
 
 .chat-messages {
-  max-height: 60vh; overflow-y: auto; padding: 8px 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #fafafa;
+}
 
-  .empty-chat { text-align: center; color: #999; padding: 60px 0; }
+.msg-loading,
+.msg-empty {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+}
 
-  .message-item {
-    margin-bottom: 16px; padding: 0 12px;
+.msg-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
 
-    .msg-meta { margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
-      .msg-sender { font-size: 12px; color: #909399; font-weight: 500; }
-      .msg-time { font-size: 11px; color: #c0c4cc; }
-    }
-
+  &.msg-from-target {
+    align-items: flex-end;
     .msg-bubble {
-      display: inline-block; max-width: 70%; padding: 10px 14px; border-radius: 12px;
-      background: #f0f2f5; color: #333; font-size: 14px; line-height: 1.6;
-      word-break: break-all;
+      background: #95ec69;
     }
+  }
 
-    &.is-mine {
-      text-align: right;
-      .msg-bubble { background: #95ec69; }
+  &:not(.msg-from-target) {
+    align-items: flex-start;
+    .msg-bubble {
+      background: #fff;
+    }
+  }
+
+  &.msg-proxy {
+    .msg-bubble {
+      position: relative;
     }
   }
 }
 
-.chat-pagination { padding: 12px 0; display: flex; justify-content: center; }
+.proxy-tag {
+  font-size: 10px;
+  color: #fff;
+  background: #f56c6c;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-bottom: 2px;
+  display: inline-block;
+  align-self: flex-end;
+}
+
+.msg-bubble {
+  max-width: 65%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+
+  .msg-sender {
+    font-size: 11px;
+    color: #909399;
+    font-weight: 500;
+  }
+
+  .msg-time {
+    font-size: 10px;
+    color: #c0c4cc;
+  }
+}
+
+.msg-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  word-break: break-all;
+}
+
+.chat-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+  flex-shrink: 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-input-area {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e5e5;
+  flex-shrink: 0;
+
+  .el-input-group__append {
+    padding: 0;
+  }
+}
+
+.chat-input-disabled {
+  .el-input {
+    opacity: 0.6;
+  }
+}
 </style>

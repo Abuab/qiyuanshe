@@ -38,6 +38,7 @@
               {{ user.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button @click="handleSendNotify">发送通知</el-button>
+            <el-button v-if="canMonitorChat" type="success" @click="handleViewChat">查看聊天</el-button>
           </div>
         </div>
       </el-card>
@@ -555,6 +556,10 @@ const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
 const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+const canMonitorChat = computed(() => {
+  const role = adminStore.userInfo?.role
+  return role === 'super_admin' || role === 'operator'
+})
 
 function goToUserDetail(userId: number) {
   router.push(`/user/detail/${userId}`)
@@ -819,6 +824,11 @@ async function handleVipSubmit() {
 
 function handleSendNotify() {
   notifyForm.title = ''; notifyForm.content = ''; notifyDialogVisible.value = true
+}
+
+function handleViewChat() {
+  if (!user.value) return
+  router.push(`/chat/monitor?userId=${user.value.id}&nickname=${encodeURIComponent(user.value.nickname)}`)
 }
 
 async function handleNotifySubmit() {

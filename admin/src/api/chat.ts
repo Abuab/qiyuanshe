@@ -21,6 +21,9 @@ export interface ChatMessageItem {
   content: string
   type: string
   isRead: number
+  isProxy: number
+  proxyBy?: number | null
+  proxyName?: string | null
   createdAt: string
   fromUser?: { id: number; nickname: string; avatar: string }
   toUser?: { id: number; nickname: string; avatar: string }
@@ -71,5 +74,37 @@ export const adminChat = {
     return request.get(`/admin/chat/user/${userId}/conversations`, {
       params: { page, limit },
     })
+  },
+
+  // ==================== 聊天监控 / 代发 ====================
+
+  /** 开始监控 */
+  startMonitor(targetUserId: number): Promise<ApiResponse<any>> {
+    return request.post('/admin/chat/monitor/start', { targetUserId })
+  },
+
+  /** 结束监控 */
+  endMonitor(targetUserId: number): Promise<ApiResponse<any>> {
+    return request.post('/admin/chat/monitor/end', { targetUserId })
+  },
+
+  /** 获取用户活跃监控状态 */
+  getMonitorStatus(userId: number): Promise<ApiResponse<{ active: boolean; operatorName?: string }>> {
+    return request.get(`/admin/chat/monitor/status/${userId}`)
+  },
+
+  /** 代发消息 */
+  proxySend(targetUserId: number, toUserId: number, content: string): Promise<ApiResponse<any>> {
+    return request.post('/admin/chat/proxy/send', { targetUserId, toUserId, content })
+  },
+
+  /** 操作日志查询 */
+  getOperationLogs(params: Record<string, any>): Promise<ApiResponse<any>> {
+    return request.get('/admin/chat/operation-logs', { params })
+  },
+
+  /** 活跃监控会话 */
+  getActiveSessions(): Promise<ApiResponse<any[]>> {
+    return request.get('/admin/chat/monitor/active')
   },
 }

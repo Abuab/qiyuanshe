@@ -31,6 +31,22 @@ export class ChatMessage {
   @Column({ type: 'tinyint', default: 0 })
   isRead: number
 
+  /** 是否代发消息：0=否, 1=是 */
+  @Column({ type: 'tinyint', default: 0 })
+  isProxy: number
+
+  /** 代发人 ID（管理员 ID） */
+  @Column({ type: 'int', nullable: true })
+  proxyBy: number | null
+
+  /** 代发人名称 */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  proxyName: string | null
+
+  /** 代发时间 */
+  @Column({ type: 'datetime', nullable: true })
+  proxyTime: Date | null
+
   @CreateDateColumn()
   createdAt: Date
 
