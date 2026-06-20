@@ -252,16 +252,23 @@ interface FeatureItem {
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(82) // 36px level1 + 46px level2
 
-const tabs = [
-  { key: 'vip', label: 'VIP会员' },
-  { key: 'custom', label: '定制会员' },
-  { key: 'about', label: '关于我们' },
-]
-const activeTab = ref('vip')
+const tabs = computed(() => {
+  const list: { key: string; label: string }[] = [
+    { key: 'about', label: '关于我们' },
+  ]
+  if (userStore.isLoggedIn) {
+    list.unshift(
+      { key: 'vip', label: 'VIP会员' },
+      { key: 'custom', label: '定制会员' },
+    )
+  }
+  return list
+})
+const activeTab = ref(userStore.isLoggedIn ? 'vip' : 'about')
 
 const currentTabLabel = computed(() => {
-  const tab = tabs.find(t => t.key === activeTab.value)
-  return tab ? tab.label : 'VIP会员'
+  const tab = tabs.value.find(t => t.key === activeTab.value)
+  return tab ? tab.label : '关于我们'
 })
 
 const redLineTerm = computed(() => systemStore.redLineTerm || '红线')

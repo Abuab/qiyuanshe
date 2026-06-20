@@ -372,11 +372,16 @@ const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
-const tabs = [
-  { key: 'all', label: '全部' },
-  { key: 'matchmaker', label: '红娘' },
-  { key: 'follow', label: '关注' },
-]
+const tabs = computed(() => {
+  const list: { key: string; label: string }[] = [
+    { key: 'all', label: '全部' },
+    { key: 'matchmaker', label: '红娘' },
+  ]
+  if (userStore.isLoggedIn) {
+    list.push({ key: 'follow', label: '关注' })
+  }
+  return list
+})
 const currentTab = ref('all')
 
 /** 判断是否应该模糊：查看者只有头像、没有其他照片 */

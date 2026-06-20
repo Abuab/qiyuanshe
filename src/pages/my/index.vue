@@ -148,7 +148,7 @@
       </view>
 
       <!-- ========== 公众号关注 ========== -->
-      <view v-if="systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
+      <view v-if="isLoggedIn && systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
         <view class="oa-avatar pink-heart">
           <image v-if="pageIcons.oaHeart" class="oa-avatar-img" :src="pageIcons.oaHeart" mode="aspectFit" />
           <text v-else class="oa-avatar-icon">❤️</text>
@@ -320,6 +320,7 @@ const goToLogin = () => uni.navigateTo({ url: '/pages/login/index' })
 const goToEditProfile = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
 const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
   uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
 }
 const goToAiMatchmaker = () => {
@@ -367,7 +368,14 @@ const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
+// 需要登录的 key 列表
+const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myGifts', 'privacy', 'feedback'])
 const handleToolClick = (key: string) => {
+  // 未登录时，提示登录
+  if (!isLoggedIn.value && requireLoginKeys.has(key)) {
+    goToLogin()
+    return
+  }
   const map: Record<string, () => void> = {
     myPhotos: goToPhotos,
     loveQuotes: goToLoveQuotes,

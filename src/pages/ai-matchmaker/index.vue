@@ -294,20 +294,17 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 }
 .nav-left, .nav-right {
   display: flex; align-items: center;
-  width: 80rpx;
+  width: $nav-right-width;
   flex-shrink: 0;
 }
-.nav-right {
-  justify-content: flex-end;
-  width: $nav-right-width;
-}
+.nav-left { justify-content: flex-start; }
+.nav-right { justify-content: flex-end; }
 .back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
 .nav-title {
   flex: 1; text-align: center;
   font-size: 32rpx; color: #fff; font-weight: bold;
   text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  margin-right: $nav-right-width;
 }
 
 // ==================== 配额提示 ====================
