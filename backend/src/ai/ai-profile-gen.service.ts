@@ -142,7 +142,7 @@ export class AiProfileGenService {
 
     try {
       if (await this.aiApiService.isConfigured()) {
-        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'profile_gen')
         rawResult = this.parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackProfile(user.nickname, tags, answers)

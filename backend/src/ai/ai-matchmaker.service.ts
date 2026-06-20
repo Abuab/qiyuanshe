@@ -138,7 +138,7 @@ export class AiMatchmakerService {
     try {
       if (await this.aiApiService.isConfigured()) {
         const systemPrompt = await this.systemService.replaceTemplateVars(MATCHMAKER_SYSTEM_PROMPT)
-        reply = await this.aiApiService.call({
+        reply = await this.aiApiService.callAndLog({
           messages: [
             { role: 'system', content: systemPrompt },
             ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
@@ -146,7 +146,7 @@ export class AiMatchmakerService {
           ],
           maxTokens: 300,
           temperature: 0.8,
-        })
+        }, userId, 'matchmaker')
       } else {
         reply = this.buildFallbackReply(message)
       }

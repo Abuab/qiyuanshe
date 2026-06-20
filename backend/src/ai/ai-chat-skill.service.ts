@@ -123,7 +123,7 @@ export class AiChatSkillService {
 
     try {
       if (await this.aiApiService.isConfigured()) {
-        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'chat_skill')
         rawResult = this.parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackSuggestions(taLastMessage.content)

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Query, Param, Req, UseGuards, ParseIntPipe } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Between, FindOptionsWhere } from 'typeorm'
+import { Repository } from 'typeorm'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
@@ -9,7 +9,7 @@ import { AiProviderSelector } from './ai-provider-selector.service'
 import { AiProviderBalanceService } from './ai-provider-balance.service'
 import { AiProviderStatsService } from './ai-provider-stats.service'
 import { AiProviderSeeder } from './ai-provider.seeder'
-import { AiCallLog } from '../entities/AiCallLog'
+import { AiProviderCallLog } from '../entities/AiProviderCallLog'
 import { LoadBalanceStrategy } from '../entities/AiProviderConfig'
 import { ProviderConfigInput, SwitchProviderInput } from './ai-provider.types'
 import { Result } from '../common/result'
@@ -27,8 +27,8 @@ export class AdminAiProviderController {
     private readonly balanceService: AiProviderBalanceService,
     private readonly statsService: AiProviderStatsService,
     private readonly seeder: AiProviderSeeder,
-    @InjectRepository(AiCallLog)
-    private readonly callLogRepo: Repository<AiCallLog>,
+    @InjectRepository(AiProviderCallLog)
+    private readonly providerCallLogRepo: Repository<AiProviderCallLog>,
   ) {}
 
   // ==================== Provider 配置 CRUD ====================
@@ -151,7 +151,7 @@ export class AdminAiProviderController {
   // ==================== 调用日志 ====================
 
   /**
-   * 获取调用日志（分页）— 查询 ai_call_logs 表
+   * 获取调用日志（分页）— 查询 ai_provider_call_logs 表（含 Token 用量 & 模型信息）
    * Query: page=1&limit=20&callType=&status=&userId=&startDate=&endDate=
    */
   @Get('call-logs')
@@ -167,39 +167,44 @@ export class AdminAiProviderController {
     const pageNum = Math.max(1, +page)
     const limitNum = Math.min(100, Math.max(1, +limit))
 
-    const where: FindOptionsWhere<AiCallLog> = { isDeleted: 0 as any }
+    const qb = this.providerCallLogRepo
+      .createQueryBuilder('log')
+      .leftJoinAndSelect('log.provider', 'provider')
+      .leftJoinAndSelect('log.user', 'user')
 
-    if (callType) where.callType = callType as any
-    if (status) where.responseStatus = status as any
-    if (userId) where.userId = parseInt(userId, 10)
+    if (callType) qb.andWhere('log.callType = :callType', { callType })
+    if (status) {
+      const dbStatus = status === 'failed' ? 'error' : status
+      qb.andWhere('log.status = :status', { status: dbStatus })
+    }
+    if (userId) qb.andWhere('log.userId = :userId', { userId: parseInt(userId, 10) })
 
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : new Date('2000-01-01')
       const end = endDate ? new Date(endDate) : new Date()
-      ;(where as any).createdAt = Between(start, end)
+      qb.andWhere('log.createdAt BETWEEN :start AND :end', { start, end })
     }
 
-    const [items, total] = await this.callLogRepo.findAndCount({
-      where,
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-      skip: (pageNum - 1) * limitNum,
-      take: limitNum,
-    })
+    qb.orderBy('log.createdAt', 'DESC')
+      .skip((pageNum - 1) * limitNum)
+      .take(limitNum)
+
+    const [items, total] = await qb.getManyAndCount()
 
     const mapped = items.map((log) => ({
       id: log.id,
-      providerName: '-',
+      providerName: log.provider?.displayName || '-',
+      modelName: log.provider?.modelName || '-',
       callType: log.callType,
       userId: log.userId,
       userNickname: log.user?.nickname || '-',
-      inputTokens: null,
-      outputTokens: null,
-      durationMs: log.responseMs,
-      status: log.responseStatus === 'error' ? 'failed' : log.responseStatus,
+      inputTokens: log.inputTokens,
+      outputTokens: log.outputTokens,
+      durationMs: log.durationMs,
+      status: log.status === 'error' ? 'failed' : log.status,
       requestSummary: log.requestSummary || '-',
-      responseSummary: log.safetyFlag === 2 ? '疑似违规' : log.safetyFlag === 3 ? '确认违规' : '-',
-      errorMessage: log.responseStatus === 'error' ? 'AI调用失败' : '-',
+      responseSummary: log.responseSummary || '-',
+      errorMessage: log.errorMessage || '-',
       createdAt: log.createdAt?.toISOString?.() || '',
     }))
 

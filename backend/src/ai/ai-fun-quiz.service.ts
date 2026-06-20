@@ -144,7 +144,7 @@ export class AiFunQuizService {
 
     try {
       if (await this.aiApiService.isConfigured()) {
-        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'fun_quiz')
         rawResult = this.parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackResult(userConstellation, taConstellation)

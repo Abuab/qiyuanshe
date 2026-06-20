@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm'
 import { AiProviderConfig } from './AiProviderConfig'
+import { User } from './User'
 
 /**
  * AI Provider 调用日志
@@ -38,6 +39,10 @@ export class AiProviderCallLog {
   /** 发起调用的用户 ID */
   @Column({ type: 'bigint', nullable: true })
   userId: number
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'userId' })
+  user: User | null
 
   /** 请求内容摘要（脱敏，截断 500 字符） */
   @Column({ type: 'varchar', length: 500, nullable: true })

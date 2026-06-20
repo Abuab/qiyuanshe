@@ -47,8 +47,10 @@
           <template #default="{ row }">
             <div class="expand-content">
               <el-descriptions :column="2" border size="small">
+                <el-descriptions-item label="Provider">{{ row.providerName || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="模型">{{ row.modelName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="请求摘要">{{ row.requestSummary || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="安全标记">{{ row.responseSummary || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="响应摘要">{{ row.responseSummary || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="错误信息" :span="2">{{ row.errorMessage || '-' }}</el-descriptions-item>
               </el-descriptions>
             </div>
@@ -66,6 +68,14 @@
             {{ callTypeMap[row.callType] || row.callType }}
           </template>
         </el-table-column>
+        <el-table-column label="Provider/模型" min-width="160">
+          <template #default="{ row }">
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <span style="font-weight:500">{{ row.providerName || '-' }}</span>
+              <span style="font-size:12px;color:#999">{{ row.modelName || '-' }}</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="输入Token" width="100">
           <template #default="{ row }">{{ row.inputTokens ?? '-' }}</template>
         </el-table-column>
@@ -74,7 +84,7 @@
         </el-table-column>
         <el-table-column label="总Token" width="90">
           <template #default="{ row }">
-            {{ (row.inputTokens ?? 0) + (row.outputTokens ?? 0) }}
+            {{ (row.inputTokens ?? 0) + (row.outputTokens ?? 0) || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="耗时" width="90">
@@ -119,6 +129,7 @@ import { aiProviderApi } from '../../../api/ai-provider'
 interface LogItem {
   id: number
   providerName: string
+  modelName: string
   callType: string
   userId: number
   userNickname: string
@@ -225,12 +236,17 @@ async function onExport() {
       return
     }
     // 生成 CSV
-    const headers = ['ID', '用户昵称', '用户ID', '功能类型', '耗时ms', '状态', '时间', '错误信息']
+    const headers = ['ID', 'Provider', '模型', '用户昵称', '用户ID', '功能类型', '输入Token', '输出Token', '总Token', '耗时ms', '状态', '时间', '错误信息']
     const rows = items.map((r: LogItem) => [
       r.id,
+      r.providerName || '-',
+      r.modelName || '-',
       r.userNickname || '-',
       r.userId || '',
       callTypeMap[r.callType] || r.callType || '',
+      r.inputTokens ?? 0,
+      r.outputTokens ?? 0,
+      (r.inputTokens ?? 0) + (r.outputTokens ?? 0),
       r.durationMs ?? '',
       statusMap[r.status] || r.status || '',
       r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN') : '',

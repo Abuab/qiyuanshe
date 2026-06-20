@@ -247,7 +247,7 @@ export class AiMatchService {
       // 【注】此处为 AI 调用的占位实现
       // 实际部署时替换为真正的 AI API 调用（如 OpenRouter/Qwen/DeepSeek）
       if (await this.aiApiService.isConfigured()) {
-        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'match')
         aiResult = this.parseJsonResponse(aiResponse)
       } else {
         aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)

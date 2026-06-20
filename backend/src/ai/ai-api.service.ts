@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { AiProviderSelector } from './ai-provider-selector.service'
 import { AiProviderConfigService } from './ai-provider-config.service'
+import { AiProviderCallLog } from '../entities/AiProviderCallLog'
 
 /**
  * 统一 AI API 调用服务（多 Provider 版）
@@ -40,6 +43,8 @@ export class AiApiService {
   constructor(
     private readonly selector: AiProviderSelector,
     private readonly configService: AiProviderConfigService,
+    @InjectRepository(AiProviderCallLog)
+    private readonly providerLogRepo: Repository<AiProviderCallLog>,
   ) {
     this.timeout = parseInt(process.env.AI_REQUEST_TIMEOUT || '30000', 10)
   }
@@ -167,5 +172,72 @@ export class AiApiService {
   async isConfigured(): Promise<boolean> {
     const provider = await this.selector.select()
     return !!provider
+  }
+
+  /**
+   * 调用 AI 并自动写入 Provider 调用日志（含 Token 用量、Provider/模型信息）
+   *
+   * @param options    调用参数（prompt 或 messages）
+   * @param userId     发起调用的用户 ID
+   * @param callType   功能类型：match / chat_skill / matchmaker / fun_quiz / profile_gen
+   * @returns AI 返回的文本内容
+   */
+  async callAndLog(
+    options: AiCallOptions,
+    userId: number,
+    callType: string,
+  ): Promise<string> {
+    const startMs = Date.now()
+    let status: 'success' | 'error' | 'timeout' = 'success'
+    let errorMessage = ''
+    let result: AiCallResult | null = null
+
+    try {
+      result = await this.callWithMeta(options)
+      return result.content
+    } catch (e: any) {
+      const msg = e?.message || ''
+      if (msg.includes('TIMEOUT')) status = 'timeout'
+      else status = 'error'
+      errorMessage = msg.slice(0, 1000)
+      throw e
+    } finally {
+      // 异步写入 Provider 调用日志（不阻塞主流程）
+      this.saveProviderLog({
+        providerId: result?.providerId || 0,
+        callType,
+        userId,
+        requestSummary: JSON.stringify({
+          promptLength: options.prompt?.length || 0,
+          messageCount: options.messages?.length || 0,
+          responseJson: !!options.responseJson,
+        }).slice(0, 500),
+        responseSummary: result?.content?.slice(0, 500) || '',
+        inputTokens: result?.inputTokens || 0,
+        outputTokens: result?.outputTokens || 0,
+        durationMs: Date.now() - startMs,
+        status,
+        errorMessage,
+      }).catch((e) => this.logger.warn(`写入 Provider 调用日志失败: ${e?.message}`))
+    }
+  }
+
+  /**
+   * 异步写入 ai_provider_call_logs
+   */
+  private async saveProviderLog(data: {
+    providerId: number
+    callType: string
+    userId: number
+    requestSummary: string
+    responseSummary: string
+    inputTokens: number
+    outputTokens: number
+    durationMs: number
+    status: string
+    errorMessage: string
+  }) {
+    const log = this.providerLogRepo.create(data)
+    await this.providerLogRepo.save(log)
   }
 }
