@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Req, UseGuards, Delete } from '@nestjs/common'
+import { Controller, Get, Post, Body, Req, UseGuards, Delete, Param, Query } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AiMatchmakerService } from './ai-matchmaker.service'
+import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { Result } from '../common/result'
 
 /**
@@ -9,7 +10,10 @@ import { Result } from '../common/result'
 @Controller('ai/matchmaker')
 @UseGuards(JwtAuthGuard)
 export class AiMatchmakerController {
-  constructor(private readonly matchmakerService: AiMatchmakerService) {}
+  constructor(
+    private readonly matchmakerService: AiMatchmakerService,
+    private readonly quickQuestionService: QuickQuestionService,
+  ) {}
 
   /**
    * 发送消息给 AI 红娘
@@ -33,13 +37,36 @@ export class AiMatchmakerController {
   }
 
   /**
-   * 获取快捷问题列表
-   * GET /ai/matchmaker/quick-questions
+   * 获取快捷问题列表（从数据库读取，支持按分类筛选）
+   * GET /ai/matchmaker/quick-questions?categoryId=1
    */
   @Get('quick-questions')
-  async getQuickQuestions() {
-    const data = this.matchmakerService.getQuickQuestions()
-    return Result.success(data)
+  async getQuickQuestions(@Query('categoryId') categoryId?: string) {
+    const list = await this.quickQuestionService.getEnabledList(
+      categoryId ? parseInt(categoryId, 10) : undefined,
+    )
+    // 返回格式：{ id, content, categoryId, sort }
+    // 如果数据库无数据，返回默认数组
+    if (list.length === 0) {
+      return Result.success([
+        { id: 0, content: '第一次约会去哪', sort: 0 },
+        { id: 0, content: '怎么开场', sort: 1 },
+        { id: 0, content: '对方冷淡怎么办', sort: 2 },
+        { id: 0, content: '约会穿搭建议', sort: 3 },
+        { id: 0, content: '怎么判断对方真心', sort: 4 },
+      ])
+    }
+    return Result.success(list)
+  }
+
+  /**
+   * 快捷问题点击统计上报
+   * POST /ai/matchmaker/quick-questions/:id/click
+   */
+  @Post('quick-questions/:id/click')
+  async clickQuickQuestion(@Param('id') id: string) {
+    await this.quickQuestionService.incrementClick(parseInt(id, 10))
+    return Result.success(null)
   }
 
   /**

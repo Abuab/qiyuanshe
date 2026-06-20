@@ -124,7 +124,6 @@ const LEVEL2_WORDS: Record<string, BlockReasonType> = {
   '你懂得': BlockReasonType.HARASSMENT,
   '处男': BlockReasonType.HARASSMENT,
   '处女': BlockReasonType.HARASSMENT,
-  '第一次': BlockReasonType.HARASSMENT,
   '成人': BlockReasonType.PORNOGRAPHY,
   '情趣': BlockReasonType.PORNOGRAPHY,
   '主人': BlockReasonType.HARASSMENT,

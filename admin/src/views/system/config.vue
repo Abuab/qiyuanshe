@@ -118,6 +118,18 @@
               <div class="form-tip">我的页会员卡片栏轮播展示的文字（3条）</div>
             </el-form-item>
 
+            <el-divider content-position="left">AI 红娘安全提示配置</el-divider>
+
+            <el-form-item label="违规提示标签">
+              <el-input v-model="basicConfig.matchmakerSafetyLabel" placeholder="内容提示" style="width:200px" />
+              <div class="form-tip">用户输入触发敏感词时显示的安全标签文字</div>
+            </el-form-item>
+
+            <el-form-item label="边界提示标签">
+              <el-input v-model="basicConfig.matchmakerSafetyBoundaryLabel" placeholder="安全提醒" style="width:200px" />
+              <div class="form-tip">AI回复触发内容安全边界时显示的安全标签文字</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -610,6 +622,8 @@ const basicConfig = reactive({
   followerEmptyText: '还木有人关注您~',
   redLineTerm: '红线',
   vipCardTexts: ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'],
+  matchmakerSafetyLabel: '内容提示',
+  matchmakerSafetyBoundaryLabel: '安全提醒',
 })
 
 const shareConfig = reactive({
@@ -927,6 +941,10 @@ async function handleSave() {
       },
       loveQuotes: { quotes: loveQuotesConfig.quotes.filter(q => q && q.trim()) },
       photoAudit: { ...photoAuditConfig, rejectTags: JSON.parse(JSON.stringify(photoAuditConfig.rejectTags)) },
+      matchmaker: {
+        safetyLabel: basicConfig.matchmakerSafetyLabel,
+        safetyBoundaryLabel: basicConfig.matchmakerSafetyBoundaryLabel,
+      },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {

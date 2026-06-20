@@ -41,6 +41,9 @@ export class PublicSystemController {
       redLineTerm: await this.vipService.getRedLineTerm(),
       vipCardTexts: configs.basic?.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'],
       icons: this.buildIconConfig(configs.icon || {}),
+      // AI 红娘安全提示标签（后台可配置）
+      matchmakerSafetyLabel: configs.matchmaker?.safetyLabel || '内容提示',
+      matchmakerSafetyBoundaryLabel: configs.matchmaker?.safetyBoundaryLabel || '安全提醒',
     }
 
     return Result.success(result)

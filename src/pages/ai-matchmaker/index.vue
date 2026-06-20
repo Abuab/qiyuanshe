@@ -42,10 +42,10 @@
           <text class="bubble-text">{{ msg.content }}</text>
         </view>
         <view v-if="msg.safetyNotice === 'safety_boundary'" class="safety-tag">
-          <text>安全提醒</text>
+          <text>{{ systemStore.matchmakerSafetyBoundaryLabel }}</text>
         </view>
         <view v-if="msg.safetyNotice === 'input_violation'" class="safety-tag warn">
-          <text>内容提示</text>
+          <text>{{ systemStore.matchmakerSafetyLabel }}</text>
         </view>
       </view>
 
@@ -73,7 +73,7 @@
             :key="i"
             class="quick-tag"
             @tap="sendQuick(q)"
-          >{{ q }}</text>
+          >{{ q.content }}</text>
         </view>
       </scroll-view>
 
@@ -109,6 +109,9 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import request from '@/utils/request'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
 
 interface Message {
   role: 'user' | 'ai'
@@ -116,12 +119,18 @@ interface Message {
   safetyNotice?: string
 }
 
+interface QuickQuestion {
+  id: number
+  content: string
+  sort: number
+}
+
 const messages = ref<Message[]>([])
 const inputText = ref('')
 const typing = ref(false)
 const remainingRounds = ref<number | null>(null)
 const scrollToId = ref('')
-const quickQuestions = ref<string[]>([])
+const quickQuestions = ref<QuickQuestion[]>([])
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 
@@ -171,17 +180,21 @@ const loadQuickQuestions = async () => {
   } catch {
     // 后端不返回时使用默认问题
     quickQuestions.value = [
-      '第一次约会去哪',
-      '怎么开场聊天',
-      '对方冷淡怎么办',
-      '约会穿搭建议',
-      '怎么判断对方真心',
+      { id: 0, content: '第一次约会去哪', sort: 0 },
+      { id: 0, content: '怎么开场聊天', sort: 1 },
+      { id: 0, content: '对方冷淡怎么办', sort: 2 },
+      { id: 0, content: '约会穿搭建议', sort: 3 },
+      { id: 0, content: '怎么判断对方真心', sort: 4 },
     ]
   }
 }
 
-const sendQuick = (q: string) => {
-  inputText.value = q
+const sendQuick = (q: QuickQuestion) => {
+  inputText.value = q.content
+  // 上报点击统计（异步，不阻塞）
+  if (q.id > 0) {
+    request({ url: `/ai/matchmaker/quick-questions/${q.id}/click`, method: 'POST' }).catch(() => {})
+  }
   sendText()
 }
 
@@ -299,6 +312,7 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 .bubble {
   // 用户气泡最宽 70%，防止右侧截断
   max-width: 70%; padding: 20rpx 28rpx; border-radius: 24rpx;
+  overflow: visible;
   &.user {
     background: linear-gradient(135deg, $pink, $pink-light); color: #fff;
     border-bottom-right-radius: 6rpx;
@@ -315,6 +329,7 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
   word-wrap: break-word;
   word-break: break-all;
   overflow-wrap: break-word;
+  display: block;
 }
 
 // ==================== 安全标签 ====================
@@ -355,12 +370,15 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 .quick-bar-inner {
   display: flex; gap: 16rpx;
   padding: 4rpx 0;
+  padding-left: 16rpx;
 }
 .quick-tag {
   flex-shrink: 0;
+  min-width: 100rpx;
   padding: 12rpx 24rpx; border-radius: 36rpx;
   background: #FFF0F3; border: 1rpx solid rgba(255, 107, 138, 0.25);
   font-size: 24rpx; color: $pink; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 220rpx;
   transition: all 0.2s;
   &:active { background: rgba(255, 107, 138, 0.1); }
 }

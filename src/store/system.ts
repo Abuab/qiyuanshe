@@ -42,6 +42,8 @@ interface SystemConfig {
   redLineTerm: string
   vipCardTexts: string[]
   icons: IconConfig
+  matchmakerSafetyLabel: string
+  matchmakerSafetyBoundaryLabel: string
 }
 
 const DEFAULT_ICONS: IconConfig = {
@@ -69,6 +71,8 @@ export const useSystemStore = defineStore('system', () => {
   const followerEmptyText = ref<string>('还木有人关注您~')
   const redLineTerm = ref<string>('红线')
   const vipCardTexts = ref<string[]>(['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
+  const matchmakerSafetyLabel = ref<string>('内容提示')
+  const matchmakerSafetyBoundaryLabel = ref<string>('安全提醒')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -97,6 +101,8 @@ export const useSystemStore = defineStore('system', () => {
         followerEmptyText.value = res.followerEmptyText || followerEmptyText.value
         redLineTerm.value = res.redLineTerm || redLineTerm.value
         vipCardTexts.value = res.vipCardTexts || vipCardTexts.value
+        matchmakerSafetyLabel.value = res.matchmakerSafetyLabel || matchmakerSafetyLabel.value
+        matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -138,6 +144,8 @@ export const useSystemStore = defineStore('system', () => {
           followerEmptyText.value = config.followerEmptyText || followerEmptyText.value
           redLineTerm.value = config.redLineTerm || redLineTerm.value
           vipCardTexts.value = config.vipCardTexts || vipCardTexts.value
+          matchmakerSafetyLabel.value = config.matchmakerSafetyLabel || matchmakerSafetyLabel.value
+          matchmakerSafetyBoundaryLabel.value = config.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -202,6 +210,8 @@ export const useSystemStore = defineStore('system', () => {
       followerEmptyText: followerEmptyText.value,
       redLineTerm: redLineTerm.value,
       vipCardTexts: vipCardTexts.value,
+      matchmakerSafetyLabel: matchmakerSafetyLabel.value,
+      matchmakerSafetyBoundaryLabel: matchmakerSafetyBoundaryLabel.value,
       icons: icons.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -223,6 +233,8 @@ export const useSystemStore = defineStore('system', () => {
     followerEmptyText,
     redLineTerm,
     vipCardTexts,
+    matchmakerSafetyLabel,
+    matchmakerSafetyBoundaryLabel,
     icons,
     dicts,
     loadSystemConfig,

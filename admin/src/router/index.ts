@@ -130,6 +130,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'AI调用日志', requiresAuth: true },
       },
       {
+        path: '/ai/quick-questions',
+        name: 'AiQuickQuestions',
+        component: () => import('../views/ai/quick-questions.vue'),
+        meta: { title: '快捷问题管理', requiresAuth: true },
+      },
+      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),

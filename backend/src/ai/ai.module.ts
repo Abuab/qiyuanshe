@@ -41,15 +41,20 @@ import { AiMatchmakerController } from './ai-matchmaker.controller'
 import { AiFunQuizController } from './ai-fun-quiz.controller'
 import { AiProfileGenController } from './ai-profile-gen.controller'
 import { RedisService } from '../common/redis.service'
+import { SystemService } from '../system/system.service'
+import { QuickQuestionModule } from '../quick-question/quick-question.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([
-    SystemConfig, AiFeatureSwitchLog, AiCallLog, AiMatchReport,
-    AiFunQuizReport, AiUserProfile,
-    ContentSafetyAudit,
-    AiProviderConfig, AiProviderCallLog, AiProviderBalance,
-    User, UserTagSelection, QuestionAnswer, ChatMessage,
-  ])],
+  imports: [
+    TypeOrmModule.forFeature([
+      SystemConfig, AiFeatureSwitchLog, AiCallLog, AiMatchReport,
+      AiFunQuizReport, AiUserProfile,
+      ContentSafetyAudit,
+      AiProviderConfig, AiProviderCallLog, AiProviderBalance,
+      User, UserTagSelection, QuestionAnswer, ChatMessage,
+    ]),
+    QuickQuestionModule,
+  ],
   controllers: [
     AdminAiController, AdminAiBlacklistController, AdminAiSafetyAuditController,
     AdminAiProviderController, PublicAiController,
@@ -62,7 +67,7 @@ import { RedisService } from '../common/redis.service'
     AiFunQuizService, AiProfileGenService,
     AiProviderConfigService, AiProviderSelector, AiProviderBalanceService,
     AiProviderStatsService, AiProviderScheduler, AiProviderSeeder,
-    RedisService,
+    RedisService, SystemService,
   ],
   exports: [
     AiConfigService, AiRateLimitService, AiProviderConfigService, AiProviderSelector,
