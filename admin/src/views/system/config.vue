@@ -804,6 +804,12 @@ const pageIconList = [
   { key: 'deactivateIcon', label: '隐私设置-注销账号图标' },
   { key: 'refreshIcon', label: '爱情语录-换一个图标' },
   { key: 'filterResetIcon', label: '筛选面板-重置按钮图标' },
+  { key: 'certRealnameIcon', label: '认证页-实名认证图标' },
+  { key: 'certSingleIcon', label: '认证页-单身承诺图标' },
+  { key: 'certEducationIcon', label: '认证页-学历认证图标' },
+  { key: 'certHouseIcon', label: '认证页-房产认证图标' },
+  { key: 'certCarIcon', label: '认证页-车产认证图标' },
+  { key: 'certStoreIcon', label: '认证页-到店认证图标' },
 ]
 
 interface TabbarIconItem {

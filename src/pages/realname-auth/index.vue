@@ -41,7 +41,8 @@
         <view class="auth-card" @tap="handleItemTap('realname')">
           <view class="card-left">
             <view class="card-icon" style="background: #4A90D9;">
-              <text class="card-icon-text">🪪</text>
+              <image v-if="pageIcons.certRealnameIcon" class="card-icon-img" :src="pageIcons.certRealnameIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">🪪</text>
             </view>
             <view class="card-text">
               <text class="card-title">实名认证</text>
@@ -58,7 +59,8 @@
         <view class="auth-card" @tap="handleItemTap('single')">
           <view class="card-left">
             <view class="card-icon" style="background: #FF9500;">
-              <text class="card-icon-text">💗</text>
+              <image v-if="pageIcons.certSingleIcon" class="card-icon-img" :src="pageIcons.certSingleIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">💗</text>
             </view>
             <view class="card-text">
               <text class="card-title">单身承诺</text>
@@ -75,7 +77,8 @@
         <view class="auth-card" @tap="handleItemTap('education')">
           <view class="card-left">
             <view class="card-icon" style="background: #FFCC00;">
-              <text class="card-icon-text">🎓</text>
+              <image v-if="pageIcons.certEducationIcon" class="card-icon-img" :src="pageIcons.certEducationIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">🎓</text>
             </view>
             <view class="card-text">
               <text class="card-title">学历认证</text>
@@ -92,7 +95,8 @@
         <view class="auth-card" @tap="handleItemTap('house')">
           <view class="card-left">
             <view class="card-icon" style="background: #4CD964;">
-              <text class="card-icon-text">🏠</text>
+              <image v-if="pageIcons.certHouseIcon" class="card-icon-img" :src="pageIcons.certHouseIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">🏠</text>
             </view>
             <view class="card-text">
               <text class="card-title">房产认证</text>
@@ -109,7 +113,8 @@
         <view class="auth-card" @tap="handleItemTap('car')">
           <view class="card-left">
             <view class="card-icon" style="background: #5AC8FA;">
-              <text class="card-icon-text">🏠</text>
+              <image v-if="pageIcons.certCarIcon" class="card-icon-img" :src="pageIcons.certCarIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">🏠</text>
             </view>
             <view class="card-text">
               <text class="card-title">车产认证</text>
@@ -126,7 +131,8 @@
         <view class="auth-card" @tap="handleItemTap('store')">
           <view class="card-left">
             <view class="card-icon" style="background: #FF3B30;">
-              <text class="card-icon-text">🏪</text>
+              <image v-if="pageIcons.certStoreIcon" class="card-icon-img" :src="pageIcons.certStoreIcon" mode="aspectFit" />
+              <text v-else class="card-icon-text">🏪</text>
             </view>
             <view class="card-text">
               <text class="card-title">到店认证</text>
@@ -147,8 +153,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
+
+const systemStore = useSystemStore()
+const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -165,8 +175,7 @@ function handleBack() {
 
 function handleItemTap(type: string) {
   uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-</script>
+}</script>
 
 <style lang="scss" scoped>
 // ===== 全局 =====
@@ -273,6 +282,9 @@ function handleItemTap(type: string) {
 }
 .card-icon-text {
   font-size: 40rpx;
+}
+.card-icon-img {
+  width: 48rpx; height: 48rpx;
 }
 
 .card-text {

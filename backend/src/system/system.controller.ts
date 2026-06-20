@@ -145,6 +145,13 @@ export class PublicSystemController {
         // 爱情语录图标
         refreshIcon: fallback(page.refreshIcon),
         filterResetIcon: fallback(page.filterResetIcon),
+        // 实名认证页 - 6个认证项图标
+        certRealnameIcon: fallback(page.certRealnameIcon),
+        certSingleIcon: fallback(page.certSingleIcon),
+        certEducationIcon: fallback(page.certEducationIcon),
+        certHouseIcon: fallback(page.certHouseIcon),
+        certCarIcon: fallback(page.certCarIcon),
+        certStoreIcon: fallback(page.certStoreIcon),
       },
     }
   }
