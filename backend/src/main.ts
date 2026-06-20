@@ -2,7 +2,8 @@ import { config } from 'dotenv'
 import { resolve, join } from 'path'
 
 // 强制从 backend/ 目录加载 .env（不受 cwd 影响）
-const envPath = resolve(__dirname, '..', '.env')
+// 编译后 __dirname = backend/dist/src/，需往上两级到 backend/
+const envPath = resolve(__dirname, '..', '..', '.env')
 config({ path: envPath })
 console.log(`[dotenv] 加载 .env 文件: ${envPath} (exists=${require('fs').existsSync(envPath)})`)
 import { NestFactory } from '@nestjs/core'

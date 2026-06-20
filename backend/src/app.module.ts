@@ -71,7 +71,7 @@ import { RedisService } from './common/redis.service'
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: join(__dirname, '..', '.env'),
+      envFilePath: join(__dirname, '..', '..', '.env'),
       load: [databaseConfig],
     }),
     TypeOrmModule.forRoot(databaseConfig()),
