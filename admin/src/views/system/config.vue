@@ -135,6 +135,26 @@
               <div class="form-tip" style="margin-left:12px">控制"我的"页面底部和系统消息页顶部的公众号关注提示横幅</div>
             </el-form-item>
 
+            <el-form-item label="登录页插画">
+              <div class="upload-item">
+                <el-image
+                  v-if="basicConfig.loginPageIllustration"
+                  :src="basicConfig.loginPageIllustration"
+                  class="logo-preview"
+                  fit="contain"
+                  style="max-height:160px"
+                />
+                <el-upload
+                  action="#"
+                  :http-request="uploadLoginIllustration"
+                  :show-file-list="false"
+                >
+                  <el-button type="primary">上传插画</el-button>
+                </el-upload>
+              </div>
+              <div class="form-tip">登录页面顶部的插画，建议尺寸 750px x 600px，留空使用默认插画</div>
+            </el-form-item>
+
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -630,6 +650,7 @@ const basicConfig = reactive({
   matchmakerSafetyLabel: '内容提示',
   matchmakerSafetyBoundaryLabel: '安全提醒',
   showOfficialAccountPrompt: true,
+  loginPageIllustration: '',
 })
 
 const shareConfig = reactive({
@@ -990,6 +1011,20 @@ async function uploadLogo(options: any) {
     if (res.success && res.data?.url) {
       basicConfig.logo = res.data.url
       logoError.value = false
+      ElMessage.success('上传成功')
+    }
+  } catch (error) {
+    ElMessage.error('上传失败')
+  }
+}
+
+async function uploadLoginIllustration(options: any) {
+  const formData = new FormData()
+  formData.append('file', options.file)
+  try {
+    const res = await adminSystem.upload(formData)
+    if (res.success && res.data?.url) {
+      basicConfig.loginPageIllustration = res.data.url
       ElMessage.success('上传成功')
     }
   } catch (error) {

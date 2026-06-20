@@ -1,95 +1,76 @@
 <template>
   <view class="login-page">
     <!-- 粉色渐变背景 -->
-    <view class="bg-layer" />
+    <view class="bg-pink" />
 
-    <view class="content-wrap">
-      <!-- 插画区 -->
-      <view class="illustration-area">
-        <image
-          v-if="loginIllustration"
-          :src="loginIllustration"
-          mode="aspectFit"
-          class="login-illustration"
-        />
-        <view v-else class="default-illustration">
-          <view class="couple-scene">
-            <view class="heart-float heart-1">💕</view>
-            <view class="heart-float heart-2">💗</view>
-            <view class="heart-float heart-3">💖</view>
-            <text class="couple-emoji">👫</text>
+    <!-- 情侣插画 + 底部阴影 -->
+    <view class="illustration-area">
+      <image
+        :src="illustrationImg"
+        mode="widthFix"
+        class="illustration-img"
+      />
+      <view class="illustration-shadow" />
+    </view>
+
+    <!-- ===== 用户协议弹窗 ===== -->
+    <view v-if="showProtocol" class="protocol-fullscreen">
+      <view class="protocol-mask" />
+      <view class="protocol-card">
+        <text class="protocol-title">用户协议及隐私协议</text>
+
+        <scroll-view class="protocol-body" scroll-y>
+          <text class="protocol-p">
+            欢迎使用{{ appName }}及相关服务。您需要同意
+            <text class="link" @tap="openAgreement">《用户协议》</text>
+            和
+            <text class="link" @tap="openPrivacy">《隐私政策》</text>
+            才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。
+          </text>
+        </scroll-view>
+
+        <view class="protocol-actions">
+          <view class="btn-agree" @tap="handleAgree">
+            <text>同意</text>
           </view>
-          <view class="plant-deco plant-left">🌿</view>
-          <view class="plant-deco plant-right">🌸</view>
+          <text class="btn-disagree" @tap="handleDisagree">不同意</text>
         </view>
       </view>
 
-      <!-- 提示文字 -->
-      <view class="hint-area">
-        <text class="hint-text">需要授权手机号，以便于您下次直接登录</text>
-        <text class="hint-sub">请放心，我们将严格保护您的隐私</text>
-      </view>
+      <text class="skip-auth" @tap="handleSkipAuth">暂不授权</text>
+    </view>
 
-      <!-- 登录按钮 -->
+    <!-- ===== 登录区域 ===== -->
+    <view v-else class="login-area">
+      <text class="login-tip-line1">需要授权手机号，以便于您下次直接登录</text>
+      <text class="login-tip-line2">请放心，我们将严格保护您的隐私</text>
+
       <view class="login-buttons">
-        <button class="btn-phone-primary" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber">
+        <view class="btn-phone-quick" @tap="handlePhoneLogin">
           <text>手机号快捷登录</text>
-        </button>
-        <view class="btn-phone-secondary" @tap="showPhoneCode">
+        </view>
+        <view class="btn-phone-code" @tap="handlePhoneCodeLogin">
           <text>手机验证码登录</text>
         </view>
       </view>
 
-      <!-- 底部 -->
-      <view class="skip-area">
-        <text class="skip-link" @tap="handleSkip">暂不授权</text>
-      </view>
+      <text class="skip-auth" @tap="handleSkipAuth">暂不授权</text>
     </view>
 
-    <!-- 协议弹窗 -->
-    <protocol-popup
-      :show="showProtocol"
-      @update:show="showProtocol = $event"
-      @agree="onProtocolAgree"
-      @close="handleProtocolClose"
-      @navigate="handleProtocolNavigate"
-    />
-
-    <!-- 验证码登录弹窗 -->
-    <view v-if="showPhonePopup" class="phone-popup">
-      <view class="phone-overlay" @tap="showPhonePopup = false" />
-      <view class="phone-card">
-        <text class="phone-title">手机验证码登录</text>
-        <view class="phone-input-row">
-          <input
-            v-model="phoneNumber"
-            class="phone-input"
-            type="number"
-            maxlength="11"
-            placeholder="请输入手机号"
-          />
-        </view>
-        <view class="code-row">
-          <input
-            v-model="phoneCode"
-            class="code-input"
-            type="number"
-            maxlength="6"
-            placeholder="验证码"
-          />
-          <view class="code-btn" :class="{ disabled: codeSending || countdown > 0 }" @tap="sendCode">
-            <text v-if="countdown > 0">{{ countdown }}s</text>
-            <text v-else>获取验证码</text>
-          </view>
-        </view>
-        <button class="btn-code-login" :loading="codeLoading" @tap="handleCodeLogin">
-          登录
+    <!-- 手机号快捷登录弹窗 -->
+    <view v-if="showPhonePopup" class="phone-popup" @tap="handlePhonePopupClose">
+      <view class="phone-mask" />
+      <view class="phone-card" @tap.stop>
+        <text class="phone-title">手机号登录</text>
+        <text class="phone-desc">请先获取手机号授权</text>
+        <button class="get-phone-btn" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber">
+          获取手机号
         </button>
-        <text class="code-cancel" @tap="showPhonePopup = false">取消</text>
+        <text class="phone-cancel" @tap="handlePhonePopupClose">取消</text>
       </view>
     </view>
 
-    <!-- Loading -->
+    <!-- 加载遮罩 -->
     <view v-if="loading" class="loading-mask">
       <view class="loading-spinner" />
       <text class="loading-text">登录中...</text>
@@ -98,70 +79,132 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
+import { onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
-import { post } from '@/utils/request'
+import { post, get } from '@/utils/request'
+import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
-import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
 
 interface LoginResult {
   user: any
   tokens: { accessToken: string; refreshToken: string; expiresIn: number }
 }
+interface WechatLoginResult { code: string; errMsg: string }
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '栖缘社')
 const showProtocol = ref(false)
 const showPhonePopup = ref(false)
 const loading = ref(false)
-const phoneNumber = ref('')
-const phoneCode = ref('')
-const codeSending = ref(false)
-const codeLoading = ref(false)
-const countdown = ref(0)
-const hasAgreed = ref(false)
-let countdownTimer: ReturnType<typeof setInterval> | null = null
+const illustrationImg = ref('/static/login-illustration.png')
 
-const loginIllustration = ref('')
-
-onMounted(() => {
-  loginIllustration.value = systemStore.loginIllustration || ''
-  // 检查是否已同意协议
-  if (uni.getStorageSync('hasAgreedProtocol')) {
-    hasAgreed.value = true
-  } else {
-    // 首次进入显示协议弹窗
-    showProtocol.value = true
-  }
+onMounted(async () => {
+  await loadLoginConfig()
+  checkLogin()
 })
 
-const onProtocolAgree = () => {
-  hasAgreed.value = true
-  // 协议同意后显示登录按钮（通过 hasAgreed 控制）
+/** 加载登录页配置（插画） */
+const loadLoginConfig = async () => {
+  try {
+    const res: any = await get('/system/config')
+    if (res?.loginPageIllustration) {
+      illustrationImg.value = res.loginPageIllustration
+    }
+  } catch {}
 }
 
-const handleProtocolClose = () => {
+const checkLogin = () => {
+  if (userStore.isLoggedIn) {
+    handleLoginSuccess()
+    return
+  }
+  // 检查是否已同意协议
+  if (!secureStorage.isProtocolAgreed()) {
+    showProtocol.value = true
+  }
+}
+
+const handleAgree = () => {
+  secureStorage.setProtocolAgreed()
   showProtocol.value = false
 }
 
-const handleProtocolNavigate = (url: string) => {
-  uni.navigateTo({ url })
+const handleDisagree = () => {
+  uni.showToast({ title: '需要同意才能继续使用', icon: 'none' })
 }
 
-// ========== 手机号快捷登录 ==========
-const onGetPhoneNumber = async (e: any) => {
-  if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-    return
-  }
-  if (!hasAgreed.value) {
+const handleSkipAuth = () => {
+  showProtocol.value = false
+  showPhonePopup.value = false
+  uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/my/index' }) })
+}
+
+const openAgreement = () => {
+  uni.navigateTo({ url: '/pages/agreement/index?type=USER_AGREEMENT' })
+}
+const openPrivacy = () => {
+  uni.navigateTo({ url: '/pages/agreement/index?type=PRIVACY_POLICY' })
+}
+
+const handlePhoneLogin = () => {
+  if (!secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
     return
   }
+  showPhonePopup.value = true
+}
+
+const handlePhoneCodeLogin = () => {
+  if (!secureStorage.isProtocolAgreed()) {
+    showProtocol.value = true
+    return
+  }
+  // 手机验证码登录：先获取微信授权码，再跳转验证码页面
+  performWechatLogin()
+}
+
+const handlePhonePopupClose = () => {
+  showPhonePopup.value = false
+}
+
+/** 微信授权 → 后端登录 */
+const performWechatLogin = async () => {
+  try {
+    loading.value = true
+    const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
+      uni.login({ provider: 'weixin', success: resolve, fail: reject })
+    })
+    if (!loginRes.code) throw new Error('微信登录失败')
+
+    const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code })
+    if (result?.user && result?.tokens) {
+      userStore.login(result.tokens.accessToken, result.user)
+      if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
+      showToast('登录成功', 'success')
+      handleLoginSuccess()
+    } else {
+      throw new Error('登录响应数据异常')
+    }
+  } catch (error: any) {
+    logger.error('微信登录失败:', error)
+    showToast(error.message || '登录失败，请重试', 'none')
+  } finally { loading.value = false }
+}
+
+/** 获取手机号回调 */
+const onGetPhoneNumber = async (e: any) => {
+  if (e.detail.errMsg !== 'getPhoneNumber:ok') {
+    showToast('获取手机号失败', 'none')
+    return
+  }
+  showPhonePopup.value = false
   loading.value = true
   try {
-    const loginRes = await new Promise<any>((resolve, reject) => {
+    const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
     const result = await post<LoginResult>('/auth/phone-login', {
@@ -172,215 +215,184 @@ const onGetPhoneNumber = async (e: any) => {
     if (result?.user && result?.tokens) {
       userStore.login(result.tokens.accessToken, result.user)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
-      uni.showToast({ title: '登录成功', icon: 'success' })
-      uni.navigateBack({ delta: 1 })
+      showToast('登录成功', 'success')
+      handleLoginSuccess()
     }
   } catch (error: any) {
     logger.error('手机号登录失败:', error)
-    uni.showToast({ title: error?.message || '登录失败，请重试', icon: 'none' })
-  } finally {
-    loading.value = false
-  }
+    showToast(error.message || '登录失败，请重试', 'none')
+  } finally { loading.value = false }
 }
 
-// ========== 验证码登录 ==========
-const showPhoneCode = () => {
-  if (!hasAgreed.value) {
-    showProtocol.value = true
-    return
+const handleLoginSuccess = () => {
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack()
+  } else {
+    uni.switchTab({ url: '/pages/index/index' })
   }
-  showPhonePopup.value = true
-}
-
-const sendCode = async () => {
-  if (codeSending.value || countdown.value > 0) return
-  if (!/^1\d{10}$/.test(phoneNumber.value)) {
-    uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
-    return
-  }
-  codeSending.value = true
-  try {
-    await post('/auth/send-code', { phone: phoneNumber.value })
-    uni.showToast({ title: '验证码已发送', icon: 'success' })
-    countdown.value = 60
-    countdownTimer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(countdownTimer!)
-        countdownTimer = null
-      }
-    }, 1000)
-  } catch (e: any) {
-    uni.showToast({ title: e?.message || '发送失败', icon: 'none' })
-  } finally {
-    codeSending.value = false
-  }
-}
-
-const handleCodeLogin = async () => {
-  if (!/^1\d{10}$/.test(phoneNumber.value)) {
-    uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
-    return
-  }
-  if (!phoneCode.value.trim()) {
-    uni.showToast({ title: '请输入验证码', icon: 'none' })
-    return
-  }
-  codeLoading.value = true
-  try {
-    const loginRes = await new Promise<any>((resolve, reject) => {
-      uni.login({ provider: 'weixin', success: resolve, fail: reject })
-    })
-    const result = await post<LoginResult>('/auth/code-login', {
-      code: loginRes.code,
-      phone: phoneNumber.value,
-      verifyCode: phoneCode.value,
-    })
-    if (result?.user && result?.tokens) {
-      userStore.login(result.tokens.accessToken, result.user)
-      if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
-      uni.showToast({ title: '登录成功', icon: 'success' })
-      uni.navigateBack({ delta: 1 })
-    }
-  } catch (error: any) {
-    logger.error('验证码登录失败:', error)
-    uni.showToast({ title: error?.message || '登录失败', icon: 'none' })
-  } finally {
-    codeLoading.value = false
-  }
-}
-
-const handleSkip = () => {
-  uni.navigateBack({ delta: 1 })
 }
 </script>
 
 <style lang="scss" scoped>
 .login-page {
-  min-height: 100vh; position: relative;
+  min-height: 100vh;
+  position: relative;
+  display: flex; flex-direction: column;
+  align-items: center;
   overflow: hidden;
 }
 
-.bg-layer {
+// ===== 粉色渐变背景 =====
+.bg-pink {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 60%, #FFF 100%);
+  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 60%, #FFF8FA 100%);
   z-index: -1;
 }
 
-.content-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 120rpx 48rpx 0;
-}
-
-// ========== 插画 ==========
+// ===== 情侣插画 =====
 .illustration-area {
-  width: 520rpx; height: 460rpx;
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 40rpx;
+  width: 100%; display: flex; flex-direction: column; align-items: center;
+  padding-top: 100rpx; margin-bottom: 40rpx;
 }
-.login-illustration { width: 100%; height: 100%; }
-
-.default-illustration {
-  position: relative; width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
+.illustration-img { width: 480rpx; display: block; }
+.illustration-shadow {
+  width: 340rpx; height: 20rpx;
+  background: radial-gradient(ellipse, rgba(255,107,138,0.15), transparent);
+  border-radius: 50%; margin-top: -10rpx;
 }
-.couple-scene { position: relative; display: flex; align-items: center; justify-content: center; }
-.couple-emoji { font-size: 160rpx; }
 
-.heart-float { position: absolute; font-size: 48rpx; }
-.heart-1 { top: -40rpx; left: -30rpx; animation: floatHeart 2.5s ease-in-out infinite; }
-.heart-2 { top: 20rpx; right: -50rpx; animation: floatHeart 3s ease-in-out infinite 0.5s; }
-.heart-3 { bottom: -20rpx; left: -20rpx; animation: floatHeart 2.8s ease-in-out infinite 1s; }
-@keyframes floatHeart {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-16rpx) scale(1.1); }
-}
-.plant-deco { position: absolute; font-size: 60rpx; }
-.plant-left { bottom: 20rpx; left: 40rpx; }
-.plant-right { bottom: 10rpx; right: 40rpx; }
-
-// ========== 提示文字 ==========
-.hint-area {
+// ===== 协议弹窗 =====
+.protocol-fullscreen {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;
   display: flex; flex-direction: column; align-items: center;
+  padding-top: 120rpx;
+}
+.protocol-mask {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+}
+.protocol-card {
+  position: relative; z-index: 1;
+  width: 85%; max-width: 640rpx;
+  background: #fff; border-radius: 40rpx;
+  padding: 48rpx 40rpx 32rpx;
+  display: flex; flex-direction: column;
+}
+.protocol-title {
+  font-size: 36rpx; font-weight: 700; color: #1A1A1A;
+  text-align: center; margin-bottom: 28rpx;
+}
+.protocol-body {
+  max-height: 300rpx; margin-bottom: 32rpx;
+}
+.protocol-p {
+  font-size: 28rpx; color: #666; line-height: 1.8;
+}
+.link {
+  color: #4A90D9; text-decoration: underline;
+}
+.protocol-actions {
+  display: flex; flex-direction: column; align-items: center; gap: 20rpx;
+}
+.btn-agree {
+  width: 100%; height: 88rpx;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 48rpx;
+  display: flex; align-items: center; justify-content: center;
+  text { font-size: 32rpx; color: #fff; font-weight: 600; }
+  &:active { opacity: 0.85; }
+}
+.btn-disagree {
+  font-size: 28rpx; color: #999; text-decoration: underline;
+}
+
+// ===== 登录区域 =====
+.login-area {
+  width: 85%; max-width: 640rpx;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: 20rpx;
+}
+.login-tip-line1 {
+  font-size: 28rpx; color: #666; text-align: center; margin-bottom: 12rpx;
+}
+.login-tip-line2 {
+  font-size: 24rpx; color: #999; text-align: center; margin-bottom: 56rpx;
+}
+.login-buttons {
+  width: 100%; display: flex; flex-direction: column; gap: 24rpx;
   margin-bottom: 48rpx;
 }
-.hint-text { font-size: 28rpx; color: #666; }
-.hint-sub { font-size: 24rpx; color: #999; margin-top: 8rpx; }
-
-// ========== 登录按钮 ==========
-.login-buttons {
-  width: 85vw; max-width: 600rpx;
-  display: flex; flex-direction: column; align-items: center;
-  gap: 24rpx;
-}
-
-.btn-phone-primary {
+.btn-phone-quick {
   width: 100%; height: 96rpx;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 999rpx; border: none;
+  border-radius: 48rpx;
   display: flex; align-items: center; justify-content: center;
-  &::after { border: none; }
   text { font-size: 32rpx; color: #fff; font-weight: 600; }
+  &:active { opacity: 0.85; }
 }
-
-.btn-phone-secondary {
+.btn-phone-code {
   width: 100%; height: 96rpx;
-  background: #fff; border-radius: 999rpx;
-  border: 2rpx solid #FF6B8A;
+  background: #fff; border: 2rpx solid #FF6B8A;
+  border-radius: 48rpx;
   display: flex; align-items: center; justify-content: center;
-  text { font-size: 32rpx; color: #FF6B8A; font-weight: 600; }
+  text { font-size: 30rpx; color: #FF6B8A; font-weight: 500; }
+  &:active { background: #FFF0F5; }
 }
 
-// ========== 底部 ==========
-.skip-area { margin-top: 48rpx; }
-.skip-link { font-size: 26rpx; color: #999; text-decoration: underline; }
+// ===== 暂不授权 =====
+.skip-auth {
+  font-size: 26rpx; color: #999; text-decoration: underline;
+  text-align: center;
+}
 
-// ========== 验证码弹窗 ==========
+// ===== 手机号弹窗 =====
 .phone-popup {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1000;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1100;
   display: flex; align-items: center; justify-content: center;
 }
-.phone-overlay {
+.phone-mask {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.5);
 }
 .phone-card {
-  position: relative; width: 85vw; max-width: 600rpx;
+  position: relative; width: 600rpx;
   background: #fff; border-radius: 24rpx;
-  padding: 48rpx 40rpx 36rpx;
+  padding: 48rpx 40rpx;
   display: flex; flex-direction: column; align-items: center;
 }
-.phone-title { font-size: 34rpx; font-weight: 700; color: #1A1A1A; margin-bottom: 32rpx; }
-.phone-input-row { width: 100%; margin-bottom: 20rpx; }
-.phone-input { width: 100%; height: 88rpx; background: #F5F5F5; border-radius: 16rpx; padding: 0 28rpx; font-size: 28rpx; box-sizing: border-box; }
-.code-row { width: 100%; display: flex; gap: 16rpx; margin-bottom: 32rpx; }
-.code-input { flex: 1; height: 88rpx; background: #F5F5F5; border-radius: 16rpx; padding: 0 28rpx; font-size: 28rpx; box-sizing: border-box; }
-.code-btn {
-  width: 200rpx; height: 88rpx; background: #FF6B8A; border-radius: 16rpx;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  text { font-size: 24rpx; color: #fff; }
-  &.disabled { background: #CCC; }
+.phone-title {
+  font-size: 34rpx; font-weight: 700; color: #1A1A1A; margin-bottom: 12rpx;
 }
-.btn-code-login {
-  width: 100%; height: 88rpx; background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 999rpx; border: none; margin-bottom: 20rpx;
+.phone-desc {
+  font-size: 26rpx; color: #999; margin-bottom: 40rpx;
+}
+.get-phone-btn {
+  width: 100%; height: 88rpx;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 44rpx; border: none;
+  color: #fff; font-size: 32rpx; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
   &::after { border: none; }
-  color: #fff; font-size: 30rpx; font-weight: 600;
+  &:active { opacity: 0.85; }
 }
-.code-cancel { font-size: 26rpx; color: #999; }
+.phone-cancel {
+  font-size: 28rpx; color: #999; margin-top: 28rpx; text-decoration: underline;
+}
 
-// ========== Loading ==========
+// ===== 加载遮罩 =====
 .loading-mask {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.4);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .loading-spinner {
-  width: 60rpx; height: 60rpx; border: 4rpx solid rgba(255,255,255,0.4);
-  border-top-color: #fff; border-radius: 50%;
+  width: 60rpx; height: 60rpx;
+  border: 4rpx solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { color: #fff; font-size: 28rpx; margin-top: 16rpx; }
+.loading-text { font-size: 28rpx; color: #fff; margin-top: 20rpx; }
 </style>

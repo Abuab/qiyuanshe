@@ -10,11 +10,13 @@
       <!-- 用户信息区 -->
       <view class="profile-section" @tap="isLoggedIn ? undefined : goToLogin()">
         <!-- 未登录 -->
-        <view v-if="!isLoggedIn" class="profile-row">
-          <image class="profile-avatar" src="/static/default-avatar.png" mode="aspectFill" />
+        <view v-if="!isLoggedIn" class="profile-row guest-row">
+          <view class="guest-avatar">
+            <text class="guest-icon">👤</text>
+          </view>
           <view class="profile-info">
-            <text class="profile-nickname">点击登录</text>
-            <text class="profile-sub">登录后享受更多服务</text>
+            <text class="profile-nickname">注册/登录</text>
+            <text class="profile-sub">登录后即可体验更多服务</text>
           </view>
           <text class="arrow">></text>
         </view>
@@ -532,12 +534,26 @@ const toolGrid7 = [
 }
 
 .arrow {
-  font-size: 28rpx;
-  color: #ccc;
+  font-size: 32rpx;
+  color: #999;
   margin-left: 12rpx;
 }
 
-// 统计行
+// 未登录占位头像
+.guest-row {
+  align-items: center;
+}
+.guest-avatar {
+  width: 100rpx; height: 100rpx; border-radius: 50%;
+  background: #E5E5E5;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-right: 20rpx;
+}
+.guest-icon {
+  font-size: 48rpx; color: #999;
+}
+
+// ========== 统计行 ==========
 .stats-row {
   display: flex;
   justify-content: space-around;
