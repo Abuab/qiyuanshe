@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
@@ -38,6 +39,7 @@ export class AiProfileGenService {
     private readonly answerRepo: Repository<QuestionAnswer>,
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
+    private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
   ) {}
 
@@ -139,11 +141,15 @@ export class AiProfileGenService {
     let rawResult: { summary: string; content: string }
 
     try {
-      // 【占位】正式部署时替换为真实 AI API
-      // const aiResponse = await this.callAiModel(prompt)
-      // rawResult = JSON.parse(aiResponse)
-      rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
+      if (this.aiApiService.isConfigured()) {
+        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        rawResult = this.parseJsonResponse(aiResponse)
+      } else {
+        rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
+      }
     } catch (e: any) {
+      this.logger.warn(`AI profile gen call failed: ${e?.message}, using fallback`)
+      rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog)
       throw new BadRequestException('AI服务暂时不可用，请稍后重试')
@@ -337,5 +343,13 @@ export class AiProfileGenService {
       summary,
       content: `大家好，我是${nickname || '新朋友'}~ ${tagPart} ${answerPart}希望能遇到一个同样热爱生活、愿意一起分享美好时光的人，一起创造属于我们的故事。`,
     }
+  }
+
+  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
+  private parseJsonResponse(raw: string): any {
+    let json = raw.trim()
+    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+    if (codeBlock) json = codeBlock[1]
+    return JSON.parse(json)
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
@@ -37,6 +38,7 @@ export class AiMatchmakerService {
     private readonly userRepo: Repository<User>,
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
+    private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
   ) {}
 
@@ -126,16 +128,22 @@ export class AiMatchmakerService {
     let reply: string
 
     try {
-      // 【占位】正式部署时替换为真实 AI API
-      // const aiResponse = await this.callAiModel([
-      //   { role: 'system', content: MATCHMAKER_SYSTEM_PROMPT },
-      //   ...history.map(h => ({ role: h.role, content: h.content })),
-      //   { role: 'user', content: message },
-      // ])
-      // reply = aiResponse
-
-      reply = this.buildFallbackReply(message)
+      if (this.aiApiService.isConfigured()) {
+        reply = await this.aiApiService.call({
+          messages: [
+            { role: 'system', content: MATCHMAKER_SYSTEM_PROMPT },
+            ...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })),
+            { role: 'user', content: message },
+          ],
+          maxTokens: 300,
+          temperature: 0.8,
+        })
+      } else {
+        reply = this.buildFallbackReply(message)
+      }
     } catch (e: any) {
+      this.logger.warn(`AI matchmaker call failed: ${e?.message}, using fallback`)
+      reply = this.buildFallbackReply(message)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog)
       this.logger.error(`AI matchmaker failed for user ${userId}: ${e?.message}`)

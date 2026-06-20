@@ -12,6 +12,7 @@ import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { ChatMessage } from '../entities/ChatMessage'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiSafetyService } from './ai-safety.service'
 import { AiRateLimitService } from './ai-rate-limit.service'
 import { AiMatchService } from './ai-match.service'
@@ -43,7 +44,7 @@ import { RedisService } from '../common/redis.service'
     AiFunQuizController, AiProfileGenController,
   ],
   providers: [
-    AiConfigService, AiSafetyService, AiRateLimitService,
+    AiConfigService, AiApiService, AiSafetyService, AiRateLimitService,
     AiMatchService, AiChatSkillService, AiMatchmakerService,
     AiFunQuizService, AiProfileGenService,
     RedisService,

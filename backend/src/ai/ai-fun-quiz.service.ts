@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
@@ -38,6 +39,7 @@ export class AiFunQuizService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly aiConfigService: AiConfigService,
+    private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
   ) {}
 
@@ -141,10 +143,15 @@ export class AiFunQuizService {
     }
 
     try {
-      // const aiResponse = await this.callAiModel(prompt)
-      // rawResult = JSON.parse(aiResponse)
-      rawResult = this.buildFallbackResult(userConstellation, taConstellation)
+      if (this.aiApiService.isConfigured()) {
+        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        rawResult = this.parseJsonResponse(aiResponse)
+      } else {
+        rawResult = this.buildFallbackResult(userConstellation, taConstellation)
+      }
     } catch (e: any) {
+      this.logger.warn(`AI fun quiz call failed: ${e?.message}, using fallback`)
+      rawResult = this.buildFallbackResult(userConstellation, taConstellation)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog)
       throw new BadRequestException('AI服务暂时不可用，请稍后重试')
@@ -275,5 +282,13 @@ export class AiFunQuizService {
       ],
       keywords: ['互补型', '慢热配主动', '天作之合'],
     }
+  }
+
+  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
+  private parseJsonResponse(raw: string): any {
+    let json = raw.trim()
+    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+    if (codeBlock) json = codeBlock[1]
+    return JSON.parse(json)
   }
 }

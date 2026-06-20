@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiCallLog } from '../entities/AiCallLog'
 import { AiCallType } from '../entities/AiCallLog'
@@ -43,6 +44,7 @@ export class AiMatchService {
     private readonly callLogRepo: Repository<AiCallLog>,
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
+    private readonly aiApiService: AiApiService,
   ) {}
 
   // ==================== 公开 API ====================
@@ -170,14 +172,16 @@ export class AiMatchService {
 
       // 【注】此处为 AI 调用的占位实现
       // 实际部署时替换为真正的 AI API 调用（如 OpenRouter/Qwen/DeepSeek）
-      // const aiResponse = await this.callAiModel(prompt)
-      // aiResult = JSON.parse(aiResponse)
-
-      // 占位：模拟 AI 返回
-      aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
+      if (this.aiApiService.isConfigured()) {
+        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        aiResult = this.parseJsonResponse(aiResponse)
+      } else {
+        aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
+      }
 
     } catch (e: any) {
-      this.logger.error(`AI match analysis failed for ${userId} → ${targetUserId}: ${e?.message}`)
+      this.logger.warn(`AI match analysis call failed: ${e?.message}, using fallback`)
+      aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
       if (aiCallLog) {
         aiCallLog.responseStatus = 'error'
         await this.callLogRepo.save(aiCallLog)
@@ -428,5 +432,13 @@ export class AiMatchService {
         '建议从共同的兴趣爱好出发，慢慢建立信任和默契。',
       advice,
     }
+  }
+
+  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
+  private parseJsonResponse(raw: string): any {
+    let json = raw.trim()
+    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+    if (codeBlock) json = codeBlock[1]
+    return JSON.parse(json)
   }
 }

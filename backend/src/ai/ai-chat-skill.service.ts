@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
+import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
@@ -39,6 +40,7 @@ export class AiChatSkillService {
     private readonly userRepo: Repository<User>,
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
+    private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
   ) {}
 
@@ -120,10 +122,15 @@ export class AiChatSkillService {
     let rawResult: { humorous: string; sincere: string; flirtatious: string }
 
     try {
-      // const aiResponse = await this.callAiModel(prompt)
-      // rawResult = JSON.parse(aiResponse)
-      rawResult = this.buildFallbackSuggestions(taLastMessage.content)
+      if (this.aiApiService.isConfigured()) {
+        const aiResponse = await this.aiApiService.call({ prompt, responseJson: true })
+        rawResult = this.parseJsonResponse(aiResponse)
+      } else {
+        rawResult = this.buildFallbackSuggestions(taLastMessage.content)
+      }
     } catch (e: any) {
+      this.logger.warn(`AI chat skill call failed: ${e?.message}, using fallback`)
+      rawResult = this.buildFallbackSuggestions(taLastMessage.content)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog)
       this.logger.error(`AI chat skill failed: ${e?.message}`)
@@ -272,5 +279,14 @@ export class AiChatSkillService {
       sincere: '听了你说的，感觉你是个很有想法的人，能跟我多分享一下吗？',
       flirtatious: '和你聊天感觉时间过得特别快，期待能更了解你',
     }
+  }
+
+  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
+  private parseJsonResponse(raw: string): any {
+    let json = raw.trim()
+    // 去除 ```json ... ``` 包裹
+    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
+    if (codeBlock) json = codeBlock[1]
+    return JSON.parse(json)
   }
 }
