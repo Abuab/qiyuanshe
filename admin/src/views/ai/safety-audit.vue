@@ -110,13 +110,13 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="生成内容" min-width="260">
+
+        <!-- 生成内容卡片列 -->
+        <el-table-column label="生成内容" min-width="280">
           <template #default="{ row }">
-            <div class="content-cell">
-              <el-tooltip :content="row.content" placement="top" :show-after="500">
-                <span class="content-text">{{ truncateText(row.content, 80) }}</span>
-              </el-tooltip>
-              <div v-if="row.sensitiveWords?.length" class="sensitive-tags">
+            <div class="content-card" @click="openContentDialog(row)">
+              <div class="content-card-text">{{ getPreviewText(row.content) }}</div>
+              <div v-if="row.sensitiveWords?.length" class="content-card-tags">
                 <el-tag
                   v-for="(w, i) in row.sensitiveWords"
                   :key="i"
@@ -127,9 +127,11 @@
                   {{ w }}
                 </el-tag>
               </div>
+              <div class="content-card-hint">点击查看完整内容</div>
             </div>
           </template>
         </el-table-column>
+
         <el-table-column label="敏感词等级" width="100" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.safetyLevel === 1" type="danger" size="small">一级拦截</el-tag>
@@ -153,9 +155,9 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="success" size="small" link @click="handlePass(row)">通过</el-button>
-            <el-button type="danger" size="small" link @click="handleBlock(row)">拦截</el-button>
-            <el-button type="warning" size="small" link @click="handleMarkReview(row)">标记复核</el-button>
+            <el-button type="success" size="small" link @click.stop="handlePass(row)">通过</el-button>
+            <el-button type="danger" size="small" link @click.stop="handleBlock(row)">拦截</el-button>
+            <el-button type="warning" size="small" link @click.stop="handleMarkReview(row)">标记复核</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -174,37 +176,90 @@
       </div>
     </div>
 
-    <!-- 内容详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="内容详情" width="600px">
-      <div class="detail-body" v-if="detailRow">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="用户ID">{{ detailRow.userId }}</el-descriptions-item>
-          <el-descriptions-item label="调用类型">{{ getCallTypeLabel(detailRow.callType) }}</el-descriptions-item>
-          <el-descriptions-item label="生成时间">{{ formatTime(detailRow.createdAt) }}</el-descriptions-item>
-          <el-descriptions-item label="审核状态">{{ detailRow.auditResult || '待审核' }}</el-descriptions-item>
-        </el-descriptions>
-        <div class="detail-content-section">
-          <h4>生成内容</h4>
-          <div class="content-full">{{ detailRow.content }}</div>
+    <!-- AI 生成内容详情弹窗 -->
+    <el-dialog
+      v-model="contentDialogVisible"
+      title="AI 生成内容详情"
+      width="600px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div v-if="contentDialogRow" class="content-dialog">
+        <!-- 完整内容区 -->
+        <div class="content-dialog-section">
+          <div class="content-full-box">{{ formattedContent }}</div>
         </div>
-        <div v-if="detailRow.sensitiveWords?.length" class="detail-words-section">
-          <h4>命中敏感词</h4>
+
+        <!-- 命中敏感词 -->
+        <div v-if="contentDialogRow.sensitiveWords?.length" class="content-dialog-section">
+          <h4 class="section-label">命中敏感词</h4>
           <div class="words-list">
-            <el-tag v-for="w in detailRow.sensitiveWords" :key="w" type="warning" style="margin-right: 8px; margin-bottom: 4px;">{{ w }}</el-tag>
+            <el-tag v-for="w in contentDialogRow.sensitiveWords" :key="w" type="warning" style="margin-right: 8px; margin-bottom: 4px;">{{ w }}</el-tag>
+          </div>
+        </div>
+
+        <!-- 元信息 -->
+        <div class="content-dialog-meta">
+          <h4 class="section-label">元信息</h4>
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-k">用户ID</span>
+              <span class="meta-v">{{ contentDialogRow.userId }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">调用类型</span>
+              <span class="meta-v">{{ getCallTypeLabel(contentDialogRow.callType) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">生成时间</span>
+              <span class="meta-v">{{ formatTime(contentDialogRow.createdAt) }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">敏感词等级</span>
+              <span class="meta-v">
+                <el-tag v-if="contentDialogRow.safetyLevel === 1" type="danger" size="small">一级拦截</el-tag>
+                <el-tag v-else-if="contentDialogRow.safetyLevel === 2" type="warning" size="small">二级替换</el-tag>
+                <el-tag v-else-if="contentDialogRow.safetyLevel === 3" type="info" size="small">三级标记</el-tag>
+                <span v-else style="color: #67C23A;">安全</span>
+              </span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-k">审核状态</span>
+              <span class="meta-v">
+                <el-tag v-if="contentDialogRow.auditResult === 'PASS'" type="success" size="small">已通过</el-tag>
+                <el-tag v-else-if="contentDialogRow.auditResult === 'BLOCK'" type="danger" size="small">已拦截</el-tag>
+                <el-tag v-else-if="contentDialogRow.auditResult === 'MANUAL_REVIEW'" type="warning" size="small">待复核</el-tag>
+                <el-tag v-else type="info" size="small">待审核</el-tag>
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
       <template #footer>
-        <el-button @click="detailVisible = false">关闭</el-button>
-        <el-button type="success" @click="handlePass(detailRow!); detailVisible = false">通过</el-button>
-        <el-button type="danger" @click="handleBlock(detailRow!); detailVisible = false">拦截</el-button>
+        <el-button @click="contentDialogVisible = false">关闭</el-button>
+        <el-button
+          v-if="contentDialogRow?.auditResult !== 'PASS'"
+          type="success"
+          @click="auditInDialog('PASS')"
+        >通过</el-button>
+        <el-button
+          v-if="contentDialogRow?.auditResult !== 'BLOCK'"
+          type="danger"
+          @click="auditInDialog('BLOCK')"
+        >拦截</el-button>
+        <el-button
+          v-if="contentDialogRow?.auditResult !== 'MANUAL_REVIEW'"
+          type="warning"
+          @click="auditInDialog('MANUAL_REVIEW')"
+        >标记复核</el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/api/request'
 
@@ -228,8 +283,10 @@ const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
 const dateRange = ref<string[]>([])
-const detailVisible = ref(false)
-const detailRow = ref<AuditItem | null>(null)
+
+// 内容详情弹窗
+const contentDialogVisible = ref(false)
+const contentDialogRow = ref<AuditItem | null>(null)
 
 const filterForm = reactive({
   callType: '',
@@ -250,6 +307,95 @@ onMounted(() => {
   fetchStats()
 })
 
+// ---- 格式化 JSON 内容 ----
+const formattedContent = computed(() => {
+  const text = contentDialogRow.value?.content || ''
+  try {
+    const parsed = JSON.parse(text)
+    return JSON.stringify(parsed, null, 2)
+  } catch {
+    return text
+  }
+})
+
+// ---- 内容卡片预览文本（前 100 字或前 3 行）----
+const getPreviewText = (text: string): string => {
+  if (!text) return '(空)'
+  // 先取前 3 行
+  const lines = text.split('\n')
+  const firstThree = lines.slice(0, 3).join('\n')
+  if (firstThree.length <= 100) return firstThree
+  return firstThree.slice(0, 100) + '...'
+}
+
+// ---- 打开内容详情弹窗 ----
+const openContentDialog = (row: AuditItem) => {
+  contentDialogRow.value = row
+  contentDialogVisible.value = true
+}
+
+// ---- 弹窗中操作 ----
+const auditInDialog = (result: string) => {
+  if (!contentDialogRow.value) return
+  if (result === 'PASS') {
+    confirmPass(contentDialogRow.value.id)
+  } else if (result === 'BLOCK') {
+    promptBlock(contentDialogRow.value.id)
+  } else if (result === 'MANUAL_REVIEW') {
+    updateAudit(contentDialogRow.value.id, 'MANUAL_REVIEW').then(() => {
+      contentDialogVisible.value = false
+    })
+  }
+}
+
+// ---- 审核操作 ----
+const updateAudit = async (id: number, result: string): Promise<void> => {
+  try {
+    await request.put(`/admin/ai/safety-audits/${id}`, { auditResult: result })
+    ElMessage.success('操作成功')
+    // 更新表格中的行数据
+    const row = tableData.value.find((r) => r.id === id)
+    if (row) row.auditResult = result
+    if (contentDialogRow.value?.id === id) {
+      contentDialogRow.value.auditResult = result
+    }
+    fetchStats()
+  } catch {
+    ElMessage.error('操作失败')
+  }
+}
+
+const hasPassed = (row: AuditItem): boolean => row.auditResult === 'PASS'
+const hasBlocked = (row: AuditItem): boolean => row.auditResult === 'BLOCK'
+
+const confirmPass = (id: number) => {
+  ElMessageBox.confirm('确认通过该内容的审核？', '审核确认', {
+    confirmButtonText: '确认通过',
+    cancelButtonText: '取消',
+    type: 'success',
+  }).then(() => updateAudit(id, 'PASS').then(() => { contentDialogVisible.value = false }))
+}
+
+const promptBlock = (id: number) => {
+  ElMessageBox.prompt('请输入拦截原因', '拦截确认', {
+    confirmButtonText: '确认拦截',
+    cancelButtonText: '取消',
+    inputPlaceholder: '拦截原因',
+    inputType: 'textarea',
+    type: 'warning',
+  }).then(({ value }) => {
+    updateAudit(id, 'BLOCK').then(() => {
+      contentDialogVisible.value = false
+      request.put(`/admin/ai/safety-audits/${id}/remove`, { reason: value }).catch(() => {})
+    })
+  }).catch(() => {})
+}
+
+const handlePass = (row: AuditItem) => { confirmPass(row.id) }
+const handleBlock = (row: AuditItem) => { promptBlock(row.id) }
+const handleMarkReview = (row: AuditItem) => { updateAudit(row.id, 'MANUAL_REVIEW') }
+
+// ---- API ----
 const fetchData = async () => {
   loading.value = true
   try {
@@ -299,44 +445,7 @@ const handleSelectionChange = (rows: AuditItem[]) => {
   selectedRows.value = rows
 }
 
-const updateAudit = async (id: number, result: string) => {
-  try {
-    await request.put(`/admin/ai/safety-audits/${id}`, { auditResult: result })
-    ElMessage.success('操作成功')
-    fetchData()
-    fetchStats()
-  } catch {
-    ElMessage.error('操作失败')
-  }
-}
-
-const handlePass = (row: AuditItem) => {
-  ElMessageBox.confirm(`确认通过该内容的审核？`, '审核确认', {
-    confirmButtonText: '确认通过',
-    cancelButtonText: '取消',
-    type: 'success',
-  }).then(() => updateAudit(row.id, 'PASS'))
-}
-
-const handleBlock = (row: AuditItem) => {
-  ElMessageBox.prompt('请输入拦截原因', '拦截确认', {
-    confirmButtonText: '确认拦截',
-    cancelButtonText: '取消',
-    inputPlaceholder: '拦截原因',
-    inputType: 'textarea',
-    type: 'warning',
-  }).then(({ value }) => {
-    updateAudit(row.id, 'BLOCK').then(() => {
-      // 也可调用下架 API
-      request.put(`/admin/ai/safety-audits/${row.id}/remove`, { reason: value }).catch(() => {})
-    })
-  }).catch(() => {})
-}
-
-const handleMarkReview = (row: AuditItem) => {
-  updateAudit(row.id, 'MANUAL_REVIEW')
-}
-
+// ---- 批量操作 ----
 const handleBatchPass = () => {
   const ids = selectedRows.value.map((r) => r.id)
   ElMessageBox.confirm(`确认批量通过 ${ids.length} 条内容？`, '批量审核', { type: 'success' })
@@ -390,11 +499,6 @@ const formatTime = (s: string): string => {
   if (!s) return '-'
   return s.replace('T', ' ').slice(0, 19)
 }
-
-const truncateText = (text: string, max: number): string => {
-  if (!text) return ''
-  return text.length > max ? text.slice(0, max) + '...' : text
-}
 </script>
 
 <style lang="scss" scoped>
@@ -419,22 +523,108 @@ const truncateText = (text: string, max: number): string => {
 .filter-bar { margin-bottom: 16px; }
 .batch-bar { padding: 8px 0 16px; display: flex; gap: 12px; }
 
-.content-cell { max-width: 260px; }
-.content-text { font-size: 13px; color: #333; line-height: 1.5; word-break: break-all; cursor: pointer; }
-.sensitive-tags { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
-.safe-text { color: #67C23A; font-size: 12px; }
-
+// ===== 用户信息 =====
 .user-cell { display: flex; flex-direction: column; gap: 2px; }
 .user-name { font-size: 13px; color: #333; }
 .user-id { font-size: 11px; color: #999; }
 
-.pagination-wrap { margin-top: 20px; display: flex; justify-content: flex-end; }
+.safe-text { color: #67C23A; font-size: 12px; }
 
-.detail-content-section, .detail-words-section { margin-top: 20px; }
-.detail-content-section h4, .detail-words-section h4 { margin: 0 0 8px; font-size: 14px; }
-.content-full {
-  background: #f5f5f5; border-radius: 6px; padding: 12px;
-  font-size: 14px; line-height: 1.7; white-space: pre-wrap; word-break: break-all;
-  max-height: 300px; overflow-y: auto;
+// ===== 生成内容卡片 =====
+.content-card {
+  background: #fff;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  max-height: 100px;
+  overflow: hidden;
+  position: relative;
+
+  &:hover {
+    border-color: #409EFF;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+  }
 }
+.content-card-text {
+  font-size: 13px;
+  color: #333;
+  line-height: 1.6;
+  word-break: break-all;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.content-card-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.content-card-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+}
+
+// ===== 弹窗内容区 =====
+.content-dialog-section { margin-bottom: 20px; }
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px;
+}
+
+// 完整内容展示
+.content-full-box {
+  background: #fff;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+// 敏感词列表
+.words-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+// 元信息
+.content-dialog-meta {
+  border-top: 1px solid #F0F0F0;
+  padding-top: 16px;
+}
+.meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.meta-k {
+  font-size: 13px;
+  color: #999;
+  flex-shrink: 0;
+}
+.meta-v {
+  font-size: 13px;
+  color: #333;
+}
+
+.pagination-wrap { margin-top: 20px; display: flex; justify-content: flex-end; }
 </style>

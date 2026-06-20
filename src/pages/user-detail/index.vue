@@ -257,58 +257,73 @@
       <!-- ========== AI趣味测试弹窗 ========== -->
       <view v-if="showFunQuizPopup" class="funquiz-overlay" @tap="showFunQuizPopup = false">
         <view class="funquiz-panel" @tap.stop>
+          <!-- 顶部标题 -->
           <view class="funquiz-header">
             <text class="funquiz-title">AI趣味缘分测试</text>
             <view class="funquiz-close" @tap="showFunQuizPopup = false"><text>✕</text></view>
           </view>
-          <scroll-view v-if="!funQuizResult" class="funquiz-body" scroll-y>
-            <text class="funquiz-desc">输入你和{{ profileData.top.nickname }}的生日，AI会为你们生成一份趣味缘分密码报告</text>
-            <view class="funquiz-field">
-              <text class="funquiz-label">我的生日</text>
-              <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.userBirthDay = e.detail.value">
-                <view class="funquiz-picker">{{ funQuizBirthday.userBirthDay || '点击选择' }}</view>
-              </picker>
-            </view>
-            <view class="funquiz-field">
-              <text class="funquiz-label">TA的生日</text>
-              <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.taBirthDay = e.detail.value">
-                <view class="funquiz-picker">{{ funQuizBirthday.taBirthDay || '点击选择' }}</view>
-              </picker>
-            </view>
-            <view class="funquiz-btn" :class="{ disabled: funQuizLoading }" @tap="submitFunQuiz">
-              <text>{{ funQuizLoading ? '生成中...' : '开始测试' }}</text>
-            </view>
-          </scroll-view>
-          <template v-else>
-            <scroll-view class="funquiz-body" scroll-y>
-              <view class="fq-result-header">
-                <text class="fq-zodiac">{{ funQuizResult.userZodiac }} · {{ funQuizResult.userConstellation }}</text>
-                <text class="fq-vs">💞</text>
-                <text class="fq-zodiac">{{ funQuizResult.taZodiac }} · {{ funQuizResult.taConstellation }}</text>
-              </view>
-              <view class="fq-keywords">
-                <text v-for="(k, i) in funQuizResult.keywords" :key="i" class="fq-keyword">{{ k }}</text>
-              </view>
-              <view class="fq-section">
-                <text class="fq-section-title">性格互补分析</text>
-                <text class="fq-section-text">{{ funQuizResult.personalityAnalysis }}</text>
-              </view>
-              <view class="fq-section">
-                <text class="fq-section-title">相处模式建议</text>
-                <text class="fq-section-text">{{ funQuizResult.relationshipAdvice }}</text>
-              </view>
-              <view v-if="funQuizResult.timeNodes?.length" class="fq-section">
-                <text class="fq-section-title">未来趣味节点</text>
-                <view v-for="(n, i) in funQuizResult.timeNodes" :key="i" class="fq-node">
-                  <text class="fq-node-day">{{ n.day }}</text>
-                  <text class="fq-node-title">{{ n.title }}</text>
-                  <text class="fq-node-desc">{{ n.desc }}</text>
+
+          <!-- 输入表单（按钮在外） -->
+          <template v-if="!funQuizResult">
+            <scroll-view class="funquiz-body" scroll-y :enhanced="true" :show-scrollbar="false">
+              <view class="funquiz-body-inner">
+                <text class="funquiz-desc">输入你和{{ profileData.top.nickname }}的生日，AI会为你们生成一份趣味缘分密码报告</text>
+                <view class="funquiz-field">
+                  <text class="funquiz-label">我的生日</text>
+                  <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.userBirthDay = e.detail.value">
+                    <view class="funquiz-picker">{{ funQuizBirthday.userBirthDay || '点击选择' }}</view>
+                  </picker>
+                </view>
+                <view class="funquiz-field">
+                  <text class="funquiz-label">TA的生日</text>
+                  <picker mode="date" :end="today" @change="(e: any) => funQuizBirthday.taBirthDay = e.detail.value">
+                    <view class="funquiz-picker">{{ funQuizBirthday.taBirthDay || '点击选择' }}</view>
+                  </picker>
                 </view>
               </view>
-              <view class="fq-disclaimer">仅供娱乐参考，珍惜真实相处时光</view>
             </scroll-view>
+            <!-- 开始测试按钮固定在底部 -->
             <view class="funquiz-footer">
-              <view class="funquiz-btn secondary" @tap="funQuizResult = null; funQuizBirthday = { userBirthDay: '', taBirthDay: '' }">
+              <view class="funquiz-btn" :class="{ disabled: funQuizLoading }" @tap="submitFunQuiz">
+                <text>{{ funQuizLoading ? '生成中...' : '开始测试' }}</text>
+              </view>
+            </view>
+          </template>
+
+          <!-- 结果页 -->
+          <template v-else>
+            <scroll-view class="funquiz-body funquiz-result-body" scroll-y :enhanced="true" :show-scrollbar="false">
+              <view class="funquiz-body-inner">
+                <view class="fq-result-header">
+                  <text class="fq-zodiac">{{ funQuizResult.userZodiac }} · {{ funQuizResult.userConstellation }}</text>
+                  <text class="fq-vs">💞</text>
+                  <text class="fq-zodiac">{{ funQuizResult.taZodiac }} · {{ funQuizResult.taConstellation }}</text>
+                </view>
+                <view class="fq-keywords">
+                  <text v-for="(k, i) in funQuizResult.keywords" :key="i" class="fq-keyword">{{ k }}</text>
+                </view>
+                <view class="fq-section">
+                  <text class="fq-section-title">性格互补分析</text>
+                  <text class="fq-section-text">{{ funQuizResult.personalityAnalysis }}</text>
+                </view>
+                <view class="fq-section">
+                  <text class="fq-section-title">相处模式建议</text>
+                  <text class="fq-section-text">{{ funQuizResult.relationshipAdvice }}</text>
+                </view>
+                <view v-if="funQuizResult.timeNodes?.length" class="fq-section">
+                  <text class="fq-section-title">未来趣味节点</text>
+                  <view v-for="(n, i) in funQuizResult.timeNodes" :key="i" class="fq-node">
+                    <text class="fq-node-day">{{ n.day }}</text>
+                    <text class="fq-node-title">{{ n.title }}</text>
+                    <text class="fq-node-desc">{{ n.desc }}</text>
+                  </view>
+                </view>
+                <view class="fq-disclaimer">仅供娱乐参考，珍惜真实相处时光</view>
+              </view>
+            </scroll-view>
+            <!-- 重新测试按钮固定在底部 -->
+            <view class="funquiz-footer">
+              <view class="funquiz-btn funquiz-retry-btn" @tap="funQuizResult = null; funQuizBirthday = { userBirthDay: '', taBirthDay: '' }">
                 <text>重新测试</text>
               </view>
             </view>
@@ -787,55 +802,89 @@ $text-hint: #999999;
 }
 .funquiz-panel {
   width: 100%; max-height: 80vh; background: #fff;
-  border-radius: 32rpx 32rpx 0 0; display: flex; flex-direction: column;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex; flex-direction: column;
+  box-sizing: border-box;
 }
 .funquiz-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 32rpx 32rpx 20rpx;
+  flex-shrink: 0;
 }
 .funquiz-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
 .funquiz-close {
   width: 56rpx; height: 56rpx; border-radius: 50%; background: #F5F5F5;
   display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #999;
 }
-.funquiz-body { flex: 1; overflow: hidden; padding: 0 32rpx 32rpx; }
-.funquiz-desc { font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block; }
+
+// 输入表单 body（flex: 1 撑开剩余空间）
+.funquiz-body {
+  flex: 1; overflow-y: auto;
+  box-sizing: border-box;
+}
+.funquiz-body-inner {
+  padding: 0 32rpx 24rpx;
+}
+// 结果页 body 需要独立滚动
+.funquiz-result-body {
+  overflow-y: auto;
+}
+.funquiz-desc {
+  font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block;
+  max-width: 100%; overflow-wrap: break-word;
+}
 .funquiz-field { margin-bottom: 24rpx; }
 .funquiz-label { font-size: 26rpx; color: #333; margin-bottom: 10rpx; display: block; }
 .funquiz-picker {
   padding: 20rpx 24rpx; background: #F5F5F5; border-radius: 12rpx;
   font-size: 28rpx; color: #333;
 }
+
+// 按钮容器（固定在 footer 中）
 .funquiz-btn {
   display: flex; align-items: center; justify-content: center;
-  margin-top: 20rpx; padding: 24rpx 0; border-radius: 40rpx;
+  height: 96rpx; border-radius: 999px;
   background: linear-gradient(135deg, $pink, $pink-light);
   font-size: 30rpx; color: #fff; font-weight: bold;
   width: 100%; box-sizing: border-box;
   &.disabled { opacity: 0.5; }
-  &.secondary { background: #F5F5F5; color: #666; margin-top: 0; }
 }
-.funquiz-footer { padding: 16rpx 32rpx 24rpx; border-top: 1rpx solid #F0F0F0; }
+// 重新测试按钮 — 主题粉色
+.funquiz-retry-btn {
+  background: linear-gradient(135deg, $pink, $pink-light);
+  color: #fff;
+}
+.funquiz-footer {
+  padding: 16rpx 32rpx 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #F0F0F0;
+  flex-shrink: 0;
+}
 
 .fq-result-header {
   display: flex; align-items: center; justify-content: center; gap: 16rpx;
   padding: 20rpx 0 28rpx;
 }
-.fq-zodiac { font-size: 26rpx; color: #666; }
-.fq-vs { font-size: 32rpx; }
+.fq-zodiac { font-size: 26rpx; color: #666; max-width: 100%; overflow-wrap: break-word; }
+.fq-vs { font-size: 32rpx; flex-shrink: 0; }
 .fq-keywords {
-  display: flex; justify-content: center; gap: 16rpx; padding-bottom: 28rpx;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 16rpx; padding-bottom: 28rpx;
 }
 .fq-keyword {
   padding: 10rpx 24rpx; border-radius: 28rpx;
   background: linear-gradient(135deg, #FFF0F3, #FFE8EC);
   font-size: 24rpx; color: $pink;
+  max-width: 100%; overflow-wrap: break-word;
 }
-.fq-section { padding-bottom: 24rpx; }
+.fq-section { padding-bottom: 24rpx; max-width: 100%; overflow-wrap: break-word; }
 .fq-section-title { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; }
-.fq-section-text { font-size: 26rpx; color: #666; line-height: 1.7; }
+.fq-section-text {
+  font-size: 26rpx; color: #666; line-height: 1.7;
+  max-width: 100%; overflow-wrap: break-word; word-break: break-word;
+}
 .fq-node {
   padding: 16rpx 20rpx; background: #FAFAFA; border-radius: 12rpx; margin-bottom: 12rpx;
+  max-width: 100%; overflow-wrap: break-word; box-sizing: border-box;
 }
 .fq-node-day { font-size: 24rpx; color: $pink; font-weight: bold; margin-bottom: 4rpx; display: block; }
 .fq-node-title { font-size: 26rpx; color: #333; margin-bottom: 4rpx; display: block; }

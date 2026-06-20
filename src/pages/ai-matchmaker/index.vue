@@ -21,10 +21,12 @@
       :scroll-y="true"
       :scroll-with-animation="true"
       :scroll-into-view="scrollToId"
+      :scroll-top="scrollTopVal"
       :enhanced="true"
       :show-scrollbar="false"
     >
       <view class="chat-inner">
+      <view id="msg-top" class="msg-top-spacer" />
       <!-- 欢迎语 -->
       <view v-if="messages.length === 0" class="welcome-block">
         <text class="welcome-emoji">💝</text>
@@ -133,6 +135,7 @@ const inputText = ref('')
 const typing = ref(false)
 const remainingRounds = ref<number | null>(null)
 const scrollToId = ref('')
+const scrollTopVal = ref(0)
 const quickQuestions = ref<QuickQuestion[]>([])
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -241,13 +244,28 @@ const clearChat = async () => {
     await request({ url: '/ai/matchmaker/context', method: 'DELETE' })
   } catch {}
   messages.value = []
+  scrollToTop()
   uni.showToast({ title: '对话已重置', icon: 'none', duration: 1500 })
 }
 
-const scrollToBottom = () => {
+const scrollToTop = () => {
+  // 先清 scroll-into-view 避免冲突
+  scrollToId.value = ''
   nextTick(() => {
-    scrollToId.value = 'msg-bottom'
-    setTimeout(() => { scrollToId.value = '' }, 100)
+    scrollTopVal.value = 0
+    // 强制触发响应式，如果当前已经是 0 则设为 -1 再设回 0
+    setTimeout(() => { scrollTopVal.value = scrollTopVal.value + 1 }, 50)
+    setTimeout(() => { scrollTopVal.value = 0 }, 100)
+  })
+}
+
+const scrollToBottom = () => {
+  scrollToId.value = ''
+  nextTick(() => {
+    // 设一个极大值，scroll-view 会自动截断到最大可滚动高度
+    scrollTopVal.value = 99999
+    // 重新设一次以确保触发
+    setTimeout(() => { scrollTopVal.value = 99999 }, 50)
   })
 }
 </script>
@@ -369,7 +387,8 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
   40% { transform: scale(1); }
 }
 
-.msg-bottom-spacer { height: 20rpx; }
+.msg-top-spacer { height: 1rpx; }
+.msg-bottom-spacer { height: 80rpx; }
 
 // ==================== 底部区域 ====================
 .bottom-area {

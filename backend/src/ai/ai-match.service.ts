@@ -26,6 +26,7 @@ import {
   MATCH_VIP_DAILY_LIMIT,
   MATCH_MIN_TAGS,
   MATCH_MIN_ANSWERS,
+  COMPLETENESS_WEIGHTS,
 } from './ai-match.types'
 
 @Injectable()
@@ -54,9 +55,15 @@ export class AiMatchService {
 
   /**
    * 检查双方资料是否满足 AI 分析的最低条件
-   * 要求：双方各自 ≥3 个系统标签 + ≥3 条审核通过的问答
+   * 综合评分：头像(15) + 年龄(10) + 身高(10) + 学历(10) + 收入(10) + 城市(10) + 职业(5) + 标签(15) + 问答(15) = 100
+   * 阈值：双方各自 ≥ 60% 才可分析
    */
   async checkEligibility(userId: number, targetUserId: number): Promise<MatchEligibilityCheck> {
+    const [selfUser, taUser] = await Promise.all([
+      this.userRepo.findOne({ where: { id: userId } }),
+      this.userRepo.findOne({ where: { id: targetUserId } }),
+    ])
+
     const [myTags, taTags, myAnswers, taAnswers] = await Promise.all([
       this.getSelectedTagCount(userId),
       this.getSelectedTagCount(targetUserId),
@@ -64,20 +71,79 @@ export class AiMatchService {
       this.getApprovedAnswerCount(targetUserId),
     ])
 
+    // 检查对方是否今天已被提醒过
+    const hasReminded = await this.hasRemindedToday(userId, targetUserId)
+
+    const selfCompleteness = this.calcCompleteness(selfUser, myTags, myAnswers)
+    const targetCompleteness = this.calcCompleteness(taUser, taTags, taAnswers)
+
     const reasons: string[] = []
-    if (myTags < MATCH_MIN_TAGS) reasons.push('您的标签不足3个，请完善个人标签')
-    if (myAnswers < MATCH_MIN_ANSWERS) reasons.push('您的问答不足3条，请回答更多问题')
-    if (taTags < MATCH_MIN_TAGS) reasons.push('对方标签不足3个')
-    if (taAnswers < MATCH_MIN_ANSWERS) reasons.push('对方问答不足3条')
+    const W = COMPLETENESS_WEIGHTS
+
+    // 自己的详细原因
+    if (!selfUser?.avatar || selfUser.avatar.trim() === '') reasons.push('您未上传头像')
+    if (!selfUser?.birthYear) reasons.push('您未填写出生年份')
+    if (!selfUser?.height) reasons.push('您未填写身高')
+    if (!selfUser?.education) reasons.push('您未填写学历')
+    if (!selfUser?.incomeRange) reasons.push('您未填写收入')
+    if (!selfUser?.residence) reasons.push('您未填写所在城市')
+    if (myTags < MATCH_MIN_TAGS) reasons.push(`您的标签不足${MATCH_MIN_TAGS}个`)
+    if (myAnswers < MATCH_MIN_ANSWERS) reasons.push(`您的问答不足${MATCH_MIN_ANSWERS}条`)
+
+    // 对方的详细原因
+    if (!taUser?.avatar || taUser.avatar.trim() === '') reasons.push('对方未上传头像')
+    if (!taUser?.birthYear) reasons.push('对方未填写出生年份')
+    if (!taUser?.height) reasons.push('对方未填写身高')
+    if (!taUser?.education) reasons.push('对方未填写学历')
+    if (!taUser?.incomeRange) reasons.push('对方未填写收入')
+    if (!taUser?.residence) reasons.push('对方未填写所在城市')
+    if (taTags < MATCH_MIN_TAGS) reasons.push(`对方标签不足${MATCH_MIN_TAGS}个`)
+    if (taAnswers < MATCH_MIN_ANSWERS) reasons.push(`对方问答不足${MATCH_MIN_ANSWERS}条`)
+
+    const selfOk = selfCompleteness >= W.MIN_COMPLETENESS
+    const taOk = targetCompleteness >= W.MIN_COMPLETENESS
+
+    let insufficientSide: MatchEligibilityCheck['insufficientSide'] = null
+    if (!selfOk && !taOk) insufficientSide = 'both'
+    else if (!selfOk) insufficientSide = 'self'
+    else if (!taOk) insufficientSide = 'target'
 
     return {
-      eligible: reasons.length === 0,
+      eligible: selfOk && taOk,
       reasons,
       myTagCount: myTags,
       myAnswerCount: myAnswers,
       taTagCount: taTags,
       taAnswerCount: taAnswers,
+      selfCompleteness,
+      targetCompleteness,
+      canAnalyze: selfOk && taOk,
+      insufficientSide,
+      hasReminded,
     }
+  }
+
+  /** 计算单个用户的资料完整度 (0-100) */
+  private calcCompleteness(user: User | null, tagCount: number, answerCount: number): number {
+    if (!user) return 0
+    const W = COMPLETENESS_WEIGHTS
+    let score = 0
+
+    // 头像（有值即得分）
+    if (user.avatar && user.avatar.trim().length > 0) score += W.AVATAR
+    // 基础信息
+    if (user.birthYear) score += W.AGE
+    if (user.height) score += W.HEIGHT
+    if (user.education) score += W.EDUCATION
+    if (user.incomeRange) score += W.INCOME
+    if (user.residence) score += W.CITY
+    if (user.occupation) score += W.OCCUPATION
+    // 标签（每标签 5 分，上限 15）
+    score += Math.min(tagCount * W.TAG_PER, W.TAG_MAX)
+    // 问答（每问答 5 分，上限 15）
+    score += Math.min(answerCount * W.ANSWER_PER, W.ANSWER_MAX)
+
+    return Math.min(100, score)
   }
 
   /**
@@ -95,8 +161,13 @@ export class AiMatchService {
     if (!eligibility.eligible) {
       throw new BadRequestException({
         code: 'INSUFFICIENT_DATA',
-        message: '完善资料后解锁AI分析',
+        message: '资料完整度不足，完善后可解锁AI缘分分析',
         reasons: eligibility.reasons,
+        selfCompleteness: eligibility.selfCompleteness,
+        targetCompleteness: eligibility.targetCompleteness,
+        canAnalyze: eligibility.canAnalyze,
+        insufficientSide: eligibility.insufficientSide,
+        hasReminded: eligibility.hasReminded,
       })
     }
 
@@ -302,13 +373,17 @@ export class AiMatchService {
   async remindTargetToCompleteProfile(userId: number, targetUserId: number): Promise<{ sent: boolean }> {
     const eligibility = await this.checkEligibility(userId, targetUserId)
 
-    // 只有对方资料不完整时才发提醒
-    const taReasons = eligibility.reasons.filter((r) => r.startsWith('对方'))
-    if (taReasons.length === 0) {
+    // 只有对方资料完整度不足时才发提醒
+    if (eligibility.targetCompleteness >= COMPLETENESS_WEIGHTS.MIN_COMPLETENESS) {
       throw new BadRequestException('对方资料已完整，无需提醒')
     }
 
-    // 检查 24 小时内是否已发送过提醒（防骚扰）
+    // 24 小时内已提醒过
+    if (eligibility.hasReminded) {
+      return { sent: false }
+    }
+
+    // 检查 24 小时内是否已发送过提醒（防止并发）
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const recentNotify = await this.notifyRepo.findOne({
       where: {
@@ -326,17 +401,36 @@ export class AiMatchService {
     const sender = await this.userRepo.findOne({ where: { id: userId } })
     const senderName = sender?.nickname || '一位用户'
 
+    const targetUser = await this.userRepo.findOne({ where: { id: targetUserId } })
+    const taName = targetUser?.nickname || '你'
+
     // 发送系统通知给目标用户
     const notification = this.notifyRepo.create({
       userId: targetUserId,
       title: `${senderName} 提醒你完善资料`,
-      content: `${senderName} 想和你进行AI缘分分析，但你的个人资料还不够完整。完善后即可解锁缘分匹配哦～`,
+      content: `有人查看了${taName}的资料，想为你生成缘分分析，但你的资料完善度不足。完善资料可获得更多曝光和缘分分析机会哦~`,
       senderType: 'profile_remind',
       senderId: userId,
     })
     await this.notifyRepo.save(notification)
 
     return { sent: true }
+  }
+
+  /**
+   * 检查今天是否已提醒过对方
+   */
+  private async hasRemindedToday(fromUserId: number, toUserId: number): Promise<boolean> {
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const recent = await this.notifyRepo.findOne({
+      where: {
+        userId: toUserId,
+        senderType: 'profile_remind',
+        senderId: fromUserId,
+      },
+      order: { createdAt: 'DESC' },
+    })
+    return !!(recent && recent.createdAt > oneDayAgo)
   }
 
   // ==================== 内部方法 ====================

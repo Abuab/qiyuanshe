@@ -26,7 +26,7 @@
             <text class="reason-text">{{ r }}</text>
           </view>
         </view>
-        <text v-if="hasMyIssue" class="block-desc">完善资料后即可解锁AI缘分分析</text>
+        <text v-if="hasMyIssue" class="block-desc">{{ selfDescText }}</text>
         <text v-if="hasTaIssue" class="block-desc">提醒对方完善资料，一起解锁缘分分析</text>
         <view v-if="hasMyIssue" class="block-btn" @tap="goImproveProfile">
           <text>去完善资料</text>
@@ -156,16 +156,34 @@ const report = ref<AiMatchReport | null>(null)
 const errorMsg = ref('')
 const errorReasons = ref<string[]>([])
 const remindSent = ref(false)
+const selfCompleteness = ref(0)
+const targetCompleteness = ref(0)
+const insufficientSide = ref<'self' | 'target' | 'both' | null>(null)
 
 /** 判断是否自己的资料有问题 */
-const hasMyIssue = computed(() => errorReasons.value.some((r) => r.startsWith('您')))
+const hasMyIssue = computed(() => insufficientSide.value === 'self' || insufficientSide.value === 'both')
 /** 判断是否对方的资料有问题 */
-const hasTaIssue = computed(() => errorReasons.value.some((r) => r.startsWith('对方')))
+const hasTaIssue = computed(() => insufficientSide.value === 'target' || insufficientSide.value === 'both')
+
+const completenessPercent = computed(() => {
+  if (insufficientSide.value === 'self') return selfCompleteness.value
+  if (insufficientSide.value === 'target') return targetCompleteness.value
+  return 0
+})
+
+const selfDescText = computed(() => {
+  if (hasTaIssue.value) {
+    return '您和对方的资料都需要完善，完成后即可解锁AI缘分分析'
+  }
+  return `您的资料完善度为 ${selfCompleteness.value}%，需要达到 60% 以上才能使用AI缘分分析。完善资料包括：上传头像、填写基础信息、选择个性标签、回答问答话题。`
+})
 
 /** 根据 incomplete 情况生成标题 */
 const ineligibleTitle = computed(() => {
-  if (hasMyIssue.value && hasTaIssue.value) return '双方资料均不完整'
-  if (hasTaIssue.value) return '对方资料不完整'
+  const pct = completenessPercent.value
+  if (insufficientSide.value === 'both') return `双方资料完善度均不足 60%`
+  if (insufficientSide.value === 'target') return `对方资料完善度 ${pct}%`
+  if (insufficientSide.value === 'self') return `您的资料完善度 ${pct}%`
   return '资料完整度不足'
 })
 
@@ -204,14 +222,19 @@ const loadReport = async () => {
     }
   } catch (e: any) {
     const msg = e?.message || e?.data?.message || ''
-    const reasons: string[] = e?.data?.reasons || []
+    const errData = e?.data || {}
+    const reasons: string[] = errData?.reasons || []
 
     if (msg.includes('次数') || msg.includes('用完') || msg.includes('限流') || msg.includes('ULIMITED') || msg.includes('LIMITED')) {
       errorMsg.value = '今日分析次数已用完'
       status.value = 'ineligible'
-    } else if (msg.includes('资料') || msg.includes('标签') || msg.includes('问答') || msg.includes('资格') || msg.includes('无权') || reasons.length > 0) {
+    } else if (msg.includes('资料') || msg.includes('标签') || msg.includes('问答') || msg.includes('资格') || msg.includes('无权') || reasons.length > 0 || errData?.insufficientSide) {
       errorMsg.value = '资料完整度不足'
-      errorReasons.value = reasons.length > 0 ? reasons : ['请完善个人资料并完成至少3个标签选择和3条问答']
+      errorReasons.value = reasons.length > 0 ? reasons : ['请完善个人资料']
+      selfCompleteness.value = errData?.selfCompleteness || 0
+      targetCompleteness.value = errData?.targetCompleteness || 0
+      insufficientSide.value = errData?.insufficientSide || null
+      remindSent.value = errData?.hasReminded || false
       status.value = 'ineligible'
     } else {
       errorMsg.value = msg || '网络异常，请重试'

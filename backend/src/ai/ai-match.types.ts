@@ -38,6 +38,32 @@ export interface MatchPairSnapshot {
 
 // ===================== 资料完备校验 =====================
 
+/** 资料完整度评分权重 */
+export const COMPLETENESS_WEIGHTS = {
+  /** 头像（至少1张审核通过） */
+  AVATAR: 15,
+  /** 年龄 */
+  AGE: 10,
+  /** 身高 */
+  HEIGHT: 10,
+  /** 学历 */
+  EDUCATION: 10,
+  /** 收入 */
+  INCOME: 10,
+  /** 城市 */
+  CITY: 10,
+  /** 职业 */
+  OCCUPATION: 5,
+  /** 标签基础分（每标签5分，上限15） */
+  TAG_PER: 5,
+  TAG_MAX: 15,
+  /** 问答基础分（每问答5分，上限15） */
+  ANSWER_PER: 5,
+  ANSWER_MAX: 15,
+  /** 分析最低完整度阈值 */
+  MIN_COMPLETENESS: 60,
+} as const
+
 export interface MatchEligibilityCheck {
   /** 是否满足分析条件 */
   eligible: boolean
@@ -51,6 +77,16 @@ export interface MatchEligibilityCheck {
   taTagCount: number
   /** 对方问答数 */
   taAnswerCount: number
+  /** 当前用户完整度分数（0-100） */
+  selfCompleteness: number
+  /** 对方用户完整度分数（0-100） */
+  targetCompleteness: number
+  /** 是否可分析（双方都 ≥ 60% 为 true） */
+  canAnalyze: boolean
+  /** 哪一方资料不足 */
+  insufficientSide: 'self' | 'target' | 'both' | null
+  /** 今天是否已提醒过对方 */
+  hasReminded: boolean
 }
 
 // ===================== AI 输出：匹配报告 =====================
