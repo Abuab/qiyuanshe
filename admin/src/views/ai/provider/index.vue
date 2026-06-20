@@ -137,6 +137,15 @@
             </el-popconfirm>
           </template>
         </el-table-column>
+        <template #empty>
+          <div style="padding: 40px 0; text-align: center; color: #909399;">
+            <p style="font-size: 16px; margin-bottom: 12px;">暂无 Provider 配置</p>
+            <p style="font-size: 13px; margin-bottom: 8px;">确保服务器 <code>.env</code> 文件中已配置真实 API Key，然后点击「从 .env 同步」</p>
+            <el-button type="primary" size="small" :loading="seedLoading" @click="onSeedFromEnv">
+              立即从 .env 同步
+            </el-button>
+          </div>
+        </template>
       </el-table>
     </el-card>
 
@@ -440,6 +449,12 @@ async function fetchProviders() {
     // 活跃 Provider = 第一个启用的
     const first = providers.value.find(p => p.isEnabled === 1)
     activeProviderName.value = first?.displayName || '无'
+    if (providers.value.length === 0) {
+      console.warn('[AI Provider] 获取到 0 个 Provider，请：\n'
+        + '1. 确认服务器 .env 已配置真实 API Key（不是占位符）\n'
+        + '2. 点击「从 .env 同步」按钮\n'
+        + '3. 查看服务器终端 Seeder 日志')
+    }
   } catch (e: any) {
     ElMessage.error(e?.message || '加载失败')
   } finally {
