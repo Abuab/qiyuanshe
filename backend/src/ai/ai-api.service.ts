@@ -86,7 +86,12 @@ export class AiApiService {
     const startMs = Date.now()
 
     try {
-      const url = `${provider.apiBase}/chat/completions`
+      // 标准化 API Base URL：确保以 /v1 结尾（兼容用户配置时未带 /v1 的情况）
+      let baseUrl = (provider.apiBase || '').replace(/\/+$/, '')
+      if (!baseUrl.endsWith('/v1') && !baseUrl.includes('/v1/')) {
+        baseUrl += '/v1'
+      }
+      const url = `${baseUrl}/chat/completions`
       this.logger.log(
         `AI 调用: [${provider.displayName}] model=${provider.modelName}, messages=${messages.length}条`,
       )

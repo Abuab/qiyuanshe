@@ -132,7 +132,7 @@ export class AiMatchmakerService {
         reply = await this.aiApiService.call({
           messages: [
             { role: 'system', content: MATCHMAKER_SYSTEM_PROMPT },
-            ...history.map(h => ({ role: h.role as 'user' | 'assistant', content: h.content })),
+            ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
             { role: 'user', content: message },
           ],
           maxTokens: 300,
