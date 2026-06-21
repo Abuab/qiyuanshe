@@ -432,13 +432,8 @@
       />
     </template>
 
-    <view v-else class="error-state">
-      <text class="error-emoji">😕</text>
-      <text class="error-title">页面加载失败</text>
-      <text class="error-desc">无法获取用户信息，请检查网络后重试</text>
-      <view class="retry-btn" @tap="fetchProfileDetail">
-        <text>重新加载</text>
-      </view>
+    <view v-else class="empty-container">
+      <text>用户不存在</text>
     </view>
   </view>
 </template>
@@ -461,7 +456,6 @@ const systemStore = useSystemStore()
 
 const userId = ref(0)
 const loading = ref(true)
-const loadError = ref(false)
 const profileData = ref<any>(null)
 
 // ===== 语音 =====
@@ -487,8 +481,8 @@ const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
 
 /** 底部安全区：iOS=34, 安卓=12 近似 */
 const safeAreaBottom = computed(() => {
-  const sysInfo = uni.getWindowInfo()
-  return (sysInfo.safeArea?.bottom ?? 20)
+  const sysInfo = uni.getSystemInfoSync()
+  return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
 })
 
 const reportReasons = ['虚假信息', '冒充他人', '骚扰谩骂', '广告营销', '色情低俗', '其他']
@@ -502,7 +496,9 @@ const today = computed(() => {
 async function fetchVoiceEnabled() {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    voiceEnabled.value = res?.value !== 'false'
+    if (res.code === 0 && res.data) {
+      voiceEnabled.value = res.data.value !== 'false'
+    }
   } catch { voiceEnabled.value = true }
 }
 
@@ -525,8 +521,8 @@ function stopVoice() {
 async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
-    const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET', skipToast: true })
-    if (res) { voiceData.value = res }
+    const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET' })
+    if (res.code === 0 && res.data) { voiceData.value = res.data }
   } catch { /* 404 不显示 */ }
 }
 
@@ -540,7 +536,6 @@ onMounted(async () => {
     fetchProfileDetail()
   } else {
     loading.value = false
-    loadError.value = true
   }
   fetchMatchmakerList()
   fetchVoiceIntro()
@@ -581,7 +576,6 @@ const fetchProfileDetail = async () => {
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
   } catch {
-    loadError.value = true
     uni.showToast({ title: '获取用户信息失败', icon: 'none' })
   } finally {
     loading.value = false
@@ -839,7 +833,7 @@ $text-hint: #999999;
   background: $bg;
   position: relative;
 }
-.loading-container {
+.loading-container, .empty-container {
   display: flex; align-items: center; justify-content: center; height: 100vh;
   font-size: 28rpx; color: $text-hint;
 }
@@ -849,7 +843,6 @@ $text-hint: #999999;
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   display: flex; align-items: center; justify-content: space-between;
   padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
-  background: linear-gradient(135deg, $pink, $pink-light);
 }
 .nav-left, .nav-right { display: flex; align-items: center; gap: 24rpx; }
 .back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
@@ -1240,17 +1233,4 @@ $text-hint: #999999;
 .voice-right { margin-left: auto; display: flex; align-items: center; }
 .voice-duration { font-size: 28rpx; color: #666666; }
 .voice-play-btn { margin-left: 16rpx; }
-
-// ===== 错误状态 =====
-.error-state {
-  height: 100vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-}
-.error-emoji { font-size: 80rpx; margin-bottom: 20rpx; }
-.error-title { font-size: 32rpx; color: #333; font-weight: bold; margin-bottom: 12rpx; }
-.error-desc { font-size: 26rpx; color: #999; margin-bottom: 40rpx; }
-.retry-btn {
-  padding: 20rpx 60rpx; background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 50rpx; font-size: 28rpx; color: #fff;
-}
 </style>

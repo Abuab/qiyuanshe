@@ -24,7 +24,6 @@
     </view>
 
     <!-- 消息列表 -->
-    <view class="message-area">
     <scroll-view
       class="message-list"
       scroll-y
@@ -116,7 +115,6 @@
         <view id="msg-bottom" class="msg-bottom-spacer" />
       </view>
     </scroll-view>
-    </view>
 
     <!-- 聊天权限遮罩 -->
     <view v-if="showChatMask" class="chat-permission-mask">
@@ -266,9 +264,9 @@ const placeholder = computed(() => {
 onMounted(() => {
   try {
     // #ifdef MP-WEIXIN
-    const sysInfo = uni.getWindowInfo()
+    const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeArea?.bottom || 0
+    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
     // #endif
   } catch {}
 
@@ -686,7 +684,7 @@ $bg: #F5F5F5;
 
 // ==================== 页面 ====================
 .chat-page {
-  width: 100%; height: 100%;
+  width: 100vw; height: 100vh;
   display: flex; flex-direction: column;
   background: $bg;
   overflow: hidden;
@@ -745,14 +743,8 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
 }
 
 // ==================== 消息列表 ====================
-.message-area {
-  flex: 1; min-height: 0;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-}
 .message-list {
-  flex: 1; min-height: 0; width: 100%;
-  height: 0; /* WeChat scroll-view needs explicit height with flex */
+  flex: 1; min-height: 0;
 }
 .msg-list-inner {
   padding: 0 32rpx;
