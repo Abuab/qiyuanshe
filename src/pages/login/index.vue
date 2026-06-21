@@ -4,7 +4,7 @@
     <view class="bg-pink" />
 
     <!-- 情侣插画 + 底部阴影 -->
-    <view class="illustration-area">
+    <view v-if="illustrationImg" class="illustration-area">
       <image
         :src="illustrationImg"
         mode="widthFix"
@@ -100,7 +100,7 @@ const appName = computed(() => systemStore.appName || '栖缘社')
 const showProtocol = ref(false)
 const showPhonePopup = ref(false)
 const loading = ref(false)
-const illustrationImg = ref('/static/login-illustration.png')
+const illustrationImg = ref('')
 
 onMounted(async () => {
   await loadLoginConfig()
