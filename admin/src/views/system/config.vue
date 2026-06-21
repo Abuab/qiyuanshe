@@ -414,82 +414,6 @@
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="通知通道" name="notify">
-        <el-card class="config-card">
-          <el-form :model="notifyConfig" label-width="140px">
-            <el-form-item label="启用通知">
-              <el-switch v-model="notifyConfig.enabled" />
-              <span class="form-tip" style="margin-left:12px">启用后，有配置 webhook 的通道均会收到通知</span>
-            </el-form-item>
-            <el-form-item label="企业微信 Webhook">
-              <el-input v-model="notifyConfig.webhookUrls.wecom" placeholder="企业微信机器人Webhook地址" />
-              <div v-if="wecomHint" class="webhook-hint">{{ wecomHint }}</div>
-            </el-form-item>
-            <el-form-item label="飞书 Webhook">
-              <el-input v-model="notifyConfig.webhookUrls.feishu" placeholder="飞书机器人Webhook地址" />
-              <div v-if="feishuHint" class="webhook-hint">{{ feishuHint }}</div>
-            </el-form-item>
-            <el-form-item label="钉钉 Webhook">
-              <el-input v-model="notifyConfig.webhookUrls.dingtalk" placeholder="钉钉机器人Webhook地址" />
-              <div v-if="dingtalkHint" class="webhook-hint">{{ dingtalkHint }}</div>
-            </el-form-item>
-            <el-form-item label="通知类型">
-              <el-checkbox-group v-model="notifyConfig.notifyTypes">
-                <el-checkbox label="photo" value="photo">图片审核</el-checkbox>
-                <el-checkbox label="user" value="user">用户资料审核</el-checkbox>
-                <el-checkbox label="report" value="report">举报通知</el-checkbox>
-              </el-checkbox-group>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-
-      <el-tab-pane label="通知日志" name="notify-log">
-        <el-card class="config-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <span>最近 20 条通知记录</span>
-            <el-button size="small" @click="loadNotifyLogs" :loading="notifyLogsLoading">刷新</el-button>
-          </div>
-          <el-table :data="notifyLogs" stripe size="small" max-height="500">
-            <el-table-column prop="id" label="ID" width="60" />
-            <el-table-column label="时间" width="160">
-              <template #default="{ row }">
-                {{ formatLogTime(row.createdAt) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" width="70">
-              <template #default="{ row }">
-                <el-tag :type="row.success ? 'success' : 'danger'" size="small">
-                  {{ row.success ? '成功' : '失败' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="通道" width="70">
-              <template #default="{ row }">
-                <span v-if="row.channel === 'wecom'">企业微信</span>
-                <span v-else-if="row.channel === 'feishu'">飞书</span>
-                <span v-else-if="row.channel === 'dingtalk'">钉钉</span>
-                <span v-else>{{ row.channel || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="来源" width="100">
-              <template #default="{ row }">
-                <el-tag size="small" type="info">{{ row.source }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="userId" label="用户ID" width="70" />
-            <el-table-column prop="userNickname" label="用户" min-width="80" />
-            <el-table-column prop="content" label="消息内容" min-width="150" show-overflow-tooltip />
-            <el-table-column label="失败原因" min-width="150" show-overflow-tooltip>
-              <template #default="{ row }">
-                <span v-if="row.errorMessage" style="color:#F56C6C;font-size:12px">{{ row.errorMessage }}</span>
-                <span v-else>-</span>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-tab-pane>
-
       <el-tab-pane label="简介模板" name="intro">
         <el-card class="config-card">
           <el-form :model="introConfig" label-width="140px">
@@ -631,7 +555,7 @@
       </el-tab-pane>
     </el-tabs>
 
-    <div v-if="activeTab !== 'notify-log'" class="config-footer">
+    <div class="config-footer">
       <el-button type="primary" :loading="saving" @click="handleSave">
         保存配置
       </el-button>
@@ -640,7 +564,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Check } from '@element-plus/icons-vue'
 import { system, adminSystem } from '../../api'
@@ -692,22 +616,6 @@ const paymentConfig = reactive({
   testMode: false,
 })
 
-const notifyConfig = reactive({
-  enabled: false,
-  webhookUrls: { wecom: '', feishu: '', dingtalk: '' } as Record<string, string>,
-  notifyTypes: ['photo'] as string[],
-})
-// 当前选中通道的真实 webhook 地址（未脱敏）
-const _realWebhookByChannel = reactive<Record<string, string>>({ wecom: '', feishu: '', dingtalk: '' })
-const wecomHint = computed(() => makeHint('wecom'))
-const feishuHint = computed(() => makeHint('feishu'))
-const dingtalkHint = computed(() => makeHint('dingtalk'))
-function makeHint(ch: string) {
-  const real = _realWebhookByChannel[ch]
-  if (!real || real.length <= 20) return ''
-  return '当前地址: ' + real.slice(0, -20) + '*'.repeat(20)
-}
-
 const auditConfig = reactive({
   tencentSecretId: '',
   tencentSecretKey: '',
@@ -727,31 +635,6 @@ const photoAuditConfig = reactive({
     noFrontFace: { enabled: true, label: '无正脸', tip: '如背影、侧脸过度、仅身体' },
     webPic: { enabled: true, label: '网络照片', tip: '如明星照、网图、带水印的下载图' },
   },
-})
-
-// 通知日志
-const notifyLogs = ref<any[]>([])
-const notifyLogsLoading = ref(false)
-const loadNotifyLogs = async () => {
-  notifyLogsLoading.value = true
-  try {
-    const res = await adminSystem.getNotifyLogs()
-    if (res.success && res.data) {
-      notifyLogs.value = res.data
-    }
-  } catch { /* ignore */ }
-  finally { notifyLogsLoading.value = false }
-}
-const formatLogTime = (t: string) => {
-  if (!t) return '-'
-  const d = new Date(t)
-  const pad = (n: number) => n.toString().padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
-// 切换到通知日志 tab 时自动加载
-watch(activeTab, (val) => {
-  if (val === 'notify-log') loadNotifyLogs()
 })
 
 const introConfig = reactive({
@@ -909,28 +792,6 @@ async function fetchConfig() {
       Object.assign(shareConfig, res.data.share || {})
       Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
-      // 通知通道
-      if (res.data.notify) {
-        const n = res.data.notify as any
-        // 兼容旧格式：单个 webhookUrl → 迁移到当前通道
-        if (n.webhookUrl && !n.webhookUrls) {
-          n.webhookUrls = { wecom: '', feishu: '', dingtalk: '' }
-          n.webhookUrls[n.channel || 'wecom'] = n.webhookUrl
-          delete n.webhookUrl
-        }
-        Object.assign(notifyConfig, n)
-        // 脱敏各通道 webhook 地址
-        const urls = notifyConfig.webhookUrls || {}
-        for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
-          const u = urls[ch]
-          if (u && u.length > 20) {
-            _realWebhookByChannel[ch] = u
-            urls[ch] = u.slice(0, -20) + '*'.repeat(20)
-          } else {
-            _realWebhookByChannel[ch] = u || ''
-          }
-        }
-      }
       // 简介模板
       if (res.data.intro) {
         Object.assign(introConfig, res.data.intro)
@@ -977,19 +838,11 @@ async function fetchConfig() {
 async function handleSave() {
   saving.value = true
   try {
-    // 构建待保存的 webhookUrls：如果某通道地址以 * 结尾（未被修改），则还原真实地址
-    const webhookUrlsToSave: Record<string, string> = {}
-    for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
-      const val = notifyConfig.webhookUrls[ch] || ''
-      webhookUrlsToSave[ch] = val.endsWith('*') ? (_realWebhookByChannel[ch] || val) : val
-    }
-
     const configs = {
       basic: { ...basicConfig },
       share: { ...shareConfig },
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
-      notify: { enabled: notifyConfig.enabled, webhookUrls: webhookUrlsToSave, notifyTypes: notifyConfig.notifyTypes },
       intro: { ...introConfig },
       icon: {
         tabbar: { ...iconConfig.tabbar },
@@ -1009,17 +862,6 @@ async function handleSave() {
       try {
         await adminSystem.updateConfig('red_line_term', basicConfig.redLineTerm)
       } catch { /* non-critical */ }
-      // 保存后重新脱敏各通道 webhook 地址
-      for (const ch of ['wecom', 'feishu', 'dingtalk'] as const) {
-        const u = webhookUrlsToSave[ch]
-        if (u && u.length > 20) {
-          _realWebhookByChannel[ch] = u
-          notifyConfig.webhookUrls[ch] = u.slice(0, -20) + '*'.repeat(20)
-        } else {
-          _realWebhookByChannel[ch] = u || ''
-          notifyConfig.webhookUrls[ch] = u || ''
-        }
-      }
       // 直接写入 store + localStorage，持久化，刷新也不会丢
       systemStore.setAppName(basicConfig.appName)
       ElMessage.success('配置保存成功')
