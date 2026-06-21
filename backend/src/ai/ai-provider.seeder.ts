@@ -50,12 +50,11 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
-    this.logger.log('[Seeder] ====== 开始从 .env 同步 Provider 配置 ======')
     try {
       const result = await this.seedFromEnv()
-      this.logger.log(`[Seeder] 启动同步完成 → ${result.message}`)
+      this.logger.log(`[Seeder] ${result.message}`)
     } catch (e: any) {
-      this.logger.error(`[Seeder] 启动同步异常: ${e?.message}`, e?.stack)
+      this.logger.error(`[Seeder] 启动同步异常: ${e?.message}`)
     }
   }
 
@@ -73,7 +72,7 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
         const apiBase = cleanEnvValue(process.env[`${def.envPrefix}_API_BASE`] || '')
         const modelName = cleanEnvValue(process.env[`${def.envPrefix}_MODEL_NAME`] || '')
 
-        this.logger.log(
+        this.logger.debug(
           `[Seeder] ${def.displayName}: enabled=${enabled}, key=${maskKey(apiKey)}, ` +
           `base="${apiBase}", model="${modelName}"`,
         )
@@ -104,7 +103,7 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
           await this.configRepo.save(existing)
           skipped++
           const msg = `${def.displayName}: 已更新 (enabled=${enabled})`
-          this.logger.log(`[Seeder] ${msg}`)
+          this.logger.debug(`[Seeder] ${msg}`)
           detail.push(msg)
         } else {
           const weight = parseInt(process.env[`${def.envPrefix}_WEIGHT`] || '10', 10)
@@ -127,7 +126,7 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
           await this.configRepo.save(cfg)
           created++
           const msg = `${def.displayName}: 已创建 (model=${modelName}, enabled=${enabled})`
-          this.logger.log(`[Seeder] ${msg}`)
+          this.logger.debug(`[Seeder] ${msg}`)
           detail.push(msg)
         }
       } catch (e: any) {
@@ -137,11 +136,9 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
       }
     }
 
-    const summary = created > 0 || skipped > 0
-      ? `同步完成: 新建 ${created}，更新 ${skipped}`
-      : `未发现可同步的 Provider。请检查服务器 .env 文件。`
+    const summary = `同步完成: 新建 ${created}，更新 ${skipped}`
 
-    this.logger.log(`[Seeder] ====== ${summary} ======`)
+    this.logger.debug(`[Seeder] ${summary}`)
 
     if (created > 0 || skipped > 0) {
       await this.configService.syncToRedis().catch(e =>

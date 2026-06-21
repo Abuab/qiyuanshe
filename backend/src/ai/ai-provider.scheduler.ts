@@ -21,12 +21,13 @@ export class AiProviderScheduler {
   /** 每 30 分钟：余额检查 */
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleBalanceCheck() {
-    this.logger.log('[Scheduler] 开始余额检查...')
     try {
       const result = await this.balanceService.checkAllBalances()
-      this.logger.log(
-        `[Scheduler] 余额检查完成：已检查 ${result.checked} 个，${result.alerted} 个告警`,
-      )
+      if (result.alerted > 0) {
+        this.logger.warn(
+          `[Scheduler] 余额检查：${result.checked} 个 Provider，${result.alerted} 个告警`,
+        )
+      }
     } catch (e: any) {
       this.logger.error(`[Scheduler] 余额检查异常: ${e?.message}`)
     }
@@ -48,7 +49,6 @@ export class AiProviderScheduler {
   /** 每天零点：输出昨日成本摘要 */
   @Cron('0 0 * * *')
   async handleDailyReport() {
-    this.logger.log('[Scheduler] 每日 AI 成本报告生成中...')
-    // 此处在实际部署时可接入日志/监控系统
+    // 成本报告（可接入日志/监控系统）
   }
 }

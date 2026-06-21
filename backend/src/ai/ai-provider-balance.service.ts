@@ -63,7 +63,9 @@ export class AiProviderBalanceService {
       }
     }
 
-    this.logger.log(`[BalanceCheck] 已检查 ${checked} 个 Provider，${alerted} 个处于告警状态`)
+    if (alerted > 0) {
+      this.logger.warn(`[BalanceCheck] ${checked} 个 Provider 中 ${alerted} 个处于告警状态`)
+    }
     return { checked, alerted }
   }
 

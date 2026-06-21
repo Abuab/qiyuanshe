@@ -62,7 +62,7 @@ export class AiProviderConfigService {
     }
 
     await this.redis.set(PROVIDER_LIST_CACHE_KEY, JSON.stringify(snapshots))
-    this.logger.log(`[Provider] 已同步 ${snapshots.length} 个启用的 Provider 到 Redis`)
+    this.logger.debug(`[Provider] 已同步 ${snapshots.length} 个启用的 Provider 到 Redis`)
 
     // 设置默认策略
     await this.redis.set(PROVIDER_STRATEGY_KEY, this.currentStrategy)
