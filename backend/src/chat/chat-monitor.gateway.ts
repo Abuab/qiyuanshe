@@ -8,7 +8,7 @@ import {
   MessageBody,
   WsException,
 } from '@nestjs/websockets'
-import { UseGuards } from '@nestjs/common'
+import { UseGuards, Inject, forwardRef } from '@nestjs/common'
 import { Server, WebSocket } from 'ws'
 import { JwtService } from '@nestjs/jwt'
 import { ChatMonitorService } from './chat-monitor.service'
@@ -64,6 +64,7 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
 
   constructor(
     private readonly jwtService: JwtService,
+    @Inject(forwardRef(() => ChatMonitorService))
     private readonly monitorService: ChatMonitorService,
   ) {
     // 30 秒心跳检测，清理断开连接

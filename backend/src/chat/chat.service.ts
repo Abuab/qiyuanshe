@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException, Optional } from '@nestjs/common'
+import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
@@ -74,6 +74,7 @@ export class ChatService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @Optional()
+    @Inject(forwardRef(() => ChatMonitorGateway))
     private readonly monitorGateway?: ChatMonitorGateway,
     private readonly redisService?: RedisService,
     @Optional()
