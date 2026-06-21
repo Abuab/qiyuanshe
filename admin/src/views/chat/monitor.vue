@@ -52,7 +52,7 @@
         <div class="panel-title">会话列表</div>
         <div class="session-list">
           <div
-            v-for="conv in conversations"
+            v-for="conv in sortedConversations"
             :key="conv.userId"
             class="session-item"
             :class="{ active: activePeer?.userId === conv.userId }"
@@ -67,7 +67,7 @@
             </div>
             <div class="session-time">{{ formatTimeShort(conv.lastTime) }}</div>
           </div>
-          <div v-if="conversations.length === 0 && !conversationLoading" class="empty-sessions">
+          <div v-if="sortedConversations.length === 0 && !conversationLoading" class="empty-sessions">
             暂无会话
           </div>
         </div>
@@ -104,7 +104,7 @@
               :key="msg.id"
               class="msg-item"
               :class="{
-                'msg-from-target': msg.fromUserId === targetUserId,
+                'msg-from-target': isFromTarget(msg),
                 'msg-proxy': msg.isProxy === 1,
               }"
             >
@@ -112,7 +112,7 @@
               <span v-if="msg.isProxy === 1" class="proxy-tag">代发</span>
               <div class="msg-bubble">
                 <div class="msg-meta">
-                  <span class="msg-sender">{{ msg.fromUserId === targetUserId ? targetUser?.nickname || '用户' : activePeer.nickname }}</span>
+                  <span class="msg-sender">{{ getSenderName(msg) }}</span>
                   <span class="msg-time">{{ formatTime(msg.createdAt) }}</span>
                 </div>
                 <div class="msg-content">
@@ -229,6 +229,41 @@ const pendingContent = ref('')
 
 // 需要监控 targetUserId 与哪个 peerUserId 的聊天
 const toUserIdToMonitor = ref(0)
+
+// ===== 修复 B：统一的发送者判断（兼容 string/number 类型不一致） =====
+function isFromTarget(msg: any): boolean {
+  return Number(msg.fromUserId) === Number(targetUserId.value)
+}
+
+// ===== 修复 B：发送者昵称获取 =====
+function getSenderName(msg: any): string {
+  if (isFromTarget(msg)) {
+    return targetUser.value?.nickname || '用户'
+  }
+  return activePeer.value?.nickname || '对方'
+}
+
+// ===== 修复 D：会话列表按最后消息时间倒序 =====
+const sortedConversations = computed(() => {
+  return [...conversations.value].sort((a, b) => {
+    const ta = a.lastTime ? new Date(a.lastTime).getTime() : 0
+    const tb = b.lastTime ? new Date(b.lastTime).getTime() : 0
+    return tb - ta
+  })
+})
+
+// ===== 修复 D：更新会话列表中对应会话的最后消息 =====
+function updateConversationLastMsg(peerUserId: number, content: string, type: string, time: string) {
+  const conv = conversations.value.find((c) => c.userId === peerUserId)
+  if (conv) {
+    conv.lastMessage = content
+    conv.messageType = type
+    conv.lastTime = time
+  } else {
+    // 如果会话列表里还没有（新会话），重新加载
+    loadConversations()
+  }
+}
 
 const getAvatarUrl = (url: string) => {
   if (!url) return ''
@@ -398,20 +433,27 @@ function disconnectWs() {
 }
 
 function handleWsMessage(data: any) {
-  // 只处理当前正在查看的会话消息
+  // 只处理当前正在查看的会话消息（使用 Number 兼容类型差异）
   if (!activePeer.value) return
-  const peerId = activePeer.value.userId
+  const peerId = Number(activePeer.value.userId)
+  const fromId = Number(data.fromUserId)
+  const toId = Number(data.toUserId)
+  const targetId = Number(targetUserId.value)
   const isRelevant =
-    (data.fromUserId === targetUserId.value && data.toUserId === peerId) ||
-    (data.fromUserId === peerId && data.toUserId === targetUserId.value)
+    (fromId === targetId && toId === peerId) ||
+    (fromId === peerId && toId === targetId)
 
   if (isRelevant) {
     // 避免重复消息
-    if (!messages.value.some((m) => m.id === data.id)) {
+    if (!messages.value.some((m) => Number(m.id) === Number(data.id))) {
       messages.value.push(data)
       nextTick(() => scrollToBottom())
     }
   }
+
+  // 修复 D：更新会话列表的最后消息和时间
+  const peerUserId = fromId === targetId ? toId : fromId
+  updateConversationLastMsg(peerUserId, data.content, data.type || 'text', data.createdAt)
 }
 
 // ===== 会话列表 =====
@@ -451,7 +493,7 @@ async function fetchMessages() {
     )
     if (res.success && res.data) {
       const list = res.data.list || []
-      messages.value = messagePage.value === 1 ? list : list
+      messages.value = list
       messageTotal.value = res.data.total || 0
       nextTick(() => scrollToBottom())
     }
@@ -462,10 +504,13 @@ async function fetchMessages() {
   }
 }
 
+// ===== 修复 C：统一滚动到底部 =====
 function scrollToBottom() {
   nextTick(() => {
     const el = msgContainerRef.value
-    if (el) el.scrollTop = el.scrollHeight
+    if (el) {
+      el.scrollTop = el.scrollHeight
+    }
   })
 }
 
@@ -477,6 +522,7 @@ function handleProxySend() {
   confirmVisible.value = true
 }
 
+// ===== 修复 A：代发成功后立即追加消息、滚动、更新会话 =====
 async function doProxySend() {
   if (!activePeer.value) return
   proxySending.value = true
@@ -487,9 +533,24 @@ async function doProxySend() {
       pendingContent.value,
     )
     if (res.success) {
+      const sentMsg = res.data
+      // 修复 A：将消息追加到列表末尾
+      if (sentMsg && sentMsg.id) {
+        if (!messages.value.some((m) => Number(m.id) === Number(sentMsg.id))) {
+          messages.value.push(sentMsg)
+        }
+      }
+      // 修复 D：更新会话列表的最后消息
+      updateConversationLastMsg(
+        activePeer.value.userId,
+        sentMsg?.content || pendingContent.value,
+        'text',
+        sentMsg?.createdAt || new Date().toISOString(),
+      )
       proxyContent.value = ''
-      ElMessage.success('消息已代发')
       confirmVisible.value = false
+      nextTick(() => scrollToBottom())
+      ElMessage.success('消息已代发')
     } else {
       ElMessage.error(res.message || '发送失败')
     }
