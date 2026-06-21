@@ -107,4 +107,15 @@ export const adminChat = {
   getActiveSessions(): Promise<ApiResponse<any[]>> {
     return request.get('/admin/chat/monitor/active')
   },
+
+  /** 轮询增量拉取新消息 */
+  pollMessages(
+    userId: number,
+    targetUserId: number,
+    lastMessageId?: number,
+  ): Promise<ApiResponse<{ list: ChatMessageItem[] }>> {
+    return request.get('/admin/chat/messages', {
+      params: { userId, targetUserId, lastMessageId: lastMessageId || 0 },
+    })
+  },
 }

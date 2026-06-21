@@ -1,5 +1,5 @@
 <template>
-  <view class="user-card" @tap="handleClick">
+  <view class="user-card" @tap="handleClick" :style="{ position: 'relative' }">
     <!-- 左列：仅头像 -->
     <view class="card-left">
       <image
@@ -21,6 +21,9 @@
           <text class="nickname">{{ user.nickname }}</text>
           <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
             {{ user.gender === 1 ? '♂男' : '♀女' }}
+          </text>
+          <text v-if="voiceEnabled && user.hasVoice" class="voice-icon">
+            <uni-icons type="mic-filled" size="16rpx" color="#FF6B6B"></uni-icons>
           </text>
         </view>
         <view v-if="user.isRealName" class="real-name-badge">
@@ -62,11 +65,21 @@
         ></image>
       </view>
     </view>
+
+    <!-- 心动按钮 -->
+    <view class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
+      <uni-icons
+        :type="isLiked ? 'heart-filled' : 'heart'"
+        size="40rpx"
+        color="#FF6B6B"
+      ></uni-icons>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useIcon } from '@/composables/useIcon'
@@ -88,6 +101,7 @@ export interface UserCardData {
   matchmakerComment?: string
   mateRequirements?: string
   gender?: number
+  hasVoice?: boolean
 }
 
 interface Props {
@@ -151,6 +165,45 @@ const displayPhotos = computed(() => {
 const handleClick = () => {
   emit('click', props.user)
 }
+
+// ===== 心动按钮 =====
+const isLiked = ref(false)
+const voiceEnabled = ref(false)
+
+onMounted(async () => {
+  try {
+    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    if (res.code === 0 && res.data) {
+      voiceEnabled.value = res.data.value !== 'false'
+    }
+  } catch { voiceEnabled.value = false }
+})
+
+const onLike = async () => {
+  if (isLiked.value) {
+    try {
+      const res: any = await request({ url: `/api/users/${props.user.id}/like`, method: 'DELETE' })
+      if (res.code === 0) {
+        isLiked.value = false
+      }
+    } catch {
+      uni.showToast({ title: '操作失败', icon: 'none' })
+    }
+    return
+  }
+
+  try {
+    const res: any = await request({ url: `/api/users/${props.user.id}/like`, method: 'POST' })
+    if (res.code === 0 && res.data) {
+      isLiked.value = true
+      if (res.data.isMatched && res.data.matchUser) {
+        uni.$emit('match:success', res.data.matchUser)
+      }
+    }
+  } catch {
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -162,6 +215,7 @@ const handleClick = () => {
   background-color: #fff;
   border-radius: 16rpx;
   margin-bottom: 8rpx;
+  position: relative;
 }
 
 /* ======== 左列 ======== */
@@ -327,5 +381,39 @@ const handleClick = () => {
   background-color: #f5f5f5;
   margin-right: 8rpx;
   margin-bottom: 8rpx;
+}
+
+/* ===== 心动按钮 ===== */
+.heart-btn {
+  position: absolute;
+  right: 24rpx;
+  bottom: 24rpx;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 300ms ease;
+  z-index: 2;
+}
+
+.heart-btn.liked {
+  animation: heartBounce 300ms ease;
+}
+
+@keyframes heartBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.voice-icon {
+  margin-left: 8rpx;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 </style>

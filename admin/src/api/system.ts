@@ -117,8 +117,18 @@ export const adminSystem = {
   },
 
   // 通知日志
-  getNotifyLogs(): Promise<ApiResponse<any[]>> {
-    return request.get('/admin/system/notify-logs')
+  getNotifyLogs(params?: Record<string, any>): Promise<ApiResponse<any>> {
+    return request.get('/admin/system/notify-logs', { params })
+  },
+
+  // 重试 Webhook 发送
+  retryWebhook(id: number): Promise<ApiResponse> {
+    return request.post(`/admin/system/retry-webhook/${id}`)
+  },
+
+  // 测试 Webhook 连通性
+  testWebhook(channel: string, url: string): Promise<ApiResponse> {
+    return request.post('/admin/system/test-webhook', { channel, url })
   },
 }
 

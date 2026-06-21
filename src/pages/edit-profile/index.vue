@@ -99,12 +99,22 @@
 
         <view class="form-item">
           <text class="form-label">身高(cm)</text>
-          <input class="form-input" v-model="form.height" placeholder="请输入身高" type="number" maxlength="3" />
+          <picker mode="selector" :range="heightOptions" :value="heightIndex" @change="onHeightChange" style="flex:1">
+            <view class="form-picker">
+              <text class="picker-value" :class="{ placeholder: !form.height }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.height ? form.height + 'cm' : '请选择' }}</text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+            </view>
+          </picker>
         </view>
 
         <view class="form-item">
           <text class="form-label">体重(kg)</text>
-          <input class="form-input" v-model="form.weight" placeholder="请输入体重" type="number" maxlength="3" />
+          <picker mode="selector" :range="weightOptions" :value="weightIndex" @change="onWeightChange" style="flex:1">
+            <view class="form-picker">
+              <text class="picker-value" :class="{ placeholder: !form.weight }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.weight ? form.weight + 'kg' : '请选择' }}</text>
+              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
+            </view>
+          </picker>
         </view>
 
         <view class="form-item">
@@ -327,6 +337,56 @@
               <text>+</text>
             </view>
           </view>
+        </view>
+      </view>
+
+      <!-- ===== 语音介绍 ===== -->
+      <view v-if="voiceEnabled" class="voice-section">
+        <view class="voice-title-row">
+          <uni-icons type="mic-filled" size="32rpx" color="#FF6B6B"></uni-icons>
+          <text class="voice-title">语音介绍（10秒内）</text>
+        </view>
+
+        <view v-if="voiceStatus === 'idle'" class="voice-idle">
+          <view class="voice-record-btn" @tap="startRecord">
+            <uni-icons type="mic-filled" size="48rpx" color="#FFFFFF"></uni-icons>
+          </view>
+          <text class="voice-hint">点击录制</text>
+        </view>
+
+        <view v-else-if="voiceStatus === 'recording'" class="voice-recording">
+          <view class="voice-record-btn recording" @tap="stopRecord">
+            <text class="record-countdown">录音中 {{ recordTime }}</text>
+          </view>
+          <view class="wave-bars">
+            <view class="wave-bar" style="animation-duration:0.5s"></view>
+            <view class="wave-bar" style="animation-duration:0.7s"></view>
+            <view class="wave-bar" style="animation-duration:0.4s"></view>
+            <view class="wave-bar" style="animation-duration:0.6s"></view>
+            <view class="wave-bar" style="animation-duration:0.8s"></view>
+          </view>
+        </view>
+
+        <view v-else-if="voiceStatus === 'done'" class="voice-done">
+          <view class="voice-play-row">
+            <view class="wave-static">
+              <view class="wave-static-bar" style="height:20rpx"></view>
+              <view class="wave-static-bar" style="height:40rpx"></view>
+              <view class="wave-static-bar" style="height:30rpx"></view>
+              <view class="wave-static-bar" style="height:50rpx"></view>
+              <view class="wave-static-bar" style="height:25rpx"></view>
+            </view>
+            <view class="voice-play-btn" @tap="togglePlayVoice">
+              <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="48rpx" color="#FF6B6B"></uni-icons>
+            </view>
+            <text class="voice-duration">{{ voiceDuration }}″</text>
+            <view class="voice-delete-btn" @tap="deleteVoice">
+              <uni-icons type="trash" size="40rpx" color="#999999"></uni-icons>
+            </view>
+          </view>
+          <text v-if="voiceAuditStatus === 0" class="voice-audit pending">审核中，通过后将展示</text>
+          <text v-else-if="voiceAuditStatus === 1" class="voice-audit passed">已通过</text>
+          <text v-else-if="voiceAuditStatus === 2" class="voice-audit rejected">审核未通过，请重新录制</text>
         </view>
       </view>
 
@@ -613,6 +673,36 @@ const constellationOptions = [
   '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座',
 ]
 
+// ===== 修改点 A & B：身高/体重 picker 选项 =====
+const heightOptions = [150, 155, 160, 165, 170, 172, 175, 178, 180, 182, 185, 188, 190, 195]
+const weightOptions = [40, 42, 45, 48, 50, 52, 55, 58, 60, 62, 65, 68, 70, 72, 75, 78, 80, 85, 90, 95, 100]
+
+// 身高 picker 选中索引（根据 form.height 计算）
+const heightIndex = computed(() => {
+  if (!form.value.height) return 0
+  const idx = heightOptions.indexOf(Number(form.value.height))
+  return idx >= 0 ? idx : 0
+})
+
+// 体重 picker 选中索引（根据 form.weight 计算）
+const weightIndex = computed(() => {
+  if (!form.value.weight) return 0
+  const idx = weightOptions.indexOf(Number(form.value.weight))
+  return idx >= 0 ? idx : 0
+})
+
+// picker change 事件：身高
+function onHeightChange(e: any) {
+  const index = Number(e.detail.value)
+  form.value.height = heightOptions[index]
+}
+
+// picker change 事件：体重
+function onWeightChange(e: any) {
+  const index = Number(e.detail.value)
+  form.value.weight = weightOptions[index]
+}
+
 // 择偶要求选项
 const partnerAgeRangeOptions = ['不限', '18-22岁', '20-25岁', '22-28岁', '25-30岁', '28-33岁', '30-35岁', '33-38岁', '35-40岁', '40岁以上']
 const partnerHeightOptions = ['不限', '150cm以上', '155cm以上', '160cm以上', '165cm以上', '170cm以上', '175cm以上', '180cm以上', '185cm以上']
@@ -769,6 +859,7 @@ onMounted(async () => {
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
   systemStore.loadDicts()
+  fetchVoiceEnabled()
 
   fetchPhotos()
 
@@ -1184,9 +1275,109 @@ const previewAvatar = () => {
   }
 }
 
+// ===== 语音录制 =====
+const voiceEnabled = ref(true)
+const voiceStatus = ref<'idle' | 'recording' | 'done'>('idle')
+const voiceTempPath = ref('')
+const voiceDuration = ref(0)
+const voiceAuditStatus = ref<number>(-1)
+const isVoicePlaying = ref(false)
+const recordTime = ref('00:00')
+let voiceTimer: ReturnType<typeof setTimeout> | null = null
+let voiceCountdown: ReturnType<typeof setInterval> | null = null
+let innerAudioCtx: any = null
+
+async function fetchVoiceEnabled() {
+  try {
+    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    if (res.code === 0 && res.data) {
+      voiceEnabled.value = res.data.value !== 'false'
+    }
+  } catch { voiceEnabled.value = true }
+}
+
+function startRecord() {
+  voiceStatus.value = 'recording'
+  recordTime.value = '00:10'
+  let remaining = 10
+  voiceTimer = setTimeout(() => { stopRecord() }, 10000)
+  voiceCountdown = setInterval(() => {
+    remaining--
+    if (remaining <= 0) { recordTime.value = '00:00'; return }
+    recordTime.value = '00:' + remaining.toString().padStart(2, '0')
+  }, 1000)
+  const recorder = uni.getRecorderManager()
+  recorder.start({ duration: 10000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' })
+  recorder.onStop((res: any) => {
+    voiceTempPath.value = res.tempFilePath
+    voiceDuration.value = Math.round(res.duration / 1000)
+    voiceStatus.value = 'done'
+    voiceAuditStatus.value = -1
+  })
+}
+
+function stopRecord() {
+  if (voiceTimer) { clearTimeout(voiceTimer); voiceTimer = null }
+  if (voiceCountdown) { clearInterval(voiceCountdown); voiceCountdown = null }
+  uni.getRecorderManager().stop()
+}
+
+function togglePlayVoice() {
+  if (isVoicePlaying.value) { stopVoicePlay(); return }
+  innerAudioCtx = uni.createInnerAudioContext()
+  innerAudioCtx.src = voiceTempPath.value
+  innerAudioCtx.onPlay(() => { isVoicePlaying.value = true })
+  innerAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+  innerAudioCtx.onError(() => { isVoicePlaying.value = false })
+  innerAudioCtx.play()
+}
+
+function stopVoicePlay() {
+  if (innerAudioCtx) { innerAudioCtx.stop(); innerAudioCtx.destroy(); innerAudioCtx = null }
+  isVoicePlaying.value = false
+}
+
+function deleteVoice() {
+  stopVoicePlay()
+  voiceStatus.value = 'idle'
+  voiceTempPath.value = ''
+  voiceDuration.value = 0
+  voiceAuditStatus.value = -1
+}
+
+async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number }> {
+  if (!voiceTempPath.value) return {}
+  uni.showLoading({ title: '上传中...', mask: true })
+  try {
+    const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || ''
+    const token = uni.getStorageSync('token')
+    const res: any = await new Promise((resolve, reject) => {
+      uni.uploadFile({
+        url: baseUrl + '/api/users/voice-intro',
+        filePath: voiceTempPath.value,
+        name: 'voiceFile',
+        header: token ? { Authorization: `Bearer ${token}` } : {},
+        success: (r) => { try { resolve(JSON.parse(r.data)) } catch { reject(new Error('parse')) } },
+        fail: reject,
+      })
+    })
+    if (res.code === 0 && res.data) {
+      voiceAuditStatus.value = res.data.auditStatus
+      return { voiceUrl: res.data.voiceUrl, auditStatus: res.data.auditStatus }
+    }
+    return {}
+  } catch { return {} }
+  finally { uni.hideLoading() }
+}
+
 // ===== 保存 =====
 const handleSave = async () => {
   if (saving.value) return
+
+  // 上传语音
+  if (voiceEnabled.value && voiceTempPath.value) {
+    await uploadVoice()
+  }
 
   saving.value = true
   uni.showLoading({ title: '保存中...' })
@@ -2147,4 +2338,27 @@ onShow(async () => {
     color: #fff;
   }
 }
+
+.safe-bottom { height: calc(24rpx + env(safe-area-inset-bottom)); }
+
+/* ===== 语音介绍 ===== */
+.voice-section { margin-top: 48rpx; }
+.voice-title-row { display: flex; align-items: center; }
+.voice-title { margin-left: 16rpx; font-size: 28rpx; font-weight: bold; color: #333333; }
+.voice-idle { margin-top: 32rpx; display: flex; flex-direction: column; align-items: center; }
+.voice-record-btn { width: 120rpx; height: 120rpx; border-radius: 50%; background: #ff6b6b; display: flex; justify-content: center; align-items: center; &.recording { background: #ff8e8e; } }
+.voice-hint { margin-top: 16rpx; font-size: 24rpx; color: #999999; }
+.record-countdown { font-size: 28rpx; color: #ffffff; }
+.voice-recording { margin-top: 32rpx; display: flex; flex-direction: column; align-items: center; }
+.wave-bars { margin-top: 24rpx; display: flex; align-items: flex-end; gap: 8rpx; height: 60rpx; }
+.wave-bar { width: 6rpx; background: #ffffff; border-radius: 3rpx; animation: waveMove ease-in-out infinite alternate; }
+@keyframes waveMove { 0%,100% { height: 20rpx; } 50% { height: 60rpx; } }
+.voice-done { margin-top: 32rpx; }
+.voice-play-row { display: flex; align-items: center; }
+.wave-static { display: flex; align-items: flex-end; gap: 8rpx; margin-right: 16rpx; }
+.wave-static-bar { width: 6rpx; background: #ff6b6b; border-radius: 3rpx; }
+.voice-play-btn { flex-shrink: 0; }
+.voice-duration { font-size: 28rpx; color: #666666; margin-left: 16rpx; }
+.voice-delete-btn { margin-left: 24rpx; flex-shrink: 0; }
+.voice-audit { margin-top: 16rpx; font-size: 24rpx; display: block; &.pending { color: #ffd93d; } &.passed { color: #52c41a; } &.rejected { color: #ff4d4f; } }
 </style>

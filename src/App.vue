@@ -1,8 +1,13 @@
+<template>
+  <MatchModal />
+</template>
+
 <script setup lang="ts">
 import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
+import MatchModal from '@/components/MatchModal/MatchModal.vue'
 
 onLaunch(() => {
   logger.info('App Launch')

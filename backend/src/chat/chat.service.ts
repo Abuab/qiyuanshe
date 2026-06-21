@@ -5,6 +5,19 @@ import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
+import { RedisService } from '../common/redis.service'
+import { AuditService } from '../audit/audit.service'
+import { SystemService } from '../system/system.service'
+
+/** Redis Key 前缀：记录每对会话的最后一条消息 ID */
+const LAST_MSG_KEY_PREFIX = 'chat:last_msg_id'
+
+/** Redis TTL：24 小时 */
+const LAST_MSG_TTL = 86400
+
+/** 限流：每分钟最多 20 条消息 */
+const RATE_LIMIT_MAX = 20
+const RATE_LIMIT_WINDOW_SEC = 60
 
 @Injectable()
 export class ChatService {
@@ -62,7 +75,21 @@ export class ChatService {
     private readonly userRepository: Repository<User>,
     @Optional()
     private readonly monitorGateway?: ChatMonitorGateway,
+    private readonly redisService?: RedisService,
+    @Optional()
+    private readonly auditService?: AuditService,
+    @Optional()
+    private readonly systemService?: SystemService,
   ) {}
+
+  /**
+   * 生成 Redis Key：chat:last_msg_id:${minUserId}_${maxUserId}
+   */
+  private getConversationKey(userId1: number, userId2: number): string {
+    const minId = Math.min(userId1, userId2)
+    const maxId = Math.max(userId1, userId2)
+    return `${LAST_MSG_KEY_PREFIX}:${minId}_${maxId}`
+  }
 
   async sendMessage(userId: number, dto: SendMessageDto): Promise<ChatMessage> {
     const { toUserId, content, type = 'text' } = dto
@@ -88,12 +115,28 @@ export class ChatService {
       }
     }
 
-    // 敏感词过滤
-    if (type === 'text') {
-      const hit = this.checkBannedContent(content)
-      if (hit) {
-        throw new ForbiddenException('消息包含违规内容，请修改后重试')
+    // ===== 修改点 B：限流检查（Redis 计数器，审核之前） =====
+    if (this.redisService) {
+      const rateLimitKey = `rate_limit:chat:user_${userId}`
+      let currentCount: number
+      try {
+        currentCount = await this.redisService.incr(rateLimitKey)
+        if (currentCount === 1) {
+          await this.redisService.expire(rateLimitKey, RATE_LIMIT_WINDOW_SEC)
+        }
+        if (currentCount > RATE_LIMIT_MAX) {
+          throw new ForbiddenException('发送太频繁，请稍后再试')
+        }
+      } catch (e) {
+        // Redis 限流异常时不阻断，继续往下走
+        if (e instanceof ForbiddenException) throw e
+        console.error('Redis 限流检查失败，降级放行:', e)
       }
+    }
+
+    // ===== 修改点 B：内容审核（文字消息） =====
+    if (type === 'text') {
+      await this.auditMessageContent(userId, content)
     }
 
     const message = this.messageRepository.create({
@@ -105,6 +148,14 @@ export class ChatService {
     })
 
     const saved = await this.messageRepository.save(message)
+
+    // 优化 B：更新 Redis 中该会话的最后一条消息 ID
+    if (this.redisService) {
+      const convKey = this.getConversationKey(userId, toUserId)
+      this.redisService.set(convKey, String(saved.id), LAST_MSG_TTL).catch(() => {
+        // Redis 写入失败不影响主流程
+      })
+    }
 
     // 通知监控该用户的管理员（实时推送）
     if (this.monitorGateway) {
@@ -169,6 +220,24 @@ export class ChatService {
   async pollMessages(userId: number, dto: PollMessagesDto): Promise<ChatMessage[]> {
     const { userId: toUserId, afterId } = dto
 
+    // 优化 A：先查 Redis 缓存，如果确认没有新消息则直接返回空数组
+    if (afterId > 0 && this.redisService) {
+      try {
+        const convKey = this.getConversationKey(userId, toUserId)
+        const cachedLastId = await this.redisService.get(convKey)
+        if (cachedLastId) {
+          const lastIdNum = Number(cachedLastId)
+          if (!isNaN(lastIdNum) && lastIdNum <= afterId) {
+            // Redis 记录的最后消息 ID <= 本地已有的最后消息 ID，说明没有新消息
+            return []
+          }
+        }
+      } catch {
+        // Redis 查询失败，降级到 MySQL 查询
+      }
+    }
+
+    // MySQL 查询：只查 ID 大于 afterId 的增量消息
     const messages = await this.messageRepository.find({
       where: [
         { fromUserId: userId, toUserId, id: MoreThan(afterId) },
@@ -317,6 +386,90 @@ export class ChatService {
     }
 
     return true
+  }
+
+  /**
+   * 修改点 B：内容审核方法
+   * - 优先使用腾讯云 AI 审核（audit.aiEnabled = true）
+   * - 未启用 AI 审核时，降级为本地 bannedKeywords 过滤
+   * - AI 审核调用失败时，降级为本地过滤
+   */
+  private async auditMessageContent(userId: number, content: string): Promise<void> {
+    // 读取审核配置
+    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
+
+    if (aiEnabled === '1' || aiEnabled === 'true') {
+      // === 腾讯云 AI 审核 ===
+      if (!this.auditService) {
+        // AuditService 未注入，降级为本地过滤
+        this.checkLocalBannedContent(content)
+        return
+      }
+
+      try {
+        const auditResult = await this.auditService.auditText({
+          text: content,
+          type: 'user' as any, // AuditType.USER
+          userId,
+        })
+
+        if (auditResult.result === 'pass') {
+          return // 正常通过
+        }
+
+        if (auditResult.result === 'reject') {
+          throw new ForbiddenException('消息包含违规内容，请修改后重试')
+        }
+
+        // result === 'review'
+        if (auditResult.result === 'review') {
+          const manualReviewEnabled = await this.getConfigValue('audit.manualReviewEnabled')
+          if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
+            // 人工审核已启用，消息存入但需要标记（实体无 status/isVisible 字段，正常存入）
+            // 审核日志已由 AuditService.auditText 自动写入
+            // 调用 webhook 通知（预留接口，当前仅打印日志）
+            console.log('[ChatService] 消息进入人工审核队列', {
+              userId,
+              content: content.substring(0, 50),
+              time: new Date().toISOString(),
+            })
+            return // 消息允许保存，人工审核后端可查看 AuditLog 表
+          }
+          // 人工审核未启用，按拒绝处理
+          throw new ForbiddenException('消息包含违规内容，请修改后重试')
+        }
+      } catch (e: any) {
+        // 修改点 B-3：腾讯云审核 API 调用失败，降级为本地敏感词过滤
+        if (e instanceof ForbiddenException) throw e
+        console.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
+        this.checkLocalBannedContent(content)
+      }
+    } else {
+      // === 本地敏感词过滤（兜底） ===
+      this.checkLocalBannedContent(content)
+    }
+  }
+
+  /**
+   * 本地敏感词过滤（保留作为兜底方案）
+   */
+  private checkLocalBannedContent(content: string): void {
+    const hit = this.checkBannedContent(content)
+    if (hit) {
+      throw new ForbiddenException('消息包含违规内容，请修改后重试')
+    }
+  }
+
+  /**
+   * 从 SystemConfig 读取字符串配置值，不存在时返回 null
+   */
+  private async getConfigValue(key: string): Promise<string | null> {
+    if (!this.systemService) return null
+    try {
+      return await this.systemService.getConfig(key)
+    } catch {
+      return null
+    }
   }
 
   private async getTodayMessageCount(userId: number): Promise<number> {

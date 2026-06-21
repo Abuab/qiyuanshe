@@ -147,6 +147,43 @@
         </view>
       </view>
 
+      <!-- ===== AI 情感问答入口 ===== -->
+      <view class="ai-quiz-entry" @tap="goToAiQuiz">
+        <uni-icons type="chatbubble" size="40rpx" color="#FF6B6B"></uni-icons>
+        <text class="ai-quiz-label">AI 情感问答</text>
+        <uni-icons type="arrowright" size="32rpx" color="#999999"></uni-icons>
+      </view>
+
+      <!-- ===== 认证状态 ===== -->
+      <view class="auth-status-card">
+        <text class="auth-card-title">认证状态</text>
+        <view class="auth-steps">
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.wechat }">
+              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.wechat }">微信授权</text>
+            <text v-if="!authSteps.wechat" class="step-action" @tap="goAuthWechat">去认证</text>
+          </view>
+          <view class="step-line" :class="{ done: authSteps.wechat && authSteps.phone }" />
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.phone }">
+              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.phone }">手机绑定</text>
+            <text v-if="!authSteps.phone" class="step-action" @tap="goAuthPhone">去认证</text>
+          </view>
+          <view class="step-line" :class="{ done: authSteps.phone && authSteps.realName }" />
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.realName }">
+              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.realName }">实名认证</text>
+            <text v-if="!authSteps.realName" class="step-action" @tap="goRealNameAuth">去认证</text>
+          </view>
+        </view>
+      </view>
+
       <!-- ========== 公众号关注 ========== -->
       <view v-if="isLoggedIn && systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
         <view class="oa-avatar pink-heart">
@@ -196,6 +233,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
+import { authSteps, initAuthSteps, goAuthWechat, goAuthPhone, goRealNameAuth } from '@/composables/useAuthSteps'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -218,6 +256,8 @@ onMounted(() => {
       currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
     }, 3000)
   }
+  // 在已有 onMounted 末尾追加：
+  initAuthSteps()
 })
 
 onShow(() => {
@@ -326,6 +366,9 @@ const goToQuestions = () => {
 const goToAiMatchmaker = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
   uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
+}
+const goToAiQuiz = () => {
+  uni.navigateTo({ url: '/pages/ai-quiz/ai-quiz' })
 }
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
 const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
@@ -878,5 +921,95 @@ const toolGrid7 = [
 
 .bottom-safe-area {
   height: 40rpx;
+}
+
+/* ===== AI 情感问答入口 ===== */
+.ai-quiz-entry {
+  display: flex;
+  align-items: center;
+  margin: 0 24rpx 16rpx;
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.ai-quiz-label {
+  margin-left: 16rpx;
+  font-size: 28rpx;
+  color: #333333;
+  flex: 1;
+}
+
+/* ===== 认证状态 ===== */
+.auth-status-card {
+  margin: 24rpx;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.auth-card-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.auth-steps {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: flex-start;
+}
+
+.auth-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.step-icon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #eeeeee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.done {
+    background: #52c41a;
+  }
+}
+
+.step-label {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #999999;
+
+  &.done {
+    color: #333333;
+  }
+}
+
+.step-action {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #ff6b6b;
+}
+
+.step-line {
+  height: 2rpx;
+  background: #eeeeee;
+  flex: 0.5;
+  min-width: 40rpx;
+  position: relative;
+  top: 24rpx;
+
+  &.done {
+    background: #52c41a;
+  }
 }
 </style>

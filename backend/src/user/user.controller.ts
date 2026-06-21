@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   UseGuards,
   Request,
+  ForbiddenException,
 } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -28,6 +29,14 @@ import { Result } from '../common/result'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
+import { RedisService } from '../common/redis.service'
+
+/** 限流：照片每天最多 50 张 */
+const PHOTO_RATE_LIMIT_MAX = 50
+/** 限流：头像每天最多 10 次修改 */
+const AVATAR_RATE_LIMIT_MAX = 10
+/** 限流窗口：24 小时 */
+const RATE_LIMIT_WINDOW_SEC = 86400
 
 @Controller('users')
 export class UserController {
@@ -42,6 +51,7 @@ export class UserController {
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
     private readonly dynamicService: DynamicService,
     private readonly notifyService: NotifyChannelService,
+    private readonly redisService?: RedisService,
   ) {}
 
   @Get('recommend')
@@ -121,6 +131,24 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async submitAvatarReview(@Body() body: { avatarUrl: string }, @Request() req: any) {
     const userId = req.user.userId
+
+    // ===== 修改点 B：头像上传限流（Redis 计数器，每天 10 次） =====
+    if (this.redisService) {
+      const rateLimitKey = `rate_limit:avatar:user_${userId}`
+      try {
+        const currentCount = await this.redisService.incr(rateLimitKey)
+        if (currentCount === 1) {
+          await this.redisService.expire(rateLimitKey, RATE_LIMIT_WINDOW_SEC)
+        }
+        if (currentCount > AVATAR_RATE_LIMIT_MAX) {
+          throw new ForbiddenException('今日修改头像次数已达上限，请明天再试')
+        }
+      } catch (e) {
+        if (e instanceof ForbiddenException) throw e
+        console.error('Redis 限流检查失败，降级放行:', e)
+      }
+    }
+
     const auditLog = this.auditLogRepo.create({
       action: 'PENDING',
       targetType: 'avatar',
@@ -188,6 +216,24 @@ export class UserController {
     @Request() req: any,
   ) {
     const userId = req.user.userId
+
+    // ===== 修改点 A：照片上传限流（Redis 计数器，每天 50 张） =====
+    if (this.redisService) {
+      const rateLimitKey = `rate_limit:photo:user_${userId}`
+      try {
+        const currentCount = await this.redisService.incr(rateLimitKey)
+        if (currentCount === 1) {
+          await this.redisService.expire(rateLimitKey, RATE_LIMIT_WINDOW_SEC)
+        }
+        if (currentCount > PHOTO_RATE_LIMIT_MAX) {
+          throw new ForbiddenException('今日上传照片已达上限，请明天再试')
+        }
+      } catch (e) {
+        if (e instanceof ForbiddenException) throw e
+        console.error('Redis 限流检查失败，降级放行:', e)
+      }
+    }
+
     const count = await this.photoRepo.count({ where: { userId } })
     if (count >= 6) return Result.serverError('最多上传6张照片')
 

@@ -294,6 +294,38 @@
         "navigationBarTitleText": "系统消息",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/my-likes/my-likes",
+      "style": { "navigationBarTitleText": "我的喜欢" }
+    },
+    {
+      "path": "pages/daily-recommend/daily-recommend",
+      "style": { "navigationBarTitleText": "每日缘分" }
+    },
+    {
+      "path": "pages/ai-match-report/ai-match-report",
+      "style": { "navigationBarTitleText": "AI 匹配报告" }
+    },
+    {
+      "path": "pages/ai-quiz/ai-quiz",
+      "style": { "navigationBarTitleText": "AI 情感助手" }
+    },
+    {
+      "path": "pages/questionnaire/questionnaire-list",
+      "style": { "navigationBarTitleText": "三观匹配" }
+    },
+    {
+      "path": "pages/questionnaire/questionnaire-detail",
+      "style": { "navigationBarTitleText": "问卷答题" }
+    },
+    {
+      "path": "pages/questionnaire/questionnaire-result",
+      "style": { "navigationBarTitleText": "匹配结果" }
+    },
+    {
+      "path": "pages/visitors/visitors",
+      "style": { "navigationBarTitleText": "访客记录" }
     }
   ],
   "globalStyle": {

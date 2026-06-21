@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
 import { NotifyLog } from '../entities/NotifyLog'
 
@@ -83,12 +83,31 @@ export class NotifyChannelService {
     }
   }
 
-  /** 查询最近的通知日志 */
-  async getRecentLogs(limit: number = 20) {
-    return this.notifyLogRepository.find({
+  /** 查询最近的通知日志，支持筛选和分页 */
+  async getRecentLogs(limit: number = 20, query?: any) {
+    const where: any = {}
+    if (query) {
+      if (query.channel) where.channel = query.channel
+      if (query.source) where.source = query.source
+      if (query.status !== undefined) where.success = Number(query.status)
+      if (query.startDate && query.endDate) {
+        where.createdAt = Between(new Date(query.startDate), new Date(query.endDate + ' 23:59:59'))
+      } else if (query.startDate) {
+        where.createdAt = MoreThanOrEqual(new Date(query.startDate))
+      } else if (query.endDate) {
+        where.createdAt = LessThanOrEqual(new Date(query.endDate + ' 23:59:59'))
+      }
+    }
+    const page = Number(query?.page) || 1
+    const pageLimit = Number(query?.limit) || limit
+
+    const [list, total] = await this.notifyLogRepository.findAndCount({
+      where,
       order: { createdAt: 'DESC' },
-      take: limit,
+      skip: (page - 1) * pageLimit,
+      take: pageLimit,
     })
+    return { list, total, page, limit: pageLimit }
   }
 
   private async writeLog(
@@ -188,6 +207,75 @@ export class NotifyChannelService {
     })
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${await response.text()}`)
+    }
+  }
+
+  /** 测试 Webhook 连通性 - 发送一条测试消息 */
+  async testWebhook(channel: string, url: string) {
+    const testMsg = this.buildTestMessage(channel)
+    await this.sendWebhook(url, testMsg)
+  }
+
+  /** 重试 Webhook 发送 - 根据日志 ID 反查配置重新发送 */
+  async retryWebhook(logId: number) {
+    const log = await this.notifyLogRepository.findOne({ where: { id: logId } })
+    if (!log) {
+      throw new Error('通知日志不存在')
+    }
+
+    // 读取当前通知配置，获取该通道的 webhook 地址
+    const config = await this.getNotifyConfig()
+    if (!config || !config.enabled) {
+      throw new Error('通知通道未启用')
+    }
+
+    let url = ''
+    if (config.webhookUrls) {
+      url = config.webhookUrls[log.channel] || ''
+    } else if (config.webhookUrl && config.channel === log.channel) {
+      url = config.webhookUrl
+    }
+
+    if (!url) {
+      throw new Error(`通道 ${log.channel} 未配置 Webhook 地址`)
+    }
+
+    // 重新构建并发送消息
+    const message = this.buildMessage(log.channel, log.notifyType, log.content || '')
+    await this.sendWebhook(url, message)
+
+    // 更新日志状态为成功
+    log.success = 1
+    log.errorMessage = null
+    await this.notifyLogRepository.save(log)
+  }
+
+  private buildTestMessage(channel: string): any {
+    const testContent = '【栖缘社】这是一条测试消息，用于验证通知通道连通性。'
+    switch (channel) {
+      case 'wecom':
+        return {
+          msgtype: 'markdown',
+          markdown: { content: `【栖缘社 - 通知通道测试】\n> ${testContent}\n>时间：${new Date().toLocaleString('zh-CN')}` },
+        }
+      case 'feishu':
+        return {
+          msg_type: 'text',
+          content: { text: `【栖缘社 - 通知通道测试】${testContent}` },
+        }
+      case 'dingtalk':
+        return {
+          msgtype: 'markdown',
+          markdown: {
+            title: '栖缘社 - 通知通道测试',
+            text: `【栖缘社 - 通知通道测试】\n- ${testContent}\n- 时间：${new Date().toLocaleString('zh-CN')}`,
+          },
+        }
+      default:
+        return {
+          msgtype: 'text',
+          text: { content: `【通知通道测试】${testContent}` },
+        }
     }
   }
 }

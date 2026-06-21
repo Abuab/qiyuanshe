@@ -52,6 +52,27 @@
           </scroll-view>
         </view>
 
+        <!-- ===== 语音播放条 ===== -->
+        <view
+          v-if="voiceEnabled && voiceData && voiceData.auditStatus !== 2"
+          class="voice-bar"
+          :class="{ 'voice-pending': voiceData.auditStatus === 0 }"
+        >
+          <view class="voice-bar-inner">
+            <view class="voice-mic-icon">
+              <uni-icons type="mic-filled" size="32rpx" color="#FF6B6B"></uni-icons>
+            </view>
+            <text v-if="voiceData.auditStatus === 0" class="voice-label muted">语音审核中</text>
+            <text v-else class="voice-label">听听TA的声音</text>
+            <view v-if="voiceData.auditStatus === 1" class="voice-right">
+              <text class="voice-duration">{{ voiceData.duration }}″</text>
+              <view class="voice-play-btn" @tap="toggleVoicePlay">
+                <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="40rpx" color="#FF6B6B"></uni-icons>
+              </view>
+            </view>
+          </view>
+        </view>
+
         <!-- ========== 头像+昵称区 ========== -->
         <view class="profile-header-card">
           <view class="avatar-wrapper">
@@ -436,6 +457,12 @@ const systemStore = useSystemStore()
 const userId = ref(0)
 const loading = ref(true)
 const profileData = ref<any>(null)
+
+// ===== 语音 =====
+const voiceEnabled = ref(true)
+const voiceData = ref<{ voiceUrl: string; duration: number; auditStatus: number } | null>(null)
+const isVoicePlaying = ref(false)
+let voiceAudioCtx: any = null
 const showAiMatchPopup = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -465,7 +492,42 @@ const today = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
-onMounted(() => {
+// ===== 语音 =====
+async function fetchVoiceEnabled() {
+  try {
+    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    if (res.code === 0 && res.data) {
+      voiceEnabled.value = res.data.value !== 'false'
+    }
+  } catch { voiceEnabled.value = true }
+}
+
+function toggleVoicePlay() {
+  if (isVoicePlaying.value) { stopVoice(); return }
+  if (!voiceData.value?.voiceUrl) return
+  voiceAudioCtx = uni.createInnerAudioContext()
+  voiceAudioCtx.src = voiceData.value.voiceUrl
+  voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
+  voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+  voiceAudioCtx.onError(() => { isVoicePlaying.value = false })
+  voiceAudioCtx.play()
+}
+
+function stopVoice() {
+  if (voiceAudioCtx) { voiceAudioCtx.stop(); voiceAudioCtx.destroy(); voiceAudioCtx = null }
+  isVoicePlaying.value = false
+}
+
+async function fetchVoiceIntro() {
+  if (!voiceEnabled.value) return
+  try {
+    const res: any = await request({ url: `/api/users/${userId.value}/voice-intro`, method: 'GET' })
+    if (res.code === 0 && res.data) { voiceData.value = res.data }
+  } catch { /* 404 不显示 */ }
+}
+
+onMounted(async () => {
+  await fetchVoiceEnabled()
   uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
   const pages = getCurrentPages()
   const opts = (pages[pages.length - 1] as any)?.options || {}
@@ -476,6 +538,7 @@ onMounted(() => {
     loading.value = false
   }
   fetchMatchmakerList()
+  fetchVoiceIntro()
 })
 
 onShow(() => {
@@ -1160,4 +1223,14 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   &::after { content: '+'; font-size: 36rpx; color: #CCC; }
 }
+
+/* ===== 语音播放条 ===== */
+.voice-bar { margin: 24rpx; height: 80rpx; border-radius: 40rpx; background: #fff0f3; display: flex; align-items: center; padding: 0 32rpx; &.voice-pending { opacity: 0.5; } }
+.voice-bar-inner { display: flex; align-items: center; width: 100%; }
+.voice-mic-icon { animation: voicePulse 1.5s infinite; }
+@keyframes voicePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+.voice-label { margin-left: 16rpx; font-size: 28rpx; color: #333333; &.muted { color: #999999; } }
+.voice-right { margin-left: auto; display: flex; align-items: center; }
+.voice-duration { font-size: 28rpx; color: #666666; }
+.voice-play-btn { margin-left: 16rpx; }
 </style>

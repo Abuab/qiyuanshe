@@ -74,7 +74,7 @@ export class QuestionController {
 
       return {
         success: true,
-        message: '回答提交成功，等待审核',
+        message: answer.status === 0 ? '回答正在审核中，通过后将展示' : '回答提交成功',
         data: {
           id: answer.id,
           status: answer.status,

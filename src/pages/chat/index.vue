@@ -116,6 +116,14 @@
       </view>
     </scroll-view>
 
+    <!-- 聊天权限遮罩 -->
+    <view v-if="showChatMask" class="chat-permission-mask">
+      <text class="permission-text">互相心动或开通VIP即可畅聊</text>
+      <view class="permission-btn" @tap="goToVipFromMask">
+        <text>去开通</text>
+      </view>
+    </view>
+
     <!-- 底部输入区域 -->
     <view class="input-area" :style="{ paddingBottom: (keyboardHeight + safeAreaBottom) + 'px' }">
       <!-- 防骗横幅 -->
@@ -148,6 +156,9 @@
             @confirm="handleSend"
           />
         </view>
+
+        <!-- 剩余条数 -->
+        <text v-if="showRemainingHint" class="remaining-hint">还剩{{ remainingMessages }}条</text>
 
         <!-- 发送按钮 -->
         <view
@@ -222,6 +233,12 @@ const keyboardHeight = ref(0)
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const showVipLimit = ref(false)
+const showChatMask = ref(false)
+const showRemainingHint = ref(false)
+const remainingMessages = ref(0)
+const isMatched = ref(false)
+const totalSentMessages = ref(0)
+const maxFreeMessages = 3
 const showAiSkillPanel = ref(false)
 const showFraudBanner = ref(true)
 const todayMessageCount = ref(0)
@@ -229,7 +246,7 @@ const maxDailyMessages = 3
 
 // 轮询相关
 let pollTimer: ReturnType<typeof setInterval> | null = null
-const POLL_INTERVAL = 3000
+const POLL_INTERVAL = 2500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
@@ -265,15 +282,16 @@ onMounted(() => {
   fetchMessages()
   markAsRead()
   startPolling()
+  checkChatPermission()
   isPageMounted.value = true
 })
 
-// 修复 D：页面重新显示时立即刷新 + 重启轮询
+// 修复 E：页面重新显示时立即轮询一次 + 重启定时器
 onShow(() => {
   if (!isPageMounted.value) return
-  // 立即做一次轮询拉取最新消息
+  // 立即拉取最新消息（不等待 2.5 秒轮询）
   pollOnce()
-  // 重启轮询（如果之前被 onHide 停止了）
+  // 重启轮询定时器（如果之前被 onHide 停止了）
   startPolling()
 })
 
@@ -298,13 +316,22 @@ const fetchMessages = async (isLoadMore = false) => {
       method: 'GET',
       data: { userId: toUserId.value, page: isLoadMore ? page.value : 1, limit },
     })
-    const list: ChatMessage[] = res?.list || []
+    let list: ChatMessage[] = res?.list || []
+
+    // 修复 C：按时间正序排列（旧→新）。后端返回 DESC 时自动 reverse
+    if (list.length >= 2) {
+      const firstTime = new Date(list[0].createdAt).getTime()
+      const lastTime = new Date(list[list.length - 1].createdAt).getTime()
+      if (firstTime > lastTime) {
+        list = [...list].reverse()
+      }
+    }
 
     if (isLoadMore) {
-      // 修复 B：后端返回 ASC（旧→新），直接 unshift 到现有消息前面
+      // 加载更早的历史消息，unshift 到现有消息前面
       messages.value.unshift(...list)
     } else {
-      // 修复 B：后端返回 ASC（旧→新），直接赋值，无需 reverse
+      // 首次加载，直接赋值
       messages.value = list
       page.value = 1
     }
@@ -315,7 +342,7 @@ const fetchMessages = async (isLoadMore = false) => {
 
     page.value++
     if (!isLoadMore) {
-      // 修复 C：首次加载后滚动到底部
+      // 修复 D：首次加载后滚动到底部（最新消息在下方）
       nextTick(() => scrollToBottom())
     }
   } catch (e) {
@@ -548,10 +575,11 @@ const markAsRead = async () => {
   try { await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' }) } catch {}
 }
 
-// ===== 修复 A：轮询拉取新消息 =====
+// ===== 修复 A：轮询拉取新消息（使用现有 /chat/messages/poll 接口） =====
 const pollOnce = async () => {
   if (!toUserId.value) return
   try {
+    // 取本地最后一条消息的 id 作为 lastMessageId
     const lastMsgId = messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0
     const res: any = await request({
       url: '/chat/messages/poll',
@@ -561,11 +589,13 @@ const pollOnce = async () => {
     })
     const newMsgs: ChatMessage[] = res?.list || []
     if (newMsgs.length > 0) {
+      // 按消息 id 去重
       const ids = new Set(messages.value.map(m => m.id))
       const unique = newMsgs.filter(m => !ids.has(m.id))
       if (unique.length > 0) {
+        // 追加到消息列表末尾（最新在下方）
         messages.value.push(...unique)
-        // 修复 C：如果用户没有手动上滚，自动滚到底部；否则显示提示
+        // 修复 D：如果用户没有手动上滚，自动滚到底部；否则显示提示
         if (isUserScrolledUp.value) {
           showNewMsgTip.value = true
         } else {
@@ -574,7 +604,7 @@ const pollOnce = async () => {
       }
     }
   } catch {
-    // 轮询失败不处理，等下次重试
+    // 轮询静默失败，不弹 toast
   }
 }
 
@@ -591,7 +621,51 @@ const stopPolling = () => {
 
 // ---- VIP ----
 const goToVip = () => { showVipLimit.value = false; uni.switchTab({ url: '/pages/vip/index' }) }
+const goToVipFromMask = () => { uni.navigateTo({ url: '/pages/vip/vip' }) }
 const closeVipLimit = () => { showVipLimit.value = false }
+
+// ===== 聊天权限检查 =====
+async function checkChatPermission() {
+  try {
+    const matchRes: any = await request({ url: '/api/users/matches', method: 'GET' })
+    const matches: any[] = matchRes.code === 0 ? (matchRes.data?.list || matchRes.data || []) : []
+    isMatched.value = matches.some((m: any) => m.id === toUserId.value)
+
+    if (isMatched.value) {
+      showChatMask.value = false
+      showRemainingHint.value = false
+      return
+    }
+
+    if (userStore.isVip) {
+      showChatMask.value = false
+      showRemainingHint.value = false
+      return
+    }
+
+    const msgRes: any = await request({
+      url: '/chat/messages',
+      method: 'GET',
+      data: { userId: toUserId.value, direction: 'sent' },
+    })
+    if (msgRes) {
+      const msgs = msgRes.list || msgRes.messages || msgRes.data || []
+      totalSentMessages.value = msgs.length
+    }
+
+    if (totalSentMessages.value >= maxFreeMessages) {
+      showChatMask.value = true
+      showRemainingHint.value = false
+    } else {
+      showChatMask.value = false
+      remainingMessages.value = maxFreeMessages - totalSentMessages.value
+      showRemainingHint.value = true
+    }
+  } catch {
+    showChatMask.value = false
+    showRemainingHint.value = false
+  }
+}
 
 const openAiSkillPanel = () => {
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) { showVipLimit.value = true; return }
@@ -843,4 +917,43 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
   text { font-size: 30rpx; color: #fff; font-weight: 600; }
 }
 .vip-close { display: flex; justify-content: center; text { font-size: 26rpx; color: #999; } }
+
+/* ===== 聊天权限 ===== */
+.chat-permission-mask {
+  height: 120rpx;
+  background: rgba(245, 245, 245, 0.95);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-top: 1rpx solid #eeeeee;
+  flex-shrink: 0;
+}
+
+.permission-text {
+  font-size: 28rpx;
+  color: #666666;
+}
+
+.permission-btn {
+  margin-left: 24rpx;
+  width: 160rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background: $pink;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.permission-btn text {
+  font-size: 26rpx;
+  color: #ffffff;
+}
+
+.remaining-hint {
+  padding: 0 12rpx;
+  font-size: 20rpx;
+  color: #999999;
+  flex-shrink: 0;
+}
 </style>

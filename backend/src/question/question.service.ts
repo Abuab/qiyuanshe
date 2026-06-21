@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
@@ -7,6 +7,20 @@ import { User } from '../entities/User'
 import { AnswerLike } from '../entities/AnswerLike'
 import { AuditLog } from '../entities/AuditLog'
 import { DynamicService } from '../dynamic/dynamic.service'
+import { AuditService } from '../audit/audit.service'
+import { SystemService } from '../system/system.service'
+import { RedisService } from '../common/redis.service'
+
+/** 答案状态 */
+export const ANSWER_STATUS = {
+  PENDING: 0,
+  ACTIVE: 1,
+  REJECTED: 2,
+} as const
+
+/** 限流：每分钟最多 10 次问答提交 */
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_SEC = 60
 
 export interface QuestionListResult {
   list: HotQuestion[]
@@ -45,6 +59,12 @@ export class QuestionService {
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly dynamicService: DynamicService,
     private readonly dataSource: DataSource,
+    @Optional()
+    private readonly auditService?: AuditService,
+    @Optional()
+    private readonly systemService?: SystemService,
+    @Optional()
+    private readonly redisService?: RedisService,
   ) {}
 
   async getQuestions(page: number = 1, limit: number = 20): Promise<QuestionListResult> {
@@ -156,13 +176,44 @@ export class QuestionService {
       throw new NotFoundException('问题不存在')
     }
 
+    // ===== 修改点 B：限流检查（审核之前） =====
+    if (this.redisService) {
+      const rateLimitKey = `rate_limit:question:user_${userId}`
+      let currentCount: number
+      try {
+        currentCount = await this.redisService.incr(rateLimitKey)
+        if (currentCount === 1) {
+          await this.redisService.expire(rateLimitKey, RATE_LIMIT_WINDOW_SEC)
+        }
+        if (currentCount > RATE_LIMIT_MAX) {
+          throw new ForbiddenException('提交太频繁，请稍后再试')
+        }
+      } catch (e) {
+        if (e instanceof ForbiddenException) throw e
+        console.error('Redis 限流检查失败，降级放行:', e)
+      }
+    }
+
+    // ===== 修改点 B：内容审核 =====
+    let answerStatus: number = ANSWER_STATUS.ACTIVE // 默认正常
+
+    if (content && content.trim()) {
+      const auditResult = await this.auditAnswerContent(userId, content)
+      if (auditResult === 'reject') {
+        throw new ForbiddenException('回答包含违规内容，请修改后重试')
+      }
+      if (auditResult === 'review') {
+        answerStatus = ANSWER_STATUS.PENDING
+      }
+    }
+
     // 使用 insert 确保所有字段（含 userId）写入数据库
     const insertResult = await this.answerRepository.insert({
       questionId,
       userId,
       content,
       photos,
-      status: 0,
+      status: answerStatus,
       likeCount: 0,
     } as any)
 
@@ -178,7 +229,7 @@ export class QuestionService {
 
     // 创建审核记录
     const auditLog = this.auditLogRepository.create({
-      action: 'PENDING',
+      action: answerStatus === ANSWER_STATUS.PENDING ? 'PENDING' : 'PASS',
       targetType: 'answer',
       targetId: answerId,
       submitterId: userId,
@@ -186,18 +237,31 @@ export class QuestionService {
     })
     await this.auditLogRepository.save(auditLog)
 
-    // 自动生成动态：「回答了问题」
-    const answerRecord = await this.answerRepository.findOne({ where: { id: answerId } })
-    if (answerRecord) {
-      this.dynamicService.autoCreateDynamic({
+    // 审核中的答案不自动生成动态（审核通过后由管理员操作触发）
+    // ACTIVE 状态的答案才自动生成动态
+    if (answerStatus === ANSWER_STATUS.ACTIVE) {
+      const answerRecord = await this.answerRepository.findOne({ where: { id: answerId } })
+      if (answerRecord) {
+        this.dynamicService.autoCreateDynamic({
+          userId,
+          type: 'answer',
+          content: answerRecord.content,
+          images: answerRecord.photos || [],
+          referenceId: answerRecord.id,
+          questionId,
+          questionTitle: question.title,
+        }).catch(() => {})
+      }
+    }
+
+    // 如果进入人工审核，通知 webhook
+    if (answerStatus === ANSWER_STATUS.PENDING) {
+      console.log('[QuestionService] 回答进入人工审核队列', {
         userId,
-        type: 'answer',
-        content: answerRecord.content,
-        images: answerRecord.photos || [],
-        referenceId: answerRecord.id,
         questionId,
-        questionTitle: question.title,
-      }).catch(() => {})
+        content: content.substring(0, 50),
+        time: new Date().toISOString(),
+      })
     }
 
     return this.answerRepository.findOneOrFail({ where: { id: answerId } })
@@ -258,6 +322,96 @@ export class QuestionService {
       throw error
     } finally {
       await queryRunner.release()
+    }
+  }
+
+  // ===== 修改点 C：用户查看自己的回答（含 PENDING/REJECTED 状态） =====
+  async getUserAnswers(userId: number, page: number = 1, limit: number = 20): Promise<{ list: any[]; total: number }> {
+    const skip = (page - 1) * limit
+
+    const [answers, total] = await this.answerRepository.findAndCount({
+      where: { userId },
+      relations: ['user', 'question'],
+      order: { createdAt: 'DESC' },
+      skip,
+      take: limit,
+    })
+
+    const list = answers.map((a) => ({
+      id: a.id,
+      questionId: a.questionId,
+      questionTitle: (a.question as any)?.title || '',
+      userId: a.userId,
+      content: a.content,
+      photos: a.photos || [],
+      likeCount: a.likeCount,
+      status: a.status,
+      statusText: a.status === ANSWER_STATUS.PENDING ? '审核中' : a.status === ANSWER_STATUS.REJECTED ? '未通过审核' : '已通过',
+      createdAt: a.createdAt,
+    }))
+
+    return { list, total }
+  }
+
+  // ===== 修改点 B：内容审核方法 =====
+  /**
+   * 审核回答内容
+   * - AI 审核启用时，调用腾讯云审核
+   * - AI 审核未启用时，本地敏感词过滤
+   * - 返回 'pass' | 'reject' | 'review'
+   */
+  private async auditAnswerContent(userId: number, content: string): Promise<'pass' | 'reject' | 'review'> {
+    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
+
+    if (aiEnabled === '1' || aiEnabled === 'true') {
+      if (!this.auditService) {
+        return this.checkLocalBannedContent(content)
+      }
+      try {
+        const auditResult = await this.auditService.auditText({
+          text: content,
+          type: 'answer' as any,
+          userId,
+        })
+        return auditResult.result as 'pass' | 'reject' | 'review'
+      } catch (e) {
+        console.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
+        return this.checkLocalBannedContent(content)
+      }
+    }
+
+    // 本地敏感词过滤
+    return this.checkLocalBannedContent(content)
+  }
+
+  /**
+   * 本地敏感词检查
+   */
+  private checkLocalBannedContent(content: string): 'pass' | 'reject' {
+    const bannedKeywords = [
+      '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
+      '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
+      '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
+      '加微信', '加我微信', '微商', '刷单',
+    ]
+    const text = content.replace(/\s+/g, '').toLowerCase()
+    for (const kw of bannedKeywords) {
+      if (text.includes(kw.toLowerCase())) {
+        return 'reject'
+      }
+    }
+    return 'pass'
+  }
+
+  /**
+   * 从 SystemConfig 读取配置值
+   */
+  private async getConfigValue(key: string): Promise<string | null> {
+    if (!this.systemService) return null
+    try {
+      return await this.systemService.getConfig(key)
+    } catch {
+      return null
     }
   }
 }

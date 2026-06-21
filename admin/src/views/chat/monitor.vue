@@ -230,6 +230,11 @@ const pendingContent = ref('')
 // 需要监控 targetUserId 与哪个 peerUserId 的聊天
 const toUserIdToMonitor = ref(0)
 
+// ===== 轮询 =====
+const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
+const POLLING_INTERVAL = 2500
+let visibilityHandler: (() => void) | null = null
+
 // ===== 修复 B：统一的发送者判断（兼容 string/number 类型不一致） =====
 function isFromTarget(msg: any): boolean {
   return Number(msg.fromUserId) === Number(targetUserId.value)
@@ -259,9 +264,75 @@ function updateConversationLastMsg(peerUserId: number, content: string, type: st
     conv.lastMessage = content
     conv.messageType = type
     conv.lastTime = time
+    // 将该会话移到列表顶部
+    const idx = conversations.value.indexOf(conv)
+    if (idx > 0) {
+      conversations.value.splice(idx, 1)
+      conversations.value.unshift(conv)
+    }
   } else {
     // 如果会话列表里还没有（新会话），重新加载
     loadConversations()
+  }
+}
+
+// ===== 修复 A & B：轮询逻辑 =====
+async function pollMessagesOnce() {
+  if (!activePeer.value || !targetUserId.value) return
+
+  const targetId = Number(targetUserId.value)
+  const peerId = Number(activePeer.value.userId)
+
+  // 取本地最后一条消息的 id 作为 lastMessageId
+  const lastMsg = messages.value[messages.value.length - 1]
+  const lastMessageId = lastMsg ? Number(lastMsg.id) : 0
+
+  try {
+    const res = await adminChat.pollMessages(targetId, peerId, lastMessageId)
+    if (res.success && res.data?.list?.length) {
+      const newMessages = res.data.list
+      let hasNew = false
+
+      // 去重后追加到消息列表末尾
+      for (const msg of newMessages) {
+        if (!messages.value.some((m) => Number(m.id) === Number(msg.id))) {
+          messages.value.push(msg)
+          hasNew = true
+        }
+      }
+
+      if (hasNew) {
+        // 滚动到底部
+        nextTick(() => scrollToBottom())
+
+        // 更新左侧会话列表的最后消息
+        const latestMsg = newMessages[newMessages.length - 1]
+        // 判断这条最新消息的发送方来确定 peerUserId
+        const msgFromId = Number(latestMsg.fromUserId)
+        const msgToId = Number(latestMsg.toUserId)
+        const peerUserId = msgFromId === targetId ? msgToId : msgFromId
+        updateConversationLastMsg(
+          peerUserId,
+          latestMsg.content,
+          latestMsg.type || 'text',
+          latestMsg.createdAt,
+        )
+      }
+    }
+  } catch {
+    // 轮询静默失败，不干扰用户
+  }
+}
+
+function startPolling() {
+  stopPolling()
+  pollingTimer.value = setInterval(pollMessagesOnce, POLLING_INTERVAL)
+}
+
+function stopPolling() {
+  if (pollingTimer.value) {
+    clearInterval(pollingTimer.value)
+    pollingTimer.value = null
   }
 }
 
@@ -287,10 +358,25 @@ onMounted(() => {
     targetUser.value = { id: Number(uid), nickname: decodeURIComponent(String(nickname || '用户')) }
     loadConversations()
   }
+
+  // 修复 B：页面隐藏后重新可见时，立即执行一次轮询
+  visibilityHandler = () => {
+    if (document.visibilityState === 'visible' && activePeer.value) {
+      pollMessagesOnce()
+    }
+  }
+  document.addEventListener('visibilitychange', visibilityHandler)
 })
 
 onUnmounted(() => {
   disconnectWs()
+  // 修复 B：清除轮询定时器
+  stopPolling()
+  // 修复 B：移除页面可见性监听
+  if (visibilityHandler) {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
+  }
 })
 
 // ===== 搜索切换用户 =====
@@ -311,6 +397,7 @@ async function switchTarget() {
   lockMessage.value = ''
   activePeer.value = null
   messages.value = []
+  stopPolling()
   await loadConversations()
 }
 
@@ -342,6 +429,7 @@ async function startMonitor() {
 
 async function endMonitor() {
   monitorLoading.value = true
+  stopPolling()
   try {
     await adminChat.endMonitor(targetUserId.value)
     monitoring.value = false
@@ -478,6 +566,8 @@ function selectSession(conv: any) {
   messagePage.value = 1
   messages.value = []
   fetchMessages()
+  // 修复 B：切换会话时重启轮询
+  startPolling()
 }
 
 // ===== 聊天记录 =====

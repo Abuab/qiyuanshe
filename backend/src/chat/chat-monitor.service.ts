@@ -1,9 +1,10 @@
-import { Injectable, Logger, ForbiddenException } from '@nestjs/common'
+import { Injectable, Logger, ForbiddenException, Optional, Inject, forwardRef } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { ChatMonitorSession, MonitorStatus } from '../entities/ChatMonitorSession'
 import { ChatOperationLog, ChatOpAction } from '../entities/ChatOperationLog'
 import { ChatMessage } from '../entities/ChatMessage'
+import { ChatService } from './chat.service'
 
 const MONITOR_TIMEOUT_MS = 30 * 60 * 1000 // 30 分钟超时
 
@@ -18,6 +19,9 @@ export class ChatMonitorService {
     private readonly opLogRepo: Repository<ChatOperationLog>,
     @InjectRepository(ChatMessage)
     private readonly messageRepo: Repository<ChatMessage>,
+    @Optional()
+    @Inject(forwardRef(() => ChatService))
+    private readonly chatService?: any,
   ) {}
 
   /**
@@ -114,20 +118,34 @@ export class ChatMonitorService {
     session.updatedAt = new Date()
     await this.sessionRepo.save(session)
 
-    // 创建消息（fromUserId = targetUserId，用户端看到来自 targetUser）
-    const message = this.messageRepo.create({
-      fromUserId: targetUserId,
-      toUserId,
-      content,
-      type: 'text',
-      isRead: 0,
-      isProxy: 1,
-      proxyBy: operatorId,
-      proxyName: operatorName,
-      proxyTime: new Date(),
-    })
+    // ===== 通过 chatService.sendMessage 走完整的限流 + 审核逻辑 =====
+    let saved: ChatMessage
+    if (this.chatService) {
+      // 调用 chatService.sendMessage (userId = targetUserId，以被监控用户身份发送)
+      // 这会经过限流检查、内容审核（AI + 本地敏感词）等完整流程
+      saved = await this.chatService.sendMessage(targetUserId, {
+        toUserId,
+        content,
+        type: 'text',
+      } as any)
+    } else {
+      // chatService 未注入时降级：直接创建消息
+      const message = this.messageRepo.create({
+        fromUserId: targetUserId,
+        toUserId,
+        content,
+        type: 'text',
+        isRead: 0,
+      })
+      saved = await this.messageRepo.save(message)
+    }
 
-    const saved = await this.messageRepo.save(message)
+    // 更新代发标记
+    saved.isProxy = 1
+    saved.proxyBy = operatorId
+    saved.proxyName = operatorName
+    saved.proxyTime = new Date()
+    await this.messageRepo.save(saved)
 
     // 记录操作日志
     const logContent = content.length > 100 ? content.slice(0, 100) + '...' : content
