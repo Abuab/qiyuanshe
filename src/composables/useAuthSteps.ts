@@ -21,9 +21,9 @@ export function goAuthWechat() {
 }
 
 export function goAuthPhone() {
-  uni.navigateTo({ url: '/pages/auth-phone/auth-phone' })
+  uni.navigateTo({ url: '/pages/login/index' })
 }
 
 export function goRealNameAuth() {
-  uni.navigateTo({ url: '/pages/real-name-auth/real-name-auth' })
+  uni.navigateTo({ url: '/pages/realname-auth/index' })
 }

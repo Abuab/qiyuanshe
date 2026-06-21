@@ -132,7 +132,7 @@ const handleAgree = () => {
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
   // 上报同意记录到后端
-  post('/api/user/agreement', {
+  post('/user/agreement', {
     agreementType: 'USER_AGREEMENT',
     version: '1.0',
     action: 'agree',
@@ -246,7 +246,16 @@ const handleLoginSuccess = () => {
   position: relative;
   display: flex; flex-direction: column;
   align-items: center;
+  justify-content: center;
   overflow: hidden;
+  /* 刘海屏 / 灵动岛安全区适配 */
+  --safe-area-top: constant(safe-area-inset-top);
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: constant(safe-area-inset-bottom);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  box-sizing: border-box;
 }
 
 // ===== 粉色渐变背景 =====
@@ -259,7 +268,7 @@ const handleLoginSuccess = () => {
 // ===== 情侣插画 =====
 .illustration-area {
   width: 100%; display: flex; flex-direction: column; align-items: center;
-  padding-top: 100rpx; margin-bottom: 40rpx;
+  padding-top: 60rpx; margin-bottom: 30rpx;
 }
 .illustration-img { width: 480rpx; display: block; }
 .illustration-shadow {

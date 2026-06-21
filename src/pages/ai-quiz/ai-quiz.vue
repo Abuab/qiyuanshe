@@ -78,7 +78,7 @@ onMounted(() => {
 
 async function nextQuestion() {
   try {
-    const res: any = await request({ url: '/api/ai/fun-quiz', method: 'POST' })
+    const res: any = await request({ url: '/ai/fun-quiz', method: 'POST' })
     if (res.code === 0 && res.data) {
       messages.value.push({
         type: 'ai',
@@ -103,7 +103,7 @@ function sendMessage() {
   setTimeout(async () => {
     try {
       const res: any = await request({
-        url: '/api/ai/fun-quiz/answer',
+        url: '/ai/fun-quiz/answer',
         method: 'POST',
         data: { answer: text },
       })
@@ -130,17 +130,21 @@ function sendMessage() {
   flex-direction: column;
   height: 100vh;
   background-color: #f5f5f5;
+  --safe-area-top: constant(safe-area-inset-top);
+  --safe-area-top: env(safe-area-inset-top);
 }
 
 /* ===== 标题栏 ===== */
 .title-bar {
-  height: 88rpx;
+  padding-top: var(--safe-area-top);
+  height: calc(88rpx + var(--safe-area-top));
   background: #ffffff;
   border-bottom: 1rpx solid #eeeeee;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .title-text {

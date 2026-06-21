@@ -95,7 +95,7 @@ async function submitAnswers() {
       body.targetUserId = targetUserId.value
     }
     const res: any = await request({
-      url: '/api/questionnaire/submit',
+      url: '/questionnaire/submit',
       method: 'POST',
       data: body,
     })

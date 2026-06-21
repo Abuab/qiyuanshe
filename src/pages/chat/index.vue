@@ -627,7 +627,7 @@ const closeVipLimit = () => { showVipLimit.value = false }
 // ===== 聊天权限检查 =====
 async function checkChatPermission() {
   try {
-    const matchRes: any = await request({ url: '/api/users/matches', method: 'GET' })
+    const matchRes: any = await request({ url: '/users/matches', method: 'GET' })
     const matches: any[] = matchRes.code === 0 ? (matchRes.data?.list || matchRes.data || []) : []
     isMatched.value = matches.some((m: any) => m.id === toUserId.value)
 

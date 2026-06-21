@@ -309,7 +309,7 @@
     },
     {
       "path": "pages/ai-quiz/ai-quiz",
-      "style": { "navigationBarTitleText": "AI 情感助手" }
+      "style": { "navigationBarTitleText": "", "navigationStyle": "custom" }
     },
     {
       "path": "pages/questionnaire/questionnaire-list",

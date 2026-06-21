@@ -495,7 +495,7 @@ const today = computed(() => {
 // ===== 语音 =====
 async function fetchVoiceEnabled() {
   try {
-    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
     if (res.code === 0 && res.data) {
       voiceEnabled.value = res.data.value !== 'false'
     }
@@ -521,7 +521,7 @@ function stopVoice() {
 async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
-    const res: any = await request({ url: `/api/users/${userId.value}/voice-intro`, method: 'GET' })
+    const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET' })
     if (res.code === 0 && res.data) { voiceData.value = res.data }
   } catch { /* 404 不显示 */ }
 }

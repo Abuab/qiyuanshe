@@ -111,7 +111,7 @@ function goBack() {
 
 async function fetchData() {
   try {
-    const res: any = await request({ url: '/api/users/daily-recommend', method: 'GET' })
+    const res: any = await request({ url: '/users/daily-recommend', method: 'GET' })
     if (res.code === 0 && res.data) {
       list.value = (res.data.list || []).map((item: UserInfo) => ({
         ...item,

@@ -25,6 +25,8 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserBlock } from '../entities/UserBlock'
 import { AuditLog } from '../entities/AuditLog'
+import { MatchRecord } from '../entities/MatchRecord'
+import { Follow } from '../entities/Follow'
 import { Result } from '../common/result'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
@@ -49,6 +51,8 @@ export class UserController {
     @InjectRepository(UserPhoto) private photoRepo: Repository<UserPhoto>,
     @InjectRepository(UserBlock) private blockRepo: Repository<UserBlock>,
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
+    @InjectRepository(MatchRecord) private matchRecordRepo: Repository<MatchRecord>,
+    @InjectRepository(Follow) private followRepo: Repository<Follow>,
     private readonly dynamicService: DynamicService,
     private readonly notifyService: NotifyChannelService,
     private readonly redisService?: RedisService,
@@ -367,6 +371,25 @@ export class UserController {
     return Result.success(null, '账户已注销')
   }
 
+  @Get('matches')
+  @UseGuards(JwtAuthGuard)
+  async getMatches(@Request() req: any) {
+    const userId = req.user.userId
+    const records = await this.matchRecordRepo.find({
+      where: { userId },
+      relations: ['matchedUser'],
+      order: { createdAt: 'DESC' },
+    })
+    const list = records.map(r => ({
+      id: r.matchedUserId,
+      matchedUserId: r.matchedUserId,
+      nickname: r.matchedUser?.nickname || '',
+      avatar: r.matchedUser?.avatar || '',
+      createdAt: r.createdAt,
+    }))
+    return Result.success({ list, total: list.length })
+  }
+
   @Get('stats')
   @UseGuards(JwtAuthGuard)
   async getMyStats(@Request() req: any) {
@@ -460,6 +483,55 @@ export class UserController {
       console.error('unfollowUser error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('取消关注失败: ' + (error?.message || '请稍后重试'))
+    }
+  }
+
+  @Post(':id/like')
+  @UseGuards(JwtAuthGuard)
+  async likeUser(
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const userId = req.user.userId
+      if (userId === targetUserId) return Result.serverError('不能喜欢自己')
+
+      await this.followRepo.manager.transaction(async (manager) => {
+        const existing = await manager.findOne(Follow, { where: { userId, targetUserId } })
+        if (existing) return
+        const follow = manager.create(Follow, { userId, targetUserId })
+        await manager.save(follow)
+      })
+
+      // 检查是否互相喜欢（匹配成功）
+      const reverse = await this.followRepo.findOne({ where: { userId: targetUserId, targetUserId: userId } })
+      const isMatched = !!reverse
+      if (isMatched && reverse) {
+        const targetUser = await this.userRepo.findOne({ where: { id: targetUserId }, select: ['id', 'nickname', 'avatar'] })
+        return Result.success({ isMatched: true, matchUser: targetUser })
+      }
+
+      return Result.success({ isMatched: false })
+    } catch (error: any) {
+      console.error('likeUser error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('操作失败')
+    }
+  }
+
+  @Delete(':id/like')
+  @UseGuards(JwtAuthGuard)
+  async unlikeUser(
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const userId = req.user.userId
+      await this.followRepo.delete({ userId, targetUserId })
+      return Result.success(null)
+    } catch (error: any) {
+      console.error('unlikeUser error:', error?.message || error)
+      return Result.serverError('操作失败')
     }
   }
 

@@ -172,7 +172,7 @@ const voiceEnabled = ref(false)
 
 onMounted(async () => {
   try {
-    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
     if (res.code === 0 && res.data) {
       voiceEnabled.value = res.data.value !== 'false'
     }
@@ -182,7 +182,7 @@ onMounted(async () => {
 const onLike = async () => {
   if (isLiked.value) {
     try {
-      const res: any = await request({ url: `/api/users/${props.user.id}/like`, method: 'DELETE' })
+      const res: any = await request({ url: `/users/${props.user.id}/like`, method: 'DELETE' })
       if (res.code === 0) {
         isLiked.value = false
       }
@@ -193,7 +193,7 @@ const onLike = async () => {
   }
 
   try {
-    const res: any = await request({ url: `/api/users/${props.user.id}/like`, method: 'POST' })
+    const res: any = await request({ url: `/users/${props.user.id}/like`, method: 'POST' })
     if (res.code === 0 && res.data) {
       isLiked.value = true
       if (res.data.isMatched && res.data.matchUser) {

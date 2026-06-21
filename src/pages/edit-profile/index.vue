@@ -1289,7 +1289,7 @@ let innerAudioCtx: any = null
 
 async function fetchVoiceEnabled() {
   try {
-    const res: any = await request({ url: '/api/system/config?key=feature.voiceEnabled', method: 'GET' })
+    const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
     if (res.code === 0 && res.data) {
       voiceEnabled.value = res.data.value !== 'false'
     }
@@ -1353,7 +1353,7 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
     const token = uni.getStorageSync('token')
     const res: any = await new Promise((resolve, reject) => {
       uni.uploadFile({
-        url: baseUrl + '/api/users/voice-intro',
+        url: baseUrl + '/users/voice-intro',
         filePath: voiceTempPath.value,
         name: 'voiceFile',
         header: token ? { Authorization: `Bearer ${token}` } : {},

@@ -62,7 +62,7 @@ function goDetail(id: number) {
 
 async function fetchList() {
   try {
-    const res: any = await request({ url: '/api/questionnaire/list', method: 'GET' })
+    const res: any = await request({ url: '/questionnaire/list', method: 'GET' })
     if (res.code === 0 && res.data) {
       list.value = res.data.list || res.data || []
     }
