@@ -72,7 +72,6 @@ import { NotifyChannelService } from './notify-channel.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
-import { ChatModule } from '../chat/chat.module'
 
 @Module({
   imports: [
@@ -112,7 +111,6 @@ import { ChatModule } from '../chat/chat.module'
     }),
     PassportModule,
      AppDynamicModule,
-     ChatModule,
    ],
   controllers: [
     AdminUserController,
