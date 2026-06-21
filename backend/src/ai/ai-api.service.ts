@@ -237,7 +237,10 @@ export class AiApiService {
     status: string
     errorMessage: string
   }) {
-    const log = this.providerLogRepo.create(data)
+    const log = this.providerLogRepo.create({
+      ...data,
+      userId: data.userId && data.userId > 0 ? data.userId : null,
+    })
     await this.providerLogRepo.save(log)
   }
 }

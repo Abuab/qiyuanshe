@@ -839,7 +839,7 @@ $text-secondary: #666666;
 $text-hint: #999999;
 
 .user-detail-page {
-  height: 100vh;
+  width: 100%; height: 100%;
   display: flex; flex-direction: column;
   overflow: hidden;
   background: $bg;
@@ -872,13 +872,15 @@ $text-hint: #999999;
 .page-scroll-wrapper {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 .page-scroll {
   flex: 1;
-  height: 0; /* WeChat scroll-view needs explicit height anchor for flex to expand */
+  min-height: 0;
   width: 100%;
+  height: 0;
 }
 
 // ===== 1. 顶部大图 =====
