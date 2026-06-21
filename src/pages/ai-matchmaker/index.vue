@@ -15,62 +15,8 @@
       <text class="quota-text">今日免费咨询剩余 {{ remainingRounds }} 轮</text>
     </view>
 
-    <!-- 对话消息列表 -->
-    <scroll-view
-      class="chat-scroll"
-      :scroll-y="true"
-      :scroll-with-animation="true"
-      :scroll-into-view="scrollToId"
-      :scroll-top="scrollTopVal"
-      :enhanced="true"
-      :show-scrollbar="false"
-    >
-      <view class="chat-inner">
-      <view id="msg-top" class="msg-top-spacer" />
-      <!-- 欢迎语 -->
-      <view v-if="messages.length === 0" class="welcome-block">
-        <text class="welcome-emoji">💝</text>
-        <text class="welcome-title">Hi~ 我是你的AI红娘</text>
-        <text class="welcome-desc">恋爱困惑、约会建议、相处技巧...尽管问我</text>
-      </view>
-
-      <!-- 消息气泡 -->
-      <view
-        v-for="(msg, i) in messages"
-        :key="i"
-        :id="'msg-' + i"
-        class="msg-row"
-        :class="msg.role"
-      >
-        <view class="bubble" :class="msg.role">
-          <text class="bubble-text">{{ msg.content }}</text>
-        </view>
-        <view v-if="msg.safetyNotice === 'safety_boundary'" class="safety-tag">
-          <text>{{ systemStore.matchmakerSafetyBoundaryLabel }}</text>
-        </view>
-        <view v-if="msg.safetyNotice === 'input_violation'" class="safety-tag warn">
-          <text>{{ systemStore.matchmakerSafetyLabel }}</text>
-        </view>
-      </view>
-
-      <!-- 打字动画 -->
-      <view v-if="typing" class="msg-row ai">
-        <view class="bubble ai typing-bubble">
-          <view class="typing-dots">
-            <view class="dot" />
-            <view class="dot" />
-            <view class="dot" />
-          </view>
-        </view>
-      </view>
-
-      <view id="msg-bottom" class="msg-bottom-spacer" />
-      </view>
-    </scroll-view>
-
-    <!-- 底部区域 -->
-    <view class="bottom-area" :style="{ paddingBottom: safeAreaBottom + 'px' }">
-      <!-- 快捷问题横向滚动 -->
+    <!-- 快捷问题标签栏 -->
+    <view class="quick-bar-wrap">
       <scroll-view class="quick-bar" :scroll-x="true" :show-scrollbar="false">
         <view class="quick-bar-inner">
           <text
@@ -81,7 +27,65 @@
           >{{ q.content }}</text>
         </view>
       </scroll-view>
+    </view>
 
+    <!-- 消息列表区域 -->
+    <view class="message-area">
+      <scroll-view
+        class="chat-scroll"
+        :scroll-y="true"
+        :scroll-with-animation="true"
+        :scroll-into-view="scrollToId"
+        :scroll-top="scrollTopVal"
+        :enhanced="true"
+        :show-scrollbar="false"
+      >
+        <view class="chat-inner">
+        <view id="msg-top" class="msg-top-spacer" />
+        <!-- 欢迎语 -->
+        <view v-if="messages.length === 0" class="welcome-block">
+          <text class="welcome-emoji">💝</text>
+          <text class="welcome-title">Hi~ 我是你的AI红娘</text>
+          <text class="welcome-desc">恋爱困惑、约会建议、相处技巧...尽管问我</text>
+        </view>
+
+        <!-- 消息气泡 -->
+        <view
+          v-for="(msg, i) in messages"
+          :key="i"
+          :id="'msg-' + i"
+          class="msg-row"
+          :class="msg.role"
+        >
+          <view class="bubble" :class="msg.role">
+            <text class="bubble-text">{{ msg.content }}</text>
+          </view>
+          <view v-if="msg.safetyNotice === 'safety_boundary'" class="safety-tag">
+            <text>{{ systemStore.matchmakerSafetyBoundaryLabel }}</text>
+          </view>
+          <view v-if="msg.safetyNotice === 'input_violation'" class="safety-tag warn">
+            <text>{{ systemStore.matchmakerSafetyLabel }}</text>
+          </view>
+        </view>
+
+        <!-- 打字动画 -->
+        <view v-if="typing" class="msg-row ai">
+          <view class="bubble ai typing-bubble">
+            <view class="typing-dots">
+              <view class="dot" />
+              <view class="dot" />
+              <view class="dot" />
+            </view>
+          </view>
+        </view>
+
+        <view id="msg-bottom" class="msg-bottom-spacer" />
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 底部操作区 -->
+    <view class="bottom-area" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <!-- 输入框行 -->
       <view class="input-row">
         <input
@@ -143,9 +147,11 @@ const safeAreaBottom = ref(0)
 onMounted(async () => {
   try {
     // #ifdef MP-WEIXIN
-    const sysInfo = uni.getWindowInfo()
+    // uni.getWindowInfo() 不返回 statusBarHeight，直接用系统 API
+    // eslint-disable-next-line
+    const sysInfo: any = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeArea?.bottom || 0
+    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || sysInfo.safeArea?.bottom || 0
     // #endif
   } catch {}
 
@@ -276,7 +282,7 @@ $pink-light: #FF8FA8;
 $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 .ai-matchmaker-page {
-  width: 100vw; height: 100vh;
+  width: 100%; height: 100%;
   display: flex; flex-direction: column;
   background: #F8F8F8;
   overflow: hidden;
@@ -309,15 +315,46 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 // ==================== 配额提示 ====================
 .quota-bar {
+  flex-shrink: 0;
   padding: 12rpx 32rpx; background: #FFF8F0;
   text-align: center;
 }
 .quota-text { font-size: 24rpx; color: #FF9500; }
 
-// ==================== 聊天区域 ====================
-.chat-scroll {
+// ==================== 快捷问题标签栏 ====================
+.quick-bar-wrap {
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1rpx solid #F0F0F0;
+}
+.quick-bar {
+  white-space: nowrap;
+}
+.quick-bar-inner {
+  display: flex; gap: 16rpx;
+  padding: 12rpx 24rpx;
+  padding-left: 32rpx;
+}
+.quick-tag {
+  flex-shrink: 0;
+  min-width: 100rpx;
+  padding: 12rpx 24rpx; border-radius: 36rpx;
+  background: #FFF0F3; border: 1rpx solid rgba(255, 107, 138, 0.25);
+  font-size: 24rpx; color: $pink; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 220rpx;
+  transition: all 0.2s;
+  &:active { background: rgba(255, 107, 138, 0.1); }
+}
+
+// ==================== 消息列表区域 ====================
+.message-area {
   flex: 1; min-height: 0;
-  // scroll-view 自己处理滚动，不要设 overflow
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.chat-scroll {
+  flex: 1; width: 100%;
+  height: 0; /* WeChat scroll-view needs explicit height with flex */
 }
 .chat-inner {
   padding: 24rpx 40rpx 32rpx;
@@ -391,33 +428,11 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 .msg-top-spacer { height: 1rpx; }
 .msg-bottom-spacer { height: 80rpx; }
 
-// ==================== 底部区域 ====================
+// ==================== 底部操作区 ====================
 .bottom-area {
   flex-shrink: 0;
-  z-index: 10;
   background: #fff; border-top: 1rpx solid #F0F0F0;
   padding: 12rpx 24rpx 0;
-}
-
-// 快捷问题横向滚动
-.quick-bar {
-  white-space: nowrap;
-  margin-bottom: 12rpx;
-}
-.quick-bar-inner {
-  display: flex; gap: 16rpx;
-  padding: 4rpx 0;
-  padding-left: 16rpx;
-}
-.quick-tag {
-  flex-shrink: 0;
-  min-width: 100rpx;
-  padding: 12rpx 24rpx; border-radius: 36rpx;
-  background: #FFF0F3; border: 1rpx solid rgba(255, 107, 138, 0.25);
-  font-size: 24rpx; color: $pink; white-space: nowrap;
-  overflow: hidden; text-overflow: ellipsis; max-width: 220rpx;
-  transition: all 0.2s;
-  &:active { background: rgba(255, 107, 138, 0.1); }
 }
 
 // 输入行

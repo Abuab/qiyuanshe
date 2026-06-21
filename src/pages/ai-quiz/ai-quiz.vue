@@ -1,7 +1,7 @@
 <template>
   <view class="ai-quiz-page">
     <!-- 顶部标题栏 -->
-    <view class="title-bar">
+    <view class="title-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="title-left" @tap="handleBack">
         <text class="back-icon">←</text>
       </view>
@@ -10,6 +10,7 @@
     </view>
 
     <!-- 消息区 -->
+    <view class="message-area">
     <scroll-view
       class="msg-area"
       scroll-y
@@ -31,6 +32,7 @@
         <view id="msg-bottom" class="msg-bottom-spacer" />
       </view>
     </scroll-view>
+    </view>
 
     <!-- 底部输入区 -->
     <view class="input-bar">
@@ -66,6 +68,8 @@ interface ChatMessage {
 const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const lastMsgId = ref('')
+const statusBarHeight = ref(0)
+const loadingFailed = ref(false)
 
 function scrollToBottom() {
   lastMsgId.value = ''
@@ -78,6 +82,12 @@ function scrollToBottom() {
 // 已通过 scroll-into-view 绑定
 
 onMounted(() => {
+  // #ifdef MP-WEIXIN
+  try {
+    const sysInfo = uni.getSystemInfoSync()
+    statusBarHeight.value = sysInfo.statusBarHeight || 0
+  } catch {}
+  // #endif
   nextQuestion()
 })
 
@@ -85,14 +95,22 @@ const handleBack = () => safeNavigateBack()
 
 async function nextQuestion() {
   try {
+    loadingFailed.value = false
     const res: any = await request({ url: '/ai/fun-quiz', method: 'POST' })
-    messages.value.push({
-      type: 'ai',
-      content: res?.question || res,
-    })
+    const question = res?.question || res
+    if (question && typeof question === 'string') {
+      messages.value.push({ type: 'ai', content: question })
+    } else {
+      messages.value.push({ type: 'ai', content: '如果你和对方第一次约会，你会选择什么地方？' })
+    }
     scrollToBottom()
-  } catch {
-    uni.showToast({ title: '获取题目失败', icon: 'none' })
+  } catch (err: any) {
+    loadingFailed.value = true
+    const errMsg = err?.data?.message || err?.errMsg || err?.message || '接口暂不可用'
+    uni.showToast({ title: errMsg.length > 20 ? errMsg.slice(0, 20) + '...' : errMsg, icon: 'none', duration: 2500 })
+    // 仍展示一条默认欢迎消息，避免白屏
+    messages.value.push({ type: 'ai', content: 'Hi~ 我是你的AI情感助手，想聊点什么？换个话题试试吧～' })
+    scrollToBottom()
   }
 }
 
@@ -127,34 +145,24 @@ function sendMessage() {
 }
 </script>
 
-<style lang="scss">
-/* WeChat mini-program: page element must have explicit height */
-page {
-  height: 100%;
-}
-</style>
-
 <style lang="scss" scoped>
 .ai-quiz-page {
   display: flex;
   flex-direction: column;
   height: 100%;
   background-color: #f5f5f5;
-  --safe-area-top: constant(safe-area-inset-top);
-  --safe-area-top: env(safe-area-inset-top);
 }
 
 /* ===== 标题栏 ===== */
 .title-bar {
-  padding-top: var(--safe-area-top);
-  height: calc(88rpx + var(--safe-area-top));
-  background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 88rpx;
+  background: #ffffff;
+  border-bottom: 1rpx solid #eeeeee;
   flex-shrink: 0;
-  box-sizing: border-box;
+  box-sizing: content-box;
   position: relative;
 }
 
@@ -185,9 +193,13 @@ page {
 }
 
 /* ===== 消息区 ===== */
+.message-area {
+  flex: 1; min-height: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
 .msg-area {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; width: 100%;
 }
 
 .msg-list {

@@ -4,7 +4,7 @@
       <text>加载中...</text>
     </view>
 
-    <template v-else-if="profileData">
+    <view v-else-if="profileData" class="detail-body">
       <!-- ========== 自定义导航栏 ========== -->
       <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="nav-left" @tap="handleBack">
@@ -16,6 +16,8 @@
         </view>
       </view>
 
+      <!-- ========== 滚动区域 wrapper ========== -->
+      <view class="scroll-wrapper">
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图 ========== -->
         <view class="hero-section">
@@ -264,8 +266,9 @@
 
         <view class="bottom-spacer" />
       </scroll-view>
+      </view>
 
-      <!-- ========== 7. 底部固定操作栏 ========== -->
+      <!-- ========== 7. 底部操作栏 ========== -->
       <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
         <view class="bb-btn contact-btn" @tap="handleContact">
           <text class="bb-icon">👋</text>
@@ -430,10 +433,15 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
-    </template>
+    </view>
 
-    <view v-else class="empty-container">
-      <text>用户不存在</text>
+    <view v-else class="error-state">
+      <text class="error-emoji">😕</text>
+      <text class="error-title">页面加载失败</text>
+      <text class="error-desc">无法获取用户信息，请检查网络后重试</text>
+      <view class="retry-btn" @tap="fetchProfileDetail">
+        <text>重新加载</text>
+      </view>
     </view>
   </view>
 </template>
@@ -456,6 +464,7 @@ const systemStore = useSystemStore()
 
 const userId = ref(0)
 const loading = ref(true)
+const loadError = ref(false)
 const profileData = ref<any>(null)
 
 // ===== 语音 =====
@@ -470,6 +479,7 @@ const showReportSheet = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
+const loadingDeprecated = ref(false) // unused, kept for compat
 
 // 照片引导弹窗
 const showLoginPrompt = ref(false)
@@ -534,6 +544,7 @@ onMounted(async () => {
     fetchProfileDetail()
   } else {
     loading.value = false
+    loadError.value = true
   }
   fetchMatchmakerList()
   fetchVoiceIntro()
@@ -574,6 +585,7 @@ const fetchProfileDetail = async () => {
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
   } catch {
+    loadError.value = true
     uni.showToast({ title: '获取用户信息失败', icon: 'none' })
   } finally {
     loading.value = false
@@ -816,13 +828,6 @@ const blockUser = () => {
 const goGifts = () => uni.showToast({ title: '礼物功能开发中', icon: 'none' })
 </script>
 
-<style lang="scss">
-/* WeChat mini-program: page element must have explicit height */
-page {
-  height: 100%;
-}
-</style>
-
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
@@ -834,18 +839,25 @@ $text-secondary: #666666;
 $text-hint: #999999;
 
 .user-detail-page {
-  height: 100%;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
   background: $bg;
-  position: relative;
 }
-.loading-container, .empty-container {
-  display: flex; align-items: center; justify-content: center; height: 100%;
+.detail-body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.loading-container {
+  display: flex; align-items: center; justify-content: center;
+  flex: 1;
   font-size: 28rpx; color: $text-hint;
 }
 
 // ===== 导航栏 =====
 .nav-bar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 200;
   display: flex; align-items: center; justify-content: space-between;
   padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
 }
@@ -855,8 +867,14 @@ $text-hint: #999999;
 .more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
 
 // ===== 滚动区域 =====
+.scroll-wrapper {
+  flex: 1; min-height: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
 .page-scroll {
-  height: 100%;
+  flex: 1; width: 100%;
+  height: 0; /* WeChat scroll-view needs explicit height with flex */
 }
 
 // ===== 1. 顶部大图 =====
@@ -1152,7 +1170,8 @@ $text-hint: #999999;
 
 // ===== 7. 底部操作栏 =====
 .bottom-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  flex-shrink: 0;
+  width: 100%;
   display: flex; gap: 20rpx; padding: 16rpx 24rpx;
   background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0,0,0,0.05);
 }
@@ -1240,4 +1259,17 @@ $text-hint: #999999;
 .voice-right { margin-left: auto; display: flex; align-items: center; }
 .voice-duration { font-size: 28rpx; color: #666666; }
 .voice-play-btn { margin-left: 16rpx; }
+
+// ===== 错误状态 =====
+.error-state {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.error-emoji { font-size: 80rpx; margin-bottom: 20rpx; }
+.error-title { font-size: 32rpx; color: #333; font-weight: bold; margin-bottom: 12rpx; }
+.error-desc { font-size: 26rpx; color: #999; margin-bottom: 40rpx; }
+.retry-btn {
+  padding: 20rpx 60rpx; background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 50rpx; font-size: 28rpx; color: #fff;
+}
 </style>

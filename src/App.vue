@@ -67,6 +67,7 @@ onUnhandledRejection((res: { reason: string }) => {
 @import './styles/variables.scss';
 
 page {
+  height: 100%;
   background-color: var(--bg);
   font-size: 14px;
   color: var(--text);
