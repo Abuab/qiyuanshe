@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 
 interface LikeUser {
   id: number
@@ -107,9 +108,11 @@ async function loadData() {
   try {
     const type = ['liked', 'likedMe', 'mutual'][currentTab.value]
     const res: any = await request({ url: `/api/users/likes?type=${type}`, method: 'GET' })
-    if (res.code === 0 && res.data) {
-      list.value = res.data.list || res.data || []
-    }
+    const rawList = res?.list || res || []
+    list.value = rawList.map((item: any) => ({
+      ...item,
+      avatar: getFullImageUrl(item.avatar),
+    }))
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }

@@ -99,16 +99,12 @@ async function submitAnswers() {
       method: 'POST',
       data: body,
     })
-    if (res.code === 0 && res.data) {
-      const resultId = res.data.resultId || res.data.id
-      let url = `/pages/questionnaire/questionnaire-result?id=${resultId}`
-      if (targetUserId.value) {
-        url += `&targetUserId=${targetUserId.value}`
-      }
-      uni.redirectTo({ url })
-    } else {
-      uni.showToast({ title: res.message || '提交失败', icon: 'none' })
+    const resultId = res?.resultId || res?.id
+    let url = `/pages/questionnaire/questionnaire-result?id=${resultId}`
+    if (targetUserId.value) {
+      url += `&targetUserId=${targetUserId.value}`
     }
+    uni.redirectTo({ url })
   } catch {
     uni.showToast({ title: '提交失败', icon: 'none' })
   } finally {
@@ -132,9 +128,7 @@ async function fetchQuestions() {
       url: `/api/questionnaire/${questionnaireId.value}`,
       method: 'GET',
     })
-    if (res.code === 0 && res.data) {
-      questions.value = res.data.questions || []
-    }
+    questions.value = res?.questions || []
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }

@@ -78,11 +78,9 @@ async function loadData() {
   try {
     const type = currentTab.value === 0 ? 'all' : 'like'
     const res: any = await request({ url: `/api/users/visitors?type=${type}`, method: 'GET' })
-    if (res.code === 0 && res.data) {
-      list.value = res.data.list || []
-      if (res.data.total !== undefined) {
-        newLikeCount.value = currentTab.value === 1 ? res.data.total : newLikeCount.value
-      }
+    list.value = res?.list || []
+    if (res?.total !== undefined) {
+      newLikeCount.value = currentTab.value === 1 ? res.total : newLikeCount.value
     }
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })

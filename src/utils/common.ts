@@ -161,6 +161,10 @@ export const reLaunch = (url: string): void => {
  */
 export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
+  // 过滤 picsum.photos / placeholder 等不可用外部图片源
+  if (/picsum\.photos|placeholder\.com|lorempixel/i.test(path)) {
+    return '/static/default-avatar.png'
+  }
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // 替换旧 IP 地址为当前域名
     const ipMatch = path.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/)

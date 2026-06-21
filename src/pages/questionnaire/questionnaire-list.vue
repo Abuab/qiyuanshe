@@ -63,9 +63,7 @@ function goDetail(id: number) {
 async function fetchList() {
   try {
     const res: any = await request({ url: '/questionnaire/list', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      list.value = res.data.list || res.data || []
-    }
+    list.value = res?.list || res || []
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }

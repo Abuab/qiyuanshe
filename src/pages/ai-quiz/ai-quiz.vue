@@ -2,7 +2,11 @@
   <view class="ai-quiz-page">
     <!-- 顶部标题栏 -->
     <view class="title-bar">
+      <view class="title-left" @tap="handleBack">
+        <text class="back-icon">←</text>
+      </view>
       <text class="title-text">AI 情感助手</text>
+      <view class="title-right" />
     </view>
 
     <!-- 消息区 -->
@@ -52,6 +56,7 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted } from 'vue'
 import request from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface ChatMessage {
   type: 'ai' | 'user'
@@ -76,16 +81,16 @@ onMounted(() => {
   nextQuestion()
 })
 
+const handleBack = () => safeNavigateBack()
+
 async function nextQuestion() {
   try {
     const res: any = await request({ url: '/ai/fun-quiz', method: 'POST' })
-    if (res.code === 0 && res.data) {
-      messages.value.push({
-        type: 'ai',
-        content: res.data.question || res.data,
-      })
-      scrollToBottom()
-    }
+    messages.value.push({
+      type: 'ai',
+      content: res?.question || res,
+    })
+    scrollToBottom()
   } catch {
     uni.showToast({ title: '获取题目失败', icon: 'none' })
   }
@@ -107,12 +112,10 @@ function sendMessage() {
         method: 'POST',
         data: { answer: text },
       })
-      if (res.code === 0 && res.data) {
-        messages.value.push({
-          type: 'ai',
-          content: res.data.reply || res.data,
-        })
-      }
+      messages.value.push({
+        type: 'ai',
+        content: res?.reply || res,
+      })
     } catch {
       messages.value.push({
         type: 'ai',
@@ -124,11 +127,18 @@ function sendMessage() {
 }
 </script>
 
+<style lang="scss">
+/* WeChat mini-program: page element must have explicit height */
+page {
+  height: 100%;
+}
+</style>
+
 <style lang="scss" scoped>
 .ai-quiz-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   background-color: #f5f5f5;
   --safe-area-top: constant(safe-area-inset-top);
   --safe-area-top: env(safe-area-inset-top);
@@ -145,6 +155,27 @@ function sendMessage() {
   justify-content: center;
   flex-shrink: 0;
   box-sizing: border-box;
+  position: relative;
+}
+
+.title-left {
+  position: absolute;
+  left: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+}
+
+.back-icon {
+  font-size: 44rpx;
+  color: #333333;
+  font-weight: bold;
+}
+
+.title-right {
+  width: 64rpx;
 }
 
 .title-text {

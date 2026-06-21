@@ -70,11 +70,9 @@ async function fetchReport() {
       url: `/api/ai/match-report?targetUserId=${targetUserId.value}`,
       method: 'GET',
     })
-    if (res.code === 0 && res.data) {
-      score.value = res.data.score || 0
-      analysis.value = res.data.analysis || ''
-      tags.value = res.data.tags || []
-    }
+    score.value = res?.score || 0
+    analysis.value = res?.analysis || ''
+    tags.value = res?.tags || []
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {

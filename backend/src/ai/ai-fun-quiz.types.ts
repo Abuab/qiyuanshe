@@ -18,6 +18,11 @@ export interface FunQuizRequest {
   taBirthHour?: string
 }
 
+/** AI 趣味情感问答 —— 用户回答请求 */
+export interface FunQuizAnswerRequest {
+  answer: string
+}
+
 /** 未来时间节点 */
 export interface FunTimeNode {
   /** 时间描述，如 "第100天" */

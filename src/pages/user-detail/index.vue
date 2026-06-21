@@ -496,9 +496,7 @@ const today = computed(() => {
 async function fetchVoiceEnabled() {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      voiceEnabled.value = res.data.value !== 'false'
-    }
+    voiceEnabled.value = res?.value !== 'false'
   } catch { voiceEnabled.value = true }
 }
 
@@ -522,7 +520,7 @@ async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
     const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET', skipToast: true })
-    if (res.code === 0 && res.data) { voiceData.value = res.data }
+    if (res) { voiceData.value = res }
   } catch { /* 404 不显示 */ }
 }
 
@@ -818,6 +816,13 @@ const blockUser = () => {
 const goGifts = () => uni.showToast({ title: '礼物功能开发中', icon: 'none' })
 </script>
 
+<style lang="scss">
+/* WeChat mini-program: page element must have explicit height */
+page {
+  height: 100%;
+}
+</style>
+
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
@@ -829,12 +834,12 @@ $text-secondary: #666666;
 $text-hint: #999999;
 
 .user-detail-page {
-  min-height: 100vh;
+  height: 100%;
   background: $bg;
   position: relative;
 }
 .loading-container, .empty-container {
-  display: flex; align-items: center; justify-content: center; height: 100vh;
+  display: flex; align-items: center; justify-content: center; height: 100%;
   font-size: 28rpx; color: $text-hint;
 }
 
@@ -850,7 +855,9 @@ $text-hint: #999999;
 .more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
 
 // ===== 滚动区域 =====
-.page-scroll { height: calc(100vh - 88rpx); }
+.page-scroll {
+  height: 100%;
+}
 
 // ===== 1. 顶部大图 =====
 .hero-section {

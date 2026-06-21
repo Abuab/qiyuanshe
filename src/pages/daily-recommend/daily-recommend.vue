@@ -79,6 +79,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 
 interface UserInfo {
   id: number
@@ -112,12 +113,12 @@ function goBack() {
 async function fetchData() {
   try {
     const res: any = await request({ url: '/users/daily-recommend', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      list.value = (res.data.list || []).map((item: UserInfo) => ({
-        ...item,
-        _removing: false,
-      }))
-    }
+    list.value = (res?.list || []).map((item: UserInfo) => ({
+      ...item,
+      avatar: getFullImageUrl(item.avatar),
+      photos: (item.photos || []).map((p: string) => getFullImageUrl(p)),
+      _removing: false,
+    }))
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
@@ -134,18 +135,16 @@ async function onLike(item: UserInfo, index: number) {
   uni.showLoading({ title: '心动中...', mask: true })
   try {
     const res: any = await request({ url: `/api/users/${item.id}/like`, method: 'POST' })
-    if (res.code === 0 && res.data) {
-      if (res.data.isMatched && res.data.matchUser) {
-        uni.$emit('match:success', res.data.matchUser)
-      } else {
-        uni.showToast({ title: '已心动', icon: 'none' })
-      }
-      // 卡片滑出
-      list.value[index]._removing = true
-      setTimeout(() => {
-        list.value.splice(index, 1)
-      }, 300)
+    if (res?.isMatched && res.matchUser) {
+      uni.$emit('match:success', res.matchUser)
+    } else {
+      uni.showToast({ title: '已心动', icon: 'none' })
     }
+    // 卡片滑出
+    list.value[index]._removing = true
+    setTimeout(() => {
+      list.value.splice(index, 1)
+    }, 300)
   } catch {
     uni.showToast({ title: '操作失败', icon: 'none' })
   } finally {

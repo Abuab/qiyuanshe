@@ -452,6 +452,12 @@ export class UserController {
     return Result.success(data)
   }
 
+  /** 获取用户语音介绍（暂未实现，返回空数据告知前端不显示语音条） */
+  @Get(':id/voice-intro')
+  async getVoiceIntro(@Param('id', ParseIntPipe) _id: number) {
+    return Result.success(null)
+  }
+
   @Post(':id/follow')
   @UseGuards(JwtAuthGuard)
   async followUser(

@@ -81,7 +81,7 @@
           <view class="matchmaker-user-card" @tap="goToUserDetail(item.userId)">
             <image
               class="mu-avatar"
-              :src="item.avatar || icons.common.defaultAvatar"
+              :src="getFullImageUrl(item.avatar) || icons.common.defaultAvatar"
               mode="aspectFill"
               @error="handleImageError"
             />
@@ -122,7 +122,7 @@
         <view class="user-row" @tap="goToUserDetail(item.userId)">
           <image
             class="user-avatar"
-            :src="item.avatar || icons.common.defaultAvatar"
+            :src="getFullImageUrl(item.avatar) || icons.common.defaultAvatar"
             mode="aspectFill"
             @error="handleImageError"
           />

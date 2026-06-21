@@ -677,6 +677,13 @@ const onAiSkillSend = (text: string) => { inputContent.value = text; handleSend(
 const handleBack = () => safeNavigateBack()
 </script>
 
+<style lang="scss">
+/* WeChat mini-program: page element must have explicit height for flex children to work */
+page {
+  height: 100%;
+}
+</style>
+
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
@@ -684,10 +691,11 @@ $bg: #F5F5F5;
 
 // ==================== 页面 ====================
 .chat-page {
-  width: 100vw; height: 100vh;
+  width: 100%; height: 100%;
   display: flex; flex-direction: column;
   background: $bg;
   overflow: hidden;
+  position: relative;
 }
 
 // ==================== 导航栏 ====================
@@ -745,6 +753,7 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
 // ==================== 消息列表 ====================
 .message-list {
   flex: 1; min-height: 0;
+  height: 0; /* WeChat scroll-view needs explicit height with flex */
 }
 .msg-list-inner {
   padding: 0 32rpx;

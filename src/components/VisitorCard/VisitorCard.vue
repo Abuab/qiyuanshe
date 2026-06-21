@@ -7,7 +7,7 @@
     <image
       v-else
       class="avatar-img"
-      :src="visitor.avatar"
+      :src="avatarUrl"
       mode="aspectFill"
     />
 
@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getFullImageUrl } from '@/utils/common'
 
 interface VisitorData {
   id: number
@@ -47,6 +48,8 @@ const emit = defineEmits<{
 }>()
 
 const isBlurred = computed(() => props.type === 'like' && !props.currentUserIsVip)
+
+const avatarUrl = computed(() => getFullImageUrl(props.visitor.avatar) || '/static/default-avatar.png')
 
 const displayNickname = computed(() => {
   if (isBlurred.value) return '一位神秘用户'

@@ -68,12 +68,10 @@ async function fetchResult(resultId: string) {
       url: `/api/questionnaire/result/${resultId}`,
       method: 'GET',
     })
-    if (res.code === 0 && res.data) {
-      score.value = res.data.score || 0
-      resultTitle.value = res.data.title || ''
-      description.value = res.data.description || ''
-      tags.value = res.data.tags || []
-    }
+    score.value = res?.score || 0
+    resultTitle.value = res?.title || ''
+    description.value = res?.description || ''
+    tags.value = res?.tags || []
   } catch {
     uni.showToast({ title: '加载失败', icon: 'none' })
   }

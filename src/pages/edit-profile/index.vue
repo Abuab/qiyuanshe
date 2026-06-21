@@ -1290,9 +1290,7 @@ let innerAudioCtx: any = null
 async function fetchVoiceEnabled() {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      voiceEnabled.value = res.data.value !== 'false'
-    }
+    voiceEnabled.value = res?.value !== 'false'
   } catch { voiceEnabled.value = true }
 }
 

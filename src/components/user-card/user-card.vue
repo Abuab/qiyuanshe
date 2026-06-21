@@ -173,9 +173,7 @@ const voiceEnabled = ref(false)
 onMounted(async () => {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      voiceEnabled.value = res.data.value !== 'false'
-    }
+    voiceEnabled.value = res?.value !== 'false'
   } catch { voiceEnabled.value = false }
 })
 
@@ -183,9 +181,8 @@ const onLike = async () => {
   if (isLiked.value) {
     try {
       const res: any = await request({ url: `/users/${props.user.id}/like`, method: 'DELETE' })
-      if (res.code === 0) {
-        isLiked.value = false
-      }
+      isLiked.value = false
+      void res
     } catch {
       uni.showToast({ title: '操作失败', icon: 'none' })
     }
@@ -194,11 +191,9 @@ const onLike = async () => {
 
   try {
     const res: any = await request({ url: `/users/${props.user.id}/like`, method: 'POST' })
-    if (res.code === 0 && res.data) {
-      isLiked.value = true
-      if (res.data.isMatched && res.data.matchUser) {
-        uni.$emit('match:success', res.data.matchUser)
-      }
+    isLiked.value = true
+    if (res?.isMatched && res.matchUser) {
+      uni.$emit('match:success', res.matchUser)
     }
   } catch {
     uni.showToast({ title: '操作失败', icon: 'none' })

@@ -44,6 +44,78 @@ export class AiFunQuizService {
   ) {}
 
   /**
+   * 生成报告前检查功能开关
+   */
+  private async checkFeatureEnabled() {
+    const enabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.FUN_QUIZ)
+    if (!enabled) {
+      throw new BadRequestException('AI_FEATURE_DISABLED:AI趣味缘分测试暂不可用')
+    }
+  }
+
+  /**
+   * AI 趣味情感问答 —— 生成一道趣味情感题目
+   */
+  async generateQuestion(): Promise<{ question: string }> {
+    await this.checkFeatureEnabled()
+
+    const prompt = `你是一个温暖幽默的情感话题引导者，专门为相亲交友平台设计趣味问答。
+
+请生成一道轻松有趣的恋爱/交友话题题目，要求：
+- 话题轻松不尴尬，适合破冰聊天
+- 不要涉及性、政治、暴力等敏感内容
+- 字数在15-30字之间
+- 可以是"如果..."类的假设题、选择偏好题、或者小心理测试
+
+只返回题目文本，不要加任何前缀、编号或额外文字。`
+
+    try {
+      const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: false }, 0, 'fun_quiz_question')
+      const question = aiResponse?.trim() || '如果你和对方第一次约会，你会选择什么地方？'
+      return { question }
+    } catch (e: any) {
+      this.logger.warn(`生成题目失败: ${e?.message}`)
+      const fallbackQuestions = [
+        '如果你和对方第一次约会，你会选择哪里？',
+        '你觉得两个人在一起，最重要的是什么？',
+        '如果对方突然送你一份礼物，你希望是什么？',
+        '你更喜欢安静地相处还是一起去冒险？',
+        '如果要给对方取一个昵称，你会取什么？',
+      ]
+      return { question: fallbackQuestions[Math.floor(Math.random() * fallbackQuestions.length)] }
+    }
+  }
+
+  /**
+   * AI 趣味情感问答 —— 响应用户的回答
+   */
+  async respondToAnswer(answer: string): Promise<{ reply: string }> {
+    await this.checkFeatureEnabled()
+
+    const prompt = `你是一个温暖幽默的AI情感助手，正在和一个用户进行趣味情感问答。
+
+用户刚才回答了一个关于恋爱/交友的话题，内容如下：
+"${answer}"
+
+请给一个温暖、有趣、鼓励性的回应，要求：
+- 像朋友聊天一样自然
+- 可以适当点评或追问
+- 不要涉及性、政治、暴力等敏感内容
+- 不要算命、占卜、预测未来
+- 字数在30-80字之间
+
+只返回回应文本，不要加任何前缀或额外文字。`
+
+    try {
+      const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: false }, 0, 'fun_quiz_answer')
+      return { reply: aiResponse?.trim() || '很有趣的想法呢～每个人对感情的期待都不一样，重要的是找到那个懂你的人。' }
+    } catch (e: any) {
+      this.logger.warn(`回答响应失败: ${e?.message}`)
+      return { reply: '收到你的想法了～要不要换个话题聊聊？' }
+    }
+  }
+
+  /**
    * 生成缘分密码报告
    */
   async generateReport(
