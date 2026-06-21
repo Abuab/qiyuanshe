@@ -72,7 +72,6 @@
           <el-button
             type="primary"
             size="small"
-            plain
             :loading="ch.testing"
             :disabled="!ch.webhookUrl"
             @click="testChannel(ch)"
@@ -273,10 +272,17 @@ async function doSave() {
       webhookUrls[ch.key] = ch.webhookUrl
     })
 
+    // 保存验证状态
+    const channelsStatus: Record<string, string> = {}
+    channels.forEach((ch) => {
+      if (ch.webhookUrl && ch.status) channelsStatus[ch.key] = ch.status
+    })
+
     const payload = {
       notify: {
         enabled: notificationEnabled.value,
         webhookUrls,
+        channelsStatus,
         notifyTypes: notifyTypes.filter((nt) => nt.enabled).map((nt) => nt.key),
       },
     }
@@ -309,7 +315,8 @@ async function loadConfig() {
           const url = n.webhookUrls[ch.key]
           if (url) {
             ch.webhookUrl = url
-            ch.status = '' // 加载后默认为待验证
+            // 恢复上次保存的验证状态（如果有）
+            ch.status = (n.channelsStatus && n.channelsStatus[ch.key]) || ''
           }
         })
       } else if (n.webhookUrl) {

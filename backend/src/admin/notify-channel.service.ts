@@ -71,7 +71,7 @@ export class NotifyChannelService {
 
     // 向每个通道发送通知
     for (const ch of channels) {
-      const message = this.buildMessage(ch.name, type, content)
+      const message = this.buildMessage(ch.name, type, content, userId, userNickname)
       try {
         await this.sendWebhook(ch.url, message)
         this.logger.log(`通知已发送: type=${type}, channel=${ch.name}`)
@@ -167,7 +167,7 @@ export class NotifyChannelService {
     }
   }
 
-  private buildMessage(channel: string, type: string, content: string): any {
+  private buildMessage(channel: string, type: string, content: string, userId?: number, userNickname?: string): any {
     const typeLabel: Record<string, string> = {
       photo: '图片审核',
       avatar: '头像审核',
@@ -175,6 +175,8 @@ export class NotifyChannelService {
       report: '举报通知',
     }
     const title = `【审核通知】${typeLabel[type] || type}`
+    const userInfo = userId ? `\n用户ID：${userId}${userNickname ? `（${userNickname}）` : ''}` : ''
+    const fullContent = content + userInfo
 
     switch (channel) {
       case 'feishu':
@@ -182,19 +184,19 @@ export class NotifyChannelService {
           msg_type: 'interactive',
           card: {
             header: { title: { tag: 'plain_text', content: title } },
-            elements: [{ tag: 'div', text: { tag: 'plain_text', content } }],
+            elements: [{ tag: 'div', text: { tag: 'plain_text', content: fullContent } }],
           },
         }
       case 'dingtalk':
         return {
           msgtype: 'text',
-          text: { content: `${title}\n${content}` },
+          text: { content: `${title}\n${fullContent}` },
         }
       case 'wecom':
       default:
         return {
           msgtype: 'text',
-          text: { content: `${title}\n${content}` },
+          text: { content: `${title}\n${fullContent}` },
         }
     }
   }
