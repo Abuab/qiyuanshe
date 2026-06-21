@@ -8,7 +8,8 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_DATABASE || 'qiyuanshe',
   entities: [__dirname + '/../entities/*{.ts,.js}'],
-  synchronize: true,
+  // synchronize 仅在开发环境或 DB_SYNC=true 时启用
+  synchronize: process.env.DB_SYNC === 'true',
   logging: false,
   autoLoadEntities: true,
   charset: 'utf8mb4',

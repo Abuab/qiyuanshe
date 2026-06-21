@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Brackets } from 'typeorm'
+import { Repository } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 
 @Injectable()
@@ -20,57 +20,55 @@ export class AdminChatService {
     const limit = query.limit || 20
     const skip = (page - 1) * limit
 
-    // 子查询：每对用户之间最新一条消息的 ID
-    const subQuery = this.messageRepository
-      .createQueryBuilder('m')
-      .select('MAX(m.id)', 'maxId')
-      .groupBy(
-        'CASE WHEN m.fromUserId < m.toUserId THEN m.fromUserId ELSE m.toUserId END',
-      )
-      .addGroupBy(
-        'CASE WHEN m.fromUserId < m.toUserId THEN m.toUserId ELSE m.fromUserId END',
-      )
-
-    const mainQb = this.messageRepository
-      .createQueryBuilder('msg')
-      .innerJoin('(' + subQuery.getQuery() + ')', 'lm', 'msg.id = lm.maxId')
-      .leftJoin('msg.fromUser', 'fromUser')
-      .leftJoin('msg.toUser', 'toUser')
-      .select('msg.id', 'messageId')
-      .addSelect('msg.content', 'lastMessage')
-      .addSelect('msg.type', 'messageType')
-      .addSelect('msg.createdAt', 'lastTime')
-      .addSelect('msg.fromUserId', 'fromUserId')
-      .addSelect('msg.toUserId', 'toUserId')
-      .addSelect('fromUser.nickname', 'fromNickname')
-      .addSelect('toUser.nickname', 'toNickname')
-      .addSelect('fromUser.avatar', 'fromAvatar')
-      .addSelect('toUser.avatar', 'toAvatar')
+    // 用 LEAST/GREATEST 函数取代 CASE WHEN，利用功能索引 idx_chat_pair_latest
+    const baseParams: any[] = []
+    const conditions: string[] = []
 
     if (query.keyword) {
-      mainQb.andWhere(
-        new Brackets((qb2) => {
-          qb2
-            .where('fromUser.nickname LIKE :kw', { kw: `%${query.keyword}%` })
-            .orWhere('toUser.nickname LIKE :kw', { kw: `%${query.keyword}%` })
-        }),
-      )
+      conditions.push('(fu.nickname LIKE ? OR tu.nickname LIKE ?)')
+      baseParams.push(`%${query.keyword}%`, `%${query.keyword}%`)
     }
 
-    mainQb.orderBy('lastTime', 'DESC').offset(skip).limit(limit)
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
-    const rawList: any[] = await mainQb.getRawMany()
+    // 子查询：利用功能索引获取每对用户最新消息 ID
+    const subSql = `
+      SELECT MAX(id) AS maxId
+      FROM chat_messages
+      GROUP BY LEAST(fromUserId, toUserId), GREATEST(fromUserId, toUserId)
+    `
 
-    // 统计不同聊天对的个数
-    const countQb = this.messageRepository
-      .createQueryBuilder('m')
-      .select(
-        'COUNT(DISTINCT CASE WHEN m.fromUserId < m.toUserId THEN CONCAT(m.fromUserId,"_",m.toUserId) ELSE CONCAT(m.toUserId,"_",m.fromUserId) END)',
-        'total',
-      )
+    const countSql = `
+      SELECT COUNT(*) AS total FROM (${subSql}) AS conv
+    `
 
-    const countResult = await countQb.getRawOne()
-    const total = Number(countResult?.total) || 0
+    const dataSql = `
+      SELECT
+        msg.id AS messageId,
+        msg.content AS lastMessage,
+        msg.type AS messageType,
+        msg.createdAt AS lastTime,
+        msg.fromUserId,
+        msg.toUserId,
+        fu.nickname AS fromNickname,
+        tu.nickname AS toNickname,
+        fu.avatar AS fromAvatar,
+        tu.avatar AS toAvatar
+      FROM chat_messages msg
+      INNER JOIN (${subSql}) lm ON msg.id = lm.maxId
+      LEFT JOIN users fu ON msg.fromUserId = fu.id
+      LEFT JOIN users tu ON msg.toUserId = tu.id
+      ${whereClause}
+      ORDER BY msg.createdAt DESC
+      LIMIT ? OFFSET ?
+    `
+
+    const [countResult, rawList] = await Promise.all([
+      this.messageRepository.query(countSql),
+      this.messageRepository.query(dataSql, [...baseParams, limit, skip]),
+    ])
+
+    const total = Number(countResult?.[0]?.total) || 0
 
     const list = rawList.map((r: any) => ({
       messageId: Number(r.messageId),

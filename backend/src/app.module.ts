@@ -69,6 +69,7 @@ import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
 import { RedisService } from './common/redis.service'
+import { DatabaseIndexService } from './common/database-index.service'
 
 @Global()
 @Module({
@@ -147,7 +148,7 @@ import { RedisService } from './common/redis.service'
     AgreementLogStorageModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService],
+  providers: [RedisService, DatabaseIndexService],
   exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}
