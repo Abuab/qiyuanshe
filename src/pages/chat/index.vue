@@ -264,9 +264,9 @@ const placeholder = computed(() => {
 onMounted(() => {
   try {
     // #ifdef MP-WEIXIN
-    const sysInfo = uni.getSystemInfoSync()
+    const sysInfo = uni.getWindowInfo()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
+    safeAreaBottom.value = sysInfo.safeArea?.bottom || 0
     // #endif
   } catch {}
 

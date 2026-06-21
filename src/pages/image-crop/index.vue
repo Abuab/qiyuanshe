@@ -145,9 +145,9 @@ const onTouchEnd = () => {
 
 // ====== 生命周期 ======
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  safeBottom.value = sysInfo.safeAreaInsets?.bottom || 0
+  safeBottom.value = sysInfo.safeArea?.bottom || 0
   screenW.value = sysInfo.windowWidth || 375
   const screenH = sysInfo.windowHeight || 667
 

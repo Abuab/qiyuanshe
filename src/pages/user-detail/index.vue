@@ -481,8 +481,8 @@ const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
 
 /** 底部安全区：iOS=34, 安卓=12 近似 */
 const safeAreaBottom = computed(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
+  const sysInfo = uni.getWindowInfo()
+  return (sysInfo.safeArea?.bottom ?? 20)
 })
 
 const reportReasons = ['虚假信息', '冒充他人', '骚扰谩骂', '广告营销', '色情低俗', '其他']
@@ -521,7 +521,7 @@ function stopVoice() {
 async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
-    const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET' })
+    const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET', skipToast: true })
     if (res.code === 0 && res.data) { voiceData.value = res.data }
   } catch { /* 404 不显示 */ }
 }

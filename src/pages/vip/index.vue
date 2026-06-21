@@ -511,7 +511,7 @@ const fetchPackagesAndProfile = async () => {
 
 // ===== 生命周期 =====
 onMounted(() => {
-  const systemInfo = uni.getSystemInfoSync()
+  const systemInfo = uni.getWindowInfo()
   statusBarHeight.value = systemInfo.statusBarHeight || 20
 
   fetchPackagesAndProfile()

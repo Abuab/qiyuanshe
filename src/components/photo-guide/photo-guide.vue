@@ -12,7 +12,9 @@
           <view class="photo-row">
             <view class="example-card" v-for="(item, idx) in goodExamples" :key="'good-' + idx">
               <view class="example-img-wrap">
-                <image :src="item.src" mode="aspectFill" class="example-img" />
+                <view class="example-placeholder placeholder-good">
+                  <text class="placeholder-label">{{ item.label }}</text>
+                </view>
                 <view class="img-mark mark-good"></view>
               </view>
             </view>
@@ -28,7 +30,9 @@
           <view class="photo-row">
             <view class="example-card" v-for="(item, idx) in badExamples" :key="'bad-' + idx">
               <view class="example-img-wrap">
-                <image :src="item.src" mode="aspectFill" class="example-img" />
+                <view class="example-placeholder placeholder-bad">
+                  <text class="placeholder-label">{{ item.label }}</text>
+                </view>
                 <view class="img-mark mark-bad"></view>
               </view>
             </view>
@@ -80,32 +84,18 @@ const emit = defineEmits<{
 
 const safeBottom = ref(0)
 
-// 占位图 URL（开发期使用 picsum 占位，上线前替换为真实素材）
-const GOOD_PLACEHOLDERS = [
-  'https://picsum.photos/seed/good1/200/260',
-  'https://picsum.photos/seed/good2/200/260',
-  'https://picsum.photos/seed/good3/200/260',
-]
-const BAD_PLACEHOLDERS = [
-  'https://picsum.photos/seed/bad1/200/260',
-  'https://picsum.photos/seed/bad2/200/260',
-  'https://picsum.photos/seed/bad3/200/260',
-  'https://picsum.photos/seed/bad4/200/260',
-  'https://picsum.photos/seed/bad5/200/260',
-]
-
 const defaultGoodExamples: ExampleItem[] = [
-  { src: GOOD_PLACEHOLDERS[0], label: '光线充足' },
-  { src: GOOD_PLACEHOLDERS[1], label: '五官清晰' },
-  { src: GOOD_PLACEHOLDERS[2], label: '正面照' },
+  { src: '', label: '光线充足' },
+  { src: '', label: '五官清晰' },
+  { src: '', label: '正面照' },
 ]
 
 const defaultBadExamples: ExampleItem[] = [
-  { src: BAD_PLACEHOLDERS[0], label: '衣着不当' },
-  { src: BAD_PLACEHOLDERS[1], label: '模糊遮挡' },
-  { src: BAD_PLACEHOLDERS[2], label: '非人物照' },
-  { src: BAD_PLACEHOLDERS[3], label: '无正脸' },
-  { src: BAD_PLACEHOLDERS[4], label: '网络照片' },
+  { src: '', label: '衣着不当' },
+  { src: '', label: '模糊遮挡' },
+  { src: '', label: '非人物照' },
+  { src: '', label: '无正脸' },
+  { src: '', label: '网络照片' },
 ]
 
 const goodExamples = computed(() =>
@@ -117,8 +107,8 @@ const badExamples = computed(() =>
 )
 
 try {
-  const sys = uni.getSystemInfoSync()
-  safeBottom.value = sys.safeAreaInsets?.bottom || 0
+  const sys = uni.getWindowInfo()
+  safeBottom.value = sys.safeArea?.bottom || 0
 } catch (_) {}
 
 const handleCamera = () => { emit('camera'); emit('update:visible', false) }
@@ -247,10 +237,28 @@ const handleCancel = () => { emit('cancel'); emit('update:visible', false) }
   background: #f5f5f5;
 }
 
-.example-img {
+.example-placeholder {
   width: 100%;
   height: 100%;
   border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-good {
+  background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+}
+
+.placeholder-bad {
+  background: linear-gradient(135deg, #FFF3F0, #FFD6CC);
+}
+
+.placeholder-label {
+  font-size: 22rpx;
+  color: #666666;
+  text-align: center;
+  padding: 8rpx;
 }
 
 // ===== 右下角标记 =====
