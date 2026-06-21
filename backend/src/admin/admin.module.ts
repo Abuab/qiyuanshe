@@ -57,8 +57,6 @@ import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
-import { ChatMonitorService } from '../chat/chat-monitor.service'
-import { ChatMonitorGateway } from '../chat/chat-monitor.gateway'
 import { AdminAccountService } from './admin-account.service'
 import { RoleGuard } from './role.guard'
 import { UserProfileService } from './user-profile.service'
@@ -74,6 +72,7 @@ import { NotifyChannelService } from './notify-channel.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
+import { ChatModule } from '../chat/chat.module'
 
 @Module({
   imports: [
@@ -113,6 +112,7 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
     }),
     PassportModule,
      AppDynamicModule,
+     ChatModule,
    ],
   controllers: [
     AdminUserController,
@@ -152,8 +152,6 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
     AdminAccountService,
     RoleGuard,
     AdminChatService,
-    ChatMonitorService,
-    ChatMonitorGateway,
     UserProfileService,
     AdminMatchmakerDynamicService,
     NotifyChannelService,
