@@ -4,7 +4,7 @@
       <text>加载中...</text>
     </view>
 
-    <view v-else-if="profileData" class="detail-body">
+    <template v-else-if="profileData">
       <!-- ========== 自定义导航栏 ========== -->
       <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="nav-left" @tap="handleBack">
@@ -16,8 +16,6 @@
         </view>
       </view>
 
-      <!-- ========== 滚动区域 wrapper ========== -->
-      <view class="page-scroll-wrapper">
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图 ========== -->
         <view class="hero-section">
@@ -266,9 +264,8 @@
 
         <view class="bottom-spacer" />
       </scroll-view>
-      </view> <!-- page-scroll-wrapper -->
 
-      <!-- ========== 7. 底部操作栏 ========== -->
+      <!-- ========== 7. 底部固定操作栏 ========== -->
       <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
         <view class="bb-btn contact-btn" @tap="handleContact">
           <text class="bb-icon">👋</text>
@@ -433,7 +430,7 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
-    </view>
+    </template>
 
     <view v-else class="error-state">
       <text class="error-emoji">😕</text>
@@ -479,7 +476,6 @@ const showReportSheet = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
-const loadingDeprecated = ref(false) // unused, kept for compat
 
 // 照片引导弹窗
 const showLoginPrompt = ref(false)
@@ -839,29 +835,21 @@ $text-secondary: #666666;
 $text-hint: #999999;
 
 .user-detail-page {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-  overflow: hidden;
+  min-height: 100vh;
   background: $bg;
-}
-.detail-body {
-  flex: 1; min-height: 0;
-  display: flex; flex-direction: column;
-  overflow: hidden;
+  position: relative;
 }
 .loading-container {
-  display: flex; align-items: center; justify-content: center;
-  flex: 1;
+  display: flex; align-items: center; justify-content: center; height: 100vh;
   font-size: 28rpx; color: $text-hint;
 }
 
 // ===== 导航栏 =====
 .nav-bar {
-  flex-shrink: 0;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   display: flex; align-items: center; justify-content: space-between;
   padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
   background: linear-gradient(135deg, $pink, $pink-light);
-  z-index: 10;
 }
 .nav-left, .nav-right { display: flex; align-items: center; gap: 24rpx; }
 .back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
@@ -869,19 +857,7 @@ $text-hint: #999999;
 .more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
 
 // ===== 滚动区域 =====
-.page-scroll-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.page-scroll {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  height: 0;
-}
+.page-scroll { height: calc(100vh - 88rpx); }
 
 // ===== 1. 顶部大图 =====
 .hero-section {
@@ -1176,8 +1152,7 @@ $text-hint: #999999;
 
 // ===== 7. 底部操作栏 =====
 .bottom-bar {
-  flex-shrink: 0;
-  width: 100%;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
   display: flex; gap: 20rpx; padding: 16rpx 24rpx;
   background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0,0,0,0.05);
 }
@@ -1268,7 +1243,7 @@ $text-hint: #999999;
 
 // ===== 错误状态 =====
 .error-state {
-  flex: 1;
+  height: 100vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .error-emoji { font-size: 80rpx; margin-bottom: 20rpx; }
