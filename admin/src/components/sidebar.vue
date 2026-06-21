@@ -57,7 +57,8 @@
           <span>审核管理</span>
           <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
         </template>
-        <el-menu-item index="/audit/list">待审核列表</el-menu-item>
+        <el-menu-item index="/audit/list">审核列表</el-menu-item>
+        <el-menu-item index="/audit/queue">人工审核队列</el-menu-item>
       </el-sub-menu>
 
       <el-menu-item v-if="canManageAudit" index="/chat/monitor">
@@ -134,6 +135,8 @@
         <el-menu-item index="/ai/provider">AI Provider管理</el-menu-item>
         <el-menu-item index="/ai/call-logs">AI调用日志</el-menu-item>
         <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
+        <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
+        <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
       </el-sub-menu>
     </el-menu>
 

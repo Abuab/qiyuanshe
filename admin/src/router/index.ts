@@ -94,6 +94,24 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '系统配置', requiresAuth: true },
       },
       {
+        path: '/system/notification-channel',
+        name: 'NotificationChannel',
+        component: () => import('../views/system/notification-channel.vue'),
+        meta: { title: '通知通道', requiresAuth: true },
+      },
+      {
+        path: '/system/notification-log',
+        name: 'NotificationLog',
+        component: () => import('../views/system/notification-log.vue'),
+        meta: { title: '通知日志', requiresAuth: true },
+      },
+      {
+        path: '/audit/queue',
+        name: 'AuditQueue',
+        component: () => import('../views/audit/queue.vue'),
+        meta: { title: '人工审核队列', requiresAuth: true },
+      },
+      {
         path: '/agreement',
         name: 'AgreementEdit',
         component: () => import('../views/agreement/edit.vue'),
