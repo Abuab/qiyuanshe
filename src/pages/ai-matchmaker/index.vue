@@ -15,20 +15,6 @@
       <text class="quota-text">今日免费咨询剩余 {{ remainingRounds }} 轮</text>
     </view>
 
-    <!-- 快捷问题标签栏 -->
-    <view class="quick-bar-wrap">
-      <scroll-view class="quick-bar" :scroll-x="true" :show-scrollbar="false">
-        <view class="quick-bar-inner">
-          <text
-            v-for="(q, i) in quickQuestions"
-            :key="i"
-            class="quick-tag"
-            @tap="sendQuick(q)"
-          >{{ q.content }}</text>
-        </view>
-      </scroll-view>
-    </view>
-
     <!-- 消息列表区域 -->
     <view class="message-area">
       <scroll-view
@@ -36,7 +22,6 @@
         :scroll-y="true"
         :scroll-with-animation="true"
         :scroll-into-view="scrollToId"
-        :scroll-top="scrollTopVal"
         :enhanced="true"
         :show-scrollbar="false"
       >
@@ -86,6 +71,18 @@
 
     <!-- 底部操作区 -->
     <view class="bottom-area" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+      <!-- 快捷问题横向滚动 -->
+      <scroll-view class="quick-bar" :scroll-x="true" :show-scrollbar="false">
+        <view class="quick-bar-inner">
+          <text
+            v-for="(q, i) in quickQuestions"
+            :key="i"
+            class="quick-tag"
+            @tap="sendQuick(q)"
+          >{{ q.content }}</text>
+        </view>
+      </scroll-view>
+
       <!-- 输入框行 -->
       <view class="input-row">
         <input
@@ -139,7 +136,6 @@ const inputText = ref('')
 const typing = ref(false)
 const remainingRounds = ref<number | null>(null)
 const scrollToId = ref('')
-const scrollTopVal = ref(0)
 const quickQuestions = ref<QuickQuestion[]>([])
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -231,6 +227,7 @@ const sendText = async () => {
         content: res.reply || '抱歉，暂时无法回复，请稍后再试',
         safetyNotice: res.safetyNotice,
       })
+      scrollToBottom()
       if (res.remainingRounds !== undefined && res.remainingRounds !== null) {
         remainingRounds.value = res.remainingRounds
       }
@@ -240,6 +237,7 @@ const sendText = async () => {
       role: 'ai',
       content: '红娘正在忙，请稍后再试～',
     })
+    scrollToBottom()
   }
   typing.value = false
   scrollToBottom()
@@ -255,23 +253,16 @@ const clearChat = async () => {
 }
 
 const scrollToTop = () => {
-  // 先清 scroll-into-view 避免冲突
   scrollToId.value = ''
   nextTick(() => {
-    scrollTopVal.value = 0
-    // 强制触发响应式，如果当前已经是 0 则设为 -1 再设回 0
-    setTimeout(() => { scrollTopVal.value = scrollTopVal.value + 1 }, 50)
-    setTimeout(() => { scrollTopVal.value = 0 }, 100)
+    scrollToId.value = 'msg-top'
   })
 }
 
 const scrollToBottom = () => {
   scrollToId.value = ''
   nextTick(() => {
-    // 设一个极大值，scroll-view 会自动截断到最大可滚动高度
-    scrollTopVal.value = 99999
-    // 重新设一次以确保触发
-    setTimeout(() => { scrollTopVal.value = 99999 }, 50)
+    scrollToId.value = 'msg-bottom'
   })
 }
 </script>
@@ -321,19 +312,15 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 }
 .quota-text { font-size: 24rpx; color: #FF9500; }
 
-// ==================== 快捷问题标签栏 ====================
-.quick-bar-wrap {
-  flex-shrink: 0;
-  background: #fff;
-  border-bottom: 1rpx solid #F0F0F0;
-}
+// ==================== 快捷问题标签栏（在底部区内） ====================
 .quick-bar {
   white-space: nowrap;
+  margin-bottom: 12rpx;
 }
 .quick-bar-inner {
   display: flex; gap: 16rpx;
-  padding: 12rpx 24rpx;
-  padding-left: 32rpx;
+  padding: 4rpx 0;
+  padding-left: 16rpx;
 }
 .quick-tag {
   flex-shrink: 0;

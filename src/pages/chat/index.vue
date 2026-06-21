@@ -24,6 +24,7 @@
     </view>
 
     <!-- 消息列表 -->
+    <view class="message-area">
     <scroll-view
       class="message-list"
       scroll-y
@@ -115,6 +116,7 @@
         <view id="msg-bottom" class="msg-bottom-spacer" />
       </view>
     </scroll-view>
+    </view>
 
     <!-- 聊天权限遮罩 -->
     <view v-if="showChatMask" class="chat-permission-mask">
@@ -677,13 +679,6 @@ const onAiSkillSend = (text: string) => { inputContent.value = text; handleSend(
 const handleBack = () => safeNavigateBack()
 </script>
 
-<style lang="scss">
-/* WeChat mini-program: page element must have explicit height for flex children to work */
-page {
-  height: 100%;
-}
-</style>
-
 <style lang="scss" scoped>
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
@@ -695,7 +690,6 @@ $bg: #F5F5F5;
   display: flex; flex-direction: column;
   background: $bg;
   overflow: hidden;
-  position: relative;
 }
 
 // ==================== 导航栏 ====================
@@ -751,8 +745,13 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
 }
 
 // ==================== 消息列表 ====================
-.message-list {
+.message-area {
   flex: 1; min-height: 0;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.message-list {
+  flex: 1; min-height: 0; width: 100%;
   height: 0; /* WeChat scroll-view needs explicit height with flex */
 }
 .msg-list-inner {

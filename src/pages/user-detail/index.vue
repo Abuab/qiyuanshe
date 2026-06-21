@@ -17,7 +17,7 @@
       </view>
 
       <!-- ========== 滚动区域 wrapper ========== -->
-      <view class="scroll-wrapper">
+      <view class="page-scroll-wrapper">
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图 ========== -->
         <view class="hero-section">
@@ -266,7 +266,7 @@
 
         <view class="bottom-spacer" />
       </scroll-view>
-      </view>
+      </view> <!-- page-scroll-wrapper -->
 
       <!-- ========== 7. 底部操作栏 ========== -->
       <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
@@ -777,7 +777,7 @@ const handleContact = () => {
     uni.switchTab({ url: '/pages/vip/index' })
     return
   }
-  uni.navigateTo({ url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(profileData.value.top.nickname || '')}` })
+  uni.navigateTo({ url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(profileData.value.top.nickname || '')}&avatar=${encodeURIComponent(profileData.value.top.avatar || '')}` })
 }
 
 const showMatchmakerPopup = () => {
@@ -839,7 +839,7 @@ $text-secondary: #666666;
 $text-hint: #999999;
 
 .user-detail-page {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  height: 100vh;
   display: flex; flex-direction: column;
   overflow: hidden;
   background: $bg;
@@ -857,9 +857,11 @@ $text-hint: #999999;
 
 // ===== 导航栏 =====
 .nav-bar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 200;
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
   padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  z-index: 10;
 }
 .nav-left, .nav-right { display: flex; align-items: center; gap: 24rpx; }
 .back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
@@ -867,14 +869,16 @@ $text-hint: #999999;
 .more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
 
 // ===== 滚动区域 =====
-.scroll-wrapper {
-  flex: 1; min-height: 0;
-  overflow: hidden;
-  display: flex; flex-direction: column;
+.page-scroll-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .page-scroll {
-  flex: 1; width: 100%;
-  height: 0; /* WeChat scroll-view needs explicit height with flex */
+  flex: 1;
+  height: 0; /* WeChat scroll-view needs explicit height anchor for flex to expand */
+  width: 100%;
 }
 
 // ===== 1. 顶部大图 =====

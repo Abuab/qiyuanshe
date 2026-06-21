@@ -200,6 +200,7 @@ function sendMessage() {
 }
 .msg-area {
   flex: 1; width: 100%;
+  height: 0; /* WeChat scroll-view needs explicit height anchor for flex to expand */
 }
 
 .msg-list {
