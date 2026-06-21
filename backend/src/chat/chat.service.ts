@@ -153,9 +153,14 @@ export class ChatService {
     // 优化 B：更新 Redis 中该会话的最后一条消息 ID
     if (this.redisService) {
       const convKey = this.getConversationKey(userId, toUserId)
-      this.redisService.set(convKey, String(saved.id), LAST_MSG_TTL).catch(() => {
-        // Redis 写入失败不影响主流程
-      })
+      try {
+        await Promise.race([
+          this.redisService.set(convKey, String(saved.id), LAST_MSG_TTL),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+        ])
+      } catch {
+        // Redis 写入失败或超时不影响主流程
+      }
     }
 
     // 通知监控该用户的管理员（实时推送）
