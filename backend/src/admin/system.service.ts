@@ -11,6 +11,7 @@ export interface SystemConfigs {
   audit?: Record<string, any>
   dict?: Record<string, any>
   icon?: Record<string, any>
+  notify?: Record<string, any>
 }
 
 @Injectable()

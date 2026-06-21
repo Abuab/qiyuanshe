@@ -33,6 +33,7 @@
           <span>红娘管理</span>
         </template>
         <el-menu-item index="/matchmaker/list">红娘列表</el-menu-item>
+        <el-menu-item index="/matchmaker-comments">红娘评语</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canManageQuestion" index="/question">
