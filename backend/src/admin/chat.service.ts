@@ -111,6 +111,30 @@ export class AdminChatService {
     return { list, page, limit, total }
   }
 
+  /** 轮询增量拉取新消息（监控页面用） */
+  async pollMessages(
+    userId: number,
+    targetUserId: number,
+    lastMessageId: number = 0,
+  ) {
+    const qb = this.messageRepository
+      .createQueryBuilder('msg')
+      .leftJoinAndSelect('msg.fromUser', 'fromUser')
+      .leftJoinAndSelect('msg.toUser', 'toUser')
+      .where(
+        '((msg.fromUserId = :u1 AND msg.toUserId = :u2) OR (msg.fromUserId = :u2 AND msg.toUserId = :u1))',
+        { u1: userId, u2: targetUserId },
+      )
+      .orderBy('msg.createdAt', 'ASC')
+
+    if (lastMessageId > 0) {
+      qb.andWhere('msg.id > :lastId', { lastId: lastMessageId })
+    }
+
+    const list = await qb.getMany()
+    return { list }
+  }
+
   /** 查询某个用户的所有会话 */
   async getUserConversations(
     userId: number,

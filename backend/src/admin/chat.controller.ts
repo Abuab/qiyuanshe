@@ -45,7 +45,7 @@ export class AdminChatController {
 
   /** 两个用户之间的聊天记录 */
   @Get('conversations/:fromUserId/:toUserId')
-  async getMessages(
+  async getConversationMessages(
     @Param('fromUserId', ParseIntPipe) fromUserId: number,
     @Param('toUserId', ParseIntPipe) toUserId: number,
     @Query('page') page?: number,
@@ -56,6 +56,21 @@ export class AdminChatController {
       toUserId,
       page ? Number(page) : 1,
       limit ? Number(limit) : 50,
+    )
+    return Result.success(result)
+  }
+
+  /** 轮询增量拉取新消息（监控页面用） */
+  @Get('messages')
+  async pollMessages(
+    @Query('userId') userId: string,
+    @Query('targetUserId') targetUserId: string,
+    @Query('lastMessageId') lastMessageId?: string,
+  ) {
+    const result = await this.chatService.pollMessages(
+      Number(userId),
+      Number(targetUserId),
+      lastMessageId ? Number(lastMessageId) : 0,
     )
     return Result.success(result)
   }
