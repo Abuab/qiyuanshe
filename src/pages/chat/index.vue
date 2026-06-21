@@ -31,6 +31,7 @@
       :scroll-top="scrollTop"
       :scroll-into-view="scrollIntoView"
       @scrolltoupper="loadMore"
+      @scroll="onScroll"
       :refresher-enabled="true"
       :refresher-triggered="loadingMore"
       @refresherrefresh="onRefresh"
@@ -47,7 +48,7 @@
           <text class="empty-text">还没有消息，主动打个招呼吧~</text>
         </view>
 
-        <!-- 消息列表 -->
+        <!-- 消息列表（按时间正序：最早在上，最新在下） -->
         <view
           v-for="(msg, index) in messages"
           :key="msg.id"
@@ -104,6 +105,11 @@
         <!-- 加载更多 -->
         <view v-if="!loading && noMore && messages.length > 0" class="sys-tip">
           <text>没有更多消息了</text>
+        </view>
+
+        <!-- 新消息提示 -->
+        <view v-if="showNewMsgTip" class="new-msg-tip" @tap="scrollToBottom">
+          <text>有新消息 ↓</text>
         </view>
 
         <view id="msg-bottom" class="msg-bottom-spacer" />
@@ -176,6 +182,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { onShow, onHide } from '@dcloudio/uni-app'
 import request, { getServerBaseUrl } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
@@ -219,19 +226,24 @@ const showAiSkillPanel = ref(false)
 const showFraudBanner = ref(true)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
+
+// 轮询相关
 let pollTimer: ReturnType<typeof setInterval> | null = null
 const POLL_INTERVAL = 3000
+const isPageMounted = ref(false)
+const isUserScrolledUp = ref(false)
+const showNewMsgTip = ref(false)
 
 const canSend = computed(() => inputContent.value.trim().length > 0)
 
 const otherAvatar = computed(() => getFullImageUrl(avatar.value) || '/static/default-avatar.png')
-const myDisplayAvatar = computed(() => getFullImageUrl(myAvatar.value) || '/static/default-avatar.png')
 
 const placeholder = computed(() => {
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) return '今日消息已用完'
   return '输入消息...'
 })
 
+// ===== 生命周期 =====
 onMounted(() => {
   try {
     // #ifdef MP-WEIXIN
@@ -253,31 +265,59 @@ onMounted(() => {
   fetchMessages()
   markAsRead()
   startPolling()
+  isPageMounted.value = true
+})
+
+// 修复 D：页面重新显示时立即刷新 + 重启轮询
+onShow(() => {
+  if (!isPageMounted.value) return
+  // 立即做一次轮询拉取最新消息
+  pollOnce()
+  // 重启轮询（如果之前被 onHide 停止了）
+  startPolling()
+})
+
+// 修复 A：页面隐藏时清除轮询，防止后台持续请求
+onHide(() => {
+  stopPolling()
 })
 
 onUnmounted(() => {
   stopPolling()
+  isPageMounted.value = false
 })
 
+// ===== 消息加载 =====
 const fetchMessages = async (isLoadMore = false) => {
-  if (loading.value) return
+  if (loading.value || loadingMore.value) return
   try {
     if (isLoadMore) { loadingMore.value = true } else { loading.value = true }
 
     const res: any = await request({
       url: '/chat/messages',
       method: 'GET',
-      data: { userId: toUserId.value, page: page.value, limit },
+      data: { userId: toUserId.value, page: isLoadMore ? page.value : 1, limit },
     })
     const list: ChatMessage[] = res?.list || []
+
     if (isLoadMore) {
-      messages.value.unshift(...list.reverse())
+      // 修复 B：后端返回 ASC（旧→新），直接 unshift 到现有消息前面
+      messages.value.unshift(...list)
     } else {
-      messages.value = list.reverse()
+      // 修复 B：后端返回 ASC（旧→新），直接赋值，无需 reverse
+      messages.value = list
+      page.value = 1
     }
+
+    // 只有当返回数量小于 limit 时才算没有更多
     if (list.length < limit) noMore.value = true
+    else noMore.value = false
+
     page.value++
-    nextTick(() => scrollToBottom())
+    if (!isLoadMore) {
+      // 修复 C：首次加载后滚动到底部
+      nextTick(() => scrollToBottom())
+    }
   } catch (e) {
     logger.error('fetch messages error', e)
   } finally {
@@ -292,6 +332,7 @@ const loadMore = () => {
 
 const onRefresh = () => fetchMessages(true)
 
+// ===== 发送消息 =====
 const handleSend = async () => {
   if (!canSend.value) return
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) {
@@ -310,6 +351,7 @@ const handleSend = async () => {
       skipToast: true,
     })
 
+    // 乐观更新：将消息追加到末尾（最新在下方）
     messages.value.push({
       id: Date.now(),
       fromUserId: userStore.userInfo?.id || 0,
@@ -333,10 +375,36 @@ const handleSend = async () => {
   }
 }
 
+// ===== 修复 C：统一滚动到底部 =====
 const scrollToBottom = () => {
+  // 重置用户滚动状态
+  isUserScrolledUp.value = false
+  showNewMsgTip.value = false
   nextTick(() => {
-    scrollIntoView.value = 'msg-bottom'
+    // 优先使用 scroll-into-view
+    scrollIntoView.value = ''
+    nextTick(() => {
+      scrollIntoView.value = 'msg-bottom'
+    })
   })
+}
+
+// 监听滚动事件，判断用户是否手动上滚
+let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null
+const onScroll = (e: any) => {
+  if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer)
+  scrollDebounceTimer = setTimeout(() => {
+    const detail = e?.detail || {}
+    const scrollTopVal = detail.scrollTop ?? 0
+    const scrollHeight = detail.scrollHeight ?? 0
+    const clientHeight = detail.clientHeight ?? 0
+    // 距离底部超过 100px 认为用户在上滚查看历史
+    const distanceToBottom = scrollHeight - scrollTopVal - clientHeight
+    isUserScrolledUp.value = distanceToBottom > 100
+    if (!isUserScrolledUp.value) {
+      showNewMsgTip.value = false
+    }
+  }, 150)
 }
 
 // ---- 时间分割线 ----
@@ -480,29 +548,40 @@ const markAsRead = async () => {
   try { await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' }) } catch {}
 }
 
-// ---- 轮询 ----
-const startPolling = () => {
-  stopPolling()
-  pollTimer = setInterval(async () => {
-    try {
-      const res: any = await request({
-        url: '/chat/messages/poll',
-        method: 'GET',
-        data: { userId: toUserId.value, afterId: messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0 },
-        skipToast: true,
-      })
-      const newMsgs: ChatMessage[] = res?.list || []
-      if (newMsgs.length > 0) {
-        const ids = new Set(messages.value.map(m => m.id))
-        const unique = newMsgs.filter(m => !ids.has(m.id))
-        if (unique.length > 0) {
-          messages.value.push(...unique)
+// ===== 修复 A：轮询拉取新消息 =====
+const pollOnce = async () => {
+  if (!toUserId.value) return
+  try {
+    const lastMsgId = messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0
+    const res: any = await request({
+      url: '/chat/messages/poll',
+      method: 'GET',
+      data: { userId: toUserId.value, afterId: lastMsgId },
+      skipToast: true,
+    })
+    const newMsgs: ChatMessage[] = res?.list || []
+    if (newMsgs.length > 0) {
+      const ids = new Set(messages.value.map(m => m.id))
+      const unique = newMsgs.filter(m => !ids.has(m.id))
+      if (unique.length > 0) {
+        messages.value.push(...unique)
+        // 修复 C：如果用户没有手动上滚，自动滚到底部；否则显示提示
+        if (isUserScrolledUp.value) {
+          showNewMsgTip.value = true
+        } else {
           nextTick(() => scrollToBottom())
         }
       }
-    } catch {
-      stopPolling()
     }
+  } catch {
+    // 轮询失败不处理，等下次重试
+  }
+}
+
+const startPolling = () => {
+  stopPolling()
+  pollTimer = setInterval(() => {
+    pollOnce()
   }, POLL_INTERVAL)
 }
 
@@ -614,6 +693,17 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
 .empty-emoji { font-size: 80rpx; margin-bottom: 24rpx; }
 .empty-text { font-size: 28rpx; color: #BDBDBD; }
 
+// 新消息提示
+.new-msg-tip {
+  display: flex; justify-content: center;
+  padding: 16rpx 0;
+  text {
+    font-size: 24rpx; color: $pink;
+    background: rgba(255, 107, 138, 0.1);
+    padding: 8rpx 32rpx; border-radius: 24rpx;
+  }
+}
+
 // 时间分割线
 .time-divider {
   display: flex; justify-content: center;
@@ -638,7 +728,6 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
     justify-content: flex-start;
   }
 }
-// 说话人切换加间距（js 侧无法感知 .msg-row 不切换，但基本够用）
 
 // 头像
 .avatar {
@@ -689,87 +778,69 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
   max-width: 360rpx; border-radius: 8rpx; display: block;
 }
 
-// ==================== 底部输入区域 ====================
+// ==================== 输入区域 ====================
 .input-area {
   flex-shrink: 0;
   background: #fff;
-  border-top: 1rpx solid #E5E5E5;
-  z-index: 10;
+  border-top: 1px solid #E5E5E5;
+  z-index: 100;
 }
-
-// 防骗横幅
 .fraud-banner {
   display: flex; align-items: center;
-  margin: 12rpx 24rpx 0;
-  padding: 12rpx 20rpx;
-  background: #FFF8E1; border-radius: 12rpx;
+  padding: 12rpx 32rpx;
+  background: #FFF3CD;
 }
-.fraud-text { flex: 1; font-size: 22rpx; color: #F57F17; }
-.fraud-close {
-  width: 36rpx; height: 36rpx; display: flex; align-items: center; justify-content: center;
-  font-size: 22rpx; color: #999; flex-shrink: 0;
-  margin-left: 12rpx;
-}
+.fraud-text { flex: 1; font-size: 22rpx; color: #856404; }
+.fraud-close { padding: 4rpx 12rpx; }
 
-// 输入行
 .input-row {
   display: flex; align-items: center;
-  padding: 12rpx 24rpx;
-  gap: 16rpx;
+  padding: 8rpx 16rpx; gap: 8rpx;
+  box-sizing: border-box;
 }
-
 .ai-btn {
   flex-shrink: 0;
-  height: 68rpx;
-  display: flex; align-items: center; gap: 8rpx;
-  padding: 0 20rpx;
-  background: rgba($pink, 0.1);
-  border-radius: 999px;
+  display: flex; align-items: center; gap: 6rpx;
+  padding: 10rpx 16rpx; border-radius: 30rpx;
+  background: linear-gradient(135deg, #667eea, #764ba2);
 }
-.ai-btn-icon { font-size: 34rpx; }
-.ai-btn-text {
-  font-size: 24rpx; color: $pink; white-space: nowrap;
-}
+.ai-btn-icon { font-size: 24rpx; }
+.ai-btn-text { font-size: 22rpx; color: #fff; font-weight: 500; }
 
 .input-box {
-  flex: 1; height: 68rpx;
-  background: #F5F5F5; border-radius: 34rpx;
-  display: flex; align-items: center;
-  padding: 0 24rpx;
+  flex: 1; min-height: 64rpx; display: flex; align-items: center;
+  background: #F5F5F5; border-radius: 36rpx;
+  padding: 0 24rpx; box-sizing: border-box;
 }
 .input-field {
-  width: 100%; height: 68rpx;
-  font-size: 28rpx; color: #333; line-height: 68rpx;
+  width: 100%; font-size: 28rpx; line-height: 1.4;
 }
-
 .send-btn {
   flex-shrink: 0;
-  width: 120rpx; height: 68rpx; border-radius: 34rpx;
-  background: linear-gradient(135deg, $pink, $pink-light);
   display: flex; align-items: center; justify-content: center;
-  text { font-size: 28rpx; color: #fff; font-weight: 600; }
-  &.disabled { opacity: 0.45; }
+  width: 96rpx; height: 64rpx;
+  background: $pink; border-radius: 36rpx;
+  text { font-size: 26rpx; color: #fff; }
+  &.disabled { opacity: 0.5; }
 }
 
-// ==================== VIP弹窗 ====================
+// ==================== 弹窗 ====================
 .vip-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1100;
-  background: rgba(0,0,0,0.45);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 999;
   display: flex; align-items: center; justify-content: center;
 }
 .vip-popup {
   width: 560rpx; background: #fff; border-radius: 24rpx;
-  padding: 48rpx 40rpx; display: flex; flex-direction: column; align-items: center;
+  padding: 40rpx 32rpx; text-align: center;
 }
-.vip-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; margin-bottom: 12rpx; }
-.vip-desc { font-size: 26rpx; color: #999; margin-bottom: 36rpx; }
+.vip-title { display: block; font-size: 34rpx; font-weight: 600; color: #333; margin-bottom: 12rpx; }
+.vip-desc { display: block; font-size: 28rpx; color: #999; margin-bottom: 32rpx; }
 .vip-btn {
-  width: 100%; height: 88rpx; border-radius: 44rpx;
-  background: linear-gradient(135deg, $pink, $pink-light);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20rpx;
+  display: flex; justify-content: center; align-items: center;
+  height: 80rpx; background: linear-gradient(135deg, $pink, $pink-light);
+  border-radius: 40rpx; margin-bottom: 16rpx;
   text { font-size: 30rpx; color: #fff; font-weight: 600; }
 }
-.vip-close { text { font-size: 26rpx; color: #BDBDBD; } }
-
+.vip-close { display: flex; justify-content: center; text { font-size: 26rpx; color: #999; } }
 </style>
