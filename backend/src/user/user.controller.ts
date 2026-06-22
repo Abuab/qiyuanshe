@@ -424,6 +424,25 @@ export class UserController {
     return Result.success(list)
   }
 
+  @Get('likes')
+  @UseGuards(JwtAuthGuard)
+  async getMyLikes(
+    @Request() req: any,
+    @Query('type') type: string = 'liked',
+  ) {
+    try {
+      const userId = req.user.userId
+      if (!['liked', 'likedBy', 'mutual'].includes(type)) {
+        return Result.serverError('type 参数必须为 liked / likedBy / mutual')
+      }
+      const list = await this.userService.getMyLikes(userId, type as 'liked' | 'likedBy' | 'mutual')
+      return Result.success(list)
+    } catch (error: any) {
+      console.error('getMyLikes error:', error?.message || error)
+      return Result.serverError('查询失败')
+    }
+  }
+
   @Get(':id')
   @UseGuards(OptionalJwtAuthGuard)
   async getUserDetail(
@@ -538,25 +557,6 @@ export class UserController {
     } catch (error: any) {
       console.error('unlikeUser error:', error?.message || error)
       return Result.serverError('操作失败')
-    }
-  }
-
-  @Get('likes')
-  @UseGuards(JwtAuthGuard)
-  async getMyLikes(
-    @Request() req: any,
-    @Query('type') type: string = 'liked',
-  ) {
-    try {
-      const userId = req.user.userId
-      if (!['liked', 'likedBy', 'mutual'].includes(type)) {
-        return Result.serverError('type 参数必须为 liked / likedBy / mutual')
-      }
-      const list = await this.userService.getMyLikes(userId, type as 'liked' | 'likedBy' | 'mutual')
-      return Result.success(list)
-    } catch (error: any) {
-      console.error('getMyLikes error:', error?.message || error)
-      return Result.serverError('查询失败')
     }
   }
 

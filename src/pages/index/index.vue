@@ -348,7 +348,10 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
       if (reset) {
         userList.value = filteredList
       } else {
-        userList.value = [...userList.value, ...filteredList]
+        // 去重：已在列表中的用户不再追加，避免 wx:key 重复警告
+        const existingIds = new Set(userList.value.map(u => u.id))
+        const newUsers = filteredList.filter((u: UserCardData) => !existingIds.has(u.id))
+        userList.value = [...userList.value, ...newUsers]
       }
 
       if (result.list.length < pageSize) {

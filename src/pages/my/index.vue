@@ -140,6 +140,9 @@
           >
             <template v-if="!item.placeholder">
               <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
+              <view v-else-if="item.key === 'myLikes'" class="tool-icon-likes">
+                <uni-icons type="heart-filled" size="36rpx" color="#fff"></uni-icons>
+              </view>
               <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
               <text class="tool-label">{{ item.label }}</text>
             </template>
@@ -808,6 +811,17 @@ const toolGrid7 = [
   font-size: 64rpx;
   margin-bottom: 12rpx;
   filter: grayscale(1) opacity(0.7);
+}
+
+.tool-icon-likes {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12rpx;
 }
 
 .tool-icon-img {
