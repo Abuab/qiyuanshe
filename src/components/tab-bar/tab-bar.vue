@@ -28,7 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useIcon } from '@/composables/useIcon'
 
 interface TabItem {
@@ -91,13 +92,11 @@ onMounted(() => {
   // 使用新版 API 获取安全区域信息
   const windowInfo = uni.getWindowInfo()
   safeAreaBottom.value = windowInfo.safeAreaInsets?.bottom || 0
-
-  // 监听全局未读数更新事件（tab-bar 是子组件，onShow 不会触发）
-  uni.$on('tabbar:refreshUnread', loadUnreadCount)
 })
 
-onBeforeUnmount(() => {
-  uni.$off('tabbar:refreshUnread')
+onShow(() => {
+  updateCurrentTab()
+  loadUnreadCount()
 })
 
 defineExpose({

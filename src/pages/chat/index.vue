@@ -200,88 +200,9 @@ import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
-import { secureStorage } from '@/utils/crypto'
 import { useImageFallback } from '@/composables/useImageFallback'
 import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
-
-// ===== WebSocket 连接 =====
-let wsSocket: any = null
-let wsIntentionalClose = false
-let wsReconnectAttempts = 0
-const wsConnected = ref(false)
-
-const connectWebSocket = () => {
-  if (wsSocket) return
-  const token = secureStorage.getToken()
-  if (!token) return
-  wsIntentionalClose = false
-  const baseUrl = getServerBaseUrl().replace(/^http/, 'ws')
-  wsSocket = uni.connectSocket({
-    url: `${baseUrl}/ws/chat`,
-  })
-  wsSocket.onOpen(() => {
-    wsSocket.send({ data: JSON.stringify({ event: 'auth', data: { token, type: 'user' } }) })
-  })
-  wsSocket.onMessage((res: any) => {
-    try {
-      const msg = JSON.parse(res.data)
-      if (msg.event === 'auth_success') {
-        wsConnected.value = true
-        wsReconnectAttempts = 0
-        console.log('[WS] auth_success')
-      } else if (msg.event === 'auth_error') {
-        // 认证失败，不再重连
-        console.error('[WS] auth_error:', msg.data?.message)
-        wsIntentionalClose = true
-        wsConnected.value = false
-      } else if (msg.event === 'new_message') {
-        const newMsg = msg.data
-        if (newMsg.fromUserId === toUserId.value || newMsg.toUserId === toUserId.value) {
-          if (!seenMsgIds.has(newMsg.id)) {
-            seenMsgIds.add(newMsg.id)
-            messages.value.push(newMsg)
-            console.log('[WS] new_message id=', newMsg.id, 'content=', newMsg.content?.slice(0, 20))
-            if (!isUserScrolledUp.value) {
-              nextTick(() => scrollToBottom())
-            } else {
-              showNewMsgTip.value = true
-            }
-            markAsRead()
-          }
-        }
-      }
-    } catch { /* JSON parse error, ignore */ }
-  })
-  wsSocket.onClose(() => {
-    console.log('[WS] onClose, intentional=', wsIntentionalClose, 'mounted=', isPageMounted.value)
-    wsConnected.value = false
-    wsSocket = null
-    // 只在非主动关闭 + 页面仍活跃 + 未超过重试次数时重连
-    if (!wsIntentionalClose && isPageMounted.value && wsReconnectAttempts < 1) {
-      wsReconnectAttempts++
-      console.log('[WS] reconnect attempt', wsReconnectAttempts)
-      setTimeout(() => connectWebSocket(), 2000)
-    }
-  })
-  wsSocket.onError((err: any) => {
-    console.error('[WS] onError:', err)
-    // 错误时标记为主动关闭，防止 onClose 中无限重连
-    wsIntentionalClose = true
-    wsConnected.value = false
-    try { wsSocket?.close({}) } catch {}
-    wsSocket = null
-  })
-}
-
-const closeWebSocket = () => {
-  wsIntentionalClose = true
-  wsConnected.value = false
-  if (wsSocket) {
-    try { wsSocket.close({}) } catch {}
-    wsSocket = null
-  }
-}
 
 interface ChatMessage {
   id: number
@@ -329,8 +250,8 @@ const POLL_INTERVAL = 2500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
-let tempMsgIdCounter = -1 // 本地临时消息 ID（负数，避免与后端 DB 自增 ID 冲突）
-const seenMsgIds = new Set<number>() // 已添加的消息 ID，防止 WS/poll 竞态重复
+let tempMsgIdCounter = -1 // 临时消息 ID（负数避免与后端自增 ID 冲突）
+const seenMsgIds = new Set<number>() // 已处理消息 ID，防重复
 
 const canSend = computed(() => inputContent.value.trim().length > 0)
 
@@ -361,9 +282,7 @@ onMounted(() => {
   myAvatar.value = userStore.userInfo?.avatar || ''
 
   fetchMessages()
-  connectWebSocket()
-  // 确保标记已读完成后再继续
-  markAsRead().catch(e => logger.error('markAsRead failed', e))
+  markAsRead()
   startPolling()
   checkChatPermission()
   isPageMounted.value = true
@@ -372,25 +291,19 @@ onMounted(() => {
 // 修复 E：页面重新显示时立即轮询一次 + 重启定时器
 onShow(() => {
   if (!isPageMounted.value) return
-  // 同步已读状态（从其他页面返回时确保未读数更新）
-  markAsRead()
   // 立即拉取最新消息（不等待 2.5 秒轮询）
   pollOnce()
   // 重启轮询定时器（如果之前被 onHide 停止了）
   startPolling()
-  // 重连 WebSocket（如果断开的话）
-  if (!wsSocket) connectWebSocket()
 })
 
 // 修复 A：页面隐藏时清除轮询，防止后台持续请求
 onHide(() => {
   stopPolling()
-  closeWebSocket()
 })
 
 onUnmounted(() => {
   stopPolling()
-  closeWebSocket()
   isPageMounted.value = false
 })
 
@@ -424,8 +337,7 @@ const fetchMessages = async (isLoadMore = false) => {
       messages.value = list
       page.value = 1
     }
-
-    // 同步 seenMsgIds，防止 poll/WS 重复推送已加载的消息
+    // 同步已加载消息 ID，防止轮询重复添加
     list.forEach(m => seenMsgIds.add(m.id))
 
     // 只有当返回数量小于 limit 时才算没有更多
@@ -666,7 +578,6 @@ const reportUser = () => {
 const markAsRead = async () => {
   try {
     await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' })
-    // 通知 tab-bar 刷新未读数
     uni.$emit('tabbar:refreshUnread')
   } catch (e) {
     logger.error('markAsRead failed:', e)
@@ -685,12 +596,12 @@ const pollOnce = async () => {
       data: { userId: toUserId.value, afterId: lastMsgId },
       skipToast: true,
     })
-    const newMsgs: ChatMessage[] = Array.isArray(res) ? res : (res?.list || [])
+    const newMsgs: ChatMessage[] = res?.list || []
     if (newMsgs.length > 0) {
-      console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId)
+      console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId, 'ids=', newMsgs.map(m => m.id))
       const unique = newMsgs.filter(m => !seenMsgIds.has(m.id))
       if (unique.length > 0) {
-        console.log('[poll] adding', unique.length, 'unique msgs, ids=', unique.map(m => m.id))
+        console.log('[poll] adding', unique.length, 'unique msgs')
         unique.forEach(m => seenMsgIds.add(m.id))
         // 追加到消息列表末尾（最新在下方）
         messages.value.push(...unique)
@@ -700,15 +611,12 @@ const pollOnce = async () => {
         } else {
           nextTick(() => scrollToBottom())
         }
-        // 标记已读（WS 不可用时 poll 是唯一标记已读的途径）
+        // 标记已读（轮询收到新消息时也需要标记）
         markAsRead()
       }
     }
-  } catch (e: any) {
-    // 轮询静默失败，但记录到控制台方便排查
-    if (e?.message !== 'Network Error') {
-      logger.error('pollOnce error:', e)
-    }
+  } catch {
+    // 轮询静默失败，不弹 toast
   }
 }
 
