@@ -208,6 +208,7 @@ const { handleImageError } = useImageFallback()
 // ===== WebSocket 连接 =====
 let wsSocket: any = null
 let wsIntentionalClose = false
+let wsReconnectAttempts = 0
 const wsConnected = ref(false)
 
 const connectWebSocket = () => {
@@ -227,12 +228,20 @@ const connectWebSocket = () => {
       const msg = JSON.parse(res.data)
       if (msg.event === 'auth_success') {
         wsConnected.value = true
+        wsReconnectAttempts = 0
+        console.log('[WS] auth_success')
+      } else if (msg.event === 'auth_error') {
+        // 认证失败，不再重连
+        console.error('[WS] auth_error:', msg.data?.message)
+        wsIntentionalClose = true
+        wsConnected.value = false
       } else if (msg.event === 'new_message') {
         const newMsg = msg.data
         if (newMsg.fromUserId === toUserId.value || newMsg.toUserId === toUserId.value) {
           if (!seenMsgIds.has(newMsg.id)) {
             seenMsgIds.add(newMsg.id)
             messages.value.push(newMsg)
+            console.log('[WS] new_message id=', newMsg.id, 'content=', newMsg.content?.slice(0, 20))
             if (!isUserScrolledUp.value) {
               nextTick(() => scrollToBottom())
             } else {
@@ -245,16 +254,21 @@ const connectWebSocket = () => {
     } catch { /* JSON parse error, ignore */ }
   })
   wsSocket.onClose(() => {
+    console.log('[WS] onClose, intentional=', wsIntentionalClose, 'mounted=', isPageMounted.value)
     wsConnected.value = false
     wsSocket = null
-    // 只在非主动关闭时重连（页面隐藏/卸载时主动关闭不应重连）
-    if (!wsIntentionalClose && isPageMounted.value) {
-      setTimeout(() => connectWebSocket(), 3000)
+    // 只在非主动关闭 + 页面仍活跃 + 未超过重试次数时重连
+    if (!wsIntentionalClose && isPageMounted.value && wsReconnectAttempts < 1) {
+      wsReconnectAttempts++
+      console.log('[WS] reconnect attempt', wsReconnectAttempts)
+      setTimeout(() => connectWebSocket(), 2000)
     }
   })
   wsSocket.onError((err: any) => {
-    console.error('WebSocket error:', err)
-    // 先关闭再置空，释放底层连接
+    console.error('[WS] onError:', err)
+    // 错误时标记为主动关闭，防止 onClose 中无限重连
+    wsIntentionalClose = true
+    wsConnected.value = false
     try { wsSocket?.close({}) } catch {}
     wsSocket = null
   })
@@ -262,11 +276,11 @@ const connectWebSocket = () => {
 
 const closeWebSocket = () => {
   wsIntentionalClose = true
+  wsConnected.value = false
   if (wsSocket) {
     try { wsSocket.close({}) } catch {}
     wsSocket = null
   }
-  wsConnected.value = false
 }
 
 interface ChatMessage {
@@ -311,7 +325,7 @@ const maxDailyMessages = 3
 
 // 轮询相关
 let pollTimer: ReturnType<typeof setInterval> | null = null
-const POLL_INTERVAL = 2500
+const POLL_INTERVAL = 1500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
@@ -650,7 +664,11 @@ const reportUser = () => {
 
 // ---- 已读 ----
 const markAsRead = async () => {
-  try { await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' }) } catch {}
+  try {
+    await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' })
+  } catch (e) {
+    logger.error('markAsRead failed:', e)
+  }
 }
 
 // ===== 修复 A：轮询拉取新消息（使用现有 /chat/messages/poll 接口） =====
