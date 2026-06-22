@@ -189,9 +189,9 @@
 
       <!-- ========== 公众号关注 ========== -->
       <view v-if="isLoggedIn && systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
-        <view class="oa-avatar pink-heart">
+        <view class="oa-avatar red-ring-heart">
           <image v-if="pageIcons.oaHeart" class="oa-avatar-img" :src="pageIcons.oaHeart" mode="aspectFit" />
-          <uni-icons v-else type="heart-filled" size="36rpx" color="#fff"></uni-icons>
+          <uni-icons v-else type="heart-filled" size="36rpx" color="#FF6B6B"></uni-icons>
         </view>
         <view class="oa-info">
           <text class="oa-name">{{ appName }}公众号</text>
@@ -858,8 +858,9 @@ const toolGrid7 = [
   align-items: center;
   justify-content: center;
 
-  &.pink-heart {
-    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  &.red-ring-heart {
+    background: #fff;
+    border: 3rpx solid #FF6B6B;
   }
 }
 
