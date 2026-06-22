@@ -93,7 +93,7 @@ interface LikeUser {
   isMutual?: boolean
 }
 
-const tabs = ['我喜欢', '喜欢我的', '互相喜欢']
+const tabs = ['我喜欢的', '喜欢我的', '互相喜欢']
 const currentTab = ref(0)
 const list = ref<LikeUser[]>([])
 const isRefreshing = ref(false)
