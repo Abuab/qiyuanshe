@@ -588,8 +588,8 @@ const markAsRead = async () => {
 const pollOnce = async () => {
   if (!toUserId.value) return
   try {
-    // 取本地最后一条消息的 id 作为 lastMessageId
-    const lastMsgId = messages.value.length > 0 ? messages.value[messages.value.length - 1].id : 0
+    // 取本地最后一条服务的消息 id（跳过负数临时 ID）
+    const lastMsgId = messages.value.length > 0 ? Math.max(0, messages.value[messages.value.length - 1].id) : 0
     const res: any = await request({
       url: '/chat/messages/poll',
       method: 'GET',
@@ -599,10 +599,25 @@ const pollOnce = async () => {
     const newMsgs: ChatMessage[] = res?.list || []
     if (newMsgs.length > 0) {
       console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId, 'ids=', newMsgs.map(m => m.id))
-      const unique = newMsgs.filter(m => !seenMsgIds.has(m.id))
+      const unique: ChatMessage[] = []
+      for (const m of newMsgs) {
+        if (seenMsgIds.has(m.id)) continue
+        // 如果这条消息是自己发的，尝试找到并替换之前的乐观临时消息
+        if (m.isMine && m.id > 0) {
+          const optIdx = messages.value.findIndex(existing =>
+            existing.id < 0 && existing.isMine && existing.content === m.content
+          )
+          if (optIdx >= 0) {
+            messages.value[optIdx] = m
+            seenMsgIds.add(m.id)
+            continue
+          }
+        }
+        seenMsgIds.add(m.id)
+        unique.push(m)
+      }
       if (unique.length > 0) {
         console.log('[poll] adding', unique.length, 'unique msgs')
-        unique.forEach(m => seenMsgIds.add(m.id))
         // 追加到消息列表末尾（最新在下方）
         messages.value.push(...unique)
         // 修复 D：如果用户没有手动上滚，自动滚到底部；否则显示提示
