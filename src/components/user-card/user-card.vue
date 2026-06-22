@@ -95,6 +95,7 @@ export interface UserCardData {
   incomeRange?: string
   housingStatus?: string
   isRealName?: boolean
+  isLiked?: boolean
   photos?: string[]
   residence?: string
   city?: string
@@ -167,7 +168,7 @@ const handleClick = () => {
 }
 
 // ===== 心动按钮 =====
-const isLiked = ref(false)
+const isLiked = ref(props.user?.isLiked || false)
 const voiceEnabled = ref(false)
 
 onMounted(async () => {
