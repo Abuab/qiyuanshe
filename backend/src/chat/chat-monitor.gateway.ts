@@ -201,6 +201,28 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     }
   }
 
+  /** 推送新消息给指定用户（消息接收方实时接收） */
+  notifyUser(userId: number, messageData: any) {
+    const userSockets = this.userSockets.get(userId)
+    if (!userSockets || userSockets.size === 0) return
+    const payload = JSON.stringify({ event: 'new_message', data: messageData })
+    for (const ws of userSockets) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(payload)
+      }
+    }
+  }
+
+  /** 推送会话更新事件给指定用户（新会话、未读数变更等） */
+  notifyConversationUpdate(userId: number, data: any) {
+    const userSockets = this.userSockets.get(userId)
+    if (!userSockets || userSockets.size === 0) return
+    const payload = JSON.stringify({ event: 'conversation_update', data })
+    for (const ws of userSockets) {
+      if (ws.readyState === WebSocket.OPEN) ws.send(payload)
+    }
+  }
+
   // ==================== 工具方法 ====================
 
   private requireAdmin(client: AuthenticatedWs): WsAuth | null {
