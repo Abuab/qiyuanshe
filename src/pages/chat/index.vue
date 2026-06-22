@@ -638,8 +638,12 @@ const pollOnce = async () => {
         markAsRead()
       }
     }
-  } catch {
+  } catch (e: any) {
     // 轮询静默失败，不弹 toast
+    // 401 表示 token 已失效，request.ts 已处理登录态清除，此刻停止轮询防止循环重定向
+    if (e?.statusCode === 401 || e?.message === 'Unauthorized') {
+      stopPolling()
+    }
   }
 }
 
