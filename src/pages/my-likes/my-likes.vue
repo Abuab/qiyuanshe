@@ -1,7 +1,7 @@
 <template>
   <view class="my-likes-page">
     <!-- 导航栏 -->
-    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px' }">
       <view class="nav-left" @tap="goBack">
         <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
       </view>
@@ -27,10 +27,10 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :style="scrollViewStyle"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
-      :style="{ height: `calc(100vh - 176rpx - ${statusBarHeight}px)` }"
     >
       <view v-if="list.length > 0" class="list-area">
         <view
@@ -101,6 +101,12 @@ const list = ref<LikeUser[]>([])
 const isRefreshing = ref(false)
 const statusBarHeight = ref(0)
 
+const scrollViewStyle = computed(() => {
+  // navBar (44) + tabBar (44) + statusBar padding → px
+  const top = (statusBarHeight.value || 20) + 88
+  return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
+})
+
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']
   return texts[currentTab.value] || '暂无数据'
@@ -159,8 +165,8 @@ function goToUser(item: LikeUser) {
 }
 
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = sysInfo.statusBarHeight || 0
+  const sysInfo = uni.getWindowInfo() as any
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
   loadData()
 })
 </script>
@@ -169,6 +175,7 @@ onMounted(() => {
 .my-likes-page {
   min-height: 100vh;
   background-color: #f5f5f5;
+  position: relative;
 }
 
 .nav-bar {
@@ -231,9 +238,6 @@ onMounted(() => {
   bottom: 4rpx;
 }
 
-.content-scroll {
-  height: calc(100vh - 176rpx);
-}
 
 .list-area {
   background: #ffffff;

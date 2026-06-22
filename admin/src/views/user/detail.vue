@@ -544,7 +544,7 @@
     </el-dialog>
 
     <!-- 添加喜欢弹窗 -->
-    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px">
+    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px" @opened="handleLikeDialogOpened">
       <el-form label-width="80px">
         <el-form-item label="选择用户" required>
           <el-select
@@ -556,6 +556,7 @@
             placeholder="输入昵称搜索用户"
             style="width:260px"
             clearable
+            value-key="id"
           >
             <el-option
               v-for="u in searchUserOptions"
@@ -983,6 +984,23 @@ async function handleSearchUsers(keyword: string) {
   try {
     const res = await adminUsers.searchUsers(keyword)
     if (res.success) searchUserOptions.value = res.data || []
+  } catch { searchUserOptions.value = [] }
+  finally { searchUserLoading.value = false }
+}
+
+async function handleLikeDialogOpened() {
+  // 打开弹窗时加载第一页用户列表，让用户可以直接选择
+  if (searchUserOptions.value.length > 0) return
+  searchUserLoading.value = true
+  try {
+    const res = await adminUsers.list({ page: 1, limit: 50 })
+    if (res.success && res.data) {
+      searchUserOptions.value = res.data.list.map((u: any) => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+      }))
+    }
   } catch { searchUserOptions.value = [] }
   finally { searchUserLoading.value = false }
 }
