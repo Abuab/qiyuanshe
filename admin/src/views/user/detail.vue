@@ -326,33 +326,47 @@
 
           <el-tab-pane label="关注" name="follow">
             <div v-loading="tabLoading.follow">
-              <div style="display:flex;gap:24px">
+              <div class="like-sections">
                 <!-- 我关注的 -->
-                <div style="flex:1">
-                  <h4 style="margin:0 0 12px 0">我关注的 ({{ followData.following.length }})</h4>
-                  <div v-if="followData.following.length === 0" style="color:#999;font-size:13px">暂无关注</div>
-                  <div v-for="f in followData.following" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(f.targetUserId)">
-                    <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
-                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                <div class="like-section-card">
+                  <div class="like-section-header">
+                    <h4>我关注的 ({{ followData.following.length }})</h4>
+                    <el-button type="danger" size="small" :icon="Plus" @click="followAddType = 'following'; followAddDialogVisible = true">添加</el-button>
+                  </div>
+                  <div v-if="followData.following.length === 0" class="like-empty">暂无关注</div>
+                  <div v-for="f in followData.following" :key="f.id" class="like-item" @click="goToUserDetail(f.targetUserId)">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <span style="margin-left:12px;font-size:14px;flex:1">{{ f.nickname }}</span>
-                    <span style="font-size:12px;color:#999">{{ formatDate(f.createdAt) }}</span>
+                    <div class="like-item-info">
+                      <div class="like-item-name">{{ f.nickname }}</div>
+                    </div>
+                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveFollow(f.targetUserId, 'following')" />
                   </div>
                 </div>
                 <!-- 关注我的 -->
-                <div style="flex:1">
-                  <h4 style="margin:0 0 12px 0">关注我的 ({{ followData.followers.length }})</h4>
-                  <div v-if="followData.followers.length === 0" style="color:#999;font-size:13px">暂无粉丝</div>
-                  <div v-for="f in followData.followers" :key="f.id" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(f.userId)">
-                    <el-image :src="f.avatar" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
-                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                <div class="like-section-card">
+                  <div class="like-section-header">
+                    <h4>关注我的 ({{ followData.followers.length }})</h4>
+                    <el-button type="danger" size="small" :icon="Plus" @click="followAddType = 'followers'; followAddDialogVisible = true">添加</el-button>
+                  </div>
+                  <div v-if="followData.followers.length === 0" class="like-empty">暂无粉丝</div>
+                  <div v-for="f in followData.followers" :key="f.id" class="like-item" @click="goToUserDetail(f.userId)">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <span style="margin-left:12px;font-size:14px;flex:1">{{ f.nickname }}</span>
-                    <span style="font-size:12px;color:#999">{{ formatDate(f.createdAt) }}</span>
+                    <div class="like-item-info">
+                      <div class="like-item-name">{{ f.nickname }}</div>
+                    </div>
+                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveFollow(f.userId, 'followers')" />
                   </div>
                 </div>
               </div>
+
               <el-divider />
+
               <div style="display:flex;gap:24px">
                 <!-- 我看过谁 -->
                 <div style="flex:1">
@@ -569,6 +583,32 @@
       </template>
     </el-dialog>
 
+    <!-- 添加关注弹窗 -->
+    <el-dialog v-model="followAddDialogVisible" :title="followAddType === 'following' ? '添加关注的' : '添加关注我的'" width="420px" @opened="handleFollowDialogOpened">
+      <el-form label-width="80px">
+        <el-form-item label="选择用户" required>
+          <el-select
+            v-model="followSelectedUserId"
+            filterable
+            :loading="followSearchUserLoading"
+            placeholder="请选择用户"
+            style="width:260px"
+          >
+            <el-option
+              v-for="u in followSearchUserOptions"
+              :key="u.id"
+              :label="`${u.nickname} (ID: ${u.id})`"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="followAddDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAddFollowSubmit" :disabled="!followSelectedUserId">确认添加</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 添加回答弹窗 -->
     <el-dialog v-model="answerDialogVisible" title="手动添加回答" width="520px">
       <el-form :model="answerForm" label-width="80px">
@@ -746,6 +786,11 @@ const likeAddType = ref<'liked' | 'likedBy'>('liked')
 const likeSelectedUserId = ref<number | null>(null)
 const searchUserOptions = ref<any[]>([])
 const searchUserLoading = ref(false)
+const followAddDialogVisible = ref(false)
+const followAddType = ref<'following' | 'followers'>('following')
+const followSelectedUserId = ref<number | null>(null)
+const followSearchUserOptions = ref<any[]>([])
+const followSearchUserLoading = ref(false)
 const viewData = reactive({ views: [] as any[], visitors: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
@@ -954,36 +999,98 @@ async function loadLikesDetail() {
 }
 
 async function loadLikeUserOptions() {
-  // 预加载用户列表供"添加喜欢"下拉选择，参考 loadMatchmakers 模式
   if (searchUserOptions.value.length > 0) return
   searchUserLoading.value = true
   try {
     const res = await adminUsers.list({ page: 1, limit: 200 })
     if (res.success && res.data) {
-      searchUserOptions.value = res.data.list.map((u: any) => ({
-        id: u.id,
-        nickname: u.nickname,
-        avatar: u.avatar,
-      }))
+      const curId = user.value?.id
+      searchUserOptions.value = res.data.list
+        .filter((u: any) => u.id !== curId)
+        .map((u: any) => ({
+          id: u.id,
+          nickname: u.nickname,
+          avatar: u.avatar,
+        }))
     }
   } catch { searchUserOptions.value = [] }
   finally { searchUserLoading.value = false }
 }
 
 async function handleLikeDialogOpened() {
-  // 每次打开弹窗强制重新加载，避免竞态导致 No data
+  // 每次打开弹窗强制重新加载，过滤掉当前用户避免自己选自己
   searchUserLoading.value = true
   try {
     const res = await adminUsers.list({ page: 1, limit: 200 })
     if (res.success && res.data) {
-      searchUserOptions.value = res.data.list.map((u: any) => ({
-        id: u.id,
-        nickname: u.nickname,
-        avatar: u.avatar,
-      }))
+      const curId = user.value?.id
+      searchUserOptions.value = res.data.list
+        .filter((u: any) => u.id !== curId)
+        .map((u: any) => ({
+          id: u.id,
+          nickname: u.nickname,
+          avatar: u.avatar,
+        }))
     }
   } catch { searchUserOptions.value = [] }
   finally { searchUserLoading.value = false }
+}
+
+async function handleFollowDialogOpened() {
+  followSearchUserLoading.value = true
+  try {
+    const res = await adminUsers.list({ page: 1, limit: 200 })
+    if (res.success && res.data) {
+      const curId = user.value?.id
+      followSearchUserOptions.value = res.data.list
+        .filter((u: any) => u.id !== curId)
+        .map((u: any) => ({
+          id: u.id,
+          nickname: u.nickname,
+          avatar: u.avatar,
+        }))
+    }
+  } catch { followSearchUserOptions.value = [] }
+  finally { followSearchUserLoading.value = false }
+}
+
+async function handleAddFollowSubmit() {
+  if (!user.value || !followSelectedUserId.value) return
+  try {
+    let res
+    if (followAddType.value === 'following') {
+      // 当前用户关注 selectedUser
+      res = await adminUsers.addFollow(user.value.id, { targetUserId: followSelectedUserId.value })
+    } else {
+      // selectedUser 关注当前用户
+      res = await adminUsers.addFollower(user.value.id, { followerUserId: followSelectedUserId.value })
+    }
+    if (res.success) {
+      ElMessage.success('添加关注成功')
+      followAddDialogVisible.value = false
+      followSelectedUserId.value = null
+      followSearchUserOptions.value = []
+      loadFollowDetail()
+    } else {
+      ElMessage.error(res.message || '添加失败')
+    }
+  } catch (e: any) { ElMessage.error(e.message || '添加失败') }
+}
+
+async function handleRemoveFollow(targetUserId: number, tab: 'following' | 'followers') {
+  if (!user.value) return
+  try {
+    await ElMessageBox.confirm('确定要取消该关注关系吗？', '删除确认', { type: 'warning' })
+    const res = tab === 'following'
+      ? await adminUsers.removeFollow(user.value.id, targetUserId)
+      : await adminUsers.removeFollower(user.value.id, targetUserId)
+    if (res.success) {
+      ElMessage.success('已取消关注')
+      loadFollowDetail()
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 
 async function handleAddLikeSubmit() {
