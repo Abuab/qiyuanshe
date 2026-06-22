@@ -7,6 +7,11 @@
 export function normalizeImageUrl(url: string | undefined | null): string {
   if (!url) return ''
 
+  // 过滤不可用的外部图片源（picsum 已不可用，placeholder/lorempixel 同理）
+  if (/picsum\.photos|placeholder\.com|lorempixel/i.test(url)) {
+    return ''
+  }
+
   // 相对路径、data URI 直接放行
   if (url.startsWith('/') || url.startsWith('data:')) return url
 
