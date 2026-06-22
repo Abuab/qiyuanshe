@@ -200,6 +200,7 @@ import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
+import { secureStorage } from '@/utils/crypto'
 import { useImageFallback } from '@/composables/useImageFallback'
 import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
@@ -210,7 +211,7 @@ const wsConnected = ref(false)
 
 const connectWebSocket = () => {
   if (wsSocket) return
-  const token = uni.getStorageSync('accessToken')
+  const token = secureStorage.getToken()
   if (!token) return
   const baseUrl = getServerBaseUrl().replace(/^http/, 'ws')
   wsSocket = uni.connectSocket({
