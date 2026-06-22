@@ -141,8 +141,8 @@ http {
         }
 
         # ============ WebSocket 实时通信代理 ============
-        location /ws/chat/ {
-            proxy_pass http://api_upstream/ws/chat/;
+        location /ws/chat {
+            proxy_pass http://api_upstream/ws/chat;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection "upgrade";
