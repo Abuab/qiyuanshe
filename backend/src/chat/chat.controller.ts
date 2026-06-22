@@ -36,7 +36,7 @@ export class ChatController {
 
     return {
       success: true,
-      data: { list },
+      list,
     }
   }
 
