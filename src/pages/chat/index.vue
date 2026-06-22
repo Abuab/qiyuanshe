@@ -626,9 +626,11 @@ const pollOnce = async () => {
         messages.value = messages.value.filter(m => !(m.id < 0 && myContents.has(m.content)))
         messages.value.push(...toAdd)
         console.log('[poll] merged, total=', messages.value.length)
-        if (isUserScrolledUp.value) {
+        // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时自动滚动处理）
+        const hasOtherMsg = toAdd.some(m => !m.isMine)
+        if (isUserScrolledUp.value && hasOtherMsg) {
           showNewMsgTip.value = true
-        } else {
+        } else if (!isUserScrolledUp.value) {
           nextTick(() => scrollToBottom())
         }
         markAsRead()
