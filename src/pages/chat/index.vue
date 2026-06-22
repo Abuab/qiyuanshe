@@ -383,6 +383,7 @@ const handleSend = async () => {
     })
 
     // 乐观更新：将消息追加到末尾（最新在下方）
+    showNewMsgTip.value = false
     messages.value.push({
       id: tempMsgIdCounter--,
       fromUserId: userStore.userInfo?.id || 0,
@@ -626,12 +627,15 @@ const pollOnce = async () => {
         messages.value = messages.value.filter(m => !(m.id < 0 && myContents.has(m.content)))
         messages.value.push(...toAdd)
         console.log('[poll] merged, total=', messages.value.length)
-        // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时自动滚动处理）
+        // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时同步清除）
         const hasOtherMsg = toAdd.some(m => !m.isMine)
-        if (isUserScrolledUp.value && hasOtherMsg) {
+        if (hasOtherMsg && isUserScrolledUp.value) {
           showNewMsgTip.value = true
         } else if (!isUserScrolledUp.value) {
           nextTick(() => scrollToBottom())
+        } else {
+          // 有自己的消息回执但无对方消息，确保 tip 被清除
+          showNewMsgTip.value = false
         }
         markAsRead()
       }
