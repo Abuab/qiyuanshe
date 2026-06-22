@@ -1,25 +1,27 @@
 <template>
   <view class="my-likes-page">
-    <!-- 导航栏 -->
-    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px' }">
-      <view class="nav-left" @tap="goBack">
-        <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
+    <!-- 固定导航区（含状态栏占位 + 标题行 + Tab行），参考会员页 -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 第一级：返回 + 标题 -->
+      <view class="nav-level1">
+        <view class="nav-left" @tap="goBack">
+          <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
+        </view>
+        <text class="nav-title">我的喜欢</text>
+        <view class="nav-right" />
       </view>
-      <text class="nav-title">我的喜欢</text>
-      <view class="nav-right" />
-    </view>
-
-    <!-- Tab 切换 -->
-    <view class="tab-bar">
-      <view
-        v-for="(tab, index) in tabs"
-        :key="index"
-        class="tab-item"
-        :class="{ active: currentTab === index }"
-        @tap="switchTab(index)"
-      >
-        <text class="tab-text">{{ tab }}</text>
-        <view v-if="currentTab === index" class="tab-underline" />
+      <!-- 第二级：Tab 切换行 -->
+      <view class="nav-level2">
+        <view
+          v-for="(tab, index) in tabs"
+          :key="index"
+          class="nav-tab"
+          :class="{ active: currentTab === index }"
+          @tap="switchTab(index)"
+        >
+          <text class="tab-text">{{ tab }}</text>
+          <view v-if="currentTab === index" class="tab-underline" />
+        </view>
       </view>
     </view>
 
@@ -27,7 +29,7 @@
     <scroll-view
       class="content-scroll"
       scroll-y
-      :style="scrollViewStyle"
+      :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
@@ -100,12 +102,8 @@ const currentTab = ref(0)
 const list = ref<LikeUser[]>([])
 const isRefreshing = ref(false)
 const statusBarHeight = ref(0)
-
-const scrollViewStyle = computed(() => {
-  // navBar (44) + tabBar (44) + statusBar padding → px
-  const top = (statusBarHeight.value || 20) + 88
-  return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
-})
+// nav-level1 (88rpx ≈ 44px) + nav-level2 (88rpx ≈ 44px)
+const navBarHeightPx = 88
 
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']
@@ -165,7 +163,7 @@ function goToUser(item: LikeUser) {
 }
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   loadData()
 })
@@ -175,17 +173,33 @@ onMounted(() => {
 .my-likes-page {
   min-height: 100vh;
   background-color: #f5f5f5;
-  position: relative;
 }
 
-.nav-bar {
-  height: 88rpx;
+// ===== 固定导航区 =====
+.nav-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
   background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
+}
+
+// 第一级：标题行
+.nav-level1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 88rpx;
   padding: 0 24rpx;
+}
+
+.nav-title {
+  font-size: 32rpx;
+  color: #333333;
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
 }
 
 .nav-left,
@@ -194,28 +208,26 @@ onMounted(() => {
   height: 88rpx;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .nav-left { justify-content: flex-start; }
 
-.nav-title {
-  font-size: 32rpx;
-  color: #333333;
-  font-weight: 500;
-}
-
-.tab-bar {
-  height: 88rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
+// 第二级：Tab 切换行
+.nav-level2 {
   display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-bottom: 1rpx solid #eeeeee;
 }
 
-.tab-item {
+.nav-tab {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 100%;
   position: relative;
 }
 
@@ -224,7 +236,7 @@ onMounted(() => {
   color: #999999;
 }
 
-.tab-item.active .tab-text {
+.nav-tab.active .tab-text {
   color: #ff6b6b;
   font-weight: bold;
 }
@@ -238,6 +250,10 @@ onMounted(() => {
   bottom: 4rpx;
 }
 
+// ===== 内容区 =====
+.content-scroll {
+  min-height: 100vh;
+}
 
 .list-area {
   background: #ffffff;
