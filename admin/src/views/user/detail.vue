@@ -544,19 +544,15 @@
     </el-dialog>
 
     <!-- 添加喜欢弹窗 -->
-    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px" @opened="handleLikeDialogOpened">
+    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px">
       <el-form label-width="80px">
         <el-form-item label="选择用户" required>
           <el-select
             v-model="likeSelectedUserId"
             filterable
-            remote
-            :remote-method="handleSearchUsers"
             :loading="searchUserLoading"
-            placeholder="输入昵称搜索用户"
+            placeholder="请选择用户"
             style="width:260px"
-            clearable
-            value-key="id"
           >
             <el-option
               v-for="u in searchUserOptions"
@@ -789,6 +785,7 @@ watch(() => route.params.id, async (newId) => {
     likeData.liked = []
     likeData.likedBy = []
     likeData.mutual = []
+    searchUserOptions.value = []
     viewData.views = []
     viewData.visitors = []
     await nextTick()
@@ -825,7 +822,7 @@ function handleTabChange(tabName: string) {
     case 'answers': loadUserAnswers(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
     case 'follow': loadFollowDetail(); break
-    case 'likes': loadLikesDetail(); break
+    case 'likes': loadLikesDetail(); loadLikeUserOptions(); break
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
   }
@@ -956,6 +953,23 @@ async function loadLikesDetail() {
   finally { tabLoading.likes = false }
 }
 
+async function loadLikeUserOptions() {
+  // 预加载用户列表供"添加喜欢"下拉选择，参考 loadMatchmakers 模式
+  if (searchUserOptions.value.length > 0) return
+  searchUserLoading.value = true
+  try {
+    const res = await adminUsers.list({ page: 1, limit: 200 })
+    if (res.success && res.data) {
+      searchUserOptions.value = res.data.list.map((u: any) => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+      }))
+    }
+  } catch { searchUserOptions.value = [] }
+  finally { searchUserLoading.value = false }
+}
+
 async function handleAddLikeSubmit() {
   if (!user.value || !likeSelectedUserId.value) return
   try {
@@ -976,33 +990,6 @@ async function handleAddLikeSubmit() {
       ElMessage.error(res.message || '添加失败')
     }
   } catch (e: any) { ElMessage.error(e.message || '添加失败') }
-}
-
-async function handleSearchUsers(keyword: string) {
-  if (!keyword || keyword.length < 1) { searchUserOptions.value = []; return }
-  searchUserLoading.value = true
-  try {
-    const res = await adminUsers.searchUsers(keyword)
-    if (res.success) searchUserOptions.value = res.data || []
-  } catch { searchUserOptions.value = [] }
-  finally { searchUserLoading.value = false }
-}
-
-async function handleLikeDialogOpened() {
-  // 打开弹窗时加载第一页用户列表，让用户可以直接选择
-  if (searchUserOptions.value.length > 0) return
-  searchUserLoading.value = true
-  try {
-    const res = await adminUsers.list({ page: 1, limit: 50 })
-    if (res.success && res.data) {
-      searchUserOptions.value = res.data.list.map((u: any) => ({
-        id: u.id,
-        nickname: u.nickname,
-        avatar: u.avatar,
-      }))
-    }
-  } catch { searchUserOptions.value = [] }
-  finally { searchUserLoading.value = false }
 }
 
 async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' | 'mutual') {
