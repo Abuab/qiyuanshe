@@ -146,8 +146,9 @@ onShow(() => {
 })
 
 const fetchConversations = async (isRefresh = false) => {
-  if (fetchLock) return
-  fetchLock = true
+  // 仅在首次加载时防并发；刷新类请求直接执行，不阻塞
+  if (!isRefresh && fetchLock) return
+  if (!isRefresh) fetchLock = true
   try {
     if (isRefresh) {
       page.value = 1

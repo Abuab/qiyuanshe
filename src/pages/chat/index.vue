@@ -325,7 +325,7 @@ const maxDailyMessages = 3
 
 // 轮询相关
 let pollTimer: ReturnType<typeof setInterval> | null = null
-const POLL_INTERVAL = 1500
+const POLL_INTERVAL = 2500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
@@ -696,10 +696,15 @@ const pollOnce = async () => {
         } else {
           nextTick(() => scrollToBottom())
         }
+        // 标记已读（WS 不可用时 poll 是唯一标记已读的途径）
+        markAsRead()
       }
     }
-  } catch {
-    // 轮询静默失败，不弹 toast
+  } catch (e: any) {
+    // 轮询静默失败，但记录到控制台方便排查
+    if (e?.message !== 'Network Error') {
+      logger.error('pollOnce error:', e)
+    }
   }
 }
 
