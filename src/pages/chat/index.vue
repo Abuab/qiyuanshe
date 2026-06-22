@@ -204,6 +204,56 @@ import { useImageFallback } from '@/composables/useImageFallback'
 import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
 
+// ===== WebSocket 连接 =====
+let wsSocket: any = null
+const wsConnected = ref(false)
+
+const connectWebSocket = () => {
+  if (wsSocket) return
+  const token = uni.getStorageSync('accessToken')
+  if (!token) return
+  const baseUrl = getServerBaseUrl().replace(/^http/, 'ws')
+  wsSocket = uni.connectSocket({
+    url: `${baseUrl}/ws/chat`,
+  })
+  wsSocket.onOpen(() => {
+    wsSocket.send({ data: JSON.stringify({ event: 'auth', data: { token, type: 'user' } }) })
+  })
+  wsSocket.onMessage((res: any) => {
+    try {
+      const msg = JSON.parse(res.data)
+      if (msg.event === 'auth_success') {
+        wsConnected.value = true
+      } else if (msg.event === 'new_message') {
+        const newMsg = msg.data
+        if (newMsg.fromUserId === toUserId.value || newMsg.toUserId === toUserId.value) {
+          const ids = new Set(messages.value.map((m: ChatMessage) => m.id))
+          if (!ids.has(newMsg.id)) {
+            messages.value.push(newMsg)
+            if (!isUserScrolledUp.value) {
+              nextTick(() => scrollToBottom())
+            } else {
+              showNewMsgTip.value = true
+            }
+            markAsRead()
+          }
+        }
+      }
+    } catch { /* JSON parse error, ignore */ }
+  })
+  wsSocket.onClose(() => {
+    wsConnected.value = false
+    wsSocket = null
+    setTimeout(() => { if (isPageMounted.value) connectWebSocket() }, 3000)
+  })
+  wsSocket.onError(() => { wsSocket = null })
+}
+
+const closeWebSocket = () => {
+  if (wsSocket) { wsSocket.close({}); wsSocket = null }
+  wsConnected.value = false
+}
+
 interface ChatMessage {
   id: number
   fromUserId: number
@@ -280,6 +330,7 @@ onMounted(() => {
   myAvatar.value = userStore.userInfo?.avatar || ''
 
   fetchMessages()
+  connectWebSocket()
   markAsRead()
   startPolling()
   checkChatPermission()
@@ -293,15 +344,19 @@ onShow(() => {
   pollOnce()
   // 重启轮询定时器（如果之前被 onHide 停止了）
   startPolling()
+  // 重连 WebSocket（如果断开的话）
+  if (!wsSocket) connectWebSocket()
 })
 
 // 修复 A：页面隐藏时清除轮询，防止后台持续请求
 onHide(() => {
   stopPolling()
+  closeWebSocket()
 })
 
 onUnmounted(() => {
   stopPolling()
+  closeWebSocket()
   isPageMounted.value = false
 })
 
@@ -587,7 +642,7 @@ const pollOnce = async () => {
       data: { userId: toUserId.value, afterId: lastMsgId },
       skipToast: true,
     })
-    const newMsgs: ChatMessage[] = res?.list || []
+    const newMsgs: ChatMessage[] = Array.isArray(res) ? res : (res?.list || [])
     if (newMsgs.length > 0) {
       // 按消息 id 去重
       const ids = new Set(messages.value.map(m => m.id))
