@@ -443,7 +443,11 @@ const showTimeDivider = (index: number): boolean => {
   if (index === 0) return true
   const cur = new Date(messages.value[index].createdAt)
   const prev = new Date(messages.value[index - 1].createdAt)
-  return cur.toDateString() !== prev.toDateString()
+  // 跨天一定显示
+  if (cur.toDateString() !== prev.toDateString()) return true
+  // 同一天内，间隔超过 5 分钟显示
+  const diffMs = cur.getTime() - prev.getTime()
+  return diffMs >= 5 * 60 * 1000
 }
 
 const formatDate = (timeStr: string): string => {
@@ -451,9 +455,19 @@ const formatDate = (timeStr: string): string => {
   const now = new Date()
   const pad = (n: number) => String(n).padStart(2, '0')
   if (d.toDateString() === now.toDateString()) {
-    return `今天 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  // 昨天
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+  if (d.toDateString() === yesterday.toDateString()) {
+    return `昨天 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  // 今年内
+  if (d.getFullYear() === now.getFullYear()) {
+    return `${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  // 跨年
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 // ---- 图片消息 ----
