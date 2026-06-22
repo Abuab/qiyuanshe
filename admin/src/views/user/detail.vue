@@ -544,7 +544,7 @@
     </el-dialog>
 
     <!-- 添加喜欢弹窗 -->
-    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px">
+    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px" @opened="handleLikeDialogOpened">
       <el-form label-width="80px">
         <el-form-item label="选择用户" required>
           <el-select
@@ -956,6 +956,22 @@ async function loadLikesDetail() {
 async function loadLikeUserOptions() {
   // 预加载用户列表供"添加喜欢"下拉选择，参考 loadMatchmakers 模式
   if (searchUserOptions.value.length > 0) return
+  searchUserLoading.value = true
+  try {
+    const res = await adminUsers.list({ page: 1, limit: 200 })
+    if (res.success && res.data) {
+      searchUserOptions.value = res.data.list.map((u: any) => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+      }))
+    }
+  } catch { searchUserOptions.value = [] }
+  finally { searchUserLoading.value = false }
+}
+
+async function handleLikeDialogOpened() {
+  // 每次打开弹窗强制重新加载，避免竞态导致 No data
   searchUserLoading.value = true
   try {
     const res = await adminUsers.list({ page: 1, limit: 200 })
