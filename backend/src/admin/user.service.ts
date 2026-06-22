@@ -825,6 +825,116 @@ export class AdminUserService {
     await this.followRepository.remove(follow)
   }
 
+  // ===== 喜欢管理 =====
+
+  async getUserLikeStats(userId: number) {
+    const [liked, likedBy, mutual] = await Promise.all([
+      this.followRepository.count({ where: { userId } }),
+      this.followRepository.count({ where: { targetUserId: userId } }),
+      this.getMutualCount(userId),
+    ])
+    return { liked, likedBy, mutual }
+  }
+
+  private async getMutualCount(userId: number): Promise<number> {
+    const myLikes = await this.followRepository.find({ where: { userId }, select: ['targetUserId'] })
+    if (myLikes.length === 0) return 0
+    return this.followRepository.count({
+      where: { userId: In(myLikes.map(f => f.targetUserId)), targetUserId: userId },
+    })
+  }
+
+  async getUserLikesList(
+    userId: number,
+    type: 'liked' | 'likedBy' | 'mutual',
+    page: number,
+    limit: number,
+  ) {
+    if (type === 'liked') {
+      const [items, total] = await this.followRepository.findAndCount({
+        where: { userId },
+        relations: ['targetUser'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      })
+      return {
+        list: items.map(f => ({
+          id: f.id,
+          targetUserId: f.targetUserId,
+          nickname: f.targetUser?.nickname || '',
+          avatar: normalizeImageUrl(f.targetUser?.avatar),
+          age: f.targetUser?.birthYear ? new Date().getFullYear() - f.targetUser.birthYear : 0,
+          gender: f.targetUser?.gender || 0,
+          location: f.targetUser?.residence || f.targetUser?.hometown || '',
+          createdAt: f.createdAt,
+        })),
+        total,
+      }
+    }
+
+    if (type === 'likedBy') {
+      const [items, total] = await this.followRepository.findAndCount({
+        where: { targetUserId: userId },
+        relations: ['user'],
+        skip: (page - 1) * limit,
+        take: limit,
+        order: { createdAt: 'DESC' },
+      })
+      return {
+        list: items.map(f => ({
+          id: f.id,
+          targetUserId: f.userId,
+          nickname: f.user?.nickname || '',
+          avatar: normalizeImageUrl(f.user?.avatar),
+          age: f.user?.birthYear ? new Date().getFullYear() - f.user.birthYear : 0,
+          gender: f.user?.gender || 0,
+          location: f.user?.residence || f.user?.hometown || '',
+          createdAt: f.createdAt,
+        })),
+        total,
+      }
+    }
+
+    // mutual
+    const myLikes = await this.followRepository.find({ where: { userId }, select: ['targetUserId'] })
+    if (myLikes.length === 0) return { list: [], total: 0 }
+
+    const myLikeTargetIds = myLikes.map(f => f.targetUserId)
+    const [items, total] = await this.followRepository.findAndCount({
+      where: { userId: In(myLikeTargetIds), targetUserId: userId },
+      relations: ['user'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    })
+    return {
+      list: items.map(f => ({
+        id: f.id,
+        targetUserId: f.userId,
+        nickname: f.user?.nickname || '',
+        avatar: normalizeImageUrl(f.user?.avatar),
+        age: f.user?.birthYear ? new Date().getFullYear() - f.user.birthYear : 0,
+        gender: f.user?.gender || 0,
+        location: f.user?.residence || f.user?.hometown || '',
+        createdAt: f.createdAt,
+      })),
+      total,
+    }
+  }
+
+  async adminAddLike(userId: number, targetUserId: number) {
+    const exists = await this.followRepository.findOne({ where: { userId, targetUserId } })
+    if (exists) return
+    await this.followRepository.save({ userId, targetUserId })
+  }
+
+  async adminRemoveLike(userId: number, targetUserId: number) {
+    const follow = await this.followRepository.findOne({ where: { userId, targetUserId } })
+    if (!follow) return
+    await this.followRepository.remove(follow)
+  }
+
   async searchUsers(keyword: string) {
     if (!keyword || keyword.length < 1) return []
     const users = await this.userRepository.find({

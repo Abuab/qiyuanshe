@@ -250,6 +250,21 @@ export const adminUsers = {
   removeFollower(id: number, followerUserId: number): Promise<ApiResponse> {
     return request.delete(`/admin/users/${id}/admin-follow/${followerUserId}`)
   },
+
+  // 喜欢管理
+  getLikeStats(id: number): Promise<ApiResponse<{ liked: number; likedBy: number; mutual: number }>> {
+    return request.get(`/admin/users/${id}/like-stats`)
+  },
+  getAdminLikes(id: number, type: string = 'liked', page = 1, limit = 50): Promise<ApiResponse<{ list: any[]; total: number }>> {
+    return request.get(`/admin/users/${id}/admin-likes`, { params: { type, page, limit } })
+  },
+  addAdminLike(id: number, data: { targetUserId: number }): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/admin-like`, data)
+  },
+  removeAdminLike(id: number, targetUserId: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}/admin-like/${targetUserId}`)
+  },
+
   searchUsers(keyword: string): Promise<ApiResponse<any[]>> {
     return request.get('/admin/users/search', { params: { keyword } })
   },

@@ -381,6 +381,106 @@
               </div>
             </div>
           </el-tab-pane>
+
+          <el-tab-pane label="喜欢" name="likes">
+            <div v-loading="tabLoading.likes">
+              <!-- 统计卡片 -->
+              <div class="like-stats-row">
+                <div class="like-stat-card">
+                  <div class="like-stat-num">{{ likeData.liked.length }}</div>
+                  <div class="like-stat-label">我喜欢的</div>
+                </div>
+                <div class="like-stat-card">
+                  <div class="like-stat-num">{{ likeData.likedBy.length }}</div>
+                  <div class="like-stat-label">喜欢我的</div>
+                </div>
+                <div class="like-stat-card">
+                  <div class="like-stat-num">{{ likeData.mutual.length }}</div>
+                  <div class="like-stat-label">互相喜欢</div>
+                </div>
+              </div>
+
+              <div class="like-sections">
+                <!-- 我喜欢的 -->
+                <div class="like-section-card">
+                  <div class="like-section-header">
+                    <h4>我喜欢的 ({{ likeData.liked.length }})</h4>
+                    <el-button type="danger" size="small" :icon="Plus" @click="likeAddType = 'liked'; likeAddDialogVisible = true">添加</el-button>
+                  </div>
+                  <div v-if="likeData.liked.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.liked" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info">
+                      <div class="like-item-name">
+                        {{ item.nickname }}
+                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
+                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
+                      </div>
+                      <div class="like-item-meta">
+                        <template v-if="item.age">{{ item.age }}岁</template>
+                        <template v-if="item.age && item.location"> · </template>
+                        <template v-if="item.location">{{ item.location }}</template>
+                      </div>
+                    </div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'liked')" />
+                  </div>
+                </div>
+
+                <!-- 喜欢我的 -->
+                <div class="like-section-card">
+                  <h4 class="like-section-title">喜欢我的 ({{ likeData.likedBy.length }})</h4>
+                  <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.likedBy" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info">
+                      <div class="like-item-name">
+                        {{ item.nickname }}
+                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
+                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
+                      </div>
+                      <div class="like-item-meta">
+                        <template v-if="item.age">{{ item.age }}岁</template>
+                        <template v-if="item.age && item.location"> · </template>
+                        <template v-if="item.location">{{ item.location }}</template>
+                      </div>
+                    </div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'likedBy')" />
+                  </div>
+                </div>
+
+                <!-- 互相喜欢 -->
+                <div class="like-section-card">
+                  <h4 class="like-section-title">互相喜欢 ({{ likeData.mutual.length }})</h4>
+                  <div v-if="likeData.mutual.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.mutual" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info">
+                      <div class="like-item-name">
+                        {{ item.nickname }}
+                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
+                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
+                      </div>
+                      <div class="like-item-meta">
+                        <template v-if="item.age">{{ item.age }}岁</template>
+                        <template v-if="item.age && item.location"> · </template>
+                        <template v-if="item.location">{{ item.location }}</template>
+                      </div>
+                    </div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'mutual')" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </el-card>
     </div>
@@ -437,6 +537,19 @@
         <el-button type="primary" @click="handleReviewSubmit" :disabled="!reviewForm.matchmakerId || !reviewForm.content.trim()">
           确认添加
         </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加喜欢弹窗 -->
+    <el-dialog v-model="likeAddDialogVisible" title="添加喜欢" width="400px">
+      <el-form label-width="100px">
+        <el-form-item label="目标用户ID" required>
+          <el-input-number v-model="likeInputUserId" :min="1" placeholder="请输入用户ID" style="width:200px" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="likeAddDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAddLikeSubmit" :disabled="!likeInputUserId">确认添加</el-button>
       </template>
     </el-dialog>
 
@@ -501,7 +614,7 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Picture, Plus, Delete } from '@element-plus/icons-vue'
 import { adminUsers, adminMatchmaker } from '../../api'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
 import { formatDate } from '../../utils/date'
@@ -603,7 +716,7 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false, likes: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
@@ -611,6 +724,10 @@ const userAnswerList = ref<any[]>([])
 const answerAuditing = reactive<Record<number, boolean>>({})
 const reviewList = ref<any[]>([])
 const followData = reactive({ following: [] as any[], followers: [] as any[] })
+const likeData = reactive({ liked: [] as any[], likedBy: [] as any[], mutual: [] as any[] })
+const likeAddDialogVisible = ref(false)
+const likeAddType = ref<'liked'>('liked')
+const likeInputUserId = ref<number | null>(null)
 const viewData = reactive({ views: [] as any[], visitors: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
@@ -647,6 +764,9 @@ watch(() => route.params.id, async (newId) => {
     // 清除关注/浏览列表旧数据
     followData.following = []
     followData.followers = []
+    likeData.liked = []
+    likeData.likedBy = []
+    likeData.mutual = []
     viewData.views = []
     viewData.visitors = []
     await nextTick()
@@ -683,6 +803,7 @@ function handleTabChange(tabName: string) {
     case 'answers': loadUserAnswers(); break
     case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
     case 'follow': loadFollowDetail(); break
+    case 'likes': loadLikesDetail(); break
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
   }
@@ -795,6 +916,59 @@ async function loadFollowDetail() {
     if (visitorsRes.success) viewData.visitors = visitorsRes.data || []
   } catch (e) { console.error(e) }
   finally { tabLoading.follow = false }
+}
+
+async function loadLikesDetail() {
+  if (!user.value) return
+  tabLoading.likes = true
+  try {
+    const [likedRes, likedByRes, mutualRes] = await Promise.all([
+      adminUsers.getAdminLikes(user.value.id, 'liked'),
+      adminUsers.getAdminLikes(user.value.id, 'likedBy'),
+      adminUsers.getAdminLikes(user.value.id, 'mutual'),
+    ])
+    if (likedRes.success) likeData.liked = likedRes.data?.list || []
+    if (likedByRes.success) likeData.likedBy = likedByRes.data?.list || []
+    if (mutualRes.success) likeData.mutual = mutualRes.data?.list || []
+  } catch (e) { console.error(e) }
+  finally { tabLoading.likes = false }
+}
+
+async function handleAddLikeSubmit() {
+  if (!user.value || !likeInputUserId.value) return
+  try {
+    const res = await adminUsers.addAdminLike(user.value.id, { targetUserId: likeInputUserId.value })
+    if (res.success) {
+      ElMessage.success('添加喜欢成功')
+      likeAddDialogVisible.value = false
+      likeInputUserId.value = null
+      loadLikesDetail()
+    } else {
+      ElMessage.error(res.message || '添加失败')
+    }
+  } catch (e: any) { ElMessage.error(e.message || '添加失败') }
+}
+
+async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' | 'mutual') {
+  if (!user.value) return
+  try {
+    await ElMessageBox.confirm('确定要取消该喜欢关系吗？', '删除确认', { type: 'warning' })
+    // liked: Follow 记录是 当前用户→targetUserId，直接删除
+    // likedBy / mutual: Follow 记录是 targetUserId→当前用户，需要反转参数
+    const [delUserId, delTargetId] = tab === 'liked'
+      ? [user.value.id, targetUserId]
+      : [targetUserId, user.value.id]
+    const res = await adminUsers.removeAdminLike(delUserId, delTargetId)
+    if (res.success) {
+      ElMessage.success('已取消喜欢')
+      // 从三个列表中移除
+      likeData.liked = likeData.liked.filter((item: any) => item.targetUserId !== targetUserId)
+      likeData.likedBy = likeData.likedBy.filter((item: any) => item.targetUserId !== targetUserId)
+      likeData.mutual = likeData.mutual.filter((item: any) => item.targetUserId !== targetUserId)
+    } else {
+      ElMessage.error(res.message || '操作失败')
+    }
+  } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 
 async function handleToggleStatus() {
@@ -1033,4 +1207,43 @@ function getAnswerStatusType(status: number) { return { 0: 'warning', 1: 'succes
 .link-text { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }
 .ml-10 { margin-left: 10px; }
 .text-muted { color: #909399; font-size: 13px; }
+
+// ===== 喜欢 tab =====
+.like-stats-row {
+  display: flex; gap: 16px; margin-bottom: 20px;
+}
+.like-stat-card {
+  flex: 1; text-align: center; padding: 16px; border-radius: 8px;
+  background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.like-stat-num { font-size: 28px; font-weight: 700; color: #e74c3c; }
+.like-stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
+.like-sections { display: flex; flex-direction: column; gap: 16px; }
+.like-section-card {
+  background: #fff; border-radius: 8px; padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.like-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+  h4 { margin: 0; font-size: 15px; font-weight: 600; }
+}
+.like-section-title { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+.like-empty { color: #999; font-size: 13px; text-align: center; padding: 32px 0; }
+.like-item {
+  display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+  cursor: pointer; transition: background 0.2s;
+  &:hover { background: #fafafa; }
+  &:last-child { border-bottom: none; }
+}
+.like-avatar-img { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+.like-avatar-fallback {
+  width: 48px; height: 48px; border-radius: 50%; background: #f5f5f5;
+  display: flex; align-items: center; justify-content: center;
+}
+.like-item-info { flex: 1; margin-left: 12px; min-width: 0; }
+.like-item-name { font-size: 14px; font-weight: 600; color: #333; }
+.like-item-meta { font-size: 12px; color: #999; margin-top: 2px; }
+.like-gender-male { color: #409eff; margin-left: 4px; font-size: 14px; }
+.like-gender-female { color: #e74c8a; margin-left: 4px; font-size: 14px; }
+.like-item-time { font-size: 12px; color: #999; margin: 0 12px; white-space: nowrap; }
+.like-del-btn { flex-shrink: 0; }
 </style>

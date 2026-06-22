@@ -304,4 +304,44 @@ export class AdminUserController {
       return Result.serverError(error?.message || '置顶设置失败')
     }
   }
+
+  // ===== 喜欢管理（后台手动管理用户的喜欢） =====
+
+  @Get(':id/like-stats')
+  async getLikeStats(@Param('id', ParseIntPipe) id: number) {
+    const stats = await this.userService.getUserLikeStats(id)
+    return Result.success(stats)
+  }
+
+  @Get(':id/admin-likes')
+  async getUserLikes(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('type') type: string = 'liked',
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    if (!['liked', 'likedBy', 'mutual'].includes(type)) {
+      return Result.serverError('type 参数必须为 liked / likedBy / mutual')
+    }
+    const result = await this.userService.getUserLikesList(id, type as 'liked' | 'likedBy' | 'mutual', page, limit)
+    return Result.success(result)
+  }
+
+  @Post(':id/admin-like')
+  async adminAddLike(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { targetUserId: number },
+  ) {
+    await this.userService.adminAddLike(id, body.targetUserId)
+    return Result.success(null, '添加喜欢成功')
+  }
+
+  @Delete(':id/admin-like/:targetId')
+  async adminRemoveLike(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('targetId', ParseIntPipe) targetId: number,
+  ) {
+    await this.userService.adminRemoveLike(id, targetId)
+    return Result.success(null, '取消喜欢成功')
+  }
 }
