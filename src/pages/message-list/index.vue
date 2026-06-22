@@ -194,6 +194,7 @@ const fetchConversations = async (isRefresh = false) => {
     // 更新未读数
     const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
     uni.setStorageSync('unreadMessageCount', totalUnread)
+    uni.$emit('tabbar:refreshUnread')
 
     // 合并：系统消息入口在前，聊天在后
     const mergedList: MessageItem[] = [systemAggregate, ...chatList]

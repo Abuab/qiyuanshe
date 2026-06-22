@@ -666,6 +666,8 @@ const reportUser = () => {
 const markAsRead = async () => {
   try {
     await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' })
+    // 通知 tab-bar 刷新未读数
+    uni.$emit('tabbar:refreshUnread')
   } catch (e) {
     logger.error('markAsRead failed:', e)
   }
@@ -685,8 +687,10 @@ const pollOnce = async () => {
     })
     const newMsgs: ChatMessage[] = Array.isArray(res) ? res : (res?.list || [])
     if (newMsgs.length > 0) {
+      console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId)
       const unique = newMsgs.filter(m => !seenMsgIds.has(m.id))
       if (unique.length > 0) {
+        console.log('[poll] adding', unique.length, 'unique msgs, ids=', unique.map(m => m.id))
         unique.forEach(m => seenMsgIds.add(m.id))
         // 追加到消息列表末尾（最新在下方）
         messages.value.push(...unique)
