@@ -298,7 +298,7 @@
     },
     {
       "path": "pages/my-likes/my-likes",
-      "style": { "navigationBarTitleText": "我的喜欢" }
+      "style": { "navigationStyle": "custom" }
     },
     {
       "path": "pages/daily-recommend/daily-recommend",

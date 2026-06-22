@@ -1,7 +1,7 @@
 <template>
   <view class="my-likes-page">
     <!-- 导航栏 -->
-    <view class="nav-bar">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="goBack">
         <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
       </view>
@@ -30,12 +30,14 @@
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
+      :style="{ height: `calc(100vh - 176rpx - ${statusBarHeight}px)` }"
     >
       <view v-if="list.length > 0" class="list-area">
         <view
           v-for="item in list"
           :key="item.id"
           class="like-card"
+          @tap="goToUser(item)"
         >
           <image
             class="like-avatar"
@@ -48,7 +50,7 @@
               {{ [item.age ? item.age + '岁' : '', item.location || ''].filter(Boolean).join(' · ') }}
             </text>
           </view>
-          <view class="like-actions">
+          <view class="like-actions" @tap.stop>
             <view
               v-if="currentTab === 1 && item.isMutual"
               class="action-btn chat-btn"
@@ -97,6 +99,7 @@ const tabs = ['我喜欢的', '喜欢我的', '互相喜欢']
 const currentTab = ref(0)
 const list = ref<LikeUser[]>([])
 const isRefreshing = ref(false)
+const statusBarHeight = ref(0)
 
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']
@@ -151,7 +154,13 @@ function goChat(item: LikeUser) {
   })
 }
 
+function goToUser(item: LikeUser) {
+  uni.navigateTo({ url: `/pages/user-detail/index?id=${item.id}` })
+}
+
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 0
   loadData()
 })
 </script>
