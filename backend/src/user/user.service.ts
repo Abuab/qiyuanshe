@@ -920,7 +920,7 @@ export class UserService {
   async getMyLikes(
     userId: number,
     type: 'liked' | 'likedBy' | 'mutual',
-  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]> {
+  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date; isMutual?: boolean }[]> {
     if (type === 'liked') {
       const follows = await this.followRepository.find({
         where: { userId },
@@ -934,7 +934,18 @@ export class UserService {
         where: { targetUserId: userId },
         order: { createdAt: 'DESC' },
       })
-      return this.mapLikesToUsers(follows, 'userId')
+      const list = await this.mapLikesToUsers(follows, 'userId')
+      // 标记哪些用户已经被当前用户回喜欢了（双向喜欢）
+      if (list.length > 0) {
+        const likedBackIds = new Set(
+          (await this.followRepository.find({
+            where: { userId, targetUserId: In(list.map(u => u.id)) },
+            select: ['targetUserId'],
+          })).map(f => f.targetUserId),
+        )
+        list.forEach(u => { u.isMutual = likedBackIds.has(u.id) })
+      }
+      return list
     }
 
     // mutual: 互相喜欢
@@ -955,7 +966,7 @@ export class UserService {
   private async mapLikesToUsers(
     follows: Follow[],
     userField: 'userId' | 'targetUserId',
-  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]> {
+  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date; isMutual?: boolean }[]> {
     if (follows.length === 0) return []
 
     const userIds = follows.map((f) => f[userField])
