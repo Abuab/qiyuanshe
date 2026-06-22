@@ -431,7 +431,10 @@
 
                 <!-- 喜欢我的 -->
                 <div class="like-section-card">
-                  <h4 class="like-section-title">喜欢我的 ({{ likeData.likedBy.length }})</h4>
+                  <div class="like-section-header">
+                    <h4>喜欢我的 ({{ likeData.likedBy.length }})</h4>
+                    <el-button type="danger" size="small" :icon="Plus" @click="likeAddType = 'likedBy'; likeAddDialogVisible = true">添加</el-button>
+                  </div>
                   <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="item in likeData.likedBy" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
                     <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
@@ -541,15 +544,31 @@
     </el-dialog>
 
     <!-- 添加喜欢弹窗 -->
-    <el-dialog v-model="likeAddDialogVisible" title="添加喜欢" width="400px">
-      <el-form label-width="100px">
-        <el-form-item label="目标用户ID" required>
-          <el-input-number v-model="likeInputUserId" :min="1" placeholder="请输入用户ID" style="width:200px" />
+    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px">
+      <el-form label-width="80px">
+        <el-form-item label="选择用户" required>
+          <el-select
+            v-model="likeSelectedUserId"
+            filterable
+            remote
+            :remote-method="handleSearchUsers"
+            :loading="searchUserLoading"
+            placeholder="输入昵称搜索用户"
+            style="width:260px"
+            clearable
+          >
+            <el-option
+              v-for="u in searchUserOptions"
+              :key="u.id"
+              :label="`${u.nickname} (ID: ${u.id})`"
+              :value="u.id"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="likeAddDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddLikeSubmit" :disabled="!likeInputUserId">确认添加</el-button>
+        <el-button type="primary" @click="handleAddLikeSubmit" :disabled="!likeSelectedUserId">确认添加</el-button>
       </template>
     </el-dialog>
 
@@ -726,8 +745,10 @@ const reviewList = ref<any[]>([])
 const followData = reactive({ following: [] as any[], followers: [] as any[] })
 const likeData = reactive({ liked: [] as any[], likedBy: [] as any[], mutual: [] as any[] })
 const likeAddDialogVisible = ref(false)
-const likeAddType = ref<'liked'>('liked')
-const likeInputUserId = ref<number | null>(null)
+const likeAddType = ref<'liked' | 'likedBy'>('liked')
+const likeSelectedUserId = ref<number | null>(null)
+const searchUserOptions = ref<any[]>([])
+const searchUserLoading = ref(false)
 const viewData = reactive({ views: [] as any[], visitors: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
@@ -935,18 +956,35 @@ async function loadLikesDetail() {
 }
 
 async function handleAddLikeSubmit() {
-  if (!user.value || !likeInputUserId.value) return
+  if (!user.value || !likeSelectedUserId.value) return
   try {
-    const res = await adminUsers.addAdminLike(user.value.id, { targetUserId: likeInputUserId.value })
+    let res
+    if (likeAddType.value === 'liked') {
+      res = await adminUsers.addAdminLike(user.value.id, { targetUserId: likeSelectedUserId.value })
+    } else {
+      // likedBy: 让 selectedUser 喜欢当前用户
+      res = await adminUsers.addAdminLike(likeSelectedUserId.value, { targetUserId: user.value.id })
+    }
     if (res.success) {
       ElMessage.success('添加喜欢成功')
       likeAddDialogVisible.value = false
-      likeInputUserId.value = null
+      likeSelectedUserId.value = null
+      searchUserOptions.value = []
       loadLikesDetail()
     } else {
       ElMessage.error(res.message || '添加失败')
     }
   } catch (e: any) { ElMessage.error(e.message || '添加失败') }
+}
+
+async function handleSearchUsers(keyword: string) {
+  if (!keyword || keyword.length < 1) { searchUserOptions.value = []; return }
+  searchUserLoading.value = true
+  try {
+    const res = await adminUsers.searchUsers(keyword)
+    if (res.success) searchUserOptions.value = res.data || []
+  } catch { searchUserOptions.value = [] }
+  finally { searchUserLoading.value = false }
 }
 
 async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' | 'mutual') {
@@ -961,10 +999,7 @@ async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' |
     const res = await adminUsers.removeAdminLike(delUserId, delTargetId)
     if (res.success) {
       ElMessage.success('已取消喜欢')
-      // 从三个列表中移除
-      likeData.liked = likeData.liked.filter((item: any) => item.targetUserId !== targetUserId)
-      likeData.likedBy = likeData.likedBy.filter((item: any) => item.targetUserId !== targetUserId)
-      likeData.mutual = likeData.mutual.filter((item: any) => item.targetUserId !== targetUserId)
+      loadLikesDetail()
     } else {
       ElMessage.error(res.message || '操作失败')
     }
