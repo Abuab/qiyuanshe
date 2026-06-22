@@ -191,7 +191,7 @@
       <view v-if="isLoggedIn && systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
         <view class="oa-avatar pink-heart">
           <image v-if="pageIcons.oaHeart" class="oa-avatar-img" :src="pageIcons.oaHeart" mode="aspectFit" />
-          <text v-else class="oa-avatar-icon">❤️</text>
+          <uni-icons v-else type="heart-filled" size="36rpx" color="#fff"></uni-icons>
         </view>
         <view class="oa-info">
           <text class="oa-name">{{ appName }}公众号</text>
@@ -204,8 +204,10 @@
 
       <!-- ========== 底部陪伴信息（仅登录后显示） ========== -->
       <view v-if="isLoggedIn" class="footer-info">
-        <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
-        <text v-else class="footer-heart">❤️</text>
+        <view class="footer-heart-circle">
+          <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
+          <uni-icons v-else type="heart-filled" size="20rpx" color="#fff"></uni-icons>
+        </view>
         <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
       </view>
       <view class="footer-version">
@@ -857,17 +859,25 @@ const toolGrid7 = [
   justify-content: center;
 
   &.pink-heart {
-    background-color: #FF6681;
+    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
   }
 }
 
 .oa-avatar-img {
-  width: 40rpx;
-  height: 40rpx;
+  width: 44rpx;
+  height: 44rpx;
 }
 
-.oa-avatar-icon {
-  font-size: 36rpx;
+.footer-heart-circle {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10rpx;
+  flex-shrink: 0;
 }
 
 .oa-info {
@@ -907,15 +917,9 @@ const toolGrid7 = [
   padding: 32rpx 0 8rpx;
 }
 
-.footer-heart {
-  font-size: 26rpx;
-  margin-right: 6rpx;
-}
-
 .footer-heart-img {
   width: 28rpx;
   height: 28rpx;
-  margin-right: 6rpx;
 }
 
 .footer-text {
