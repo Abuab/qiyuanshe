@@ -409,15 +409,11 @@ const handleSend = async () => {
 
 // ===== 修复 C：统一滚动到底部 =====
 const scrollToBottom = () => {
-  // 重置用户滚动状态
   isUserScrolledUp.value = false
   showNewMsgTip.value = false
   nextTick(() => {
-    // 优先使用 scroll-into-view
-    scrollIntoView.value = ''
-    nextTick(() => {
-      scrollIntoView.value = 'msg-bottom'
-    })
+    // 将 scrollTop 设为一个极大值，即滚到底部（比 scroll-into-view 更可靠，避免首次渲染时失效）
+    scrollTop.value = 999999
   })
 }
 
@@ -634,8 +630,10 @@ const pollOnce = async () => {
         } else if (!isUserScrolledUp.value) {
           nextTick(() => scrollToBottom())
         } else {
-          // 有自己的消息回执但无对方消息，确保 tip 被清除
+          // 只有自己的消息回执，且 isUserScrolledUp 为 true（通常是首次渲染 jitter 误判）
+          // 强制滚动到底部，因为用户刚发完消息，应该在底部
           showNewMsgTip.value = false
+          nextTick(() => scrollToBottom())
         }
         markAsRead()
       }
