@@ -5,6 +5,7 @@ import { ChatMonitorSession, MonitorStatus } from '../entities/ChatMonitorSessio
 import { ChatOperationLog, ChatOpAction } from '../entities/ChatOperationLog'
 import { ChatMessage } from '../entities/ChatMessage'
 import { ChatService } from './chat.service'
+import { ChatMonitorGateway } from './chat-monitor.gateway'
 
 const MONITOR_TIMEOUT_MS = 30 * 60 * 1000 // 30 分钟超时
 
@@ -22,6 +23,9 @@ export class ChatMonitorService {
     @Optional()
     @Inject(forwardRef(() => ChatService))
     private readonly chatService?: any,
+    @Optional()
+    @Inject(forwardRef(() => ChatMonitorGateway))
+    private readonly monitorGateway?: ChatMonitorGateway,
   ) {}
 
   /**
@@ -156,6 +160,20 @@ export class ChatMonitorService {
       toUserId,
       logContent,
     )
+
+    // 通知消息接收方用户（实时推送）
+    if (this.monitorGateway) {
+      this.monitorGateway.notifyUser(toUserId, {
+        id: saved.id,
+        fromUserId: saved.fromUserId,
+        toUserId: saved.toUserId,
+        content: saved.content,
+        type: saved.type,
+        isProxy: saved.isProxy,
+        proxyName: saved.proxyName || null,
+        createdAt: saved.createdAt?.toISOString(),
+      })
+    }
 
     return saved
   }
