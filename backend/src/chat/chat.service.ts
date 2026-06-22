@@ -185,6 +185,8 @@ export class ChatService {
         toUserId: saved.toUserId,
         content: saved.content,
         type: saved.type,
+        isMine: false,
+        isRead: saved.isRead,
         isProxy: saved.isProxy,
         proxyName: saved.proxyName || null,
         createdAt: saved.createdAt?.toISOString(),

@@ -28,7 +28,6 @@
       class="message-list"
       scroll-y
       enable-flex
-      :scroll-top="scrollTop"
       :scroll-into-view="scrollIntoView"
       @scrolltoupper="loadMore"
       @scroll="onScroll"
@@ -227,8 +226,7 @@ const limit = 20
 const loading = ref(false)
 const loadingMore = ref(false)
 const noMore = ref(false)
-const scrollTop = ref(0)
-const scrollIntoView = ref('')
+const scrollIntoView = ref('msg-bottom')
 const keyboardHeight = ref(0)
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -243,6 +241,7 @@ const showAiSkillPanel = ref(false)
 const showFraudBanner = ref(true)
 const todayMessageCount = ref(0)
 const maxDailyMessages = 3
+const isSending = ref(false) // 发送中标记，防止轮询干扰乐观更新
 
 // 轮询相关
 let pollTimer: ReturnType<typeof setInterval> | null = null
@@ -250,6 +249,7 @@ const POLL_INTERVAL = 2500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
+const scrollLockUntil = ref(0) // 滚动锁定时长，防止 onScroll 在 scrollToBottom 动画期间覆盖状态
 let tempMsgIdCounter = -1 // 临时消息 ID（负数避免与后端自增 ID 冲突）
 const seenMsgIds = new Set<number>() // 已处理消息 ID，防重复
 
@@ -373,6 +373,7 @@ const handleSend = async () => {
 
   const content = inputContent.value.trim()
   inputContent.value = ''
+  isSending.value = true
 
   try {
     await request({
@@ -404,31 +405,46 @@ const handleSend = async () => {
     if (errMsg && (errMsg.includes('消息已用完') || errMsg.includes('开通会员'))) {
       showVipLimit.value = true
     }
+  } finally {
+    // 延迟清除 isSending，等 scrollToBottom 的 nextTick 执行完
+    setTimeout(() => { isSending.value = false }, 200)
   }
 }
 
-// ===== 修复 C：统一滚动到底部 =====
+// ===== 滚动到底部 =====
 const scrollToBottom = () => {
+  console.log('[scrollToBottom] called, isUserScrolledUp=', isUserScrolledUp.value, 'showNewMsgTip=', showNewMsgTip.value, 'msgCount=', messages.value.length)
   isUserScrolledUp.value = false
   showNewMsgTip.value = false
+  if (messages.value.length === 0) return
+  // 锁定 800ms，防止滚动动画期间的 onScroll 事件把 isUserScrolledUp 改回 true
+  scrollLockUntil.value = Date.now() + 800
+  console.log('[scrollToBottom] lock until', scrollLockUntil.value, 'scrollIntoView cleared')
+  // 先清空再在 nextTick 中设为 msg-bottom，确保值每次变化以触发 scroll-view 滚动
+  scrollIntoView.value = ''
   nextTick(() => {
-    // 将 scrollTop 设为一个极大值，即滚到底部（比 scroll-into-view 更可靠，避免首次渲染时失效）
-    scrollTop.value = 999999
+    scrollIntoView.value = 'msg-bottom'
+    console.log('[scrollToBottom] nextTick set scrollIntoView=msg-bottom')
   })
 }
 
-// 监听滚动事件，判断用户是否手动上滚
+// 监听滚动事件
 let scrollDebounceTimer: ReturnType<typeof setTimeout> | null = null
 const onScroll = (e: any) => {
   if (scrollDebounceTimer) clearTimeout(scrollDebounceTimer)
   scrollDebounceTimer = setTimeout(() => {
+    // 滚动锁定期间不更新 isUserScrolledUp（scrollToBottom 动画中）
+    if (Date.now() < scrollLockUntil.value) {
+      console.log('[onScroll] locked, skip')
+      return
+    }
     const detail = e?.detail || {}
     const scrollTopVal = detail.scrollTop ?? 0
     const scrollHeight = detail.scrollHeight ?? 0
     const clientHeight = detail.clientHeight ?? 0
-    // 距离底部超过 100px 认为用户在上滚查看历史
     const distanceToBottom = scrollHeight - scrollTopVal - clientHeight
     isUserScrolledUp.value = distanceToBottom > 100
+    console.log('[onScroll] distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
     if (!isUserScrolledUp.value) {
       showNewMsgTip.value = false
     }
@@ -488,7 +504,7 @@ function previewMessageImage(msg: ChatMessage) {
 }
 
 // ---- 输入框事件 ----
-const handleFocus = () => nextTick(() => scrollToBottom())
+const handleFocus = () => { /* keyboardHeight handled by adjust-position */ }
 const handleBlur = () => { keyboardHeight.value = 0 }
 const handleInput = () => {
   if (inputContent.value.length > 500) {
@@ -595,9 +611,10 @@ const markAsRead = async () => {
   }
 }
 
-// ===== 修复 A：轮询拉取新消息（使用现有 /chat/messages/poll 接口） =====
+// ===== 修复 A：轮询拉取新消息 =====
 const pollOnce = async () => {
   if (!toUserId.value) return
+  if (isSending.value) return // 发送中，跳过轮询避免干扰乐观更新
   try {
     // 取本地最后一条服务的消息 id（跳过负数临时 ID）
     const lastMsgId = messages.value.length > 0 ? Math.max(0, messages.value[messages.value.length - 1].id) : 0
@@ -611,39 +628,45 @@ const pollOnce = async () => {
     if (newMsgs.length > 0) {
       console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId, 'ids=', newMsgs.map(m => m.id))
       const toAdd: ChatMessage[] = []
-      const myContents = new Set<string>() // 本轮 poll 中自己发出的消息内容
+      const myContents = new Set<string>()
+      // 建立已有消息 ID 集合，防御性去重（包括 seenMsgIds 和当前 messages 列表）
+      const existingIds = new Set(seenMsgIds)
+      messages.value.forEach(m => { if (m.id >= 0) existingIds.add(m.id) })
       for (const m of newMsgs) {
-        if (seenMsgIds.has(m.id)) continue
-        seenMsgIds.add(m.id)
+        if (existingIds.has(m.id)) continue
+        existingIds.add(m.id)
         toAdd.push(m)
         if (m.isMine) myContents.add(m.content)
       }
       if (toAdd.length > 0) {
-        // 删除已被真实消息替换的乐观临时消息（按内容匹配）
-        messages.value = messages.value.filter(m => !(m.id < 0 && myContents.has(m.content)))
-        messages.value.push(...toAdd)
+        // 一次性合并数组，只触发一次渲染，避免中间态导致 onScroll 误判
+        messages.value = [
+          ...messages.value.filter(m => !(m.id < 0 && myContents.has(m.content))),
+          ...toAdd,
+        ]
+        // 按时间正序排列（旧→新），防止后端返回消息乱序
+        messages.value.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         console.log('[poll] merged, total=', messages.value.length)
-        // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时同步清除）
+        // 同步 seenMsgIds，防止后续轮询重复添加
+        toAdd.forEach(m => { if (m.id >= 0) seenMsgIds.add(m.id) })
+        // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时自动滚动处理）
         const hasOtherMsg = toAdd.some(m => !m.isMine)
+        console.log('[poll] hasOtherMsg=', hasOtherMsg, 'isUserScrolledUp=', isUserScrolledUp.value, 'isSending=', isSending.value)
         if (hasOtherMsg && isUserScrolledUp.value) {
           showNewMsgTip.value = true
+          console.log('[poll] showing new msg tip')
         } else if (!isUserScrolledUp.value) {
+          console.log('[poll] auto scroll to bottom')
           nextTick(() => scrollToBottom())
         } else {
-          // 只有自己的消息回执，且 isUserScrolledUp 为 true（通常是首次渲染 jitter 误判）
-          // 强制滚动到底部，因为用户刚发完消息，应该在底部
+          // 只有自己的消息回执，清除提示（send 时已处理）
           showNewMsgTip.value = false
-          nextTick(() => scrollToBottom())
         }
         markAsRead()
       }
     }
-  } catch (e: any) {
+  } catch {
     // 轮询静默失败，不弹 toast
-    // 401 表示 token 已失效，request.ts 已处理登录态清除，此刻停止轮询防止循环重定向
-    if (e?.statusCode === 401 || e?.message === 'Unauthorized') {
-      stopPolling()
-    }
   }
 }
 
