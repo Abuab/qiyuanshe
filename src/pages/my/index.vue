@@ -849,8 +849,8 @@ const toolGrid7 = [
 }
 
 .oa-avatar {
-  width: 72rpx;
-  height: 72rpx;
+  width: 60rpx;
+  height: 60rpx;
   border-radius: 50%;
   flex-shrink: 0;
   margin-right: 20rpx;
@@ -864,8 +864,8 @@ const toolGrid7 = [
 }
 
 .oa-avatar-img {
-  width: 44rpx;
-  height: 44rpx;
+  width: 36rpx;
+  height: 36rpx;
 }
 
 .footer-heart-circle {
