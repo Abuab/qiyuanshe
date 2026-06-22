@@ -207,12 +207,14 @@ const { handleImageError } = useImageFallback()
 
 // ===== WebSocket 连接 =====
 let wsSocket: any = null
+let wsIntentionalClose = false
 const wsConnected = ref(false)
 
 const connectWebSocket = () => {
   if (wsSocket) return
   const token = secureStorage.getToken()
   if (!token) return
+  wsIntentionalClose = false
   const baseUrl = getServerBaseUrl().replace(/^http/, 'ws')
   wsSocket = uni.connectSocket({
     url: `${baseUrl}/ws/chat`,
@@ -228,8 +230,8 @@ const connectWebSocket = () => {
       } else if (msg.event === 'new_message') {
         const newMsg = msg.data
         if (newMsg.fromUserId === toUserId.value || newMsg.toUserId === toUserId.value) {
-          const ids = new Set(messages.value.map((m: ChatMessage) => m.id))
-          if (!ids.has(newMsg.id)) {
+          if (!seenMsgIds.has(newMsg.id)) {
+            seenMsgIds.add(newMsg.id)
             messages.value.push(newMsg)
             if (!isUserScrolledUp.value) {
               nextTick(() => scrollToBottom())
@@ -245,13 +247,25 @@ const connectWebSocket = () => {
   wsSocket.onClose(() => {
     wsConnected.value = false
     wsSocket = null
-    setTimeout(() => { if (isPageMounted.value) connectWebSocket() }, 3000)
+    // 只在非主动关闭时重连（页面隐藏/卸载时主动关闭不应重连）
+    if (!wsIntentionalClose && isPageMounted.value) {
+      setTimeout(() => connectWebSocket(), 3000)
+    }
   })
-  wsSocket.onError(() => { wsSocket = null })
+  wsSocket.onError((err: any) => {
+    console.error('WebSocket error:', err)
+    // 先关闭再置空，释放底层连接
+    try { wsSocket?.close({}) } catch {}
+    wsSocket = null
+  })
 }
 
 const closeWebSocket = () => {
-  if (wsSocket) { wsSocket.close({}); wsSocket = null }
+  wsIntentionalClose = true
+  if (wsSocket) {
+    try { wsSocket.close({}) } catch {}
+    wsSocket = null
+  }
   wsConnected.value = false
 }
 
@@ -301,6 +315,8 @@ const POLL_INTERVAL = 2500
 const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
+let tempMsgIdCounter = -1 // 本地临时消息 ID（负数，避免与后端 DB 自增 ID 冲突）
+const seenMsgIds = new Set<number>() // 已添加的消息 ID，防止 WS/poll 竞态重复
 
 const canSend = computed(() => inputContent.value.trim().length > 0)
 
@@ -332,7 +348,8 @@ onMounted(() => {
 
   fetchMessages()
   connectWebSocket()
-  markAsRead()
+  // 确保标记已读完成后再继续
+  markAsRead().catch(e => logger.error('markAsRead failed', e))
   startPolling()
   checkChatPermission()
   isPageMounted.value = true
@@ -341,6 +358,8 @@ onMounted(() => {
 // 修复 E：页面重新显示时立即轮询一次 + 重启定时器
 onShow(() => {
   if (!isPageMounted.value) return
+  // 同步已读状态（从其他页面返回时确保未读数更新）
+  markAsRead()
   // 立即拉取最新消息（不等待 2.5 秒轮询）
   pollOnce()
   // 重启轮询定时器（如果之前被 onHide 停止了）
@@ -392,6 +411,9 @@ const fetchMessages = async (isLoadMore = false) => {
       page.value = 1
     }
 
+    // 同步 seenMsgIds，防止 poll/WS 重复推送已加载的消息
+    list.forEach(m => seenMsgIds.add(m.id))
+
     // 只有当返回数量小于 limit 时才算没有更多
     if (list.length < limit) noMore.value = true
     else noMore.value = false
@@ -436,7 +458,7 @@ const handleSend = async () => {
 
     // 乐观更新：将消息追加到末尾（最新在下方）
     messages.value.push({
-      id: Date.now(),
+      id: tempMsgIdCounter--,
       fromUserId: userStore.userInfo?.id || 0,
       toUserId: toUserId.value,
       content,
@@ -645,10 +667,9 @@ const pollOnce = async () => {
     })
     const newMsgs: ChatMessage[] = Array.isArray(res) ? res : (res?.list || [])
     if (newMsgs.length > 0) {
-      // 按消息 id 去重
-      const ids = new Set(messages.value.map(m => m.id))
-      const unique = newMsgs.filter(m => !ids.has(m.id))
+      const unique = newMsgs.filter(m => !seenMsgIds.has(m.id))
       if (unique.length > 0) {
+        unique.forEach(m => seenMsgIds.add(m.id))
         // 追加到消息列表末尾（最新在下方）
         messages.value.push(...unique)
         // 修复 D：如果用户没有手动上滚，自动滚到底部；否则显示提示
