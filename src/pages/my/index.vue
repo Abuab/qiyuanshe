@@ -412,11 +412,12 @@ const fetchMatchmakerList = async () => {
   }
 }
 const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
+const goToMyLikes = () => uni.navigateTo({ url: '/pages/my-likes/my-likes' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 // 需要登录的 key 列表
-const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myGifts', 'privacy', 'feedback'])
+const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myLikes', 'privacy', 'feedback'])
 const handleToolClick = (key: string) => {
   // 未登录时，提示登录
   if (!isLoggedIn.value && requireLoginKeys.has(key)) {
@@ -426,7 +427,7 @@ const handleToolClick = (key: string) => {
   const map: Record<string, () => void> = {
     myPhotos: goToPhotos,
     loveQuotes: goToLoveQuotes,
-    myGifts: showComingSoon,
+    myLikes: goToMyLikes,
     privacy: goToPrivacySettings,
     feedback: showComingSoon,
     userAgreement: showComingSoon,
@@ -441,7 +442,7 @@ const handleToolClick = (key: string) => {
 const toolGrid7 = [
   { key: 'myPhotos',    label: '我的相册', emoji: '🖼' },
   { key: 'loveQuotes',  label: '爱情语录', emoji: '💌' },
-  { key: 'myGifts',     label: '我的礼物', emoji: '🎁' },
+  { key: 'myLikes',     label: '我的喜欢', emoji: '❤️' },
   { key: 'privacy',     label: '隐私设置', emoji: '🔒' },
   { key: 'feedback',    label: '问题反馈', emoji: '📝' },
   { key: 'userAgreement', label: '用户协议', emoji: '📄' },

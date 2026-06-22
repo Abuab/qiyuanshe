@@ -552,7 +552,7 @@ const goToProfile = () => {
 
 const showChatMenu = () => {
   uni.showActionSheet({
-    itemList: ['查看个人资料', '清空聊天记录', '举报', '取消'],
+    itemList: ['查看个人资料', '清空聊天记录', '举报'],
     success: (res) => {
       if (res.tapIndex === 0) {
         goToProfile()

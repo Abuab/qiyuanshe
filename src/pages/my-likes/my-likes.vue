@@ -44,11 +44,13 @@
           />
           <view class="like-info">
             <text class="like-nickname">{{ item.nickname }}</text>
-            <text class="like-meta" v-if="item.city">{{ item.city }}</text>
+            <text class="like-meta" v-if="item.age || item.location">
+              {{ [item.age ? item.age + '岁' : '', item.location || ''].filter(Boolean).join(' · ') }}
+            </text>
           </view>
           <view class="like-actions">
             <view
-              v-if="currentTab === 0"
+              v-if="currentTab === 1"
               class="action-btn like-back-btn"
               @tap="handleLikeBack(item)"
             >回喜欢</view>
@@ -79,8 +81,9 @@ interface LikeUser {
   id: number
   nickname: string
   avatar: string
-  city?: string
+  location?: string
   age?: number
+  gender?: number
   createdAt?: string
 }
 
@@ -106,8 +109,8 @@ function switchTab(index: number) {
 
 async function loadData() {
   try {
-    const type = ['liked', 'likedMe', 'mutual'][currentTab.value]
-    const res: any = await request({ url: `/api/users/likes?type=${type}`, method: 'GET' })
+    const type = ['liked', 'likedBy', 'mutual'][currentTab.value]
+    const res: any = await request({ url: `/users/likes?type=${type}`, method: 'GET' })
     const rawList = res?.list || res || []
     list.value = rawList.map((item: any) => ({
       ...item,
@@ -126,7 +129,7 @@ async function onRefresh() {
 
 async function handleLikeBack(item: LikeUser) {
   try {
-    await request({ url: `/api/users/${item.id}/like`, method: 'POST' })
+    await request({ url: `/users/${item.id}/like`, method: 'POST' })
     uni.showToast({ title: '已回喜欢', icon: 'success' })
     loadData()
   } catch {

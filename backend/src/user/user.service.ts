@@ -915,4 +915,77 @@ export class UserService {
     user.deleteReason = '用户自行注销'
     await this.userRepository.save(user)
   }
+
+  /** 查询我喜欢/喜欢我/互相喜欢的人列表 */
+  async getMyLikes(
+    userId: number,
+    type: 'liked' | 'likedBy' | 'mutual',
+  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]> {
+    if (type === 'liked') {
+      const follows = await this.followRepository.find({
+        where: { userId },
+        order: { createdAt: 'DESC' },
+      })
+      return this.mapLikesToUsers(follows, 'targetUserId')
+    }
+
+    if (type === 'likedBy') {
+      const follows = await this.followRepository.find({
+        where: { targetUserId: userId },
+        order: { createdAt: 'DESC' },
+      })
+      return this.mapLikesToUsers(follows, 'userId')
+    }
+
+    // mutual: 互相喜欢
+    const myLikes = await this.followRepository.find({
+      where: { userId },
+    })
+    if (myLikes.length === 0) return []
+
+    const myLikeTargetIds = myLikes.map((f) => f.targetUserId)
+    const mutualFollows = await this.followRepository.find({
+      where: { userId: In(myLikeTargetIds), targetUserId: userId },
+      order: { createdAt: 'DESC' },
+    })
+
+    return this.mapLikesToUsers(mutualFollows, 'userId')
+  }
+
+  private async mapLikesToUsers(
+    follows: Follow[],
+    userField: 'userId' | 'targetUserId',
+  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]> {
+    if (follows.length === 0) return []
+
+    const userIds = follows.map((f) => f[userField])
+    const users = await this.userRepository.find({
+      where: { id: In(userIds), status: 1, isDeleted: 0 },
+    })
+
+    const userMap = new Map(users.map((u) => [u.id, u]))
+    const createdAtMap = new Map<number, Date>()
+    follows.forEach((f) => {
+      const uid = f[userField] as number
+      if (!createdAtMap.has(uid)) {
+        createdAtMap.set(uid, f.createdAt)
+      }
+    })
+
+    return userIds
+      .map((uid) => {
+        const user = userMap.get(uid)
+        if (!user) return null
+        return {
+          id: user.id,
+          nickname: user.nickname,
+          avatar: user.avatar || '',
+          age: this.calculateAge(user.birthYear),
+          gender: user.gender,
+          location: user.residence || user.hometown || '',
+          createdAt: createdAtMap.get(uid) || new Date(),
+        }
+      })
+      .filter(Boolean) as { id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
+  }
 }
