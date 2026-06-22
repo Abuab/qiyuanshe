@@ -5,7 +5,7 @@
       <!-- 第一级：返回 + 标题 -->
       <view class="nav-level1">
         <view class="nav-left" @tap="goBack">
-          <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
+          <text class="back-icon">←</text>
         </view>
         <text class="nav-title">我的喜欢</text>
         <view class="nav-right" />
@@ -212,6 +212,13 @@ onMounted(() => {
 }
 
 .nav-left { justify-content: flex-start; }
+
+.back-icon {
+  font-size: 40rpx;
+  color: #333;
+  font-weight: bold;
+  line-height: 1;
+}
 
 // 第二级：Tab 切换行
 .nav-level2 {
