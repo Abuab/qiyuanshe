@@ -12,9 +12,27 @@ export class SendMessageDto {
   @IsString()
   @IsOptional()
   type?: string = 'text'
+
+  // 代发相关字段（仅管理员可用，普通用户传入会被 service 重置）
+  @IsNumber()
+  @IsOptional()
+  isProxy?: number
+
+  @IsNumber()
+  @IsOptional()
+  proxyBy?: number
+
+  @IsString()
+  @IsOptional()
+  proxyName?: string
 }
 
 export class QueryMessagesDto {
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  beforeId?: number
+
   @IsNumber()
   @Type(() => Number)
   userId: number

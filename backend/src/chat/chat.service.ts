@@ -1,6 +1,8 @@
-import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan } from 'typeorm'
+import { Repository, MoreThan, LessThan } from 'typeorm'
+import { readFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
@@ -20,11 +22,15 @@ const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_SEC = 60
 
 @Injectable()
-export class ChatService {
+export class ChatService implements OnModuleInit {
   private readonly dailyFreeMessages = 3
   private messageCountCache: Map<number, { count: number; date: string }> = new Map()
 
-  private bannedKeywords = [
+  /** 敏感词库，从 config/sensitive-words.json 加载，文件不存在时回退到硬编码 */
+  private bannedKeywords: string[] = []
+
+  /** 硬编码兜底敏感词库（文件不存在时使用） */
+  private static readonly FALLBACK_KEYWORDS: string[] = [
     // ===== 脏话/辱骂 =====
     '傻逼', '傻B', '煞笔', 'SB', 'sb', 'Sb', 'sB',
     '尼玛', '你妈', 'nmb', 'NMB', 'cnm', 'CNM', '草泥马', '艹你', '操你',
@@ -52,6 +58,35 @@ export class ChatService {
     // ===== 政治敏感 =====
     '台独', '藏独', '疆独', '港独', '法轮功',
   ]
+
+  /**
+   * 模块初始化时加载敏感词库
+   */
+  onModuleInit() {
+    this.loadSensitiveWords()
+  }
+
+  /**
+   * 从 config/sensitive-words.json 加载敏感词库；文件不存在时使用硬编码兜底
+   */
+  private loadSensitiveWords(): void {
+    try {
+      const filePath = resolve(__dirname, '../../../config/sensitive-words.json')
+      if (existsSync(filePath)) {
+        const raw = readFileSync(filePath, 'utf-8')
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.bannedKeywords = parsed.map((w: unknown) => String(w))
+          console.log(`[ChatService] 敏感词库已从文件加载，共 ${this.bannedKeywords.length} 个词`)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('[ChatService] 加载敏感词配置文件失败，使用硬编码兜底:', e)
+    }
+    this.bannedKeywords = [...ChatService.FALLBACK_KEYWORDS]
+    console.log(`[ChatService] 使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
+  }
 
   /**
    * 检查文本是否包含违禁词。
@@ -92,7 +127,7 @@ export class ChatService {
     return `${LAST_MSG_KEY_PREFIX}:${minId}_${maxId}`
   }
 
-  async sendMessage(userId: number, dto: SendMessageDto): Promise<ChatMessage> {
+  async sendMessage(userId: number, dto: SendMessageDto, currentUser?: { userId: number; role?: string }): Promise<ChatMessage> {
     const { toUserId, content, type = 'text' } = dto
 
     if (userId === toUserId) {
@@ -146,10 +181,10 @@ export class ChatService {
       content,
       type,
       isRead: 0,
-      // 防御性重置：普通用户禁止代发标记，仅管理员专用接口可设置
-      isProxy: 0,
-      proxyBy: null,
-      proxyName: null,
+      // 修复 P1：管理员代发时保留 dto 中的代发标记；普通用户强制重置
+      isProxy: currentUser?.role === 'admin' ? (dto.isProxy ?? 0) : 0,
+      proxyBy: currentUser?.role === 'admin' ? (dto.proxyBy ?? null) : null,
+      proxyName: currentUser?.role === 'admin' ? (dto.proxyName ?? null) : null,
     })
 
     const saved = await this.messageRepository.save(message)
@@ -208,6 +243,17 @@ export class ChatService {
     // 非VIP用户发送成功后更新缓存计数，避免并发绕过限制
     if (!isVip) {
       const today = new Date().toISOString().split('T')[0]
+      // 修复 P5：同步更新 Redis 计数
+      if (this.redisService) {
+        const redisKey = `chat:daily_msg_count:${userId}:${today}`
+        try {
+          await this.redisService.incr(redisKey)
+          await this.redisService.expire(redisKey, 86400)
+        } catch {
+          // Redis 写入失败降级到内存
+        }
+      }
+      // 内存 Map 兜底
       const cacheEntry = this.messageCountCache.get(userId)
       if (cacheEntry && cacheEntry.date === today) {
         cacheEntry.count++
@@ -220,7 +266,7 @@ export class ChatService {
   }
 
   async getMessages(userId: number, dto: QueryMessagesDto): Promise<{ list: ChatMessage[]; total: number }> {
-    const { userId: toUserId, page, limit } = dto
+    const { userId: toUserId, page, limit, beforeId } = dto
 
     const targetUser = await this.userRepository.findOne({
       where: { id: toUserId, isDeleted: 0 },
@@ -230,15 +276,20 @@ export class ChatService {
       throw new NotFoundException('用户不存在')
     }
 
-    const skip = (page - 1) * limit
+    // 修复 P2：改为 ASC 查询，移除 reverse()；翻页使用 beforeId 而非 skip
+    const whereConditions: any[] = [
+      { fromUserId: userId, toUserId },
+      { fromUserId: toUserId, toUserId: userId },
+    ]
+    // 如果有 beforeId，加载该 ID 之前（更早）的消息
+    if (beforeId) {
+      whereConditions.forEach((cond) => (cond.id = LessThan(beforeId)))
+    }
 
     const [list, total] = await this.messageRepository.findAndCount({
-      where: [
-        { fromUserId: userId, toUserId },
-        { fromUserId: toUserId, toUserId: userId },
-      ],
-      order: { createdAt: 'DESC' },
-      skip,
+      where: whereConditions,
+      order: { createdAt: 'ASC' },
+      skip: (page - 1) * limit,
       take: limit,
       relations: ['fromUser', 'toUser'],
     })
@@ -248,7 +299,7 @@ export class ChatService {
       isMine: msg.fromUserId === userId,
     }))
 
-    return { list: messagesWithMine.reverse(), total }
+    return { list: messagesWithMine, total }
   }
 
   async pollMessages(userId: number, dto: PollMessagesDto): Promise<ChatMessage[]> {
@@ -384,6 +435,7 @@ export class ChatService {
     )
   }
 
+  // TODO: 如需软删除需新增 ChatMessage.isDeleted 字段（当前实体无此字段，暂保留物理删除）
   async deleteConversation(userId: number, targetUserId: number): Promise<void> {
     await this.messageRepository.delete({
       fromUserId: userId,
@@ -396,6 +448,7 @@ export class ChatService {
     })
   }
 
+  // TODO: 如需软删除需新增 ChatMessage.isDeleted 字段，此处改为 update 设置 isDeleted=1
   async clearAllConversations(userId: number): Promise<void> {
     await this.messageRepository.delete({
       fromUserId: userId,
@@ -508,8 +561,23 @@ export class ChatService {
 
   private async getTodayMessageCount(userId: number): Promise<number> {
     const today = new Date().toISOString().split('T')[0]
-    const cacheKey = userId
+    const redisKey = `chat:daily_msg_count:${userId}:${today}`
 
+    // 修复 P5：优先从 Redis 读取每日消息计数，多实例共享
+    if (this.redisService) {
+      try {
+        const val = await this.redisService.get(redisKey)
+        if (val !== null) {
+          const count = parseInt(val, 10)
+          if (!isNaN(count)) return count
+        }
+      } catch {
+        // Redis 读取失败，降级到内存 Map
+      }
+    }
+
+    // 内存 Map 兜底
+    const cacheKey = userId
     const cached = this.messageCountCache.get(cacheKey)
     if (cached && cached.date === today) {
       return cached.count
@@ -525,6 +593,16 @@ export class ChatService {
       },
     })
 
+    // 同步写入 Redis
+    if (this.redisService) {
+      try {
+        await this.redisService.set(redisKey, String(count), 86400)
+      } catch {
+        // 写入失败忽略
+      }
+    }
+
+    // 同步写入内存 Map 兜底
     this.messageCountCache.set(cacheKey, { count, date: today })
 
     return count

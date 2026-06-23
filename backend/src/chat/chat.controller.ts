@@ -22,7 +22,8 @@ export class ChatController {
 
   @Post('messages')
   async sendMessage(@Body() dto: SendMessageDto, @Request() req: any) {
-    const message = await this.chatService.sendMessage(req.user.userId, dto)
+    // 修复 P1：将 req.user 完整传给 service，让 service 根据角色决定是否重置代发字段
+    const message = await this.chatService.sendMessage(req.user.userId, dto, req.user)
 
     return {
       success: true,
