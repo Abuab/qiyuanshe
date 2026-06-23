@@ -251,11 +251,22 @@ export class AiMatchService {
         const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'match')
         aiResult = parseJsonResponse(aiResponse)
       } else {
+        // 修复：AI 未配置时记录 error 级别日志，便于运维及时发现 API Key 缺失
+        this.logger.error(
+          'AI 服务未配置或 API Key 缺失，当前使用兜底结果。请检查环境变量中 AI 相关配置。',
+        )
         aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
       }
 
     } catch (e: any) {
-      this.logger.error(`[AI匹配] 调用失败: ${e?.message}，降级使用兜底结果`)
+      // 修复：增强异常日志，记录错误类型、消息和堆栈，便于排查超时/鉴权/网络等问题
+      const errorDetail = e?.response?.status
+        ? `HTTP ${e.response.status} ${e?.message}`
+        : e?.message || '未知错误'
+      this.logger.error(
+        `[AI匹配] AI 调用异常，降级使用兜底结果 | 错误详情: ${errorDetail}`,
+        e?.stack,
+      )
       aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
       if (aiCallLog) {
         aiCallLog.responseStatus = 'error'

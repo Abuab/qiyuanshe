@@ -43,8 +43,6 @@ interface AuthenticatedWs extends WebSocket {
  */
 @WebSocketGateway({
   path: '/ws/chat',
-  // 允许所有来源（生产环境应限制为具体域名）
-  cors: { origin: '*' },
 })
 export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

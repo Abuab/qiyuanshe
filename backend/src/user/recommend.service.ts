@@ -148,6 +148,11 @@ export class RecommendService {
 
     // 同省曝光池优先展示同城用户的排序表达式
     const provinceCityBoost = this.buildProvinceCityBoost(city)
+    // 修复：为 :cityBoost 参数化占位符绑定实际值，消除 SQL 拼接注入风险
+    const safeCity = this.sanitizeCity(city)
+    if (safeCity && provinceCityBoost !== '1') {
+      baseQb.setParameter('cityBoost', `%${safeCity}%`)
+    }
 
     // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
     // 注意：不依赖 SQL NOT IN，改用结果后过滤确保可靠性
@@ -555,11 +560,12 @@ export class RecommendService {
    * 同省曝光池城市优先表达式
    * province 池用户中，同城市（residence 匹配 city）优先展示
    * city 参数经由前端传入，使用 sanitizeCity 防止 SQL 注入
+   * 修复：使用参数化占位符 :cityBoost 替代字符串拼接，消除 SQL 注入风险
    */
   private buildProvinceCityBoost(city: string): string {
     const safe = this.sanitizeCity(city)
     if (!safe) return '1'
-    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE '%${safe}%' THEN 1 ELSE 0 END)`
+    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE :cityBoost THEN 1 ELSE 0 END)`
   }
 
   /** 对城市名做安全清洗，仅保留中文和拉丁字母，防止 SQL 注入 */
