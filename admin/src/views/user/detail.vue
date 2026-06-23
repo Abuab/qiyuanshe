@@ -32,13 +32,17 @@
               <el-tag v-else type="danger">禁用</el-tag>
             </div>
           </div>
+          <!-- 右侧快捷操作：设为VIP/取消VIP、禁用/启用、发送通知、查看聊天、编辑资料 -->
           <div class="header-actions">
-            <el-button type="warning" @click="handleSetVip">设为VIP</el-button>
+            <el-button :type="(user.isVip && (user.vipLevel || 0) > 0) ? 'warning' : 'primary'" @click="handleSetVip">
+              {{ (user.isVip && (user.vipLevel || 0) > 0) ? '取消VIP' : '设为VIP' }}
+            </el-button>
             <el-button :type="user.status === 1 ? 'danger' : 'success'" @click="handleToggleStatus">
               {{ user.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button @click="handleSendNotify">发送通知</el-button>
             <el-button v-if="canMonitorChat" type="success" @click="handleViewChat">查看聊天</el-button>
+            <el-button @click="handleEditProfile">编辑资料</el-button>
           </div>
         </div>
       </el-card>
@@ -46,7 +50,19 @@
       <!-- Tab内容 -->
       <el-card class="tab-card">
         <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+          <!-- Tab 1: 基本资料（合并基本资料 + 我的特点 + 择偶要求） -->
           <el-tab-pane label="基本资料" name="basic">
+            <!-- 运营标签（顶部昵称下方） -->
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+              <span style="font-size:13px;color:#909399;flex-shrink:0">运营标签：</span>
+              <template v-if="currentUserTags.length > 0">
+                <el-tag v-for="tag in currentUserTags" :key="tag" :type="getTagType(tag)" size="small" closable @close="handleRemoveTag(tag)">{{ tag }}</el-tag>
+              </template>
+              <span v-else style="font-size:13px;color:#c0c4cc">暂无标签</span>
+              <el-button type="primary" link size="small" @click="openTagDialog">+ 添加标签</el-button>
+            </div>
+            <!-- 基本信息 -->
+            <h4 class="section-title">基本信息</h4>
             <el-descriptions :column="2" border>
               <el-descriptions-item label="性别">{{ user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未知' }}</el-descriptions-item>
               <el-descriptions-item label="年龄">{{ user.age || '-' }} 岁</el-descriptions-item>
@@ -75,18 +91,141 @@
                 <span v-else>未开通</span>
               </el-descriptions-item>
             </el-descriptions>
+            <!-- 我的特点 -->
+            <h4 class="section-title" style="margin-top:20px">我的特点</h4>
+            <div v-if="hasPersonalityTags" class="personality-section">
+              <div v-if="characterTags.length > 0" class="tag-category">
+                <div class="category-title">性格</div>
+                <div class="tag-group-inline">
+                  <el-tag v-for="tag in characterTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <div v-if="hobbyTags.length > 0" class="tag-category">
+                <div class="category-title">爱好</div>
+                <div class="tag-group-inline">
+                  <el-tag v-for="tag in hobbyTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <div v-if="loveRuleTags.length > 0" class="tag-category">
+                <div class="category-title">恋爱准则</div>
+                <div class="tag-group-inline">
+                  <el-tag v-for="tag in loveRuleTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+                </div>
+              </div>
+              <div v-if="!isStructuredPersonality && flatPersonalityTags.length > 0" class="tag-group-inline">
+                <el-tag v-for="tag in flatPersonalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+              </div>
+            </div>
+            <div v-else class="text-content text-muted">暂无</div>
+            <!-- 择偶要求 -->
+            <h4 class="section-title" style="margin-top:20px">择偶要求</h4>
+            <el-descriptions v-if="hasMateRequirement" :column="2" border>
+              <el-descriptions-item label="希望TA">{{ (user.hopeTaTags || []).join('、') || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="年龄要求">{{ user.partnerAgeRange || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="身高要求">{{ user.partnerHeightMin || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="学历要求">{{ user.partnerEducation || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="收入要求">{{ user.partnerIncome || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="住房要求">{{ user.housingRequirement || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="婚况要求">{{ user.partnerMaritalStatus || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="接受小孩">{{ user.acceptChildren || '-' }}</el-descriptions-item>
+            </el-descriptions>
+            <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
+            <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
+            <!-- 红娘评价（内容极少时放在基本资料底部） -->
+            <h4 class="section-title" style="margin-top:20px">红娘评价</h4>
+            <div v-loading="tabLoading.reviews">
+              <el-table :data="reviewList" stripe v-if="reviewList.length > 0" row-key="id">
+                <el-table-column prop="matchmakerName" label="评价红娘" width="120" />
+                <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip />
+                <el-table-column prop="createdAt" label="评价时间" width="170">
+                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+                </el-table-column>
+              </el-table>
+              <el-empty v-else description="暂无红娘评价" />
+            </div>
+            <!-- 操作日志（基本资料 Tab 内展示用户关键行为） -->
+            <h4 class="section-title" style="margin-top:20px">操作日志</h4>
+            <div v-loading="tabLoading.opLogs">
+              <el-table :data="operationLogs" stripe v-if="operationLogs.length > 0">
+                <el-table-column prop="createdAt" label="时间" width="170">
+                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+                </el-table-column>
+                <el-table-column label="操作类型" width="120">
+                  <template #default="{ row }">
+                    <el-tag :type="getOpLogTypeColor(row.actionType)" size="small">{{ getOpLogTypeLabel(row.actionType) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="content" label="操作内容" min-width="200" show-overflow-tooltip />
+                <el-table-column prop="ip" label="IP" width="140" />
+              </el-table>
+              <div v-else class="text-content text-muted" style="text-align:center;padding:40px 0">暂无操作日志数据</div>
+            </div>
+            <!-- 运营备注（仅管理员可见） -->
+            <template v-if="isAdmin">
+            <h4 class="section-title" style="margin-top:20px">运营备注</h4>
+            <el-card shadow="never" style="margin-bottom:12px">
+              <div style="display:flex;gap:8px;align-items:flex-start">
+                <el-input
+                  v-model="noteForm.content"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="请输入运营备注..."
+                  maxlength="500"
+                  show-word-limit
+                  style="flex:1"
+                />
+                <el-button type="primary" @click="handleSaveNote" :loading="noteSaving">保存备注</el-button>
+              </div>
+            </el-card>
+            <!-- 备注历史 -->
+            <div v-if="noteHistory.length > 0">
+              <div v-for="(note, idx) in noteHistory" :key="idx" style="padding:10px 0;border-bottom:1px solid #f0f0f0">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                  <span style="font-size:12px;color:#909399">{{ note.operator }} · {{ formatDate(note.time) }}</span>
+                </div>
+                <div style="font-size:14px;color:#333;white-space:pre-wrap;line-height:1.6">{{ note.content }}</div>
+              </div>
+            </div>
+            <div v-else style="text-align:center;color:#c0c4cc;font-size:13px;padding:16px 0">暂无备注记录</div>
+            </template>
           </el-tab-pane>
 
+          <!-- Tab 2: 照片/相册（含审核操作） -->
+          <el-tab-pane label="照片/相册" name="photos">
+            <div v-loading="tabLoading.photos">
+              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
+                <el-upload :show-file-list="false" :http-request="handlePhotoUpload" :before-upload="beforePhotoUpload" accept="image/*" multiple>
+                  <el-button type="primary" size="small" :loading="photoUploading">上传照片</el-button>
+                </el-upload>
+              </div>
+              <div v-if="userPhotos.length > 0" class="photo-grid">
+                <div v-for="photo in userPhotos" :key="photo.id" class="photo-card">
+                  <el-image :src="photo.photoUrl" :preview-src-list="userPhotos.map(p => p.photoUrl)" :initial-index="userPhotos.indexOf(photo)" fit="cover" class="photo-item">
+                    <template #error><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px"><el-icon :size="32"><Picture /></el-icon></div></template>
+                  </el-image>
+                  <div class="photo-actions">
+                    <el-tag v-if="photo.isMain" type="success" size="small">主图</el-tag>
+                    <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为主图</el-button>
+                    <el-button type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
+                    <!-- 照片审核操作 -->
+                    <template v-if="photo.auditStatus === 0">
+                      <el-button type="success" link size="small" @click="handleAuditPhoto(photo.id, 'approve')">通过</el-button>
+                      <el-button type="danger" link size="small" @click="handleAuditPhoto(photo.id, 'reject')">拒绝</el-button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+              <el-empty v-else description="暂无照片" />
+            </div>
+          </el-tab-pane>
+
+          <!-- Tab 3: 聊天记录 -->
           <el-tab-pane label="聊天记录" name="chat">
             <div v-loading="tabLoading.chat">
               <div v-if="chatConversations.length > 0">
-                <div
-                  v-for="conv in chatConversations"
-                  :key="conv.userId"
-                  class="chat-conv-item"
+                <div v-for="conv in chatConversations" :key="conv.userId" class="chat-conv-item"
                   style="display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #ebeef5;cursor:pointer"
-                  @click="openUserChat(conv)"
-                >
+                  @click="openUserChat(conv)">
                   <el-image :src="conv.avatar" fit="cover" style="width:44px;height:44px;border-radius:50%">
                     <template #error><div style="width:44px;height:44px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="22"><User /></el-icon></div></template>
                   </el-image>
@@ -103,82 +242,146 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="我的特点" name="personality">
-            <div v-if="hasPersonalityTags" class="personality-section">
-              <div v-if="characterTags.length > 0" class="tag-category">
-                <h4 class="category-title">性格</h4>
-                <div class="tag-group">
-                  <el-tag v-for="tag in characterTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+          <!-- Tab 4: 互动记录（合并关注 + 喜欢 + 看过谁） -->
+          <el-tab-pane label="互动记录" name="interaction">
+            <div v-loading="tabLoading.follow">
+              <!-- 喜欢统计卡片 -->
+              <div class="like-stats-row">
+                <div class="like-stat-card" v-for="item in [
+                  { label: '我喜欢的', num: likeData.liked.length },
+                  { label: '喜欢我的', num: likeData.likedBy.length },
+                  { label: '互相喜欢', num: likeData.mutual.length },
+                  { label: '我关注的', num: followData.following.length },
+                  { label: '关注我的', num: followData.followers.length },
+                ]" :key="item.label">
+                  <div class="like-stat-num">{{ item.num }}</div>
+                  <div class="like-stat-label">{{ item.label }}</div>
                 </div>
               </div>
-              <div v-if="hobbyTags.length > 0" class="tag-category">
-                <h4 class="category-title">爱好</h4>
-                <div class="tag-group">
-                  <el-tag v-for="tag in hobbyTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
+              <!-- 我喜欢的/喜欢我的/互相喜欢/我关注的/关注我的 使用 el-collapse 折叠面板 -->
+              <el-collapse v-model="interactionActivePanels" accordion>
+                <el-collapse-item title="我喜欢的" name="liked">
+                  <div v-if="likeData.liked.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.liked" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                  </div>
+                </el-collapse-item>
+                <el-collapse-item title="喜欢我的" name="likedBy">
+                  <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.likedBy" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                  </div>
+                </el-collapse-item>
+                <el-collapse-item title="互相喜欢" name="mutual">
+                  <div v-if="likeData.mutual.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="item in likeData.mutual" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                  </div>
+                </el-collapse-item>
+                <el-collapse-item title="我关注的" name="following">
+                  <div v-if="followData.following.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="f in followData.following" :key="f.id" class="like-item" @click="goToUserDetail(f.targetUserId)">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info"><div class="like-item-name">{{ f.nickname }}</div></div>
+                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                  </div>
+                </el-collapse-item>
+                <el-collapse-item title="关注我的" name="followers">
+                  <div v-if="followData.followers.length === 0" class="like-empty">暂无记录</div>
+                  <div v-for="f in followData.followers" :key="f.id" class="like-item" @click="goToUserDetail(f.userId)">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
+                    </el-image>
+                    <div class="like-item-info"><div class="like-item-name">{{ f.nickname }}</div></div>
+                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                  </div>
+                </el-collapse-item>
+              </el-collapse>
+              <!-- 浏览记录 -->
+              <h4 style="margin:16px 0 8px">浏览记录</h4>
+              <div style="display:flex;gap:24px">
+                <div style="flex:1">
+                  <div style="font-size:13px;color:#909399;margin-bottom:8px">我看过谁 ({{ viewData.views.length }})</div>
+                  <div v-if="viewData.views.length === 0" style="color:#999;font-size:13px">暂无记录</div>
+                  <div v-for="v in viewData.views" :key="v.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.targetUserId)">
+                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
+                    <span style="font-size:12px;color:#999">第{{ v.viewCount }}次查看</span>
+                  </div>
                 </div>
-              </div>
-              <div v-if="loveRuleTags.length > 0" class="tag-category">
-                <h4 class="category-title">恋爱准则</h4>
-                <div class="tag-group">
-                  <el-tag v-for="tag in loveRuleTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
-                </div>
-              </div>
-              <!-- 兼容旧数据: 非结构化数组 -->
-              <div v-if="!isStructuredPersonality && flatPersonalityTags.length > 0" class="tag-group">
-                <el-tag v-for="tag in flatPersonalityTags" :key="tag" size="large" effect="plain" round style="margin:4px">{{ tag }}</el-tag>
-              </div>
-            </div>
-            <div v-else class="text-content text-muted">暂无</div>
-          </el-tab-pane>
-
-          <el-tab-pane label="择偶要求" name="mate">
-            <el-descriptions v-if="hasMateRequirement" :column="2" border style="margin-bottom:16px">
-              <el-descriptions-item label="希望TA">{{ (user.hopeTaTags || []).join('、') || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="年龄要求">{{ user.partnerAgeRange || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="身高要求">{{ user.partnerHeightMin || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="学历要求">{{ user.partnerEducation || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="收入要求">{{ user.partnerIncome || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="住房要求">{{ user.housingRequirement || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="婚况要求">{{ user.partnerMaritalStatus || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="接受小孩">{{ user.acceptChildren || '-' }}</el-descriptions-item>
-            </el-descriptions>
-            <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
-            <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
-          </el-tab-pane>
-
-          <el-tab-pane label="照片墙" name="photos">
-            <div v-loading="tabLoading.photos">
-              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
-                <el-upload
-                  :show-file-list="false"
-                  :http-request="handlePhotoUpload"
-                  :before-upload="beforePhotoUpload"
-                  accept="image/*"
-                  multiple
-                >
-                  <el-button type="primary" size="small" :loading="photoUploading">上传照片</el-button>
-                </el-upload>
-              </div>
-              <div v-if="userPhotos.length > 0" class="photo-grid">
-                <div v-for="photo in userPhotos" :key="photo.id" class="photo-card">
-                  <el-image :src="photo.photoUrl"
-                    :preview-src-list="userPhotos.map(p => p.photoUrl)" :initial-index="userPhotos.indexOf(photo)" fit="cover" class="photo-item">
-                    <template #error><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px"><el-icon :size="32"><Picture /></el-icon></div></template>
-                  </el-image>
-                  <div class="photo-actions">
-                    <el-tag v-if="photo.isMain" type="success" size="small">主图</el-tag>
-                    <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为主图</el-button>
-                    <el-button type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
+                <div style="flex:1">
+                  <div style="font-size:13px;color:#909399;margin-bottom:8px">谁看过我 ({{ viewData.visitors.length }})</div>
+                  <div v-if="viewData.visitors.length === 0" style="color:#999;font-size:13px">暂无记录</div>
+                  <div v-for="v in viewData.visitors" :key="v.visitorUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.visitorUserId)">
+                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
+                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
+                    </el-image>
+                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
+                    <span style="font-size:12px;color:#999">看过{{ v.viewCount }}次</span>
                   </div>
                 </div>
               </div>
-              <el-empty v-else description="暂无照片" />
             </div>
           </el-tab-pane>
 
-          <!-- ===== 新增标签页 ===== -->
+          <!-- Tab 5: 审核记录（合并资料审核 + 照片审核 + 实名认证状态） -->
+          <el-tab-pane label="审核记录" name="audit">
+            <div v-loading="tabLoading.audit">
+              <!-- 当前审核状态 -->
+              <h4 class="section-title">当前审核状态</h4>
+              <el-descriptions :column="3" border>
+                <el-descriptions-item label="资料审核">
+                  <el-tag :type="getAuditTagType(user.profileAuditStatus)" size="small">{{ getAuditStatusLabel(user.profileAuditStatus) }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="照片审核">
+                  <el-tag :type="getAuditTagType(user.photoAuditStatus)" size="small">{{ getAuditStatusLabel(user.photoAuditStatus) }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="实名认证">
+                  <el-tag v-if="user.isRealName" type="success" size="small">已认证</el-tag>
+                  <el-tag v-else type="info" size="small">未认证</el-tag>
+                </el-descriptions-item>
+              </el-descriptions>
+              <!-- 审核历史 -->
+              <h4 class="section-title" style="margin-top:20px">审核历史</h4>
+              <el-table :data="auditHistoryList" stripe v-if="auditHistoryList.length > 0">
+                <el-table-column prop="id" label="审核ID" width="80" />
+                <el-table-column label="审核类型" width="100">
+                  <template #default="{ row }">{{ getAuditTypeLabel(row.targetType) }}</template>
+                </el-table-column>
+                <el-table-column prop="action" label="处理结果" width="90">
+                  <template #default="{ row }">
+                    <el-tag :type="row.action === 'APPROVE' ? 'success' : 'danger'" size="small">{{ row.action === 'APPROVE' ? '通过' : '拒绝' }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="reason" label="原因" min-width="150" show-overflow-tooltip />
+                <el-table-column prop="createdAt" label="审核时间" width="170">
+                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+                </el-table-column>
+              </el-table>
+              <el-empty v-else description="暂无审核记录" />
+            </div>
+          </el-tab-pane>
 
-          <el-tab-pane label="举报记录" name="reports">
+          <!-- Tab 6: 举报/拉黑（合并举报记录 + 拉黑记录） -->
+          <el-tab-pane label="举报/拉黑" name="reports">
+            <!-- 举报记录 -->
+            <h4 class="section-title">举报记录</h4>
             <div v-loading="tabLoading.reports">
               <el-table :data="reportList" stripe v-if="reportList.length > 0">
                 <el-table-column prop="id" label="举报ID" width="80" />
@@ -204,9 +407,8 @@
               </el-table>
               <el-empty v-else description="暂无举报记录" />
             </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="拉黑记录" name="blocks">
+            <!-- 拉黑记录 -->
+            <h4 class="section-title" style="margin-top:20px">拉黑记录</h4>
             <div v-loading="tabLoading.blocks">
               <el-table :data="blockList" stripe v-if="blockList.length > 0">
                 <el-table-column prop="id" label="拉黑ID" width="80" />
@@ -228,274 +430,33 @@
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="系统通知" name="notifications">
-            <div v-loading="tabLoading.notifications">
-              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
-                <el-button type="primary" size="small" @click="handleSendNotify">发送新通知</el-button>
+          <!-- Tab 7: 财务记录（新增：订单 + VIP开通记录 + 红线索消费记录） -->
+          <el-tab-pane label="财务记录" name="finance">
+            <div v-loading="tabLoading.finance">
+              <!-- 后端需提供财务记录接口，当前展示占位提示 -->
+              <div v-if="!financeDataLoaded" class="text-content text-muted" style="text-align:center;padding:60px 0">
+                暂无财务记录数据，请确认后端接口已提供
               </div>
-              <el-table :data="notificationList" stripe v-if="notificationList.length > 0">
-                <el-table-column prop="id" label="通知ID" width="80" />
-                <el-table-column prop="title" label="标题" min-width="150" />
-                <el-table-column prop="content" label="内容" min-width="200" show-overflow-tooltip />
-                <el-table-column prop="createdAt" label="发送时间" width="170">
-                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
-                </el-table-column>
-                <el-table-column prop="senderType" label="发送人" width="100">
-                  <template #default="{ row }">{{ row.senderType === 'admin' ? '管理员' : '系统' }}</template>
-                </el-table-column>
-                <el-table-column prop="isRead" label="阅读状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="row.isRead ? 'success' : 'info'" size="small">{{ row.isRead ? '已读' : '未读' }}</el-tag>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <el-empty v-else description="暂无通知记录" />
-            </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="回答记录" name="answers">
-            <div v-loading="tabLoading.answers">
-              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
-                <el-button type="primary" size="small" @click="handleAddAnswer">添加回答</el-button>
-              </div>
-              <el-table :data="userAnswerList" stripe v-if="userAnswerList.length > 0">
-                <el-table-column prop="id" label="回答ID" width="80" />
-                <el-table-column label="问题标题" min-width="180">
-                  <template #default="{ row }">
-                    <span class="link-text" @click="$router.push(`/question/detail/${row.questionId}`)">{{ row.questionTitle }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="content" label="回答内容" min-width="200" show-overflow-tooltip />
-                <el-table-column prop="createdAt" label="回答时间" width="170">
-                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
-                </el-table-column>
-                <el-table-column prop="likeCount" label="点赞数" width="80" align="center" />
-                <el-table-column prop="status" label="审核状态" width="100">
-                  <template #default="{ row }">
-                    <el-tag :type="getAnswerStatusType(row.status)" size="small">{{ getAnswerStatusName(row.status) }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column v-if="!isReadonly" label="操作" width="180" fixed="right">
-                  <template #default="{ row }">
-                    <el-button
-                      v-if="row.status === 0"
-                      type="success"
-                      link
-                      size="small"
-                      :loading="answerAuditing[row.id]"
-                      @click="handleApproveAnswer(row)"
-                    >通过</el-button>
-                    <el-button
-                      v-if="row.status === 0"
-                      type="danger"
-                      link
-                      size="small"
-                      :loading="answerAuditing[row.id]"
-                      @click="handleRejectAnswer(row)"
-                    >拒绝</el-button>
-                    <span v-if="row.status !== 0" class="text-muted">-</span>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <el-empty v-else description="暂无回答记录" />
-            </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="红娘评价" name="matchmaker-reviews">
-            <div v-loading="tabLoading.reviews">
-              <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
-                <el-button type="primary" size="small" @click="handleAddReview">新增评价</el-button>
-              </div>
-              <el-table :data="reviewList" stripe v-if="reviewList.length > 0" row-key="id">
-                <el-table-column prop="id" label="评价ID" width="80" />
-                <el-table-column prop="matchmakerName" label="评价红娘" width="120" />
-                <el-table-column prop="content" label="评价内容" min-width="200" show-overflow-tooltip />
-                <el-table-column prop="createdAt" label="评价时间" width="170">
-                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
-                </el-table-column>
-                <el-table-column prop="difficulty" label="是否好牵线" width="120" />
-                <el-table-column v-if="!isReadonly" label="操作" width="80">
-                  <template #default="{ row }">
-                    <el-button type="danger" link size="small" @click="handleDeleteReview(row)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-              <el-empty v-else description="暂无评价记录" />
-            </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="关注" name="follow">
-            <div v-loading="tabLoading.follow">
-              <div class="like-sections">
-                <!-- 我关注的 -->
-                <div class="like-section-card">
-                  <div class="like-section-header">
-                    <h4>我关注的 ({{ followData.following.length }})</h4>
-                    <el-button type="danger" size="small" :icon="Plus" @click="followAddType = 'following'; followAddDialogVisible = true">添加</el-button>
-                  </div>
-                  <div v-if="followData.following.length === 0" class="like-empty">暂无关注</div>
-                  <div v-for="f in followData.following" :key="f.id" class="like-item" @click="goToUserDetail(f.targetUserId)">
-                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
-                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
-                    </el-image>
-                    <div class="like-item-info">
-                      <div class="like-item-name">{{ f.nickname }}</div>
-                    </div>
-                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
-                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveFollow(f.targetUserId, 'following')" />
-                  </div>
-                </div>
-                <!-- 关注我的 -->
-                <div class="like-section-card">
-                  <div class="like-section-header">
-                    <h4>关注我的 ({{ followData.followers.length }})</h4>
-                    <el-button type="danger" size="small" :icon="Plus" @click="followAddType = 'followers'; followAddDialogVisible = true">添加</el-button>
-                  </div>
-                  <div v-if="followData.followers.length === 0" class="like-empty">暂无粉丝</div>
-                  <div v-for="f in followData.followers" :key="f.id" class="like-item" @click="goToUserDetail(f.userId)">
-                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
-                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
-                    </el-image>
-                    <div class="like-item-info">
-                      <div class="like-item-name">{{ f.nickname }}</div>
-                    </div>
-                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
-                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveFollow(f.userId, 'followers')" />
-                  </div>
-                </div>
-              </div>
-
-              <el-divider />
-
-              <div style="display:flex;gap:24px">
-                <!-- 我看过谁 -->
-                <div style="flex:1">
-                  <h4 style="margin:0 0 12px 0">我看过谁 ({{ viewData.views.length }})</h4>
-                  <div v-if="viewData.views.length === 0" style="color:#999;font-size:13px">暂无记录</div>
-                  <div v-for="v in viewData.views" :key="v.targetUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.targetUserId)">
-                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
-                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
-                    </el-image>
-                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
-                    <span style="font-size:12px;color:#999;margin-right:8px">第{{ v.viewCount }}次查看</span>
-                  </div>
-                </div>
-                <!-- 谁看过我 -->
-                <div style="flex:1">
-                  <h4 style="margin:0 0 12px 0">谁看过我 ({{ viewData.visitors.length }})</h4>
-                  <div v-if="viewData.visitors.length === 0" style="color:#999;font-size:13px">暂无记录</div>
-                  <div v-for="v in viewData.visitors" :key="v.visitorUserId" style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0;cursor:pointer" @click="goToUserDetail(v.visitorUserId)">
-                    <el-image :src="v.avatar || ''" fit="cover" style="width:40px;height:40px;border-radius:50%;flex-shrink:0">
-                      <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
-                    </el-image>
-                    <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
-                    <span style="font-size:12px;color:#999;margin-right:8px">看过{{ v.viewCount }}次</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-tab-pane>
-
-          <el-tab-pane label="喜欢" name="likes">
-            <div v-loading="tabLoading.likes">
-              <!-- 统计卡片 -->
-              <div class="like-stats-row">
-                <div class="like-stat-card">
-                  <div class="like-stat-num">{{ likeData.liked.length }}</div>
-                  <div class="like-stat-label">我喜欢的</div>
-                </div>
-                <div class="like-stat-card">
-                  <div class="like-stat-num">{{ likeData.likedBy.length }}</div>
-                  <div class="like-stat-label">喜欢我的</div>
-                </div>
-                <div class="like-stat-card">
-                  <div class="like-stat-num">{{ likeData.mutual.length }}</div>
-                  <div class="like-stat-label">互相喜欢</div>
-                </div>
-              </div>
-
-              <div class="like-sections">
-                <!-- 我喜欢的 -->
-                <div class="like-section-card">
-                  <div class="like-section-header">
-                    <h4>我喜欢的 ({{ likeData.liked.length }})</h4>
-                    <el-button type="danger" size="small" :icon="Plus" @click="likeAddType = 'liked'; likeAddDialogVisible = true">添加</el-button>
-                  </div>
-                  <div v-if="likeData.liked.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.liked" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
-                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
-                    </el-image>
-                    <div class="like-item-info">
-                      <div class="like-item-name">
-                        {{ item.nickname }}
-                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
-                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
-                      </div>
-                      <div class="like-item-meta">
-                        <template v-if="item.age">{{ item.age }}岁</template>
-                        <template v-if="item.age && item.location"> · </template>
-                        <template v-if="item.location">{{ item.location }}</template>
-                      </div>
-                    </div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
-                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'liked')" />
-                  </div>
-                </div>
-
-                <!-- 喜欢我的 -->
-                <div class="like-section-card">
-                  <div class="like-section-header">
-                    <h4>喜欢我的 ({{ likeData.likedBy.length }})</h4>
-                    <el-button type="danger" size="small" :icon="Plus" @click="likeAddType = 'likedBy'; likeAddDialogVisible = true">添加</el-button>
-                  </div>
-                  <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.likedBy" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
-                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
-                    </el-image>
-                    <div class="like-item-info">
-                      <div class="like-item-name">
-                        {{ item.nickname }}
-                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
-                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
-                      </div>
-                      <div class="like-item-meta">
-                        <template v-if="item.age">{{ item.age }}岁</template>
-                        <template v-if="item.age && item.location"> · </template>
-                        <template v-if="item.location">{{ item.location }}</template>
-                      </div>
-                    </div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
-                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'likedBy')" />
-                  </div>
-                </div>
-
-                <!-- 互相喜欢 -->
-                <div class="like-section-card">
-                  <h4 class="like-section-title">互相喜欢 ({{ likeData.mutual.length }})</h4>
-                  <div v-if="likeData.mutual.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.mutual" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
-                      <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
-                    </el-image>
-                    <div class="like-item-info">
-                      <div class="like-item-name">
-                        {{ item.nickname }}
-                        <span v-if="item.gender === 1" class="like-gender-male">♂</span>
-                        <span v-else-if="item.gender === 2" class="like-gender-female">♀</span>
-                      </div>
-                      <div class="like-item-meta">
-                        <template v-if="item.age">{{ item.age }}岁</template>
-                        <template v-if="item.age && item.location"> · </template>
-                        <template v-if="item.location">{{ item.location }}</template>
-                      </div>
-                    </div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
-                    <el-button class="like-del-btn" :icon="Delete" circle size="small" @click.stop="handleRemoveLike(item.targetUserId, 'mutual')" />
-                  </div>
-                </div>
-              </div>
+              <template v-else>
+                <el-empty v-if="financeOrders.length === 0" description="暂无财务记录" />
+                <el-table v-else :data="financeOrders" stripe>
+                  <el-table-column prop="orderNo" label="订单编号" width="180" />
+                  <el-table-column label="类型" width="100">
+                    <template #default="{ row }">{{ financeTypeLabel(row.type) }}</template>
+                  </el-table-column>
+                  <el-table-column prop="amount" label="金额" width="100">
+                    <template #default="{ row }">¥{{ (row.amount || 0).toFixed(2) }}</template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="80">
+                    <template #default="{ row }">
+                      <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '已支付' : '未支付' }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="paidAt" label="支付时间" width="170">
+                    <template #default="{ row }">{{ formatDate(row.paidAt) }}</template>
+                  </el-table-column>
+                </el-table>
+              </template>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -530,109 +491,55 @@
       <template #footer><el-button @click="notifyDialogVisible = false">取消</el-button><el-button type="primary" @click="handleNotifySubmit">发送</el-button></template>
     </el-dialog>
 
-    <!-- 红娘评价弹窗 -->
-    <el-dialog v-model="reviewDialogVisible" title="新增评价" width="520px">
-      <el-form :model="reviewForm" label-width="80px">
-        <el-form-item label="选择红娘" required>
-          <el-select v-model="reviewForm.matchmakerId" placeholder="请选择红娘" filterable style="width:100%">
-            <el-option v-for="m in matchmakerOptions" :key="m.id" :label="m.name" :value="m.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="评价文字" required>
-          <el-input
-            v-model="reviewForm.content"
-            type="textarea"
-            :rows="5"
-            placeholder="请输入对用户的评价内容"
-            maxlength="500"
-            show-word-limit
-          />
+    <!-- 标签管理弹窗 -->
+    <el-dialog v-model="tagDialogVisible" title="标签管理" width="580px" destroy-on-close>
+      <!-- 自定义标签输入 -->
+      <el-form label-width="90px">
+        <el-form-item label="自定义标签">
+          <div style="display:flex;gap:8px;width:100%">
+            <el-input v-model="tagInputValue" placeholder="输入标签名，回车添加" @keyup.enter="handleTagInputConfirm" style="flex:1" />
+            <el-button @click="handleTagInputConfirm">添加</el-button>
+          </div>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="reviewDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleReviewSubmit" :disabled="!reviewForm.matchmakerId || !reviewForm.content.trim()">
-          确认添加
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 添加喜欢弹窗 -->
-    <el-dialog v-model="likeAddDialogVisible" :title="likeAddType === 'liked' ? '添加我喜欢的' : '添加喜欢我的'" width="420px" @opened="handleLikeDialogOpened">
-      <el-form label-width="80px">
-        <el-form-item label="选择用户" required>
-          <el-select
-            v-model="likeSelectedUserId"
-            filterable
-            :loading="searchUserLoading"
-            placeholder="请选择用户"
-            style="width:260px"
+      <!-- 系统预设标签库 -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;color:#909399;margin-bottom:8px">系统标签库（点击添加）</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <el-tag
+            v-for="pt in filteredPresetTags"
+            :key="pt.label"
+            :type="pt.type"
+            size="default"
+            style="cursor:pointer"
+            @click="handleAddPresetTag(pt.label)"
           >
-            <el-option
-              v-for="u in searchUserOptions"
-              :key="u.id"
-              :label="`${u.nickname} (ID: ${u.id})`"
-              :value="u.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="likeAddDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddLikeSubmit" :disabled="!likeSelectedUserId">确认添加</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 添加关注弹窗 -->
-    <el-dialog v-model="followAddDialogVisible" :title="followAddType === 'following' ? '添加关注的' : '添加关注我的'" width="420px" @opened="handleFollowDialogOpened">
-      <el-form label-width="80px">
-        <el-form-item label="选择用户" required>
-          <el-select
-            v-model="followSelectedUserId"
-            filterable
-            :loading="followSearchUserLoading"
-            placeholder="请选择用户"
-            style="width:260px"
+            + {{ pt.label }}
+          </el-tag>
+        </div>
+      </div>
+      <!-- 当前已选标签 -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:13px;color:#909399;margin-bottom:8px">
+          已选标签 ({{ tagDraftSelected.length }})
+          <el-button type="danger" link size="small" @click="tagDraftSelected = []" style="margin-left:8px">清空</el-button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;padding:8px;border:1px solid #e4e7ed;border-radius:6px">
+          <el-tag
+            v-for="t in tagDraftSelected"
+            :key="t"
+            :type="getTagType(t)"
+            closable
+            @close="tagDraftSelected = tagDraftSelected.filter(i => i !== t)"
           >
-            <el-option
-              v-for="u in followSearchUserOptions"
-              :key="u.id"
-              :label="`${u.nickname} (ID: ${u.id})`"
-              :value="u.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
+            {{ t }}
+          </el-tag>
+          <span v-if="tagDraftSelected.length === 0" style="font-size:13px;color:#c0c4cc">暂无已选标签</span>
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="followAddDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAddFollowSubmit" :disabled="!followSelectedUserId">确认添加</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 添加回答弹窗 -->
-    <el-dialog v-model="answerDialogVisible" title="手动添加回答" width="520px">
-      <el-form :model="answerForm" label-width="80px">
-        <el-form-item label="选择问题" required>
-          <el-select v-model="answerForm.questionId" placeholder="请选择要回答的问题" filterable style="width:100%">
-            <el-option v-for="q in questionOptions" :key="q.id" :label="q.title" :value="q.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="回答内容" required>
-          <el-input
-            v-model="answerForm.content"
-            type="textarea"
-            :rows="5"
-            placeholder="请输入回答内容"
-            maxlength="1000"
-            show-word-limit
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="answerDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleAnswerSubmit" :disabled="!answerForm.questionId || !answerForm.content.trim()" :loading="answerSubmitting">
-          确认添加
-        </el-button>
+        <el-button @click="tagDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveTags">保存标签</el-button>
       </template>
     </el-dialog>
 
@@ -670,8 +577,8 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, User, Picture, Plus, Delete } from '@element-plus/icons-vue'
-import { adminUsers, adminMatchmaker } from '../../api'
+import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
+import { adminUsers } from '../../api'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
 import { formatDate } from '../../utils/date'
 import { useAdminStore } from '../../store/admin'
@@ -719,12 +626,14 @@ interface UserDetail {
   acceptChildren?: string
   adminRemark?: string
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
+  profileAuditStatus?: number  // 资料审核状态: 0-待审核 1-通过 2-拒绝
+  photoAuditStatus?: number    // 照片审核状态: 0-待审核 1-通过 2-拒绝
 }
 
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
-const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+const isAdmin = computed(() => adminStore.userInfo?.role === 'super_admin' || adminStore.userInfo?.role === 'operator')
 const canMonitorChat = computed(() => {
   const role = adminStore.userInfo?.role
   return role === 'super_admin' || role === 'operator'
@@ -772,7 +681,7 @@ const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
 
 // Tab data
-const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false, likes: false })
+const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false, likes: false, audit: false, finance: false, opLogs: false })
 const reportList = ref<any[]>([])
 const blockList = ref<any[]>([])
 const notificationList = ref<any[]>([])
@@ -814,6 +723,45 @@ const userChatPeerName = ref('')
 const userChatMessages = ref<ChatMessageItem[]>([])
 const userChatMsgLoading = ref(false)
 
+// 互动记录折叠面板 active
+const interactionActivePanels = ref('')
+
+// 审核记录
+const auditHistoryList = ref<any[]>([])
+
+// 财务记录（后端未提供接口时占位）
+const financeDataLoaded = ref(false)
+const financeOrders = ref<any[]>([])
+
+// ===== 标签管理 =====
+// 系统预设标签库（前端硬编码，管理员可输入自定义标签）
+const presetTags: { label: string; type: 'danger' | 'warning' | 'success' | '' | 'primary' | 'info' }[] = [
+  { label: '高付费意向', type: 'danger' },
+  { label: '需跟进', type: 'warning' },
+  { label: '资料优质', type: 'success' },
+  { label: '照片清晰', type: '' },       // 蓝色 (Element Plus default type)
+  { label: '主动活跃', type: 'primary' },  // 紫色在 Element Plus 中用 primary
+  { label: '疑似违规', type: 'info' },     // 灰色
+  { label: '红娘推荐', type: 'danger' },   // 粉色用 danger 替代
+]
+// 当前用户标签（从后端 tags 字段初始化，或本地维护）
+const currentUserTags = ref<string[]>([])
+const tagDialogVisible = ref(false)
+const tagInputValue = ref('')
+const tagDraftSelected = ref<string[]>([])
+// 过滤掉已选中的预设标签
+const filteredPresetTags = computed(() =>
+  presetTags.filter(pt => !tagDraftSelected.value.includes(pt.label))
+)
+
+// ===== 运营备注 =====
+const noteForm = reactive({ content: '' })
+const noteSaving = ref(false)
+const noteHistory = ref<{ operator: string; time: string; content: string }[]>([])
+
+// ===== 操作日志 =====
+const operationLogs = ref<any[]>([])
+
 const tabDataLoaded: Record<string, boolean> = {}
 
 onMounted(() => { fetchDetail() })
@@ -833,6 +781,11 @@ watch(() => route.params.id, async (newId) => {
     searchUserOptions.value = []
     viewData.views = []
     viewData.visitors = []
+    // 清除标签/备注/日志旧数据
+    currentUserTags.value = []
+    noteForm.content = ''
+    noteHistory.value = []
+    operationLogs.value = []
     await nextTick()
     fetchDetail()
   }
@@ -853,6 +806,8 @@ async function fetchDetail() {
     const res = await adminUsers.detail(id)
     if (res.success && res.data) {
       user.value = res.data as UserDetail
+      // 初始化运营标签：优先从后端 tags 字段读取
+      currentUserTags.value = (user.value.tags && user.value.tags.length > 0) ? [...user.value.tags] : []
     }
   } finally { loading.value = false }
 }
@@ -861,15 +816,13 @@ function handleTabChange(tabName: string) {
   if (tabDataLoaded[tabName]) return
   tabDataLoaded[tabName] = true
   switch (tabName) {
-    case 'reports': loadReports(); break
-    case 'blocks': loadBlocks(); break
-    case 'notifications': loadNotifications(); break
-    case 'answers': loadUserAnswers(); break
-    case 'matchmaker-reviews': loadReviews(); loadMatchmakers(); break
-    case 'follow': loadFollowDetail(); break
-    case 'likes': loadLikesDetail(); loadLikeUserOptions(); break
+    case 'reports': loadReports(); loadBlocks(); break  // 举报/拉黑合并到一个 Tab 加载
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
+    case 'interaction': loadInteractionData(); break  // 互动记录：合并关注 + 喜欢 + 浏览
+    case 'audit': loadAuditHistory(); break  // 审核记录：合并资料审核 + 照片审核
+    case 'finance': loadFinanceData(); break  // 财务记录：占位提示（后端接口未提供）
+    case 'basic': loadReviews(); loadOpLogs(); break  // 基本资料内加载红娘评价 + 操作日志
   }
 }
 
@@ -957,16 +910,8 @@ async function loadReviews() {
   finally { tabLoading.reviews = false }
 }
 
-async function loadMatchmakers() {
-  try {
-    const res = await adminMatchmaker.list({ page: 1, limit: 100, status: 1 })
-    if (res.success) matchmakerOptions.value = res.data?.list || []
-  } catch (e) { console.error(e) }
-}
-
 async function loadFollowDetail() {
   if (!user.value) return
-  tabLoading.follow = true
   try {
     const [followingRes, followersRes, viewsRes, visitorsRes] = await Promise.all([
       adminUsers.getFollowing(user.value.id),
@@ -979,12 +924,32 @@ async function loadFollowDetail() {
     if (viewsRes.success) viewData.views = viewsRes.data || []
     if (visitorsRes.success) viewData.visitors = visitorsRes.data || []
   } catch (e) { console.error(e) }
-  finally { tabLoading.follow = false }
+}
+
+/** 互动记录：一次加载关注 + 喜欢 + 浏览数据 */
+async function loadInteractionData() {
+  if (!user.value) return
+  tabLoading.follow = true
+  tabLoading.likes = true
+  try {
+    await Promise.all([
+      loadFollowDetail(),
+      loadLikesDetail(),
+    ])
+  } finally {
+    tabLoading.follow = false
+    tabLoading.likes = false
+  }
+}
+
+/** 财务记录：后端接口未提供时展示占位文本，不报错 */
+async function loadFinanceData() {
+  // 后端财务接口暂未提供，保持占位状态
+  financeDataLoaded.value = false
 }
 
 async function loadLikesDetail() {
   if (!user.value) return
-  tabLoading.likes = true
   try {
     const [likedRes, likedByRes, mutualRes] = await Promise.all([
       adminUsers.getAdminLikes(user.value.id, 'liked'),
@@ -995,7 +960,6 @@ async function loadLikesDetail() {
     if (likedByRes.success) likeData.likedBy = likedByRes.data?.list || []
     if (mutualRes.success) likeData.mutual = mutualRes.data?.list || []
   } catch (e) { console.error(e) }
-  finally { tabLoading.likes = false }
 }
 
 async function loadLikeUserOptions() {
@@ -1147,7 +1111,23 @@ async function handleToggleStatus() {
 
 function handleSetVip() {
   if (!user.value) return
+  // 已是VIP则取消VIP
+  if (user.value.isVip && (user.value.vipLevel || 0) > 0) {
+    ElMessageBox.confirm(`确定取消「${user.value.nickname}」的VIP身份？`, '取消VIP', { type: 'warning' })
+      .then(async () => {
+        const res = await adminUsers.updateVip(user.value!.id, { level: 0, days: 0 } as any)
+        if (res.success) { ElMessage.success('已取消VIP'); fetchDetail() }
+        else ElMessage.error(res.message || '操作失败')
+      }).catch(() => {})
+    return
+  }
   vipForm.level = user.value.vipLevel || 0; vipForm.days = 30; vipDialogVisible.value = true
+}
+
+/** 编辑资料：跳转到列表页并在查询参数中携带编辑用户 ID，由列表页弹窗编辑 */
+function handleEditProfile() {
+  if (!user.value) return
+  router.push({ path: '/user/list', query: { editUserId: user.value.id.toString() } })
 }
 
 async function handleVipSubmit() {
@@ -1175,8 +1155,6 @@ async function handleNotifySubmit() {
     await adminUsers.sendUserNotification(user.value.id, { title: notifyForm.title || '系统通知', content: notifyForm.content })
     ElMessage.success('通知已发送')
     notifyDialogVisible.value = false
-    // Reload notifications if tab is visible
-    if (activeTab.value === 'notifications') loadNotifications()
   } catch (e: any) { ElMessage.error(e.message || '发送失败') }
 }
 
@@ -1343,8 +1321,169 @@ function getReportReasonName(reason: string) {
 function getReportStatusName(status: number) { return { 0: '待处理', 1: '已处理', 2: '已驳回' }[status] || '未知' }
 function getReportStatusType(status: number) { return { 0: 'warning', 1: 'success', 2: 'danger' }[status] || 'info' }
 
+// ===== 审核记录辅助函数 =====
+function getAuditStatusLabel(status?: number) { return { 0: '待审核', 1: '已通过', 2: '已拒绝' }[status ?? 0] || '未知' }
+function getAuditTagType(status?: number) { return { 0: 'warning', 1: 'success', 2: 'danger' }[status ?? 0] || 'info' }
+function getAuditTypeLabel(targetType: string) {
+  const map: Record<string, string> = { profile: '资料审核', photo: '照片审核', realName: '实名认证' }
+  return map[targetType] || targetType
+}
+
+// ===== 财务记录辅助函数 =====
+function financeTypeLabel(type: string) {
+  const map: Record<string, string> = { vip: 'VIP充值', order: '订单', love_clue: '红线索' }
+  return map[type] || type
+}
+
+async function loadAuditHistory() {
+  if (!user.value) return
+  tabLoading.audit = true
+  try {
+    // 审核记录：查询资料审核 + 照片审核的全部历史记录
+    const { adminAudit } = await import('../../api/audit')
+    const [profileRes, photoRes] = await Promise.all([
+      adminAudit.list({ type: 'user', limit: 50 } as any),
+      adminAudit.list({ type: 'photo', limit: 50 } as any),
+    ])
+    const items: any[] = []
+    if (profileRes.success && profileRes.data) items.push(...(profileRes.data.list || []))
+    if (photoRes.success && photoRes.data) items.push(...(photoRes.data.list || []))
+    auditHistoryList.value = items
+  } catch (e) { console.error(e) }
+  finally { tabLoading.audit = false }
+}
+
+/** 照片审核操作：通过或拒绝，拒绝时弹窗选择原因 */
+async function handleAuditPhoto(photoId: number, action: 'approve' | 'reject') {
+  const { adminAudit } = await import('../../api/audit')
+  try {
+    // 先查询该照片的待审核记录，找到 audit 记录 ID
+    const listRes = await adminAudit.list({ type: 'photo', status: 0, limit: 99999 } as any)
+    const auditItems = (listRes.success && listRes.data) ? (listRes.data as any).list || [] : []
+    const auditItem = auditItems.find((a: any) => a.targetId === photoId)
+    if (!auditItem) { ElMessage.warning('未找到该照片的待审核记录'); return }
+    if (action === 'approve') {
+      await adminAudit.approve(auditItem.id)
+      ElMessage.success('照片已通过')
+    } else {
+      const { value: reason } = await ElMessageBox.prompt('请选择或输入拒绝原因', '拒绝照片', {
+        type: 'warning',
+        inputType: 'textarea',
+        inputPlaceholder: '非本人 / 不清晰 / 含联系方式 / 违规 / 其他',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+      })
+      await adminAudit.reject(auditItem.id, reason || '')
+      ElMessage.success('照片已拒绝')
+    }
+    loadPhotos()
+  } catch (e) {
+    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+  }
+}
+
 function getAnswerStatusName(status: number) { return { 0: '待审核', 1: '已通过', 2: '已拒绝' }[status] || '未知' }
 function getAnswerStatusType(status: number) { return { 0: 'warning', 1: 'success', 2: 'danger' }[status] || 'info' }
+
+// ===== 标签管理函数 =====
+
+/** 根据标签名返回 Element Plus el-tag 的 type */
+function getTagType(tag: string): '' | 'success' | 'warning' | 'danger' | 'info' | 'primary' {
+  const found = presetTags.find(pt => pt.label === tag)
+  // 使用 ?? 保留空字符串（如"照片清晰"的空 type 表示蓝色），|| 会误将 '' 判为 falsy
+  return found ? found.type ?? 'info' : 'info'
+}
+
+/** 打开标签管理弹窗，初始化草稿为当前标签 */
+function openTagDialog() {
+  tagDraftSelected.value = [...currentUserTags.value]
+  tagInputValue.value = ''
+  tagDialogVisible.value = true
+}
+
+/** 自定义标签输入确认（回车或点击） */
+function handleTagInputConfirm() {
+  const val = tagInputValue.value.trim()
+  if (!val) return
+  if (tagDraftSelected.value.includes(val)) {
+    ElMessage.warning('该标签已存在')
+    return
+  }
+  tagDraftSelected.value.push(val)
+  tagInputValue.value = ''
+}
+
+/** 点击预设标签添加到已选 */
+function handleAddPresetTag(label: string) {
+  if (tagDraftSelected.value.includes(label)) {
+    ElMessage.warning('该标签已存在')
+    return
+  }
+  tagDraftSelected.value.push(label)
+}
+
+/** 移除标签（从展示区直接删除） */
+function handleRemoveTag(tag: string) {
+  currentUserTags.value = currentUserTags.value.filter(t => t !== tag)
+}
+
+/** 保存标签：更新 currentUserTags 并关闭弹窗 */
+function handleSaveTags() {
+  currentUserTags.value = [...tagDraftSelected.value]
+  tagDialogVisible.value = false
+  ElMessage.success('标签已保存')
+  // TODO: 接入后端标签接口 - adminUsers.updateTags(userId, tags)
+}
+
+// ===== 运营备注函数 =====
+
+/** 保存运营备注到本地 noteHistory */
+function handleSaveNote() {
+  const content = noteForm.content.trim()
+  if (!content) { ElMessage.warning('请输入备注内容'); return }
+  noteSaving.value = true
+  // 模拟保存延迟，写入本地历史
+  setTimeout(() => {
+    noteHistory.value.unshift({
+      operator: adminStore.userInfo?.nickname || adminStore.userInfo?.username || '管理员',
+      time: new Date().toISOString(),
+      content,
+    })
+    noteForm.content = ''
+    noteSaving.value = false
+    ElMessage.success('备注已保存')
+  }, 300)
+  // TODO: 接入后端备注接口 - adminUsers.saveRemark(userId, content)
+}
+
+// ===== 操作日志函数 =====
+
+/** 加载操作日志（后端未提供接口时展示占位文本） */
+async function loadOpLogs() {
+  if (!user.value) return
+  tabLoading.opLogs = true
+  try {
+    // TODO: 接入后端操作日志接口 - adminUsers.getOpLogs(userId)
+    operationLogs.value = []
+  } catch (e) { console.error(e) }
+  finally { tabLoading.opLogs = false }
+}
+
+function getOpLogTypeLabel(actionType: string) {
+  const map: Record<string, string> = {
+    login: '登录', profile_update: '修改资料', recharge: '充值',
+    vip_change: 'VIP开通', audit_change: '审核变更', register: '注册',
+  }
+  return map[actionType] || actionType
+}
+
+function getOpLogTypeColor(actionType: string) {
+  const map: Record<string, string> = {
+    login: 'success', profile_update: '', recharge: 'warning',
+    vip_change: 'danger', audit_change: 'primary', register: 'info',
+  }
+  return map[actionType] || 'info'
+}
 </script>
 
 <style lang="scss" scoped>
@@ -1363,8 +1502,10 @@ function getAnswerStatusType(status: number) { return { 0: 'warning', 1: 'succes
 .tab-card {
   .text-content { padding: 16px; min-height: 200px; white-space: pre-wrap; line-height: 1.8; color: #333; }
   .tag-group { padding: 16px; }
+  .tag-group-inline { padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 4px; }
   .personality-section { padding: 16px; .tag-category { margin-bottom: 16px; .category-title { font-size: 14px; font-weight: 600; color: #606266; margin: 0 0 8px; } } }
   .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } .photo-card { position: relative; .photo-actions { display: flex; align-items: center; gap: 6px; justify-content: center; padding-top: 6px; } } }
+  .section-title { font-size: 15px; font-weight: 600; color: #303133; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #409eff; }
 }
 .tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }
 .link-text { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }

@@ -15,9 +15,10 @@
     </div>
 
     <div class="card">
+      <!-- 筛选区：首屏仅展示高频筛选，高级筛选通过展开/收起切换 -->
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm" class="filter-form">
-          <!-- 第一行：基础筛选 -->
+          <!-- 首屏高频筛选（始终可见） -->
           <div class="filter-row">
             <el-form-item label="关键词">
               <el-input
@@ -38,8 +39,7 @@
             <el-form-item label="年龄">
               <el-input-number
                 v-model="filterForm.minAge"
-                :min="18"
-                :max="100"
+                :min="18" :max="100"
                 placeholder="最小"
                 controls-position="right"
                 style="width: 120px"
@@ -47,49 +47,10 @@
               <span class="range-separator">—</span>
               <el-input-number
                 v-model="filterForm.maxAge"
-                :min="18"
-                :max="100"
+                :min="18" :max="100"
                 placeholder="最大"
                 controls-position="right"
                 style="width: 120px"
-              />
-            </el-form-item>
-            <el-form-item label="身高">
-              <el-input-number
-                v-model="filterForm.minHeight"
-                :min="100"
-                :max="250"
-                placeholder="最低"
-                controls-position="right"
-                style="width: 110px"
-              />
-              <span class="range-separator">—</span>
-              <el-input-number
-                v-model="filterForm.maxHeight"
-                :min="100"
-                :max="250"
-                placeholder="最高"
-                controls-position="right"
-                style="width: 110px"
-              />
-            </el-form-item>
-            <el-form-item label="体重">
-              <el-input-number
-                v-model="filterForm.minWeight"
-                :min="20"
-                :max="300"
-                placeholder="最轻"
-                controls-position="right"
-                style="width: 110px"
-              />
-              <span class="range-separator">—</span>
-              <el-input-number
-                v-model="filterForm.maxWeight"
-                :min="20"
-                :max="300"
-                placeholder="最重"
-                controls-position="right"
-                style="width: 110px"
               />
             </el-form-item>
             <el-form-item label="会员等级">
@@ -107,147 +68,6 @@
                 <el-option label="待审核" :value="2" />
               </el-select>
             </el-form-item>
-          </div>
-          <!-- 标签筛选 -->
-          <div class="filter-row">
-            <el-form-item label="用户标签">
-              <el-select v-model="filterForm.tags" multiple placeholder="全部" clearable style="width: 320px">
-                <el-option label="后台添加" value="后台添加" />
-                <el-option label="真实注册" value="真实注册" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="匹配次数">
-              <el-input-number
-                v-model="filterForm.minMatchCount"
-                :min="0"
-                placeholder="最少"
-                controls-position="right"
-                style="width: 110px"
-              />
-              <span class="range-separator">—</span>
-              <el-input-number
-                v-model="filterForm.maxMatchCount"
-                :min="0"
-                placeholder="最多"
-                controls-position="right"
-                style="width: 110px"
-              />
-            </el-form-item>
-          </div>
-          <!-- 第二行：详细筛选 -->
-          <div class="filter-row">
-            <el-form-item label="婚况">
-              <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.maritalStatus"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="月收入">
-              <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.incomeRange"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="住房">
-              <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.housingStatus"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="车辆">
-              <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.carStatus"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="学历">
-              <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.education"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="职业">
-              <el-select v-model="filterForm.occupation" placeholder="全部" clearable style="width: 140px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.occupation"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-          </div>
-          <!-- 第二行半：属相星座等 -->
-          <div class="filter-row">
-            <el-form-item label="属相">
-              <el-select v-model="filterForm.zodiac" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.zodiac"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="星座">
-              <el-select v-model="filterForm.constellation" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.constellation"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="独生子女">
-              <el-select v-model="filterForm.onlyChild" placeholder="全部" clearable style="width: 120px">
-                <el-option label="全部" :value="undefined" />
-                <el-option label="是" value="是" />
-                <el-option label="否" value="否" />
-              </el-select>
-            </el-form-item>
-            <el-form-item label="何时结婚">
-              <el-select v-model="filterForm.whenMarry" placeholder="全部" clearable style="width: 140px">
-                <el-option label="全部" :value="undefined" />
-                <el-option
-                  v-for="item in createDicts.whenMarry"
-                  :key="item"
-                  :label="item"
-                  :value="item"
-                />
-              </el-select>
-            </el-form-item>
-          </div>
-          <!-- 第三行：时间和操作 -->
-          <div class="filter-row">
             <el-form-item label="注册时间">
               <el-date-picker
                 v-model="dateRange"
@@ -259,20 +79,162 @@
                 style="width: 240px"
               />
             </el-form-item>
+          </div>
+          <!-- 搜索和重置按钮固定在首屏 -->
+          <div class="filter-row">
             <el-form-item>
               <el-button type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
               <el-button @click="handleReset">重置</el-button>
+              <!-- 高级筛选展开/收起按钮 -->
+              <el-button text @click="advancedFilterVisible = !advancedFilterVisible">
+                <el-icon style="margin-right:4px"><Select /></el-icon>
+                高级筛选 {{ advancedFilterVisible ? '收起' : '展开' }}
+              </el-button>
             </el-form-item>
+          </div>
+          <!-- 高级筛选面板（可折叠） -->
+          <div v-show="advancedFilterVisible" class="advanced-filters">
+            <div class="filter-row">
+              <el-form-item label="身高">
+                <el-input-number v-model="filterForm.minHeight" :min="100" :max="250" placeholder="最低" controls-position="right" style="width: 110px" />
+                <span class="range-separator">—</span>
+                <el-input-number v-model="filterForm.maxHeight" :min="100" :max="250" placeholder="最高" controls-position="right" style="width: 110px" />
+              </el-form-item>
+              <el-form-item label="体重">
+                <el-input-number v-model="filterForm.minWeight" :min="20" :max="300" placeholder="最轻" controls-position="right" style="width: 110px" />
+                <span class="range-separator">—</span>
+                <el-input-number v-model="filterForm.maxWeight" :min="20" :max="300" placeholder="最重" controls-position="right" style="width: 110px" />
+              </el-form-item>
+              <el-form-item label="婚况">
+                <el-select v-model="filterForm.maritalStatus" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.maritalStatus" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="月收入">
+                <el-select v-model="filterForm.incomeRange" placeholder="全部" clearable style="width: 140px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.incomeRange" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+            </div>
+            <div class="filter-row">
+              <el-form-item label="住房">
+                <el-select v-model="filterForm.housingStatus" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.housingStatus" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="车辆">
+                <el-select v-model="filterForm.carStatus" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.carStatus" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="学历">
+                <el-select v-model="filterForm.education" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.education" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="职业">
+                <el-select v-model="filterForm.occupation" placeholder="全部" clearable style="width: 140px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.occupation" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+            </div>
+            <div class="filter-row">
+              <el-form-item label="属相">
+                <el-select v-model="filterForm.zodiac" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.zodiac" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="星座">
+                <el-select v-model="filterForm.constellation" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.constellation" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="独生子女">
+                <el-select v-model="filterForm.onlyChild" placeholder="全部" clearable style="width: 120px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option label="是" value="是" />
+                  <el-option label="否" value="否" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="何时结婚">
+                <el-select v-model="filterForm.whenMarry" placeholder="全部" clearable style="width: 140px">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option v-for="item in createDicts.whenMarry" :key="item" :label="item" :value="item" />
+                </el-select>
+              </el-form-item>
+            </div>
+            <div class="filter-row">
+              <el-form-item label="用户标签">
+                <el-select v-model="filterForm.tags" multiple placeholder="选择标签筛选" clearable style="width: 320px">
+                  <el-option v-for="pt in presetTags" :key="pt.label" :label="pt.label" :value="pt.label" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="匹配次数">
+                <el-input-number v-model="filterForm.minMatchCount" :min="0" placeholder="最少" controls-position="right" style="width: 110px" />
+                <span class="range-separator">—</span>
+                <el-input-number v-model="filterForm.maxMatchCount" :min="0" placeholder="最多" controls-position="right" style="width: 110px" />
+              </el-form-item>
+              <!-- 最近活跃时间筛选 -->
+              <el-form-item label="最近活跃">
+                <el-select v-model="lastActiveAtRange" placeholder="全部" clearable style="width: 140px" @change="onLastActiveAtRangeChange">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option label="今天" value="today" />
+                  <el-option label="3天内" value="3d" />
+                  <el-option label="7天内" value="7d" />
+                  <el-option label="30天内" value="30d" />
+                  <el-option label="自定义" value="custom" />
+                </el-select>
+                <el-date-picker
+                  v-if="lastActiveAtRange === 'custom'"
+                  v-model="lastActiveAtDateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="开始"
+                  end-placeholder="结束"
+                  value-format="YYYY-MM-DD"
+                  style="width: 230px; margin-left: 8px"
+                />
+              </el-form-item>
+            </div>
           </div>
         </el-form>
       </div>
 
-      <div class="batch-actions" v-if="selectedRows.length > 0 && !isReadonly">
-        <el-checkbox v-model="selectAll" @change="handleSelectAll">全选</el-checkbox>
-        <span class="selected-count">已选择 {{ selectedRows.length }} 项</span>
+      <!-- 批量操作栏：选中用户后浮现，含批量禁用/导出/发送通知/打标签 -->
+      <div class="batch-actions" v-if="selectedRows.length > 0">
+        <span class="selected-count">已选择 {{ selectedRows.length }} 人</span>
         <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
-        <el-button type="success" size="small" @click="handleBatchEnable">批量启用</el-button>
-        <el-button type="danger" size="small" @click="handleBatchDelete">批量删除</el-button>
+        <el-button type="success" size="small" @click="handleExport" :loading="exportLoading">批量导出Excel</el-button>
+        <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
+        <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
+        <el-button size="small" @click="clearSelection">取消选择</el-button>
+      </div>
+
+      <!-- 自定义列按钮：运营勾选显示/隐藏可选列，偏好保存到 localStorage -->
+      <div class="table-toolbar">
+        <el-popover placement="bottom-end" :width="220" trigger="click">
+          <template #reference>
+            <el-button size="small">
+              自定义列 <el-icon><ArrowDown /></el-icon>
+            </el-button>
+          </template>
+          <div class="column-checkbox-list">
+            <el-checkbox
+              v-for="col in columnOptions"
+              :key="col.key"
+              v-model="col.visible"
+              @change="onColumnToggle"
+            >{{ col.label }}</el-checkbox>
+          </div>
+        </el-popover>
       </div>
 
       <el-table
@@ -311,9 +273,32 @@
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column prop="nickname" label="昵称" min-width="120" sortable="custom">
+        <el-table-column prop="nickname" label="昵称" min-width="180" sortable="custom">
           <template #default="{ row }">
             <span class="nickname">{{ row.nickname }}</span>
+            <!-- 用户生命周期标签：新注册(绿)/活跃(蓝)/沉默(橙)/流失(灰) -->
+            <el-tag
+              v-if="getLifecycleBadge(row)"
+              :type="getLifecycleBadge(row)!.type"
+              size="small"
+              style="margin-left:6px"
+            >{{ getLifecycleBadge(row)!.label }}</el-tag>
+            <!-- 运营标签：最多展示3个，多余显示+N 悬浮提示全部 -->
+            <template v-if="getUserTags(row).length">
+              <el-tag
+                v-for="tag in getUserTags(row).slice(0, 3)"
+                :key="tag"
+                :type="getTagType(tag)"
+                size="small"
+                style="margin-left:4px"
+              >{{ tag }}</el-tag>
+              <el-tooltip v-if="getUserTags(row).length > 3" placement="top">
+                <template #content>
+                  <div v-for="tag in getUserTags(row)" :key="tag" style="margin:2px 0">{{ tag }}</div>
+                </template>
+                <el-tag size="small" type="info" style="margin-left:4px;cursor:pointer">+{{ getUserTags(row).length - 3 }}</el-tag>
+              </el-tooltip>
+            </template>
           </template>
         </el-table-column>
         <el-table-column prop="gender" label="性别" width="80" sortable="custom">
@@ -333,7 +318,7 @@
             {{ row.phone || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="maritalStatus" label="婚况" width="80">
+        <el-table-column v-if="isColumnVisible('maritalStatus')" prop="maritalStatus" label="婚况" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.maritalStatus === '未婚'" type="success" size="small">未婚</el-tag>
             <el-tag v-else-if="row.maritalStatus === '离异'" type="warning" size="small">离异</el-tag>
@@ -341,19 +326,19 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="incomeRange" label="月收入" width="100">
+        <el-table-column v-if="isColumnVisible('incomeRange')" prop="incomeRange" label="月收入" width="100">
           <template #default="{ row }">
             <span>{{ row.incomeRange || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="carStatus" label="车辆" width="80">
+        <el-table-column v-if="isColumnVisible('carStatus')" prop="carStatus" label="车辆" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.carStatus === '已购车'" type="success" size="small">有车</el-tag>
             <el-tag v-else-if="row.carStatus === '未购车'" type="info" size="small">无车</el-tag>
             <span v-else>{{ row.carStatus || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="housingStatus" label="住房" width="90">
+        <el-table-column v-if="isColumnVisible('housingStatus')" prop="housingStatus" label="住房" width="90">
           <template #default="{ row }">
             <el-tag v-if="row.housingStatus === '已购房'" type="success" size="small">有房</el-tag>
             <el-tag v-else-if="row.housingStatus === '租房'" type="warning" size="small">租房</el-tag>
@@ -362,7 +347,7 @@
             <span v-else>{{ row.housingStatus || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="education" label="学历" width="80">
+        <el-table-column v-if="isColumnVisible('education')" prop="education" label="学历" width="80">
           <template #default="{ row }">
             <span>{{ row.education || '-' }}</span>
           </template>
@@ -380,7 +365,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="profileScore" label="资料完整度" width="120" sortable="custom">
+        <el-table-column v-if="isColumnVisible('profileScore')" prop="profileScore" label="资料完整度" width="120" sortable="custom">
           <template #default="{ row }">
             <div style="display:flex;align-items:center;gap:6px">
               <el-progress
@@ -393,29 +378,29 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="置顶状态" width="90">
+        <el-table-column v-if="isColumnVisible('pinnedStatus')" label="置顶状态" width="90">
           <template #default="{ row }">
             <span v-if="row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()" style="color:#303133">置顶中</span>
             <span v-else style="color:#909399">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="置顶截至" width="160">
+        <el-table-column v-if="isColumnVisible('pinnedExpire')" label="置顶截至" width="160">
           <template #default="{ row }">
             <span v-if="row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()" style="color:#303133;font-size:12px">{{ formatDate(row.pinnedExpireAt) }}</span>
             <span v-else style="color:#909399;font-size:12px">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="manualBoostScore" label="运营加权" width="90" sortable="custom">
+        <el-table-column v-if="isColumnVisible('manualBoostScore')" prop="manualBoostScore" label="运营加权" width="90" sortable="custom">
           <template #default="{ row }">
             <span :style="{ color: row.manualBoostScore > 0 ? '#303133' : '#909399' }">{{ row.manualBoostScore || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="exposurePool" label="曝光池" width="90">
+        <el-table-column v-if="isColumnVisible('exposurePool')" prop="exposurePool" label="曝光池" width="90">
           <template #default="{ row }">
             <span :style="{ color: row.exposurePool !== 'city' ? '#303133' : '#909399' }">{{ exposurePoolLabel(row.exposurePool) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="注册时间" width="160" sortable="custom">
+        <el-table-column v-if="isColumnVisible('createdAt')" prop="createdAt" label="注册时间" width="160" sortable="custom">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
@@ -427,7 +412,7 @@
             <el-tag v-else type="danger" size="small">禁用</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="资料审核" width="110">
+        <el-table-column v-if="isColumnVisible('profileAudit')" label="资料审核" width="110">
           <template #default="{ row }">
             <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.profileAuditStatus || row.profileAuditStatus === 'unsubmitted'">
               <el-tag
@@ -441,7 +426,7 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="照片审核" width="110">
+        <el-table-column v-if="isColumnVisible('photoAudit')" label="照片审核" width="110">
           <template #default="{ row }">
             <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.photoAuditStatus || row.photoAuditStatus === 'unsubmitted'">
               <el-tag
@@ -455,30 +440,36 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column label="用户标签" width="160">
+        <el-table-column v-if="isColumnVisible('userTags')" label="用户标签" width="200">
           <template #default="{ row }">
             <template v-if="getUserTags(row).length">
-              <el-tag v-for="tag in getUserTags(row)" :key="tag" size="small" style="margin-right:4px">{{ tag }}</el-tag>
+              <el-tag v-for="tag in getUserTags(row).slice(0, 3)" :key="tag" :type="getTagType(tag)" size="small" style="margin-right:4px;margin-bottom:2px">{{ tag }}</el-tag>
+              <el-tooltip v-if="getUserTags(row).length > 3" placement="top">
+                <template #content>
+                  <div v-for="tag in getUserTags(row)" :key="tag" style="margin:2px 0">{{ tag }}</div>
+                </template>
+                <el-tag size="small" type="info">+{{ getUserTags(row).length - 3 }}</el-tag>
+              </el-tooltip>
             </template>
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="matchCount" label="匹配次数" width="90" sortable="custom">
+        <el-table-column v-if="isColumnVisible('matchCount')" prop="matchCount" label="匹配次数" width="90" sortable="custom">
           <template #default="{ row }">
             <span>{{ row.matchCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="followingCount" label="关注数" width="80" sortable="custom">
+        <el-table-column v-if="isColumnVisible('followingCount')" prop="followingCount" label="关注数" width="80" sortable="custom">
           <template #default="{ row }">
             <span>{{ row.followingCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="followerCount" label="被关注数" width="90" sortable="custom">
+        <el-table-column v-if="isColumnVisible('followerCount')" prop="followerCount" label="被关注数" width="90" sortable="custom">
           <template #default="{ row }">
             <span>{{ row.followerCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="viewCount" label="看过谁" width="80" sortable="custom">
+        <el-table-column v-if="isColumnVisible('viewCount')" prop="viewCount" label="看过谁" width="80" sortable="custom">
           <template #default="{ row }">
             <el-button v-if="(row.viewCount ?? 0) > 0" link type="primary" size="small" @click="handleViewDetail(row)">
               {{ row.viewCount ?? 0 }}
@@ -486,16 +477,70 @@
             <span v-else>0</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="!isReadonly" label="操作" width="400" fixed="right">
+        <!-- 最近活跃时间列（可选展示）：来自 lastActiveAt 字段，格式化相对时间 -->
+        <el-table-column v-if="isColumnVisible('lastActiveAt')" prop="lastActiveAt" label="最近活跃时间" width="150" sortable="custom">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleView(row)">详情</el-button>
-            <el-button type="info" link @click="handleEditUser(row)">编辑</el-button>
-            <el-button type="warning" link @click="handleToggleStatus(row)">
-              {{ row.status === 1 ? '禁用' : '启用' }}
-            </el-button>
-            <el-button type="success" link @click="handleSetVip(row)">设为VIP</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
-            <el-button type="primary" link @click="handlePinUser(row)">手动置顶</el-button>
+            <span>{{ formatLastActive(row.lastActiveAt) }}</span>
+          </template>
+        </el-table-column>
+        <!-- 累计付费列（可选展示）：从订单数据汇总，格式 ¥0.00 -->
+        <el-table-column v-if="isColumnVisible('totalPayment')" label="累计付费" width="110">
+          <template #default="{ row }">
+            <span>{{ '¥' + (paymentMap[row.id] || 0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <!-- 操作列：详情按钮 + 更多操作下拉菜单 + 快捷审核图标 -->
+        <el-table-column v-if="!isReadonly" label="操作" width="220" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link size="small" @click="handleView(row)">详情</el-button>
+            <el-dropdown trigger="click" @command="(cmd: string) => handleDropdownCommand(cmd, row)">
+              <el-button link size="small" style="margin-left:4px">
+                更多 <el-icon><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit">编辑</el-dropdown-item>
+                  <el-dropdown-item :command="(row.isVip && row.vipLevel > 0) ? 'unvip' : 'vip'">
+                    {{ (row.isVip && row.vipLevel > 0) ? '取消VIP' : '设为VIP' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="(row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()) ? 'unpin' : 'pin'">
+                    {{ (row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()) ? '取消置顶' : '手动置顶' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item :command="row.status === 1 ? 'disable' : 'enable'">
+                    {{ row.status === 1 ? '禁用账号' : '启用账号' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="notify">发送通知</el-dropdown-item>
+                  <!-- 运营操作：打标签 + 查看备注 -->
+                  <el-dropdown-item command="tag">打标签</el-dropdown-item>
+                  <el-dropdown-item command="viewNotes">查看备注</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <!-- 快捷审核：资料/照片审核状态为 PENDING/unsubmitted 时显示图标按钮 -->
+            <template v-if="row.profileAuditStatus && row.profileAuditStatus !== 'APPROVE' && row.profileAuditStatus !== 'REJECT'">
+              <el-tooltip content="快速通过资料审核" placement="top">
+                <el-button link size="small" type="success" @click="handleQuickAudit(row, 'user', 'approve')">
+                  <el-icon><CheckIcon /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="快速拒绝资料审核" placement="top">
+                <el-button link size="small" type="danger" @click="handleQuickAudit(row, 'user', 'reject')">
+                  <el-icon><CloseIcon /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
+            <template v-if="row.photoAuditStatus && row.photoAuditStatus !== 'APPROVE' && row.photoAuditStatus !== 'REJECT'">
+              <el-tooltip content="快速通过照片审核" placement="top">
+                <el-button link size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
+                  <el-icon><CheckIcon /></el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="快速拒绝照片审核" placement="top">
+                <el-button link size="small" type="danger" @click="handleQuickAudit(row, 'photo', 'reject')">
+                  <el-icon><CloseIcon /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -566,6 +611,29 @@
       <template #footer>
         <el-button @click="notifyDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleNotifySubmit">发送</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量发送通知弹窗 -->
+    <el-dialog v-model="notifyBatchDialogVisible" title="批量发送通知" width="500px">
+      <el-form label-width="100px">
+        <el-form-item label="已选用户">
+          <span>{{ selectedRows.length }} 人</span>
+        </el-form-item>
+        <el-form-item label="通知内容" required>
+          <el-input
+            v-model="notifyBatchContent"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入通知内容..."
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="notifyBatchDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleBatchNotifySubmit">发送</el-button>
       </template>
     </el-dialog>
 
@@ -1010,6 +1078,71 @@
         <el-button type="primary" @click="handleCreateSubmit" :loading="createLoading || editLoading">{{ editingUserId ? '保存' : '确定' }}</el-button>
       </template>
     </el-dialog>
+
+    <!-- 打标签弹窗（单用户/批量共用） -->
+    <el-dialog v-model="tagDialogVisible" :title="tagDialogTitle" width="580px" destroy-on-close>
+      <!-- 自定义标签输入 -->
+      <el-form label-width="90px">
+        <el-form-item label="自定义标签">
+          <div style="display:flex;gap:8px;width:100%">
+            <el-input v-model="tagInputValue" placeholder="输入标签名，回车添加" @keyup.enter="handleListTagInputConfirm" style="flex:1" />
+            <el-button @click="handleListTagInputConfirm">添加</el-button>
+          </div>
+        </el-form-item>
+      </el-form>
+      <!-- 系统预设标签库 -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;color:#909399;margin-bottom:8px">系统标签库（点击添加）</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <el-tag
+            v-for="pt in filteredPresetTags"
+            :key="pt.label"
+            :type="pt.type"
+            size="default"
+            style="cursor:pointer"
+            @click="handleAddListPresetTag(pt.label)"
+          >
+            + {{ pt.label }}
+          </el-tag>
+        </div>
+      </div>
+      <!-- 当前已选标签 -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:13px;color:#909399;margin-bottom:8px">
+          已选标签 ({{ tagDraftSelected.length }})
+          <el-button type="danger" link size="small" @click="tagDraftSelected = []" style="margin-left:8px">清空</el-button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;padding:8px;border:1px solid #e4e7ed;border-radius:6px">
+          <el-tag
+            v-for="t in tagDraftSelected"
+            :key="t"
+            :type="getTagType(t)"
+            closable
+            @close="tagDraftSelected = tagDraftSelected.filter(i => i !== t)"
+          >
+            {{ t }}
+          </el-tag>
+          <span v-if="tagDraftSelected.length === 0" style="font-size:13px;color:#c0c4cc">暂无已选标签</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="tagDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleListSaveTags" :loading="tagSaving">保存标签</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 查看备注弹窗（只读） -->
+    <el-dialog v-model="notesDialogVisible" title="运营备注" width="500px">
+      <div v-if="notesLoading" style="text-align:center;padding:40px 0">
+        <el-icon class="is-loading"><Loading /></el-icon>
+      </div>
+      <div v-else-if="notesContent" style="white-space:pre-wrap;line-height:1.8;color:#333;font-size:14px;padding:8px 0">{{ notesContent }}</div>
+      <div v-else style="text-align:center;color:#c0c4cc;font-size:13px;padding:40px 0">暂无运营备注</div>
+      <template #footer>
+        <el-button @click="notesDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="goToDetailForNotes">进入详情编辑</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1017,8 +1150,9 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download, Plus, User as UserIcon } from '@element-plus/icons-vue'
-import { adminUsers } from '../../api'
+import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Check as CheckIcon, Close as CloseIcon, Loading } from '@element-plus/icons-vue'
+import { adminUsers, adminPayment } from '../../api'
+import { adminAudit } from '../../api/audit'
 import { userPin, vipPackages, VipPackage } from '../../api/vip'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
@@ -1097,6 +1231,13 @@ const filterForm = reactive<UserFilter>({
 })
 
 const dateRange = ref<string[]>([])
+
+// 高级筛选面板展开/收起
+const advancedFilterVisible = ref(false)
+
+// 最近活跃时间筛选
+const lastActiveAtRange = ref<string | undefined>(undefined)
+const lastActiveAtDateRange = ref<string[]>([])
 const selectAll = ref(false)
 
 const pagination = reactive({
@@ -1105,9 +1246,158 @@ const pagination = reactive({
   total: 0,
 })
 
+// ===== 自定义列功能 =====
+// 列选项配置：默认隐藏的列，运营可通过"自定义列"按钮勾选显示
+// 列偏好保存到 localStorage key: user-table-columns
+const COLUMN_STORAGE_KEY = 'user-table-columns'
+const columnOptions = reactive([
+  { key: 'maritalStatus', label: '婚况', visible: false },
+  { key: 'incomeRange', label: '月收入', visible: false },
+  { key: 'carStatus', label: '车辆', visible: false },
+  { key: 'housingStatus', label: '住房', visible: false },
+  { key: 'education', label: '学历', visible: false },
+  { key: 'profileScore', label: '资料完整度', visible: false },
+  { key: 'pinnedStatus', label: '置顶状态', visible: false },
+  { key: 'pinnedExpire', label: '置顶截至', visible: false },
+  { key: 'manualBoostScore', label: '运营加权', visible: false },
+  { key: 'exposurePool', label: '曝光池', visible: false },
+  { key: 'createdAt', label: '注册时间', visible: false },
+  { key: 'profileAudit', label: '资料审核', visible: false },
+  { key: 'photoAudit', label: '照片审核', visible: false },
+  { key: 'userTags', label: '用户标签', visible: false },
+  { key: 'matchCount', label: '匹配次数', visible: false },
+  { key: 'followingCount', label: '关注数', visible: false },
+  { key: 'followerCount', label: '被关注数', visible: false },
+  { key: 'viewCount', label: '看过谁', visible: false },
+  { key: 'lastActiveAt', label: '最近活跃时间', visible: false },
+  { key: 'totalPayment', label: '累计付费', visible: false },
+])
+
+function loadColumnPrefs() {
+  try {
+    const saved = localStorage.getItem(COLUMN_STORAGE_KEY)
+    if (saved) {
+      const visibleKeys: string[] = JSON.parse(saved)
+      columnOptions.forEach(col => { col.visible = visibleKeys.includes(col.key) })
+    }
+  } catch { /* ignore */ }
+}
+
+function saveColumnPrefs() {
+  const visibleKeys = columnOptions.filter(c => c.visible).map(c => c.key)
+  localStorage.setItem(COLUMN_STORAGE_KEY, JSON.stringify(visibleKeys))
+}
+
+function isColumnVisible(key: string): boolean {
+  return columnOptions.find(c => c.key === key)?.visible ?? false
+}
+
+function onColumnToggle() {
+  saveColumnPrefs()
+}
+
+// ===== 用户生命周期标签 =====
+// 优先级：新注册 > 活跃 > 沉默 > 流失
+// Element Plus el-tag type 合法值
+type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
+
+// ===== 运营标签管理 =====
+// 系统预设标签库（与详情页保持一致），用于筛选和展示
+const presetTags: { label: string; type: TagType | '' }[] = [
+  { label: '高付费意向', type: 'danger' },
+  { label: '需跟进', type: 'warning' },
+  { label: '资料优质', type: 'success' },
+  { label: '照片清晰', type: '' },       // Element Plus 默认蓝色
+  { label: '主动活跃', type: 'primary' },
+  { label: '疑似违规', type: 'info' },
+  { label: '红娘推荐', type: 'danger' },  // 粉色用 danger 近似
+]
+
+/** 根据标签名返回 Element Plus el-tag 的 type，保留空字符串（默认蓝色） */
+function getTagType(tag: string): TagType | '' | 'info' {
+  const found = presetTags.find(pt => pt.label === tag)
+  // 使用 ?? 保留空字符串（如"照片清晰"的 '' 表示蓝色）；未匹配到默认 info
+  return found ? found.type ?? 'info' : 'info'
+}
+
+function getLifecycleBadge(row: any): { label: string; type: TagType } | null {
+  const now = Date.now()
+  const createdAt = row.createdAt ? new Date(row.createdAt).getTime() : 0
+  const lastActiveAt = row.lastActiveAt ? new Date(row.lastActiveAt).getTime() : 0
+  // 新注册：注册时间 <= 24 小时
+  if (createdAt && now - createdAt <= 24 * 60 * 60 * 1000) {
+    return { label: '新注册', type: 'success' }
+  }
+  // 活跃：lastActiveAt <= 7 天
+  if (lastActiveAt && now - lastActiveAt <= 7 * 24 * 60 * 60 * 1000) {
+    return { label: '活跃', type: 'primary' }
+  }
+  // 沉默：7 天 < lastActiveAt <= 30 天
+  if (lastActiveAt && now - lastActiveAt <= 30 * 24 * 60 * 60 * 1000) {
+    return { label: '沉默', type: 'warning' }
+  }
+  return { label: '流失', type: 'info' }
+}
+
+// ===== 最近活跃时间格式化 =====
+function formatLastActive(lastActiveAt: string | null): string {
+  if (!lastActiveAt) return '-'
+  const now = Date.now()
+  const time = new Date(lastActiveAt).getTime()
+  const diffMs = now - time
+  const diffMinutes = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffMinutes < 1) return '刚刚'
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
+  if (diffHours < 24) return `${diffHours}小时前`
+  return formatDate(lastActiveAt)
+}
+
+// ===== 累计付费数据 =====
+// 从订单API汇总每个用户的累计付费金额
+// paymentMap 用于模板中展示累计付费列，loadingPayment 防止并发重复请求
+const paymentMap = ref<Record<number, number>>({})
+
+let loadingPayment = false
+
+async function loadPaymentData() {
+  if (loadingPayment) return // 已有请求在进行中，跳过
+  loadingPayment = true
+  try {
+    const res = await adminPayment.orders({ limit: 99999 })
+    if (res.success && res.data) {
+      const map: Record<number, number> = {}
+      for (const order of res.data.list) {
+        map[order.userId] = (map[order.userId] || 0) + (order.amount || 0)
+      }
+      paymentMap.value = map
+    }
+  } catch { /* 累计付费加载失败不影响列表展示 */ }
+  loadingPayment = false
+}
+
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
 const createDialogVisible = ref(false)
+
+// ===== 标签管理弹窗状态 =====
+const tagDialogVisible = ref(false)
+const tagDialogTitle = ref('')
+const tagInputValue = ref('')
+const tagDraftSelected = ref<string[]>([])
+const tagSaving = ref(false)
+// 过滤掉已选中的预设标签，避免重复添加
+const filteredPresetTags = computed(() =>
+  presetTags.filter(pt => !tagDraftSelected.value.includes(pt.label))
+)
+// 记录当前操作目标：单用户为 row 对象，批量为 null
+const tagTargetUser = ref<User | null>(null)
+
+// ===== 查看备注弹窗状态 =====
+const notesDialogVisible = ref(false)
+const notesContent = ref('')
+const notesLoading = ref(false)
+const notesUserId = ref<number | null>(null)
 const dialogVersion = ref(0)
 const editingUserId = ref<number | null>(null)
 const editLoading = ref(false)
@@ -1425,6 +1715,7 @@ function buildResidenceLabel(pId?: number, cId?: number, dId?: number): string {
 }
 
 onMounted(() => {
+  loadColumnPrefs() // 从 localStorage 恢复列偏好
   fetchData()
   loadDicts()
   loadHometownProvinces()
@@ -1475,16 +1766,41 @@ async function fetchData() {
       params.endDate = dateRange.value[1]
     }
 
+    // 最近活跃时间筛选 — 后端暂不支持 lastActiveAt 查询参数，UI 保留等待后端跟进
+    // 后端需在 user.service.ts list() 中增加对 lastActiveAtStartDate/lastActiveAtEndDate 的处理
+    // if (lastActiveAtDateRange.value && lastActiveAtDateRange.value.length === 2) {
+    //   (params as any).lastActiveAtStartDate = lastActiveAtDateRange.value[0]
+    //   ;(params as any).lastActiveAtEndDate = lastActiveAtDateRange.value[1]
+    // }
+
     const res = await adminUsers.list(params)
     if (res.success && res.data) {
       tableData.value = (res.data.list || []).map(normalizeUser)
       pagination.total = res.data.total || 0
     }
+    // 累计付费数据异步加载，不阻塞列表展示
+    loadPaymentData()
   } catch (error) {
     console.error('Fetch data error:', error)
   } finally {
     loading.value = false
   }
+}
+
+// 最近活跃时间筛选变化时将预设周期转为起止日期
+function onLastActiveAtRangeChange() {
+  if (!lastActiveAtRange.value || lastActiveAtRange.value === 'custom') {
+    lastActiveAtDateRange.value = []
+    return
+  }
+  const end = new Date()
+  const start = new Date()
+  const days: Record<string, number> = { today: 0, '3d': 3, '7d': 7, '30d': 30 }
+  start.setDate(start.getDate() - (days[lastActiveAtRange.value] || 0))
+  lastActiveAtDateRange.value = [
+    start.toISOString().slice(0, 10),
+    end.toISOString().slice(0, 10),
+  ]
 }
 
 function handleSearch() {
@@ -1712,6 +2028,8 @@ function handleReset() {
     maxMatchCount: undefined,
   })
   dateRange.value = []
+  lastActiveAtRange.value = undefined
+  lastActiveAtDateRange.value = []
   pagination.page = 1
   fetchData()
 }
@@ -2074,6 +2392,109 @@ const handleBatchDelete = async () => {
   }
 }
 
+// 取消所有选中
+function clearSelection() {
+  tableRef.value?.clearSelection()
+  selectedRows.value = []
+  selectAll.value = false
+}
+
+// 批量发送通知
+const notifyBatchDialogVisible = ref(false)
+const notifyBatchContent = ref('')
+
+function handleBatchSendNotify() {
+  if (selectedRows.value.length === 0) return
+  notifyBatchContent.value = ''
+  notifyBatchDialogVisible.value = true
+}
+
+async function handleBatchNotifySubmit() {
+  if (!notifyBatchContent.value.trim()) {
+    ElMessage.warning('请输入通知内容')
+    return
+  }
+  const ids = selectedRows.value.map(r => r.id)
+  let successCount = 0
+  let failCount = 0
+  for (const id of ids) {
+    try {
+      await adminUsers.sendNotification(id, notifyBatchContent.value)
+      successCount++
+    } catch { failCount++ }
+  }
+  if (successCount > 0) {
+    ElMessage.success(`通知已发送：${successCount} 人成功${failCount > 0 ? '，' + failCount + ' 人失败' : ''}`)
+  } else {
+    ElMessage.error('批量发送通知失败')
+  }
+  notifyBatchDialogVisible.value = false
+  clearSelection()
+}
+
+// 操作列下拉菜单命令分发
+async function handleDropdownCommand(cmd: string, row: User) {
+  switch (cmd) {
+    case 'edit': handleEditUser(row); break
+    case 'vip': handleSetVip(row); break
+    case 'unvip':
+      // 取消VIP：设为普通用户级别0
+      try {
+        const res = await adminUsers.updateVip(row.id, { level: 0, days: 0 } as any)
+        if (res.success) { ElMessage.success('已取消VIP'); fetchData() }
+        else ElMessage.error(res.message || '取消VIP失败')
+      } catch { ElMessage.error('取消VIP失败') }
+      break
+    case 'pin': handlePinUser(row); break
+    case 'unpin':
+      // 取消置顶：调用置顶接口传 durationHours=0 立即过期
+      try {
+        const res = await userPin.pinUser(row.id, 0)
+        if (res.success) { ElMessage.success('已取消置顶'); fetchData() }
+        else ElMessage.error(res.message || '取消置顶失败')
+      } catch { ElMessage.error('取消置顶失败') }
+      break
+    case 'disable': handleToggleStatus(row); break
+    case 'enable': handleToggleStatus(row); break
+    case 'notify': handleSendNotify(row); break
+    case 'tag': handleOpenTagDialog(row); break
+    case 'viewNotes': handleViewNotes(row); break
+  }
+}
+
+// 快捷审核：从审计列表找到PENDING记录并审批/拒绝
+async function handleQuickAudit(row: User, auditType: 'user' | 'photo', action: 'approve' | 'reject') {
+  const typeLabel = auditType === 'user' ? '资料' : '照片'
+  const actionLabel = action === 'approve' ? '通过' : '拒绝'
+  try {
+    await ElMessageBox.confirm(
+      `确定${actionLabel}用户「${row.nickname}」的${typeLabel}审核？`,
+      `快捷${actionLabel}审核`,
+      { type: 'warning', confirmButtonText: actionLabel, cancelButtonText: '取消' }
+    )
+  } catch { return /* 用户取消 */ }
+
+  try {
+    // 查询该用户的待审核审计记录（limit 设为极大值以确保不漏查）
+    const res = await adminAudit.list({ type: auditType, status: 0, limit: 99999 })
+    if (res.success && res.data) {
+      const auditItem = res.data.list.find((item: any) => item.targetId === row.id)
+      if (!auditItem) {
+        // 无审计记录，尝试直接调用审批接口（如支持）
+        ElMessage.warning(`未找到「${row.nickname}」的${typeLabel}待审核记录，请前往审核管理处理`)
+        return
+      }
+      if (action === 'approve') {
+        await adminAudit.approve(auditItem.id)
+      } else {
+        await adminAudit.reject(auditItem.id, '快捷拒绝')
+      }
+      ElMessage.success(`${typeLabel}审核已${actionLabel}`)
+      fetchData()
+    }
+  } catch { ElMessage.error(`${actionLabel}审核失败`) }
+}
+
 async function handleExport() {
   exportLoading.value = true
   try {
@@ -2203,6 +2624,98 @@ function getUserTags(row: any): string[] {
   }
   return tags
 }
+
+// ===== 标签管理操作函数 =====
+
+/** 打开打标签弹窗（单用户/批量共用） */
+function handleOpenTagDialog(row: User) {
+  tagTargetUser.value = row
+  tagDialogTitle.value = `为「${row.nickname}」打标签`
+  // 初始化草稿为当前用户标签
+  tagDraftSelected.value = [...getUserTags(row)]
+  tagInputValue.value = ''
+  tagDialogVisible.value = true
+}
+
+/** 批量打标签（使用选中用户） */
+function handleBatchTag() {
+  if (selectedRows.value.length === 0) return
+  tagTargetUser.value = null // 批量模式
+  tagDialogTitle.value = `批量打标签（已选 ${selectedRows.value.length} 人）`
+  tagDraftSelected.value = []
+  tagInputValue.value = ''
+  tagDialogVisible.value = true
+}
+
+/** 自定义标签输入确认（回车或点击） */
+function handleListTagInputConfirm() {
+  const val = tagInputValue.value.trim()
+  if (!val) return
+  if (tagDraftSelected.value.includes(val)) {
+    ElMessage.warning('该标签已存在')
+    return
+  }
+  tagDraftSelected.value.push(val)
+  tagInputValue.value = ''
+}
+
+/** 点击预设标签添加到已选 */
+function handleAddListPresetTag(label: string) {
+  if (tagDraftSelected.value.includes(label)) {
+    ElMessage.warning('该标签已存在')
+    return
+  }
+  tagDraftSelected.value.push(label)
+}
+
+/** 保存标签：单用户更新后端，批量仅前端模拟 */
+async function handleListSaveTags() {
+  tagSaving.value = true
+  try {
+    if (tagTargetUser.value) {
+      // 单用户打标签
+      // TODO: 接入后端标签接口 - adminUsers.updateTags(userId, tags)
+      ElMessage.success('标签已保存（前端模拟，待接入后端接口）')
+    } else {
+      // 批量打标签：为每个选中用户追加标签
+      // TODO: 接入后端批量标签接口 - adminUsers.batchUpdateTags(ids, tags)
+      ElMessage.success(`已为 ${selectedRows.value.length} 人打标签（前端模拟，待接入后端接口）`)
+    }
+    tagDialogVisible.value = false
+    fetchData() // 刷新列表以更新标签显示
+  } catch { ElMessage.error('保存标签失败') }
+  finally { tagSaving.value = false }
+}
+
+// ===== 查看备注操作函数 =====
+
+/** 打开查看备注弹窗（只读） */
+async function handleViewNotes(row: User) {
+  notesUserId.value = row.id
+  notesDialogVisible.value = true
+  notesLoading.value = true
+  notesContent.value = ''
+  try {
+    // TODO: 接入后端备注查询接口 - adminUsers.getRemark(userId)
+    // 当前从用户详情的 adminRemark 字段读取（如有）
+    const detail = await adminUsers.detail(row.id)
+    if (detail.success && detail.data) {
+      notesContent.value = (detail.data as any).adminRemark || ''
+    }
+  } catch {
+    // 后端接口缺失时静默，展示空状态
+    notesContent.value = ''
+  }
+  finally { notesLoading.value = false }
+}
+
+/** 从查看备注弹窗跳转到详情页编辑备注 */
+function goToDetailForNotes() {
+  if (notesUserId.value) {
+    notesDialogVisible.value = false
+    router.push(`/user/detail/${notesUserId.value}`)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -2306,5 +2819,25 @@ function getUserTags(row: any): string[] {
   &:last-child {
     margin-bottom: 0;
   }
+}
+
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.column-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.advanced-filters {
+  border-top: 1px dashed #dcdfe6;
+  padding-top: 12px;
 }
 </style>
