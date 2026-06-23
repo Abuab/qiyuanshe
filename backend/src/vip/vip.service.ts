@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThan } from 'typeorm'
+import { Repository, MoreThan, DataSource } from 'typeorm'
 import { User } from '../entities/User'
 import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
@@ -47,6 +47,7 @@ export class VipService {
     @InjectRepository(SystemConfig)
     private readonly configRepo: Repository<SystemConfig>,
     private readonly redis: RedisService,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ========================================================================
@@ -104,83 +105,91 @@ export class VipService {
    * 真实环境：由 /payment/notify 调用此方法
    */
   async handlePaymentSuccess(orderNo: string, transactionId?: string) {
-    const order = await this.orderRepo.findOne({
-      where: { orderNo },
-      relations: ['package'],
-    })
-    if (!order) throw new Error('订单不存在')
-    if (order.status === 1) return { success: true, message: '已处理' }
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
 
-    const pkg = order.package
-    if (!pkg) throw new Error('套餐不存在')
-
-    // === 事务：更新订单 + 激活会员 + 发放配额 ===
-    const now = new Date()
-    const expireTime = new Date(now.getTime() + pkg.durationDays * 86_400_000)
-
-    // 1. 更新订单
-    order.status = 1
-    order.paidAt = now
-    order.expireTime = expireTime
-    order.transactionId = transactionId || ''
-    await this.orderRepo.save(order)
-
-    // 2. 激活会员
-    const user = await this.userRepo.findOne({ where: { id: order.userId } })
-    if (user) {
-      user.isVip = 1
-      user.vipLevel = Math.max(user.vipLevel || 0, order.vipLevel)
-      // 如果已有会员且在有效期内，则延长
-      if (user.vipExpireTime && user.vipExpireTime > now) {
-        user.vipExpireTime = new Date(user.vipExpireTime.getTime() + pkg.durationDays * 86_400_000)
-      } else {
-        user.vipExpireTime = expireTime
-      }
-      await this.userRepo.save(user)
-    }
-
-    // 3. 发放今日置顶卡额度
-    if (pkg.dailyTopCards > 0) {
-      const today = todayStr()
-      let quota = await this.quotaRepo.findOne({
-        where: { userId: order.userId, date: today as any, isDeleted: 0 },
+    try {
+      const order = await queryRunner.manager.findOne(VipOrder, {
+        where: { orderNo },
+        relations: ['package'],
       })
-      if (quota) {
-        quota.totalQuota += pkg.dailyTopCards
-      } else {
-        quota = this.quotaRepo.create({
-          userId: order.userId,
-          date: today as any,
-          totalQuota: pkg.dailyTopCards,
-          usedCount: 0,
-          vipPackageId: pkg.id,
-        })
+      if (!order) throw new Error('订单不存在')
+      if (order.status === 1) {
+        await queryRunner.rollbackTransaction()
+        return { success: true, message: '已处理' }
       }
-      await this.quotaRepo.save(quota)
-    }
 
-    // 3.5 发放红线索额度（终身累计，非每日重置）
-    if (pkg.redLineCount > 0) {
-      let rlQuota = await this.redLineQuotaRepo.findOne({
-        where: { userId: order.userId, isDeleted: 0 },
+      const pkg = order.package
+      if (!pkg) throw new Error('套餐不存在')
+
+      const now = new Date()
+      const expireTime = new Date(now.getTime() + pkg.durationDays * 86_400_000)
+
+      // 1. 更新订单
+      await queryRunner.manager.update(VipOrder, { orderNo }, {
+        status: 1, paidAt: now, expireTime, transactionId: transactionId || '',
       })
-      if (rlQuota) {
-        rlQuota.totalQuota += pkg.redLineCount
-      } else {
-        rlQuota = this.redLineQuotaRepo.create({
-          userId: order.userId,
-          totalQuota: pkg.redLineCount,
-          usedCount: 0,
-          vipPackageId: pkg.id,
-        })
+
+      // 2. 激活会员
+      const user = await queryRunner.manager.findOne(User, { where: { id: order.userId } })
+      if (user) {
+        const updateData: Partial<User> = { isVip: 1, vipLevel: Math.max(user.vipLevel || 0, order.vipLevel) }
+        if (user.vipExpireTime && user.vipExpireTime > now) {
+          updateData.vipExpireTime = new Date(user.vipExpireTime.getTime() + pkg.durationDays * 86_400_000)
+        } else {
+          updateData.vipExpireTime = expireTime
+        }
+        await queryRunner.manager.update(User, { id: order.userId }, updateData)
       }
-      await this.redLineQuotaRepo.save(rlQuota)
+
+      // 3. 发放今日置顶卡额度（仅当前套餐每日配额生效）
+      // 业务规则：每日配额以最新订单的套餐为准，不做叠加
+      if (pkg.dailyTopCards > 0) {
+        const today = todayStr()
+        const existingQuota = await queryRunner.manager.findOne(UserTopCardQuota, {
+          where: { userId: order.userId, date: today as any, isDeleted: 0 },
+        })
+        if (existingQuota) {
+          existingQuota.totalQuota += pkg.dailyTopCards
+          await queryRunner.manager.save(existingQuota)
+        } else {
+          const quota = queryRunner.manager.create(UserTopCardQuota, {
+            userId: order.userId, date: today as any, totalQuota: pkg.dailyTopCards, usedCount: 0, vipPackageId: pkg.id,
+          })
+          await queryRunner.manager.save(quota)
+        }
+      }
+
+      // 4. 发放红线索额度（终身累计，非每日重置）
+      // 续费时若已有未用完额度，正确累加新套餐红线索数量
+      if (pkg.redLineCount > 0) {
+        const existing = await queryRunner.manager.findOne(UserRedLineQuota, {
+          where: { userId: order.userId, isDeleted: 0 },
+        })
+        if (existing) {
+          existing.totalQuota += pkg.redLineCount
+          await queryRunner.manager.save(existing)
+        } else {
+          const rl = queryRunner.manager.create(UserRedLineQuota, {
+            userId: order.userId, totalQuota: pkg.redLineCount, usedCount: 0, vipPackageId: pkg.id,
+          })
+          await queryRunner.manager.save(rl)
+        }
+      }
+
+      await queryRunner.commitTransaction()
+
+      // 清除缓存（事务外，Redis 失败不影响主流程）
+      await this.redis.del(`recommend:score:${order.userId}`).catch(() => {})
+
+      return { success: true, orderId: order.id, expireTime }
+    } catch (e) {
+      await queryRunner.rollbackTransaction()
+      throw e
+    } finally {
+      await queryRunner.release()
     }
-
-    // 4. 清除缓存
-    await this.redis.del(`recommend:score:${order.userId}`)
-
-    return { success: true, orderId: order.id, expireTime }
   }
 
   // ========================================================================
@@ -287,47 +296,38 @@ export class VipService {
   // ========================================================================
 
   /**
-   * 定时任务：检查并降级过期会员
-   * 建议每天凌晨 1 点执行一次
+   * 定时任务：批量降级过期会员
+   * 使用单条 UPDATE 语句，不逐条查询和保存，避免性能问题
+   * 红线索额度（RedLineQuota）在会员到期后保留不清零 — 续费后可继续使用
    */
   async checkExpiredVip(): Promise<number> {
     const now = new Date()
-    const expiredUsers = await this.userRepo
-      .createQueryBuilder('user')
-      .where('user.isVip = :vip', { vip: 1 })
-      .andWhere('user.vipExpireTime IS NOT NULL')
-      .andWhere('user.vipExpireTime <= :now', { now })
-      .getMany()
 
-    let count = 0
-    for (const user of expiredUsers) {
-      user.isVip = 0
-      user.vipLevel = 0
-      user.vipExpireTime = null
-      await this.userRepo.save(user)
+    // 批量 UPDATE：到期会员降为普通用户
+    const result = await this.userRepo
+      .createQueryBuilder()
+      .update(User)
+      .set({ isVip: 0, vipLevel: 0, vipExpireTime: null as any })
+      .where('isVip = :vip', { vip: 1 })
+      .andWhere('vipExpireTime IS NOT NULL')
+      .andWhere('vipExpireTime <= :now', { now })
+      .execute()
 
-      // 清理置顶卡额度
-      await this.quotaRepo.update(
-        { userId: user.id, isDeleted: 0 },
-        { isDeleted: 1 },
-      )
+    const count = result.affected || 0
 
-      // 清理红线索额度（会员到期后不再有效）
-      await this.redLineQuotaRepo.update(
-        { userId: user.id, isDeleted: 0 },
-        { isDeleted: 1 },
-      )
+    if (count > 0) {
+      // 结束进行中的置顶记录（不再逐个处理，批量标记过期置顶）
+      await this.topRecordRepo
+        .createQueryBuilder()
+        .update(UserTopRecord)
+        .set({ status: 2 })
+        .where('status = :active', { active: 1 })
+        .andWhere('topEndTime <= :now', { now })
+        .execute()
 
-      // 结束进行中的置顶
-      await this.topRecordRepo.update(
-        { userId: user.id, status: 1 },
-        { status: 2 },
-      )
-
-      // 清除缓存
-      await this.redis.del(`recommend:score:${user.id}`)
-
-      count++
+      // 注意：不再清除置顶卡额度 (UserTopCardQuota) — dailyQuotaReset 会每天重新生成
+      // 注意：不再清除红线索额度 (UserRedLineQuota) — 会员续费后保留原有额度
+      console.log(`[VipService] 已降级 ${count} 名过期会员`)
     }
 
     return count
@@ -390,6 +390,9 @@ export class VipService {
    * @param boostScore 手动加权分（可选）
    */
   async adminPinUser(userId: number, durationHours: number, boostScore?: number) {
+    if (boostScore !== undefined && (boostScore < 0 || boostScore > 1000)) {
+      throw new Error('boostScore 超出允许范围（0-1000）')
+    }
     const now = new Date()
     const topEndTime = new Date(now.getTime() + durationHours * 3600_000)
 
@@ -459,6 +462,14 @@ export class VipService {
 
   /** 使用红线索解锁目标用户的联系方式 */
   async useRedLine(userId: number, targetUserId: number) {
+    // 校验会员有效性
+    const now = new Date()
+    const user = await this.userRepo.findOne({ where: { id: userId } })
+    if (!user) throw new Error('用户不存在')
+    if (!user.isVip || !user.vipExpireTime || user.vipExpireTime <= now) {
+      throw new Error('会员已过期，请先续费')
+    }
+
     // 1. 校验目标用户存在且有联系方式
     const targetUser = await this.userRepo.findOne({
       where: { id: targetUserId, status: 1, isDeleted: 0 },

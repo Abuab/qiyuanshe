@@ -20,6 +20,7 @@ import { AdminLoginController } from './login.controller'
 import { UploadController } from './upload.controller'
 import { AdminSystemController } from './system.controller'
 import { AdminSystemService } from './system.service'
+import { AdminSeederService } from './admin-seeder.service'
 import { AdminProfileController } from './profile.controller'
 import { AdminProfileService } from './profile.service'
 import { MfaController } from './mfa.controller'
@@ -156,6 +157,7 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
     VipPackageService,
     VipService,
     RedisService,
+    AdminSeederService,
   ],
   exports: [
     AdminUserService,

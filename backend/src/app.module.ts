@@ -2,6 +2,8 @@ import { Module, Global } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { ConfigModule } from '@nestjs/config'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { APP_GUARD } from '@nestjs/core'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
 import {
@@ -74,6 +76,10 @@ import { DatabaseIndexService } from './common/database-index.service'
 @Global()
 @Module({
   imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,   // 时间窗口 60 秒
+      limit: 60,    // 每个窗口最多 60 次请求（公开接口可单独覆盖为更低值）
+    }]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: join(__dirname, '..', '..', '.env'),
@@ -148,7 +154,11 @@ import { DatabaseIndexService } from './common/database-index.service'
     AgreementLogStorageModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService, DatabaseIndexService],
+  providers: [
+    RedisService,
+    DatabaseIndexService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
   exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}

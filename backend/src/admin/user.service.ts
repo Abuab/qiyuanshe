@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Like, In } from 'typeorm'
+import * as crypto from 'crypto'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserNotification } from '../entities/UserNotification'
@@ -588,7 +589,7 @@ export class AdminUserService {
     acceptChildren?: string
     photoUrls?: string[]
   }) {
-    const hashedPassword = await bcrypt.hash(data.password || '123456', 10)
+    const hashedPassword = await bcrypt.hash(data.password || crypto.randomBytes(8).toString('hex'), 10)
     
     // 管理员手动创建的用户默认为待审核状态(status=2)
     const status = data.status !== undefined ? data.status : 2
