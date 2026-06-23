@@ -363,14 +363,21 @@ export class AiRateLimitService {
     }
   }
 
-  /** 全局 QPS 限流 */
+  /** 全局 QPS 限流（滑动窗口，使用单个 ZSET key，避免每秒创建新 key） */
   private async checkGlobalQps(config: RateLimitConfig): Promise<RateLimitResult> {
-    const now = new Date()
-    const secondKey = RATE_LIMIT_KEYS.GLOBAL_QPS
-      .replace('%s', now.toISOString().slice(0, 19)) // YYYY-MM-DD HH:mm:ss
+    const now = Date.now()
+    const window = 1000 // 1 秒窗口
+    const key = RATE_LIMIT_KEYS.GLOBAL_QPS.replace('%s', '') // 移除时间占位符，使用固定 key
 
-    const count = await this.redis.incr(secondKey)
-    if (count === 1) await this.redis.expire(secondKey, 2)
+    const client = this.redis.getClient()
+    // 移除窗口外的记录
+    await client.zremrangebyscore(key, 0, now - window)
+    // 添加当前请求
+    await client.zadd(key, now, `${now}-${Math.random()}`)
+    // 计数窗口内请求
+    const count = await client.zcard(key)
+    // 设置 key 过期（2秒后自动清理）
+    await this.redis.expire(key, 2)
 
     if (count > config.globalQps) {
       return {

@@ -28,6 +28,7 @@ import {
   MATCH_MIN_ANSWERS,
   COMPLETENESS_WEIGHTS,
 } from './ai-match.types'
+import { parseJsonResponse } from './ai-common.util'
 
 @Injectable()
 export class AiMatchService {
@@ -248,19 +249,18 @@ export class AiMatchService {
       // 实际部署时替换为真正的 AI API 调用（如 OpenRouter/Qwen/DeepSeek）
       if (await this.aiApiService.isConfigured()) {
         const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'match')
-        aiResult = this.parseJsonResponse(aiResponse)
+        aiResult = parseJsonResponse(aiResponse)
       } else {
         aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
       }
 
     } catch (e: any) {
-      this.logger.warn(`AI match analysis call failed: ${e?.message}, using fallback`)
+      this.logger.error(`[AI匹配] 调用失败: ${e?.message}，降级使用兜底结果`)
       aiResult = this.buildFallbackResult(meSnapshot, taSnapshot, overlapTags)
       if (aiCallLog) {
         aiCallLog.responseStatus = 'error'
-        await this.callLogRepo.save(aiCallLog)
+        await this.callLogRepo.save(aiCallLog).catch(() => {})
       }
-      throw new BadRequestException('AI分析暂时不可用，请稍后重试')
     }
 
     const generationMs = Date.now() - startMs
@@ -572,13 +572,5 @@ export class AiMatchService {
         '建议从共同的兴趣爱好出发，慢慢建立信任和默契。',
       advice,
     }
-  }
-
-  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
-  private parseJsonResponse(raw: string): any {
-    let json = raw.trim()
-    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-    if (codeBlock) json = codeBlock[1]
-    return JSON.parse(json)
   }
 }

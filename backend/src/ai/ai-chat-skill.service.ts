@@ -10,6 +10,7 @@ import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { buildChatSkillPrompt } from './ai-chat-skill.prompt'
+import { parseJsonResponse } from './ai-common.util'
 import {
   ChatSkillSuggestion,
   ChatSkillResponse,
@@ -124,17 +125,15 @@ export class AiChatSkillService {
     try {
       if (await this.aiApiService.isConfigured()) {
         const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'chat_skill')
-        rawResult = this.parseJsonResponse(aiResponse)
+        rawResult = parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackSuggestions(taLastMessage.content)
       }
     } catch (e: any) {
-      this.logger.warn(`AI chat skill call failed: ${e?.message}, using fallback`)
+      this.logger.error(`[AI帮回] 调用失败: ${e?.message}，降级使用兜底建议`)
       rawResult = this.buildFallbackSuggestions(taLastMessage.content)
       savedCallLog.responseStatus = 'error'
-      await this.callLogRepo.save(savedCallLog)
-      this.logger.error(`AI chat skill failed: ${e?.message}`)
-      throw new BadRequestException('AI服务暂时不可用，请稍后重试')
+      await this.callLogRepo.save(savedCallLog).catch(() => {})
     }
 
     savedCallLog.responseMs = Date.now() - startMs
@@ -279,14 +278,5 @@ export class AiChatSkillService {
       sincere: '听了你说的，感觉你是个很有想法的人，能跟我多分享一下吗？',
       flirtatious: '和你聊天感觉时间过得特别快，期待能更了解你',
     }
-  }
-
-  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
-  private parseJsonResponse(raw: string): any {
-    let json = raw.trim()
-    // 去除 ```json ... ``` 包裹
-    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-    if (codeBlock) json = codeBlock[1]
-    return JSON.parse(json)
   }
 }

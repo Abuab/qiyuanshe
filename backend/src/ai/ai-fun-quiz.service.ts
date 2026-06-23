@@ -9,6 +9,7 @@ import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { AiFunQuizReport } from '../entities/AiFunQuizReport'
 import { User } from '../entities/User'
 import { buildFunQuizPrompt } from './ai-fun-quiz.prompt'
+import { parseJsonResponse } from './ai-common.util'
 import {
   FunQuizRequest,
   FunQuizReportResponse,
@@ -217,7 +218,7 @@ export class AiFunQuizService {
     try {
       if (await this.aiApiService.isConfigured()) {
         const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'fun_quiz')
-        rawResult = this.parseJsonResponse(aiResponse)
+        rawResult = parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackResult(userConstellation, taConstellation)
       }
@@ -353,13 +354,5 @@ export class AiFunQuizService {
       ],
       keywords: ['互补型', '慢热配主动', '天作之合'],
     }
-  }
-
-  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
-  private parseJsonResponse(raw: string): any {
-    let json = raw.trim()
-    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-    if (codeBlock) json = codeBlock[1]
-    return JSON.parse(json)
   }
 }

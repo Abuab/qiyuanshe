@@ -46,6 +46,9 @@ export const FAILURE_THRESHOLD = 3
 /** 故障冷却期（秒） */
 export const COOLDOWN_SECONDS = 10 * 60
 
+/** Round-Robin 全局计数器（Redis INCR 多实例共享） */
+export const PROVIDER_RR_KEY = 'ai:provider:rr:index'
+
 /** 余额监控间隔（秒） */
 export const BALANCE_CHECK_INTERVAL_SECONDS = 30 * 60
 

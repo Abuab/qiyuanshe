@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RedisService } from '../common/redis.service'
@@ -48,6 +48,14 @@ export interface TieredSafetyResult {
 
 /** 每日违规限次 Redis key 前缀 */
 const DAILY_VIOLATION_KEY = 'ai:safety:daily:'
+
+/** 敏感词库 Redis key 前缀（运营可动态增删） */
+const SAFETY_WORDS_KEY_PREFIX = 'ai:safety:custom:words:'
+
+/** 转义正则特殊字符 */
+function escapeRegex(word: string): string {
+  return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
 
 // ================================================================
 // 一级拦截词库 —— 直接拒绝
@@ -197,7 +205,7 @@ const ALL_SENSITIVE_WORDS = [
 ]
 
 @Injectable()
-export class AiSafetyService {
+export class AiSafetyService implements OnModuleInit {
   private readonly logger = new Logger(AiSafetyService.name)
 
   constructor(
@@ -205,6 +213,73 @@ export class AiSafetyService {
     private readonly auditRepo: Repository<ContentSafetyAudit>,
     private readonly redis: RedisService,
   ) {}
+
+  /** 服务启动时从 Redis 加载运营自定义敏感词到内存 */
+  async onModuleInit() {
+    try {
+      await this.loadCustomWords()
+    } catch (e: any) {
+      this.logger.error(`[Safety] 敏感词加载失败: ${e?.message}`)
+    }
+  }
+
+  // ==================== 敏感词库管理 ====================
+
+  /** 从 Redis 加载运营自定义敏感词（运营通过后台 API 增删） */
+  async loadCustomWords(): Promise<void> {
+    const keys = await this.redis.getClient().keys(`${SAFETY_WORDS_KEY_PREFIX}*`)
+    for (const key of keys) {
+      const level = key.replace(SAFETY_WORDS_KEY_PREFIX, '')
+      const wordsJson = await this.redis.get(key)
+      if (wordsJson) {
+        try {
+          const words: string[] = JSON.parse(wordsJson)
+          if (level === 'level1') {
+            words.forEach(w => { ALL_LEVEL1[w] = BlockReasonType.OTHER })
+            ALL_SENSITIVE_WORDS.push(...words.filter(w => !ALL_SENSITIVE_WORDS.includes(w)))
+          } else if (level === 'level2') {
+            words.forEach(w => { (LEVEL2_WORDS as any)[w] = BlockReasonType.OTHER })
+          } else if (level === 'level3') {
+            words.forEach(w => { (LEVEL3_WORDS as any)[w] = BlockReasonType.OTHER })
+          }
+        } catch { /* skip malformed JSON */ }
+      }
+    }
+  }
+
+  /** 获取所有级别的敏感词（供管理后台使用） */
+  getWords(): { level: string; words: Record<string, BlockReasonType> } {
+    return { level: 'level1', words: ALL_LEVEL1 }
+  }
+
+  /** 运营通过后台添加自定义敏感词 */
+  async addCustomWord(level: string, word: string): Promise<void> {
+    const key = `${SAFETY_WORDS_KEY_PREFIX}${level}`
+    const raw = await this.redis.get(key)
+    const words: string[] = raw ? JSON.parse(raw) : []
+    if (!words.includes(word)) {
+      words.push(word)
+      await this.redis.set(key, JSON.stringify(words))
+    }
+    await this.loadCustomWords()
+    this.logger.log(`[Safety] 已添加敏感词 [${level}]: ${word}`)
+  }
+
+  /** 运营通过后台删除自定义敏感词 */
+  async removeCustomWord(level: string, word: string): Promise<void> {
+    const key = `${SAFETY_WORDS_KEY_PREFIX}${level}`
+    const raw = await this.redis.get(key)
+    if (raw) {
+      const words: string[] = JSON.parse(raw).filter((w: string) => w !== word)
+      if (words.length > 0) {
+        await this.redis.set(key, JSON.stringify(words))
+      } else {
+        await this.redis.del(key)
+      }
+    }
+    await this.loadCustomWords()
+    this.logger.log(`[Safety] 已删除敏感词 [${level}]: ${word}`)
+  }
 
   // ==================== 三级过滤（新增） ====================
 
@@ -303,7 +378,7 @@ export class AiSafetyService {
     let sanitized = originalContent
     if (result.level2Hits.length > 0) {
       for (const word of result.level2Hits) {
-        sanitized = sanitized.replace(new RegExp(word, 'g'), '***')
+        sanitized = sanitized.replace(new RegExp(escapeRegex(word), 'g'), '***')
       }
       await this.saveAudit(originalContent, aiCallLogId, SafetyAuditResult.MANUAL_REVIEW, result)
       return {

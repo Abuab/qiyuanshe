@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { AiProviderBalanceService } from './ai-provider-balance.service'
 import { AiProviderSelector } from './ai-provider-selector.service'
+import { RedisService } from '../common/redis.service'
 
 /**
  * AI Provider 定时任务
  *
- * - 每 30 分钟：查询所有 Provider 余额，检测告警
+ * - 每 30 分钟：查询所有 Provider 余额，检测告警（分布式锁防止多实例重复执行）
  * - 每 5 分钟：检查冷却期满的故障 Provider，自动恢复
  */
 @Injectable()
@@ -16,11 +17,16 @@ export class AiProviderScheduler {
   constructor(
     private readonly balanceService: AiProviderBalanceService,
     private readonly selector: AiProviderSelector,
+    private readonly redis: RedisService,
   ) {}
 
-  /** 每 30 分钟：余额检查 */
+  /** 每 30 分钟：余额检查（仅一个实例执行） */
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleBalanceCheck() {
+    const lockKey = 'cron:balance:check'
+    const acquired = await this.redis.getClient().set(lockKey, '1', 'EX', 600, 'NX')
+    if (!acquired) return
+
     try {
       const result = await this.balanceService.checkAllBalances()
       if (result.alerted > 0) {
@@ -30,6 +36,8 @@ export class AiProviderScheduler {
       }
     } catch (e: any) {
       this.logger.error(`[Scheduler] 余额检查异常: ${e?.message}`)
+    } finally {
+      await this.redis.del(lockKey).catch(() => {})
     }
   }
 

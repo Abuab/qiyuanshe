@@ -151,12 +151,11 @@ export class AiMatchmakerService {
         reply = this.buildFallbackReply(message)
       }
     } catch (e: any) {
-      this.logger.warn(`AI matchmaker call failed: ${e?.message}, using fallback`)
+      this.logger.error(`[AI红娘] 调用失败: ${e?.message}，降级使用兜底回复`)
       reply = this.buildFallbackReply(message)
       savedCallLog.responseStatus = 'error'
-      await this.callLogRepo.save(savedCallLog)
-      this.logger.error(`AI matchmaker failed for user ${userId}: ${e?.message}`)
-      throw new BadRequestException('红娘正在忙，请稍后再试')
+      await this.callLogRepo.save(savedCallLog).catch(() => {})
+      // 不抛出异常，返回兜底回复保证用户体验
     }
 
     savedCallLog.responseMs = Date.now() - startMs

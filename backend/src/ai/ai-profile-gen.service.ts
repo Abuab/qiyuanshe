@@ -12,6 +12,7 @@ import { User } from '../entities/User'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { buildProfileGenPrompt } from './ai-profile-gen.prompt'
+import { parseJsonResponse } from './ai-common.util'
 import {
   ProfileGenEligibility,
   ProfileGenResponse,
@@ -143,7 +144,7 @@ export class AiProfileGenService {
     try {
       if (await this.aiApiService.isConfigured()) {
         const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: true }, userId, 'profile_gen')
-        rawResult = this.parseJsonResponse(aiResponse)
+        rawResult = parseJsonResponse(aiResponse)
       } else {
         rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
       }
@@ -343,13 +344,5 @@ export class AiProfileGenService {
       summary,
       content: `大家好，我是${nickname || '新朋友'}~ ${tagPart} ${answerPart}希望能遇到一个同样热爱生活、愿意一起分享美好时光的人，一起创造属于我们的故事。`,
     }
-  }
-
-  /** 解析 AI 返回的 JSON（兼容 markdown code block 包裹） */
-  private parseJsonResponse(raw: string): any {
-    let json = raw.trim()
-    const codeBlock = json.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/)
-    if (codeBlock) json = codeBlock[1]
-    return JSON.parse(json)
   }
 }

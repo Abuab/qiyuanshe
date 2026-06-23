@@ -8,6 +8,7 @@ import {
   PROVIDER_STRATEGY_KEY,
   PROVIDER_COOLDOWN_PREFIX,
   PROVIDER_FAILS_PREFIX,
+  PROVIDER_RR_KEY,
   FAILURE_THRESHOLD,
   COOLDOWN_SECONDS,
 } from './ai-provider.types'
@@ -25,7 +26,6 @@ import {
 @Injectable()
 export class AiProviderSelector {
   private readonly logger = new Logger(AiProviderSelector.name)
-  private roundRobinIndex = 0
 
   constructor(
     private readonly configService: AiProviderConfigService,
@@ -50,7 +50,7 @@ export class AiProviderSelector {
       case LoadBalanceStrategy.PRIMARY_BACKUP:
         return this.selectPrimaryBackup(available)
       case LoadBalanceStrategy.ROUND_ROBIN:
-        return this.selectRoundRobin(available)
+        return await this.selectRoundRobin(available)
       case LoadBalanceStrategy.WEIGHTED:
       default:
         return this.selectWeighted(available)
@@ -136,10 +136,14 @@ export class AiProviderSelector {
     return sorted[0]
   }
 
-  /** 轮询模式 */
-  private selectRoundRobin(snapshots: AiProviderSnapshot[]): AiProviderSnapshot {
-    const idx = this.roundRobinIndex % snapshots.length
-    this.roundRobinIndex = (this.roundRobinIndex + 1) % snapshots.length
+  /** 轮询模式（Redis INCR 全局计数，多实例共享） */
+  private async selectRoundRobin(snapshots: AiProviderSnapshot[]): Promise<AiProviderSnapshot> {
+    const globalIndex = await this.redis.incr(PROVIDER_RR_KEY)
+    // 定期清理计数器，避免无限制增长（不影响取模结果，仅防溢出）
+    if (globalIndex > 1000000) {
+      await this.redis.getClient().set(PROVIDER_RR_KEY, '0')
+    }
+    const idx = globalIndex % snapshots.length
     return snapshots[idx]
   }
 
