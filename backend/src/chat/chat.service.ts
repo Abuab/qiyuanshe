@@ -1,10 +1,11 @@
-import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit } from '@nestjs/common'
+import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, LessThan } from 'typeorm'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
+import { AuditLog } from '../entities/AuditLog'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
 import { RedisService } from '../common/redis.service'
@@ -22,12 +23,15 @@ const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_SEC = 60
 
 @Injectable()
-export class ChatService implements OnModuleInit {
+export class ChatService implements OnModuleInit, OnModuleDestroy {
   private readonly dailyFreeMessages = 3
   private messageCountCache: Map<number, { count: number; date: string }> = new Map()
 
-  /** 敏感词库，从 config/sensitive-words.json 加载，文件不存在时回退到硬编码 */
+  /** 敏感词库，从远程 URL 或本地 config/sensitive-words.json 加载，文件不存在时回退到硬编码 */
   private bannedKeywords: string[] = []
+
+  /** 定时刷新敏感词库的定时器 ID */
+  private sensitiveWordsRefreshTimer: ReturnType<typeof setInterval> | null = null
 
   /** 硬编码兜底敏感词库（文件不存在时使用） */
   private static readonly FALLBACK_KEYWORDS: string[] = [
@@ -60,32 +64,142 @@ export class ChatService implements OnModuleInit {
   ]
 
   /**
-   * 模块初始化时加载敏感词库
+   * 模块初始化时加载敏感词库，并启动定时刷新
    */
-  onModuleInit() {
-    this.loadSensitiveWords()
+  async onModuleInit() {
+    await this.loadSensitiveWords()
+    // 每 24 小时定时刷新远程敏感词库
+    const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000
+    this.sensitiveWordsRefreshTimer = setInterval(() => {
+      this.loadSensitiveWords().catch((e) => {
+        console.warn('[ChatService] 定时刷新敏感词库失败:', e?.message)
+      })
+    }, REFRESH_INTERVAL_MS)
+  }
+
+  onModuleDestroy() {
+    if (this.sensitiveWordsRefreshTimer) {
+      clearInterval(this.sensitiveWordsRefreshTimer)
+      this.sensitiveWordsRefreshTimer = null
+    }
   }
 
   /**
-   * 从 config/sensitive-words.json 加载敏感词库；文件不存在时使用硬编码兜底
+   * 加载敏感词库（优先级：远程 URL > 本地文件 > 硬编码兜底）
+   * 修复：支持从 SystemConfig 配置的远程 URL 拉取词库，兼容 JSON 数组和纯文本每行一词两种格式
    */
-  private loadSensitiveWords(): void {
+  private async loadSensitiveWords(): Promise<void> {
+    // 1. 尝试从远程 URL 拉取
+    let remoteWords: string[] | null = null
     try {
-      const filePath = resolve(__dirname, '../../../config/sensitive-words.json')
-      if (existsSync(filePath)) {
-        const raw = readFileSync(filePath, 'utf-8')
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          this.bannedKeywords = parsed.map((w: unknown) => String(w))
-          console.log(`[ChatService] 敏感词库已从文件加载，共 ${this.bannedKeywords.length} 个词`)
-          return
+      const remoteUrl = await this.getConfigValue('chat.sensitiveWordsUrl')
+      if (remoteUrl) {
+        console.log(`[ChatService] 正在从远程 URL 拉取敏感词库: ${remoteUrl}`)
+        const response = await fetch(remoteUrl, { signal: AbortSignal.timeout(10000) })
+        if (response.ok) {
+          const text = await response.text()
+          remoteWords = this.parseSensitiveWords(text)
+          if (remoteWords.length > 0) {
+            console.log(`[ChatService] 远程敏感词库加载成功，共 ${remoteWords.length} 个词`)
+          }
+        } else {
+          console.warn(`[ChatService] 远程敏感词库请求失败 HTTP ${response.status}`)
         }
       }
-    } catch (e) {
-      console.warn('[ChatService] 加载敏感词配置文件失败，使用硬编码兜底:', e)
+    } catch (e: any) {
+      console.warn('[ChatService] 远程敏感词库拉取失败，回退到本地文件:', e?.message)
     }
+
+    // 2. 回退到本地文件（优先读取 config/sensitive-words/ 目录下的所有 .txt 文件）
+    let localWords: string[] | null = null
+    try {
+      const wordsDir = resolve(__dirname, '../../../config/sensitive-words')
+      if (existsSync(wordsDir)) {
+        const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
+        if (txtFiles.length > 0) {
+          const localWordSet = new Set<string>()
+          for (const file of txtFiles) {
+            try {
+              const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
+              raw.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .forEach(word => localWordSet.add(word))
+            } catch {
+              // 单个文件读取失败跳过
+            }
+          }
+          if (localWordSet.size > 0) {
+            localWords = Array.from(localWordSet)
+            console.log(`[ChatService] 本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('[ChatService] 本地 .txt 词库目录加载失败:', e?.message)
+    }
+
+    // 2.1 降级：txt 目录无数据时尝试 JSON 文件
+    if (!localWords) {
+      try {
+        const filePath = resolve(__dirname, '../../../config/sensitive-words.json')
+        if (existsSync(filePath)) {
+          const raw = readFileSync(filePath, 'utf-8')
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            localWords = parsed.map((w: unknown) => String(w)).filter(w => w.length > 0)
+          }
+        }
+      } catch (e: any) {
+        console.warn('[ChatService] 本地敏感词 JSON 文件加载失败:', e?.message)
+      }
+    }
+
+    // 3. 合并词库（远程优先，去重）
+    const merged = new Set<string>()
+    if (remoteWords) {
+      remoteWords.forEach(w => merged.add(w))
+      if (localWords) {
+        localWords.forEach(w => merged.add(w))
+      }
+    } else if (localWords) {
+      localWords.forEach(w => merged.add(w))
+    }
+
+    if (merged.size > 0) {
+      this.bannedKeywords = Array.from(merged)
+      console.log(`[ChatService] 敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}）`)
+      return
+    }
+
+    // 4. 全部失败，使用硬编码兜底
     this.bannedKeywords = [...ChatService.FALLBACK_KEYWORDS]
     console.log(`[ChatService] 使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
+  }
+
+  /**
+   * 解析远程敏感词文本，兼容两种格式：
+   * - JSON 数组：["词1", "词2", ...]
+   * - 纯文本每行一词：词1\n词2\n...
+   */
+  private parseSensitiveWords(text: string): string[] {
+    const trimmed = text.trim()
+    // 尝试 JSON 数组
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          return parsed.map((w: unknown) => String(w)).filter(w => w.length > 0)
+        }
+      } catch {
+        // JSON 解析失败，继续尝试逐行解析
+      }
+    }
+    // 纯文本逐行
+    return trimmed
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
   }
 
   /**
@@ -108,6 +222,9 @@ export class ChatService implements OnModuleInit {
     private readonly messageRepository: Repository<ChatMessage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @Optional()
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepository?: Repository<AuditLog>,
     @Optional()
     @Inject(forwardRef(() => ChatMonitorGateway))
     private readonly monitorGateway?: ChatMonitorGateway,
@@ -489,7 +606,7 @@ export class ChatService implements OnModuleInit {
       // === 腾讯云 AI 审核 ===
       if (!this.auditService) {
         // AuditService 未注入，降级为本地过滤
-        this.checkLocalBannedContent(content)
+        await this.checkLocalBannedContent(userId, content)
         return
       }
 
@@ -529,22 +646,50 @@ export class ChatService implements OnModuleInit {
         // 修改点 B-3：腾讯云审核 API 调用失败，降级为本地敏感词过滤
         if (e instanceof ForbiddenException) throw e
         console.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
-        this.checkLocalBannedContent(content)
+        await this.checkLocalBannedContent(userId, content)
       }
     } else {
       // === 本地敏感词过滤（兜底） ===
-      this.checkLocalBannedContent(content)
+      await this.checkLocalBannedContent(userId, content)
     }
   }
 
   /**
    * 本地敏感词过滤（保留作为兜底方案）
+   * 修复：命中敏感词后写入 AuditLog 并触发 webhook 通知，便于管理后台追溯
    */
-  private checkLocalBannedContent(content: string): void {
+  private async checkLocalBannedContent(userId: number, content: string): Promise<void> {
     const hit = this.checkBannedContent(content)
-    if (hit) {
-      throw new ForbiddenException('消息包含违规内容，请修改后重试')
+    if (!hit) return
+
+    // 写入 AuditLog
+    try {
+      if (this.auditLogRepository) {
+        const auditLog = this.auditLogRepository.create({
+          action: 'TEXT_REJECT',
+          targetType: 'chat_message',
+          targetId: userId,
+          submitterId: userId,
+          content: content.substring(0, 500),
+          reason: JSON.stringify({ keywords: [hit], filter: 'local' }),
+          aiResult: 'LocalBlocked',
+        })
+        await this.auditLogRepository.save(auditLog)
+      }
+    } catch (e: any) {
+      console.error('[ChatService] AuditLog 写入失败:', e?.message)
     }
+
+    // 触发 webhook 通知
+    if (this.auditService) {
+      this.auditService.notifyWebhook('chat_message', {
+        userId,
+        content: content.substring(0, 200),
+        time: new Date().toISOString(),
+      }).catch(() => {})
+    }
+
+    throw new ForbiddenException('消息包含违规内容，请修改后重试')
   }
 
   /**

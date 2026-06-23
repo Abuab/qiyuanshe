@@ -267,10 +267,15 @@ export class AuditService {
       })
       await this.auditLogRepository.save(log)
 
-      // 审核结果为 review 且人工审核开启时，发送 webhook 通知
-      if (result.result === 'review') {
-        const manualReviewEnabled = await this.getConfigValue('audit.manualReviewEnabled')
-        if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
+      // 审核结果为 review 或 reject 时，发送 webhook 通知
+      // 修复：reject 是严重违规，也需要通知管理员
+      if (result.result === 'review' || result.result === 'reject') {
+        const manualReviewEnabled = result.result === 'review'
+          ? await this.getConfigValue('audit.manualReviewEnabled')
+          : '1' // reject 直接发通知，无需额外配置
+        const shouldNotify = result.result === 'reject'
+          || (manualReviewEnabled === '1' || manualReviewEnabled === 'true')
+        if (shouldNotify) {
           // 根据 type 映射通知类型
           const notifyTypeMap: Record<string, string> = {
             answer: 'question_answer',
