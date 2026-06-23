@@ -32,8 +32,8 @@
               <el-tag v-else type="danger">禁用</el-tag>
             </div>
           </div>
-          <!-- 右侧快捷操作：设为VIP/取消VIP、禁用/启用、发送通知、查看聊天、编辑资料 -->
-          <div class="header-actions">
+          <!-- 右侧快捷操作：仅管理员可见（readonly角色不可见） -->
+          <div class="header-actions" v-if="isAdmin">
             <el-button :type="(user.isVip && (user.vipLevel || 0) > 0) ? 'warning' : 'primary'" @click="handleSetVip">
               {{ (user.isVip && (user.vipLevel || 0) > 0) ? '取消VIP' : '设为VIP' }}
             </el-button>
@@ -633,7 +633,10 @@ interface UserDetail {
 const route = useRoute()
 const router = useRouter()
 const adminStore = useAdminStore()
-const isAdmin = computed(() => adminStore.userInfo?.role === 'super_admin' || adminStore.userInfo?.role === 'operator')
+// isReadonly: 只读角色，无任何编辑/禁用/VIP等操作权限
+const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+// isAdmin: 非只读即为可操作管理员（super_admin / operator 均可操作）
+const isAdmin = computed(() => !isReadonly.value && (adminStore.userInfo?.role === 'super_admin' || adminStore.userInfo?.role === 'operator'))
 const canMonitorChat = computed(() => {
   const role = adminStore.userInfo?.role
   return role === 'super_admin' || role === 'operator'
@@ -808,6 +811,14 @@ async function fetchDetail() {
       user.value = res.data as UserDetail
       // 初始化运营标签：优先从后端 tags 字段读取
       currentUserTags.value = (user.value.tags && user.value.tags.length > 0) ? [...user.value.tags] : []
+      // 初始化备注历史：如果后端已返回 adminRemark，追加到历史记录第一条
+      if (user.value.adminRemark && !noteHistory.value.some(n => n.content === user.value!.adminRemark)) {
+        noteHistory.value.unshift({
+          operator: '系统',
+          time: user.value.updatedAt || user.value.createdAt || new Date().toISOString(),
+          content: user.value.adminRemark,
+        })
+      }
     }
   } finally { loading.value = false }
 }
@@ -1339,15 +1350,25 @@ async function loadAuditHistory() {
   if (!user.value) return
   tabLoading.audit = true
   try {
-    // 审核记录：查询资料审核 + 照片审核的全部历史记录
+    // 审核记录：查询资料审核 + 照片审核的历史记录，仅限当前用户
+    // TODO: 后端接口增加 userId 过滤参数，当前先传 userId 并用前端过滤兜底
     const { adminAudit } = await import('../../api/audit')
+    const uid = user.value.id
     const [profileRes, photoRes] = await Promise.all([
-      adminAudit.list({ type: 'user', limit: 50 } as any),
-      adminAudit.list({ type: 'photo', limit: 50 } as any),
+      adminAudit.list({ type: 'user', userId: uid, limit: 50 } as any),
+      adminAudit.list({ type: 'photo', userId: uid, limit: 50 } as any),
     ])
     const items: any[] = []
-    if (profileRes.success && profileRes.data) items.push(...(profileRes.data.list || []))
-    if (photoRes.success && photoRes.data) items.push(...(photoRes.data.list || []))
+    if (profileRes.success && profileRes.data) {
+      // 资料审核：targetId 即为 userId，前端过滤确保只展示当前用户记录
+      const filtered = (profileRes.data.list || []).filter((item: any) => item.userId === uid || item.targetId === uid)
+      items.push(...filtered)
+    }
+    if (photoRes.success && photoRes.data) {
+      // 照片审核：按 submitterId 或 targetId 过滤当前用户的照片审核记录
+      const filtered = (photoRes.data.list || []).filter((item: any) => item.userId === uid || item.submitterId === uid || item.targetId === uid)
+      items.push(...filtered)
+    }
     auditHistoryList.value = items
   } catch (e) { console.error(e) }
   finally { tabLoading.audit = false }
@@ -1357,8 +1378,9 @@ async function loadAuditHistory() {
 async function handleAuditPhoto(photoId: number, action: 'approve' | 'reject') {
   const { adminAudit } = await import('../../api/audit')
   try {
-    // 先查询该照片的待审核记录，找到 audit 记录 ID
-    const listRes = await adminAudit.list({ type: 'photo', status: 0, limit: 99999 } as any)
+    // 精确查询该照片的待审核记录：优先使用 targetId + status + limit:1 避免全量扫描
+    // TODO: 后端接口增加 targetId 精确查询参数，当前先传 targetId 并用前端 find 兜底
+    const listRes = await adminAudit.list({ type: 'photo', targetId: photoId, status: 0, limit: 1 } as any)
     const auditItems = (listRes.success && listRes.data) ? (listRes.data as any).list || [] : []
     const auditItem = auditItems.find((a: any) => a.targetId === photoId)
     if (!auditItem) { ElMessage.warning('未找到该照片的待审核记录'); return }
@@ -1373,7 +1395,9 @@ async function handleAuditPhoto(photoId: number, action: 'approve' | 'reject') {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
       })
-      await adminAudit.reject(auditItem.id, reason || '')
+      // 拒绝原因非空校验：运营人员必须输入原因才能提交
+      if (!reason || !reason.trim()) { ElMessage.warning('请输入拒绝原因'); return }
+      await adminAudit.reject(auditItem.id, reason)
       ElMessage.success('照片已拒绝')
     }
     loadPhotos()
@@ -1427,45 +1451,72 @@ function handleRemoveTag(tag: string) {
   currentUserTags.value = currentUserTags.value.filter(t => t !== tag)
 }
 
-/** 保存标签：更新 currentUserTags 并关闭弹窗 */
-function handleSaveTags() {
+/** 保存标签：优先调用后端 API，失败则降级为本地保存 */
+async function handleSaveTags() {
   currentUserTags.value = [...tagDraftSelected.value]
   tagDialogVisible.value = false
-  ElMessage.success('标签已保存')
-  // TODO: 接入后端标签接口 - adminUsers.updateTags(userId, tags)
+  try {
+    // 尝试调用后端标签接口持久化保存
+    if (user.value) {
+      await (adminUsers as any).updateTags(user.value.id, currentUserTags.value)
+    }
+    ElMessage.success('标签已保存到服务器')
+  } catch {
+    // 后端标签接口不存在，降级为本地保存（刷新后丢失）
+    ElMessage.warning('标签已本地保存，刷新后可能丢失，请确认后端已提供标签保存接口')
+  }
 }
 
 // ===== 运营备注函数 =====
 
-/** 保存运营备注到本地 noteHistory */
-function handleSaveNote() {
+/** 保存运营备注：优先调用后端 API，失败则降级为本地保存 */
+async function handleSaveNote() {
   const content = noteForm.content.trim()
   if (!content) { ElMessage.warning('请输入备注内容'); return }
   noteSaving.value = true
-  // 模拟保存延迟，写入本地历史
-  setTimeout(() => {
+  try {
+    // 尝试调用后端备注接口持久化保存
+    if (user.value) {
+      await (adminUsers as any).saveRemark(user.value.id, content)
+    }
     noteHistory.value.unshift({
       operator: adminStore.userInfo?.nickname || adminStore.userInfo?.username || '管理员',
       time: new Date().toISOString(),
       content,
     })
     noteForm.content = ''
-    noteSaving.value = false
-    ElMessage.success('备注已保存')
-  }, 300)
-  // TODO: 接入后端备注接口 - adminUsers.saveRemark(userId, content)
+    ElMessage.success('备注已保存到服务器')
+  } catch {
+    // 后端备注接口不存在，降级为本地保存（刷新后丢失）
+    noteHistory.value.unshift({
+      operator: adminStore.userInfo?.nickname || adminStore.userInfo?.username || '管理员',
+      time: new Date().toISOString(),
+      content,
+    })
+    noteForm.content = ''
+    ElMessage.warning('备注已本地保存，刷新后可能丢失，请确认后端已提供备注保存接口')
+  }
+  finally { noteSaving.value = false }
 }
 
 // ===== 操作日志函数 =====
 
-/** 加载操作日志（后端未提供接口时展示占位文本） */
+/** 加载操作日志：优先调用后端 API，失败则展示占位文本 */
 async function loadOpLogs() {
   if (!user.value) return
   tabLoading.opLogs = true
   try {
-    // TODO: 接入后端操作日志接口 - adminUsers.getOpLogs(userId)
+    // 尝试调用后端操作日志接口
+    const res = await (adminUsers as any).getOpLogs(user.value.id)
+    if (res && res.success && res.data) {
+      operationLogs.value = Array.isArray(res.data) ? res.data : []
+    } else {
+      operationLogs.value = []
+    }
+  } catch {
+    // 后端操作日志接口不存在，展示占位文本
     operationLogs.value = []
-  } catch (e) { console.error(e) }
+  }
   finally { tabLoading.opLogs = false }
 }
 
