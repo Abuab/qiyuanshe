@@ -12,6 +12,7 @@ import {
   Request,
   ForbiddenException,
 } from '@nestjs/common'
+import { ThrottlerGuard } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserService } from './user.service'
@@ -59,7 +60,7 @@ export class UserController {
   ) {}
 
   @Get('recommend')
-  @UseGuards(OptionalJwtAuthGuard)
+  @UseGuards(ThrottlerGuard, OptionalJwtAuthGuard)
   async findRecommend(
     @Query('city') city: string = '',
     @Query('page') page: number = 1,
@@ -95,7 +96,7 @@ export class UserController {
   }
 
   @Post('filter')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
   async filterUsers(@Body() dto: FilterUsersDto, @Request() req: any) {
     const currentUserId = req?.user?.userId
     return this.userService.filterUsers(dto, currentUserId)

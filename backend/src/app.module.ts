@@ -2,8 +2,7 @@ import { Module, Global } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { ConfigModule } from '@nestjs/config'
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
-import { APP_GUARD } from '@nestjs/core'
+import { ThrottlerModule } from '@nestjs/throttler'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
 import {
@@ -154,11 +153,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     AgreementLogStorageModule,
   ],
   controllers: [HealthController],
-  providers: [
-    RedisService,
-    DatabaseIndexService,
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [RedisService, DatabaseIndexService],
   exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}
