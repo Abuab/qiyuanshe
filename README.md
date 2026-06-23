@@ -10,6 +10,8 @@
 
 ### C端小程序功能
 - **用户系统**: 微信授权登录、个人资料管理、照片上传认证
+- **即时通讯**: 站内私信、HTTP 轮询聊天、消息已读状态
+- **AI 缘分匹配**: 资料完整度评估、AI 分析缘分报告、双方匹配建议
 - **问答社区**: 热门问题发布、回答互动、点赞评论
 - **红娘服务**: 专业红娘推荐、一对一匹配服务
 - **会员体系**: 黄金/钻石/至尊VIP多种会员等级
@@ -17,11 +19,13 @@
 
 ### 管理后台功能
 - **用户管理**: 用户列表、资料审核、状态管理、VIP管理
-- **内容审核**: AI智能审核 + 人工复核（照片/回答/用户资料）
+- **聊天监控**: 实时 WebSocket 消息推送、多管理员会话订阅、并发冲突锁
+- **内容审核**: 腾讯云 AI 审核 + 本地敏感词过滤（51K+ 词库）+ 人工复核（照片/回答/聊天消息/用户资料）
+- **审核通知**: 企业微信/飞书/钉钉 Webhook 实时推送违规内容通知
 - **红娘管理**: 红娘资料编辑、排序、状态管理
 - **问答管理**: 问题发布、回答管理、热门问题配置
 - **订单管理**: 会员订单查询、退款处理、营收统计
-- **系统配置**: 小程序配置、分享配置、支付配置、审核配置
+- **系统配置**: 小程序配置、分享配置、支付配置、审核配置、敏感词远程拉取
 
 ## 技术栈
 
@@ -86,6 +90,27 @@ qiyuanshe/
 │   ├── Dockerfile
 │   └── package.json
 │
+├── config/                   # 应用配置数据
+│   └── sensitive-words/      # 敏感词库（来自 Sensitive-lexicon）
+│       ├── 色情词库.txt
+│       ├── 政治类型.txt
+│       ├── 广告类型.txt
+│       ├── 暴恐词库.txt
+│       ├── 反动词库.txt
+│       ├── 贪腐词库.txt
+│       ├── 民生词库.txt
+│       ├── 涉枪涉爆.txt
+│       ├── 非法网址.txt
+│       ├── 零时-Tencent.txt
+│       ├── GFW补充词库.txt
+│       ├── 网易前端过滤敏感词库.txt
+│       ├── 补充词库.txt
+│       ├── 其他词库.txt
+│       ├── COVID-19词库.txt
+│       ├── 新思想启蒙.txt
+│       ├── _all.txt          # 合并去重文件（51K+ 唯一词）
+│       └── sensitive-words.json # JSON 格式兜底文件
+│
 ├── docker/                   # Docker 配置文件
 │   ├── mysql/
 │   │   ├── init.sql          # 数据库初始化
@@ -107,6 +132,82 @@ qiyuanshe/
 ├── docker-compose.yml        # 服务编排
 └── README.md
 ```
+
+## 敏感词过滤系统
+
+聊天消息发送时，系统会经过**三级审核机制**确保内容合规：
+
+### 审核流程
+
+```
+用户发送消息
+    ↓
+ 限流检查（Redis 计数器，每分钟 20 条）
+    ↓
+ 内容审核
+    ├── 腾讯云 AI 审核（audit.aiEnabled = true 时启用）
+    │   ├── pass  → 消息正常通过
+    │   ├── review → 写入 AuditLog + Webhook 通知管理员
+    │   └── reject → 写入 AuditLog + Webhook 通知 + 拦截消息
+    │
+    └── 本地敏感词过滤（AI 不可用时的兜底方案）
+        ├── 命中敏感词 → 写入 AuditLog + Webhook 通知 + 拦截消息
+        └── 未命中     → 消息正常通过
+```
+
+### 敏感词库
+
+项目集成了 [konsheng/Sensitive-lexicon](https://github.com/konsheng/Sensitive-lexicon) 开源词库，包含 **51,361 个唯一敏感词**，覆盖以下分类：
+
+| 分类 | 文件 | 词条数 |
+|------|------|--------|
+| 色情 | `色情词库.txt` `色情类型.txt` | ~1.2K |
+| 政治 | `政治类型.txt` | ~326 |
+| 广告/引流 | `广告类型.txt` | ~123 |
+| 暴恐 | `暴恐词库.txt` | ~177 |
+| 反动 | `反动词库.txt` | ~556 |
+| 贪腐 | `贪腐词库.txt` | ~243 |
+| 民生 | `民生词库.txt` | ~570 |
+| 涉枪涉爆 | `涉枪涉爆.txt` | ~437 |
+| 非法网址 | `非法网址.txt` | ~14.6K |
+| GFW 补充 | `GFW补充词库.txt` | ~6.4K |
+| 网易词库 | `网易前端过滤敏感词库.txt` | ~7.7K |
+| 零时 (Tencent) | `零时-Tencent.txt` | ~53K |
+| 其他 | 其余 5 个分类文件 | ~1.5K |
+
+### 词库加载优先级
+
+```
+远程 URL (SystemConfig → chat.sensitiveWordsUrl)  ← 最高优先级
+    ↓ 失败
+本地目录 (config/sensitive-words/*.txt)            ← 打包在项目中
+    ↓ 目录为空
+本地 JSON (config/sensitive-words.json)            ← JSON 格式兜底
+    ↓ 不存在
+硬编码兜底 (ChatService.FALLBACK_KEYWORDS)         ← 代码内最小词库
+```
+
+- **远程拉取**：在系统配置中设置 `chat.sensitiveWordsUrl` 指向远程词库文件 URL，服务启动时自动拉取并合并
+- **定时刷新**：每 24 小时自动重新拉取远程词库，确保时效性
+- **格式兼容**：远程词库同时支持 JSON 数组 `["词1","词2"]` 和纯文本每行一词两种格式
+- **本地方案**：`config/sensitive-words/` 目录下的 17 个 .txt 文件随 git 发布，去重后得到 51K+ 词
+
+### 审核通知
+
+命中敏感词或 AI 审核 reject/review 时，系统通过 Webhook 推送到：
+
+- **企业微信**（Markdown 格式）
+- **飞书**（Text 格式）
+- **钉钉**（Markdown 格式）
+
+通知内容包含：类型、用户 ID、违规内容（前 200 字）、时间戳。
+
+相关配置项：
+- `notification.enabled` — 通知总开关
+- `notification.types` — 各类型通知开关（JSON）
+- `notification.channels` — Webhook URL 配置（JSON: `{"wechatWork":"...","feishu":"...","dingtalk":"..."}`）
+- `audit.aiEnabled` — 腾讯云 AI 审核开关
+- `chat.sensitiveWordsUrl` — 远程词库拉取地址（可选）
 
 ## 快速开始
 
