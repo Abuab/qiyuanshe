@@ -104,7 +104,7 @@ export class PaymentService {
       orderNo,
       vipLevel: pkg.id,
       packageId: pkg.id,
-      amount: pkg.price,
+      amount: pkg.price, // 整数分
       payType: 'wechat',
       status: 0,
     })
@@ -129,10 +129,9 @@ export class PaymentService {
   }
 
   /** 真实调用微信支付 V3 JSAPI 统一下单 */
-  private async unifiedOrder(orderNo: string, amountYuan: number, description: string): Promise<PayParams> {
+  private async unifiedOrder(orderNo: string, amountCents: number, description: string): Promise<PayParams> {
     const path = '/v3/pay/transactions/jsapi'
     const url = `https://api.mch.weixin.qq.com${path}`
-    const amountFen = Math.round(amountYuan * 100)
 
     const body = JSON.stringify({
       appid: this.appId,
@@ -140,11 +139,11 @@ export class PaymentService {
       description,
       out_trade_no: orderNo,
       notify_url: this.notifyUrl,
-      amount: { total: amountFen, currency: 'CNY' },
+      amount: { total: amountCents, currency: 'CNY' },
       payer: {}, // JSAPI 由小程序传入 openid，此处留空由前端补
     })
 
-    this.logger.log(`[统一下单] orderNo=${orderNo}, amount=${amountFen}分`)
+    this.logger.log(`[统一下单] orderNo=${orderNo}, amount=${amountCents}分`)
 
     const auth = this.buildAuthHeader('POST', path, body)
     const resp = await fetch(url, {
@@ -220,11 +219,11 @@ export class PaymentService {
         return this.buildNotifyResponse(true)
       }
 
-      // 金额校验：使用整数分比较
+      // 金额校验：订单金额已为整数分，直接比较
       const totalFee = parseInt(String(data.total_fee || data.amount?.total || '0'), 10)
-      const orderAmountFen = Math.round(Number(order.amount) * 100)
-      if (totalFee !== orderAmountFen) {
-        this.logger.error(`[回调] 金额不匹配: 回调=${totalFee}, 订单=${orderAmountFen} (${out_trade_no})`)
+      const orderAmountCents = Number(order.amount)
+      if (totalFee !== orderAmountCents) {
+        this.logger.error(`[回调] 金额不匹配: 回调=${totalFee}, 订单=${orderAmountCents} (${out_trade_no})`)
         return this.buildNotifyResponse(false, '金额不匹配')
       }
 
@@ -429,7 +428,7 @@ export class PaymentService {
       orderNo: order.orderNo,
       vipLevel: order.vipLevel,
       vipName: order.package?.name || '',
-      amount: order.amount,
+      amount: Number(order.amount) / 100, // 分转元展示
       status: order.status,
       paidAt: order.paidAt,
       expireTime: order.paidAt && order.package
@@ -458,7 +457,7 @@ export class PaymentService {
       orderNo: order.orderNo,
       vipLevel: order.vipLevel,
       vipName: order.package?.name || '',
-      amount: order.amount,
+      amount: Number(order.amount) / 100, // 分转元展示
       status: order.status,
       paidAt: order.paidAt,
       expireTime,

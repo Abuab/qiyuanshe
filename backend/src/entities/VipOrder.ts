@@ -48,8 +48,8 @@ export class VipOrder {
   @Column({ type: 'tinyint', default: 0 })
   vipLevel: number
 
-  /** 支付金额（元） */
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  /** 支付金额（分，整数存储，避免浮点精度问题） */
+  @Column({ type: 'bigint' })
   amount: number
 
   /** 支付方式: wechat / alipay / admin */
@@ -79,8 +79,8 @@ export class VipOrder {
   @Column({ type: 'varchar', length: 128, nullable: true })
   transactionId: string
 
-  /** 退款金额 */
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  /** 退款金额（分） */
+  @Column({ type: 'bigint', nullable: true })
   refundAmount: number | null
 
   /** 软删除标记 */

@@ -485,8 +485,18 @@ export class AdminUserService {
     await this.userRepository.update(id, updateData)
   }
 
+  /**
+   * 重置用户密码为随机强密码（12 位，含大小写字母和数字）。
+   * 重置后的密码需通过短信或站内信等安全渠道通知用户，或强制用户首次登录修改。
+   * 接口响应不返回明文密码。
+   */
   async resetPassword(id: number) {
-    const hashedPassword = await bcrypt.hash('123456', 10)
+    // 使用 crypto 随机生成 12 位强密码（大小写字母 + 数字）
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const password = Array.from(crypto.randomBytes(12))
+      .map(byte => chars[byte % chars.length])
+      .join('')
+    const hashedPassword = await bcrypt.hash(password, 10)
     await this.userRepository.update(id, { password: hashedPassword })
   }
 
@@ -593,7 +603,11 @@ export class AdminUserService {
     acceptChildren?: string
     photoUrls?: string[]
   }) {
-    const hashedPassword = await bcrypt.hash(data.password || crypto.randomBytes(8).toString('hex'), 10)
+    // 管理员创建用户未提供密码时，生成随机强密码（12 位大小写字母 + 数字）
+    const defaultPassword = Array.from(crypto.randomBytes(12))
+      .map(byte => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'.charAt(byte % 62))
+      .join('')
+    const hashedPassword = await bcrypt.hash(data.password || defaultPassword, 10)
     
     // 管理员手动创建的用户默认为待审核状态(status=2)
     const status = data.status !== undefined ? data.status : 2

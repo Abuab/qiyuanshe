@@ -1,11 +1,13 @@
 import { Controller, Post, Body, Get, Put, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { CaptchaService } from './captcha.service'
 import { MfaService } from './mfa.service'
 import { AdminAccountService } from './admin-account.service'
+import { RedisService } from '../common/redis.service'
 import { adminJwtConfig } from '../config/jwt'
 import { AdminRole } from '../entities/AdminUser'
 
@@ -39,19 +41,71 @@ interface UpdateAdminUserDto {
 
 const MAX_LOGIN_ATTEMPTS = 5
 const LOGIN_BLOCK_DURATION_MS = 15 * 60 * 1000
+const LOGIN_BLOCK_TTL_SEC = Math.ceil(LOGIN_BLOCK_DURATION_MS / 1000)
+const REDIS_KEY_PREFIX = 'admin:login:attempts:'
 
 @Controller('admin')
 export class AdminLoginController {
-  private loginAttempts = new Map<string, { count: number; blockUntil: number }>()
+  /** Redis 不可用时降级使用的内存 Map */
+  private loginAttemptsFallback = new Map<string, { count: number; blockUntil: number }>()
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly captchaService: CaptchaService,
     private readonly mfaService: MfaService,
     private readonly adminAccountService: AdminAccountService,
+    private readonly redisService: RedisService,
   ) {}
 
+  /**
+   * 获取登录尝试记录：优先从 Redis 读取，不可用时降级为内存 Map
+   */
+  private async getLoginAttempt(username: string): Promise<{ count: number; blockUntil: number }> {
+    try {
+      const raw = await this.redisService.get(REDIS_KEY_PREFIX + username)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        // 如果 blockUntil 已过期，返回空记录
+        if (parsed.blockUntil && parsed.blockUntil <= Date.now()) return { count: 0, blockUntil: 0 }
+        return parsed
+      }
+      return { count: 0, blockUntil: 0 }
+    } catch {
+      // Redis 不可用，降级为内存 Map
+      return this.loginAttemptsFallback.get(username) || { count: 0, blockUntil: 0 }
+    }
+  }
+
+  /**
+   * 设置登录尝试记录：优先写入 Redis，不可用时降级为内存 Map
+   */
+  private async setLoginAttempt(username: string, record: { count: number; blockUntil: number }) {
+    try {
+      await this.redisService.set(
+        REDIS_KEY_PREFIX + username,
+        JSON.stringify(record),
+        LOGIN_BLOCK_TTL_SEC,
+      )
+    } catch {
+      // Redis 不可用，降级为内存 Map
+      this.loginAttemptsFallback.set(username, record)
+    }
+  }
+
+  /**
+   * 清除登录尝试记录（登录成功后）
+   */
+  private async clearLoginAttempt(username: string) {
+    try {
+      await this.redisService.del(REDIS_KEY_PREFIX + username)
+    } catch {
+      this.loginAttemptsFallback.delete(username)
+    }
+  }
+
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(@Body() dto: LoginDto) {
     const { username, password, captcha, captchaKey } = dto
 
@@ -63,7 +117,7 @@ export class AdminLoginController {
       return { success: false, message: '验证码已过期，请刷新' }
     }
 
-    const attemptRecord = this.loginAttempts.get(username) || { count: 0, blockUntil: 0 }
+    const attemptRecord = await this.getLoginAttempt(username)
     if (attemptRecord.blockUntil > Date.now()) {
       return { success: false, message: '登录尝试次数过多，请15分钟后再试' }
     }
@@ -81,11 +135,11 @@ export class AdminLoginController {
         attemptRecord.blockUntil = Date.now() + LOGIN_BLOCK_DURATION_MS
         attemptRecord.count = 0
       }
-      this.loginAttempts.set(username, attemptRecord)
+      await this.setLoginAttempt(username, attemptRecord)
       return { success: false, message: '用户名或密码错误' }
     }
 
-    this.loginAttempts.delete(username)
+    await this.clearLoginAttempt(username)
 
     if (adminUser.isMfaEnabled) {
       const tempToken = this.jwtService.sign(

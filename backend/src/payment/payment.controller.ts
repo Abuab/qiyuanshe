@@ -12,6 +12,7 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common'
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { PaymentService } from './payment.service'
 import { CreateOrderDto, QueryOrdersDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
@@ -23,7 +24,8 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post('create-order')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async createOrder(@Body() dto: CreateOrderDto, @Request() req: any) {
     const result = await this.paymentService.createOrder(req.user.userId, dto)
     return { success: true, orderNo: result.orderNo, payParams: result.payParams }

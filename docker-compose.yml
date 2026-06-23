@@ -1,4 +1,5 @@
 # 栖缘社 Docker Compose 部署配置
+# 安全策略：生产环境仅暴露 Nginx 的 80/443 端口，其他服务仅通过 Docker 内部网络通信
 
 services:
   # ============ MySQL 数据库 ============
@@ -19,8 +20,6 @@ services:
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       # 自定义配置文件
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
-    ports:
-      - "3306:3306"
     networks:
       - lingtong_network
     command: [
@@ -54,8 +53,6 @@ services:
       --tcp-keepalive 60
     volumes:
       - redis_data:/data
-    ports:
-      - "6379:6379"
     networks:
       - lingtong_network
     healthcheck:
@@ -127,8 +124,6 @@ services:
       - ./data/logs:/app/logs
       # 支付证书目录
       - ./certs:/app/certs:ro
-    ports:
-      - "3000:3000"
     networks:
       - lingtong_network
     depends_on:

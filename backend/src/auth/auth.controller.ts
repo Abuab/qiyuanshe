@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common'
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { AuthService } from './auth.service'
 import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto, UpdateProfileDto } from './dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
@@ -20,6 +21,8 @@ export class AuthController {
 
   @Post('wechat-login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async wechatLogin(@Body() dto: WechatLoginDto) {
     const result = await this.authService.wechatLogin(dto.code)
     return Result.success(result)
@@ -27,6 +30,8 @@ export class AuthController {
 
   @Post('phone-login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async phoneLogin(@Body() dto: PhoneLoginDto) {
     const result = await this.authService.phoneLogin(
       dto.sessionKey,

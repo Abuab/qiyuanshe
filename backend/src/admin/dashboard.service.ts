@@ -235,7 +235,7 @@ export class AdminDashboardService {
       if (!result[dateKey]) {
         result[dateKey] = 0
       }
-      result[dateKey] += Number(order.amount) || 0
+      result[dateKey] += (Number(order.amount) || 0) / 100 // 分转元
     })
 
     return Object.entries(result).map(([date, amount]) => {
@@ -305,7 +305,7 @@ export class AdminDashboardService {
       },
     })
 
-    return orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0)
+    return orders.reduce((sum, order) => sum + ((Number(order.amount) || 0) / 100), 0) // 分转元
   }
 
   private async getYesterdayRevenue(): Promise<number> {
@@ -322,6 +322,6 @@ export class AdminDashboardService {
       },
     })
 
-    return orders.reduce((sum, order) => sum + (Number(order.amount) || 0), 0)
+    return orders.reduce((sum, order) => sum + ((Number(order.amount) || 0) / 100), 0) // 分转元
   }
 }

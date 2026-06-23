@@ -91,42 +91,48 @@ export const useUserStore = defineStore('user', () => {
     secureStorage.setUserInfo(userInfo.value)
   }
 
-  /** 编辑资料后更新 store */
+  /** 编辑资料后更新 store（配置驱动，消除重复条件判断） */
   const updateProfile = (data: Record<string, unknown>) => {
     if (!userInfo.value) return
+
+    // 字段类型映射：哪些字段是 string / number / string[]
+    const stringFields = [
+      'nickname', 'avatar', 'updatedAt', 'education', 'occupation', 'incomeRange',
+      'maritalStatus', 'residence', 'city', 'hometown', 'housingStatus', 'carStatus',
+      'onlyChild', 'whenMarry', 'zodiac', 'constellation', 'partnerAgeRange',
+      'partnerHeightMin', 'partnerEducation', 'partnerIncome', 'housingRequirement',
+      'partnerMaritalStatus', 'acceptChildren',
+    ] as const
+
+    const numberFields = [
+      'gender', 'birthYear', 'height', 'weight', 'avatarReviewStatus',
+    ] as const
+
+    const arrayFields = ['personalityTags', 'hopeTaTags'] as const
+
     const updates: Partial<UserInfo> = {}
-    if (typeof data.nickname === 'string') updates.nickname = data.nickname
-    if (typeof data.avatar === 'string') updates.avatar = data.avatar
-    if (typeof data.avatarReviewStatus === 'number') updates.avatarReviewStatus = data.avatarReviewStatus
-    // 后端返回 null 时也清除审核状态（新用户或从未提交审核的头像）
-    if ('avatarReviewStatus' in data && data.avatarReviewStatus === null) updates.avatarReviewStatus = 1
-    if (typeof data.updatedAt === 'string') updates.updatedAt = data.updatedAt
-    if (typeof data.gender === 'number') updates.gender = data.gender
-    if (typeof data.birthYear === 'number') updates.birthYear = data.birthYear
-    if (typeof data.height === 'number') updates.height = data.height
-    if (typeof data.weight === 'number') updates.weight = data.weight
-    if (typeof data.education === 'string') updates.education = data.education
-    if (typeof data.occupation === 'string') updates.occupation = data.occupation
-    if (typeof data.incomeRange === 'string') updates.incomeRange = data.incomeRange
-    if (typeof data.maritalStatus === 'string') updates.maritalStatus = data.maritalStatus
-    if (typeof data.residence === 'string') updates.residence = data.residence
-    if (typeof data.city === 'string') updates.city = data.city
-    if (typeof data.hometown === 'string') updates.hometown = data.hometown
-    if (typeof data.housingStatus === 'string') updates.housingStatus = data.housingStatus
-    if (typeof data.carStatus === 'string') updates.carStatus = data.carStatus
-    if (typeof data.onlyChild === 'string') updates.onlyChild = data.onlyChild
-    if (typeof data.whenMarry === 'string') updates.whenMarry = data.whenMarry
-    if (typeof data.zodiac === 'string') updates.zodiac = data.zodiac
-    if (typeof data.constellation === 'string') updates.constellation = data.constellation
-    if (typeof data.partnerAgeRange === 'string') updates.partnerAgeRange = data.partnerAgeRange
-    if (typeof data.partnerHeightMin === 'string') updates.partnerHeightMin = data.partnerHeightMin
-    if (typeof data.partnerEducation === 'string') updates.partnerEducation = data.partnerEducation
-    if (typeof data.partnerIncome === 'string') updates.partnerIncome = data.partnerIncome
-    if (typeof data.housingRequirement === 'string') updates.housingRequirement = data.housingRequirement
-    if (typeof data.partnerMaritalStatus === 'string') updates.partnerMaritalStatus = data.partnerMaritalStatus
-    if (typeof data.acceptChildren === 'string') updates.acceptChildren = data.acceptChildren
-    if (Array.isArray(data.personalityTags)) updates.personalityTags = data.personalityTags as string[]
-    if (Array.isArray(data.hopeTaTags)) updates.hopeTaTags = data.hopeTaTags as string[]
+    let key: string
+
+    // 统一处理 string 字段
+    for (key of stringFields) {
+      if (typeof data[key] === 'string') (updates as any)[key] = data[key]
+    }
+
+    // 统一处理 number 字段
+    for (key of numberFields) {
+      if (typeof data[key] === 'number') (updates as any)[key] = data[key]
+    }
+
+    // 后端返回 null 时也清除 avatarReviewStatus（新用户或从未提交审核的头像 → 设为 1）
+    if ('avatarReviewStatus' in data && data.avatarReviewStatus === null) {
+      updates.avatarReviewStatus = 1
+    }
+
+    // 统一处理数组字段
+    for (key of arrayFields) {
+      if (Array.isArray(data[key])) (updates as any)[key] = data[key]
+    }
+
     Object.assign(userInfo.value, updates)
     secureStorage.setUserInfo(userInfo.value)
   }

@@ -22,8 +22,8 @@ export class VipPackage {
   @Column({ type: 'varchar', length: 100 })
   name: string
 
-  /** 套餐价格（元） */
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  /** 套餐价格（分，整数存储，避免浮点精度问题） */
+  @Column({ type: 'bigint', default: 0 })
   price: number
 
   /** 会员时长（天） */

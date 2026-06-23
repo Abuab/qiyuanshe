@@ -9,27 +9,46 @@ function getToken(): string {
 }
 
 /**
- * 检测 URL 是否包含 IP 地址（非域名）
+ * 域名白名单：只允许 HTTPS 协议的生产域名 + 开发环境 localhost/127.0.0.1
+ * 生产域名使用占位符，部署前需替换为实际域名。
  */
-function isIpUrl(url: string): boolean {
-  return /https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)
+const ALLOWED_DOMAINS = [
+  'YOUR_PRODUCTION_DOMAIN.com',   // TODO: 替换为实际生产域名
+]
+
+function isAllowedOrigin(url: string): boolean {
+  // 允许开发环境 localhost / 127.0.0.1（仅 HTTP/HTTPS 均可）
+  if (/^https?:\/\/localhost(:\d+)?(\/|$)/.test(url)) return true
+  if (/^https?:\/\/127\.0\.0\.1(:\d+)?(\/|$)/.test(url)) return true
+
+  // 仅允许 HTTPS 协议
+  if (!url.startsWith('https://')) return false
+
+  // 拒绝纯 IP 地址（除 127.0.0.1 已在上述通过）
+  if (/^https:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) return false
+
+  // 域名白名单校验
+  const hostname = url.replace(/^https:\/\//, '').split('/')[0].split(':')[0]
+  return ALLOWED_DOMAINS.includes(hostname)
 }
 
 /**
- * 生产环境 API 地址（兜底默认值）
- * 优先级：storage 缓存 > build-time VITE_API_BASE_URL > 此常量
+ * 生产环境 API 地址（兜底默认值 — 开发环境）
+ * 优先级：build-time VITE_API_BASE_URL > storage 缓存（须过白名单） > 此常量
  */
 const DEFAULT_BASE_URL = 'http://localhost:3000/api'
 const DEFAULT_SERVER_URL = 'http://localhost:3000'
-function resolveBaseUrl(): string {
-  const storageUrl = uni.getStorageSync('api_base_url') as string | undefined
-  // 忽略缓存中的 IP 地址（旧版本遗留），自动使用 build-time 域名
-  if (storageUrl && !isIpUrl(storageUrl)) return storageUrl
 
-  // import.meta.env 在 uni-app Vite 构建中可用，ts 需 declare
+function resolveBaseUrl(): string {
+  // 第 1 优先级：build-time 环境变量（由 Vite define 注入，不可被运行时篡改）
   const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
   if (viteEnv?.VITE_API_BASE_URL) return viteEnv.VITE_API_BASE_URL
 
+  // 第 2 优先级：storage 缓存值（必须通过域名白名单校验）
+  const storageUrl = uni.getStorageSync('api_base_url') as string | undefined
+  if (storageUrl && isAllowedOrigin(storageUrl)) return storageUrl
+
+  // 第 3 优先级：默认值
   return DEFAULT_BASE_URL
 }
 

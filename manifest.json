@@ -1,6 +1,6 @@
 {
   "name": "交友平台",
-  "appid": "wx74946b5b72ed765d",
+  "appid": "wxYOUR_APPID_HERE",
   "description": "交友平台 - 相亲小程序",
   "versionName": "1.0.0",
   "versionCode": "100",
@@ -16,7 +16,7 @@
     "enable": false
   },
   "mp-weixin": {
-    "appid": "wx74946b5b72ed765d",
+    "appid": "wxYOUR_APPID_HERE",
     "setting": {
       "urlCheck": false,
       "es6": true,

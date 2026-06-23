@@ -1,22 +1,14 @@
-import { Controller, Get, OnModuleDestroy } from '@nestjs/common'
+import { Controller, Get } from '@nestjs/common'
 import { Result } from './common/result'
 import { DataSource } from 'typeorm'
-import Redis from 'ioredis'
-import { redisConfig } from './config/redis'
+import { RedisService } from './common/redis.service'
 
 @Controller('health')
-export class HealthController implements OnModuleDestroy {
-  private sharedRedis: Redis | null = null
-
-  constructor(private readonly dataSource: DataSource) {}
-
-  private getRedis(): Redis {
-    if (!this.sharedRedis) {
-      this.sharedRedis = new Redis(redisConfig())
-      this.sharedRedis.on('error', () => {})
-    }
-    return this.sharedRedis
-  }
+export class HealthController {
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly redisService: RedisService,
+  ) {}
 
   @Get()
   async check() {
@@ -31,8 +23,8 @@ export class HealthController implements OnModuleDestroy {
     }
 
     try {
-      const redis = this.getRedis()
-      const result = await redis.ping()
+      // 复用 RedisService 的连接池进行 ping 检查，不再创建独立连接
+      const result = await this.redisService.getClient().ping()
       redisOk = result === 'PONG'
     } catch (error) {
       console.error('Redis health check failed:', error)
@@ -46,16 +38,5 @@ export class HealthController implements OnModuleDestroy {
       },
       timestamp: new Date().toISOString(),
     })
-  }
-
-  async onModuleDestroy() {
-    if (this.sharedRedis) {
-      try {
-        await this.sharedRedis.quit()
-      } catch (e) {
-        // ignore
-      }
-      this.sharedRedis = null
-    }
   }
 }

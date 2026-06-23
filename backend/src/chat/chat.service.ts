@@ -9,6 +9,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
 import { RedisService } from '../common/redis.service'
+import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 
@@ -29,6 +30,9 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
 
   /** 敏感词库，从远程 URL 或本地 config/sensitive-words.json 加载，文件不存在时回退到硬编码 */
   private bannedKeywords: string[] = []
+
+  /** DFA 敏感词过滤器（Trie 树多模式匹配，O(N) 复杂度） */
+  private sensitiveFilter = new SensitiveWordFilter()
 
   /** 定时刷新敏感词库的定时器 ID */
   private sensitiveWordsRefreshTimer: ReturnType<typeof setInterval> | null = null
@@ -168,12 +172,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
 
     if (merged.size > 0) {
       this.bannedKeywords = Array.from(merged)
-      console.log(`[ChatService] 敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}）`)
+      this.sensitiveFilter.build(this.bannedKeywords)
+      console.log(`[ChatService] 敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}），DFA 已构建`)
       return
     }
 
     // 4. 全部失败，使用硬编码兜底
     this.bannedKeywords = [...ChatService.FALLBACK_KEYWORDS]
+    this.sensitiveFilter.build(this.bannedKeywords)
     console.log(`[ChatService] 使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
   }
 
@@ -203,18 +209,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * 检查文本是否包含违禁词。
+   * 检查文本是否包含违禁词（使用 DFA 多模式匹配，O(N) 复杂度）。
    * 同时检查原文和去除所有空格后的文本，防止用空格绕过。
    */
   private checkBannedContent(text: string): string | null {
     if (!text) return null
-    const stripped = text.replace(/\s+/g, '')
-    for (const kw of this.bannedKeywords) {
-      if (text.includes(kw) || stripped.toLowerCase().includes(kw.toLowerCase())) {
-        return kw
-      }
-    }
-    return null
+    return this.sensitiveFilter.check(text)
   }
 
   constructor(

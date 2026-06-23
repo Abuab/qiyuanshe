@@ -4,22 +4,7 @@ import App from './App.vue'
 import { icons } from './config/icons'
 import '@/utils/logger'
 import { logger } from '@/utils/logger'
-import { secureStorage } from './utils/crypto'
 import { setupGlobalErrorHandling } from './utils/error-handler'
-
-// 旧版明文 Token 一次性迁移到加密存储
-const oldToken = uni.getStorageSync('token')
-const oldUserInfo = uni.getStorageSync('userInfo')
-if (oldToken && !secureStorage.getToken()) {
-  secureStorage.setToken(oldToken)
-  uni.removeStorageSync('token')
-}
-if (oldUserInfo && !secureStorage.getUserInfo()) {
-  try {
-    secureStorage.setUserInfo(JSON.parse(oldUserInfo))
-    uni.removeStorageSync('userInfo')
-  } catch { /* ignore parse error */ }
-}
 
 export function createApp() {
   const app = createSSRApp(App)

@@ -73,7 +73,7 @@ export class AdminPaymentService {
       orderNo: order.orderNo,
       userId: order.userId,
       vipLevel: order.vipLevel,
-      amount: Number(order.amount) || 0,
+      amount: Number(order.amount) / 100 || 0, // 分转元展示
       payType: order.payType,
       status: order.status,
       paidAt: order.paidAt,
@@ -93,10 +93,15 @@ export class AdminPaymentService {
   }
 
   async orderDetail(id: number) {
-    return this.orderRepository.findOne({
+    const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'package'],
     })
+    if (!order) return null
+    return {
+      ...order,
+      amount: Number(order.amount) / 100, // 分转元展示
+    }
   }
 
   async refund(orderId: number, reason: string) {
@@ -171,8 +176,8 @@ export class AdminPaymentService {
       where: { status: 2, ...dateCondition },
     })
 
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0)
-    const refundAmount = refundedOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0)
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0) / 100 // 分转元
+    const refundAmount = refundedOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0) / 100 // 分转元
     const orderCount = paidOrders.length
     const averageAmount = orderCount > 0 ? totalRevenue / orderCount : 0
 
@@ -182,12 +187,12 @@ export class AdminPaymentService {
       const date = new Date(o.createdAt).toISOString().split('T')[0]
       if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
       dailyStatsMap[date].orderCount++
-      dailyStatsMap[date].revenue += Number(o.amount) || 0
+      dailyStatsMap[date].revenue += (Number(o.amount) || 0) / 100 // 分转元
     })
     refundedOrders.forEach(o => {
       const date = new Date(o.createdAt).toISOString().split('T')[0]
       if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
-      dailyStatsMap[date].refund += Number(o.amount) || 0
+      dailyStatsMap[date].refund += (Number(o.amount) || 0) / 100 // 分转元
     })
 
     const dailyStats = Object.entries(dailyStatsMap)

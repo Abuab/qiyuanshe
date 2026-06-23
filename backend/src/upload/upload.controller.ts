@@ -3,12 +3,15 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
+  Request,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { Result } from '../common/result'
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 
 interface UploadedFile {
   fieldname: string
@@ -41,11 +44,12 @@ if (!existsSync(uploadsDir)) {
 }
 
 /**
- * 小程序端公开图片上传（无需登录）
+ * 小程序端公开图片上传（已添加 JWT 认证）
  */
 @Controller('upload')
 export class UploadController {
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -68,7 +72,7 @@ export class UploadController {
       },
     }),
   )
-  async uploadFile(@UploadedFile() file: UploadedFile) {
+  async uploadFile(@UploadedFile() file: UploadedFile, @Request() req: any) {
     try {
     if (!file) {
       return Result.error('请选择要上传的文件')
@@ -83,8 +87,10 @@ export class UploadController {
     const url = baseUrl && !/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(baseUrl)
       ? `${baseUrl}/uploads/${file.filename}`
       : `/uploads/${file.filename}`
-    console.log('Upload success:', file.originalname, '->', url)
-    return Result.success({ url })
+    // 记录上传者信息，用于后续追溯
+    const uploaderId = req.user?.sub || req.user?.id || null
+    console.log('Upload success:', file.originalname, '->', url, 'uploaderId:', uploaderId)
+    return Result.success({ url, uploaderId })
     } catch (error: any) {
       console.error('Upload error:', error?.message || error)
       return Result.error('文件上传失败: ' + (error?.message || '未知错误'))

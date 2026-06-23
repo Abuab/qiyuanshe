@@ -13,6 +13,14 @@ async function bootstrap() {
     logger: ['log', 'error', 'warn'],
   })
 
+  // ===== CORS 配置 =====
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (isProduction && !process.env.CORS_ORIGINS) {
+    console.error('FATAL: CORS_ORIGINS environment variable must be set in production')
+    process.exit(1)
+  }
+
   const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
     : ['*']
@@ -27,6 +35,15 @@ async function bootstrap() {
     },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
+  })
+
+  // ===== HTTP 安全头（helmet 尚未安装，手动设置关键安全头） =====
+  app.use((_req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Frame-Options', 'DENY')
+    res.setHeader('X-XSS-Protection', '1; mode=block')
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    next()
   })
 
   // 指定 WebSocket 适配器为 ws（非 socket.io），与 @nestjs/platform-ws 配套使用
