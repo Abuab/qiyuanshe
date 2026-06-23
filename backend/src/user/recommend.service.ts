@@ -65,7 +65,7 @@ const PIN_CONFIG = {
 // 缓存 TTL（秒）
 const CACHE_TTL = {
   userScore: 600,              // 单个用户推荐分缓存 10 分钟
-  recommendList: 120,          // 推荐列表分页缓存 2 分钟
+  recommendList: 600,          // 推荐列表分页缓存 10 分钟
 }
 
 // 缓存版本号：修改推荐逻辑后递增以强制刷新所有旧缓存
@@ -146,6 +146,9 @@ export class RecommendService {
       : this.buildScoreExpression()
     const orderDir: 'DESC' = 'DESC'
 
+    // 同省曝光池优先展示同城用户的排序表达式
+    const provinceCityBoost = this.buildProvinceCityBoost(city)
+
     // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
     // 注意：不依赖 SQL NOT IN，改用结果后过滤确保可靠性
     let allPinnedIds: number[] = []
@@ -160,8 +163,7 @@ export class RecommendService {
 
     // 5. 先查总数（非置顶部分）
     const nonPinnedTotal = await baseQb.getCount()
-    const total = pinnedUsers.length + nonPinnedTotal
-    const totalPages = Math.ceil(total / pageSize)
+    let total = pinnedUsers.length + nonPinnedTotal
 
     // 6. 分页：计算置顶和非置顶各自的偏移和数量
     let resultList: User[]
@@ -172,6 +174,7 @@ export class RecommendService {
       const needMore = Math.max(0, pageSize - pinnedUsers.length)
       const qb = baseQb
         .orderBy(orderBy, orderDir)
+        .addOrderBy(provinceCityBoost, 'DESC')
         .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
         .skip(0)
         .take(needMore)
@@ -187,6 +190,7 @@ export class RecommendService {
         const remain = pageSize - fromPinned.length
         const qb = baseQb
           .orderBy(orderBy, orderDir)
+          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(0)
           .take(remain)
@@ -195,6 +199,7 @@ export class RecommendService {
       } else {
         resultList = await baseQb
           .orderBy(orderBy, orderDir)
+          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(Math.max(0, skip))
           .take(take)
@@ -211,12 +216,23 @@ export class RecommendService {
         const alreadyFetchedTotal = offset + pageSize
         const moreQb = baseQb
           .orderBy(orderBy, orderDir)
+          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(alreadyFetchedTotal)
           .take(pageSize - resultList.length)
         const more = await moreQb.getMany()
         resultList = [...resultList, ...more]
       }
+      // newest 模式下 total 需排除被过滤掉的置顶用户
+      // 用子查询统计当前条件下置顶用户数，从 nonPinnedTotal 中扣除
+      const pinnedInQuery = await this.userRepository
+        .createQueryBuilder('user2')
+        .select('COUNT(*)', 'cnt')
+        .where('user2.id IN (:...pinIds)', { pinIds: allPinnedIds })
+        .andWhere('user2.status = :status', { status: 1 })
+        .andWhere('user2.isDeleted = :isDeleted', { isDeleted: 0 })
+        .getRawOne<{ cnt: string }>()
+      total = nonPinnedTotal - Number(pinnedInQuery?.cnt || 0)
     }
 
     // 全局去重：确保无重复用户（置顶+非置顶重叠 / more补齐重叠）
@@ -264,7 +280,7 @@ export class RecommendService {
       total,
       page: pageNum,
       pageSize,
-      totalPages,
+      totalPages: Math.ceil(total / pageSize),
     }
 
     // 8. 写入 Redis 缓存
@@ -280,23 +296,7 @@ export class RecommendService {
   async invalidateUserCache(userId: number): Promise<void> {
     // 直接删除该用户的推荐分缓存
     await this.redis.del(`recommend:score:${userId}`)
-    // 列表缓存 key 模式太多无法精确清理，靠 TTL 自然过期
-    // 如果用户城市已知，可以主动清该城市首页：
-    const user = await this.userRepository.findOne({ where: { id: userId }, select: ['residence'] })
-    if (user?.residence) {
-      const city = this.extractCity(user.residence)
-      await this.invalidateCityCache(city)
-    }
-  }
-
-  /**
-   * 清除指定城市的所有推荐列表缓存
-   */
-  async invalidateCityCache(city: string): Promise<void> {
-    const keys = await this.redis.getClient().keys(`recommend:list:${city}:*`)
-    if (keys.length > 0) {
-      await Promise.all(keys.map(k => this.redis.del(k)))
-    }
+    // 列表缓存靠 CACHE_TTL.recommendList (10分钟) 自然过期，不再主动清除
   }
 
   // ========================================================================
@@ -311,7 +311,6 @@ export class RecommendService {
     const cached = await this.redis.get(cacheKey)
     if (cached) return Number(cached)
 
-    const now = Date.now()
     let score = 0
 
     // 1. 活跃度分 (0~100)
@@ -336,19 +335,19 @@ export class RecommendService {
   }
 
   private buildScoreExpression(): string {
-    // 在 SQL 中构建推荐分表达式（用于排序）
-    // 避免逐条查 Redis 性能问题，直接用数据库字段计算
+    // 推荐分表达式（用于 SQL ORDER BY）
+    // 使用 UNIX_TIMESTAMP / DATEDIFF 替代 MySQL 特有函数 TIMESTAMPDIFF，便于未来迁移
     return `
       (${WEIGHTS.activity} * CASE
-        WHEN TIMESTAMPDIFF(HOUR, COALESCE(user.lastActiveAt, user.createdAt), NOW()) <= 24 THEN 100
-        WHEN TIMESTAMPDIFF(DAY, COALESCE(user.lastActiveAt, user.createdAt), NOW()) <= 7 THEN 80
-        WHEN TIMESTAMPDIFF(DAY, COALESCE(user.lastActiveAt, user.createdAt), NOW()) <= 30 THEN 50
+        WHEN (UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(COALESCE(user.lastActiveAt, user.createdAt))) <= 86400 THEN 100
+        WHEN DATEDIFF(NOW(), COALESCE(user.lastActiveAt, user.createdAt)) <= 7 THEN 80
+        WHEN DATEDIFF(NOW(), COALESCE(user.lastActiveAt, user.createdAt)) <= 30 THEN 50
         ELSE 15
       END
       + ${WEIGHTS.profile} * COALESCE(user.profileScore, 0)
       + ${WEIGHTS.manualBoost} * COALESCE(user.manualBoostScore, 0)
       + ${WEIGHTS.vip} * (CASE WHEN user.isVip = 1 THEN COALESCE(user.vipLevel, 1) * 15 ELSE 0 END)
-      + ${WEIGHTS.newUser} * (CASE WHEN TIMESTAMPDIFF(DAY, user.createdAt, NOW()) <= 7 THEN 80 ELSE 0 END))
+      + ${WEIGHTS.newUser} * (CASE WHEN DATEDIFF(NOW(), user.createdAt) <= 7 THEN 80 ELSE 0 END))
     `
   }
 
@@ -362,8 +361,9 @@ export class RecommendService {
    * 规则：
    * 1. 筛选 pinnedExpireAt > now 的用户
    * 2. 受性别、城市等基础条件约束
-   * 3. 按 manualBoostScore 降序取前 N 个
+   * 3. 按 pinnedExpireAt 升序取前 N 个（到期越早越靠前，形成自然轮播）
    * 4. 前端无感知，无任何角标/标签
+   * 5. manualBoostScore 仅影响非置顶区域的推荐排序，不参与置顶位分配
    */
   private async getPinnedUsers(
     city: string,
@@ -399,7 +399,7 @@ export class RecommendService {
       qb.andWhere('user.isRealName = :pinRn', { pinRn: 1 })
     }
 
-    qb.orderBy('user.manualBoostScore', 'DESC')
+    qb.orderBy('user.pinnedExpireAt', 'ASC')
     qb.take(PIN_CONFIG.maxPinnedSlots)
 
     return qb.getMany()
@@ -551,19 +551,25 @@ export class RecommendService {
 
   // ---- 缓存 ----
 
+  /**
+   * 同省曝光池城市优先表达式
+   * province 池用户中，同城市（residence 匹配 city）优先展示
+   */
+  private buildProvinceCityBoost(city: string): string {
+    if (!city) return '1'
+    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE '%${city}%' THEN 1 ELSE 0 END)`
+  }
+
   private buildListCacheKey(
     city: string, page: number, pageSize: number,
     targetGender: number, currentUserId?: number,
     filters?: RecommendFilters,
   ): string {
-    const filterStr = filters ? JSON.stringify(filters) : ''
+    // 对 filters key 进行字母排序，确保相同过滤条件始终生成相同的缓存键
+    const filterStr = filters
+      ? JSON.stringify(filters, Object.keys(filters).sort())
+      : ''
     return `v${CACHE_VERSION}:rec:${city}:${targetGender}:p${page}s${pageSize}:u${currentUserId || 0}:${filterStr}`
-  }
-
-  private extractCity(residence: string): string {
-    // residence 格式: "浙江省/杭州市/西湖区"，取第二段
-    const parts = residence.split('/')
-    return parts[1] || parts[0] || ''
   }
 
   // ---- 关联数据批量查询 ----

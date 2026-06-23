@@ -541,6 +541,10 @@ export class AdminUserService {
     await this.userPhotoRepository.update({ userId: photo.userId }, { isMain: 0 })
     // 设置目标照片为主图
     await this.userPhotoRepository.update(photoId, { isMain: 1 })
+    // 同步更新用户头像
+    if (photo.photoUrl) {
+      await this.userRepository.update(photo.userId, { avatar: photo.photoUrl })
+    }
   }
 
   async batchUpdateStatus(ids: number[], status: number) {
