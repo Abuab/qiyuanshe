@@ -93,7 +93,7 @@ export class PaymentService {
   async createOrder(userId: number, dto: CreateOrderDto): Promise<{ orderNo: string; payParams: PayParams }> {
     // 从数据库读取套餐信息
     const packages = await this.packageRepository.find({ where: { status: 1, isDeleted: 0 } })
-    const pkg = packages.find(p => p.id === dto.vipPackageId) || packages.find(p => p.sortOrder === dto.vipPackageId)
+    const pkg = packages.find(p => p.id === dto.vipPackageId)
     if (!pkg) throw new BadRequestException('无效的会员套餐')
     if (pkg.price <= 0) throw new BadRequestException('套餐价格异常')
 
@@ -368,10 +368,10 @@ export class PaymentService {
   }
 
   // ===== Mock 支付（仅测试/管理员环境） =====
-  async mockPay(orderNo: string, userId: number, isAdmin = false): Promise<void> {
-    const isProduction = process.env.NODE_ENV === 'production'
-    if (isProduction && !isAdmin) {
-      throw new BadRequestException('生产环境下仅管理员可使用模拟支付')
+  async mockPay(orderNo: string, userId: number): Promise<void> {
+    const mockPayEnabled = process.env.NODE_ENV !== 'production' || process.env.MOCK_PAY_ENABLED === 'true'
+    if (!mockPayEnabled) {
+      throw new BadRequestException('生产环境下模拟支付已禁用')
     }
 
     const queryRunner = this.dataSource.createQueryRunner()
@@ -404,7 +404,7 @@ export class PaymentService {
       })
 
       await queryRunner.commitTransaction()
-      this.logger.log(`[模拟支付] orderNo=${orderNo}, userId=${userId}, isAdmin=${isAdmin}`)
+      this.logger.log(`[模拟支付] orderNo=${orderNo}, userId=${userId}`)
     } catch (e) {
       await queryRunner.rollbackTransaction()
       throw e
