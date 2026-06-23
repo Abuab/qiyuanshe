@@ -326,8 +326,9 @@ const selectedPackage = ref<VipPackageItem | null>(null)
 const packagesLoading = ref(false)
 
 function formatPrice(price: number): string {
-  if (Number.isInteger(price)) return String(price)
-  return price.toFixed(2)
+  // 数据库存储单位为「分」（整数），展示时需除以 100 转为「元」
+  const yuan = price / 100
+  return yuan.toFixed(2)
 }
 
 async function fetchPackages() {

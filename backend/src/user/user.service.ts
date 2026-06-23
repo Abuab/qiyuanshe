@@ -304,6 +304,10 @@ export class UserService {
           this.visitRepository.create({ userId: id, visitorUserId: currentUserId }),
         ).catch((err) => console.error('Record visit error:', err?.message || err))
 
+        // 更新访问者的最后活跃时间
+        this.userRepository.update(currentUserId, { lastActiveAt: new Date() })
+          .catch((err) => console.error('Update lastActiveAt error:', err?.message || err))
+
         const follow = await this.followRepository.findOne({
           where: { userId: currentUserId, targetUserId: id },
         })
@@ -392,6 +396,9 @@ export class UserService {
       follow.userId = userId
       follow.targetUserId = targetUserId
       await manager.save(follow)
+
+      // 更新最后活跃时间
+      await manager.update(User, userId, { lastActiveAt: new Date() })
     })
   }
 
@@ -713,6 +720,7 @@ export class UserService {
     }
 
     user.profileScore = calcProfileScore(user)
+    user.lastActiveAt = new Date()
     await this.userRepository.save(user)
     return user
   }

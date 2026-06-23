@@ -10,12 +10,15 @@ export interface Order {
   userNickname?: string
   packageName?: string
   vipLevel: number
+  /** 金额（元），后端已从「分」转换 */
   amount: number
   status: number
   payMethod?: string
+  payType?: string
   paidAt?: string
   createdAt: string
   payTime?: string
+  orderType?: string
 }
 
 export interface OrderFilter {

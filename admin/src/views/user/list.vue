@@ -1371,6 +1371,8 @@ async function loadPaymentData() {
     if (res.success && res.data) {
       const map: Record<number, number> = {}
       for (const order of res.data.list) {
+        // 仅统计已支付(order.status===1)的订单，排除待支付/已退款/已取消
+        if (order.status !== 1) continue
         map[order.userId] = (map[order.userId] || 0) + (order.amount || 0)
       }
       paymentMap.value = map

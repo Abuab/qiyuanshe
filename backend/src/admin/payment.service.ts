@@ -34,9 +34,11 @@ export class AdminPaymentService {
 
     const queryBuilder = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.package', 'package')
+      .where('order.isDeleted = :isDeleted', { isDeleted: 0 })
 
     if (filter.orderNo) {
-      queryBuilder.where('order.orderNo LIKE :orderNo', {
+      queryBuilder.andWhere('order.orderNo LIKE :orderNo', {
         orderNo: `%${filter.orderNo}%`,
       })
     }
@@ -82,6 +84,7 @@ export class AdminPaymentService {
       userNickname: order.user?.nickname || '-',
       userAvatar: order.user?.avatar || '',
       userPhone: order.user?.phone || '',
+      orderType: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
     }))
 
     return {
@@ -169,11 +172,11 @@ export class AdminPaymentService {
 
     // 已支付订单
     const paidOrders = await this.orderRepository.find({
-      where: { status: 1, ...dateCondition },
+      where: { status: 1, isDeleted: 0, ...dateCondition },
     })
     // 已退款订单
     const refundedOrders = await this.orderRepository.find({
-      where: { status: 2, ...dateCondition },
+      where: { status: 2, isDeleted: 0, ...dateCondition },
     })
 
     const totalRevenue = paidOrders.reduce((sum, o) => sum + (Number(o.amount) || 0), 0) / 100 // 分转元
@@ -249,6 +252,8 @@ export class AdminPaymentService {
       paidAt: order.paidAt,
       expireTime: order.expireTime,
       createdAt: order.createdAt,
+      /** 订单类型：从套餐名称推导，便于运营区分 */
+      orderType: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
     }))
 
     // 累计消费统计

@@ -4,6 +4,7 @@ import type { ApiResponse } from './request'
 export interface VipPackage {
   id: number
   name: string
+  /** 价格（元）— 后端从数据库「分」转为「元」后返回，编辑保存时也传「元」 */
   price: number
   durationDays: number
   dailyTopCards: number

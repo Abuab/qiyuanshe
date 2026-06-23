@@ -103,6 +103,7 @@
         </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12">
+            <!-- 价格以「元」为单位输入，后端保存时自动 ×100 转为「分」存储 -->
             <el-form-item label="价格" prop="price">
               <el-input-number
                 v-model="formData.price"

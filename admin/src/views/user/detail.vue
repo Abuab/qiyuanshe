@@ -479,6 +479,11 @@
                 <el-empty v-if="financeOrders.length === 0" description="暂无订单记录" />
                 <el-table v-else :data="financeOrders" stripe>
                   <el-table-column prop="orderNo" label="订单编号" width="180" />
+                  <el-table-column prop="orderType" label="订单类型" width="110">
+                    <template #default="{ row }">
+                      <el-tag size="small" type="warning">{{ row.orderType || '--' }}</el-tag>
+                    </template>
+                  </el-table-column>
                   <el-table-column label="VIP等级" width="90">
                     <template #default="{ row }">
                       <el-tag v-if="row.vipLevel > 0" type="warning" size="small">{{ ['','普通','黄金','钻石','至尊'][row.vipLevel] || 'VIP' }}</el-tag>

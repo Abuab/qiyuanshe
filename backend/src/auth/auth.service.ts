@@ -78,6 +78,7 @@ export class AuthService {
     }
 
     user.lastLoginAt = new Date()
+    user.lastActiveAt = new Date()
     await this.userRepository.save(user)
 
     const tokens = this.generateToken(user)
@@ -115,6 +116,7 @@ export class AuthService {
     }
 
     user.lastLoginAt = new Date()
+    user.lastActiveAt = new Date()
     await this.userRepository.save(user)
 
     const tokens = this.generateToken(user)
