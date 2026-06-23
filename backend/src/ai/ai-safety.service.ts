@@ -277,7 +277,16 @@ export class AiSafetyService implements OnModuleInit {
         await this.redis.del(key)
       }
     }
-    await this.loadCustomWords()
+    // 同时从内存中移除
+    if (level === 'level1') {
+      delete ALL_LEVEL1[word]
+      const idx = ALL_SENSITIVE_WORDS.indexOf(word)
+      if (idx !== -1) ALL_SENSITIVE_WORDS.splice(idx, 1)
+    } else if (level === 'level2') {
+      delete (LEVEL2_WORDS as any)[word]
+    } else if (level === 'level3') {
+      delete (LEVEL3_WORDS as any)[word]
+    }
     this.logger.log(`[Safety] 已删除敏感词 [${level}]: ${word}`)
   }
 

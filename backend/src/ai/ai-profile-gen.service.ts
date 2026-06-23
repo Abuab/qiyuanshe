@@ -149,11 +149,10 @@ export class AiProfileGenService {
         rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
       }
     } catch (e: any) {
-      this.logger.warn(`AI profile gen call failed: ${e?.message}, using fallback`)
+      this.logger.error(`[AI画像] 调用失败: ${e?.message}，降级使用兜底画像`)
       rawResult = this.buildFallbackProfile(user.nickname, tags, answers)
       savedCallLog.responseStatus = 'error'
-      await this.callLogRepo.save(savedCallLog)
-      throw new BadRequestException('AI服务暂时不可用，请稍后重试')
+      await this.callLogRepo.save(savedCallLog).catch(() => {})
     }
 
     savedCallLog.responseMs = Date.now() - startMs

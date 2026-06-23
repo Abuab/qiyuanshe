@@ -223,10 +223,10 @@ export class AiFunQuizService {
         rawResult = this.buildFallbackResult(userConstellation, taConstellation)
       }
     } catch (e: any) {
-      this.logger.warn(`AI fun quiz call failed: ${e?.message}, using fallback`)
+      this.logger.error(`[AI趣味] 调用失败: ${e?.message}，降级使用兜底结果`)
       rawResult = this.buildFallbackResult(userConstellation, taConstellation)
       savedCallLog.responseStatus = 'error'
-      await this.callLogRepo.save(savedCallLog)
+      await this.callLogRepo.save(savedCallLog).catch(() => {})
     }
 
     savedCallLog.responseMs = Date.now() - startMs
