@@ -28,7 +28,7 @@ function isAllowedOrigin(url: string): boolean {
   if (/^https:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) return false
 
   // 域名白名单校验
-  const hostname = url.replace(/^https:\/\//, '').split('/')[0].split(':')[0]
+  const hostname = url.replace(/^https?:\/\//, '').split('/')[0].split(':')[0]
   return ALLOWED_DOMAINS.includes(hostname)
 }
 

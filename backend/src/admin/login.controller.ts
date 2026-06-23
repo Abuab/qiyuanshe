@@ -182,6 +182,8 @@ export class AdminLoginController {
   }
 
   @Post('mfa/login-verify')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async mfaLoginVerify(@Body() dto: MfaLoginVerifyDto) {
     const { tempToken, code } = dto
 

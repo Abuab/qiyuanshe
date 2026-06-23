@@ -44,7 +44,7 @@ if (!existsSync(uploadsDir)) {
 }
 
 /**
- * 小程序端公开图片上传（已添加 JWT 认证）
+ * 小程序端图片上传（需登录，已添加 JWT 认证）
  */
 @Controller('upload')
 export class UploadController {

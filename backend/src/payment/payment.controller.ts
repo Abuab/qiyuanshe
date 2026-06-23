@@ -24,7 +24,7 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Post('create-order')
-  @UseGuards(ThrottlerGuard, JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async createOrder(@Body() dto: CreateOrderDto, @Request() req: any) {
     const result = await this.paymentService.createOrder(req.user.userId, dto)

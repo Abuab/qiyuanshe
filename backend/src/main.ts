@@ -13,16 +13,19 @@ async function bootstrap() {
     logger: ['log', 'error', 'warn'],
   })
 
-  // ===== CORS 配置 =====
+  // ===== 生产环境 CORS 校验 =====
   const isProduction = process.env.NODE_ENV === 'production'
 
-  if (isProduction && !process.env.CORS_ORIGINS) {
-    console.error('FATAL: CORS_ORIGINS environment variable must be set in production')
-    process.exit(1)
+  if (isProduction) {
+    const corsOrigins = (process.env.CORS_ORIGINS || '').trim()
+    if (!corsOrigins) {
+      console.error('FATAL: CORS_ORIGINS environment variable must be set in production')
+      process.exit(1)
+    }
   }
 
   const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim())
+    ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()).filter(s => s.length > 0)
     : ['*']
 
   app.enableCors({
@@ -37,11 +40,12 @@ async function bootstrap() {
     credentials: true,
   })
 
-  // ===== HTTP 安全头（helmet 尚未安装，手动设置关键安全头） =====
+  // ===== HTTP 安全头 =====
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('X-Frame-Options', 'DENY')
-    res.setHeader('X-XSS-Protection', '1; mode=block')
+    // X-XSS-Protection 在现代浏览器中已废弃，设为 0 明确禁用
+    res.setHeader('X-XSS-Protection', '0')
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     next()
   })
