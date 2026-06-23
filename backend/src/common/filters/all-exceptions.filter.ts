@@ -31,12 +31,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         code = status
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, any>
-        // NestJS 将 BadRequestException({ code, message, reasons }) 包装为 { message: { code, message, reasons } }
-        // 此处展平：优先使用内层 message 字符串
         if (typeof responseObj.message === 'object' && responseObj.message !== null) {
           const inner = responseObj.message as Record<string, any>
           message = inner.message || exception.message
-          // 透传业务层自定义字段（如 reasons, code 等）给前端
           if (inner.reasons) errorData = { reasons: inner.reasons }
           if (typeof inner.code === 'string') code = status
         } else {
@@ -51,9 +48,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const result = Result.error(message, code, errorData)
 
-    response.header('Access-Control-Allow-Origin', '*')
-    response.header('Access-Control-Allow-Methods', 'GET,HEAD,PUT,PATCH,POST,DELETE')
-    response.header('Access-Control-Allow-Credentials', 'true')
+    // CORS 头由 main.ts 中的全局 CORS 配置统一处理，
+    // 此处不再覆盖，避免与 credentials: true 冲突导致浏览器拒绝携带 cookie。
     response.status(status).json(result)
   }
 }

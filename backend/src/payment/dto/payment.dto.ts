@@ -1,12 +1,11 @@
-import { IsInt, Min, Max, IsOptional, MaxLength } from 'class-validator'
+import { IsInt, Min, Max, IsOptional } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class CreateOrderDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(3)
-  vipLevel: number
+  vipPackageId: number
 }
 
 export class QueryOrdersDto {
@@ -22,15 +21,4 @@ export class QueryOrdersDto {
   @Min(1)
   @Max(50)
   limit?: number = 20
-}
-
-export class WechatPayNotifyDto {
-  return_code: string
-  return_msg: string
-  transaction_id?: string
-  out_trade_no?: string
-  total_fee?: number
-  cash_fee?: number
-  time_end?: string
-  sign?: string
 }
