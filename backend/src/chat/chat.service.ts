@@ -146,6 +146,10 @@ export class ChatService {
       content,
       type,
       isRead: 0,
+      // 防御性重置：普通用户禁止代发标记，仅管理员专用接口可设置
+      isProxy: 0,
+      proxyBy: null,
+      proxyName: null,
     })
 
     const saved = await this.messageRepository.save(message)

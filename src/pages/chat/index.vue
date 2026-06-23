@@ -265,11 +265,9 @@ const placeholder = computed(() => {
 // ===== 生命周期 =====
 onMounted(() => {
   try {
-    // #ifdef MP-WEIXIN
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
-    // #endif
+    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || sysInfo.safeArea?.bottom || 0
   } catch {}
 
   const pages = getCurrentPages()
@@ -761,6 +759,9 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
   height: 88rpx; padding: 0 16rpx; box-sizing: content-box;
   background: linear-gradient(135deg, $pink, $pink-light);
   z-index: 100;
+  /* 顶部安全区 CSS 兜底（刘海屏/灵动岛） */
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
 }
 .nav-left {
   width: $nav-side-width; flex-shrink: 0;
@@ -920,6 +921,9 @@ $nav-side-width: 88rpx; // 左右固定宽度，确保昵称居中
   background: #fff;
   border-top: 1px solid #E5E5E5;
   z-index: 100;
+  /* 底部安全区 CSS 兜底（iPhone 横条） */
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .fraud-banner {
   display: flex; align-items: center;

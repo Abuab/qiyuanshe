@@ -2,7 +2,6 @@ import { join } from 'path'
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { NestExpressApplication } from '@nestjs/platform-express'
-import { WsAdapter } from '@nestjs/platform-ws'
 import * as fs from 'fs'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
@@ -28,9 +27,6 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   })
-
-  // 启用 WebSocket
-  app.useWebSocketAdapter(new WsAdapter(app))
 
   app.useGlobalPipes(
     new ValidationPipe({

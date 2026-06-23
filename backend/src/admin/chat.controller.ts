@@ -9,6 +9,9 @@ import {
   Request,
   UseGuards,
   ParseIntPipe,
+  Optional,
+  Inject,
+  forwardRef,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -25,7 +28,9 @@ export class AdminChatController {
   constructor(
     private readonly chatService: AdminChatService,
     private readonly monitorService: ChatMonitorService,
-    private readonly monitorGateway: ChatMonitorGateway,
+    @Optional()
+    @Inject(forwardRef(() => ChatMonitorGateway))
+    private readonly monitorGateway?: ChatMonitorGateway,
   ) {}
 
   /** 所有用户的会话列表 */
@@ -159,9 +164,9 @@ export class AdminChatController {
     }
 
     // 推送消息给监控该用户的管理员
-    this.monitorGateway.notifyAdmin(targetUserId, msgPayload)
+    this.monitorGateway?.notifyAdmin(targetUserId, msgPayload)
     // 推送消息给 toUserId 的订阅管理员（双向聊天）
-    this.monitorGateway.notifyAdmin(toUserId, msgPayload)
+    this.monitorGateway?.notifyAdmin(toUserId, msgPayload)
 
     return Result.success(msgPayload, '消息已代发')
   }
