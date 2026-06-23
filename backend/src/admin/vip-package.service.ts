@@ -44,7 +44,8 @@ export class VipPackageService {
       status: data.status ?? 1,
       sortOrder: data.sortOrder || 0,
     })
-    return this.repo.save(pkg)
+    const saved = await this.repo.save(pkg)
+    return this.normalizeTypes([saved])[0] // 分 → 元展示
   }
 
   /** 编辑套餐（管理员以"元"输入，存储为整数分） */
@@ -63,7 +64,8 @@ export class VipPackageService {
     if (data.status !== undefined) pkg.status = data.status
     if (data.sortOrder !== undefined) pkg.sortOrder = data.sortOrder
 
-    return this.repo.save(pkg)
+    const saved = await this.repo.save(pkg)
+    return this.normalizeTypes([saved])[0] // 分 → 元展示
   }
 
   /** 切换上/下架 */

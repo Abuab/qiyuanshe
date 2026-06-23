@@ -486,14 +486,16 @@ export class AdminUserService {
   }
 
   /**
-   * 使用 crypto 随机生成强密码（大小写字母 + 数字）
+   * 使用 crypto.randomInt 随机生成强密码（大小写字母 + 数字），确保均匀分布。
    * @param length 密码长度，默认 12 位
    */
   private generateRandomPassword(length = 12): string {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-    return Array.from(crypto.randomBytes(length))
-      .map(byte => chars[byte % chars.length])
-      .join('')
+    const result: string[] = []
+    for (let i = 0; i < length; i++) {
+      result.push(chars[crypto.randomInt(chars.length)])
+    }
+    return result.join('')
   }
 
   async resetPassword(id: number) {

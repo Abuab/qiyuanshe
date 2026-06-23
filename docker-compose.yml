@@ -116,7 +116,8 @@ services:
       # 服务端口
       PORT: 3000
       NODE_ENV: production
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://date.arvine.cn}
+      # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
       NODE_OPTIONS: --max-old-space-size=384
     volumes:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
