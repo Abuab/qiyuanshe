@@ -276,4 +276,9 @@ export const adminUsers = {
   getUserVisitorDetail(id: number): Promise<ApiResponse<any[]>> {
     return request.get(`/admin/users/${id}/visitor-detail`)
   },
+
+  // 财务记录
+  getUserOrders(id: number): Promise<ApiResponse<{ list: any[]; total: number; stats: { totalPaid: number; orderCount: number; paidCount: number } }>> {
+    return request.get(`/admin/users/${id}/orders`)
+  },
 }

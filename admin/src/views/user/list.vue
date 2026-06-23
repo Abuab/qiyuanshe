@@ -313,7 +313,8 @@
             {{ row.age || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="phone" label="手机号" width="120">
+        <!-- 手机号列宽度 140px，确保 11 位号码不换行 -->
+        <el-table-column prop="phone" label="手机号" width="140">
           <template #default="{ row }">
             {{ row.phone || '-' }}
           </template>
@@ -489,12 +490,12 @@
             <span>{{ '¥' + (paymentMap[row.id] || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <!-- 操作列：详情按钮 + 更多操作下拉菜单 + 快捷审核图标 -->
-        <el-table-column v-if="!isReadonly" label="操作" width="220" fixed="right">
+        <!-- 操作列：统一按钮样式，详情(plain primary) + 更多(dropdown) + 快捷审核图标按钮 -->
+        <el-table-column v-if="!isReadonly" label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link size="small" @click="handleView(row)">详情</el-button>
+            <el-button size="small" type="primary" plain @click="handleView(row)">详情</el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleDropdownCommand(cmd, row)">
-              <el-button link size="small" style="margin-left:4px">
+              <el-button size="small" style="margin-left:4px">
                 更多 <el-icon><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
@@ -519,24 +520,24 @@
             <!-- 快捷审核：资料/照片审核状态为 PENDING/unsubmitted 时显示图标按钮 -->
             <template v-if="row.profileAuditStatus && row.profileAuditStatus !== 'APPROVE' && row.profileAuditStatus !== 'REJECT'">
               <el-tooltip content="快速通过资料审核" placement="top">
-                <el-button link size="small" type="success" @click="handleQuickAudit(row, 'user', 'approve')">
+                <el-button size="small" type="success" @click="handleQuickAudit(row, 'user', 'approve')">
                   <el-icon><CheckIcon /></el-icon>
                 </el-button>
               </el-tooltip>
               <el-tooltip content="快速拒绝资料审核" placement="top">
-                <el-button link size="small" type="danger" @click="handleQuickAudit(row, 'user', 'reject')">
+                <el-button size="small" type="danger" @click="handleQuickAudit(row, 'user', 'reject')">
                   <el-icon><CloseIcon /></el-icon>
                 </el-button>
               </el-tooltip>
             </template>
             <template v-if="row.photoAuditStatus && row.photoAuditStatus !== 'APPROVE' && row.photoAuditStatus !== 'REJECT'">
               <el-tooltip content="快速通过照片审核" placement="top">
-                <el-button link size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
+                <el-button size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
                   <el-icon><CheckIcon /></el-icon>
                 </el-button>
               </el-tooltip>
               <el-tooltip content="快速拒绝照片审核" placement="top">
-                <el-button link size="small" type="danger" @click="handleQuickAudit(row, 'photo', 'reject')">
+                <el-button size="small" type="danger" @click="handleQuickAudit(row, 'photo', 'reject')">
                   <el-icon><CloseIcon /></el-icon>
                 </el-button>
               </el-tooltip>

@@ -230,4 +230,40 @@ export class AdminPaymentService {
       packageData,
     }
   }
+
+  /** 获取指定用户的订单/财务记录 */
+  async getUserOrders(userId: number) {
+    const orders = await this.orderRepository.find({
+      where: { userId, isDeleted: 0 },
+      relations: ['user', 'package'],
+      order: { createdAt: 'DESC' },
+    })
+
+    const list = orders.map(order => ({
+      id: order.id,
+      orderNo: order.orderNo,
+      vipLevel: order.vipLevel,
+      amount: Number(order.amount) / 100, // 分转元展示
+      payType: order.payType,
+      status: order.status,
+      paidAt: order.paidAt,
+      expireTime: order.expireTime,
+      createdAt: order.createdAt,
+    }))
+
+    // 累计消费统计
+    const paidAmount = orders
+      .filter(o => o.status === 1)
+      .reduce((sum, o) => sum + Number(o.amount), 0) / 100
+
+    return {
+      list,
+      total: list.length,
+      stats: {
+        totalPaid: parseFloat(paidAmount.toFixed(2)),
+        orderCount: list.length,
+        paidCount: orders.filter(o => o.status === 1).length,
+      },
+    }
+  }
 }

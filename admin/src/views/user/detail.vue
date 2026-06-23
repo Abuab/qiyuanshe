@@ -260,54 +260,77 @@
               </div>
               <!-- 我喜欢的/喜欢我的/互相喜欢/我关注的/关注我的 使用 el-collapse 折叠面板 -->
               <el-collapse v-model="interactionActivePanels" accordion>
-                <el-collapse-item title="我喜欢的" name="liked">
+                <el-collapse-item name="liked">
+                  <template #title>
+                    我喜欢的
+                    <!-- 管理员添加喜欢按钮 -->
+                    <el-button size="small" type="primary" plain @click.stop="openLikeAddDialog('liked')" style="margin-left:12px">添加</el-button>
+                  </template>
                   <div v-if="likeData.liked.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.liked" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                  <div v-for="item in likeData.liked" :key="item.id" class="like-item">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(item.targetUserId)">
                       <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <div class="like-item-info" @click="goToUserDetail(item.targetUserId)"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time" @click="goToUserDetail(item.targetUserId)">{{ formatDate(item.createdAt) }}</span>
+                    <!-- 移除喜欢按钮 -->
+                    <el-button type="danger" link size="small" @click.stop="handleRemoveLike(item.targetUserId, 'liked')" style="margin-left:8px">移除</el-button>
                   </div>
                 </el-collapse-item>
-                <el-collapse-item title="喜欢我的" name="likedBy">
+                <el-collapse-item name="likedBy">
+                  <template #title>
+                    喜欢我的
+                    <el-button size="small" type="primary" plain @click.stop="openLikeAddDialog('likedBy')" style="margin-left:12px">添加</el-button>
+                  </template>
                   <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.likedBy" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                  <div v-for="item in likeData.likedBy" :key="item.id" class="like-item">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(item.targetUserId)">
                       <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <div class="like-item-info" @click="goToUserDetail(item.targetUserId)"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time" @click="goToUserDetail(item.targetUserId)">{{ formatDate(item.createdAt) }}</span>
+                    <el-button type="danger" link size="small" @click.stop="handleRemoveLike(item.targetUserId, 'likedBy')" style="margin-left:8px">移除</el-button>
                   </div>
                 </el-collapse-item>
                 <el-collapse-item title="互相喜欢" name="mutual">
                   <div v-if="likeData.mutual.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="item in likeData.mutual" :key="item.id" class="like-item" @click="goToUserDetail(item.targetUserId)">
-                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img">
+                  <div v-for="item in likeData.mutual" :key="item.id" class="like-item">
+                    <el-image :src="item.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(item.targetUserId)">
                       <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <div class="like-item-info"><div class="like-item-name">{{ item.nickname }}</div></div>
-                    <span class="like-item-time">{{ formatDate(item.createdAt) }}</span>
+                    <div class="like-item-info" @click="goToUserDetail(item.targetUserId)"><div class="like-item-name">{{ item.nickname }}</div></div>
+                    <span class="like-item-time" @click="goToUserDetail(item.targetUserId)">{{ formatDate(item.createdAt) }}</span>
+                    <el-button type="danger" link size="small" @click.stop="handleRemoveLike(item.targetUserId, 'mutual')" style="margin-left:8px">移除</el-button>
                   </div>
                 </el-collapse-item>
-                <el-collapse-item title="我关注的" name="following">
+                <el-collapse-item name="following">
+                  <template #title>
+                    我关注的
+                    <el-button size="small" type="primary" plain @click.stop="openFollowAddDialog('following')" style="margin-left:12px">添加</el-button>
+                  </template>
                   <div v-if="followData.following.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="f in followData.following" :key="f.id" class="like-item" @click="goToUserDetail(f.targetUserId)">
-                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                  <div v-for="f in followData.following" :key="f.id" class="like-item">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(f.targetUserId)">
                       <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <div class="like-item-info"><div class="like-item-name">{{ f.nickname }}</div></div>
-                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                    <div class="like-item-info" @click="goToUserDetail(f.targetUserId)"><div class="like-item-name">{{ f.nickname }}</div></div>
+                    <span class="like-item-time" @click="goToUserDetail(f.targetUserId)">{{ formatDate(f.createdAt) }}</span>
+                    <el-button type="danger" link size="small" @click.stop="handleRemoveFollow(f.targetUserId, 'following')" style="margin-left:8px">取消关注</el-button>
                   </div>
                 </el-collapse-item>
-                <el-collapse-item title="关注我的" name="followers">
+                <el-collapse-item name="followers">
+                  <template #title>
+                    关注我的
+                    <el-button size="small" type="primary" plain @click.stop="openFollowAddDialog('followers')" style="margin-left:12px">添加</el-button>
+                  </template>
                   <div v-if="followData.followers.length === 0" class="like-empty">暂无记录</div>
-                  <div v-for="f in followData.followers" :key="f.id" class="like-item" @click="goToUserDetail(f.userId)">
-                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img">
+                  <div v-for="f in followData.followers" :key="f.id" class="like-item">
+                    <el-image :src="f.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(f.userId)">
                       <template #error><div class="like-avatar-fallback"><el-icon :size="22"><User /></el-icon></div></template>
                     </el-image>
-                    <div class="like-item-info"><div class="like-item-name">{{ f.nickname }}</div></div>
-                    <span class="like-item-time">{{ formatDate(f.createdAt) }}</span>
+                    <div class="like-item-info" @click="goToUserDetail(f.userId)"><div class="like-item-name">{{ f.nickname }}</div></div>
+                    <span class="like-item-time" @click="goToUserDetail(f.userId)">{{ formatDate(f.createdAt) }}</span>
+                    <el-button type="danger" link size="small" @click.stop="handleRemoveFollow(f.userId, 'followers')" style="margin-left:8px">取消关注</el-button>
                   </div>
                 </el-collapse-item>
               </el-collapse>
@@ -430,30 +453,57 @@
             </div>
           </el-tab-pane>
 
-          <!-- Tab 7: 财务记录（新增：订单 + VIP开通记录 + 红线索消费记录） -->
+          <!-- Tab 7: 财务记录（用户订单数据，来自后端 /admin/users/:id/orders） -->
           <el-tab-pane label="财务记录" name="finance">
             <div v-loading="tabLoading.finance">
-              <!-- 后端需提供财务记录接口，当前展示占位提示 -->
-              <div v-if="!financeDataLoaded" class="text-content text-muted" style="text-align:center;padding:60px 0">
-                暂无财务记录数据，请确认后端接口已提供
+              <!-- 统计卡片：累计消费、订单数、已支付数 -->
+              <div v-if="financeDataLoaded" class="like-stats-row" style="margin-bottom:16px">
+                <div class="like-stat-card">
+                  <div class="like-stat-num">¥{{ financeStats.totalPaid.toFixed(2) }}</div>
+                  <div class="like-stat-label">累计消费</div>
+                </div>
+                <div class="like-stat-card">
+                  <div class="like-stat-num">{{ financeStats.orderCount }}</div>
+                  <div class="like-stat-label">订单总数</div>
+                </div>
+                <div class="like-stat-card">
+                  <div class="like-stat-num">{{ financeStats.paidCount }}</div>
+                  <div class="like-stat-label">已支付</div>
+                </div>
               </div>
+              <!-- 订单明细表格 -->
+              <template v-if="!financeDataLoaded">
+                <div class="text-content text-muted" style="text-align:center;padding:60px 0">加载中...</div>
+              </template>
               <template v-else>
-                <el-empty v-if="financeOrders.length === 0" description="暂无财务记录" />
+                <el-empty v-if="financeOrders.length === 0" description="暂无订单记录" />
                 <el-table v-else :data="financeOrders" stripe>
                   <el-table-column prop="orderNo" label="订单编号" width="180" />
-                  <el-table-column label="类型" width="100">
-                    <template #default="{ row }">{{ financeTypeLabel(row.type) }}</template>
+                  <el-table-column label="VIP等级" width="90">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.vipLevel > 0" type="warning" size="small">{{ ['','普通','黄金','钻石','至尊'][row.vipLevel] || 'VIP' }}</el-tag>
+                      <span v-else>-</span>
+                    </template>
                   </el-table-column>
                   <el-table-column prop="amount" label="金额" width="100">
                     <template #default="{ row }">¥{{ (row.amount || 0).toFixed(2) }}</template>
                   </el-table-column>
-                  <el-table-column prop="status" label="状态" width="80">
+                  <el-table-column prop="payType" label="支付方式" width="90">
+                    <template #default="{ row }">{{ row.payType || '-' }}</template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="90">
                     <template #default="{ row }">
-                      <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '已支付' : '未支付' }}</el-tag>
+                      <el-tag :type="orderStatusType(row.status)" size="small">{{ orderStatusLabel(row.status) }}</el-tag>
                     </template>
                   </el-table-column>
+                  <el-table-column prop="createdAt" label="创建时间" width="170">
+                    <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+                  </el-table-column>
                   <el-table-column prop="paidAt" label="支付时间" width="170">
-                    <template #default="{ row }">{{ formatDate(row.paidAt) }}</template>
+                    <template #default="{ row }">{{ formatDate(row.paidAt) || '-' }}</template>
+                  </el-table-column>
+                  <el-table-column prop="expireTime" label="VIP到期" width="170">
+                    <template #default="{ row }">{{ formatDate(row.expireTime) || '-' }}</template>
                   </el-table-column>
                 </el-table>
               </template>
@@ -477,6 +527,178 @@
         <el-form-item label="有效期"><el-input-number v-model="vipForm.days" :min="1" :max="3650" /><span class="ml-10">天</span></el-form-item>
       </el-form>
       <template #footer><el-button @click="vipDialogVisible = false">取消</el-button><el-button type="primary" @click="handleVipSubmit">确定</el-button></template>
+    </el-dialog>
+
+    <!-- 编辑资料弹窗：三栏分区 Tab 布局，避免单屏内容过长 -->
+    <el-dialog v-model="editDialogVisible" title="编辑用户资料" width="720px" destroy-on-close>
+      <el-tabs v-model="editActiveTab" type="border-card">
+        <el-tab-pane label="基本信息" name="basic">
+          <el-form :model="editForm" label-width="90px" size="default">
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="昵称"><el-input v-model="editForm.nickname" placeholder="用户昵称" /></el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="手机号"><el-input v-model="editForm.phone" placeholder="手机号" /></el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="密码"><el-input v-model="editForm.password" type="password" placeholder="留空则不修改" show-password /></el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="性别">
+                  <el-radio-group v-model="editForm.gender">
+                    <el-radio :value="1">男</el-radio>
+                    <el-radio :value="2">女</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="8">
+                <el-form-item label="出生年份"><el-input-number v-model="editForm.birthYear" :min="1950" :max="2010" controls-position="right" style="width:100%" /></el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="身高(cm)"><el-input-number v-model="editForm.height" :min="100" :max="250" controls-position="right" style="width:100%" /></el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="30" :max="200" controls-position="right" style="width:100%" /></el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="学历">
+                  <el-select v-model="editForm.education" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in EDU_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="职业"><el-input v-model="editForm.occupation" /></el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="月收入">
+                  <el-select v-model="editForm.incomeRange" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in INCOME_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="住房">
+                  <el-select v-model="editForm.housingStatus" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in HOUSING_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="车辆">
+                  <el-select v-model="editForm.carStatus" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in CAR_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="8">
+                <el-form-item label="婚况">
+                  <el-select v-model="editForm.maritalStatus" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in MARITAL_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="独生子女"><el-input v-model="editForm.onlyChild" /></el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="何时结婚"><el-input v-model="editForm.whenMarry" /></el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="8"><el-form-item label="属相"><el-input v-model="editForm.zodiac" /></el-form-item></el-col>
+              <el-col :span="8"><el-form-item label="星座"><el-input v-model="editForm.constellation" /></el-form-item></el-col>
+              <el-col :span="8" />
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12"><el-form-item label="家乡"><el-input v-model="editForm.hometown" placeholder="如 北京-东城" /></el-form-item></el-col>
+              <el-col :span="12"><el-form-item label="居住地"><el-input v-model="editForm.residence" placeholder="如 上海-浦东" /></el-form-item></el-col>
+            </el-row>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane label="个性 &amp; 择偶" name="personality">
+          <el-form :model="editForm" label-width="100px" size="default">
+            <el-form-item label="性格标签">
+              <el-input v-model="editForm.personalityTags" placeholder="多个标签用逗号分隔，如：开朗,幽默,细心" />
+            </el-form-item>
+            <el-form-item label="希望 TA">
+              <el-input v-model="editForm.hopeTaTags" placeholder="多个标签用逗号分隔，如：温柔,善良,有责任心" />
+            </el-form-item>
+            <el-divider content-position="left">择偶要求</el-divider>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="年龄范围"><el-input v-model="editForm.partnerAgeRange" placeholder="如 25-35" /></el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="最低身高"><el-input v-model="editForm.partnerHeightMin" placeholder="如 170" /></el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="最低学历">
+                  <el-select v-model="editForm.partnerEducation" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in EDU_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="收入要求">
+                  <el-select v-model="editForm.partnerIncome" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in INCOME_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="8">
+                <el-form-item label="住房要求"><el-input v-model="editForm.housingRequirement" placeholder="如 已购房" /></el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="婚况要求">
+                  <el-select v-model="editForm.partnerMaritalStatus" placeholder="请选择" style="width:100%">
+                    <el-option v-for="o in MARITAL_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="接受小孩"><el-input v-model="editForm.acceptChildren" /></el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-tab-pane>
+        <el-tab-pane label="账户状态" name="account">
+          <el-form :model="editForm" label-width="100px" size="default">
+            <el-form-item label="账号状态">
+              <el-radio-group v-model="editForm.status">
+                <el-radio :value="1">正常</el-radio>
+                <el-radio :value="0">禁用</el-radio>
+                <el-radio :value="2">待审核</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="实名认证">
+              <el-radio-group v-model="editForm.isRealName">
+                <el-radio :value="1">已实名</el-radio>
+                <el-radio :value="0">未实名</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+      </el-tabs>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="editSaving" @click="handleEditSave">保存</el-button>
+      </template>
     </el-dialog>
 
     <!-- 通知弹窗 -->
@@ -569,6 +791,68 @@
           </div>
         </div>
       </div>
+    </el-dialog>
+
+    <!-- 添加喜欢对话框 -->
+    <el-dialog v-model="likeAddDialogVisible" title="添加喜欢" width="450px" @opened="handleLikeDialogOpened">
+      <el-form label-width="80px">
+        <el-form-item label="选择用户">
+          <el-select
+            v-model="likeSelectedUserId"
+            placeholder="请选择用户"
+            filterable
+            :loading="searchUserLoading"
+            style="width:100%"
+          >
+            <el-option
+              v-for="u in searchUserOptions"
+              :key="u.id"
+              :label="u.nickname"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+        <div style="font-size:12px;color:#909399">
+          将 {{ likeAddType === 'liked' ? '当前用户' : '所选用户' }} 的喜欢关系添加到 {{ likeAddType === 'liked' ? '所选用户' : '当前用户' }}
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button @click="likeAddDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAddLikeSubmit" :disabled="!likeSelectedUserId">确认添加</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加关注对话框 -->
+    <el-dialog v-model="followAddDialogVisible" title="添加关注" width="450px" @opened="handleFollowDialogOpened">
+      <el-form label-width="80px">
+        <el-form-item label="选择用户">
+          <el-select
+            v-model="followSelectedUserId"
+            placeholder="请选择用户"
+            filterable
+            :loading="followSearchUserLoading"
+            style="width:100%"
+          >
+            <el-option
+              v-for="u in followSearchUserOptions"
+              :key="u.id"
+              :label="u.nickname"
+              :value="u.id"
+            />
+          </el-select>
+        </el-form-item>
+        <div style="font-size:12px;color:#909399">
+          {{
+            followAddType === 'following'
+              ? '所选用户将被添加到当前用户的关注列表'
+              : '所选用户将关注当前用户（添加到关注我的列表）'
+          }}
+        </div>
+      </el-form>
+      <template #footer>
+        <el-button @click="followAddDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleAddFollowSubmit" :disabled="!followSelectedUserId">确认添加</el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -677,11 +961,34 @@ const hasPersonalityTags = computed(() => {
 const loading = ref(false)
 const user = ref<UserDetail | null>(null)
 const activeTab = ref('basic')
+const editActiveTab = ref('basic') // 编辑资料弹窗 Tab active
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
 const vipForm = reactive({ level: 0, days: 30 })
 const notifyForm = reactive({ title: '', content: '' })
+
+// 编辑资料弹窗
+const editDialogVisible = ref(false)
+const editSaving = ref(false)
+const editForm = reactive({
+  nickname: '', phone: '', password: '', gender: 0, birthYear: undefined as number | undefined,
+  height: undefined as number | undefined, weight: undefined as number | undefined,
+  education: '', occupation: '', incomeRange: '', housingStatus: '', carStatus: '',
+  maritalStatus: '', onlyChild: '', whenMarry: '', zodiac: '', constellation: '',
+  hometown: '', residence: '',
+  personalityTags: '' as string, hopeTaTags: '' as string,
+  partnerAgeRange: '', partnerHeightMin: '', partnerEducation: '', partnerIncome: '',
+  housingRequirement: '', partnerMaritalStatus: '', acceptChildren: '',
+  status: 1, isRealName: 0,
+})
+
+// 编辑资料下拉选项常量（与列表页保持一致）
+const EDU_OPTIONS = ['初中', '高中', '中专', '大专', '本科', '硕士', '博士']
+const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '2-5万', '5万以上']
+const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住']
+const CAR_OPTIONS = ['已购车', '未购车']
+const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
 
 // Tab data
 const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false, likes: false, audit: false, finance: false, opLogs: false })
@@ -732,9 +1039,10 @@ const interactionActivePanels = ref('')
 // 审核记录
 const auditHistoryList = ref<any[]>([])
 
-// 财务记录（后端未提供接口时占位）
+// 财务记录
 const financeDataLoaded = ref(false)
 const financeOrders = ref<any[]>([])
+const financeStats = reactive({ totalPaid: 0, orderCount: 0, paidCount: 0 })
 
 // ===== 标签管理 =====
 // 系统预设标签库（前端硬编码，管理员可输入自定义标签）
@@ -789,6 +1097,12 @@ watch(() => route.params.id, async (newId) => {
     noteForm.content = ''
     noteHistory.value = []
     operationLogs.value = []
+    // 清除财务记录旧数据，避免切换用户时短暂显示上一用户数据
+    financeDataLoaded.value = false
+    financeOrders.value = []
+    financeStats.totalPaid = 0
+    financeStats.orderCount = 0
+    financeStats.paidCount = 0
     await nextTick()
     fetchDetail()
   }
@@ -832,7 +1146,7 @@ function handleTabChange(tabName: string) {
     case 'chat': loadChatConversations(); break
     case 'interaction': loadInteractionData(); break  // 互动记录：合并关注 + 喜欢 + 浏览
     case 'audit': loadAuditHistory(); break  // 审核记录：合并资料审核 + 照片审核
-    case 'finance': loadFinanceData(); break  // 财务记录：占位提示（后端接口未提供）
+    case 'finance': loadFinanceData(); break  // 财务记录：从后端 /admin/users/:id/orders 加载
     case 'basic': loadReviews(); loadOpLogs(); break  // 基本资料内加载红娘评价 + 操作日志
   }
 }
@@ -953,10 +1267,30 @@ async function loadInteractionData() {
   }
 }
 
-/** 财务记录：后端接口未提供时展示占位文本，不报错 */
+/** 财务记录：调用后端接口获取用户订单数据 */
 async function loadFinanceData() {
-  // 后端财务接口暂未提供，保持占位状态
-  financeDataLoaded.value = false
+  if (!user.value) return
+  tabLoading.finance = true
+  try {
+    const res = await adminUsers.getUserOrders(user.value.id)
+    if (res.success && res.data) {
+      financeOrders.value = res.data.list || []
+      if (res.data.stats) {
+        financeStats.totalPaid = res.data.stats.totalPaid || 0
+        financeStats.orderCount = res.data.stats.orderCount || 0
+        financeStats.paidCount = res.data.stats.paidCount || 0
+      }
+      financeDataLoaded.value = true
+    } else {
+      financeOrders.value = []
+      financeDataLoaded.value = true
+    }
+  } catch (e) {
+    console.error('财务记录加载失败:', e)
+    financeOrders.value = []
+    financeDataLoaded.value = true // 接口异常也不阻塞页面
+  }
+  finally { tabLoading.finance = false }
 }
 
 async function loadLikesDetail() {
@@ -990,6 +1324,22 @@ async function loadLikeUserOptions() {
     }
   } catch { searchUserOptions.value = [] }
   finally { searchUserLoading.value = false }
+}
+
+/** 打开添加喜欢对话框 */
+function openLikeAddDialog(type: 'liked' | 'likedBy') {
+  likeAddType.value = type
+  likeSelectedUserId.value = null
+  searchUserOptions.value = []
+  likeAddDialogVisible.value = true
+}
+
+/** 打开添加关注对话框 */
+function openFollowAddDialog(type: 'following' | 'followers') {
+  followAddType.value = type
+  followSelectedUserId.value = null
+  followSearchUserOptions.value = []
+  followAddDialogVisible.value = true
 }
 
 async function handleLikeDialogOpened() {
@@ -1135,10 +1485,78 @@ function handleSetVip() {
   vipForm.level = user.value.vipLevel || 0; vipForm.days = 30; vipDialogVisible.value = true
 }
 
-/** 编辑资料：跳转到列表页并在查询参数中携带编辑用户 ID，由列表页弹窗编辑 */
+/** 编辑资料：在当前页打开编辑弹窗，从 user.value 初始化表单 */
 function handleEditProfile() {
   if (!user.value) return
-  router.push({ path: '/user/list', query: { editUserId: user.value.id.toString() } })
+  const u = user.value
+  editForm.nickname = u.nickname || ''
+  editForm.phone = u.phone || ''
+  editForm.password = ''
+  editForm.gender = u.gender || 0
+  editForm.birthYear = u.birthYear
+  editForm.height = u.height
+  editForm.weight = u.weight
+  editForm.education = u.education || ''
+  editForm.occupation = u.occupation || ''
+  editForm.incomeRange = u.incomeRange || ''
+  editForm.housingStatus = u.housingStatus || ''
+  editForm.carStatus = u.carStatus || ''
+  editForm.maritalStatus = u.maritalStatus || ''
+  editForm.onlyChild = u.onlyChild || ''
+  editForm.whenMarry = u.whenMarry || ''
+  editForm.zodiac = u.zodiac || ''
+  editForm.constellation = u.constellation || ''
+  editForm.hometown = u.hometown || ''
+  editForm.residence = u.residence || ''
+  editForm.personalityTags = Array.isArray(u.personalityTags) ? u.personalityTags.join(',') : (u.personalityTags || '')
+  editForm.hopeTaTags = Array.isArray(u.hopeTaTags) ? u.hopeTaTags.join(',') : (u.hopeTaTags || '')
+  editForm.partnerAgeRange = u.partnerAgeRange || ''
+  editForm.partnerHeightMin = u.partnerHeightMin || ''
+  editForm.partnerEducation = u.partnerEducation || ''
+  editForm.partnerIncome = u.partnerIncome || ''
+  editForm.housingRequirement = (u as any).housingRequirement || ''
+  editForm.partnerMaritalStatus = u.partnerMaritalStatus || ''
+  editForm.acceptChildren = u.acceptChildren || ''
+  editForm.status = u.status ?? 1
+  editForm.isRealName = (u as any).isRealName || 0
+  editDialogVisible.value = true
+}
+
+/** 提交编辑资料 */
+async function handleEditSave() {
+  if (!user.value) return
+  editSaving.value = true
+  try {
+    const data: Record<string, unknown> = {
+      nickname: editForm.nickname, phone: editForm.phone,
+      gender: editForm.gender, birthYear: editForm.birthYear,
+      height: editForm.height, weight: editForm.weight,
+      education: editForm.education, occupation: editForm.occupation,
+      incomeRange: editForm.incomeRange, housingStatus: editForm.housingStatus,
+      carStatus: editForm.carStatus, maritalStatus: editForm.maritalStatus,
+      onlyChild: editForm.onlyChild, whenMarry: editForm.whenMarry,
+      zodiac: editForm.zodiac, constellation: editForm.constellation,
+      hometown: editForm.hometown, residence: editForm.residence,
+      personalityTags: editForm.personalityTags.split(',').map(s => s.trim()).filter(Boolean),
+      hopeTaTags: editForm.hopeTaTags.split(',').map(s => s.trim()).filter(Boolean),
+      partnerAgeRange: editForm.partnerAgeRange, partnerHeightMin: editForm.partnerHeightMin,
+      partnerEducation: editForm.partnerEducation, partnerIncome: editForm.partnerIncome,
+      housingRequirement: editForm.housingRequirement,
+      partnerMaritalStatus: editForm.partnerMaritalStatus, acceptChildren: editForm.acceptChildren,
+      status: editForm.status, isRealName: editForm.isRealName,
+    }
+    // 仅当密码非空时才传入
+    if (editForm.password) data.password = editForm.password
+    const res = await adminUsers.update(user.value.id, data as any)
+    if (res.success) {
+      ElMessage.success('保存成功')
+      editDialogVisible.value = false
+      fetchDetail()
+    } else {
+      ElMessage.error(res.message || '保存失败')
+    }
+  } catch (e: any) { ElMessage.error(e.message || '保存失败') }
+  finally { editSaving.value = false }
 }
 
 async function handleVipSubmit() {
@@ -1341,9 +1759,12 @@ function getAuditTypeLabel(targetType: string) {
 }
 
 // ===== 财务记录辅助函数 =====
-function financeTypeLabel(type: string) {
-  const map: Record<string, string> = { vip: 'VIP充值', order: '订单', love_clue: '红线索' }
-  return map[type] || type
+/** 订单状态文字映射: 0=待支付 1=已支付 2=已退款 3=已取消 */
+function orderStatusLabel(status: number) {
+  return { 0: '待支付', 1: '已支付', 2: '已退款', 3: '已取消' }[status] || '未知'
+}
+function orderStatusType(status: number) {
+  return { 0: 'info', 1: 'success', 2: 'danger', 3: 'info' }[status] || 'info'
 }
 
 async function loadAuditHistory() {

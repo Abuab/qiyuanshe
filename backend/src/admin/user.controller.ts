@@ -17,6 +17,7 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminUserService } from './user.service'
+import { AdminPaymentService } from './payment.service'
 import { VipService } from '../vip/vip.service'
 import { Result } from '../common/result'
 
@@ -50,6 +51,7 @@ interface UserFilter {
 export class AdminUserController {
   constructor(
     private readonly userService: AdminUserService,
+    private readonly paymentService: AdminPaymentService,
     private readonly vipService: VipService,
   ) {}
 
@@ -70,6 +72,13 @@ export class AdminUserController {
   async searchUsers(@Query('keyword') keyword: string) {
     const users = await this.userService.searchUsers(keyword)
     return Result.success(users)
+  }
+
+  /** 获取用户财务记录（VIP订单等） */
+  @Get(':id/orders')
+  async userOrders(@Param('id', ParseIntPipe) id: number) {
+    const result = await this.paymentService.getUserOrders(id)
+    return Result.success(result)
   }
 
   @Get(':id')
