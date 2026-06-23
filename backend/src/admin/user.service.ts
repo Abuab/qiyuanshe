@@ -435,6 +435,14 @@ export class AdminUserService {
       order: { sortOrder: 'ASC' },
     })
 
+    // 同步头像、查询审核状态（资料 + 照片最新一条记录）
+    const [profileAudit, photoAudit] = await Promise.all([
+      this.auditLogRepository.findOne({ where: { targetType: 'user', targetId: id }, order: { createdAt: 'DESC' } }),
+      this.auditLogRepository.findOne({ where: { targetType: 'photo', targetId: id }, order: { createdAt: 'DESC' } }),
+    ])
+    const profileAuditStatus = profileAudit?.action || 'unsubmitted'
+    const photoAuditStatus = photoAudit?.action || 'unsubmitted'
+
     // 自动从第一张照片同步头像（历史数据兜底 + 实时同步）
     if ((!user.avatar || !user.avatar.trim()) && photos.length > 0) {
       const mainPhoto = photos.find(p => p.isMain === 1) || photos[0]
@@ -455,6 +463,9 @@ export class AdminUserService {
       hopeTaTags: parseSimpleJson(safeUser.hopeTaTags),
       photos: photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) })),
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
+      // 审核状态：与 list 一致，返回字符串 'PENDING'/'APPROVE'/'REJECT'/'unsubmitted'
+      profileAuditStatus,
+      photoAuditStatus,
     }
   }
 

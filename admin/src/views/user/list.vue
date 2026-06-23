@@ -490,12 +490,12 @@
             <span>{{ '¥' + (paymentMap[row.id] || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <!-- 操作列：统一按钮样式，详情(plain primary) + 更多(dropdown) + 快捷审核图标按钮 -->
-        <el-table-column v-if="!isReadonly" label="操作" width="260" fixed="right">
+        <!-- 操作列：统一按钮样式，详情(primary) + 更多(dropdown 间距 8px) + 快捷审核图标按钮(间距 4px/8px) -->
+        <el-table-column v-if="!isReadonly" label="操作" min-width="260" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="primary" plain @click="handleView(row)">详情</el-button>
+            <el-button size="small" type="primary" @click="handleView(row)">详情</el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleDropdownCommand(cmd, row)">
-              <el-button size="small" style="margin-left:4px">
+              <el-button size="small" style="margin-left:8px">
                 更多 <el-icon><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
@@ -517,8 +517,9 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <!-- 快捷审核：资料/照片审核状态为 PENDING/unsubmitted 时显示图标按钮 -->
-            <template v-if="row.profileAuditStatus && row.profileAuditStatus !== 'APPROVE' && row.profileAuditStatus !== 'REJECT'">
+            <!-- 快捷审核：仅在状态为 PENDING 时显示图标按钮，用 flex gap 统一间距 -->
+            <span style="display:inline-flex;align-items:center;gap:4px;margin-left:8px">
+            <template v-if="row.profileAuditStatus === 'PENDING'">
               <el-tooltip content="快速通过资料审核" placement="top">
                 <el-button size="small" type="success" @click="handleQuickAudit(row, 'user', 'approve')">
                   <el-icon><CheckIcon /></el-icon>
@@ -530,7 +531,7 @@
                 </el-button>
               </el-tooltip>
             </template>
-            <template v-if="row.photoAuditStatus && row.photoAuditStatus !== 'APPROVE' && row.photoAuditStatus !== 'REJECT'">
+            <template v-if="row.photoAuditStatus === 'PENDING'">
               <el-tooltip content="快速通过照片审核" placement="top">
                 <el-button size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
                   <el-icon><CheckIcon /></el-icon>
@@ -542,6 +543,7 @@
                 </el-button>
               </el-tooltip>
             </template>
+            </span>
           </template>
         </el-table-column>
       </el-table>
