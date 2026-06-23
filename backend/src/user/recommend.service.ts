@@ -554,10 +554,17 @@ export class RecommendService {
   /**
    * 同省曝光池城市优先表达式
    * province 池用户中，同城市（residence 匹配 city）优先展示
+   * city 参数经由前端传入，使用 sanitizeCity 防止 SQL 注入
    */
   private buildProvinceCityBoost(city: string): string {
-    if (!city) return '1'
-    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE '%${city}%' THEN 1 ELSE 0 END)`
+    const safe = this.sanitizeCity(city)
+    if (!safe) return '1'
+    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE '%${safe}%' THEN 1 ELSE 0 END)`
+  }
+
+  /** 对城市名做安全清洗，仅保留中文和拉丁字母，防止 SQL 注入 */
+  private sanitizeCity(city: string): string {
+    return city.replace(/[^a-zA-Z\u4e00-\u9fff\u3400-\u4dbf]/g, '').slice(0, 20)
   }
 
   private buildListCacheKey(
