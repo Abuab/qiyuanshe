@@ -16,7 +16,7 @@
           title="总用户数"
           :value="stats.totalUsers"
           icon="User"
-          color="#e8a0bf"
+          color="#409EFF"
           :change="stats.userGrowth"
         />
       </el-col>
@@ -25,7 +25,7 @@
           title="今日新增"
           :value="stats.todayNewUsers"
           icon="Plus"
-          color="#64b5f6"
+          color="#67C23A"
           :change="stats.todayGrowth"
         />
       </el-col>
@@ -35,7 +35,7 @@
           :value="stats.vipUsers"
           suffix="人"
           icon="Medal"
-          color="#9575cd"
+          color="#E6A23C"
         />
       </el-col>
       <el-col :span="6">
@@ -44,7 +44,7 @@
           :value="stats.todayRevenue"
           prefix="¥"
           icon="Money"
-          color="#81c784"
+          color="#F56C6C"
           :change="stats.revenueGrowth"
         />
       </el-col>
@@ -401,21 +401,21 @@ function updateUserChart(rawData: any[] = []) {
         type: 'line',
         smooth: true,
         data: totalData.length > 0 ? totalData : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#e8a0bf' },
+        itemStyle: { color: '#409EFF' },
       },
       {
         name: '男性',
         type: 'line',
         smooth: true,
         data: maleData.length > 0 ? maleData : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#64b5f6' },
+        itemStyle: { color: '#67C23A' },
       },
       {
         name: '女性',
         type: 'line',
         smooth: true,
         data: femaleData.length > 0 ? femaleData : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#9575cd' },
+        itemStyle: { color: '#F56C6C' },
       },
     ],
   }
@@ -427,20 +427,20 @@ function updateGenderChart(data: any[] = []) {
   if (!genderChart) return
 
   const colors: Record<string, string> = {
-    '男性': '#64b5f6',
-    '女性': '#e8a0bf',
-    '未知': '#b0bec5',
+    '男性': '#409EFF',
+    '女性': '#F56C6C',
+    '未知': '#909399',
   }
 
   const chartData = data.length > 0 
     ? data.map((item: { name: string; value: number }) => ({
         ...item,
-        itemStyle: { color: colors[item.name] || '#b0bec5' },
+        itemStyle: { color: colors[item.name] || '#909399' },
       }))
     : [
-        { value: 0, name: '男性', itemStyle: { color: '#64b5f6' } },
-        { value: 0, name: '女性', itemStyle: { color: '#e8a0bf' } },
-        { value: 0, name: '未知', itemStyle: { color: '#b0bec5' } },
+        { value: 0, name: '男性', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '女性', itemStyle: { color: '#F56C6C' } },
+        { value: 0, name: '未知', itemStyle: { color: '#909399' } },
       ]
 
   const option: echarts.EChartsOption = {
@@ -485,22 +485,22 @@ function updateAgeChart(data: any[] = []) {
   if (!ageChart) return
 
   const colors: Record<string, string> = {
-    '18-25岁': '#64b5f6',
-    '26-35岁': '#e8a0bf',
-    '36-45岁': '#9575cd',
-    '45岁以上': '#81c784',
+    '18-25岁': '#409EFF',
+    '26-35岁': '#67C23A',
+    '36-45岁': '#E6A23C',
+    '45岁以上': '#F56C6C',
   }
 
   const chartData = data.length > 0
     ? data.map((item: { name: string; value: number }) => ({
         ...item,
-        itemStyle: { color: colors[item.name] || '#b0bec5' },
+        itemStyle: { color: colors[item.name] || '#909399' },
       }))
     : [
-        { value: 0, name: '18-25岁', itemStyle: { color: '#64b5f6' } },
-        { value: 0, name: '26-35岁', itemStyle: { color: '#e8a0bf' } },
-        { value: 0, name: '36-45岁', itemStyle: { color: '#9575cd' } },
-        { value: 0, name: '45岁以上', itemStyle: { color: '#81c784' } },
+        { value: 0, name: '18-25岁', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '26-35岁', itemStyle: { color: '#67C23A' } },
+        { value: 0, name: '36-45岁', itemStyle: { color: '#E6A23C' } },
+        { value: 0, name: '45岁以上', itemStyle: { color: '#F56C6C' } },
       ]
 
   const option: echarts.EChartsOption = {
@@ -591,7 +591,7 @@ function updateRevenueChart(data: any[] = []) {
         name: '日营收',
         type: 'bar',
         data: amountData.length > 0 ? amountData : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#e8a0bf' },
+        itemStyle: { color: '#409EFF' },
       },
       {
         name: '累计营收',
@@ -599,7 +599,7 @@ function updateRevenueChart(data: any[] = []) {
         yAxisIndex: 1,
         smooth: true,
         data: cumulativeData.length > 0 ? cumulativeData : [0, 0, 0, 0, 0, 0, 0],
-        itemStyle: { color: '#9575cd' },
+        itemStyle: { color: '#F56C6C' },
       },
     ],
   }
@@ -610,8 +610,7 @@ function updateRevenueChart(data: any[] = []) {
 function updateFunnelChart(data: any[] = []) {
   if (!funnelChart) return
 
-  /* 漏斗图 - 蓝紫渐变系列，与品牌色统一 */
-  const colors = ['#64b5f6', '#9575cd', '#e8a0bf', '#81c784']
+  const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C']
 
   const chartData = data.length > 0
     ? data.map((item, index) => ({
@@ -619,10 +618,10 @@ function updateFunnelChart(data: any[] = []) {
         itemStyle: { color: colors[index % colors.length] },
       }))
     : [
-        { value: 0, name: '访问用户', itemStyle: { color: '#64b5f6' } },
-        { value: 0, name: '注册用户', itemStyle: { color: '#9575cd' } },
-        { value: 0, name: '完善资料', itemStyle: { color: '#e8a0bf' } },
-        { value: 0, name: '开通VIP', itemStyle: { color: '#81c784' } },
+        { value: 0, name: '访问用户', itemStyle: { color: '#409EFF' } },
+        { value: 0, name: '注册用户', itemStyle: { color: '#67C23A' } },
+        { value: 0, name: '完善资料', itemStyle: { color: '#E6A23C' } },
+        { value: 0, name: '开通VIP', itemStyle: { color: '#F56C6C' } },
       ]
 
   const option: echarts.EChartsOption = {
@@ -728,9 +727,9 @@ function getVipName(level: number) {
 .chart-card,
 .table-card {
   background-color: #fff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .chart-header {
