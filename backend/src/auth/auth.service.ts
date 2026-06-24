@@ -93,6 +93,21 @@ export class AuthService {
       throw new UnauthorizedException('账号已被禁用')
     }
 
+    // 如果用户尚未记录协议同意，自动补录（老用户微信登录时也补录，与 phoneLogin 一致）
+    if (!user.protocolAgreedAt) {
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
+          userId: user.id,
+          agreementType: 'USER_AGREEMENT',
+          version: '1.0',
+          action: 'agree',
+          ipAddress: ipAddress || null,
+        }),
+      )
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
+    }
+
     user.lastLoginAt = new Date()
     user.lastActiveAt = new Date()
     await this.userRepository.save(user)
