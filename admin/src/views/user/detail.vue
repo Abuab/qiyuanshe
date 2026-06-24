@@ -86,6 +86,14 @@
               </el-descriptions-item>
               <el-descriptions-item label="注册时间">{{ formatDate(user.createdAt) }}</el-descriptions-item>
               <el-descriptions-item label="最后登录">{{ formatDate(user.lastLoginAt) }}</el-descriptions-item>
+              <el-descriptions-item label="协议同意时间">
+                <span v-if="user.protocolAgreedAt">{{ formatDate(user.protocolAgreedAt) }}</span>
+                <el-tag v-else type="danger" size="small">未同意</el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="协议版本">
+                <span v-if="user.protocolVersion">{{ user.protocolVersion }}</span>
+                <span v-else>-</span>
+              </el-descriptions-item>
               <el-descriptions-item label="VIP到期">
                 <span v-if="user.vipExpireTime">{{ formatDate(user.vipExpireTime) }}</span>
                 <span v-else>未开通</span>
@@ -899,6 +907,8 @@ interface UserDetail {
   createdAt: string
   updatedAt: string
   lastLoginAt?: string
+  protocolAgreedAt?: string
+  protocolVersion?: string
   tags?: string[]
   onlyChild?: string
   whenMarry?: string
