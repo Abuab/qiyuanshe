@@ -10,7 +10,7 @@
     </view>
 
     <scroll-view class="content-scroll" scroll-y :style="{ paddingTop: navTopPx + 'px' }">
-      <!-- 5个功能栏 -->
+      <!-- 功能栏 -->
       <view class="menu-group">
         <view class="menu-row" @tap="goToBlockList">
           <view class="menu-left">
@@ -39,36 +39,13 @@
           <text class="menu-arrow">></text>
         </view>
 
-        <!-- 隐私设置：两个开关（不可用户自行修改，仅管理后台可控制） -->
-        <view class="settings-card">
-          <!-- 显示基本资料 -->
-          <view class="setting-item">
-            <view class="setting-left">
-              <text class="setting-title">显示基本资料</text>
-              <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
-            </view>
-            <view class="setting-right" @tap="onSwitchTap">
-              <view class="custom-switch" :class="{ on: showBasicProfile }">
-                <view class="switch-knob" />
-              </view>
-            </view>
+        <view class="menu-row" @tap="goToPrivacySwitches">
+          <view class="menu-left">
+            <image v-if="pageIcons.privacySettingIcon" class="menu-icon" :src="pageIcons.privacySettingIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">⚙️</text>
+            <text class="menu-label">隐私设置</text>
           </view>
-
-          <!-- 分割线 -->
-          <view class="setting-divider" />
-
-          <!-- 委托平台 -->
-          <view class="setting-item">
-            <view class="setting-left">
-              <text class="setting-title">委托平台</text>
-              <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
-            </view>
-            <view class="setting-right" @tap="onSwitchTap">
-              <view class="custom-switch" :class="{ on: delegateToPlatform }">
-                <view class="switch-knob" />
-              </view>
-            </view>
-          </view>
+          <text class="menu-arrow">></text>
         </view>
 
         <view class="menu-row" @tap="handleDeactivate">
@@ -104,40 +81,13 @@
         </view>
       </view>
     </view>
-
-    <!-- 开关点击提示弹窗 -->
-    <view v-if="showTipDialog" class="dialog-overlay" @tap="handleTipCancel">
-      <view class="dialog-box" @tap.stop>
-        <text class="dialog-title">提示</text>
-        <text class="dialog-content">请联系红娘修改设置</text>
-        <view class="dialog-buttons">
-          <view class="dialog-btn cancel-btn" @tap="handleTipCancel">
-            <text>下次再说</text>
-          </view>
-          <view class="dialog-btn confirm-btn" @tap="handleGoContact">
-            <text>去联系</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
-    <!-- 红娘联系方式弹窗 -->
-    <matchmaker-popup
-      :show="showMatchmakerPopup"
-      :matchmaker="selectedMatchmaker || defaultMatchmaker"
-      @update:show="showMatchmakerPopup = $event"
-      @close="showMatchmakerPopup = false"
-    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
-import { get, put } from '@/utils/request'
-import { getFullImageUrl } from '@/utils/common'
-import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
-import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import { put } from '@/utils/request'
 
 const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
@@ -146,46 +96,11 @@ const showDialog = ref(false)
 
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
-// 隐私开关状态（仅管理后台可修改，小程序端只读）
-const showBasicProfile = ref(true)
-const delegateToPlatform = ref(false)
-
-// 开关点击提示弹窗
-const showTipDialog = ref(false)
-
-// 红娘弹窗
-const showMatchmakerPopup = ref(false)
-const selectedMatchmaker = ref<MatchmakerData | null>(null)
-const defaultMatchmaker: MatchmakerData = {
-  id: 0,
-  name: '红娘',
-  avatar: '',
-  title: '专属红娘',
-  wechat: '',
-  phone: '',
-  qrCode: '',
-}
-
-onMounted(async () => {
+onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
-
-  await loadSettings()
 })
-
-/** 加载当前隐私设置 */
-const loadSettings = async () => {
-  try {
-    const res: any = await get('/auth/profile')
-    if (res) {
-      showBasicProfile.value = res.showBasicProfile ?? true
-      delegateToPlatform.value = res.delegateToPlatform ?? false
-    }
-  } catch {
-    // 使用默认值
-  }
-}
 
 const handleBack = () => {
   uni.navigateBack()
@@ -203,41 +118,8 @@ const goToSelfDiscipline = () => {
   uni.navigateTo({ url: '/pages/agreement/index?type=selfDiscipline' })
 }
 
-/** 两个开关点击均弹窗提示 */
-const onSwitchTap = () => {
-  showTipDialog.value = true
-}
-
-/** 提示 - 下次再说 */
-const handleTipCancel = () => {
-  showTipDialog.value = false
-}
-
-/** 提示 - 去联系红娘 */
-const handleGoContact = async () => {
-  showTipDialog.value = false
-
-  try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    if (rawList.length === 0) {
-      uni.showToast({ title: '暂无红娘信息', icon: 'none' })
-      return
-    }
-    const item = rawList[0]
-    selectedMatchmaker.value = {
-      id: item.id || 0,
-      name: item.name || '红娘',
-      avatar: getFullImageUrl(item.avatar),
-      title: item.title || '专属红娘',
-      wechat: item.wechat || '',
-      phone: item.phone || '',
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-    }
-    showMatchmakerPopup.value = true
-  } catch {
-    uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
-  }
+const goToPrivacySwitches = () => {
+  uni.navigateTo({ url: '/pages/privacy-switches/index' })
 }
 
 const showDeactivateDialog = () => {
@@ -347,78 +229,6 @@ const handleDeactivate = () => {
 .menu-arrow {
   font-size: 28rpx;
   color: #ccc;
-}
-
-/* ===== 隐私设置卡片（两个开关） ===== */
-.settings-card {
-  background-color: #fff;
-  margin: 0;
-  padding: 0 32rpx;
-}
-
-.setting-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 32rpx 0;
-}
-
-.setting-left {
-  flex: 1;
-  margin-right: 24rpx;
-}
-
-.setting-title {
-  font-size: 30rpx;
-  color: #333;
-  display: block;
-}
-
-.setting-desc {
-  font-size: 24rpx;
-  color: #999;
-  margin-top: 6rpx;
-  display: block;
-  line-height: 1.4;
-}
-
-.setting-right {
-  flex-shrink: 0;
-}
-
-.setting-divider {
-  height: 1rpx;
-  background-color: #f5f5f5;
-}
-
-/* ===== 自定义仿开关（替代原生 switch，彻底消除 toggle 动画） ===== */
-.custom-switch {
-  width: 104rpx;
-  height: 64rpx;
-  border-radius: 32rpx;
-  background-color: #e5e5e5;
-  position: relative;
-  transition: background-color 0.2s ease;
-}
-
-.custom-switch.on {
-  background-color: #ff6b6b;
-}
-
-.switch-knob {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.15);
-  position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  transition: left 0.2s ease;
-}
-
-.custom-switch.on .switch-knob {
-  left: 44rpx;
 }
 
 .deactivate-hint {

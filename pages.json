@@ -276,6 +276,13 @@
       }
     },
     {
+      "path": "pages/privacy-switches/index",
+      "style": {
+        "navigationBarTitleText": "隐私设置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/block-list/index",
       "style": {
         "navigationBarTitleText": "黑名单",
