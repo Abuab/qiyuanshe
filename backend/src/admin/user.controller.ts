@@ -353,4 +353,21 @@ export class AdminUserController {
     await this.userService.adminRemoveLike(id, targetId)
     return Result.success(null, '取消喜欢成功')
   }
+
+  // ===== 标签管理 =====
+
+  @Put('batch/tags')
+  async batchUpdateTags(@Body() body: { ids: number[]; tags: string[] }) {
+    const count = await this.userService.batchUpdateTags(body.ids, body.tags)
+    return Result.success({ updated: count }, `批量标签更新成功，更新 ${count} 人`)
+  }
+
+  @Put(':id/tags')
+  async updateTags(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { tags: string[] },
+  ) {
+    const result = await this.userService.updateTags(id, body.tags)
+    return Result.success(result, '标签更新成功')
+  }
 }

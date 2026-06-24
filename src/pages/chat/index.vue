@@ -226,7 +226,7 @@ const limit = 20
 const loading = ref(false)
 const loadingMore = ref(false)
 const noMore = ref(false)
-const scrollIntoView = ref('msg-bottom')
+const scrollIntoView = ref('') // 修复：初始值为空字符串，避免页面空列表/数据未加载完成时就开始追踪滚动目标
 const keyboardHeight = ref(0)
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -250,6 +250,7 @@ const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
 const scrollLockUntil = ref(0) // 滚动锁定时长，防止 onScroll 在 scrollToBottom 动画期间覆盖状态
+let lastScrollToBottomTime = 0 // 修复：scrollToBottom 最短调用间隔（300ms 防抖），防止短时间内多次调用导致反复跳动
 let tempMsgIdCounter = -1 // 临时消息 ID（负数避免与后端自增 ID 冲突）
 const seenMsgIds = new Set<number>() // 已处理消息 ID，防重复
 
@@ -344,8 +345,12 @@ const fetchMessages = async (isLoadMore = false) => {
 
     page.value++
     if (!isLoadMore) {
-      // 修复 D：首次加载后滚动到底部（最新消息在下方）
-      nextTick(() => scrollToBottom())
+      // 修复：首次加载时延迟 400ms 再滚动到底部，给渲染层留出完成布局计算的时间
+      // nextTick 只保证 Vue DOM 更新，不保证原生渲染层已完成布局
+      setTimeout(() => {
+        console.log('[fetchMessages] first load done, delayed scrollToBottom')
+        scrollToBottom()
+      }, 400)
     }
   } catch (e) {
     logger.error('fetch messages error', e)
@@ -411,6 +416,14 @@ const handleSend = async () => {
 
 // ===== 滚动到底部 =====
 const scrollToBottom = () => {
+  // 修复：最短调用间隔 300ms 防抖，防止 fetchMessages/轮询/发送消息在短时间内多次触发导致跳动
+  const now = Date.now()
+  if (now - lastScrollToBottomTime < 300) {
+    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    return
+  }
+  lastScrollToBottomTime = now
+
   console.log('[scrollToBottom] called, isUserScrolledUp=', isUserScrolledUp.value, 'showNewMsgTip=', showNewMsgTip.value, 'msgCount=', messages.value.length)
   isUserScrolledUp.value = false
   showNewMsgTip.value = false

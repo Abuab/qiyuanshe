@@ -269,6 +269,15 @@ export const adminUsers = {
     return request.get('/admin/users/search', { params: { keyword } })
   },
 
+  // 标签管理
+  updateTags(id: number, tags: string[]): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}/tags`, { tags })
+  },
+
+  batchUpdateTags(ids: number[], tags: string[]): Promise<ApiResponse> {
+    return request.put('/admin/users/batch/tags', { ids, tags })
+  },
+
   // 浏览记录
   getUserViewDetail(id: number): Promise<ApiResponse<any[]>> {
     return request.get(`/admin/users/${id}/view-detail`)

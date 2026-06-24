@@ -1888,19 +1888,17 @@ function handleRemoveTag(tag: string) {
   currentUserTags.value = currentUserTags.value.filter(t => t !== tag)
 }
 
-/** 保存标签：优先调用后端 API，失败则降级为本地保存 */
+/** 保存标签：调用后端 API 持久化保存 */
 async function handleSaveTags() {
-  currentUserTags.value = [...tagDraftSelected.value]
-  tagDialogVisible.value = false
   try {
-    // 尝试调用后端标签接口持久化保存
     if (user.value) {
-      await (adminUsers as any).updateTags(user.value.id, currentUserTags.value)
+      await adminUsers.updateTags(user.value.id, tagDraftSelected.value)
+      currentUserTags.value = [...tagDraftSelected.value]
+      tagDialogVisible.value = false
+      ElMessage.success('标签保存成功')
     }
-    ElMessage.success('标签已保存到服务器')
-  } catch {
-    // 后端标签接口不存在，降级为本地保存（刷新后丢失）
-    ElMessage.warning('标签已本地保存，刷新后可能丢失，请确认后端已提供标签保存接口')
+  } catch (err: any) {
+    ElMessage.error('标签保存失败：' + (err?.message || err))
   }
 }
 

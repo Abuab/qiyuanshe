@@ -1058,6 +1058,57 @@ export class AdminUserService {
       viewCount: Number(r.viewCount),
     }))
   }
+
+  /** 单个用户更新标签（去重），同时记录审计日志 */
+  async updateTags(userId: number, tags: string[]) {
+    const user = await this.userRepository.findOne({ where: { id: userId, isDeleted: 0 } })
+    if (!user) throw new Error('用户不存在')
+
+    const uniqueTags = [...new Set(tags.filter(Boolean))]
+    await this.userRepository.update(userId, { tags: uniqueTags as any })
+
+    await this.auditLogRepository.save(
+      this.auditLogRepository.create({
+        targetType: 'user',
+        targetId: userId,
+        action: 'UPDATE_TAGS',
+        content: JSON.stringify({ tags: uniqueTags }),
+      }),
+    )
+
+    return { userId, tags: uniqueTags }
+  }
+
+  /** 批量更新标签：为每个用户追加新标签（去重，不覆盖已有标签），使用事务 */
+  async batchUpdateTags(userIds: number[], tags: string[]) {
+    const newTags = [...new Set(tags.filter(Boolean))]
+    if (newTags.length === 0 || userIds.length === 0) return 0
+
+    let updatedCount = 0
+    await this.userRepository.manager.transaction(async (manager) => {
+      for (const userId of userIds) {
+        const user = await manager.findOne(User, { where: { id: userId, isDeleted: 0 } })
+        if (!user) continue
+
+        const existing: string[] = Array.isArray(user.tags) ? user.tags : []
+        const merged = [...new Set([...existing, ...newTags])]
+        await manager.update(User, userId, { tags: merged as any })
+        updatedCount++
+      }
+    })
+
+    // 记录批量操作日志
+    await this.auditLogRepository.save(
+      this.auditLogRepository.create({
+        targetType: 'user',
+        targetId: 0,
+        action: 'BATCH_UPDATE_TAGS',
+        content: JSON.stringify({ userIds, tags: newTags }),
+      }),
+    )
+
+    return updatedCount
+  }
 }
 
 /**

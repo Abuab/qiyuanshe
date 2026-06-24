@@ -2673,23 +2673,27 @@ function handleAddListPresetTag(label: string) {
   tagDraftSelected.value.push(label)
 }
 
-/** 保存标签：单用户更新后端，批量仅前端模拟 */
+/** 保存标签：调用后端 API 持久化保存 */
 async function handleListSaveTags() {
   tagSaving.value = true
   try {
     if (tagTargetUser.value) {
       // 单用户打标签
-      // TODO: 接入后端标签接口 - adminUsers.updateTags(userId, tags)
-      ElMessage.success('标签已保存（前端模拟，待接入后端接口）')
+      await adminUsers.updateTags(tagTargetUser.value.id, tagDraftSelected.value)
+      ElMessage.success('标签保存成功')
     } else {
       // 批量打标签：为每个选中用户追加标签
-      // TODO: 接入后端批量标签接口 - adminUsers.batchUpdateTags(ids, tags)
-      ElMessage.success(`已为 ${selectedRows.value.length} 人打标签（前端模拟，待接入后端接口）`)
+      await adminUsers.batchUpdateTags(
+        selectedRows.value.map(r => r.id),
+        tagDraftSelected.value,
+      )
+      ElMessage.success(`已为 ${selectedRows.value.length} 人打标签`)
     }
     tagDialogVisible.value = false
     fetchData() // 刷新列表以更新标签显示
-  } catch { ElMessage.error('保存标签失败') }
-  finally { tagSaving.value = false }
+  } catch (err: any) {
+    ElMessage.error('标签保存失败：' + (err?.message || err))
+  } finally { tagSaving.value = false }
 }
 
 // ===== 查看备注操作函数 =====

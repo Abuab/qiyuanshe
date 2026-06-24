@@ -234,6 +234,8 @@ const toUserIdToMonitor = ref(0)
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const POLLING_INTERVAL = 2500
 let visibilityHandler: (() => void) | null = null
+// 修复：scrollToBottom 最短调用间隔（300ms 防抖），防止首次加载/轮询/WebSocket/代发短时间内连续触发导致跳动
+let lastScrollToBottomTime = 0
 
 // ===== 修复 B：统一的发送者判断（兼容 string/number 类型不一致） =====
 function isFromTarget(msg: any): boolean {
@@ -585,7 +587,17 @@ async function fetchMessages() {
       const list = res.data.list || []
       messages.value = list
       messageTotal.value = res.data.total || 0
-      nextTick(() => scrollToBottom())
+      // 修复：仅在第一页时自动滚动到底部，非第一页为查看历史消息不打断
+      if (messagePage.value === 1) {
+        // 修复：延迟 500ms 再滚动到底部，给浏览器渲染层留出完成布局计算的时间
+        // nextTick 只保证 Vue DOM 更新，不保证浏览器已完成 layout/paint
+        setTimeout(() => {
+          console.log('[fetchMessages] page 1 loaded, delayed scrollToBottom, msgCount=', messages.value.length)
+          scrollToBottom()
+        }, 500)
+      } else {
+        console.log('[fetchMessages] page', messagePage.value, 'loaded, skip scrollToBottom (viewing history)')
+      }
     }
   } catch {
     ElMessage.error('获取聊天记录失败')
@@ -594,12 +606,21 @@ async function fetchMessages() {
   }
 }
 
-// ===== 修复 C：统一滚动到底部 =====
+// ===== 修复：统一滚动到底部（含 300ms 防抖，防止短时间内多次调用导致跳动） =====
 function scrollToBottom() {
+  const now = Date.now()
+  if (now - lastScrollToBottomTime < 300) {
+    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    return
+  }
+  lastScrollToBottomTime = now
+
+  console.log('[scrollToBottom] executing scroll, msgCount=', messages.value.length)
   nextTick(() => {
     const el = msgContainerRef.value
     if (el) {
       el.scrollTop = el.scrollHeight
+      console.log('[scrollToBottom] scrollTop set to', el.scrollHeight)
     }
   })
 }
