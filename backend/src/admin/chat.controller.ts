@@ -55,12 +55,14 @@ export class AdminChatController {
     @Param('toUserId', ParseIntPipe) toUserId: number,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('beforeId') beforeId?: number,
   ) {
     const result = await this.chatService.getMessages(
       fromUserId,
       toUserId,
       page ? Number(page) : 1,
       limit ? Number(limit) : 50,
+      beforeId ? Number(beforeId) : undefined,
     )
     return Result.success(result)
   }

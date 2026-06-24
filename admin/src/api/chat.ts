@@ -59,9 +59,10 @@ export const adminChat = {
     toUserId: number,
     page?: number,
     limit?: number,
+    beforeId?: number,
   ): Promise<ApiResponse<MessageListResponse>> {
     return request.get(`/admin/chat/conversations/${fromUserId}/${toUserId}`, {
-      params: { page, limit },
+      params: { page, limit, beforeId },
     })
   },
 

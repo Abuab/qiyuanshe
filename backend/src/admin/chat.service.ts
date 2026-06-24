@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 
 @Injectable()
@@ -86,25 +86,42 @@ export class AdminChatService {
     return { list, page, limit, total }
   }
 
-  /** 查询两个用户之间的聊天记录 */
+  /** 查询两个用户之间的聊天记录（游标分页：beforeId > 0 加载更早消息，否则加载最新消息） */
   async getMessages(
     fromUserId: number,
     toUserId: number,
     page: number = 1,
     limit: number = 50,
+    beforeId?: number,
   ) {
-    const skip = (page - 1) * limit
+    const whereConditions = [
+      { fromUserId, toUserId },
+      { fromUserId: toUserId, toUserId: fromUserId },
+    ]
 
-    const [list, total] = await this.messageRepository.findAndCount({
-      where: [
-        { fromUserId, toUserId },
-        { fromUserId: toUserId, toUserId: fromUserId },
-      ],
-      order: { createdAt: 'ASC' },
-      skip,
-      take: limit,
-      relations: ['fromUser', 'toUser'],
-    })
+    let list: any[]
+    let total: number
+
+    if (beforeId && beforeId > 0) {
+      // 上拉加载更多：查 id < beforeId 的更早消息，DESC + take + reverse 为正序
+      whereConditions.forEach((cond: any) => (cond.id = LessThan(beforeId)))
+      ;[list, total] = await this.messageRepository.findAndCount({
+        where: whereConditions,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        relations: ['fromUser', 'toUser'],
+      })
+      list.reverse()
+    } else {
+      // 首次加载/分页跳转：查最新的 limit 条，DESC + take + reverse 为正序（旧→新）
+      ;[list, total] = await this.messageRepository.findAndCount({
+        where: whereConditions,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        relations: ['fromUser', 'toUser'],
+      })
+      list.reverse()
+    }
 
     return { list, page, limit, total }
   }

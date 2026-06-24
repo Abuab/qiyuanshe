@@ -98,7 +98,13 @@
             <div v-if="messageLoading" class="msg-loading">
               <el-icon class="is-loading"><Loading /></el-icon>
             </div>
-            <div v-else-if="messages.length === 0" class="msg-empty">暂无聊天记录</div>
+            <!-- 加载更多历史消息 -->
+            <div v-if="!messageLoading && !noMoreMessages && messages.length > 0" class="load-more-bar">
+              <el-button text type="primary" :loading="loadingMoreHistory" @click="loadMoreHistory">
+                加载更早的消息
+              </el-button>
+            </div>
+            <div v-else-if="!messageLoading && messages.length === 0" class="msg-empty">暂无聊天记录</div>
             <div
               v-for="msg in messages"
               :key="msg.id"
@@ -121,19 +127,6 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- 分页 -->
-          <div class="chat-pagination" v-if="messageTotal > pageSize">
-            <el-pagination
-              v-model:current-page="messagePage"
-              :page-size="pageSize"
-              :total="messageTotal"
-              layout="prev, pager, next"
-              small
-              background
-              @current-change="fetchMessages"
-            />
           </div>
 
           <!-- 底部输入框（仅监控中可用） -->
@@ -221,10 +214,13 @@ const conversationLoading = ref(false)
 const activePeer = ref<any>(null)
 const messages = ref<ChatMessageItem[]>([])
 const messageLoading = ref(false)
-const messagePage = ref(1)
+const loadingMoreHistory = ref(false)
+const noMoreMessages = ref(false)
 const pageSize = 50
-const messageTotal = ref(0)
 const msgContainerRef = ref<HTMLElement | null>(null)
+
+// WebSocket 消息缓冲区：历史消息加载完成前暂存 WS 推送的消息
+const wsPendingMessages = ref<ChatMessageItem[]>([])
 
 // ===== 代发 =====
 const proxyContent = ref('')
@@ -597,10 +593,15 @@ function handleWsMessage(data: any) {
   if (isRelevant) {
     // 避免重复消息
     if (!messages.value.some((m) => Number(m.id) === Number(data.id))) {
-      messages.value.push(data)
-      // 修复：仅当用户未手动上滑时自动滚动到底部
-      if (!isUserScrolledUp.value) {
-        nextTick(() => scrollToBottom())
+      // 历史消息加载中？暂存到缓冲区，等加载完成后再合并
+      if (messageLoading.value) {
+        wsPendingMessages.value.push(data)
+      } else {
+        messages.value.push(data)
+        // 修复：仅当用户未手动上滑时自动滚动到底部
+        if (!isUserScrolledUp.value) {
+          nextTick(() => scrollToBottom())
+        }
       }
     }
   }
@@ -629,8 +630,9 @@ async function loadConversations() {
 function selectSession(conv: any) {
   activePeer.value = conv
   toUserIdToMonitor.value = conv.userId
-  messagePage.value = 1
   messages.value = []
+  noMoreMessages.value = false
+  wsPendingMessages.value = []
   fetchMessages()
   // 修复 B：切换会话时重启轮询
   startPolling()
@@ -644,34 +646,70 @@ async function fetchMessages() {
     const res = await adminChat.getMessages(
       targetUserId.value,
       activePeer.value.userId,
-      messagePage.value,
+      undefined, // page 不再使用
       pageSize,
+      0, // beforeId=0 表示加载最新消息
     )
     if (res.success && res.data) {
       const list = res.data.list || []
       messages.value = list
-      messageTotal.value = res.data.total || 0
-      // 修复：仅在第一页时自动滚动到底部，非第一页为查看历史消息不打断
-      if (messagePage.value === 1) {
-        // 修复：延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
-        // 两次调用确保 DOM 完全稳定后精确滚动到底部
-        setTimeout(() => {
-          console.log('[fetchMessages] page 1 loaded, 300ms scrollToBottom, msgCount=', messages.value.length)
-          scrollToBottom()
-        }, 300)
-        setTimeout(() => {
-          console.log('[fetchMessages] page 1 loaded, 900ms scrollToBottom (ensure), msgCount=', messages.value.length)
-          scrollToBottom()
-        }, 900)
-      } else {
-        console.log('[fetchMessages] page', messagePage.value, 'loaded, skip scrollToBottom (viewing history)')
-      }
+      // 不足 pageSize 条说明没有更多历史消息
+      if (list.length < pageSize) noMoreMessages.value = true
+
+      // 首次加载：nextTick + 300ms fallback 滚动到底部
+      nextTick(() => scrollToBottom())
+      setTimeout(() => scrollToBottom(), 300)
     }
   } catch {
     ElMessage.error('获取聊天记录失败')
   } finally {
     messageLoading.value = false
+
+    // 历史消息加载完成后，合并 WS 缓冲区中的消息
+    flushWsPendingMessages()
   }
+}
+
+/** 加载更早的历史消息 */
+async function loadMoreHistory() {
+  if (!activePeer.value || !targetUserId.value || messages.value.length === 0) return
+  loadingMoreHistory.value = true
+  try {
+    const oldestId = messages.value[0].id
+    const res = await adminChat.getMessages(
+      targetUserId.value,
+      activePeer.value.userId,
+      undefined,
+      pageSize,
+      oldestId, // beforeId = 最旧消息的 id
+    )
+    if (res.success && res.data) {
+      const list = res.data.list || []
+      if (list.length === 0) {
+        noMoreMessages.value = true
+      } else {
+        messages.value = [...list, ...messages.value]
+        if (list.length < pageSize) noMoreMessages.value = true
+      }
+    }
+  } catch {
+    ElMessage.error('加载失败')
+  } finally {
+    loadingMoreHistory.value = false
+  }
+}
+
+/** 将 WebSocket 缓冲区中的消息合并到消息列表（去重后追加） */
+function flushWsPendingMessages() {
+  if (wsPendingMessages.value.length === 0) return
+  const pending = wsPendingMessages.value
+  wsPendingMessages.value = []
+  for (const msg of pending) {
+    if (!messages.value.some((m) => Number(m.id) === Number(msg.id))) {
+      messages.value.push(msg)
+    }
+  }
+  nextTick(() => scrollToBottom())
 }
 
 // ===== 修复：统一滚动到底部（含 300ms 防抖，防止短时间内多次调用导致跳动） =====
