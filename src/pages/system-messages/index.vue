@@ -102,6 +102,7 @@ onShow(() => {
 })
 
 const fetchList = async (isRefresh = false) => {
+  if (loading.value) return
   if (isRefresh) {
     page.value = 1
     noMore.value = false
