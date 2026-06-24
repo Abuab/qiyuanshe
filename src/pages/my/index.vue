@@ -421,6 +421,10 @@ const goToMyLikes = () => uni.navigateTo({ url: '/pages/my-likes/my-likes' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 const goToUserAgreement = () => uni.navigateTo({ url: '/pages/agreement/index?type=user' })
 const goToAntiFraud = () => uni.navigateTo({ url: '/pages/agreement/index?type=antiFraud' })
+const goToFeedback = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
+  uni.navigateTo({ url: '/pages/feedback/index' })
+}
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 // 需要登录的 key 列表
@@ -436,7 +440,7 @@ const handleToolClick = (key: string) => {
     loveQuotes: goToLoveQuotes,
     myLikes: goToMyLikes,
     privacy: goToPrivacySettings,
-    feedback: showComingSoon,
+    feedback: goToFeedback,
     userAgreement: goToUserAgreement,
     antiFraud: goToAntiFraud,
   }

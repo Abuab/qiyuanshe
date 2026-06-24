@@ -243,6 +243,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/vip/page-config.vue'),
         meta: { title: '页面配置', requiresAuth: true },
       },
+      {
+        path: '/feedback',
+        name: 'FeedbackList',
+        component: () => import('../views/feedback/index.vue'),
+        meta: { title: '问题反馈', requiresAuth: true },
+      },
     ],
   },
 ]

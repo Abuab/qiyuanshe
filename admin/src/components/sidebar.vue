@@ -72,6 +72,11 @@
         <template #title>举报管理</template>
       </el-menu-item>
 
+      <el-menu-item v-if="isSuperAdmin" index="/feedback">
+        <el-icon><ChatLineSquare /></el-icon>
+        <template #title>问题反馈</template>
+      </el-menu-item>
+
       <el-menu-item v-if="isSuperAdmin || userInfo?.role === 'matchmaker'" index="/matchmaker-dynamics">
         <el-icon><Promotion /></el-icon>
         <template #title>红娘发布动态</template>
@@ -188,6 +193,7 @@ import {
   ChatDotRound,
   Promotion,
   Ticket,
+  ChatLineSquare,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

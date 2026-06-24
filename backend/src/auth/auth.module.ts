@@ -7,12 +7,13 @@ import { AuthService } from './auth.service'
 import { JwtStrategy } from './strategies/jwt.strategy'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
+import { Feedback } from '../entities/Feedback'
 import { jwtConfig } from '../config/jwt'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserAgreement]),
+    TypeOrmModule.forFeature([User, UserAgreement, Feedback]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: jwtConfig.secret,

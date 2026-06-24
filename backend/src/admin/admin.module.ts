@@ -56,6 +56,7 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
+import { AdminFeedbackController } from './feedback.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
 import { AdminAccountService } from './admin-account.service'
@@ -73,6 +74,7 @@ import { NotifyChannelService } from './notify-channel.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
+import { Feedback } from '../entities/Feedback'
 
 @Module({
   imports: [
@@ -105,6 +107,7 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
       ProfileVisit,
       NotifyLog,
       AiFeatureSwitchLog,
+      Feedback,
     ]),
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
@@ -134,6 +137,7 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
     AdminMatchmakerDynamicController,
     VipPackageController,
     AdminVipConfigController,
+    AdminFeedbackController,
   ],
   providers: [
     AdminUserService,
