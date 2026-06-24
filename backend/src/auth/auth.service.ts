@@ -8,6 +8,7 @@ import { UserAgreement } from '../entities/UserAgreement'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
+import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
@@ -42,6 +43,7 @@ export class AuthService {
     @InjectRepository(UserAgreement)
     private readonly agreementRepo: Repository<UserAgreement>,
     private readonly jwtService: JwtService,
+    private readonly agreementLogStorage: AgreementLogStorageService,
   ) {}
 
   async wechatLogin(code: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
@@ -85,6 +87,15 @@ export class AuthService {
           ipAddress: ipAddress || null,
         }),
       )
+      // 同步写入 AgreementLogStorage，确保管理后台"同意记录查询"可查到
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: '',
+      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }
@@ -104,6 +115,15 @@ export class AuthService {
           ipAddress: ipAddress || null,
         }),
       )
+      // 同步写入 AgreementLogStorage
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: '',
+      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }
@@ -157,6 +177,15 @@ export class AuthService {
           ipAddress: ipAddress || null,
         }),
       )
+      // 同步写入 AgreementLogStorage
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: '',
+      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }

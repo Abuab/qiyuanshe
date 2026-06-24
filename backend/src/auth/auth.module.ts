@@ -8,6 +8,7 @@ import { JwtStrategy } from './strategies/jwt.strategy'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
 import { jwtConfig } from '../config/jwt'
+import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { jwtConfig } from '../config/jwt'
       secret: jwtConfig.secret,
       signOptions: { expiresIn: jwtConfig.expiresIn },
     }),
+    AgreementLogStorageModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

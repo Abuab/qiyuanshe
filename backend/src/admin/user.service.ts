@@ -230,6 +230,7 @@ export class AdminUserService {
         .select('a.targetId', 'targetId')
         .addSelect('a.action', 'action')
         .where('a.targetType = :userType', { userType: 'user' })
+        .andWhere('a.action IN (:...auditActions)', { auditActions: ['PENDING', 'APPROVE', 'REJECT'] })
         .andWhere('a.targetId IN (:...userIds)', { userIds })
         .orderBy('a.createdAt', 'DESC')
         .getRawMany<{ targetId: number; action: string }>()
@@ -438,8 +439,12 @@ export class AdminUserService {
     })
 
     // 同步头像、查询审核状态（资料 + 照片最新一条记录）
+    // 注意：排除 UPDATE_TAGS/BATCH_UPDATE_TAGS 等非审核操作，避免误将运营操作当作审核状态
     const [profileAudit, photoAudit] = await Promise.all([
-      this.auditLogRepository.findOne({ where: { targetType: 'user', targetId: id }, order: { createdAt: 'DESC' } }),
+      this.auditLogRepository.findOne({
+        where: { targetType: 'user', targetId: id, action: In(['PENDING', 'APPROVE', 'REJECT']) },
+        order: { createdAt: 'DESC' },
+      }),
       this.auditLogRepository.findOne({ where: { targetType: 'photo', targetId: id }, order: { createdAt: 'DESC' } }),
     ])
     const profileAuditStatus = profileAudit?.action || 'unsubmitted'
