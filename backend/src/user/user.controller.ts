@@ -372,13 +372,6 @@ export class UserController {
     return Result.success(null, '账户已注销')
   }
 
-  @Put('privacy-settings')
-  @UseGuards(JwtAuthGuard)
-  async updatePrivacySettings(@Body() body: { showBasicProfile?: boolean }, @Request() req: any) {
-    const result = await this.userService.updatePrivacySettings(req.user.userId, body)
-    return Result.success(result, '设置已保存')
-  }
-
   @Get('matches')
   @UseGuards(JwtAuthGuard)
   async getMatches(@Request() req: any) {

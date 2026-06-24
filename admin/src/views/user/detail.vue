@@ -692,6 +692,20 @@
         </el-tab-pane>
         <el-tab-pane label="账户状态" name="account">
           <el-form :model="editForm" label-width="100px" size="default">
+            <el-form-item label="显示基本资料">
+              <el-switch
+                v-model="editForm.showBasicProfile"
+                active-text="显示"
+                inactive-text="隐藏"
+              />
+            </el-form-item>
+            <el-form-item label="委托平台">
+              <el-switch
+                v-model="editForm.delegateToPlatform"
+                active-text="已委托"
+                inactive-text="未委托"
+              />
+            </el-form-item>
             <el-form-item label="账号状态">
               <el-radio-group v-model="editForm.status">
                 <el-radio :value="1">正常</el-radio>
@@ -996,6 +1010,7 @@ const editForm = reactive({
   partnerAgeRange: '', partnerHeightMin: '', partnerEducation: '', partnerIncome: '',
   housingRequirement: '', partnerMaritalStatus: '', acceptChildren: '',
   status: 1, isRealName: 0,
+  showBasicProfile: true, delegateToPlatform: false,
 })
 
 // 编辑资料下拉选项常量（与列表页保持一致）
@@ -1534,6 +1549,8 @@ function handleEditProfile() {
   editForm.acceptChildren = u.acceptChildren || ''
   editForm.status = u.status ?? 1
   editForm.isRealName = (u as any).isRealName || 0
+  editForm.showBasicProfile = (u as any).showBasicProfile ?? true
+  editForm.delegateToPlatform = (u as any).delegateToPlatform ?? false
   editDialogVisible.value = true
 }
 
@@ -1559,6 +1576,7 @@ async function handleEditSave() {
       housingRequirement: editForm.housingRequirement,
       partnerMaritalStatus: editForm.partnerMaritalStatus, acceptChildren: editForm.acceptChildren,
       status: editForm.status, isRealName: editForm.isRealName,
+      showBasicProfile: editForm.showBasicProfile, delegateToPlatform: editForm.delegateToPlatform,
     }
     // 仅当密码非空时才传入
     if (editForm.password) data.password = editForm.password

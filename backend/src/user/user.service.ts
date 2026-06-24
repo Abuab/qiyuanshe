@@ -1011,22 +1011,6 @@ export class UserService {
       .filter(Boolean) as { id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
   }
 
-  /** 更新隐私设置（仅限 showBasicProfile 字段，用户可自行修改） */
-  async updatePrivacySettings(userId: number, settings: { showBasicProfile?: boolean }) {
-    const updateData: Partial<User> = {}
-    if (settings.showBasicProfile !== undefined) {
-      updateData.showBasicProfile = settings.showBasicProfile
-    }
-    if (Object.keys(updateData).length > 0) {
-      await this.userRepository.update(userId, updateData)
-    }
-    const user = await this.userRepository.findOne({ where: { id: userId, isDeleted: 0 } })
-    return {
-      showBasicProfile: user?.showBasicProfile ?? true,
-      delegateToPlatform: user?.delegateToPlatform ?? false,
-    }
-  }
-
   /** 记录用户协议同意/不同意 */
   async recordAgreement(
     userId: number,

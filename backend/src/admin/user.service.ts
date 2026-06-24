@@ -361,6 +361,8 @@ export class AdminUserService {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
         lastLoginAt: user.lastLoginAt,
+        showBasicProfile: user.showBasicProfile ?? true,
+        delegateToPlatform: user.delegateToPlatform ?? false,
         tags,
         personalityTags,
         hopeTaTags,

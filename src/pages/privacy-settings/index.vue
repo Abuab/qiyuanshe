@@ -77,7 +77,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { get, put } from '@/utils/request'
+import { get } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -129,15 +129,9 @@ const handleBack = () => {
   uni.navigateBack()
 }
 
-/** 隐私设置开关 - 直接保存 */
-const onBasicProfileChange = async (e: any) => {
-  const newVal = e.detail.value
-  try {
-    await put('/users/privacy-settings', { showBasicProfile: newVal })
-    showBasicProfile.value = newVal
-  } catch {
-    uni.showToast({ title: '保存失败', icon: 'none' })
-  }
+/** 隐私设置开关 - 拦截并弹窗（不回写 ref 值，开关保持原状态） */
+const onBasicProfileChange = () => {
+  showTipDialog.value = true
 }
 
 /** 委托平台开关 - 拦截并弹窗（不回写 ref 值，开关保持原状态） */
