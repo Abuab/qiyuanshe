@@ -55,8 +55,8 @@ onMounted(async () => {
   const t = options.type || 'user'
   type.value = t
 
-  // 防骗提醒页面顶部标题栏显示小程序名称
-  const navTitle = t === 'antiFraud' ? (systemStore.appName || '防骗提醒') : titleMap[t]
+  // 用户协议和防骗提醒页面顶部标题栏显示小程序名称
+  const navTitle = (t === 'antiFraud' || t === 'user') ? (systemStore.appName || titleMap[t]) : titleMap[t]
   pageTitle.value = titleMap[t] || '用户协议'
   uni.setNavigationBarTitle({ title: navTitle })
 
