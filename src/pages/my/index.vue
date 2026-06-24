@@ -419,6 +419,8 @@ const fetchMatchmakerList = async () => {
 const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
 const goToMyLikes = () => uni.navigateTo({ url: '/pages/my-likes/my-likes' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
+const goToUserAgreement = () => uni.navigateTo({ url: '/pages/agreement/index?type=user' })
+const goToAntiFraud = () => uni.navigateTo({ url: '/pages/agreement/index?type=antiFraud' })
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 // 需要登录的 key 列表
@@ -435,8 +437,8 @@ const handleToolClick = (key: string) => {
     myLikes: goToMyLikes,
     privacy: goToPrivacySettings,
     feedback: showComingSoon,
-    userAgreement: showComingSoon,
-    antiFraud: showComingSoon,
+    userAgreement: goToUserAgreement,
+    antiFraud: goToAntiFraud,
   }
   const fn = map[key]
   if (fn) fn()

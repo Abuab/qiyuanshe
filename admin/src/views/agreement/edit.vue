@@ -11,6 +11,7 @@
         <el-radio-button value="PRIVACY_POLICY">隐私政策</el-radio-button>
         <el-radio-button value="VIP_AGREEMENT">会员服务协议</el-radio-button>
         <el-radio-button value="SELF_DISCIPLINE_STATEMENT">平台自律声明</el-radio-button>
+        <el-radio-button value="ANTI_FRAUD">防骗提醒</el-radio-button>
       </el-radio-group>
 
       <el-form :model="formData" label-width="80px" class="edit-form">
@@ -63,7 +64,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { adminAgreement } from '../../api/agreement'
 
-const currentType = ref<'USER_AGREEMENT' | 'PRIVACY_POLICY' | 'VIP_AGREEMENT' | 'SELF_DISCIPLINE_STATEMENT'>('USER_AGREEMENT')
+const currentType = ref<'USER_AGREEMENT' | 'PRIVACY_POLICY' | 'VIP_AGREEMENT' | 'SELF_DISCIPLINE_STATEMENT' | 'ANTI_FRAUD'>('USER_AGREEMENT')
 const saving = ref(false)
 const editorRef = shallowRef<IDomEditor>()
 
@@ -108,6 +109,7 @@ async function loadAgreement() {
           PRIVACY_POLICY: '隐私政策',
           VIP_AGREEMENT: '会员服务协议',
           SELF_DISCIPLINE_STATEMENT: '平台自律声明',
+          ANTI_FRAUD: '防骗提醒',
         }
         formData.value.title = titleMap[currentType.value] || '协议'
         formData.value.content = ''
