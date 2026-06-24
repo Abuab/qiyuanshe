@@ -455,7 +455,10 @@ async function endMonitor() {
 
 // ===== WebSocket =====
 function connectWs() {
+  // 修复：保存当前重连计数，防止 disconnectWs() 将其重置为 WS_MAX_RECONNECT 导致后续重连失效
+  const savedCount = wsReconnectCount
   disconnectWs()
+  wsReconnectCount = savedCount
 
   const token = adminStore.token
   if (!token) {
