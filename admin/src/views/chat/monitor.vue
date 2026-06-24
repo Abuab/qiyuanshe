@@ -94,7 +94,7 @@
           </div>
 
           <!-- 消息列表 -->
-          <div class="chat-messages" ref="msgContainerRef">
+          <div class="chat-messages" ref="msgContainerRef" @scroll="onMsgScroll">
             <div v-if="messageLoading" class="msg-loading">
               <el-icon class="is-loading"><Loading /></el-icon>
             </div>
@@ -207,6 +207,11 @@ const monitorLoading = ref(false)
 const wsRef = ref<WebSocket | null>(null)
 const wsConnected = ref(false)
 let wsHeartbeatTimer: ReturnType<typeof setInterval> | null = null
+// 修复：自动重连机制
+let wsReconnectCount = 0
+const WS_MAX_RECONNECT = 5
+let wsReconnectTimer: ReturnType<typeof setTimeout> | null = null
+let wsAuthTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ===== 会话列表 =====
 const conversations = ref<any[]>([])
@@ -234,6 +239,10 @@ const toUserIdToMonitor = ref(0)
 const pollingTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const POLLING_INTERVAL = 2500
 let visibilityHandler: (() => void) | null = null
+// 修复：scrollToBottom 最短调用间隔（300ms 防抖），防止首次加载/轮询/WebSocket/代发短时间内连续触发导致跳动
+let lastScrollToBottomTime = 0
+// 修复：用户手动上滑标记，收到 WebSocket 新消息时不自动滚动
+const isUserScrolledUp = ref(false)
 
 // ===== 修复 B：统一的发送者判断（兼容 string/number 类型不一致） =====
 function isFromTarget(msg: any): boolean {
@@ -430,6 +439,8 @@ async function startMonitor() {
 async function endMonitor() {
   monitorLoading.value = true
   stopPolling()
+  wsReconnectCount = 0 // 修复：重置重连计数
+  if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null }
   try {
     await adminChat.endMonitor(targetUserId.value)
     monitoring.value = false
@@ -444,10 +455,14 @@ async function endMonitor() {
 
 // ===== WebSocket =====
 function connectWs() {
+  // 修复：保存当前重连计数，防止 disconnectWs() 将其重置为 WS_MAX_RECONNECT 导致后续重连失效
+  const savedCount = wsReconnectCount
   disconnectWs()
+  wsReconnectCount = savedCount
 
   const token = adminStore.token
   if (!token) {
+    console.log('[WS] connect failed: no token')
     ElMessage.error('未获取到登录凭证')
     return
   }
@@ -455,63 +470,111 @@ function connectWs() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = location.host
   const url = `${protocol}//${host}/ws/chat`
+  console.log('[WS] connecting to', url, 'at', new Date().toISOString())
 
-  try {
-    const ws = new WebSocket(url)
-    wsRef.value = ws
+  const ws = new WebSocket(url)
+  wsRef.value = ws
 
-    ws.onopen = () => {
-      wsConnected.value = true
-      // 认证
-      ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
-    }
+  // 修复：5 秒认证超时检测，超时则主动断开并触发重连
+  wsAuthTimeout = setTimeout(() => {
+    console.log('[WS] auth timeout after 5s, closing...')
+    ws.close()
+  }, 5000)
 
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data)
-        const { event: evt, data } = payload
-
-        if (evt === 'auth_success') {
-          // 订阅目标用户的消息
-          ws.send(JSON.stringify({
-            event: 'subscribe',
-            data: { targetUserId: targetUserId.value },
-          }))
-        } else if (evt === 'subscribed') {
-          console.log('[WS] 已订阅用户', data.targetUserId)
-        } else if (evt === 'new_message') {
-          handleWsMessage(data)
-        } else if (evt === 'monitor_locked') {
-          lockMessage.value = data.message
-          ElMessage.warning(data.message)
-        } else if (evt === 'auth_error') {
-          ElMessage.error(data.message || 'WebSocket 认证失败')
-          disconnectWs()
-        }
-      } catch {}
-    }
-
-    ws.onclose = () => {
-      wsConnected.value = false
-      wsRef.value = null
-    }
-
-    ws.onerror = () => {
-      wsConnected.value = false
-    }
-
-    // 心跳
-    wsHeartbeatTimer = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ event: 'ping', data: {} }))
-      }
-    }, 25000)
-  } catch {
-    ElMessage.error('WebSocket 连接失败')
+  ws.onopen = () => {
+    console.log('[WS] onopen at', new Date().toISOString())
+    wsConnected.value = true
+    wsReconnectCount = 0 // 修复：连接成功后重置重连计数
+    // 发送认证消息
+    ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
+    console.log('[WS] auth message sent')
   }
+
+  ws.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data)
+      const { event: evt, data } = payload
+      console.log('[WS] onmessage event=', evt, 'at', new Date().toISOString())
+
+      if (evt === 'auth_success') {
+        console.log('[WS] auth_success, subscribing to targetUserId=', targetUserId.value)
+        // 修复：清除认证超时定时器
+        if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
+        // 订阅目标用户的消息
+        ws.send(JSON.stringify({
+          event: 'subscribe',
+          data: { targetUserId: targetUserId.value },
+        }))
+      } else if (evt === 'subscribed') {
+        console.log('[WS] subscribed to userId=', data.targetUserId)
+      } else if (evt === 'new_message') {
+        console.log('[WS] new_message from=', data.fromUserId, 'to=', data.toUserId)
+        handleWsMessage(data)
+      } else if (evt === 'monitor_locked') {
+        lockMessage.value = data.message
+        ElMessage.warning(data.message)
+      } else if (evt === 'auth_error') {
+        console.log('[WS] auth_error:', data.message)
+        ElMessage.error(data.message || 'WebSocket 认证失败')
+        disconnectWs()
+      }
+    } catch (e) {
+      console.log('[WS] onmessage parse error:', e)
+    }
+  }
+
+  ws.onclose = (event) => {
+    console.log('[WS] onclose code=', event.code, 'reason=', event.reason, 'at', new Date().toISOString())
+    wsConnected.value = false
+    wsRef.value = null
+    // 清除心跳和超时
+    if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null }
+    if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
+    // 修复：自动重连。检查 !wsReconnectTimer 避免与 onerror 重复创建重连定时器导致重试次数重复消耗
+    if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
+      wsReconnectCount++
+      console.log('[WS] reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      wsReconnectTimer = setTimeout(() => {
+        console.log('[WS] reconnecting from onclose...')
+        connectWs()
+      }, 3000)
+    } else if (wsReconnectCount >= WS_MAX_RECONNECT) {
+      console.log('[WS] max reconnect attempts reached, giving up')
+      ElMessage.error('WebSocket 连接失败，请检查网络后重新开始监控')
+    }
+  }
+
+  ws.onerror = (event) => {
+    console.log('[WS] onerror at', new Date().toISOString(), event)
+    wsConnected.value = false
+    // 修复：onerror 中启动重连。虽然规范要求 onerror 后必触发 onclose，但某些边缘情况
+    //（如网络完全断开、浏览器休眠）可能导致 onclose 不被调用，在此兜底。
+    // 检查 wsReconnectTimer 避免与 onclose 重复创建重连定时器
+    if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
+      wsReconnectCount++
+      console.log('[WS] onerror reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      wsReconnectTimer = setTimeout(() => {
+        console.log('[WS] reconnecting from onerror...')
+        connectWs()
+      }, 3000)
+    }
+  }
+
+  // 心跳
+  wsHeartbeatTimer = setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ event: 'ping', data: {} }))
+    }
+  }, 25000)
 }
 
 function disconnectWs() {
+  console.log('[WS] disconnectWs called')
+  // 修复：先阻止重连，防止 ws.close() 触发 onclose 时再次创建重连定时器
+  wsReconnectCount = WS_MAX_RECONNECT
+  // 修复：清除重连定时器和认证超时
+  if (wsReconnectTimer) { clearTimeout(wsReconnectTimer); wsReconnectTimer = null }
+  if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
   if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null }
   if (wsRef.value) {
     wsRef.value.close()
@@ -535,7 +598,10 @@ function handleWsMessage(data: any) {
     // 避免重复消息
     if (!messages.value.some((m) => Number(m.id) === Number(data.id))) {
       messages.value.push(data)
-      nextTick(() => scrollToBottom())
+      // 修复：仅当用户未手动上滑时自动滚动到底部
+      if (!isUserScrolledUp.value) {
+        nextTick(() => scrollToBottom())
+      }
     }
   }
 
@@ -585,7 +651,21 @@ async function fetchMessages() {
       const list = res.data.list || []
       messages.value = list
       messageTotal.value = res.data.total || 0
-      nextTick(() => scrollToBottom())
+      // 修复：仅在第一页时自动滚动到底部，非第一页为查看历史消息不打断
+      if (messagePage.value === 1) {
+        // 修复：延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
+        // 两次调用确保 DOM 完全稳定后精确滚动到底部
+        setTimeout(() => {
+          console.log('[fetchMessages] page 1 loaded, 300ms scrollToBottom, msgCount=', messages.value.length)
+          scrollToBottom()
+        }, 300)
+        setTimeout(() => {
+          console.log('[fetchMessages] page 1 loaded, 900ms scrollToBottom (ensure), msgCount=', messages.value.length)
+          scrollToBottom()
+        }, 900)
+      } else {
+        console.log('[fetchMessages] page', messagePage.value, 'loaded, skip scrollToBottom (viewing history)')
+      }
     }
   } catch {
     ElMessage.error('获取聊天记录失败')
@@ -594,14 +674,33 @@ async function fetchMessages() {
   }
 }
 
-// ===== 修复 C：统一滚动到底部 =====
+// ===== 修复：统一滚动到底部（含 300ms 防抖，防止短时间内多次调用导致跳动） =====
 function scrollToBottom() {
+  const now = Date.now()
+  if (now - lastScrollToBottomTime < 300) {
+    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    return
+  }
+  lastScrollToBottomTime = now
+
+  console.log('[scrollToBottom] executing scroll, msgCount=', messages.value.length)
+  // 修复：滚动到底部时重置上滑标记
+  isUserScrolledUp.value = false
   nextTick(() => {
     const el = msgContainerRef.value
     if (el) {
       el.scrollTop = el.scrollHeight
+      console.log('[scrollToBottom] scrollTop set to', el.scrollHeight)
     }
   })
+}
+
+// 修复：监听消息容器滚动，检测用户是否手动上滑
+function onMsgScroll() {
+  const el = msgContainerRef.value
+  if (!el) return
+  const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+  isUserScrolledUp.value = distanceToBottom > 100
 }
 
 // ===== 代发 =====

@@ -631,14 +631,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
           if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
             // 人工审核已启用，消息存入但需要标记（实体无 status/isVisible 字段，正常存入）
             // 审核日志已由 AuditService.auditText 自动写入
-            // 发送 webhook 通知运营人员
-            if (this.auditService) {
-              this.auditService.notifyWebhook('chat_message', {
-                userId,
-                content: content.substring(0, 200),
-                time: new Date().toISOString(),
-              }).catch(() => {})
-            }
+            // 调用 webhook 通知（预留接口，当前仅打印日志）
+            console.log('[ChatService] 消息进入人工审核队列', {
+              userId,
+              content: content.substring(0, 50),
+              time: new Date().toISOString(),
+            })
             return // 消息允许保存，人工审核后端可查看 AuditLog 表
           }
           // 人工审核未启用，按拒绝处理

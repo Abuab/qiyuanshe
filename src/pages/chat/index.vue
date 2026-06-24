@@ -28,7 +28,7 @@
       class="message-list"
       scroll-y
       enable-flex
-      :scroll-into-view="scrollIntoView"
+      :scroll-top="scrollTop"
       @scrolltoupper="loadMore"
       @scroll="onScroll"
       :refresher-enabled="true"
@@ -226,7 +226,7 @@ const limit = 20
 const loading = ref(false)
 const loadingMore = ref(false)
 const noMore = ref(false)
-const scrollIntoView = ref('msg-bottom')
+const scrollTop = ref(0) // 修复：使用 scroll-top 属性精确控制滚动位置，替代不稳定的 scroll-into-view
 const keyboardHeight = ref(0)
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -250,6 +250,7 @@ const isPageMounted = ref(false)
 const isUserScrolledUp = ref(false)
 const showNewMsgTip = ref(false)
 const scrollLockUntil = ref(0) // 滚动锁定时长，防止 onScroll 在 scrollToBottom 动画期间覆盖状态
+let lastScrollToBottomTime = 0 // 修复：scrollToBottom 最短调用间隔（300ms 防抖），防止短时间内多次调用导致反复跳动
 let tempMsgIdCounter = -1 // 临时消息 ID（负数避免与后端自增 ID 冲突）
 const seenMsgIds = new Set<number>() // 已处理消息 ID，防重复
 
@@ -344,8 +345,16 @@ const fetchMessages = async (isLoadMore = false) => {
 
     page.value++
     if (!isLoadMore) {
-      // 修复 D：首次加载后滚动到底部（最新消息在下方）
-      nextTick(() => scrollToBottom())
+      // 修复：首次加载延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
+      // 两次调用确保 DOM 完全稳定后精确滚动到底部
+      setTimeout(() => {
+        console.log('[fetchMessages] first load 300ms, scrollToBottom')
+        scrollToBottom()
+      }, 300)
+      setTimeout(() => {
+        console.log('[fetchMessages] first load 900ms, scrollToBottom (ensure)')
+        scrollToBottom()
+      }, 900)
     }
   } catch (e) {
     logger.error('fetch messages error', e)
@@ -409,21 +418,76 @@ const handleSend = async () => {
   }
 }
 
-// ===== 滚动到底部 =====
+// ===== 滚动到底部（使用 scroll-top + createSelectorQuery 精确控制，替代不稳定的 scroll-into-view） =====
+function getScrollViewRect(): Promise<any> {
+  return new Promise((resolve) => {
+    uni.createSelectorQuery()
+      .select('.message-list')
+      .boundingClientRect((rect) => {
+        resolve(rect || null)
+      })
+      .exec()
+  })
+}
+
+function getMsgBottomRect(): Promise<any> {
+  return new Promise((resolve) => {
+    uni.createSelectorQuery()
+      .select('#msg-bottom')
+      .boundingClientRect((rect) => {
+        resolve(rect || null)
+      })
+      .exec()
+  })
+}
+
 const scrollToBottom = () => {
-  console.log('[scrollToBottom] called, isUserScrolledUp=', isUserScrolledUp.value, 'showNewMsgTip=', showNewMsgTip.value, 'msgCount=', messages.value.length)
+  // 修复：最短调用间隔 300ms 防抖，防止短时间多次调用导致跳动
+  const now = Date.now()
+  if (now - lastScrollToBottomTime < 300) {
+    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    return
+  }
+  lastScrollToBottomTime = now
+
+  console.log('[scrollToBottom] called, isUserScrolledUp=', isUserScrolledUp.value, 'msgCount=', messages.value.length)
   isUserScrolledUp.value = false
   showNewMsgTip.value = false
   if (messages.value.length === 0) return
-  // 锁定 800ms，防止滚动动画期间的 onScroll 事件把 isUserScrolledUp 改回 true
+
+  // 锁定 800ms，防止滚动期间的 onScroll 把 isUserScrolledUp 改回 true
   scrollLockUntil.value = Date.now() + 800
-  console.log('[scrollToBottom] lock until', scrollLockUntil.value, 'scrollIntoView cleared')
-  // 先清空再在 nextTick 中设为 msg-bottom，确保值每次变化以触发 scroll-view 滚动
-  scrollIntoView.value = ''
-  nextTick(() => {
-    scrollIntoView.value = 'msg-bottom'
-    console.log('[scrollToBottom] nextTick set scrollIntoView=msg-bottom')
-  })
+
+  // 延迟 100ms 等 DOM 渲染完成，再用 createSelectorQuery 计算精确滚动位置
+  setTimeout(async () => {
+    try {
+      const [svRect, mbRect] = await Promise.all([getScrollViewRect(), getMsgBottomRect()])
+      if (svRect && mbRect) {
+        // 计算 msg-bottom 相对 scroll-view 内容顶部的偏移 = msgBottom.top - scrollView.top + 当前 scrollTop
+        const targetScrollTop = mbRect.top - svRect.top + scrollTop.value
+        const finalScrollTop = Math.max(0, targetScrollTop)
+        console.log('[scrollToBottom] calculated scrollTop=', finalScrollTop, 'svRect.top=', svRect.top, 'mbRect.top=', mbRect.top, 'currentScrollTop=', scrollTop.value)
+        // 修复：先置 0 再用 nextTick 赋值，确保值一定变化，触发 scroll-view 的 scroll-top 响应
+        scrollTop.value = 0
+        nextTick(() => {
+          scrollTop.value = finalScrollTop
+        })
+      } else {
+        // fallback: 设一个很大的值确保滚到底部
+        console.log('[scrollToBottom] query failed, fallback to max value')
+        scrollTop.value = 0
+        nextTick(() => {
+          scrollTop.value = 999999
+        })
+      }
+    } catch (e) {
+      console.log('[scrollToBottom] query error, fallback:', e)
+      scrollTop.value = 0
+      nextTick(() => {
+        scrollTop.value = 999999
+      })
+    }
+  }, 100)
 }
 
 // 监听滚动事件
@@ -438,6 +502,8 @@ const onScroll = (e: any) => {
     }
     const detail = e?.detail || {}
     const scrollTopVal = detail.scrollTop ?? 0
+    // 修复：同步 scrollTop.value，确保 scrollToBottom 中计算 targetScrollTop 使用的是最新用户滚动位置
+    scrollTop.value = scrollTopVal
     const scrollHeight = detail.scrollHeight ?? 0
     const clientHeight = detail.clientHeight ?? 0
     const distanceToBottom = scrollHeight - scrollTopVal - clientHeight
