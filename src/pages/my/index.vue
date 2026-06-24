@@ -450,16 +450,16 @@ const handleToolClick = (key: string) => {
 
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
-const toolGrid7 = [
+const toolGrid7 = computed(() => [
   { key: 'myPhotos',    label: '我的相册', emoji: '🖼' },
   { key: 'loveQuotes',  label: '爱情语录', emoji: '💌' },
   { key: 'myLikes',     label: '我的喜欢', emoji: '❤️' },
   { key: 'privacy',     label: '隐私设置', emoji: '🔒' },
   { key: 'feedback',    label: '问题反馈', emoji: '📝' },
   { key: 'userAgreement', label: '用户协议', emoji: '📄' },
-  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡' },
+  { key: 'antiFraud',   label: systemStore.appName || '防骗提醒', emoji: '🛡' },
   { key: 'dummy',       label: '',        emoji: '',      placeholder: true },
-]
+])
 </script>
 
 <style lang="scss" scoped>

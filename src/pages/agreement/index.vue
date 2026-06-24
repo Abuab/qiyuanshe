@@ -23,15 +23,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
-import { useSystemStore } from '@/store/system'
 
 const type = ref('user')
 const title = ref('用户协议')
 const htmlContent = ref('')
 const loading = ref(true)
-
-const systemStore = useSystemStore()
-const appName = systemStore.appName || '缘来是你'
 
 const typeMap: Record<string, string> = {
   user: 'USER_AGREEMENT',
@@ -46,7 +42,7 @@ const titleMap: Record<string, string> = {
   privacy: '隐私政策',
   vip: '会员服务协议',
   selfDiscipline: '平台自律声明',
-  antiFraud: appName,
+  antiFraud: '防骗提醒',
 }
 
 onMounted(async () => {
