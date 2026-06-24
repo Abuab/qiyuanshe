@@ -26,7 +26,8 @@ export class AuthController {
   async wechatLogin(@Body() dto: WechatLoginDto, @Request() req: any) {
     const ip = req.headers['x-forwarded-for'] || req.ip || ''
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
-    const result = await this.authService.wechatLogin(dto.code, ipAddress)
+    const userAgent = (req.headers['user-agent'] || '') as string
+    const result = await this.authService.wechatLogin(dto.code, ipAddress, userAgent)
     return Result.success(result)
   }
 
@@ -37,11 +38,13 @@ export class AuthController {
   async phoneLogin(@Body() dto: PhoneLoginDto, @Request() req: any) {
     const ip = req.headers['x-forwarded-for'] || req.ip || ''
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    const userAgent = (req.headers['user-agent'] || '') as string
     const result = await this.authService.phoneLogin(
       dto.sessionKey,
       dto.encryptedData,
       dto.iv,
       ipAddress,
+      userAgent,
     )
     return Result.success(result)
   }

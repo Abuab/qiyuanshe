@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { AgreementLogStorageConfig } from '../entities/AgreementLogStorageConfig'
+import { User } from '../entities/User'
 import { StorageStrategyFactory } from './strategies/storage-strategy.factory'
 import { SlsStorageStrategy } from './strategies/sls-storage.strategy'
 import {
@@ -67,6 +68,8 @@ export class AgreementLogStorageService {
   constructor(
     @InjectRepository(AgreementLogStorageConfig)
     private readonly configRepo: Repository<AgreementLogStorageConfig>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly factory: StorageStrategyFactory,
     private readonly slsStrategy: SlsStorageStrategy,
   ) {}
@@ -232,11 +235,31 @@ export class AgreementLogStorageService {
     return this.getActiveStrategy().save(logData)
   }
 
-  /** 查询日志 */
+  /** 查询日志（附带用户昵称和手机号） */
   async queryLogs(
     filters: AgreementLogQuery,
   ): Promise<{ items: any[]; total: number }> {
-    return this.getActiveStrategy().query(filters)
+    const result = await this.getActiveStrategy().query(filters)
+
+    // 批量查询用户昵称和手机号
+    const userIds = [...new Set(result.items.map((item: any) => item.userId).filter(Boolean))] as number[]
+    if (userIds.length > 0) {
+      const users = await this.userRepo.find({
+        where: { id: In(userIds) },
+        select: ['id', 'nickname', 'phone'],
+      })
+      const userMap = new Map(users.map(u => [u.id, u]))
+      result.items = result.items.map((item: any) => {
+        const u = userMap.get(item.userId)
+        return {
+          ...item,
+          nickname: u?.nickname || '',
+          phone: u?.phone || '',
+        }
+      })
+    }
+
+    return result
   }
 
   /** 导出 CSV */

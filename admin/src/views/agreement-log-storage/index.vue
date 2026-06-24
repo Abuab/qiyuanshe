@@ -152,9 +152,15 @@
       </el-form>
 
       <el-table :data="logs" border stripe v-loading="logLoading" style="margin-top: 10px">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="userId" label="用户ID" width="100" />
-        <el-table-column prop="agreementType" label="协议类型" width="120" />
+        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column prop="nickname" label="用户昵称" width="120" />
+        <el-table-column prop="userId" label="用户ID" width="80" />
+        <el-table-column prop="phone" label="手机号" width="130">
+          <template #default="{ row }">
+            {{ maskPhone(row.phone) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="agreementType" label="协议类型" width="110" />
         <el-table-column prop="version" label="版本" width="80" />
         <el-table-column prop="action" label="操作" width="80">
           <template #default="{ row }">
@@ -193,6 +199,12 @@
 import { reactive, ref, onMounted } from 'vue'
 import { agreementLogStorage, type StorageConfig } from '@/api/agreement-log-storage'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+/** 手机号脱敏：保留前3后4，中间4位显示为**** */
+function maskPhone(phone: string): string {
+  if (!phone) return '-'
+  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+}
 
 const saving = ref(false)
 const testing = ref(false)

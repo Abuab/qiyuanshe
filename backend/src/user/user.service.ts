@@ -1020,6 +1020,7 @@ export class UserService {
     version: string,
     action: string,
     ipAddress?: string,
+    userAgent?: string,
   ) {
     const agreement = this.agreementRepo.create({
       userId,
@@ -1037,7 +1038,7 @@ export class UserService {
       version,
       action,
       ipAddress: ipAddress || '',
-      userAgent: '',
+      userAgent: userAgent || '',
     }).catch(err => console.error('[user] saveLog failed:', err?.message || err))
 
     // 同步更新 User 表中的最近同意时间与版本

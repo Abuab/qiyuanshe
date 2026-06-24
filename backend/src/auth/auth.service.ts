@@ -46,7 +46,7 @@ export class AuthService {
     private readonly agreementLogStorage: AgreementLogStorageService,
   ) {}
 
-  async wechatLogin(code: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
 
     if (!session.openid) {
@@ -94,7 +94,7 @@ export class AuthService {
         version: '1.0',
         action: 'agree',
         ipAddress: ipAddress || '',
-        userAgent: '',
+        userAgent: userAgent || '',
       }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
@@ -122,7 +122,7 @@ export class AuthService {
         version: '1.0',
         action: 'agree',
         ipAddress: ipAddress || '',
-        userAgent: '',
+        userAgent: userAgent || '',
       }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
@@ -139,7 +139,7 @@ export class AuthService {
     return { user: userInfo, tokens }
   }
 
-  async phoneLogin(sessionKey: string, encryptedData: string, iv: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async phoneLogin(sessionKey: string, encryptedData: string, iv: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const phoneData = this.decryptPhone(sessionKey, encryptedData, iv)
 
     if (!phoneData || !phoneData.purePhoneNumber) {
@@ -184,7 +184,7 @@ export class AuthService {
         version: '1.0',
         action: 'agree',
         ipAddress: ipAddress || '',
-        userAgent: '',
+        userAgent: userAgent || '',
       }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'

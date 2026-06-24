@@ -659,12 +659,14 @@ export class UserController {
     const userId = req.user.userId
     const ip = req.headers['x-forwarded-for'] || req.ip || ''
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    const userAgent = (req.headers['user-agent'] || '') as string
     await this.userService.recordAgreement(
       userId,
       body.agreementType,
       body.version,
       body.action,
       ipAddress,
+      userAgent,
     )
     return Result.success(null, '已记录')
   }
