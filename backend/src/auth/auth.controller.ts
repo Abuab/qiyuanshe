@@ -34,11 +34,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async phoneLogin(@Body() dto: PhoneLoginDto) {
+  async phoneLogin(@Body() dto: PhoneLoginDto, @Request() req: any) {
+    const ip = req.headers['x-forwarded-for'] || req.ip || ''
+    const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
     const result = await this.authService.phoneLogin(
       dto.sessionKey,
       dto.encryptedData,
       dto.iv,
+      ipAddress,
     )
     return Result.success(result)
   }

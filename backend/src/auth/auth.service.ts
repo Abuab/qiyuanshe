@@ -104,7 +104,7 @@ export class AuthService {
     return { user: userInfo, tokens }
   }
 
-  async phoneLogin(sessionKey: string, encryptedData: string, iv: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async phoneLogin(sessionKey: string, encryptedData: string, iv: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const phoneData = this.decryptPhone(sessionKey, encryptedData, iv)
 
     if (!phoneData || !phoneData.purePhoneNumber) {
@@ -125,6 +125,21 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('该手机号未注册，请先通过微信登录注册')
+    }
+
+    // 如果用户尚未记录协议同意，自动补录
+    if (!user.protocolAgreedAt) {
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
+          userId: user.id,
+          agreementType: 'USER_AGREEMENT',
+          version: '1.0',
+          action: 'agree',
+          ipAddress: ipAddress || null,
+        }),
+      )
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
     }
 
     if (user.status === 0) {
