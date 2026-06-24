@@ -225,7 +225,7 @@ a {
 }
 
 .el-button {
-  &.el-button--primary:not(.is-link) {
+  &.el-button--primary:not(.is-link):not(.is-plain) {
     background-color: #409EFF;
     border-color: #409EFF;
 
