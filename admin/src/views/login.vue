@@ -60,13 +60,13 @@
 
             <el-form-item prop="captcha">
               <div class="captcha-wrapper">
+                <!-- 移除 @keyup.enter：el-form @submit.prevent 已统一处理 Enter 提交，避免重复触发 -->
                 <el-input
                   v-model="form.captcha"
                   placeholder="请输入验证码"
                   size="large"
                   :prefix-icon="CircleCheck"
                   class="captcha-input"
-                  @keyup.enter="handleLogin"
                 />
                 <div
                   class="captcha-image"
@@ -233,7 +233,8 @@ async function refreshCaptcha() {
 }
 
 async function handleLogin() {
-  if (!formRef.value) return
+  // 兜底防重：loading 为 true 时跳过（配合移除 captcha input 的 @keyup.enter，根治 Enter 键双重触发）
+  if (!formRef.value || loading.value) return
 
   try {
     await formRef.value.validate()
