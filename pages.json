@@ -340,7 +340,7 @@
       "style": {
         "navigationBarTitleText": "问题反馈",
         "navigationStyle": "custom",
-        "backgroundColor": "transparent",
+        "backgroundColor": "#FFF5F5",
         "app-plus": {
           "titleNView": false
         }
