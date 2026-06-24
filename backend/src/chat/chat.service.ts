@@ -383,7 +383,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getMessages(userId: number, dto: QueryMessagesDto): Promise<{ list: ChatMessage[]; total: number }> {
-    const { userId: toUserId, page, limit, beforeId } = dto
+    const { userId: toUserId, limit, beforeId } = dto
 
     const targetUser = await this.userRepository.findOne({
       where: { id: toUserId, isDeleted: 0 },
@@ -393,23 +393,35 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       throw new NotFoundException('用户不存在')
     }
 
-    // 修复 P2：改为 ASC 查询，移除 reverse()；翻页使用 beforeId 而非 skip
     const whereConditions: any[] = [
       { fromUserId: userId, toUserId },
       { fromUserId: toUserId, toUserId: userId },
     ]
-    // 如果有 beforeId，加载该 ID 之前（更早）的消息
-    if (beforeId) {
-      whereConditions.forEach((cond) => (cond.id = LessThan(beforeId)))
-    }
 
-    const [list, total] = await this.messageRepository.findAndCount({
-      where: whereConditions,
-      order: { createdAt: 'ASC' },
-      skip: (page - 1) * limit,
-      take: limit,
-      relations: ['fromUser', 'toUser'],
-    })
+    let list: ChatMessage[]
+    let total: number
+
+    // 游标分页：按 beforeId 确定加载方向
+    if (beforeId && beforeId > 0) {
+      // 上拉加载更多：查 id < beforeId 的更早消息，DESC + limit，然后 reverse 为正序
+      whereConditions.forEach((cond) => (cond.id = LessThan(beforeId)))
+      ;[list, total] = await this.messageRepository.findAndCount({
+        where: whereConditions,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        relations: ['fromUser', 'toUser'],
+      })
+      list.reverse()
+    } else {
+      // 首次加载：查最新的 limit 条，DESC + limit，然后 reverse 为正序（旧→新）
+      ;[list, total] = await this.messageRepository.findAndCount({
+        where: whereConditions,
+        order: { createdAt: 'DESC' },
+        take: limit,
+        relations: ['fromUser', 'toUser'],
+      })
+      list.reverse()
+    }
 
     const messagesWithMine = list.map((msg) => ({
       ...msg,

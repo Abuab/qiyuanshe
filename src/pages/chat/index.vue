@@ -221,7 +221,6 @@ const avatar = ref('')
 const myAvatar = ref('')
 const messages = ref<ChatMessage[]>([])
 const inputContent = ref('')
-const page = ref(1)
 const limit = 20
 const loading = ref(false)
 const loadingMore = ref(false)
@@ -312,21 +311,21 @@ const fetchMessages = async (isLoadMore = false) => {
   try {
     if (isLoadMore) { loadingMore.value = true } else { loading.value = true }
 
+    const params: any = { userId: toUserId.value, limit }
+    if (isLoadMore && messages.value.length > 0) {
+      // 上拉加载更多：传最旧消息的 id 作为 beforeId，加载更早的消息
+      params.beforeId = messages.value[0].id
+    } else {
+      // 首次加载：不传 beforeId（或传 0），后端返回最新的 limit 条
+      params.beforeId = 0
+    }
+
     const res: any = await request({
       url: '/chat/messages',
       method: 'GET',
-      data: { userId: toUserId.value, page: isLoadMore ? page.value : 1, limit },
+      data: params,
     })
-    let list: ChatMessage[] = res?.list || []
-
-    // 修复 C：按时间正序排列（旧→新）。后端返回 DESC 时自动 reverse
-    if (list.length >= 2) {
-      const firstTime = new Date(list[0].createdAt).getTime()
-      const lastTime = new Date(list[list.length - 1].createdAt).getTime()
-      if (firstTime > lastTime) {
-        list = [...list].reverse()
-      }
-    }
+    const list: ChatMessage[] = res?.list || []
 
     if (isLoadMore) {
       // 加载更早的历史消息，unshift 到现有消息前面
@@ -334,7 +333,6 @@ const fetchMessages = async (isLoadMore = false) => {
     } else {
       // 首次加载，直接赋值
       messages.value = list
-      page.value = 1
     }
     // 同步已加载消息 ID，防止轮询重复添加
     list.forEach(m => seenMsgIds.add(m.id))
@@ -343,18 +341,10 @@ const fetchMessages = async (isLoadMore = false) => {
     if (list.length < limit) noMore.value = true
     else noMore.value = false
 
-    page.value++
     if (!isLoadMore) {
-      // 修复：首次加载延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
-      // 两次调用确保 DOM 完全稳定后精确滚动到底部
-      setTimeout(() => {
-        console.log('[fetchMessages] first load 300ms, scrollToBottom')
-        scrollToBottom()
-      }, 300)
-      setTimeout(() => {
-        console.log('[fetchMessages] first load 900ms, scrollToBottom (ensure)')
-        scrollToBottom()
-      }, 900)
+      // 首次加载：nextTick 等 DOM 渲染后滚动到底部，再加 300ms fallback
+      nextTick(() => scrollToBottom())
+      setTimeout(() => scrollToBottom(), 300)
     }
   } catch (e) {
     logger.error('fetch messages error', e)
