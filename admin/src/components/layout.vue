@@ -30,21 +30,21 @@ const isCollapsed = computed(() => adminStore.isCollapsed)
 }
 
 .aside {
-  background-color: #304156;
+  background-color: #1a1a2e;
   transition: width 0.3s;
   overflow-x: hidden;
 }
 
 .header {
   background-color: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
   display: flex;
   align-items: center;
   padding: 0 20px;
 }
 
 .main {
-  background-color: #f5f7fa;
+  background-color: #f0f2f5;
   padding: 20px;
   overflow-y: auto;
 }

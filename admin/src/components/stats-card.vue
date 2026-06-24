@@ -58,17 +58,18 @@ const changeClass = computed(() => ({
 </script>
 
 <style lang="scss" scoped>
+/* 统计卡片 - 升级圆角和阴影，与登录页设计语言统一 */
 .stats-card {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 16px;
+  padding: 24px;
   border-left: 4px solid;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   transition: transform 0.3s, box-shadow 0.3s;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -80,7 +81,7 @@ const changeClass = computed(() => ({
 }
 
 .card-title {
-  color: #666;
+  color: #8898aa;
   font-size: 14px;
 }
 

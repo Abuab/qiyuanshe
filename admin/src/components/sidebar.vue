@@ -8,9 +8,9 @@
     <el-menu
       :default-active="activeMenu"
       :collapse="isCollapsed"
-      background-color="#304156"
-      text-color="#bfcbd9"
-      active-text-color="#FF6B9D"
+      background-color="#1a1a2e"
+      text-color="rgba(255,255,255,0.7)"
+      active-text-color="#e8a0bf"
       :router="true"
       class="sidebar-menu"
     >
@@ -246,16 +246,18 @@ function handleLogout() {
 </script>
 
 <style lang="scss" scoped>
+/* 侧边栏容器 - 深蓝紫背景，与登录页左侧品牌区呼应 */
 .sidebar {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #304156;
+  background-color: #1a1a2e;
 }
 
+/* 品牌条 - 玫瑰金渐变，与登录页品牌色统一 */
 .logo-area {
   height: 60px;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  background: linear-gradient(135deg, #e8a0bf 0%, #d486a0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,11 +290,28 @@ function handleLogout() {
   &:not(.el-menu--collapse) {
     width: 220px;
   }
+
+  /* 菜单项 hover 背景 */
+  :deep(.el-menu-item:hover),
+  :deep(.el-sub-menu__title:hover) {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* 菜单项选中背景 - 玫瑰金半透明 */
+  :deep(.el-menu-item.is-active) {
+    background-color: rgba(232, 160, 191, 0.12) !important;
+  }
+
+  /* 子菜单展开区域背景 */
+  :deep(.el-menu) {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+  }
 }
 
+/* 底部用户信息区 - 调暗分割线 */
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid #3d4a5c;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -326,10 +345,10 @@ function handleLogout() {
 .logout-btn {
   background-color: transparent;
   border: none;
-  color: #bfcbd9;
+  color: rgba(255, 255, 255, 0.7);
 
   &:hover {
-    background-color: #3d4a5c;
+    background-color: rgba(255, 255, 255, 0.08);
     color: #fff;
   }
 }
