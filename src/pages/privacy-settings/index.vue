@@ -18,11 +18,10 @@
             <text class="setting-title">隐私设置</text>
             <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
           </view>
-          <view class="setting-right">
+          <view class="setting-right" @tap.stop="onBasicProfileChange">
             <switch
               :checked="showBasicProfile"
               color="#ff6b6b"
-              @change="onBasicProfileChange"
             />
           </view>
         </view>
@@ -36,11 +35,10 @@
             <text class="setting-title">委托平台</text>
             <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
           </view>
-          <view class="setting-right">
+          <view class="setting-right" @tap.stop="onDelegateClick">
             <switch
               :checked="delegateToPlatform"
               color="#ff6b6b"
-              @change="onDelegateClick"
             />
           </view>
         </view>
