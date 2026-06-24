@@ -10,42 +10,102 @@
     </view>
 
     <scroll-view class="content-scroll" scroll-y :style="{ paddingTop: navTopPx + 'px' }">
-      <!-- 设置卡片 -->
-      <view class="settings-card">
-        <!-- 第1项：隐私设置 -->
-        <view class="setting-item">
-          <view class="setting-left">
-            <text class="setting-title">隐私设置</text>
-            <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
+      <!-- 5个功能栏 -->
+      <view class="menu-group">
+        <view class="menu-row" @tap="goToBlockList">
+          <view class="menu-left">
+            <image v-if="pageIcons.blockListIcon" class="menu-icon" :src="pageIcons.blockListIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">🚫</text>
+            <text class="menu-label">黑名单</text>
           </view>
-          <view class="setting-right" @tap="onBasicProfileChange">
-            <view class="custom-switch" :class="{ on: showBasicProfile }">
-              <view class="switch-knob" />
+          <text class="menu-arrow">></text>
+        </view>
+
+        <view class="menu-row" @tap="goToAgreement">
+          <view class="menu-left">
+            <image v-if="pageIcons.privacyPolicyIcon" class="menu-icon" :src="pageIcons.privacyPolicyIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">📄</text>
+            <text class="menu-label">隐私政策</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+
+        <view class="menu-row" @tap="goToSelfDiscipline">
+          <view class="menu-left">
+            <image v-if="pageIcons.selfDisciplineIcon" class="menu-icon" :src="pageIcons.selfDisciplineIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">📋</text>
+            <text class="menu-label">平台自律声明</text>
+          </view>
+          <text class="menu-arrow">></text>
+        </view>
+
+        <!-- 隐私设置：两个开关（不可用户自行修改，仅管理后台可控制） -->
+        <view class="settings-card">
+          <!-- 显示基本资料 -->
+          <view class="setting-item">
+            <view class="setting-left">
+              <text class="setting-title">显示基本资料</text>
+              <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
+            </view>
+            <view class="setting-right" @tap="onSwitchTap">
+              <view class="custom-switch" :class="{ on: showBasicProfile }">
+                <view class="switch-knob" />
+              </view>
+            </view>
+          </view>
+
+          <!-- 分割线 -->
+          <view class="setting-divider" />
+
+          <!-- 委托平台 -->
+          <view class="setting-item">
+            <view class="setting-left">
+              <text class="setting-title">委托平台</text>
+              <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
+            </view>
+            <view class="setting-right" @tap="onSwitchTap">
+              <view class="custom-switch" :class="{ on: delegateToPlatform }">
+                <view class="switch-knob" />
+              </view>
             </view>
           </view>
         </view>
 
-        <!-- 分割线 -->
-        <view class="setting-divider" />
-
-        <!-- 第2项：委托平台 -->
-        <view class="setting-item">
-          <view class="setting-left">
-            <text class="setting-title">委托平台</text>
-            <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
+        <view class="menu-row" @tap="handleDeactivate">
+          <view class="menu-left">
+            <image v-if="pageIcons.deactivateIcon" class="menu-icon" :src="pageIcons.deactivateIcon" mode="aspectFit" />
+            <text v-else class="menu-icon-emoji">🚪</text>
+            <text class="menu-label">注销账号</text>
           </view>
-          <view class="setting-right" @tap="onDelegateClick">
-            <view class="custom-switch" :class="{ on: delegateToPlatform }">
-              <view class="switch-knob" />
-            </view>
-          </view>
+          <text class="menu-arrow">></text>
         </view>
       </view>
 
-      <view class="bottom-safe" />
+      <!-- 注销账号下方灰色小字提示 -->
+      <view class="deactivate-hint" @tap="showDeactivateDialog">
+        <text class="hint-text">撤回同意协议</text>
+      </view>
+
+      <view class="bottom-safe"></view>
     </scroll-view>
 
-    <!-- 委托平台提示弹窗 -->
+    <!-- 注销确认弹窗 -->
+    <view v-if="showDialog" class="dialog-overlay" @tap="closeDeactivateDialog">
+      <view class="dialog-box" @tap.stop>
+        <text class="dialog-title">提示</text>
+        <text class="dialog-content">若点击确认撤回《隐私政策》的同意，将会无法正常使用小程序。</text>
+        <view class="dialog-buttons">
+          <view class="dialog-btn cancel-btn" @tap="closeDeactivateDialog">
+            <text>取消</text>
+          </view>
+          <view class="dialog-btn confirm-btn" @tap="confirmDeactivate">
+            <text>确定</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 开关点击提示弹窗 -->
     <view v-if="showTipDialog" class="dialog-overlay" @tap="handleTipCancel">
       <view class="dialog-box" @tap.stop>
         <text class="dialog-title">提示</text>
@@ -72,19 +132,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { get } from '@/utils/request'
+import { ref, onMounted, computed } from 'vue'
+import { useSystemStore } from '@/store/system'
+import { get, put } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
+const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
+const showDialog = ref(false)
 
+const pageIcons = computed(() => systemStore.icons?.page || {})
+
+// 隐私开关状态（仅管理后台可修改，小程序端只读）
 const showBasicProfile = ref(true)
 const delegateToPlatform = ref(false)
 
-// 提示弹窗
+// 开关点击提示弹窗
 const showTipDialog = ref(false)
 
 // 红娘弹窗
@@ -125,26 +191,32 @@ const handleBack = () => {
   uni.navigateBack()
 }
 
-/** 隐私设置开关 - 拦截并弹窗（不回写 ref 值，开关保持原状态） */
-const onBasicProfileChange = () => {
+const goToBlockList = () => {
+  uni.navigateTo({ url: '/pages/block-list/index' })
+}
+
+const goToAgreement = () => {
+  uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
+}
+
+const goToSelfDiscipline = () => {
+  uni.navigateTo({ url: '/pages/agreement/index?type=selfDiscipline' })
+}
+
+/** 两个开关点击均弹窗提示 */
+const onSwitchTap = () => {
   showTipDialog.value = true
 }
 
-/** 委托平台开关 - 拦截并弹窗（不回写 ref 值，开关保持原状态） */
-const onDelegateClick = () => {
-  showTipDialog.value = true
-}
-
-/** 弹出提示 - 下次再说 */
+/** 提示 - 下次再说 */
 const handleTipCancel = () => {
   showTipDialog.value = false
 }
 
-/** 弹出提示 - 去联系红娘 */
+/** 提示 - 去联系红娘 */
 const handleGoContact = async () => {
   showTipDialog.value = false
 
-  // 加载红娘列表
   try {
     const res: any = await get('/matchmakers')
     const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
@@ -166,6 +238,31 @@ const handleGoContact = async () => {
   } catch {
     uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
   }
+}
+
+const showDeactivateDialog = () => {
+  showDialog.value = true
+}
+
+const closeDeactivateDialog = () => {
+  showDialog.value = false
+}
+
+const confirmDeactivate = async () => {
+  try {
+    await put('/users/deactivate')
+    uni.showToast({ title: '已注销', icon: 'success' })
+    showDialog.value = false
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/index/index' })
+    }, 1500)
+  } catch {
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  }
+}
+
+const handleDeactivate = () => {
+  showDeactivateDialog()
 }
 </script>
 
@@ -214,11 +311,48 @@ const handleGoContact = async () => {
   height: 100vh;
 }
 
-/* ===== 设置卡片 ===== */
+.menu-group {
+  background-color: #fff;
+  margin: 20rpx 0;
+}
+
+.menu-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 32rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.menu-icon {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.menu-icon-emoji {
+  font-size: 36rpx;
+}
+
+.menu-label {
+  font-size: 30rpx;
+  color: #333;
+}
+
+.menu-arrow {
+  font-size: 28rpx;
+  color: #ccc;
+}
+
+/* ===== 隐私设置卡片（两个开关） ===== */
 .settings-card {
   background-color: #fff;
-  margin: 24rpx;
-  border-radius: 16rpx;
+  margin: 0;
   padding: 0 32rpx;
 }
 
@@ -235,22 +369,26 @@ const handleGoContact = async () => {
 }
 
 .setting-title {
-  font-size: 32rpx;
-  font-weight: bold;
+  font-size: 30rpx;
   color: #333;
   display: block;
 }
 
 .setting-desc {
-  font-size: 26rpx;
+  font-size: 24rpx;
   color: #999;
-  margin-top: 8rpx;
+  margin-top: 6rpx;
   display: block;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .setting-right {
   flex-shrink: 0;
+}
+
+.setting-divider {
+  height: 1rpx;
+  background-color: #f5f5f5;
 }
 
 /* ===== 自定义仿开关（替代原生 switch，彻底消除 toggle 动画） ===== */
@@ -283,12 +421,16 @@ const handleGoContact = async () => {
   left: 44rpx;
 }
 
-.setting-divider {
-  height: 1rpx;
-  background-color: #eeeeee;
+.deactivate-hint {
+  padding: 16rpx 32rpx;
 }
 
-/* ===== 提示弹窗 ===== */
+.hint-text {
+  font-size: 24rpx;
+  color: #999;
+}
+
+// 弹窗样式
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -299,25 +441,24 @@ const handleGoContact = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 999;
 }
 
 .dialog-box {
-  width: 75%;
-  max-width: 560rpx;
+  width: 560rpx;
   background: #fff;
   border-radius: 20rpx;
-  padding: 48rpx 40rpx 36rpx;
+  padding: 48rpx 40rpx 32rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .dialog-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx;
 }
 
 .dialog-content {
@@ -340,25 +481,23 @@ const handleGoContact = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12rpx;
-
-  text {
-    font-size: 30rpx;
-  }
+  border-radius: 40rpx;
 }
 
 .cancel-btn {
-  background: #f2f2f2;
+  background: #f5f5f5;
 
   text {
-    color: #333;
+    font-size: 30rpx;
+    color: #666;
   }
 }
 
 .confirm-btn {
-  background: #07c160;
+  background: #FF4081;
 
   text {
+    font-size: 30rpx;
     color: #fff;
     font-weight: bold;
   }
