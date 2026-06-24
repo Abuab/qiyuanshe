@@ -225,6 +225,12 @@
       :matchmaker="selectedMatchmaker || {}"
       @close="showMatchmaker = false"
     />
+
+    <!-- 问题反馈弹窗 -->
+    <feedback-popup
+      :show="showFeedback"
+      @close="showFeedback = false"
+    />
   </view>
 </template>
 
@@ -235,6 +241,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
@@ -421,9 +428,13 @@ const goToMyLikes = () => uni.navigateTo({ url: '/pages/my-likes/my-likes' })
 const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
 const goToUserAgreement = () => uni.navigateTo({ url: '/pages/agreement/index?type=user' })
 const goToAntiFraud = () => uni.navigateTo({ url: '/pages/agreement/index?type=antiFraud' })
+
+// 问题反馈弹窗
+const showFeedback = ref(false)
+
 const goToFeedback = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  uni.navigateTo({ url: '/pages/feedback/index' })
+  showFeedback.value = true
 }
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失

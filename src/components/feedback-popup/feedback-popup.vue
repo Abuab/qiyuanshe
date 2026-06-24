@@ -1,9 +1,13 @@
 <template>
-  <view class="feedback-overlay" @tap="handleClose" @touchmove.stop.prevent>
-    <view class="feedback-panel" :class="{ 'panel-show': showPanel }" @tap.stop>
+  <view v-if="visible" class="feedback-popup">
+    <!-- 半透明遮罩 -->
+    <view class="overlay" @tap="handleClose"></view>
+
+    <!-- 底部弹窗内容 -->
+    <view class="bottom-sheet" :class="{ 'sheet-visible': sheetVisible }">
       <!-- 标题栏 -->
-      <view class="panel-header">
-        <text class="panel-title">问题反馈</text>
+      <view class="sheet-header">
+        <text class="sheet-title">问题反馈</text>
         <view class="close-btn" @tap="handleClose">
           <uni-icons type="closeempty" size="36rpx" color="#999"></uni-icons>
         </view>
@@ -82,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { post } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 
@@ -91,23 +95,42 @@ interface ImageItem {
   uploading: boolean
 }
 
+interface Props {
+  show: boolean
+}
+
+interface Emits {
+  (e: 'close'): void
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+
+const visible = ref(false)
+const sheetVisible = ref(false)
 const content = ref('')
 const images = ref<ImageItem[]>([])
-const showPanel = ref(false)
 const submitting = ref(false)
 
-onMounted(() => {
-  // 延迟触发动画，确保 DOM 渲染完成
-  setTimeout(() => {
-    showPanel.value = true
-  }, 50)
-})
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    visible.value = true
+    // 重置表单
+    content.value = ''
+    images.value = []
+    nextTick(() => {
+      setTimeout(() => {
+        sheetVisible.value = true
+      }, 50)
+    })
+  }
+}, { immediate: true })
 
 const handleClose = () => {
-  showPanel.value = false
-  // 等待动画结束后关闭页面
+  sheetVisible.value = false
   setTimeout(() => {
-    uni.navigateBack({ delta: 1 })
+    visible.value = false
+    emit('close')
   }, 300)
 }
 
@@ -131,7 +154,6 @@ const handleChooseImage = () => {
 
 const handleUploadImages = async (tempFilePaths: string[]) => {
   for (const filePath of tempFilePaths) {
-    // 先添加占位
     const item: ImageItem = { url: filePath, uploading: true }
     images.value.push(item)
     const currentIdx = images.value.length - 1
@@ -140,7 +162,6 @@ const handleUploadImages = async (tempFilePaths: string[]) => {
       const result = await uploadImage(filePath, 'file')
       images.value[currentIdx] = { url: result.url, uploading: false }
     } catch (err: any) {
-      // 上传失败，移除该图片
       images.value.splice(currentIdx, 1)
       uni.showToast({
         title: err.message || '图片上传失败，请重试',
@@ -166,7 +187,6 @@ const previewImage = (idx: number) => {
 const handleSubmit = async () => {
   if (submitting.value) return
 
-  // 校验内容
   if (!content.value.trim()) {
     uni.showToast({ title: '请填写您的举报理由', icon: 'none', duration: 2000 })
     return
@@ -187,10 +207,7 @@ const handleSubmit = async () => {
     uni.showToast({ title: '提交成功', icon: 'success', duration: 1500 })
 
     setTimeout(() => {
-      showPanel.value = false
-      setTimeout(() => {
-        uni.navigateBack({ delta: 1 })
-      }, 300)
+      handleClose()
     }, 1500)
   } catch (err: any) {
     uni.showToast({
@@ -205,36 +222,45 @@ const handleSubmit = async () => {
 </script>
 
 <style lang="scss" scoped>
-.feedback-overlay {
+.feedback-popup {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: flex-end;
+  z-index: 2000;
 }
 
-.feedback-panel {
-  width: 100%;
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   max-height: 85vh;
   background: #fff5f5;
-  border-radius: 32rpx 30rpx 0 0;
+  border-radius: 32rpx 32rpx 0 0;
   display: flex;
   flex-direction: column;
   transform: translateY(100%);
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   overflow-y: auto;
 
-  &.panel-show {
+  &.sheet-visible {
     transform: translateY(0);
   }
 }
 
 // ========== 标题栏 ==========
-.panel-header {
+.sheet-header {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -243,7 +269,7 @@ const handleSubmit = async () => {
   flex-shrink: 0;
 }
 
-.panel-title {
+.sheet-title {
   font-size: 34rpx;
   font-weight: bold;
   color: #333;

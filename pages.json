@@ -334,17 +334,6 @@
     {
       "path": "pages/visitors/visitors",
       "style": { "navigationBarTitleText": "访客记录" }
-    },
-    {
-      "path": "pages/feedback/index",
-      "style": {
-        "navigationBarTitleText": "问题反馈",
-        "navigationStyle": "custom",
-        "backgroundColor": "#FFF5F5",
-        "app-plus": {
-          "titleNView": false
-        }
-      }
     }
   ],
   "globalStyle": {
