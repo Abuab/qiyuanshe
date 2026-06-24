@@ -392,6 +392,8 @@ export class AuthService {
       lastActiveAt: user.lastActiveAt,
       protocolAgreedAt: user.protocolAgreedAt,
       protocolVersion: user.protocolVersion,
+      showBasicProfile: user.showBasicProfile ?? true,
+      delegateToPlatform: user.delegateToPlatform ?? false,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }

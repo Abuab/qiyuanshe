@@ -10,141 +10,172 @@
     </view>
 
     <scroll-view class="content-scroll" scroll-y :style="{ paddingTop: navTopPx + 'px' }">
-      <!-- 4个功能栏 -->
-      <view class="menu-group">
-        <view class="menu-row" @tap="goToBlockList">
-          <view class="menu-left">
-            <image v-if="pageIcons.blockListIcon" class="menu-icon" :src="pageIcons.blockListIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">🚫</text>
-            <text class="menu-label">黑名单</text>
+      <!-- 设置卡片 -->
+      <view class="settings-card">
+        <!-- 第1项：隐私设置 -->
+        <view class="setting-item">
+          <view class="setting-left">
+            <text class="setting-title">隐私设置</text>
+            <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
           </view>
-          <text class="menu-arrow">></text>
+          <view class="setting-right">
+            <switch
+              :checked="showBasicProfile"
+              color="#ff6b6b"
+              @change="onBasicProfileChange"
+            />
+          </view>
         </view>
 
-        <view class="menu-row" @tap="goToAgreement">
-          <view class="menu-left">
-            <image v-if="pageIcons.privacyPolicyIcon" class="menu-icon" :src="pageIcons.privacyPolicyIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">📄</text>
-            <text class="menu-label">隐私政策</text>
-          </view>
-          <text class="menu-arrow">></text>
-        </view>
+        <!-- 分割线 -->
+        <view class="setting-divider" />
 
-        <view class="menu-row" @tap="goToSelfDiscipline">
-          <view class="menu-left">
-            <image v-if="pageIcons.selfDisciplineIcon" class="menu-icon" :src="pageIcons.selfDisciplineIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">📋</text>
-            <text class="menu-label">平台自律声明</text>
+        <!-- 第2项：委托平台 -->
+        <view class="setting-item">
+          <view class="setting-left">
+            <text class="setting-title">委托平台</text>
+            <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
           </view>
-          <text class="menu-arrow">></text>
-        </view>
-
-        <view class="menu-row" @tap="goToPrivacySettings">
-          <view class="menu-left">
-            <image v-if="pageIcons.privacySettingIcon" class="menu-icon" :src="pageIcons.privacySettingIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">⚙️</text>
-            <text class="menu-label">隐私设置</text>
+          <view class="setting-right">
+            <switch
+              :checked="delegateToPlatform"
+              color="#ff6b6b"
+              @change="onDelegateClick"
+            />
           </view>
-          <text class="menu-arrow">></text>
-        </view>
-
-        <view class="menu-row" @tap="handleDeactivate">
-          <view class="menu-left">
-            <image v-if="pageIcons.deactivateIcon" class="menu-icon" :src="pageIcons.deactivateIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">🚪</text>
-            <text class="menu-label">注销账号</text>
-          </view>
-          <text class="menu-arrow">></text>
         </view>
       </view>
 
-      <!-- 注销账号下方灰色小字提示 -->
-      <view class="deactivate-hint" @tap="showDeactivateDialog">
-        <text class="hint-text">撤回同意协议</text>
-      </view>
-
-      <view class="bottom-safe"></view>
+      <view class="bottom-safe" />
     </scroll-view>
 
-    <!-- 注销确认弹窗 -->
-    <view v-if="showDialog" class="dialog-overlay" @tap="closeDeactivateDialog">
+    <!-- 委托平台提示弹窗 -->
+    <view v-if="showTipDialog" class="dialog-overlay" @tap="handleTipCancel">
       <view class="dialog-box" @tap.stop>
         <text class="dialog-title">提示</text>
-        <text class="dialog-content">若点击确认撤回《隐私政策》的同意，将会无法正常使用小程序。</text>
+        <text class="dialog-content">请联系红娘修改设置</text>
         <view class="dialog-buttons">
-          <view class="dialog-btn cancel-btn" @tap="closeDeactivateDialog">
-            <text>取消</text>
+          <view class="dialog-btn cancel-btn" @tap="handleTipCancel">
+            <text>下次再说</text>
           </view>
-          <view class="dialog-btn confirm-btn" @tap="confirmDeactivate">
-            <text>确定</text>
+          <view class="dialog-btn confirm-btn" @tap="handleGoContact">
+            <text>去联系</text>
           </view>
         </view>
       </view>
     </view>
+
+    <!-- 红娘联系方式弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmakerPopup"
+      :matchmaker="selectedMatchmaker || defaultMatchmaker"
+      @update:show="showMatchmakerPopup = $event"
+      @close="showMatchmakerPopup = false"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useSystemStore } from '@/store/system'
-import { put } from '@/utils/request'
+import { ref, onMounted } from 'vue'
+import { get, put } from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
-const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
-const showDialog = ref(false)
 
-const pageIcons = computed(() => systemStore.icons?.page || {})
+const showBasicProfile = ref(true)
+const delegateToPlatform = ref(false)
 
-onMounted(() => {
+// 提示弹窗
+const showTipDialog = ref(false)
+
+// 红娘弹窗
+const showMatchmakerPopup = ref(false)
+const selectedMatchmaker = ref<MatchmakerData | null>(null)
+const defaultMatchmaker: MatchmakerData = {
+  id: 0,
+  name: '红娘',
+  avatar: '',
+  title: '专属红娘',
+  wechat: '',
+  phone: '',
+  qrCode: '',
+}
+
+onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+
+  await loadSettings()
 })
+
+/** 加载当前隐私设置 */
+const loadSettings = async () => {
+  try {
+    const res: any = await get('/auth/profile')
+    if (res) {
+      showBasicProfile.value = res.showBasicProfile ?? true
+      delegateToPlatform.value = res.delegateToPlatform ?? false
+    }
+  } catch {
+    // 使用默认值
+  }
+}
 
 const handleBack = () => {
   uni.navigateBack()
 }
 
-const goToBlockList = () => {
-  uni.navigateTo({ url: '/pages/block-list/index' })
-}
-
-const goToAgreement = () => {
-  uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
-}
-
-const goToSelfDiscipline = () => {
-  uni.navigateTo({ url: '/pages/agreement/index?type=selfDiscipline' })
-}
-
-const goToPrivacySettings = () => {
-  uni.showToast({ title: '隐私设置功能开发中', icon: 'none' })
-}
-
-const showDeactivateDialog = () => {
-  showDialog.value = true
-}
-
-const closeDeactivateDialog = () => {
-  showDialog.value = false
-}
-
-const confirmDeactivate = async () => {
+/** 隐私设置开关 - 直接保存 */
+const onBasicProfileChange = async (e: any) => {
+  const newVal = e.detail.value
   try {
-    await put('/users/deactivate')
-    uni.showToast({ title: '已注销', icon: 'success' })
-    showDialog.value = false
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/index/index' })
-    }, 1500)
+    await put('/users/privacy-settings', { showBasicProfile: newVal })
+    showBasicProfile.value = newVal
   } catch {
-    uni.showToast({ title: '操作失败', icon: 'none' })
+    uni.showToast({ title: '保存失败', icon: 'none' })
   }
 }
 
-const handleDeactivate = () => {
-  showDeactivateDialog()
+/** 委托平台开关 - 拦截并弹窗（不回写 ref 值，开关保持原状态） */
+const onDelegateClick = () => {
+  showTipDialog.value = true
+}
+
+/** 弹出提示 - 下次再说 */
+const handleTipCancel = () => {
+  showTipDialog.value = false
+}
+
+/** 弹出提示 - 去联系红娘 */
+const handleGoContact = async () => {
+  showTipDialog.value = false
+
+  // 加载红娘列表
+  try {
+    const res: any = await get('/matchmakers')
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+    if (rawList.length === 0) {
+      uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+      return
+    }
+    const item = rawList[0]
+    selectedMatchmaker.value = {
+      id: item.id || 0,
+      name: item.name || '红娘',
+      avatar: getFullImageUrl(item.avatar),
+      title: item.title || '专属红娘',
+      wechat: item.wechat || '',
+      phone: item.phone || '',
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+    }
+    showMatchmakerPopup.value = true
+  } catch {
+    uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
+  }
 }
 </script>
 
@@ -193,54 +224,51 @@ const handleDeactivate = () => {
   height: 100vh;
 }
 
-.menu-group {
+/* ===== 设置卡片 ===== */
+.settings-card {
   background-color: #fff;
-  margin: 20rpx 0;
+  margin: 24rpx;
+  border-radius: 16rpx;
+  padding: 0 32rpx;
 }
 
-.menu-row {
+.setting-item {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 32rpx 32rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  padding: 32rpx 0;
 }
 
-.menu-left {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
+.setting-left {
+  flex: 1;
+  margin-right: 24rpx;
 }
 
-.menu-icon {
-  width: 40rpx;
-  height: 40rpx;
-}
-
-.menu-icon-emoji {
-  font-size: 36rpx;
-}
-
-.menu-label {
-  font-size: 30rpx;
+.setting-title {
+  font-size: 32rpx;
+  font-weight: bold;
   color: #333;
+  display: block;
 }
 
-.menu-arrow {
-  font-size: 28rpx;
-  color: #ccc;
-}
-
-.deactivate-hint {
-  padding: 16rpx 32rpx;
-}
-
-.hint-text {
-  font-size: 24rpx;
+.setting-desc {
+  font-size: 26rpx;
   color: #999;
+  margin-top: 8rpx;
+  display: block;
+  line-height: 1.5;
 }
 
-// 弹窗样式
+.setting-right {
+  flex-shrink: 0;
+}
+
+.setting-divider {
+  height: 1rpx;
+  background-color: #eeeeee;
+}
+
+/* ===== 提示弹窗 ===== */
 .dialog-overlay {
   position: fixed;
   top: 0;
@@ -251,24 +279,25 @@ const handleDeactivate = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9999;
 }
 
 .dialog-box {
-  width: 560rpx;
+  width: 75%;
+  max-width: 560rpx;
   background: #fff;
   border-radius: 20rpx;
-  padding: 48rpx 40rpx 32rpx;
+  padding: 48rpx 40rpx 36rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 .dialog-title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 24rpx;
+  margin-bottom: 20rpx;
 }
 
 .dialog-content {
@@ -291,23 +320,25 @@ const handleDeactivate = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 40rpx;
-}
-
-.cancel-btn {
-  background: #f5f5f5;
+  border-radius: 12rpx;
 
   text {
     font-size: 30rpx;
-    color: #666;
+  }
+}
+
+.cancel-btn {
+  background: #f2f2f2;
+
+  text {
+    color: #333;
   }
 }
 
 .confirm-btn {
-  background: #FF4081;
+  background: #07c160;
 
   text {
-    font-size: 30rpx;
     color: #fff;
     font-weight: bold;
   }

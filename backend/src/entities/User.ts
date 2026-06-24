@@ -207,6 +207,14 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   protocolVersion: string | null
 
+  /** 隐私设置：是否在平台显示基本资料 */
+  @Column({ type: 'boolean', default: true })
+  showBasicProfile: boolean
+
+  /** 隐私设置：是否委托平台（用户不可自行修改，由红娘操作） */
+  @Column({ type: 'boolean', default: false })
+  delegateToPlatform: boolean
+
   @CreateDateColumn()
   createdAt: Date
 
