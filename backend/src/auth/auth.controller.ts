@@ -23,8 +23,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async wechatLogin(@Body() dto: WechatLoginDto) {
-    const result = await this.authService.wechatLogin(dto.code)
+  async wechatLogin(@Body() dto: WechatLoginDto, @Request() req: any) {
+    const ip = req.headers['x-forwarded-for'] || req.ip || ''
+    const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    const result = await this.authService.wechatLogin(dto.code, ipAddress)
     return Result.success(result)
   }
 

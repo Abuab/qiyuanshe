@@ -1095,17 +1095,16 @@ export class AdminUserService {
         await manager.update(User, userId, { tags: merged as any })
         updatedCount++
       }
-    })
 
-    // 记录批量操作日志
-    await this.auditLogRepository.save(
-      this.auditLogRepository.create({
+      // 审计日志在事务内部，确保事务回滚时一并回滚
+      const auditLog = manager.create(AuditLog, {
         targetType: 'user',
         targetId: 0,
         action: 'BATCH_UPDATE_TAGS',
         content: JSON.stringify({ userIds, tags: newTags }),
-      }),
-    )
+      })
+      await manager.save(AuditLog, auditLog)
+    })
 
     return updatedCount
   }

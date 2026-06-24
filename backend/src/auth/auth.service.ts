@@ -44,7 +44,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async wechatLogin(code: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async wechatLogin(code: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
 
     if (!session.openid) {
@@ -82,6 +82,7 @@ export class AuthService {
           agreementType: 'USER_AGREEMENT',
           version: '1.0',
           action: 'agree',
+          ipAddress: ipAddress || null,
         }),
       )
       user.protocolAgreedAt = new Date()
