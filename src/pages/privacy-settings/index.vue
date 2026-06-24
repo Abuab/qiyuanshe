@@ -18,11 +18,10 @@
             <text class="setting-title">隐私设置</text>
             <text class="setting-desc">在平台显示基本资料（不包含任何联系方式）</text>
           </view>
-          <view class="setting-right" @tap.stop="onBasicProfileChange">
-            <switch
-              :checked="showBasicProfile"
-              color="#ff6b6b"
-            />
+          <view class="setting-right" @tap="onBasicProfileChange">
+            <view class="custom-switch" :class="{ on: showBasicProfile }">
+              <view class="switch-knob" />
+            </view>
           </view>
         </view>
 
@@ -35,11 +34,10 @@
             <text class="setting-title">委托平台</text>
             <text class="setting-desc">平台工作人员在充分保护您的隐私情况下，帮您脱单！</text>
           </view>
-          <view class="setting-right" @tap.stop="onDelegateClick">
-            <switch
-              :checked="delegateToPlatform"
-              color="#ff6b6b"
-            />
+          <view class="setting-right" @tap="onDelegateClick">
+            <view class="custom-switch" :class="{ on: delegateToPlatform }">
+              <view class="switch-knob" />
+            </view>
           </view>
         </view>
       </view>
@@ -253,6 +251,36 @@ const handleGoContact = async () => {
 
 .setting-right {
   flex-shrink: 0;
+}
+
+/* ===== 自定义仿开关（替代原生 switch，彻底消除 toggle 动画） ===== */
+.custom-switch {
+  width: 104rpx;
+  height: 64rpx;
+  border-radius: 32rpx;
+  background-color: #e5e5e5;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.custom-switch.on {
+  background-color: #ff6b6b;
+}
+
+.switch-knob {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.15);
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  transition: left 0.2s ease;
+}
+
+.custom-switch.on .switch-knob {
+  left: 44rpx;
 }
 
 .setting-divider {
