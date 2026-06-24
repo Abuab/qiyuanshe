@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
+import { UserAgreementLog } from '../entities/UserAgreementLog'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
@@ -41,8 +42,35 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserAgreement)
     private readonly agreementRepo: Repository<UserAgreement>,
+    @InjectRepository(UserAgreementLog)
+    private readonly agreementLogRepo: Repository<UserAgreementLog>,
     private readonly jwtService: JwtService,
   ) {}
+
+  private async saveAgreementRecord(userId: number, version: string, action: string, ipAddress: string | null) {
+    // 写入 user_agreements 表（User 详情页查询用）
+    await this.agreementRepo.save(this.agreementRepo.create({
+      userId,
+      agreementType: 'USER_AGREEMENT',
+      version,
+      action,
+      ipAddress: ipAddress || null,
+    }))
+    // 同步写入 user_agreement_logs 表（管理后台"协议同意记录查询"页面用）
+    // 非关键审计日志，失败不阻塞登录
+    try {
+      await this.agreementLogRepo.save(this.agreementLogRepo.create({
+        userId,
+        agreementType: 'USER_AGREEMENT',
+        version,
+        action,
+        ipAddress: ipAddress || '',
+        userAgent: '',
+      }))
+    } catch (e: any) {
+      console.error('[AuthService] 写入 user_agreement_logs 失败:', e?.message)
+    }
+  }
 
   async wechatLogin(code: string, ipAddress?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
@@ -76,15 +104,7 @@ export class AuthService {
       user = await this.userRepository.save(user)
 
       // 新用户自动记录协议同意（关联登录即视为同意）
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.saveAgreementRecord(user.id, '1.0', 'agree', ipAddress || null)
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }
@@ -95,15 +115,7 @@ export class AuthService {
 
     // 如果用户尚未记录协议同意，自动补录（老用户微信登录时也补录，与 phoneLogin 一致）
     if (!user.protocolAgreedAt) {
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.saveAgreementRecord(user.id, '1.0', 'agree', ipAddress || null)
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }
@@ -148,15 +160,7 @@ export class AuthService {
 
     // 如果用户尚未记录协议同意，自动补录（在禁用校验之后，避免为禁用用户创建协议记录）
     if (!user.protocolAgreedAt) {
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.saveAgreementRecord(user.id, '1.0', 'agree', ipAddress || null)
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }

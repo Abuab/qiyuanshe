@@ -345,8 +345,9 @@ const fetchMessages = async (isLoadMore = false) => {
 
     page.value++
     if (!isLoadMore) {
-      // 修复：首次加载延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
-      // 两次调用确保 DOM 完全稳定后精确滚动到底部
+      // 修复：首次加载立即滚动到底部（nextTick 确保 DOM 渲染后执行），
+      // 再延迟 300ms 和 900ms 做二次确认
+      nextTick(() => scrollToBottom())
       setTimeout(() => {
         console.log('[fetchMessages] first load 300ms, scrollToBottom')
         scrollToBottom()

@@ -653,8 +653,9 @@ async function fetchMessages() {
       messageTotal.value = res.data.total || 0
       // 修复：仅在第一页时自动滚动到底部，非第一页为查看历史消息不打断
       if (messagePage.value === 1) {
-        // 修复：延迟 300ms 后第一次滚动，再延迟 600ms（总计 900ms）第二次滚动
-        // 两次调用确保 DOM 完全稳定后精确滚动到底部
+        // 修复：首次加载立即滚动到底部（nextTick 确保 DOM 渲染后执行），
+        // 再延迟 300ms 和 900ms 做二次确认
+        nextTick(() => scrollToBottom())
         setTimeout(() => {
           console.log('[fetchMessages] page 1 loaded, 300ms scrollToBottom, msgCount=', messages.value.length)
           scrollToBottom()
