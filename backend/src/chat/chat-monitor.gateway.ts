@@ -87,12 +87,6 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     this.cleanup(client)
   }
 
-  /** 处理客户端 JSON ping，刷新心跳存活标记（配合服务端 ws.ping() 保活） */
-  @SubscribeMessage('ping')
-  handlePing(@ConnectedSocket() client: AuthenticatedWs) {
-    client.isAlive = true
-  }
-
   /** 客户端认证 */
   @SubscribeMessage('auth')
   async handleAuth(
