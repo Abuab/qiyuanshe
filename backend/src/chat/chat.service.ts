@@ -23,6 +23,17 @@ const LAST_MSG_TTL = 86400
 const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_SEC = 60
 
+/** 过滤国内不可访问的外部头像域名 */
+const EXTERNAL_AVATAR_DOMAINS = ['api.dicebear.com']
+function safeAvatarUrl(url: string | undefined | null): string {
+  if (!url) return ''
+  try {
+    const hostname = new URL(url).hostname
+    if (EXTERNAL_AVATAR_DOMAINS.includes(hostname)) return ''
+  } catch {}
+  return url
+}
+
 @Injectable()
 export class ChatService implements OnModuleInit, OnModuleDestroy {
   private readonly dailyFreeMessages = 3
@@ -532,7 +543,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       type: 'user',
       userId: conv.userId,
       nickname: conv.nickname,
-      avatar: conv.avatar,
+      avatar: safeAvatarUrl(conv.avatar),
       lastMessage: conv.lastMessage,
       createdAt: conv.createdAt,
       unreadCount: unreadMap.get(conv.userId) || 0,
