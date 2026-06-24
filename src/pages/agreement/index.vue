@@ -3,7 +3,7 @@
     <scroll-view class="content-scroll" scroll-y>
       <view class="content-inner">
         <view class="agreement-content">
-        <text class="agreement-title">{{ title }}</text>
+        <text class="agreement-title">{{ pageTitle }}</text>
 
         <view class="agreement-body">
           <rich-text v-if="htmlContent" class="vip-rich" :nodes="htmlContent"></rich-text>
@@ -23,11 +23,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
+import { useSystemStore } from '@/store/system'
 
 const type = ref('user')
-const title = ref('用户协议')
+const pageTitle = ref('用户协议')
 const htmlContent = ref('')
 const loading = ref(true)
+
+const systemStore = useSystemStore()
 
 const typeMap: Record<string, string> = {
   user: 'USER_AGREEMENT',
@@ -51,8 +54,11 @@ onMounted(async () => {
   const options = currentPage.options || {}
   const t = options.type || 'user'
   type.value = t
-  title.value = titleMap[t] || '用户协议'
-  uni.setNavigationBarTitle({ title: title.value })
+
+  // 防骗提醒页面顶部标题栏显示小程序名称
+  const navTitle = t === 'antiFraud' ? (systemStore.appName || '防骗提醒') : titleMap[t]
+  pageTitle.value = titleMap[t] || '用户协议'
+  uni.setNavigationBarTitle({ title: navTitle })
 
   try {
     const res: any = await get(`/agreement?type=${typeMap[t]}`)
