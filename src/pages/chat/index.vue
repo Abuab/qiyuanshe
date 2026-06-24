@@ -467,15 +467,25 @@ const scrollToBottom = () => {
         const targetScrollTop = mbRect.top - svRect.top + scrollTop.value
         const finalScrollTop = Math.max(0, targetScrollTop)
         console.log('[scrollToBottom] calculated scrollTop=', finalScrollTop, 'svRect.top=', svRect.top, 'mbRect.top=', mbRect.top, 'currentScrollTop=', scrollTop.value)
-        scrollTop.value = finalScrollTop
+        // 修复：先置 0 再用 nextTick 赋值，确保值一定变化，触发 scroll-view 的 scroll-top 响应
+        scrollTop.value = 0
+        nextTick(() => {
+          scrollTop.value = finalScrollTop
+        })
       } else {
         // fallback: 设一个很大的值确保滚到底部
         console.log('[scrollToBottom] query failed, fallback to max value')
-        scrollTop.value = 999999
+        scrollTop.value = 0
+        nextTick(() => {
+          scrollTop.value = 999999
+        })
       }
     } catch (e) {
       console.log('[scrollToBottom] query error, fallback:', e)
-      scrollTop.value = 999999
+      scrollTop.value = 0
+      nextTick(() => {
+        scrollTop.value = 999999
+      })
     }
   }, 100)
 }
@@ -492,6 +502,8 @@ const onScroll = (e: any) => {
     }
     const detail = e?.detail || {}
     const scrollTopVal = detail.scrollTop ?? 0
+    // 修复：同步 scrollTop.value，确保 scrollToBottom 中计算 targetScrollTop 使用的是最新用户滚动位置
+    scrollTop.value = scrollTopVal
     const scrollHeight = detail.scrollHeight ?? 0
     const clientHeight = detail.clientHeight ?? 0
     const distanceToBottom = scrollHeight - scrollTopVal - clientHeight

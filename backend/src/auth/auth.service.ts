@@ -127,7 +127,11 @@ export class AuthService {
       throw new UnauthorizedException('该手机号未注册，请先通过微信登录注册')
     }
 
-    // 如果用户尚未记录协议同意，自动补录
+    if (user.status === 0) {
+      throw new UnauthorizedException('账号已被禁用')
+    }
+
+    // 如果用户尚未记录协议同意，自动补录（在禁用校验之后，避免为禁用用户创建协议记录）
     if (!user.protocolAgreedAt) {
       await this.agreementRepo.save(
         this.agreementRepo.create({
@@ -140,10 +144,6 @@ export class AuthService {
       )
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
-    }
-
-    if (user.status === 0) {
-      throw new UnauthorizedException('账号已被禁用')
     }
 
     user.lastLoginAt = new Date()

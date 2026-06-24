@@ -469,94 +469,100 @@ function connectWs() {
   const url = `${protocol}//${host}/ws/chat`
   console.log('[WS] connecting to', url, 'at', new Date().toISOString())
 
-  try {
-    const ws = new WebSocket(url)
-    wsRef.value = ws
+  const ws = new WebSocket(url)
+  wsRef.value = ws
 
-    // 修复：5 秒认证超时检测，超时则主动断开并触发重连
-    wsAuthTimeout = setTimeout(() => {
-      console.log('[WS] auth timeout after 5s, closing...')
-      ws.close()
-    }, 5000)
+  // 修复：5 秒认证超时检测，超时则主动断开并触发重连
+  wsAuthTimeout = setTimeout(() => {
+    console.log('[WS] auth timeout after 5s, closing...')
+    ws.close()
+  }, 5000)
 
-    ws.onopen = () => {
-      console.log('[WS] onopen at', new Date().toISOString())
-      wsConnected.value = true
-      wsReconnectCount = 0 // 修复：连接成功后重置重连计数
-      // 发送认证消息
-      ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
-      console.log('[WS] auth message sent')
-    }
-
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data)
-        const { event: evt, data } = payload
-        console.log('[WS] onmessage event=', evt, 'at', new Date().toISOString())
-
-        if (evt === 'auth_success') {
-          console.log('[WS] auth_success, subscribing to targetUserId=', targetUserId.value)
-          // 修复：清除认证超时定时器
-          if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
-          // 订阅目标用户的消息
-          ws.send(JSON.stringify({
-            event: 'subscribe',
-            data: { targetUserId: targetUserId.value },
-          }))
-        } else if (evt === 'subscribed') {
-          console.log('[WS] subscribed to userId=', data.targetUserId)
-        } else if (evt === 'new_message') {
-          console.log('[WS] new_message from=', data.fromUserId, 'to=', data.toUserId)
-          handleWsMessage(data)
-        } else if (evt === 'monitor_locked') {
-          lockMessage.value = data.message
-          ElMessage.warning(data.message)
-        } else if (evt === 'auth_error') {
-          console.log('[WS] auth_error:', data.message)
-          ElMessage.error(data.message || 'WebSocket 认证失败')
-          disconnectWs()
-        }
-      } catch (e) {
-        console.log('[WS] onmessage parse error:', e)
-      }
-    }
-
-    ws.onclose = (event) => {
-      console.log('[WS] onclose code=', event.code, 'reason=', event.reason, 'at', new Date().toISOString())
-      wsConnected.value = false
-      wsRef.value = null
-      // 清除心跳和超时
-      if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null }
-      if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
-      // 修复：自动重连（非正常关闭 且 监控中 且 未超重试次数）
-      if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT) {
-        wsReconnectCount++
-        console.log('[WS] reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
-        wsReconnectTimer = setTimeout(() => {
-          console.log('[WS] reconnecting...')
-          connectWs()
-        }, 3000)
-      } else if (wsReconnectCount >= WS_MAX_RECONNECT) {
-        console.log('[WS] max reconnect attempts reached, giving up')
-        ElMessage.error('WebSocket 连接失败，请检查网络后重新开始监控')
-      }
-    }
-
-    ws.onerror = (event) => {
-      console.log('[WS] onerror at', new Date().toISOString(), event)
-      wsConnected.value = false
-    }
-
-    // 心跳
-    wsHeartbeatTimer = setInterval(() => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ event: 'ping', data: {} }))
-      }
-    }, 25000)
-  } catch (e) {
-    console.log('[WS] connect error:', e)
-    ElMessage.error('WebSocket 连接失败')
+  ws.onopen = () => {
+    console.log('[WS] onopen at', new Date().toISOString())
+    wsConnected.value = true
+    wsReconnectCount = 0 // 修复：连接成功后重置重连计数
+    // 发送认证消息
+    ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
+    console.log('[WS] auth message sent')
   }
+
+  ws.onmessage = (event) => {
+    try {
+      const payload = JSON.parse(event.data)
+      const { event: evt, data } = payload
+      console.log('[WS] onmessage event=', evt, 'at', new Date().toISOString())
+
+      if (evt === 'auth_success') {
+        console.log('[WS] auth_success, subscribing to targetUserId=', targetUserId.value)
+        // 修复：清除认证超时定时器
+        if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
+        // 订阅目标用户的消息
+        ws.send(JSON.stringify({
+          event: 'subscribe',
+          data: { targetUserId: targetUserId.value },
+        }))
+      } else if (evt === 'subscribed') {
+        console.log('[WS] subscribed to userId=', data.targetUserId)
+      } else if (evt === 'new_message') {
+        console.log('[WS] new_message from=', data.fromUserId, 'to=', data.toUserId)
+        handleWsMessage(data)
+      } else if (evt === 'monitor_locked') {
+        lockMessage.value = data.message
+        ElMessage.warning(data.message)
+      } else if (evt === 'auth_error') {
+        console.log('[WS] auth_error:', data.message)
+        ElMessage.error(data.message || 'WebSocket 认证失败')
+        disconnectWs()
+      }
+    } catch (e) {
+      console.log('[WS] onmessage parse error:', e)
+    }
+  }
+
+  ws.onclose = (event) => {
+    console.log('[WS] onclose code=', event.code, 'reason=', event.reason, 'at', new Date().toISOString())
+    wsConnected.value = false
+    wsRef.value = null
+    // 清除心跳和超时
+    if (wsHeartbeatTimer) { clearInterval(wsHeartbeatTimer); wsHeartbeatTimer = null }
+    if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
+    // 修复：自动重连。检查 !wsReconnectTimer 避免与 onerror 重复创建重连定时器导致重试次数重复消耗
+    if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
+      wsReconnectCount++
+      console.log('[WS] reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      wsReconnectTimer = setTimeout(() => {
+        console.log('[WS] reconnecting from onclose...')
+        connectWs()
+      }, 3000)
+    } else if (wsReconnectCount >= WS_MAX_RECONNECT) {
+      console.log('[WS] max reconnect attempts reached, giving up')
+      ElMessage.error('WebSocket 连接失败，请检查网络后重新开始监控')
+    }
+  }
+
+  ws.onerror = (event) => {
+    console.log('[WS] onerror at', new Date().toISOString(), event)
+    wsConnected.value = false
+    // 修复：onerror 中启动重连。虽然规范要求 onerror 后必触发 onclose，但某些边缘情况
+    //（如网络完全断开、浏览器休眠）可能导致 onclose 不被调用，在此兜底。
+    // 检查 wsReconnectTimer 避免与 onclose 重复创建重连定时器
+    if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
+      wsReconnectCount++
+      console.log('[WS] onerror reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      wsReconnectTimer = setTimeout(() => {
+        console.log('[WS] reconnecting from onerror...')
+        connectWs()
+      }, 3000)
+    }
+  }
+
+  // 心跳
+  wsHeartbeatTimer = setInterval(() => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ event: 'ping', data: {} }))
+    }
+  }, 25000)
 }
 
 function disconnectWs() {
