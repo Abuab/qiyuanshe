@@ -107,20 +107,22 @@ export class AdminChatService {
       whereConditions.forEach((cond: any) => (cond.id = LessThan(beforeId)))
       ;[list, total] = await this.messageRepository.findAndCount({
         where: whereConditions,
-        order: { createdAt: 'DESC' },
+        order: { createdAt: 'DESC', id: 'DESC' },
         take: limit,
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
+      console.log('[AdminChat] getMessages loadMore beforeId=', beforeId, 'returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     } else {
       // 首次加载/分页跳转：查最新的 limit 条，DESC + take + reverse 为正序（旧→新）
       ;[list, total] = await this.messageRepository.findAndCount({
         where: whereConditions,
-        order: { createdAt: 'DESC' },
+        order: { createdAt: 'DESC', id: 'DESC' },
         take: limit,
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
+      console.log('[AdminChat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
     return { list, page, limit, total }

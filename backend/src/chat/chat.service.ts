@@ -407,20 +407,22 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       whereConditions.forEach((cond) => (cond.id = LessThan(beforeId)))
       ;[list, total] = await this.messageRepository.findAndCount({
         where: whereConditions,
-        order: { createdAt: 'DESC' },
+        order: { createdAt: 'DESC', id: 'DESC' },
         take: limit,
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
+      console.log('[Chat] getMessages loadMore beforeId=', beforeId, 'returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     } else {
       // 首次加载：查最新的 limit 条，DESC + limit，然后 reverse 为正序（旧→新）
       ;[list, total] = await this.messageRepository.findAndCount({
         where: whereConditions,
-        order: { createdAt: 'DESC' },
+        order: { createdAt: 'DESC', id: 'DESC' },
         take: limit,
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
+      console.log('[Chat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
     const messagesWithMine = list.map((msg) => ({
@@ -461,10 +463,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       relations: ['fromUser', 'toUser'],
     })
 
-    return messages.map((msg) => ({
+    const result = messages.map((msg) => ({
       ...msg,
       isMine: msg.fromUserId === userId,
     }))
+    console.log('[Chat] pollMessages afterId=', afterId, 'returned=', result.length, 'ids=', result.map(m => m.id))
+    return result
   }
 
   async getConversations(

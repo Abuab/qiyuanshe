@@ -28,7 +28,7 @@
       class="message-list"
       scroll-y
       enable-flex
-      :scroll-top="scrollTop"
+      :scroll-into-view="scrollIntoView"
       @scrolltoupper="loadMore"
       @scroll="onScroll"
       :refresher-enabled="true"
@@ -225,7 +225,7 @@ const limit = 20
 const loading = ref(false)
 const loadingMore = ref(false)
 const noMore = ref(false)
-const scrollTop = ref(0) // 修复：使用 scroll-top 属性精确控制滚动位置，替代不稳定的 scroll-into-view
+const scrollIntoView = ref('') // 修复：使用 scroll-into-view 方式滚动到底部，彻底消除 scroll-top 先置0导致的闪动
 const keyboardHeight = ref(0)
 const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
@@ -414,31 +414,9 @@ const handleSend = async () => {
   }
 }
 
-// ===== 滚动到底部（使用 scroll-top + createSelectorQuery 精确控制，替代不稳定的 scroll-into-view） =====
-function getScrollViewRect(): Promise<any> {
-  return new Promise((resolve) => {
-    uni.createSelectorQuery()
-      .select('.message-list')
-      .boundingClientRect((rect) => {
-        resolve(rect || null)
-      })
-      .exec()
-  })
-}
-
-function getMsgBottomRect(): Promise<any> {
-  return new Promise((resolve) => {
-    uni.createSelectorQuery()
-      .select('#msg-bottom')
-      .boundingClientRect((rect) => {
-        resolve(rect || null)
-      })
-      .exec()
-  })
-}
-
+// ===== 滚动到底部（使用 scroll-into-view 方式，彻底消除 scroll-top 先置0导致的闪动） =====
 const scrollToBottom = () => {
-  // 修复：最短调用间隔 300ms 防抖，防止短时间多次调用导致跳动
+  // 最短调用间隔 300ms 防抖，防止短时间内多次调用导致跳动
   const now = Date.now()
   if (now - lastScrollToBottomTime < 300) {
     console.log('[Chat] scrollToBottom throttled, lastCall', now - lastScrollToBottomTime, 'ms ago')
@@ -446,7 +424,7 @@ const scrollToBottom = () => {
   }
   lastScrollToBottomTime = now
 
-  console.log('[Chat] scrollToBottom called, isUserScrolledUp=', isUserScrolledUp.value, 'msgCount=', messages.value.length, 'scrollTop=', scrollTop.value)
+  console.log('[Chat] scrollToBottom called, isUserScrolledUp=', isUserScrolledUp.value, 'msgCount=', messages.value.length)
   isUserScrolledUp.value = false
   showNewMsgTip.value = false
   if (messages.value.length === 0) return
@@ -454,36 +432,11 @@ const scrollToBottom = () => {
   // 锁定 800ms，防止滚动期间的 onScroll 把 isUserScrolledUp 改回 true
   scrollLockUntil.value = Date.now() + 800
 
-  // 延迟 100ms 等 DOM 渲染完成，再用 createSelectorQuery 计算精确滚动位置
-  setTimeout(async () => {
-    try {
-      const [svRect, mbRect] = await Promise.all([getScrollViewRect(), getMsgBottomRect()])
-      if (svRect && mbRect) {
-        // 计算 msg-bottom 相对 scroll-view 内容顶部的偏移 = msgBottom.top - scrollView.top + 当前 scrollTop
-        const targetScrollTop = mbRect.top - svRect.top + scrollTop.value
-        const finalScrollTop = Math.max(0, targetScrollTop)
-        console.log('[Chat] scrollToBottom querySuccess scrollTop=', finalScrollTop, 'svRect.top=', svRect.top, 'mbRect.top=', mbRect.top, 'currentScrollTop=', scrollTop.value)
-        // 修复：先置 0 再用 nextTick 赋值，确保值一定变化，触发 scroll-view 的 scroll-top 响应
-        scrollTop.value = 0
-        nextTick(() => {
-          scrollTop.value = finalScrollTop
-        })
-      } else {
-        // fallback: 设一个很大的值确保滚到底部
-        console.log('[Chat] scrollToBottom queryFailed, fallback to max')
-        scrollTop.value = 0
-        nextTick(() => {
-          scrollTop.value = 999999
-        })
-      }
-    } catch (e) {
-      console.log('[Chat] scrollToBottom queryError:', e)
-      scrollTop.value = 0
-      nextTick(() => {
-        scrollTop.value = 999999
-      })
-    }
-  }, 100)
+  // 先置空再设 msg-bottom，确保值有变化，scroll-view 才会响应滚动
+  scrollIntoView.value = ''
+  nextTick(() => {
+    scrollIntoView.value = 'msg-bottom'
+  })
 }
 
 // 监听滚动事件
@@ -498,8 +451,6 @@ const onScroll = (e: any) => {
     }
     const detail = e?.detail || {}
     const scrollTopVal = detail.scrollTop ?? 0
-    // 修复：同步 scrollTop.value，确保 scrollToBottom 中计算 targetScrollTop 使用的是最新用户滚动位置
-    scrollTop.value = scrollTopVal
     const scrollHeight = detail.scrollHeight ?? 0
     const clientHeight = detail.clientHeight ?? 0
     const distanceToBottom = scrollHeight - scrollTopVal - clientHeight

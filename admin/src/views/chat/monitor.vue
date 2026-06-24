@@ -724,7 +724,7 @@ function flushWsPendingMessages() {
   nextTick(() => scrollToBottom())
 }
 
-// ===== 修复：统一滚动到底部（含 300ms 防抖 + 滚动锁定） =====
+// ===== 修复：统一滚动到底部（nextTick + requestAnimationFrame + setTimeout 三重保障，确保布局稳定后再计算 scrollHeight） =====
 function scrollToBottom() {
   const now = Date.now()
   if (now - lastScrollToBottomTime < 300) {
@@ -738,12 +738,19 @@ function scrollToBottom() {
   isUserScrolledUp.value = false
   // 锁定 800ms，防止滚动期间的 onMsgScroll 把 isUserScrolledUp 改回 true
   scrollLockUntil = Date.now() + 800
+  // 三重保障：nextTick → requestAnimationFrame → setTimeout(100ms)，确保浏览器布局完全稳定
   nextTick(() => {
-    const el = msgContainerRef.value
-    if (el) {
-      el.scrollTop = el.scrollHeight
-      console.log('[Chat] monitor scrollToBottom scrollTop set to', el.scrollHeight)
-    }
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const el = msgContainerRef.value
+        if (!el) {
+          console.log('[Chat] monitor scrollToBottom el is null, skip')
+          return
+        }
+        el.scrollTop = el.scrollHeight
+        console.log('[Chat] monitor scrollToBottom scrollTop set to', el.scrollHeight)
+      }, 100)
+    })
   })
 }
 
