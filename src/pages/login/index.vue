@@ -119,10 +119,11 @@ const loadLoginConfig = async () => {
 
 const checkLogin = () => {
   if (userStore.isLoggedIn) {
+    // 已登录用户直接进首页，不弹协议弹窗（后端已有协议记录）
     handleLoginSuccess()
     return
   }
-  // 检查是否已同意协议
+  // 未登录用户检查是否已同意协议（本地缓存兜底）
   if (!secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
   }
