@@ -237,6 +237,8 @@ const POLLING_INTERVAL = 2500
 let visibilityHandler: (() => void) | null = null
 // 修复：scrollToBottom 最短调用间隔（300ms 防抖），防止首次加载/轮询/WebSocket/代发短时间内连续触发导致跳动
 let lastScrollToBottomTime = 0
+// 修复：滚动锁定时长，防止 onMsgScroll 在 scrollToBottom 动画期间覆盖 isUserScrolledUp
+let scrollLockUntil = 0
 // 修复：用户手动上滑标记，收到 WebSocket 新消息时不自动滚动
 const isUserScrolledUp = ref(false)
 
@@ -596,8 +598,10 @@ function handleWsMessage(data: any) {
       // 历史消息加载中？暂存到缓冲区，等加载完成后再合并
       if (messageLoading.value) {
         wsPendingMessages.value.push(data)
+        console.log('[Chat] monitor WS buffered msg id=', data.id, 'pendingCount=', wsPendingMessages.value.length)
       } else {
         messages.value.push(data)
+        console.log('[Chat] monitor WS appended msg id=', data.id, 'msgCount=', messages.value.length)
         // 修复：仅当用户未手动上滑时自动滚动到底部
         if (!isUserScrolledUp.value) {
           nextTick(() => scrollToBottom())
@@ -642,6 +646,7 @@ function selectSession(conv: any) {
 async function fetchMessages() {
   if (!activePeer.value || !targetUserId.value) return
   messageLoading.value = true
+  console.log('[Chat] monitor fetchMessages firstLoad userId=', targetUserId.value, 'peerId=', activePeer.value.userId)
   try {
     const res = await adminChat.getMessages(
       targetUserId.value,
@@ -653,8 +658,10 @@ async function fetchMessages() {
     if (res.success && res.data) {
       const list = res.data.list || []
       messages.value = list
+      console.log('[Chat] monitor fetchMessages response listLen=', list.length, 'firstId=', list[0]?.id, 'lastId=', list[list.length - 1]?.id)
       // 不足 pageSize 条说明没有更多历史消息
       if (list.length < pageSize) noMoreMessages.value = true
+      console.log('[Chat] monitor fetchMessages noMore=', noMoreMessages.value)
 
       // 首次加载：nextTick + 300ms fallback 滚动到底部
       nextTick(() => scrollToBottom())
@@ -674,8 +681,9 @@ async function fetchMessages() {
 async function loadMoreHistory() {
   if (!activePeer.value || !targetUserId.value || messages.value.length === 0) return
   loadingMoreHistory.value = true
+  const oldestId = messages.value[0].id
+  console.log('[Chat] monitor loadMoreHistory beforeId=', oldestId, 'currentMsgCount=', messages.value.length)
   try {
-    const oldestId = messages.value[0].id
     const res = await adminChat.getMessages(
       targetUserId.value,
       activePeer.value.userId,
@@ -685,12 +693,14 @@ async function loadMoreHistory() {
     )
     if (res.success && res.data) {
       const list = res.data.list || []
+      console.log('[Chat] monitor loadMoreHistory response listLen=', list.length)
       if (list.length === 0) {
         noMoreMessages.value = true
       } else {
         messages.value = [...list, ...messages.value]
         if (list.length < pageSize) noMoreMessages.value = true
       }
+      console.log('[Chat] monitor loadMoreHistory newTotal=', messages.value.length, 'noMore=', noMoreMessages.value)
     }
   } catch {
     ElMessage.error('加载失败')
@@ -702,6 +712,7 @@ async function loadMoreHistory() {
 /** 将 WebSocket 缓冲区中的消息合并到消息列表（去重后追加） */
 function flushWsPendingMessages() {
   if (wsPendingMessages.value.length === 0) return
+  console.log('[Chat] monitor flushWsPending flushing', wsPendingMessages.value.length, 'msgs')
   const pending = wsPendingMessages.value
   wsPendingMessages.value = []
   for (const msg of pending) {
@@ -709,26 +720,29 @@ function flushWsPendingMessages() {
       messages.value.push(msg)
     }
   }
+  console.log('[Chat] monitor flushWsPending done, msgCount=', messages.value.length)
   nextTick(() => scrollToBottom())
 }
 
-// ===== 修复：统一滚动到底部（含 300ms 防抖，防止短时间内多次调用导致跳动） =====
+// ===== 修复：统一滚动到底部（含 300ms 防抖 + 滚动锁定） =====
 function scrollToBottom() {
   const now = Date.now()
   if (now - lastScrollToBottomTime < 300) {
-    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    console.log('[Chat] monitor scrollToBottom throttled, lastCall', now - lastScrollToBottomTime, 'ms ago')
     return
   }
   lastScrollToBottomTime = now
 
-  console.log('[scrollToBottom] executing scroll, msgCount=', messages.value.length)
+  console.log('[Chat] monitor scrollToBottom executing, msgCount=', messages.value.length)
   // 修复：滚动到底部时重置上滑标记
   isUserScrolledUp.value = false
+  // 锁定 800ms，防止滚动期间的 onMsgScroll 把 isUserScrolledUp 改回 true
+  scrollLockUntil = Date.now() + 800
   nextTick(() => {
     const el = msgContainerRef.value
     if (el) {
       el.scrollTop = el.scrollHeight
-      console.log('[scrollToBottom] scrollTop set to', el.scrollHeight)
+      console.log('[Chat] monitor scrollToBottom scrollTop set to', el.scrollHeight)
     }
   })
 }
@@ -737,8 +751,14 @@ function scrollToBottom() {
 function onMsgScroll() {
   const el = msgContainerRef.value
   if (!el) return
+  // 滚动锁定期间不更新 isUserScrolledUp
+  if (Date.now() < scrollLockUntil) {
+    console.log('[Chat] monitor onMsgScroll locked, skip')
+    return
+  }
   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
   isUserScrolledUp.value = distanceToBottom > 100
+  console.log('[Chat] monitor onMsgScroll distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
 }
 
 // ===== 代发 =====

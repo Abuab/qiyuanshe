@@ -315,9 +315,11 @@ const fetchMessages = async (isLoadMore = false) => {
     if (isLoadMore && messages.value.length > 0) {
       // 上拉加载更多：传最旧消息的 id 作为 beforeId，加载更早的消息
       params.beforeId = messages.value[0].id
+      console.log('[Chat] fetchMessages loadMore beforeId=', params.beforeId, 'currentMsgCount=', messages.value.length)
     } else {
       // 首次加载：不传 beforeId（或传 0），后端返回最新的 limit 条
       params.beforeId = 0
+      console.log('[Chat] fetchMessages firstLoad userId=', toUserId.value, 'limit=', limit)
     }
 
     const res: any = await request({
@@ -326,10 +328,12 @@ const fetchMessages = async (isLoadMore = false) => {
       data: params,
     })
     const list: ChatMessage[] = res?.list || []
+    console.log('[Chat] fetchMessages response listLen=', list.length, 'total=', res?.total, 'firstId=', list[0]?.id, 'lastId=', list[list.length - 1]?.id)
 
     if (isLoadMore) {
       // 加载更早的历史消息，unshift 到现有消息前面
       messages.value.unshift(...list)
+      console.log('[Chat] fetchMessages unshifted, newTotalMsgCount=', messages.value.length)
     } else {
       // 首次加载，直接赋值
       messages.value = list
@@ -340,6 +344,7 @@ const fetchMessages = async (isLoadMore = false) => {
     // 只有当返回数量小于 limit 时才算没有更多
     if (list.length < limit) noMore.value = true
     else noMore.value = false
+    console.log('[Chat] fetchMessages noMore=', noMore.value)
 
     if (!isLoadMore) {
       // 首次加载：nextTick 等 DOM 渲染后滚动到底部，再加 300ms fallback
@@ -393,6 +398,7 @@ const handleSend = async () => {
       isMine: true,
     })
     todayMessageCount.value++
+    console.log('[Chat] handleSend optimistic, msgCount=', messages.value.length)
     nextTick(() => scrollToBottom())
   } catch (e: any) {
     logger.error('send message error', e)
@@ -435,12 +441,12 @@ const scrollToBottom = () => {
   // 修复：最短调用间隔 300ms 防抖，防止短时间多次调用导致跳动
   const now = Date.now()
   if (now - lastScrollToBottomTime < 300) {
-    console.log('[scrollToBottom] throttled, last call was', now - lastScrollToBottomTime, 'ms ago')
+    console.log('[Chat] scrollToBottom throttled, lastCall', now - lastScrollToBottomTime, 'ms ago')
     return
   }
   lastScrollToBottomTime = now
 
-  console.log('[scrollToBottom] called, isUserScrolledUp=', isUserScrolledUp.value, 'msgCount=', messages.value.length)
+  console.log('[Chat] scrollToBottom called, isUserScrolledUp=', isUserScrolledUp.value, 'msgCount=', messages.value.length, 'scrollTop=', scrollTop.value)
   isUserScrolledUp.value = false
   showNewMsgTip.value = false
   if (messages.value.length === 0) return
@@ -456,7 +462,7 @@ const scrollToBottom = () => {
         // 计算 msg-bottom 相对 scroll-view 内容顶部的偏移 = msgBottom.top - scrollView.top + 当前 scrollTop
         const targetScrollTop = mbRect.top - svRect.top + scrollTop.value
         const finalScrollTop = Math.max(0, targetScrollTop)
-        console.log('[scrollToBottom] calculated scrollTop=', finalScrollTop, 'svRect.top=', svRect.top, 'mbRect.top=', mbRect.top, 'currentScrollTop=', scrollTop.value)
+        console.log('[Chat] scrollToBottom querySuccess scrollTop=', finalScrollTop, 'svRect.top=', svRect.top, 'mbRect.top=', mbRect.top, 'currentScrollTop=', scrollTop.value)
         // 修复：先置 0 再用 nextTick 赋值，确保值一定变化，触发 scroll-view 的 scroll-top 响应
         scrollTop.value = 0
         nextTick(() => {
@@ -464,14 +470,14 @@ const scrollToBottom = () => {
         })
       } else {
         // fallback: 设一个很大的值确保滚到底部
-        console.log('[scrollToBottom] query failed, fallback to max value')
+        console.log('[Chat] scrollToBottom queryFailed, fallback to max')
         scrollTop.value = 0
         nextTick(() => {
           scrollTop.value = 999999
         })
       }
     } catch (e) {
-      console.log('[scrollToBottom] query error, fallback:', e)
+      console.log('[Chat] scrollToBottom queryError:', e)
       scrollTop.value = 0
       nextTick(() => {
         scrollTop.value = 999999
@@ -487,7 +493,7 @@ const onScroll = (e: any) => {
   scrollDebounceTimer = setTimeout(() => {
     // 滚动锁定期间不更新 isUserScrolledUp（scrollToBottom 动画中）
     if (Date.now() < scrollLockUntil.value) {
-      console.log('[onScroll] locked, skip')
+      console.log('[Chat] onScroll locked, skip')
       return
     }
     const detail = e?.detail || {}
@@ -498,7 +504,7 @@ const onScroll = (e: any) => {
     const clientHeight = detail.clientHeight ?? 0
     const distanceToBottom = scrollHeight - scrollTopVal - clientHeight
     isUserScrolledUp.value = distanceToBottom > 100
-    console.log('[onScroll] distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
+    console.log('[Chat] onScroll distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
     if (!isUserScrolledUp.value) {
       showNewMsgTip.value = false
     }
@@ -680,7 +686,7 @@ const pollOnce = async () => {
     })
     const newMsgs: ChatMessage[] = res?.list || []
     if (newMsgs.length > 0) {
-      console.log('[poll] got', newMsgs.length, 'new msgs, lastId=', lastMsgId, 'ids=', newMsgs.map(m => m.id))
+      console.log('[Chat] poll got', newMsgs.length, 'new, afterId=', lastMsgId, 'ids=', newMsgs.map(m => m.id))
       const toAdd: ChatMessage[] = []
       const myContents = new Set<string>()
       // 建立已有消息 ID 集合，防御性去重（包括 seenMsgIds 和当前 messages 列表）
@@ -700,17 +706,17 @@ const pollOnce = async () => {
         ]
         // 按时间正序排列（旧→新），防止后端返回消息乱序
         messages.value.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        console.log('[poll] merged, total=', messages.value.length)
+        console.log('[Chat] poll merged, total=', messages.value.length, 'added=', toAdd.length)
         // 同步 seenMsgIds，防止后续轮询重复添加
         toAdd.forEach(m => { if (m.id >= 0) seenMsgIds.add(m.id) })
         // 只有收到对方的消息时才提示"新消息"（自己的消息由 send 时自动滚动处理）
         const hasOtherMsg = toAdd.some(m => !m.isMine)
-        console.log('[poll] hasOtherMsg=', hasOtherMsg, 'isUserScrolledUp=', isUserScrolledUp.value, 'isSending=', isSending.value)
+        console.log('[Chat] poll hasOtherMsg=', hasOtherMsg, 'isUserScrolledUp=', isUserScrolledUp.value, 'isSending=', isSending.value)
         if (hasOtherMsg && isUserScrolledUp.value) {
           showNewMsgTip.value = true
-          console.log('[poll] showing new msg tip')
+          console.log('[Chat] poll showing newMsgTip')
         } else if (!isUserScrolledUp.value) {
-          console.log('[poll] auto scroll to bottom')
+          console.log('[Chat] poll autoScroll')
           nextTick(() => scrollToBottom())
         } else {
           // 只有自己的消息回执，清除提示（send 时已处理）
