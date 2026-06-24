@@ -377,6 +377,8 @@ export class AdminUserService {
         exposurePool: user.exposurePool || 'city',
         pinnedExpireAt: user.pinnedExpireAt || null,
         lastActiveAt: user.lastActiveAt || null,
+        protocolAgreedAt: user.protocolAgreedAt || null,
+        protocolVersion: user.protocolVersion || null,
       }
     })
 
@@ -466,6 +468,8 @@ export class AdminUserService {
       // 审核状态：与 list 一致，返回字符串 'PENDING'/'APPROVE'/'REJECT'/'unsubmitted'
       profileAuditStatus,
       photoAuditStatus,
+      protocolAgreedAt: user.protocolAgreedAt || null,
+      protocolVersion: user.protocolVersion || null,
     }
   }
 

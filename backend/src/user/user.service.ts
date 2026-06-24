@@ -5,6 +5,7 @@ import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { UserAgreement } from '../entities/UserAgreement'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { SystemService } from '../system/system.service'
@@ -51,6 +52,8 @@ export class UserService {
       private readonly visitRepository: Repository<ProfileVisit>,
       @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(UserAgreement)
+    private readonly agreementRepo: Repository<UserAgreement>,
     private readonly systemService: SystemService,
     private readonly recommendService: RecommendService,
   ) {}
@@ -1006,5 +1009,31 @@ export class UserService {
         }
       })
       .filter(Boolean) as { id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
+  }
+
+  /** 记录用户协议同意/不同意 */
+  async recordAgreement(
+    userId: number,
+    agreementType: string,
+    version: string,
+    action: string,
+    ipAddress?: string,
+  ) {
+    const agreement = this.agreementRepo.create({
+      userId,
+      agreementType,
+      version,
+      action,
+      ipAddress: ipAddress || null,
+    })
+    await this.agreementRepo.save(agreement)
+
+    // 同步更新 User 表中的最近同意时间与版本
+    if (action === 'agree') {
+      await this.userRepository.update(userId, {
+        protocolAgreedAt: new Date(),
+        protocolVersion: version,
+      })
+    }
   }
 }

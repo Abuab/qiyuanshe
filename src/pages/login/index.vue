@@ -132,11 +132,13 @@ const handleAgree = () => {
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
   // 上报同意记录到后端
-  post('/user/agreement', {
+  post('/users/agreement', {
     agreementType: 'USER_AGREEMENT',
     version: '1.0',
     action: 'agree',
-  }).catch(() => {})
+  }).catch((err: any) => {
+    console.error('[agreement] 协议同意上报失败:', err?.message || err)
+  })
 }
 
 const handleDisagree = () => {

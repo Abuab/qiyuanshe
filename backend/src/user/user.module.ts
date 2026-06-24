@@ -7,6 +7,7 @@ import { UserTagSelection } from '../entities/UserTagSelection'
 import { AiUserProfile } from '../entities/AiUserProfile'
 import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { UserAgreement } from '../entities/UserAgreement'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { UserController } from './user.controller'
 import { UserService } from './user.service'
@@ -25,7 +26,7 @@ import { RedisService } from '../common/redis.service'
     TypeOrmModule.forFeature([
       User, UserPhoto, Follow, Notice, Report, UserNotification,
       UserAuth, UserTagSelection, AiUserProfile, AiMatchReport,
-      QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment,
+      QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment, UserAgreement,
     ]),
     SystemModule, DynamicModule, AdminModule, AiModule,
   ],

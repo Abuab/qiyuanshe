@@ -4,6 +4,7 @@ import { Repository } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { User } from '../entities/User'
+import { UserAgreement } from '../entities/UserAgreement'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
@@ -38,6 +39,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserAgreement)
+    private readonly agreementRepo: Repository<UserAgreement>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -71,6 +74,18 @@ export class AuthService {
         status: 2,
       })
       user = await this.userRepository.save(user)
+
+      // 新用户自动记录协议同意（关联登录即视为同意）
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
+          userId: user.id,
+          agreementType: 'USER_AGREEMENT',
+          version: '1.0',
+          action: 'agree',
+        }),
+      )
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
     }
 
     if (user.status === 0) {
@@ -314,6 +329,9 @@ export class AuthService {
       vipPackageName: user.vipPackageName || '',
       status: user.status,
       lastLoginAt: user.lastLoginAt,
+      lastActiveAt: user.lastActiveAt,
+      protocolAgreedAt: user.protocolAgreedAt,
+      protocolVersion: user.protocolVersion,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }

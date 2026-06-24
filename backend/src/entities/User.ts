@@ -199,6 +199,14 @@ export class User {
   @Column({ type: 'tinyint', default: 0 })
   profileScore: number
 
+  /** 最近一次同意协议的时间 */
+  @Column({ type: 'datetime', nullable: true })
+  protocolAgreedAt: Date | null
+
+  /** 最近一次同意的协议版本号 */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  protocolVersion: string | null
+
   @CreateDateColumn()
   createdAt: Date
 

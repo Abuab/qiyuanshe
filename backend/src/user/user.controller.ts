@@ -648,4 +648,24 @@ export class UserController {
     await this.reportRepo.save(report)
     return Result.success(null, '举报已提交')
   }
+
+  /** 记录用户协议同意/不同意 */
+  @Post('agreement')
+  @UseGuards(JwtAuthGuard)
+  async recordAgreement(
+    @Body() body: { agreementType: string; version: string; action: string },
+    @Request() req: any,
+  ) {
+    const userId = req.user.userId
+    const ip = req.headers['x-forwarded-for'] || req.ip || ''
+    const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    await this.userService.recordAgreement(
+      userId,
+      body.agreementType,
+      body.version,
+      body.action,
+      ipAddress,
+    )
+    return Result.success(null, '已记录')
+  }
 }
