@@ -10,6 +10,7 @@ import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { SystemService } from '../system/system.service'
 import { RecommendService, RecommendFilters } from './recommend.service'
+import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 
 export interface PaginatedResult<T> {
@@ -56,6 +57,7 @@ export class UserService {
     private readonly agreementRepo: Repository<UserAgreement>,
     private readonly systemService: SystemService,
     private readonly recommendService: RecommendService,
+    private readonly agreementLogStorage: AgreementLogStorageService,
   ) {}
 
   /**
@@ -1027,6 +1029,16 @@ export class UserService {
       ipAddress: ipAddress || null,
     })
     await this.agreementRepo.save(agreement)
+
+    // 同步写入 AgreementLogStorage，确保管理后台"同意记录查询"可查到
+    this.agreementLogStorage.saveLog({
+      userId,
+      agreementType,
+      version,
+      action,
+      ipAddress: ipAddress || '',
+      userAgent: '',
+    }).catch(err => console.error('[user] saveLog failed:', err?.message || err))
 
     // 同步更新 User 表中的最近同意时间与版本
     if (action === 'agree') {

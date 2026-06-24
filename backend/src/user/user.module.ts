@@ -19,6 +19,7 @@ import { SystemModule } from '../system/system.module'
 import { DynamicModule } from '../dynamic/dynamic.module'
 import { AdminModule } from '../admin/admin.module'
 import { AiModule } from '../ai/ai.module'
+import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 import { RedisService } from '../common/redis.service'
 
 @Module({
@@ -28,7 +29,7 @@ import { RedisService } from '../common/redis.service'
       UserAuth, UserTagSelection, AiUserProfile, AiMatchReport,
       QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment, UserAgreement,
     ]),
-    SystemModule, DynamicModule, AdminModule, AiModule,
+    SystemModule, DynamicModule, AdminModule, AiModule, AgreementLogStorageModule,
   ],
   controllers: [UserController, UserNoticeController, UserNotificationController],
   providers: [UserService, UserProfileDetailService, RecommendService, RedisService],
