@@ -852,30 +852,36 @@
 
         <!-- 家乡 -->
         <el-form-item label="家乡">
-          <div style="display:flex;gap:8px">
-            <el-select v-model="hometownProvinceId" placeholder="省" style="width:210px" clearable @change="onHometownProvinceChange">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <el-select v-model="hometownProvinceId" placeholder="省" style="width:180px" clearable @change="onHometownProvinceChange">
               <el-option v-for="p in hometownProvinces" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
-            <el-select v-model="hometownCityId" placeholder="市" style="width:210px" clearable :disabled="!hometownProvinceId" @change="onHometownCityChange">
+            <el-select v-model="hometownCityId" placeholder="市" style="width:180px" clearable :disabled="!hometownProvinceId" @change="onHometownCityChange">
               <el-option v-for="c in hometownCities" :key="c.id" :label="c.name" :value="c.id" />
             </el-select>
-            <el-select v-model="hometownDistrictId" placeholder="区/县" style="width:210px" clearable :disabled="!hometownCityId">
+            <el-select v-model="hometownDistrictId" placeholder="区/县" style="width:180px" clearable :disabled="!hometownCityId" @change="onHometownDistrictChange">
               <el-option v-for="d in hometownDistricts" :key="d.id" :label="d.name" :value="d.id" />
+            </el-select>
+            <el-select v-model="hometownStreetId" placeholder="街道" style="width:180px" clearable :disabled="!hometownDistrictId">
+              <el-option v-for="s in hometownStreets" :key="s.id" :label="s.name" :value="s.id" />
             </el-select>
           </div>
         </el-form-item>
 
         <!-- 居住地 -->
         <el-form-item label="居住地">
-          <div style="display:flex;gap:8px">
-            <el-select v-model="residenceProvinceId" placeholder="省" style="width:210px" clearable @change="onResidenceProvinceChange">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <el-select v-model="residenceProvinceId" placeholder="省" style="width:180px" clearable @change="onResidenceProvinceChange">
               <el-option v-for="p in residenceProvinces" :key="p.id" :label="p.name" :value="p.id" />
             </el-select>
-            <el-select v-model="residenceCityId" placeholder="市" style="width:210px" clearable :disabled="!residenceProvinceId" @change="onResidenceCityChange">
+            <el-select v-model="residenceCityId" placeholder="市" style="width:180px" clearable :disabled="!residenceProvinceId" @change="onResidenceCityChange">
               <el-option v-for="c in residenceCities" :key="c.id" :label="c.name" :value="c.id" />
             </el-select>
-            <el-select v-model="residenceDistrictId" placeholder="区/县" style="width:210px" clearable :disabled="!residenceCityId">
+            <el-select v-model="residenceDistrictId" placeholder="区/县" style="width:180px" clearable :disabled="!residenceCityId" @change="onResidenceDistrictChange">
               <el-option v-for="d in residenceDistricts" :key="d.id" :label="d.name" :value="d.id" />
+            </el-select>
+            <el-select v-model="residenceStreetId" placeholder="街道" style="width:180px" clearable :disabled="!residenceDistrictId">
+              <el-option v-for="s in residenceStreets" :key="s.id" :label="s.name" :value="s.id" />
             </el-select>
           </div>
         </el-form-item>
@@ -1643,9 +1649,11 @@ interface RegionOption { id: number; name: string; hasChildren: boolean }
 const hometownProvinceId = ref<number | undefined>()
 const hometownCityId = ref<number | undefined>()
 const hometownDistrictId = ref<number | undefined>()
+const hometownStreetId = ref<number | undefined>()
 const hometownProvinces = ref<RegionOption[]>([])
 const hometownCities = ref<RegionOption[]>([])
 const hometownDistricts = ref<RegionOption[]>([])
+const hometownStreets = ref<RegionOption[]>([])
 
 async function loadHometownProvinces() {
   const res = await adminSystem.getRegionChildren(0)
@@ -1655,8 +1663,10 @@ async function loadHometownProvinces() {
 async function onHometownProvinceChange(pid: number | undefined) {
   hometownCityId.value = undefined
   hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
   hometownCities.value = []
   hometownDistricts.value = []
+  hometownStreets.value = []
   await nextTick()
   if (!pid) return
   const res = await adminSystem.getRegionChildren(pid)
@@ -1665,27 +1675,41 @@ async function onHometownProvinceChange(pid: number | undefined) {
 
 async function onHometownCityChange(cid: number | undefined) {
   hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
   hometownDistricts.value = []
+  hometownStreets.value = []
   await nextTick()
   if (!cid) return
   const res = await adminSystem.getRegionChildren(cid)
   hometownDistricts.value = res.data || []
 }
 
-function buildCityLabel(pId?: number, cId?: number, dId?: number): string {
+async function onHometownDistrictChange(did: number | undefined) {
+  hometownStreetId.value = undefined
+  hometownStreets.value = []
+  await nextTick()
+  if (!did) return
+  const res = await adminSystem.getRegionChildren(did)
+  hometownStreets.value = res.data || []
+}
+
+function buildCityLabel(pId?: number, cId?: number, dId?: number, sId?: number): string {
   const p = hometownProvinces.value.find(x => x.id === pId)
   const c = hometownCities.value.find(x => x.id === cId)
   const d = hometownDistricts.value.find(x => x.id === dId)
-  return [p?.name, c?.name, d?.name].filter(Boolean).join(',')
+  const s = hometownStreets.value.find(x => x.id === sId)
+  return [p?.name, c?.name, d?.name, s?.name].filter(Boolean).join(',')
 }
 
 // 居住地
 const residenceProvinceId = ref<number | undefined>()
 const residenceCityId = ref<number | undefined>()
 const residenceDistrictId = ref<number | undefined>()
+const residenceStreetId = ref<number | undefined>()
 const residenceProvinces = ref<RegionOption[]>([])
 const residenceCities = ref<RegionOption[]>([])
 const residenceDistricts = ref<RegionOption[]>([])
+const residenceStreets = ref<RegionOption[]>([])
 
 async function loadResidenceProvinces() {
   const res = await adminSystem.getRegionChildren(0)
@@ -1695,8 +1719,10 @@ async function loadResidenceProvinces() {
 async function onResidenceProvinceChange(pid: number | undefined) {
   residenceCityId.value = undefined
   residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
   residenceCities.value = []
   residenceDistricts.value = []
+  residenceStreets.value = []
   await nextTick()
   if (!pid) return
   const res = await adminSystem.getRegionChildren(pid)
@@ -1705,18 +1731,30 @@ async function onResidenceProvinceChange(pid: number | undefined) {
 
 async function onResidenceCityChange(cid: number | undefined) {
   residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
   residenceDistricts.value = []
+  residenceStreets.value = []
   await nextTick()
   if (!cid) return
   const res = await adminSystem.getRegionChildren(cid)
   residenceDistricts.value = res.data || []
 }
 
-function buildResidenceLabel(pId?: number, cId?: number, dId?: number): string {
+async function onResidenceDistrictChange(did: number | undefined) {
+  residenceStreetId.value = undefined
+  residenceStreets.value = []
+  await nextTick()
+  if (!did) return
+  const res = await adminSystem.getRegionChildren(did)
+  residenceStreets.value = res.data || []
+}
+
+function buildResidenceLabel(pId?: number, cId?: number, dId?: number, sId?: number): string {
   const p = residenceProvinces.value.find(x => x.id === pId)
   const c = residenceCities.value.find(x => x.id === cId)
   const d = residenceDistricts.value.find(x => x.id === dId)
-  return [p?.name, c?.name, d?.name].filter(Boolean).join(',')
+  const s = residenceStreets.value.find(x => x.id === sId)
+  return [p?.name, c?.name, d?.name, s?.name].filter(Boolean).join(',')
 }
 
 onMounted(() => {
@@ -1884,8 +1922,8 @@ async function handleCreateSubmit() {
 
   const payload = {
     ...createForm,
-    hometown: buildCityLabel(hometownProvinceId.value, hometownCityId.value, hometownDistrictId.value),
-    residence: buildResidenceLabel(residenceProvinceId.value, residenceCityId.value, residenceDistrictId.value),
+    hometown: buildCityLabel(hometownProvinceId.value, hometownCityId.value, hometownDistrictId.value, hometownStreetId.value),
+    residence: buildResidenceLabel(residenceProvinceId.value, residenceCityId.value, residenceDistrictId.value, residenceStreetId.value),
     personalityTags: {
       character: createForm.characterTagsArr,
       hobby: createForm.hobbyTagsArr,
@@ -2202,10 +2240,12 @@ async function handleEditUser(row: User) {
 }
 
 /**
- * 根据「省/市/区」字符串回填级联选择器
+ * 根据「省,市,区,街道」字符串回填级联选择器
+ * 兼容历史斜杠格式和当前逗号格式
  */
 async function matchCityLabel(label: string, type: 'hometown' | 'residence') {
-  const parts = label.split('/').map(s => s.trim()).filter(Boolean)
+  const sep = label.includes(',') ? ',' : '/'
+  const parts = label.split(sep).map(s => s.trim()).filter(Boolean)
   if (parts.length === 0) return
 
   const provinces = type === 'hometown' ? hometownProvinces.value : residenceProvinces.value
@@ -2245,8 +2285,24 @@ async function matchCityLabel(label: string, type: 'hometown' | 'residence') {
     if (district) {
       if (type === 'hometown') {
         hometownDistrictId.value = district.id
+        const res = await adminSystem.getRegionChildren(district.id)
+        hometownStreets.value = res.data || []
       } else {
         residenceDistrictId.value = district.id
+        const res = await adminSystem.getRegionChildren(district.id)
+        residenceStreets.value = res.data || []
+      }
+    }
+  }
+
+  if (parts.length >= 4) {
+    const streets = type === 'hometown' ? hometownStreets.value : residenceStreets.value
+    const street = streets.find(s => s.name === parts[3])
+    if (street) {
+      if (type === 'hometown') {
+        hometownStreetId.value = street.id
+      } else {
+        residenceStreetId.value = street.id
       }
     }
   }
