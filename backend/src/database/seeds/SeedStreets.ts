@@ -57,7 +57,7 @@ async function main() {
     process.exit(0)
   }
 
-  const BATCH_SIZE = 500
+  const BATCH_SIZE = 200 // 每批 200 条 × 5 字段 = 1000 占位符，远低于 MySQL 限制
   const streets = data.streets
   let inserted = 0
   let skipped = 0
@@ -65,37 +65,34 @@ async function main() {
   for (let i = 0; i < streets.length; i += BATCH_SIZE) {
     const batch = streets.slice(i, i + BATCH_SIZE)
 
-    // 使用 INSERT IGNORE 批量插入
-    const values = batch
-      .map((s) => {
-        const id = parseInt(s.code, 10) // 12 位完整代码作为街道 ID
-        const parentId = parseInt(s.areaCode, 10) // 区县代码作为 parentId
-        return `(${id}, ${parentId}, '${s.name.replace(/'/g, "\\'")}', 4, '${s.code}')`
-      })
-      .join(', ')
+    // 使用参数化查询批量 INSERT IGNORE，杜绝 SQL 注入
+    const placeholders = batch.map(() => '(?, ?, ?, ?, ?)').join(', ')
+    const sql = `INSERT IGNORE INTO address_region (id, parentId, name, level, code) VALUES ${placeholders}`
+    const params: (number | string)[] = []
+    for (const s of batch) {
+      params.push(parseInt(s.code, 10))       // id: 12 位完整代码
+      params.push(parseInt(s.areaCode, 10))   // parentId: 区县代码
+      params.push(s.name)                      // name
+      params.push(4)                           // level=4
+      params.push(s.code)                      // code
+    }
 
     try {
-      const sql = `INSERT IGNORE INTO address_region (id, parentId, name, level, code) VALUES ${values}`
-      await ds.query(sql)
+      await ds.query(sql, params)
       inserted += batch.length
     } catch (err) {
-      // 部分重复可能仍导致批次失败，回退逐条插入
       console.warn(`批量插入失败 (offset=${i})，尝试逐条插入...`)
-      let batchInserted = 0
       for (const s of batch) {
         try {
-          const id = parseInt(s.code, 10)
-          const parentId = parseInt(s.areaCode, 10)
           await ds.query(
             `INSERT IGNORE INTO address_region (id, parentId, name, level, code) VALUES (?, ?, ?, 4, ?)`,
-            [id, parentId, s.name, s.code],
+            [parseInt(s.code, 10), parseInt(s.areaCode, 10), s.name, s.code],
           )
-          batchInserted++
+          inserted++
         } catch {
           skipped++
         }
       }
-      inserted += batchInserted
     }
 
     // 进度输出
