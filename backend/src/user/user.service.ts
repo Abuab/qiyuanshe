@@ -747,10 +747,11 @@ export class UserService {
       )
 
       // AI 转录异步执行，不阻塞 updateProfile HTTP 响应
-      this.aiVoiceService.transcribeVoice(dto.voiceUrl).then((transcript) => {
+      this.aiVoiceService.transcribeVoice(dto.voiceUrl).then((result) => {
+        const transcript = result.text
         const aiResult = transcript
           ? `AI转录：${transcript.length > 100 ? transcript.slice(0, 100) + '...' : transcript}`
-          : 'AI转录失败'
+          : `AI转录失败${result.error ? `（${result.error.length > 200 ? result.error.slice(0, 200) + '...' : result.error}）` : ''}`
         const aiScore = transcript ? 0.85 : 0
         // 更新 content 中的 transcript 字段，供前端展示完整转录文本
         let contentObj: any = {}
