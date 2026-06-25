@@ -32,14 +32,14 @@ export class UpdateProfileDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(12)
   birthMonth?: number
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(31)
   birthDay?: number
 

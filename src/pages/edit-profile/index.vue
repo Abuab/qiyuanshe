@@ -1515,10 +1515,14 @@ const handleSave = async () => {
     } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
       // 用户删除了之前保存的语音
       data.voiceUrl = ''
-      data.voiceAuditStatus = null as any
-      data.voiceDuration = null as any
     }
     // else: 从未录制过语音，不提交语音字段
+
+    // 清理 null 值：@Type(() => Number) 会将 null → 0，导致 @Min(1) 验证失败
+    const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight']
+    for (const key of numericKeys) {
+      if ((data as any)[key] == null) delete (data as any)[key]
+    }
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
 
