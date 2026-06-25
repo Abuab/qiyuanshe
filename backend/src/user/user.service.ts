@@ -749,8 +749,11 @@ export class UserService {
       // AI 转录异步执行，不阻塞 updateProfile HTTP 响应
       this.aiVoiceService.transcribeVoice(dto.voiceUrl).then((result) => {
         const transcript = result.text
-        const aiResult = transcript
-          ? `AI转录：${transcript.length > 100 ? transcript.slice(0, 100) + '...' : transcript}`
+        // aiResult 仅作为摘要展示，完整文本存储在 content.transcript 中
+        const maxLen = 500
+        const summary = transcript && transcript.length > maxLen ? transcript.slice(0, maxLen) + '...' : transcript
+        const aiResult = summary
+          ? `AI转录：${summary}`
           : `AI转录失败${result.error ? `（${result.error.length > 200 ? result.error.slice(0, 200) + '...' : result.error}）` : ''}`
         const aiScore = transcript ? 0.85 : 0
         // 更新 content 中的 transcript 字段，供前端展示完整转录文本

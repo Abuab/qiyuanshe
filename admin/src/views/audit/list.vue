@@ -127,16 +127,25 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="AI 审核" width="130">
+        <el-table-column label="AI 审核" width="300">
           <template #default="{ row }">
             <template v-if="row.aiResult">
-              <el-tag
-                :type="getAiTagType(row)"
-                size="small"
-                effect="plain"
+              <el-tooltip
+                :content="row.aiResult"
+                placement="top"
+                :show-after="300"
+                effect="dark"
+                :disabled="row.aiResult.length < 40"
               >
-                {{ row.aiResult }}
-              </el-tag>
+                <el-tag
+                  :type="getAiTagType(row)"
+                  size="small"
+                  effect="plain"
+                  style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                >
+                  {{ row.aiResult }}
+                </el-tag>
+              </el-tooltip>
               <div v-if="row.aiScore" class="ai-score">置信度: {{ (row.aiScore * 100).toFixed(0) }}%</div>
             </template>
             <span v-else class="text-muted">-</span>
