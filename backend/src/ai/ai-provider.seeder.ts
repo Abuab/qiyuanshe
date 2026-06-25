@@ -40,6 +40,7 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
     { envPrefix: 'KIMI',     providerKey: 'kimi',     displayName: 'Kimi (月之暗面)' },
     { envPrefix: 'OPENAI',   providerKey: 'openai',   displayName: 'OpenAI' },
     { envPrefix: 'QWEN',     providerKey: 'qwen',     displayName: '通义千问' },
+    { envPrefix: 'QWEN_ASR', providerKey: 'qwen-asr', displayName: 'Qwen3-ASR-Flash' },
     { envPrefix: 'ERNIE',    providerKey: 'ernie',    displayName: '文心一言' },
   ]
 
