@@ -149,22 +149,6 @@
           </picker>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">出生月日</text>
-          <view style="display:flex;flex:1;align-items:center;justify-content:flex-end;gap:16rpx">
-            <picker mode="selector" :range="monthOptions" :value="monthIndex" @change="onBirthMonthChange" class="picker-inline">
-              <view class="form-picker-inline">
-                <text class="picker-value-inline" :class="{ placeholder: !form.birthMonth }">{{ form.birthMonth ? form.birthMonth + '月' : '月' }}</text>
-              </view>
-            </picker>
-            <picker mode="selector" :range="dayOptions" :value="dayIndex" @change="onBirthDayChange" class="picker-inline">
-              <view class="form-picker-inline">
-                <text class="picker-value-inline" :class="{ placeholder: !form.birthDay }">{{ form.birthDay ? form.birthDay + '日' : '日' }}</text>
-              </view>
-            </picker>
-          </view>
-        </view>
-
         <view class="form-item" @tap="openCityPicker('hometown')">
           <text class="form-label">户籍地</text>
           <view class="form-picker">

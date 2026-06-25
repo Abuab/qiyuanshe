@@ -66,6 +66,10 @@
             <el-descriptions :column="2" border>
               <el-descriptions-item label="性别">{{ user.gender === 1 ? '男' : user.gender === 2 ? '女' : '未知' }}</el-descriptions-item>
               <el-descriptions-item label="年龄">{{ user.age || '-' }} 岁</el-descriptions-item>
+              <el-descriptions-item label="出生日期">
+                <span v-if="user.birthYear">{{ user.birthYear }}年{{ user.birthMonth || '?' }}月{{ user.birthDay || '?' }}日</span>
+                <span v-else>-</span>
+              </el-descriptions-item>
               <el-descriptions-item label="身高">{{ user.height ? user.height + ' cm' : '-' }}</el-descriptions-item>
               <el-descriptions-item label="体重">{{ user.weight ? user.weight + ' kg' : '-' }}</el-descriptions-item>
               <el-descriptions-item label="学历">{{ user.education || '-' }}</el-descriptions-item>
@@ -589,21 +593,21 @@
               <el-col :span="8">
                 <el-form-item label="出生年份"><el-input-number v-model="editForm.birthYear" :min="1950" :max="2010" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
-              <el-col :span="4">
+              <el-col :span="5">
                 <el-form-item label="月">
                   <el-select v-model="editForm.birthMonth" placeholder="月" clearable style="width:100%">
                     <el-option v-for="m in 12" :key="m" :label="m + '月'" :value="m" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="4">
+              <el-col :span="5">
                 <el-form-item label="日">
                   <el-select v-model="editForm.birthDay" placeholder="日" clearable style="width:100%">
                     <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="6">
                 <el-form-item label="身高(cm)"><el-input-number v-model="editForm.height" :min="100" :max="250" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
             </el-row>

@@ -747,7 +747,7 @@
         </el-row>
 
         <el-row :gutter="16">
-          <el-col :span="4">
+          <el-col :span="6">
             <el-form-item label="出生年份">
               <el-select v-model="createForm.birthYear" placeholder="请选择" filterable clearable style="width:100%">
                 <el-option v-for="y in birthYearOptions" :key="y" :label="y + '年'" :value="y" />
@@ -768,12 +768,12 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="5">
             <el-form-item label="身高(cm)">
               <el-input-number v-model="createForm.height" :min="100" :max="250" placeholder="身高" style="width:100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
+          <el-col :span="5">
             <el-form-item label="体重(kg)">
               <el-input-number v-model="createForm.weight" :min="20" :max="300" placeholder="体重" style="width:100%" />
             </el-form-item>
