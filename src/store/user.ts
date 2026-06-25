@@ -36,6 +36,9 @@ interface UserInfo {
   photos?: string[]
   personalityTags?: string[]
   hopeTaTags?: string[]
+  voiceUrl?: string
+  voiceAuditStatus?: number
+  voiceDuration?: number
   isVip?: boolean
   vipLevel?: number
   vipExpireTime?: string
@@ -101,11 +104,12 @@ export const useUserStore = defineStore('user', () => {
       'maritalStatus', 'residence', 'city', 'hometown', 'housingStatus', 'carStatus',
       'onlyChild', 'whenMarry', 'zodiac', 'constellation', 'partnerAgeRange',
       'partnerHeightMin', 'partnerEducation', 'partnerIncome', 'housingRequirement',
-      'partnerMaritalStatus', 'acceptChildren',
+      'partnerMaritalStatus', 'acceptChildren', 'voiceUrl',
     ] as const
 
     const numberFields = [
       'gender', 'birthYear', 'height', 'weight', 'avatarReviewStatus',
+      'voiceAuditStatus', 'voiceDuration',
     ] as const
 
     const arrayFields = ['personalityTags', 'hopeTaTags'] as const

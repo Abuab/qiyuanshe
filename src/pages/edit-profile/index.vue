@@ -1434,11 +1434,8 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  // 防御：临时路径在当前会话可能可播，但通常无效，提示重新录制
-  if (/^https?:\/\/tmp\//i.test(voiceTempPath.value) || voiceTempPath.value.startsWith('wxfile://')) {
-    uni.showToast({ title: '语音已失效，请重新录制', icon: 'none' })
-    return
-  }
+  // onMounted/onShow 已过滤服务端返回的临时路径，此处 voiceTempPath 要么是刚录制的有效临时路径，
+  // 要么是已上传的服务器 URL，均可播放
   innerAudioCtx = uni.createInnerAudioContext()
   innerAudioCtx.src = voiceTempPath.value
   innerAudioCtx.onPlay(() => { isVoicePlaying.value = true })
