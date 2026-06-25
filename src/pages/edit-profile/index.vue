@@ -609,6 +609,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import request, { put, get } from '@/utils/request'
+import { secureStorage } from '@/utils/crypto'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
 import { setCropImageData } from '@/utils/crop-bridge'
@@ -1478,7 +1479,7 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
   uni.showLoading({ title: '上传中...', mask: true })
   try {
     const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || ''
-    const token = uni.getStorageSync('token')
+    const token = secureStorage.getToken()
     const res: any = await new Promise((resolve, reject) => {
       uni.uploadFile({
         url: baseUrl + '/users/voice-intro',

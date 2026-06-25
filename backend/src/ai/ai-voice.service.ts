@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { AiProviderSelector } from './ai-provider-selector.service'
+import { join } from 'path'
+import { existsSync } from 'fs'
+import { readFile } from 'fs/promises'
 
 /**
  * AI 语音转文字服务
@@ -40,12 +43,6 @@ export class AiVoiceService {
     // 解析完整的音频文件 URL
     const audioUrl = this.resolveFullUrl(voiceUrl)
 
-    // SSRF 防御：域名白名单校验
-    if (!this.isAllowedAudioHost(audioUrl)) {
-      this.logger.warn(`音频文件域名不在白名单中: ${audioUrl}`)
-      return null
-    }
-
     // 尝试调用 Provider 的 OpenAI-compatible 音频转录接口
     const TIMEOUT_MS = 30000
     const controller = new AbortController()
@@ -59,15 +56,27 @@ export class AiVoiceService {
       }
       const url = `${baseUrl}/audio/transcriptions`
 
-      // 尝试通过直接下载音频文件的方式构建请求
+      // 获取音频文件数据：优先从本地文件系统读取，避免 SSRF 白名单限制
       let audioBlob: Blob
       try {
-        const audioRes = await fetch(audioUrl, { signal: controller.signal })
-        if (!audioRes.ok) {
-          this.logger.warn(`下载音频文件失败: ${audioRes.status}`)
-          return null
+        const localPath = this.resolveLocalAudioPath(audioUrl)
+        if (localPath) {
+          const buffer = await readFile(localPath)
+          audioBlob = new Blob([buffer], { type: 'audio/mpeg' })
+          this.logger.debug(`从本地文件系统读取音频: ${localPath}`)
+        } else {
+          // 非本地文件：SSRF 防御 + HTTP 下载
+          if (!this.isAllowedAudioHost(audioUrl)) {
+            this.logger.warn(`音频文件域名不在白名单中: ${audioUrl}`)
+            return null
+          }
+          const audioRes = await fetch(audioUrl, { signal: controller.signal })
+          if (!audioRes.ok) {
+            this.logger.warn(`下载音频文件失败: ${audioRes.status}`)
+            return null
+          }
+          audioBlob = await audioRes.blob()
         }
-        audioBlob = await audioRes.blob()
       } catch (err: any) {
         this.logger.warn(`获取音频文件失败: ${err?.message || err}`)
         return null
@@ -131,6 +140,26 @@ export class AiVoiceService {
       return baseUrl ? `${baseUrl}${voiceUrl}` : `http://localhost:3000${voiceUrl}`
     }
     return voiceUrl
+  }
+
+  /**
+   * 尝试将音频 URL 解析为本地文件路径。
+   * 仅当 URL 的 pathname 以 /uploads/ 开头且文件存在时返回路径，否则返回 null。
+   * 包含路径穿越防御。
+   */
+  private resolveLocalAudioPath(audioUrl: string): string | null {
+    try {
+      const url = new URL(audioUrl)
+      if (!url.pathname.startsWith('/uploads/')) return null
+      const filename = url.pathname.replace('/uploads/', '')
+      // 防止路径穿越攻击
+      if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) return null
+      const localPath = join(process.cwd(), 'uploads', filename)
+      if (!existsSync(localPath)) return null
+      return localPath
+    } catch {
+      return null
+    }
   }
 
   /**
