@@ -24,6 +24,12 @@ export class AiVoiceService {
   async transcribeVoice(voiceUrl: string): Promise<string | null> {
     if (!voiceUrl) return null
 
+    // 微信临时文件路径不可通过 HTTP 下载，直接跳过
+    if (voiceUrl.includes('/tmp/')) {
+      this.logger.debug('voiceUrl 为微信临时路径，无法下载音频文件，跳过转文字')
+      return null
+    }
+
     // 选择可用的 Provider
     const provider = await this.selector.select()
     if (!provider) {
