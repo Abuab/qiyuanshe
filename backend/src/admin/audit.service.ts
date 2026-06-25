@@ -286,7 +286,7 @@ export class AdminAuditService {
           targetId: userId,
           action,
           reason: remark || null,
-          content: JSON.stringify({ voiceUrl: user.voiceUrl, voiceDuration: user.voiceDuration }),
+          content: JSON.stringify({ voiceUrl: user.voiceUrl, duration: user.voiceDuration }),
         }),
       )
     }

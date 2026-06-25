@@ -67,12 +67,18 @@ export class AdminAuditController {
         if (userInfo) {
           notifyNickname = userInfo.nickname || ''
         }
+      } else if (audit.targetType === 'voice') {
+        // 语音审核：targetId 即 userId，查用户昵称
+        const userInfo = await this.auditService.getUserInfo(audit.targetId)
+        if (userInfo) {
+          notifyNickname = userInfo.nickname || ''
+        }
       }
-      // avatar 审核也走 photo 通知通道
+      // avatar/voice 审核统一走对应通知通道
       const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
       this.notifyService.sendAuditNotify({
         type: notifyType,
-        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
+        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'voice' ? '语音' : audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
         userId: notifyUserId,
         userNickname: notifyNickname,
         source: `${audit.targetType}_audit`,
@@ -102,11 +108,17 @@ export class AdminAuditController {
         if (userInfo) {
           notifyNickname = userInfo.nickname || ''
         }
+      } else if (audit.targetType === 'voice') {
+        // 语音审核：targetId 即 userId，查用户昵称
+        const userInfo = await this.auditService.getUserInfo(audit.targetId)
+        if (userInfo) {
+          notifyNickname = userInfo.nickname || ''
+        }
       }
       const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
       this.notifyService.sendAuditNotify({
         type: notifyType,
-        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已被拒绝${reason ? `，原因：${reason}` : ''}，审核ID: ${id}`,
+        content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'voice' ? '语音' : audit.targetType === 'photo' ? '图片' : '内容'}审核已被拒绝${reason ? `，原因：${reason}` : ''}，审核ID: ${id}`,
         userId: notifyUserId,
         userNickname: notifyNickname,
         source: `${audit.targetType}_audit`,
@@ -139,6 +151,22 @@ export class AdminAuditController {
   @Post('voice-audit')
   async voiceAudit(@Body() body: { userId: number; status: number; remark?: string }) {
     await this.auditService.voiceAudit(body.userId, body.status, body.remark)
+
+    // 发送通知
+    const userInfo = await this.auditService.getUserInfo(body.userId)
+    const userNickname = userInfo?.nickname || ''
+    const isApproved = body.status === 1
+    const content = isApproved
+      ? `有一条语音审核已通过，审核用户：${userNickname || body.userId}`
+      : `有一条语音审核已被拒绝${body.remark ? `，原因：${body.remark}` : ''}，审核用户：${userNickname || body.userId}`
+    this.notifyService.sendAuditNotify({
+      type: 'voice',
+      content,
+      userId: body.userId,
+      userNickname,
+      source: 'voice_audit',
+    }).catch(() => {})
+
     return Result.success(null, body.status === 1 ? '语音审核通过' : '语音已拒绝')
   }
 }

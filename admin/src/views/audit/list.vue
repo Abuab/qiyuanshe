@@ -106,6 +106,28 @@
                   </template>
                 </el-image>
               </template>
+              <!-- Voice type: show audio player + transcript -->
+              <template v-else-if="row.targetType === 'voice'">
+                <div class="voice-preview">
+                  <el-button
+                    type="primary"
+                    link
+                    :icon="VideoPlay"
+                    :loading="voicePlayingId === row.id"
+                    @click="toggleVoicePlay(row)"
+                  >
+                    {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
+                  </el-button>
+                  <span class="voice-duration">{{ parseVoiceDuration(row.content) }}″</span>
+                  <div v-if="parseVoiceTranscript(row.content)" class="voice-transcript-row">
+                    <span
+                      class="voice-transcript"
+                      :title="parseVoiceTranscript(row.content)"
+                    >AI 转录：{{ truncateText(parseVoiceTranscript(row.content), 30) }}</span>
+                  </div>
+                  <div v-else class="voice-no-transcript">AI 未配置，请人工审核</div>
+                </div>
+              </template>
               <span v-else class="text-muted">{{ getContentSummary(row) }}</span>
             </div>
           </template>
@@ -179,7 +201,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Picture } from '@element-plus/icons-vue'
+import { User, Picture, VideoPlay } from '@element-plus/icons-vue'
 import { adminAudit } from '../../api'
 import { useAdminStore } from '../../store/admin'
 import { formatDate } from '../../utils/date'
@@ -208,6 +230,59 @@ const rejectDialogVisible = ref(false)
 const rejectLoading = ref(false)
 const rejectForm = reactive({ reason: '' })
 const currentRejectItem = ref<AuditItem | null>(null)
+
+// 语音播放
+const voicePlayingId = ref<number | null>(null)
+const voiceAudio = ref<HTMLAudioElement | null>(null)
+
+function parseVoiceContent(content?: string): { voiceUrl?: string; duration?: number; transcript?: string | null } {
+  if (!content) return {}
+  try { return JSON.parse(content) } catch { return {} }
+}
+
+function parseVoiceDuration(content?: string): number {
+  return parseVoiceContent(content).duration || 0
+}
+
+function parseVoiceTranscript(content?: string): string | undefined {
+   const t = parseVoiceContent(content).transcript
+   return t ?? undefined
+ }
+
+function truncateText(text: string | undefined, maxLen: number): string {
+   if (!text) return ''
+   return text.length > maxLen ? text.slice(0, maxLen) + '...' : text
+ }
+
+function resolveVoiceUrl(content?: string): string {
+  const { voiceUrl } = parseVoiceContent(content)
+  if (!voiceUrl) return ''
+  if (voiceUrl.startsWith('http')) return voiceUrl
+  return (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, '') + '/' + voiceUrl.replace(/^\//, '')
+}
+
+function toggleVoicePlay(row: AuditItem) {
+  const url = resolveVoiceUrl(row.content)
+  if (!url) return
+
+  // 停止当前播放
+  if (voiceAudio.value) {
+    voiceAudio.value.pause()
+    voiceAudio.value = null
+  }
+
+  if (voicePlayingId.value === row.id) {
+    voicePlayingId.value = null
+    return
+  }
+
+  const audio = new Audio(url)
+  voiceAudio.value = audio
+  voicePlayingId.value = row.id
+  audio.play()
+  audio.onended = () => { voicePlayingId.value = null; voiceAudio.value = null }
+  audio.onerror = () => { voicePlayingId.value = null; voiceAudio.value = null; ElMessage.warning('音频加载失败') }
+}
 
 onMounted(() => {
   fetchData()
@@ -511,6 +586,34 @@ function getTypeTagType(type: string) {
 .text-muted {
   color: #909399;
   font-size: 13px;
+}
+
+.voice-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .voice-duration {
+    font-size: 12px;
+    color: #909399;
+    margin-left: 4px;
+  }
+
+  .voice-transcript-row {
+    .voice-transcript {
+      font-size: 12px;
+      color: #606266;
+      cursor: help;
+      &:hover {
+        color: #409eff;
+      }
+    }
+  }
+
+  .voice-no-transcript {
+    font-size: 12px;
+    color: #c0c4cc;
+  }
 }
 
 .ai-score {

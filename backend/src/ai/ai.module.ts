@@ -24,6 +24,7 @@ import { AiChatSkillService } from './ai-chat-skill.service'
 import { AiMatchmakerService } from './ai-matchmaker.service'
 import { AiFunQuizService } from './ai-fun-quiz.service'
 import { AiProfileGenService } from './ai-profile-gen.service'
+import { AiVoiceService } from './ai-voice.service'
 import { AiProviderConfigService } from './ai-provider-config.service'
 import { AiProviderSelector } from './ai-provider-selector.service'
 import { AiProviderBalanceService } from './ai-provider-balance.service'
@@ -64,13 +65,14 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
   providers: [
     AiConfigService, AiApiService, AiSafetyService, AiRateLimitService,
     AiMatchService, AiChatSkillService, AiMatchmakerService,
-    AiFunQuizService, AiProfileGenService,
+    AiFunQuizService, AiProfileGenService, AiVoiceService,
     AiProviderConfigService, AiProviderSelector, AiProviderBalanceService,
     AiProviderStatsService, AiProviderScheduler, AiProviderSeeder,
     RedisService, SystemService,
   ],
   exports: [
     AiConfigService, AiRateLimitService, AiProviderConfigService, AiProviderSelector,
+    AiVoiceService,
   ],
 })
 export class AiModule {}

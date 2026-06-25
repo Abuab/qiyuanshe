@@ -13,6 +13,7 @@ import { SystemService } from '../system/system.service'
 import { RecommendService, RecommendFilters } from './recommend.service'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
+import { AiVoiceService } from '../ai/ai-voice.service'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -61,6 +62,7 @@ export class UserService {
     private readonly systemService: SystemService,
     private readonly recommendService: RecommendService,
     private readonly agreementLogStorage: AgreementLogStorageService,
+    private readonly aiVoiceService: AiVoiceService,
   ) {}
 
   /**
@@ -717,6 +719,9 @@ export class UserService {
     // 语音审核：当 voiceUrl 非空且 voiceAuditStatus 为 0（待审核）时，创建待审核记录
     // 先关闭该用户所有旧的 PENDING 语音审核记录，确保一个用户只有一条有效的 PENDING
     if (dto.voiceUrl && dto.voiceAuditStatus === 0) {
+      // 调用 AI 转文字（不阻塞审核记录创建）
+      const transcript = await this.aiVoiceService.transcribeVoice(dto.voiceUrl)
+
       await this.auditLogRepository.update(
         { targetType: 'voice', targetId: userId, action: 'PENDING' },
         { action: 'CANCELLED' } as any,
@@ -725,8 +730,13 @@ export class UserService {
         this.auditLogRepository.create({
           targetType: 'voice',
           targetId: userId,
+          submitterId: userId,
           action: 'PENDING',
-          content: JSON.stringify({ voiceUrl: dto.voiceUrl, voiceDuration: dto.voiceDuration }),
+          content: JSON.stringify({
+            voiceUrl: dto.voiceUrl,
+            duration: dto.voiceDuration,
+            transcript,
+          }),
         }),
       )
     }
