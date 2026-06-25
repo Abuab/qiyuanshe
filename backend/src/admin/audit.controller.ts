@@ -135,4 +135,10 @@ export class AdminAuditController {
     const history = await this.auditService.getHistory(type, targetId)
     return Result.success(history)
   }
+
+  @Post('voice-audit')
+  async voiceAudit(@Body() body: { userId: number; status: number; remark?: string }) {
+    await this.auditService.voiceAudit(body.userId, body.status, body.remark)
+    return Result.success(null, body.status === 1 ? '语音审核通过' : '语音已拒绝')
+  }
 }

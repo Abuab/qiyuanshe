@@ -80,6 +80,7 @@ export class AdminAuditService {
       user_create: '用户创建',
       photo: '照片上传',
       answer: '回答审核',
+      voice: '语音介绍',
     }
     return {
       ...audit,
@@ -141,6 +142,8 @@ export class AdminAuditService {
     } else if (audit.targetType === 'user_create' && audit.targetId) {
       // 管理员创建用户审核通过 → 用户状态设为正常
       await this.userRepository.update(audit.targetId, { status: 1 })
+    } else if (audit.targetType === 'voice' && audit.targetId) {
+      await this.userRepository.update(audit.targetId, { voiceAuditStatus: 1 })
     }
   }
 
@@ -217,6 +220,8 @@ export class AdminAuditService {
     } else if (audit.targetType === 'user_create' && audit.targetId) {
       // 管理员创建用户审核拒绝 → 用户状态设为禁用
       await this.userRepository.update(audit.targetId, { status: 0 })
+    } else if (audit.targetType === 'voice' && audit.targetId) {
+      await this.userRepository.update(audit.targetId, { voiceAuditStatus: 2 })
     }
   }
 
@@ -257,5 +262,36 @@ export class AdminAuditService {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (!user) return null
     return { nickname: user.nickname || '' }
+  }
+
+  async voiceAudit(userId: number, status: number, remark?: string) {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user || !user.voiceUrl) throw new Error('用户无语音记录')
+
+    const action = status === 1 ? 'APPROVE' : 'REJECT'
+
+    // 查找已有的 PENDING 审核记录（用户在保存语音时自动创建），找到则更新为最终状态
+    const pendingLog = await this.auditLogRepository.findOne({
+      where: { targetType: 'voice', targetId: userId, action: 'PENDING' },
+      order: { createdAt: 'DESC' },
+    })
+
+    if (pendingLog) {
+      await this.auditLogRepository.update(pendingLog.id, { action, reason: remark || null })
+    } else {
+      // 兜底：没有 PENDING 记录时创建一个新的审核日志
+      await this.auditLogRepository.save(
+        this.auditLogRepository.create({
+          targetType: 'voice',
+          targetId: userId,
+          action,
+          reason: remark || null,
+          content: JSON.stringify({ voiceUrl: user.voiceUrl, voiceDuration: user.voiceDuration }),
+        }),
+      )
+    }
+
+    // 更新用户语音审核状态
+    await this.userRepository.update(userId, { voiceAuditStatus: status })
   }
 }

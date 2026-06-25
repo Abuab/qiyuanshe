@@ -23,6 +23,7 @@
               <el-option label="全部" :value="undefined" />
               <el-option label="照片上传" value="photo" />
               <el-option label="回答审核" value="answer" />
+              <el-option label="语音介绍" value="voice" />
               <el-option label="用户创建" value="user_create" />
             </el-select>
           </el-form-item>

@@ -5,6 +5,7 @@ import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { AuditLog } from '../entities/AuditLog'
 import { UserAgreement } from '../entities/UserAgreement'
 import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
@@ -53,6 +54,8 @@ export class UserService {
       private readonly visitRepository: Repository<ProfileVisit>,
       @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserAgreement)
     private readonly agreementRepo: Repository<UserAgreement>,
     private readonly systemService: SystemService,
@@ -711,6 +714,18 @@ export class UserService {
     if (dto.voiceAuditStatus !== undefined) user.voiceAuditStatus = dto.voiceAuditStatus
     if (dto.voiceDuration !== undefined) user.voiceDuration = dto.voiceDuration
 
+    // 语音审核：当 voiceUrl 非空且 voiceAuditStatus 为 0（待审核）时，创建待审核记录
+    if (dto.voiceUrl && dto.voiceAuditStatus === 0) {
+      await this.auditLogRepository.save(
+        this.auditLogRepository.create({
+          targetType: 'voice',
+          targetId: userId,
+          action: 'PENDING',
+          content: JSON.stringify({ voiceUrl: dto.voiceUrl, voiceDuration: dto.voiceDuration }),
+        }),
+      )
+    }
+
     // personalityTags: 支持逗号分隔字符串或数组
     if (dto.personalityTags !== undefined) {
       if (Array.isArray(dto.personalityTags)) {
@@ -733,6 +748,19 @@ export class UserService {
     user.lastActiveAt = new Date()
     await this.userRepository.save(user)
     return user
+  }
+
+  async getVoiceIntro(userId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, isDeleted: 0 },
+      select: ['id', 'voiceUrl', 'voiceDuration', 'voiceAuditStatus'],
+    })
+    if (!user || !user.voiceUrl) return null
+    return {
+      voiceUrl: user.voiceUrl,
+      duration: user.voiceDuration || 0,
+      auditStatus: user.voiceAuditStatus ?? 1,
+    }
   }
 
   async getVisitors(

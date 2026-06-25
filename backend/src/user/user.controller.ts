@@ -515,10 +515,11 @@ export class UserController {
     return Result.success({ voiceUrl, auditStatus: 0 })
   }
 
-  /** 获取用户语音介绍（暂未实现，返回空数据告知前端不显示语音条） */
+  /** 获取用户语音介绍 */
   @Get(':id/voice-intro')
-  async getVoiceIntro(@Param('id', ParseIntPipe) _id: number) {
-    return Result.success(null)
+  async getVoiceIntro(@Param('id', ParseIntPipe) id: number) {
+    const data = await this.userService.getVoiceIntro(id)
+    return Result.success(data)
   }
 
   @Post(':id/follow')

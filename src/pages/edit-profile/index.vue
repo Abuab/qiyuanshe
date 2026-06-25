@@ -351,7 +351,7 @@
             <view class="voice-play-row">
               <!-- 播放按钮（圆形粉色） -->
               <view class="voice-play-btn" @tap="togglePlayVoice">
-                <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="28rpx" color="#FFFFFF"></uni-icons>
+                <text class="voice-play-icon">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
               </view>
               <!-- 波形图 -->
               <view class="wave-static">
@@ -962,10 +962,10 @@ onMounted(async () => {
       personalityTags: parseTags(info.personalityTags),
     }
 
-    // 恢复语音状态
-    if (info.voiceUrl && info.voiceAuditStatus != null) {
+    // 恢复语音状态：只要 voiceUrl 有值就回显
+    if (info.voiceUrl && info.voiceUrl !== '') {
       voiceTempPath.value = info.voiceUrl
-      voiceAuditStatus.value = info.voiceAuditStatus
+      voiceAuditStatus.value = info.voiceAuditStatus ?? 0
       voiceDuration.value = info.voiceDuration || 0
       voiceStatus.value = 'done'
       hadVoiceSaved.value = true
@@ -1562,10 +1562,10 @@ onShow(async () => {
         form.value.avatar = profile.avatar
         form.value.avatarReviewStatus = 1
       }
-      // 恢复语音状态
-      if (profile.voiceUrl && profile.voiceAuditStatus != null && voiceStatus.value !== 'recording') {
+      // 恢复语音状态：只要 voiceUrl 有值就回显
+      if (profile.voiceUrl && profile.voiceUrl !== '' && voiceStatus.value !== 'recording') {
         voiceTempPath.value = profile.voiceUrl
-        voiceAuditStatus.value = profile.voiceAuditStatus
+        voiceAuditStatus.value = profile.voiceAuditStatus ?? 0
         voiceDuration.value = profile.voiceDuration || 0
         voiceStatus.value = 'done'
         hadVoiceSaved.value = true
@@ -2573,6 +2573,7 @@ onShow(async () => {
 .voice-done-card { background-color: #ffffff; border-radius: 12rpx; padding: 20rpx; margin: 0 30rpx; }
 .voice-play-row { display: flex; align-items: center; }
 .voice-play-btn { width: 60rpx; height: 60rpx; border-radius: 50%; background: #ff6b81; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 20rpx; }
+.voice-play-icon { font-size: 28rpx; color: #ffffff; font-weight: bold; line-height: 1; }
 .wave-static { display: flex; align-items: flex-end; gap: 8rpx; flex: 1; }
 .wave-static-bar { width: 6rpx; background: #ff6b6b; border-radius: 3rpx; }
 .voice-duration { font-size: 24rpx; color: #999999; margin-left: 16rpx; flex-shrink: 0; }

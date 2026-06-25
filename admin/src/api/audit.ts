@@ -3,7 +3,7 @@ import type { ApiResponse } from './request'
 
 export interface AuditItem {
   id: number
-  targetType: 'user' | 'photo' | 'answer'
+  targetType: 'user' | 'photo' | 'answer' | 'voice'
   targetId: number
   action: string
   reason?: string
@@ -66,5 +66,9 @@ export const adminAudit = {
 
   getHistory(type: string, targetId: number): Promise<ApiResponse> {
     return request.get(`/admin/audit/history/${type}/${targetId}`)
+  },
+
+  voiceAudit(userId: number, status: number, remark?: string): Promise<ApiResponse> {
+    return request.post('/admin/audit/voice-audit', { userId, status, remark })
   },
 }

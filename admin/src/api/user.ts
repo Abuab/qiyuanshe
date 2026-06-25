@@ -48,6 +48,9 @@ export interface User {
   adminRemark?: string
   profileAuditStatus?: string
   photoAuditStatus?: string
+  voiceUrl?: string
+  voiceDuration?: number
+  voiceAuditStatus?: number
 }
 
 export interface UserPhoto {

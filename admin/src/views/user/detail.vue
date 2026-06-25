@@ -98,6 +98,23 @@
                 <span v-if="user.vipExpireTime">{{ formatDate(user.vipExpireTime) }}</span>
                 <span v-else>未开通</span>
               </el-descriptions-item>
+              <el-descriptions-item label="语音介绍">
+                <template v-if="user.voiceUrl">
+                  <template v-if="user.voiceAuditStatus === 1">
+                    <div class="voice-player">
+                      <el-button size="small" circle @click="toggleAdminVoicePlay">
+                        <el-icon :size="14"><VideoPlay /></el-icon>
+                      </el-button>
+                      <span class="voice-dur">{{ user.voiceDuration || 0 }}″</span>
+                      <audio ref="adminVoiceAudio" :src="fullVoiceUrl" style="display:none" />
+                    </div>
+                  </template>
+                  <el-tag v-else-if="user.voiceAuditStatus === 0" type="warning" size="small">审核中</el-tag>
+                  <el-tag v-else-if="user.voiceAuditStatus === 2" type="danger" size="small">审核未通过</el-tag>
+                  <el-tag v-else size="small">-</el-tag>
+                </template>
+                <span v-else>未录制</span>
+              </el-descriptions-item>
             </el-descriptions>
             <!-- 我的特点 -->
             <h4 class="section-title" style="margin-top:20px">我的特点</h4>
@@ -941,6 +958,9 @@ interface UserDetail {
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
   profileAuditStatus?: number | string  // 后端返回字符串('PENDING'/'APPROVE'/'REJECT'/'unsubmitted')
   photoAuditStatus?: number | string    // 同上
+  voiceUrl?: string
+  voiceDuration?: number
+  voiceAuditStatus?: number
 }
 
 const route = useRoute()
@@ -997,6 +1017,25 @@ const loading = ref(false)
 const user = ref<UserDetail | null>(null)
 const activeTab = ref('basic')
 const editActiveTab = ref('basic') // 编辑资料弹窗 Tab active
+
+// 语音播放
+const adminVoiceAudio = ref<HTMLAudioElement | null>(null)
+const isAdminVoicePlaying = ref(false)
+const fullVoiceUrl = computed(() => {
+  if (!user.value?.voiceUrl) return ''
+  const url = user.value.voiceUrl
+  if (url.startsWith('http')) return url
+  // 相对路径拼接 STATIC_BASE_URL
+  const base = (import.meta as any).env?.VITE_STATIC_BASE_URL || ''
+  return base ? base.replace(/\/$/, '') + url : url
+})
+function toggleAdminVoicePlay() {
+  const audio = adminVoiceAudio.value
+  if (!audio) return
+  if (isAdminVoicePlaying.value) { audio.pause(); isAdminVoicePlaying.value = false; return }
+  audio.play(); isAdminVoicePlaying.value = true
+  audio.onended = () => { isAdminVoicePlaying.value = false }
+}
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)

@@ -30,6 +30,7 @@ export interface RecommendListItem {
   isFollowed: boolean
   isLiked: boolean
   matchmakerComment?: string
+  hasVoice?: boolean
   // 前端无感知字段（仅后端排序用，不返回）
 }
 
@@ -80,6 +81,7 @@ export class RecommendService {
     'isRealName', 'isVip', 'vipLevel', 'lastLoginAt', 'lastActiveAt',
     'profileScore', 'manualBoostScore', 'pinnedExpireAt',
     'exposurePool', 'residence', 'createdAt', 'status', 'isDeleted',
+    'voiceUrl', 'voiceAuditStatus',
   ] as const
 
   constructor(
@@ -278,6 +280,7 @@ export class RecommendService {
       isFollowed: followedIds.includes(user.id),
       isLiked: followedIds.includes(user.id),
       matchmakerComment: commentsMap.get(user.id) || '',
+      hasVoice: !!(user.voiceUrl && user.voiceAuditStatus === 1),
     }))
 
     const result: PaginatedResult<RecommendListItem> = {
