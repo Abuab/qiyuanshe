@@ -591,12 +591,16 @@
               </el-col>
               <el-col :span="4">
                 <el-form-item label="月">
-                  <el-input-number v-model="editForm.birthMonth" :min="1" :max="12" controls-position="right" style="width:100%" />
+                  <el-select v-model="editForm.birthMonth" placeholder="月" clearable style="width:100%">
+                    <el-option v-for="m in 12" :key="m" :label="m + '月'" :value="m" />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="4">
                 <el-form-item label="日">
-                  <el-input-number v-model="editForm.birthDay" :min="1" :max="31" controls-position="right" style="width:100%" />
+                  <el-select v-model="editForm.birthDay" placeholder="日" clearable style="width:100%">
+                    <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="8">
@@ -1616,13 +1620,15 @@ function handleEditProfile() {
   editForm.constellation = u.constellation || ''
   editForm.hometown = (u.hometown || '').replace(/\//g, ',')
   editForm.residence = (u.residence || '').replace(/\//g, ',')
-  // personalityTags 可能是结构化对象 {character:[], hobby:[], loveRule:[]} 或数组
+  // personalityTags 可能是结构化对象 {character:[], hobby:[], loveRule:[]} 或数组或字符串
    const pt: any = u.personalityTags
    if (Array.isArray(pt)) {
      editForm.personalityTags = pt.join(',')
    } else if (pt && typeof pt === 'object') {
      const allTags = [...(pt.character || []), ...(pt.hobby || []), ...(pt.loveRule || [])]
      editForm.personalityTags = allTags.join(',')
+   } else if (typeof pt === 'string') {
+     editForm.personalityTags = pt
    } else {
      editForm.personalityTags = ''
    }

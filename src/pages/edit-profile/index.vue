@@ -1144,14 +1144,28 @@ const monthIndex = computed(() => {
   if (!form.value.birthMonth) return -1
   return (form.value.birthMonth as number) - 1
 })
-const onBirthMonthChange = (e: { detail: { value: number } }) => {
-  form.value.birthMonth = e.detail.value + 1
-}
-const dayOptions = Array.from({ length: 31 }, (_, i) => `${i + 1}日`)
+const maxDays = computed(() => {
+  const m = form.value.birthMonth
+  if (!m) return 31
+  if ([1, 3, 5, 7, 8, 10, 12].includes(m)) return 31
+  if ([4, 6, 9, 11].includes(m)) return 30
+  return 28 // 2月，暂不考虑闰年
+})
+const dayOptions = computed(() => {
+  return Array.from({ length: maxDays.value }, (_, i) => `${i + 1}日`)
+})
 const dayIndex = computed(() => {
   if (!form.value.birthDay) return -1
-  return (form.value.birthDay as number) - 1
+  const idx = (form.value.birthDay as number) - 1
+  return idx < maxDays.value ? idx : maxDays.value - 1
 })
+const onBirthMonthChange = (e: { detail: { value: number } }) => {
+  form.value.birthMonth = e.detail.value + 1
+  // 切换月份后，如果当前已选日数超过新月份最大天数，自动截断
+  if (form.value.birthDay && form.value.birthDay > maxDays.value) {
+    form.value.birthDay = maxDays.value
+  }
+}
 const onBirthDayChange = (e: { detail: { value: number } }) => {
   form.value.birthDay = e.detail.value + 1
 }
