@@ -330,6 +330,7 @@
             <uni-icons type="mic-filled" size="48rpx" color="#FFFFFF"></uni-icons>
           </view>
           <text class="voice-hint">点击录制</text>
+          <text v-if="voiceAuditStatus === 2" class="voice-audit rejected">审核未通过，请重新录制</text>
         </view>
 
         <view v-else-if="voiceStatus === 'recording'" class="voice-recording">
@@ -962,13 +963,25 @@ onMounted(async () => {
       personalityTags: parseTags(info.personalityTags),
     }
 
-    // 恢复语音状态：只要 voiceUrl 有值就回显
-    if (info.voiceUrl && info.voiceUrl !== '') {
+    // 恢复语音状态：过滤掉已失效的微信临时路径（旧数据无法播放，需重新录制）
+    const isInvalidVoiceUrl =
+      !!info.voiceUrl &&
+      (/^https?:\/\/tmp\//i.test(info.voiceUrl) || info.voiceUrl.startsWith('wxfile://'))
+    if (info.voiceUrl && info.voiceUrl !== '' && !isInvalidVoiceUrl) {
       voiceTempPath.value = info.voiceUrl
-      voiceAuditStatus.value = Math.max(0, info.voiceAuditStatus ?? 0)
       voiceDuration.value = info.voiceDuration || 0
-      voiceStatus.value = 'done'
       hadVoiceSaved.value = true
+      // 审核未通过时清空语音状态，强制用户重新录制
+      const auditStatus = Math.max(0, info.voiceAuditStatus ?? 0)
+      if (auditStatus === 2) {
+        voiceAuditStatus.value = 2
+        voiceStatus.value = 'idle'
+        voiceTempPath.value = ''
+        voiceDuration.value = 0
+      } else {
+        voiceAuditStatus.value = auditStatus
+        voiceStatus.value = 'done'
+      }
     }
   }
 })
@@ -1421,6 +1434,11 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
+  // 防御：临时路径在当前会话可能可播，但通常无效，提示重新录制
+  if (/^https?:\/\/tmp\//i.test(voiceTempPath.value) || voiceTempPath.value.startsWith('wxfile://')) {
+    uni.showToast({ title: '语音已失效，请重新录制', icon: 'none' })
+    return
+  }
   innerAudioCtx = uni.createInnerAudioContext()
   innerAudioCtx.src = voiceTempPath.value
   innerAudioCtx.onPlay(() => { isVoicePlaying.value = true })
@@ -1558,13 +1576,14 @@ const handleSave = async () => {
       data.voiceUrl = voiceTempPath.value
       data.voiceAuditStatus = Math.max(0, voiceAuditStatus.value ?? 0)
       data.voiceDuration = vd
-    } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
+    } else if (hadVoiceSaved.value && voiceStatus.value === 'idle' && voiceAuditStatus.value !== 2) {
       // 用户删除了之前保存的语音，清空数据库
+      // 注意：voiceAuditStatus=2 时进入 idle 是因为审核被拒强制重新录制，不清空数据库
       data.voiceUrl = ''
       data.voiceAuditStatus = 0
       data.voiceDuration = 0
     }
-    // else: 从未录制过语音，不提交语音字段
+    // else: 从未录制过语音 / 审核被拒等待重新录制，不提交语音字段
 
     // 清理 null 值：@Type(() => Number) 会将 null → 0，导致 @Min(1) 验证失败
     const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight', 'voiceAuditStatus', 'voiceDuration']
@@ -1624,11 +1643,20 @@ onShow(async () => {
         !!profile.voiceUrl &&
         (/^https?:\/\/tmp\//i.test(profile.voiceUrl) || profile.voiceUrl.startsWith('wxfile://'))
       if (profile.voiceUrl && profile.voiceUrl !== '' && !isTempVoiceUrl && voiceStatus.value !== 'recording') {
-        voiceTempPath.value = profile.voiceUrl
-        voiceAuditStatus.value = Math.max(0, profile.voiceAuditStatus ?? 0)
-        voiceDuration.value = profile.voiceDuration || 0
-        voiceStatus.value = 'done'
         hadVoiceSaved.value = true
+        voiceDuration.value = profile.voiceDuration || 0
+        const auditStatus = Math.max(0, profile.voiceAuditStatus ?? 0)
+        // 审核未通过时清空语音状态，强制用户重新录制
+        if (auditStatus === 2) {
+          voiceAuditStatus.value = 2
+          voiceStatus.value = 'idle'
+          voiceTempPath.value = ''
+          voiceDuration.value = 0
+        } else {
+          voiceTempPath.value = profile.voiceUrl
+          voiceAuditStatus.value = auditStatus
+          voiceStatus.value = 'done'
+        }
       }
     }
   } catch (_) { /* 静默更新 */ }
