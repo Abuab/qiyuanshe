@@ -83,17 +83,23 @@ export class AiVoiceService {
 
   /**
    * 尝试用单个 Provider 进行语音转录
+   * 自动识别 Provider 类型：标准 Whisper API 或 Qwen3-ASR chat/completions API
    */
   private async tryTranscribe(
     provider: AiProviderSnapshot,
     audioBlob: Blob,
   ): Promise<TranscribeResult> {
+    // Qwen3-ASR-Flash 使用 chat/completions API（非标准 Whisper 接口）
+    if (this.isQwenAsrProvider(provider)) {
+      return this.tryTranscribeQwenAsr(provider, audioBlob)
+    }
+
+    // 标准 Whisper API: POST {baseUrl}/audio/transcriptions
     const TIMEOUT_MS = 30000
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
     try {
-      // 标准化 API Base URL
       let baseUrl = (provider.apiBase || '').replace(/\/+$/, '')
       if (!baseUrl.endsWith('/v1') && !baseUrl.includes('/v1/')) {
         baseUrl += '/v1'
@@ -118,7 +124,6 @@ export class AiVoiceService {
         this.logger.warn(
           `[${provider.displayName}] 语音转文字失败 ${response.status}: ${shortErr}`,
         )
-        // 404/405 表示该 Provider 不支持此接口，跳过尝试下一个
         if (response.status === 404 || response.status === 405) {
           return { text: null, error: `不支持语音转录接口 (${response.status})` }
         }
@@ -141,6 +146,102 @@ export class AiVoiceService {
         return { text: null, error: '请求超时' }
       }
       this.logger.warn(`[${provider.displayName}] 语音转文字异常: ${err?.message || err}`)
+      return { text: null, error: `网络异常: ${err?.message || err}` }
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  /**
+   * 判断是否为 Qwen3-ASR Provider（使用 chat/completions API 而非 Whisper API）
+   */
+  private isQwenAsrProvider(provider: AiProviderSnapshot): boolean {
+    return (
+      provider.apiBase?.includes('dashscope.aliyuncs.com/compatible-mode') ||
+      provider.modelName?.toLowerCase().includes('qwen3-asr')
+    )
+  }
+
+  /**
+   * Qwen3-ASR-Flash 转录（OpenAI 兼容 chat/completions API）
+   * 参考文档: https://help.aliyun.com/zh/model-studio/qwen-asr-api-reference
+   */
+  private async tryTranscribeQwenAsr(
+    provider: AiProviderSnapshot,
+    audioBlob: Blob,
+  ): Promise<TranscribeResult> {
+    const TIMEOUT_MS = 30000
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+    try {
+      // 将音频 Blob 转为 base64
+      const arrayBuffer = await audioBlob.arrayBuffer()
+      const audioBase64 = Buffer.from(arrayBuffer).toString('base64')
+
+      // 构建 Qwen3-ASR chat/completions 请求 URL
+      let baseUrl = (provider.apiBase || '').replace(/\/+$/, '')
+      // 确保 baseUrl 以 /v1 结尾，但不追加（兼容 compatible-mode/v1）
+      if (!baseUrl.endsWith('/v1') && !baseUrl.includes('/v1/')) {
+        baseUrl += '/v1'
+      }
+      const url = `${baseUrl}/chat/completions`
+
+      const body = {
+        model: provider.modelName || 'qwen3-asr-flash',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_audio',
+                input_audio: audioBase64,
+              },
+            ],
+          },
+        ],
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${provider.apiKeyPlain}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => '')
+        const shortErr = errText.slice(0, 200)
+        this.logger.warn(
+          `[${provider.displayName}] Qwen3-ASR 转录失败 ${response.status}: ${shortErr}`,
+        )
+        if (response.status === 404 || response.status === 405) {
+          return { text: null, error: `不支持语音转录接口 (${response.status})` }
+        }
+        return { text: null, error: `API错误 ${response.status}: ${shortErr}` }
+      }
+
+      // 解析 chat/completions 响应：choices[0].message.content
+      const data = await response.json()
+      const text = data?.choices?.[0]?.message?.content?.trim() || ''
+      if (!text) {
+        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容`)
+        return { text: null, error: '返回空内容' }
+      }
+
+      this.logger.log(
+        `[${provider.displayName}] Qwen3-ASR 转录成功: ${text.length} 字符`,
+      )
+      return { text, error: undefined }
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        this.logger.warn(`[${provider.displayName}] Qwen3-ASR 转录请求超时`)
+        return { text: null, error: '请求超时' }
+      }
+      this.logger.warn(`[${provider.displayName}] Qwen3-ASR 转录异常: ${err?.message || err}`)
       return { text: null, error: `网络异常: ${err?.message || err}` }
     } finally {
       clearTimeout(timer)
