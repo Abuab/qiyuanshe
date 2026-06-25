@@ -57,7 +57,7 @@ export class RegionService implements OnModuleInit {
       const id = parseInt(a.code, 10)
       const parentId = parseInt(a.cityCode, 10)
       const list = this.regionsByParent.get(parentId) || []
-      // level 2 区县：标记为可能有子级（街道），由 DB 查询时动态判断
+      // 区县数据：标记为可能有子级（街道），后续由数据库查询判断
       list.push({ id, name: a.name, level: 2, code: a.code, hasChildren: true })
       this.regionsByParent.set(parentId, list)
       hasChildrenMap.set(parentId, true)
@@ -77,7 +77,7 @@ export class RegionService implements OnModuleInit {
     const mem = this.regionsByParent.get(parentId)
     if (mem && mem.length > 0) return mem
 
-    // 内存未命中时回退查询 DB（第四级街道数据）
+    // 内存未命中时查询数据库（第四级街道数据）
     try {
       const dbRegions = await this.addressRegionRepo.find({
         where: { parentId },
@@ -93,13 +93,22 @@ export class RegionService implements OnModuleInit {
         }))
       }
     } catch {
-      // DB 查询失败时返回空数组
+      // 数据库查询失败时返回空数组
     }
     return []
   }
 
   async getPathById(regionId: number): Promise<{ id: number; name: string; level: number }[]> {
-    // 反向查找父级链路
+    // 先尝试从内存查找
+    const memPath = this.findPathInMemory(regionId)
+    if (memPath.length > 0) return memPath
+
+    // 内存未命中时从数据库逐级查询（街道数据仅在数据库）
+    return this.findPathFromDb(regionId)
+  }
+
+  /** 在内存 regionsByParent 中按父子关系反向溯源 */
+  private findPathInMemory(regionId: number): { id: number; name: string; level: number }[] {
     const path: { id: number; name: string; level: number }[] = []
     let currentId = regionId
 
@@ -117,6 +126,28 @@ export class RegionService implements OnModuleInit {
       )
       if (!parentEntry || parentEntry[0] === 0) break
       currentId = parentEntry[0]
+    }
+
+    return path
+  }
+
+  /** 从 DB address_region 表逐级查询路径 */
+  private async findPathFromDb(regionId: number): Promise<{ id: number; name: string; level: number }[]> {
+    const path: { id: number; name: string; level: number }[] = []
+    let currentId = regionId
+    const MAX_DEPTH = 10
+
+    for (let i = 0; i < MAX_DEPTH; i++) {
+      try {
+        const region = await this.addressRegionRepo.findOne({ where: { id: currentId } })
+        if (!region) break
+        // 数据库存储：1=省，2=市，3=区，4=街道 → 统一转为内存层级：0=省，1=市，2=区，3=街道
+        path.unshift({ id: region.id, name: region.name, level: region.level - 1 })
+        if (region.parentId === 0) break
+        currentId = region.parentId
+      } catch {
+        break
+      }
     }
 
     return path

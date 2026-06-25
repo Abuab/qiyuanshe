@@ -70,41 +70,69 @@
         </view>
       </view>
 
-      <!-- 基本信息 -->
+      <!-- 基础资料（只读展示） -->
       <view class="section-card">
-        <text class="section-title">基本信息</text>
-
-        <view class="form-item">
-          <text class="form-label">昵称</text>
-          <input class="form-input disabled-input" :value="form.nickname" placeholder="昵称由系统自动生成" disabled />
+        <!-- 顶部提示条 -->
+        <view class="readonly-notice">
+          <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
         </view>
-
-        <view class="form-item">
-          <text class="form-label">性别</text>
-          <view class="gender-group">
-            <view class="gender-btn" :class="{ active: form.gender === 1 }" @tap="form.gender = 1">男</view>
-            <view class="gender-btn" :class="{ active: form.gender === 2 }" @tap="form.gender = 2">女</view>
+        
+        <!-- 标题区 -->
+        <view class="section-title-row">
+          <view class="section-title-bar"></view>
+          <text class="section-title">基础资料</text>
+          <view class="contact-matchmaker-btn" @tap="openMatchmaker">
+            <text>联系红娘修改</text>
           </view>
         </view>
+        
+        <!-- 信息展示区域 -->
+        <view class="readonly-info">
+          <!-- 昵称与性别 -->
+          <view class="nickname-gender-row">
+            <text class="nickname-large">{{ form.nickname || '--' }}</text>
+            <text v-if="form.gender === 1" class="gender-icon male">♂</text>
+            <text v-else-if="form.gender === 2" class="gender-icon female">♀</text>
+          </view>
+          
+          <!-- 基础信息一行 -->
+          <view class="info-brief-row">
+            <text>{{ birthDisplay }}</text>
+            <text v-if="form.birthYear && form.height" class="info-sep">|</text>
+            <text>{{ heightDisplay }}</text>
+            <text v-if="form.height && form.incomeRange" class="info-sep">|</text>
+            <text>{{ incomeDisplay }}</text>
+            <text v-if="form.incomeRange && form.education" class="info-sep">|</text>
+            <text>{{ form.education }}</text>
+            <text v-if="form.education && form.maritalStatus" class="info-sep">|</text>
+            <text>{{ form.maritalStatus }}</text>
+          </view>
+          
+          <!-- 分隔线 -->
+          <view class="info-divider"></view>
+          
+          <!-- 车房信息 -->
+          <view class="car-house-row">
+            <text>车：{{ carDisplay }}</text>
+            <text class="info-sep">|</text>
+            <text>房：{{ houseDisplay }}</text>
+          </view>
+        </view>
+      </view>
 
-        <view class="form-item">
-          <text class="form-label">出生年份</text>
-          <picker mode="selector" :range="birthYearOptions" :value="birthYearIndex" @change="onBirthYearChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.birthYear }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.birthYear ? form.birthYear + '年' : '请选择出生年份' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
+      <!-- 其他可编辑信息 -->
+      <view class="section-card">
+        <view class="section-title-row">
+          <view class="section-title-bar"></view>
+          <text class="section-title">其他信息</text>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">身高(cm)</text>
-          <picker mode="selector" :range="heightOptions" :value="heightIndex" @change="onHeightChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.height }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.height ? form.height + 'cm' : '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
+        <view class="form-item" @tap="openOccupationPicker">
+          <text class="form-label">职业</text>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.occupation }">{{ form.occupation || '请选择' }}</text>
+            <text class="picker-arrow">></text>
+          </view>
         </view>
 
         <view class="form-item">
@@ -117,57 +145,19 @@
           </picker>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">学历</text>
-          <picker mode="selector" :range="educationLabels" :value="educationIndex" @change="onEducationChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.education }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.education || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item" @tap="openOccupationPicker">
-          <text class="form-label">职业</text>
+        <view class="form-item" @tap="openCityPicker('hometown')">
+          <text class="form-label">户籍地</text>
           <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.occupation }">{{ form.occupation || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+            <text class="picker-value" :class="{ placeholder: !form.hometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.hometown || '请选择户籍地' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">月薪</text>
-          <picker mode="selector" :range="incomeLabels" :value="incomeIndex" @change="onIncomeChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.incomeRange }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.incomeRange || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item">
-          <text class="form-label">婚姻状况</text>
-          <picker mode="selector" :range="maritalOptions" :value="maritalIndex" @change="onMaritalChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.maritalStatus }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.maritalStatus || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item" @tap="openHousingStatusPicker">
-          <text class="form-label">住房情况</text>
+        <view class="form-item" @tap="openCityPicker('residence')">
+          <text class="form-label">现居地</text>
           <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.housingStatus }">{{ form.housingStatus || '请选择' }}</text>
-            <text class="picker-arrow">></text>
-          </view>
-        </view>
-
-        <view class="form-item" @tap="openCarStatusPicker">
-          <text class="form-label">车辆情况</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.carStatus }">{{ form.carStatus || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+            <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
         </view>
 
@@ -209,22 +199,6 @@
               <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
-        </view>
-
-        <view class="form-item" @tap="openCityPicker('hometown')">
-          <text class="form-label">户籍地</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.hometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.hometown || '请选择户籍地' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
-        </view>
-
-        <view class="form-item" @tap="openCityPicker('residence')">
-          <text class="form-label">现居地</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
         </view>
       </view>
 
@@ -356,7 +330,8 @@
 
         <view v-else-if="voiceStatus === 'recording'" class="voice-recording">
           <view class="voice-record-btn recording" @tap="stopRecord">
-            <text class="record-countdown">录音中 {{ recordTime }}</text>
+            <text class="record-label">录音中</text>
+            <text class="record-time">{{ recordTime }}</text>
           </view>
           <view class="wave-bars">
             <view class="wave-bar" style="animation-duration:0.5s"></view>
@@ -542,6 +517,14 @@
       @close="showCityPicker = false"
     />
 
+    <!-- 红娘联系弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmakerPopup"
+      :matchmaker="selectedMatchmaker || {}"
+      @close="showMatchmakerPopup = false"
+      @more="onNextMatchmaker"
+    />
+
     <!-- 我的特点弹窗 -->
     <view class="popup-mask" v-if="showPersonalityPopup" @tap="closePersonalityPicker"></view>
     <view class="personality-popup-panel" :class="{ show: showPersonalityPopup }">
@@ -622,6 +605,7 @@ import { setCropImageData } from '@/utils/crop-bridge'
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
 import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
@@ -821,6 +805,58 @@ const tempTags = ref<string[]>([])
 const showCityPicker = ref(false)
 const cityTarget = ref<'residence' | 'hometown'>('residence')
 
+// 红娘联系弹窗
+const showMatchmakerPopup = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
+
+const openMatchmaker = async () => {
+  if (matchmakerList.value.length === 0) {
+    try {
+      const res: any = await get('/matchmakers')
+      const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+      matchmakerList.value = rawList.map((item: any) => ({
+        ...item,
+        qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || ''),
+        avatar: getFullImageUrl(item.avatar || ''),
+      }))
+    } catch { /* 获取失败时静默 */ }
+  }
+  if (matchmakerList.value.length === 0) {
+    uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+    return
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
+  matchmakerIndex.value = 0
+  showMatchmakerPopup.value = true
+}
+
+// 切换到下一个红娘
+const matchmakerIndex = ref(0)
+const onNextMatchmaker = () => {
+  if (matchmakerList.value.length === 0) return
+  matchmakerIndex.value = (matchmakerIndex.value + 1) % matchmakerList.value.length
+  selectedMatchmaker.value = matchmakerList.value[matchmakerIndex.value]
+  showMatchmakerPopup.value = true
+}
+
+// ===== 只读信息展示计算属性 =====
+const birthDisplay = computed(() => {
+  return form.value.birthYear ? `${form.value.birthYear}年` : '--'
+})
+const heightDisplay = computed(() => {
+  return form.value.height ? `${form.value.height}cm` : ''
+})
+const incomeDisplay = computed(() => {
+  return form.value.incomeRange ? `月收入${form.value.incomeRange}` : ''
+})
+const carDisplay = computed(() => {
+  return form.value.carStatus || '--'
+})
+const houseDisplay = computed(() => {
+  return form.value.housingStatus || '--'
+})
+
 // 我的特点弹窗
 const showPersonalityPopup = ref(false)
 const tempPersonalityTags = ref<string[]>([])
@@ -908,6 +944,14 @@ onMounted(async () => {
       acceptChildren: info.acceptChildren || '',
       hopeTaTags: parseTags(info.hopeTaTags),
       personalityTags: parseTags(info.personalityTags),
+    }
+
+    // 恢复语音状态
+    if (info.voiceUrl && info.voiceAuditStatus != null) {
+      voiceTempPath.value = info.voiceUrl
+      voiceAuditStatus.value = info.voiceAuditStatus
+      voiceStatus.value = 'done'
+      hadVoiceSaved.value = true
     }
   }
 })
@@ -1284,6 +1328,7 @@ const voiceDuration = ref(0)
 const voiceAuditStatus = ref<number>(-1)
 const isVoicePlaying = ref(false)
 const recordTime = ref('00:00')
+const hadVoiceSaved = ref(false)  // 标记进入页面时是否有已保存的语音
 let voiceTimer: ReturnType<typeof setTimeout> | null = null
 let voiceCountdown: ReturnType<typeof setInterval> | null = null
 let innerAudioCtx: any = null
@@ -1342,6 +1387,7 @@ function deleteVoice() {
   voiceTempPath.value = ''
   voiceDuration.value = 0
   voiceAuditStatus.value = -1
+  // hadVoiceSaved 保持 true，以便保存时清除服务端数据
 }
 
 async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number }> {
@@ -1373,9 +1419,10 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
 const handleSave = async () => {
   if (saving.value) return
 
-  // 上传语音
-  if (voiceEnabled.value && voiceTempPath.value) {
-    await uploadVoice()
+  // 上传语音，捕获上传结果（仅本地临时文件才需要上传，远程 URL 表示已保存）
+  let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
+  if (voiceEnabled.value && voiceTempPath.value && !voiceTempPath.value.startsWith('http')) {
+    voiceUploadResult = await uploadVoice()
   }
 
   saving.value = true
@@ -1404,9 +1451,8 @@ const handleSave = async () => {
       whenMarry: form.value.whenMarry,
       zodiac: form.value.zodiac,
       constellation: form.value.constellation,
-      // 提交前统一将地址分隔符标准化为逗号
-      residence: form.value.residence.trim().replace(/\//g, ','),
-      hometown: form.value.hometown.trim().replace(/\//g, ','),
+      residence: form.value.residence.trim(),
+      hometown: form.value.hometown.trim(),
       partnerAgeRange: form.value.partnerAgeRange,
       partnerHeightMin: form.value.partnerHeightMin,
       partnerEducation: form.value.partnerEducation,
@@ -1416,6 +1462,18 @@ const handleSave = async () => {
       acceptChildren: form.value.acceptChildren,
       hopeTaTags: form.value.hopeTaTags.join(','),
       personalityTags: form.value.personalityTags.join(','),
+    }
+
+    // 语音字段：始终同步当前状态
+    if (voiceUploadResult.voiceUrl) {
+      data.voiceUrl = voiceUploadResult.voiceUrl
+      data.voiceAuditStatus = 0
+    } else if (hadVoiceSaved.value && voiceStatus.value === 'idle' && !voiceTempPath.value) {
+      // 用户删除了之前保存的语音
+      data.voiceUrl = ''
+      data.voiceAuditStatus = null as any
+    } else if (!hadVoiceSaved.value && voiceStatus.value === 'idle') {
+      // 从未录制过语音，不提交语音字段
     }
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
@@ -1464,6 +1522,13 @@ onShow(async () => {
       if (profile.avatar && form.value.avatarReviewStatus !== 0 && profile.avatar !== form.value.avatar) {
         form.value.avatar = profile.avatar
         form.value.avatarReviewStatus = 1
+      }
+      // 恢复语音状态
+      if (profile.voiceUrl && profile.voiceAuditStatus != null && voiceStatus.value !== 'recording') {
+        voiceTempPath.value = profile.voiceUrl
+        voiceAuditStatus.value = profile.voiceAuditStatus
+        voiceStatus.value = 'done'
+        hadVoiceSaved.value = true
       }
     }
   } catch (_) { /* 静默更新 */ }
@@ -1550,6 +1615,91 @@ onShow(async () => {
 
   .section-title {
     margin-bottom: 0;
+  }
+}
+
+/* ===== 基础资料只读展示样式 ===== */
+.readonly-notice {
+  margin-bottom: 20rpx;
+}
+
+.readonly-notice-text {
+  font-size: 24rpx;
+  color: #ff758c;
+  line-height: 1.6;
+}
+
+.contact-matchmaker-btn {
+  margin-left: auto;
+  padding: 8rpx 20rpx;
+  border: 2rpx solid #ff6b81;
+  border-radius: 24rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #ff6b81;
+  }
+}
+
+.readonly-info {
+  padding-top: 4rpx;
+}
+
+.nickname-gender-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.nickname-large {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.gender-icon {
+  font-size: 36rpx;
+  margin-left: 10rpx;
+
+  &.male {
+    color: #4A90D9;
+  }
+
+  &.female {
+    color: #FF6B9D;
+  }
+}
+
+.info-brief-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.8;
+  }
+}
+
+.info-sep {
+  margin: 0 10rpx;
+  color: #ddd !important;
+}
+
+.info-divider {
+  height: 1rpx;
+  background-color: #eee;
+  margin: 16rpx 0;
+}
+
+.car-house-row {
+  display: flex;
+  align-items: center;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
   }
 }
 
@@ -2078,7 +2228,7 @@ onShow(async () => {
 }
 
 .bottom-safe {
-  height: 40rpx;
+  height: 140rpx;
 }
 
 .save-bar {
@@ -2343,12 +2493,13 @@ onShow(async () => {
 
 /* ===== 语音介绍 ===== */
 .voice-section { margin-top: 48rpx; }
-.voice-title-row { display: flex; align-items: center; }
+.voice-title-row { display: flex; align-items: center; padding-left: 8rpx; }
 .voice-title { margin-left: 16rpx; font-size: 28rpx; font-weight: bold; color: #333333; }
 .voice-idle { margin-top: 32rpx; display: flex; flex-direction: column; align-items: center; }
-.voice-record-btn { width: 120rpx; height: 120rpx; border-radius: 50%; background: #ff6b6b; display: flex; justify-content: center; align-items: center; &.recording { background: #ff8e8e; } }
+.voice-record-btn { width: 120rpx; height: 120rpx; border-radius: 50%; background: #ff6b6b; display: flex; flex-direction: column; justify-content: center; align-items: center; &.recording { background: #ff8e8e; } }
 .voice-hint { margin-top: 16rpx; font-size: 24rpx; color: #999999; }
-.record-countdown { font-size: 28rpx; color: #ffffff; }
+.record-label { font-size: 22rpx; color: #ffffff; line-height: 1.2; }
+.record-time { font-size: 26rpx; color: #ffffff; font-weight: bold; line-height: 1.2; }
 .voice-recording { margin-top: 32rpx; display: flex; flex-direction: column; align-items: center; }
 .wave-bars { margin-top: 24rpx; display: flex; align-items: flex-end; gap: 8rpx; height: 60rpx; }
 .wave-bar { width: 6rpx; background: #ffffff; border-radius: 3rpx; animation: waveMove ease-in-out infinite alternate; }

@@ -42,14 +42,17 @@
         <text
           v-if="breadcrumb.length >= 4"
           class="bread-item"
-          :class="{ active: currentLevel > 3 }"
+          :class="{ active: currentLevel === 3 }"
           @tap="switchLevel(3)"
         >{{ breadcrumb[3] }}</text>
       </view>
 
       <!-- 列表区域 -->
       <scroll-view class="city-list" scroll-y>
+        <!-- 加载中 -->
+        <view v-if="isLoading" class="city-loading">加载中...</view>
         <view
+          v-else
           v-for="item in currentList"
           :key="item.id"
           class="city-item"
@@ -59,7 +62,8 @@
           <text class="city-item-name">{{ item.name }}</text>
           <text v-if="isSelected(item)" class="city-item-check">✓</text>
         </view>
-        <view v-if="currentList.length === 0" class="city-empty">暂无数据</view>
+        <view v-if="!isLoading && currentList.length === 0 && currentLevel === 3 && selectedDistrict" class="city-empty">该区暂无街道数据，可直接完成</view>
+        <view v-else-if="!isLoading && currentList.length === 0" class="city-empty">暂无数据</view>
       </scroll-view>
 
       <!-- 底部按钮 -->
@@ -160,6 +164,19 @@ const fetchRegions = async (parentId: number) => {
 
 const switchLevel = (level: number) => {
   currentLevel.value = level
+  // 回退时清除后续层级的选中状态
+  if (level < 1) {
+    selectedCity.value = null
+    cityList.value = []
+  }
+  if (level < 2) {
+    selectedDistrict.value = null
+    districtList.value = []
+  }
+  if (level < 3) {
+    selectedStreet.value = null
+    streetList.value = []
+  }
 }
 
 const selectItem = async (item: RegionItem) => {
@@ -194,10 +211,9 @@ const selectItem = async (item: RegionItem) => {
 
     if (item.hasChildren) {
       streetList.value = await fetchRegions(item.id)
-      // 若无街道数据（如直辖市部分区县），停留在区县级，允许用户直接完成
-      if (streetList.value.length > 0) {
-        currentLevel.value = 3
-      }
+      // 无论是否有街道数据，都进入街道层级；
+      // 无数据时列表区会显示"该区暂无街道数据，可直接完成"提示
+      currentLevel.value = 3
     }
   } else if (currentLevel.value === 3) {
     selectedStreet.value = item
@@ -382,6 +398,13 @@ watch(() => props.visible, (val) => {
   padding: 60rpx 0;
   font-size: 28rpx;
   color: #ccc;
+}
+
+.city-loading {
+  text-align: center;
+  padding: 60rpx 0;
+  font-size: 28rpx;
+  color: #999;
 }
 
 .city-footer {
