@@ -589,14 +589,24 @@
               <el-col :span="8">
                 <el-form-item label="出生年份"><el-input-number v-model="editForm.birthYear" :min="1950" :max="2010" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
+              <el-col :span="4">
+                <el-form-item label="月">
+                  <el-input-number v-model="editForm.birthMonth" :min="1" :max="12" controls-position="right" style="width:100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="4">
+                <el-form-item label="日">
+                  <el-input-number v-model="editForm.birthDay" :min="1" :max="31" controls-position="right" style="width:100%" />
+                </el-form-item>
+              </el-col>
               <el-col :span="8">
                 <el-form-item label="身高(cm)"><el-input-number v-model="editForm.height" :min="100" :max="250" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
+            </el-row>
+            <el-row :gutter="12">
               <el-col :span="8">
                 <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="30" :max="200" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
-            </el-row>
-            <el-row :gutter="12">
               <el-col :span="12">
                 <el-form-item label="学历">
                   <el-select v-model="editForm.education" placeholder="请选择" style="width:100%">
@@ -961,6 +971,8 @@ interface UserDetail {
   voiceUrl?: string
   voiceDuration?: number
   voiceAuditStatus?: number
+  birthMonth?: number
+  birthDay?: number
 }
 
 const route = useRoute()
@@ -1065,6 +1077,7 @@ const editDialogVisible = ref(false)
 const editSaving = ref(false)
 const editForm = reactive({
   nickname: '', phone: '', password: '', gender: 0, birthYear: undefined as number | undefined,
+  birthMonth: undefined as number | undefined, birthDay: undefined as number | undefined,
   height: undefined as number | undefined, weight: undefined as number | undefined,
   education: '', occupation: '', incomeRange: '', housingStatus: '', carStatus: '',
   maritalStatus: '', onlyChild: '', whenMarry: '', zodiac: '', constellation: '',
@@ -1587,6 +1600,8 @@ function handleEditProfile() {
   editForm.password = ''
   editForm.gender = u.gender || 0
   editForm.birthYear = u.birthYear
+  editForm.birthMonth = u.birthMonth
+  editForm.birthDay = u.birthDay
   editForm.height = u.height
   editForm.weight = u.weight
   editForm.education = u.education || ''
@@ -1601,8 +1616,18 @@ function handleEditProfile() {
   editForm.constellation = u.constellation || ''
   editForm.hometown = (u.hometown || '').replace(/\//g, ',')
   editForm.residence = (u.residence || '').replace(/\//g, ',')
-  editForm.personalityTags = Array.isArray(u.personalityTags) ? u.personalityTags.join(',') : (u.personalityTags || '')
-  editForm.hopeTaTags = Array.isArray(u.hopeTaTags) ? u.hopeTaTags.join(',') : (u.hopeTaTags || '')
+  // personalityTags 可能是结构化对象 {character:[], hobby:[], loveRule:[]} 或数组
+   const pt: any = u.personalityTags
+   if (Array.isArray(pt)) {
+     editForm.personalityTags = pt.join(',')
+   } else if (pt && typeof pt === 'object') {
+     const allTags = [...(pt.character || []), ...(pt.hobby || []), ...(pt.loveRule || [])]
+     editForm.personalityTags = allTags.join(',')
+   } else {
+     editForm.personalityTags = ''
+   }
+  const ht = u.hopeTaTags
+  editForm.hopeTaTags = Array.isArray(ht) ? ht.join(',') : (typeof ht === 'string' ? ht : '')
   editForm.partnerAgeRange = u.partnerAgeRange || ''
   editForm.partnerHeightMin = u.partnerHeightMin || ''
   editForm.partnerEducation = u.partnerEducation || ''
@@ -1625,6 +1650,7 @@ async function handleEditSave() {
     const data: Record<string, unknown> = {
       nickname: editForm.nickname, phone: editForm.phone,
       gender: editForm.gender, birthYear: editForm.birthYear,
+      birthMonth: editForm.birthMonth, birthDay: editForm.birthDay,
       height: editForm.height, weight: editForm.weight,
       education: editForm.education, occupation: editForm.occupation,
       incomeRange: editForm.incomeRange, housingStatus: editForm.housingStatus,
@@ -1643,6 +1669,11 @@ async function handleEditSave() {
     }
     // 仅当密码非空时才传入
     if (editForm.password) data.password = editForm.password
+    // 清理 null 值以防止 DTO 验证失败
+    const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight']
+    for (const key of numericKeys) {
+      if ((data as any)[key] == null) delete (data as any)[key]
+    }
     const res = await adminUsers.update(user.value.id, data as any)
     if (res.success) {
       ElMessage.success('保存成功')

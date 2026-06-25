@@ -747,19 +747,33 @@
         </el-row>
 
         <el-row :gutter="16">
-          <el-col :span="8">
+          <el-col :span="4">
             <el-form-item label="出生年份">
               <el-select v-model="createForm.birthYear" placeholder="请选择" filterable clearable style="width:100%">
                 <el-option v-for="y in birthYearOptions" :key="y" :label="y + '年'" :value="y" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="4">
+            <el-form-item label="月">
+              <el-select v-model="createForm.birthMonth" placeholder="月" clearable style="width:100%">
+                <el-option v-for="m in 12" :key="m" :label="m + '月'" :value="m" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="日">
+              <el-select v-model="createForm.birthDay" placeholder="日" clearable style="width:100%">
+                <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="身高(cm)">
               <el-input-number v-model="createForm.height" :min="100" :max="250" placeholder="身高" style="width:100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="体重(kg)">
               <el-input-number v-model="createForm.weight" :min="20" :max="300" placeholder="体重" style="width:100%" />
             </el-form-item>
@@ -1603,6 +1617,8 @@ const createForm = reactive({
   password: '',
   gender: 1,
   birthYear: undefined as number | undefined,
+  birthMonth: undefined as number | undefined,
+  birthDay: undefined as number | undefined,
   height: undefined as number | undefined,
   weight: undefined as number | undefined,
   education: undefined as string | undefined,
@@ -1860,6 +1876,8 @@ async function handleCreate() {
     password: '',
     gender: 1,
     birthYear: undefined,
+    birthMonth: undefined,
+    birthDay: undefined,
     height: undefined,
     weight: undefined,
     education: undefined,
@@ -2187,6 +2205,8 @@ async function handleEditUser(row: User) {
   createForm.password = ''
   createForm.gender = user.gender || 1
   createForm.birthYear = user.birthYear ?? undefined
+  createForm.birthMonth = user.birthMonth ?? undefined
+  createForm.birthDay = user.birthDay ?? undefined
   createForm.height = user.height ?? undefined
   createForm.weight = user.weight ?? undefined
   createForm.education = user.education ?? undefined

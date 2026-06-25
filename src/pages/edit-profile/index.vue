@@ -149,6 +149,22 @@
           </picker>
         </view>
 
+        <view class="form-item">
+          <text class="form-label">出生月日</text>
+          <view style="display:flex;flex:1;align-items:center;justify-content:flex-end;gap:16rpx">
+            <picker mode="selector" :range="monthOptions" :value="monthIndex" @change="onBirthMonthChange" class="picker-inline">
+              <view class="form-picker-inline">
+                <text class="picker-value-inline" :class="{ placeholder: !form.birthMonth }">{{ form.birthMonth ? form.birthMonth + '月' : '月' }}</text>
+              </view>
+            </picker>
+            <picker mode="selector" :range="dayOptions" :value="dayIndex" @change="onBirthDayChange" class="picker-inline">
+              <view class="form-picker-inline">
+                <text class="picker-value-inline" :class="{ placeholder: !form.birthDay }">{{ form.birthDay ? form.birthDay + '日' : '日' }}</text>
+              </view>
+            </picker>
+          </view>
+        </view>
+
         <view class="form-item" @tap="openCityPicker('hometown')">
           <text class="form-label">户籍地</text>
           <view class="form-picker">
@@ -1122,6 +1138,24 @@ const handleCroppedAvatar = async (filePath: string) => {
   }
 }
 
+// ===== 出生月日 Picker =====
+const monthOptions = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+const monthIndex = computed(() => {
+  if (!form.value.birthMonth) return -1
+  return (form.value.birthMonth as number) - 1
+})
+const onBirthMonthChange = (e: { detail: { value: number } }) => {
+  form.value.birthMonth = e.detail.value + 1
+}
+const dayOptions = Array.from({ length: 31 }, (_, i) => `${i + 1}日`)
+const dayIndex = computed(() => {
+  if (!form.value.birthDay) return -1
+  return (form.value.birthDay as number) - 1
+})
+const onBirthDayChange = (e: { detail: { value: number } }) => {
+  form.value.birthDay = e.detail.value + 1
+}
+
 // ===== Picker 事件 =====
 const onBirthYearChange = (e: { detail: { value: number } }) => {
   form.value.birthYear = parseInt(birthYearOptions[e.detail.value])
@@ -1866,6 +1900,24 @@ onShow(async () => {
     color: #ccc;
     margin-left: 8rpx;
     flex-shrink: 0;
+  }
+}
+
+.picker-inline {
+  flex: none;
+}
+.form-picker-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 56rpx;
+  padding: 0 20rpx;
+  border: 1rpx solid #e4e7ed;
+  border-radius: 8rpx;
+  background: #fff;
+  .picker-value-inline {
+    font-size: 26rpx;
+    color: #333;
   }
 }
 
