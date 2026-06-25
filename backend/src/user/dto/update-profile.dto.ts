@@ -65,12 +65,12 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
+  @MaxLength(255)
   hometown?: string
 
   @IsOptional()
   @IsString()
-  @MaxLength(100)
+  @MaxLength(255)
   residence?: string
 
   @IsOptional()

@@ -1676,7 +1676,7 @@ function buildCityLabel(pId?: number, cId?: number, dId?: number): string {
   const p = hometownProvinces.value.find(x => x.id === pId)
   const c = hometownCities.value.find(x => x.id === cId)
   const d = hometownDistricts.value.find(x => x.id === dId)
-  return [p?.name, c?.name, d?.name].filter(Boolean).join('/')
+  return [p?.name, c?.name, d?.name].filter(Boolean).join(',')
 }
 
 // 居住地
@@ -1716,7 +1716,7 @@ function buildResidenceLabel(pId?: number, cId?: number, dId?: number): string {
   const p = residenceProvinces.value.find(x => x.id === pId)
   const c = residenceCities.value.find(x => x.id === cId)
   const d = residenceDistricts.value.find(x => x.id === dId)
-  return [p?.name, c?.name, d?.name].filter(Boolean).join('/')
+  return [p?.name, c?.name, d?.name].filter(Boolean).join(',')
 }
 
 onMounted(() => {

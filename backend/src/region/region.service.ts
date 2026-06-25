@@ -1,4 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { AddressRegion } from '../entities/AddressRegion'
 
 export interface RegionItem {
   id: number
@@ -12,6 +15,11 @@ export interface RegionItem {
 export class RegionService implements OnModuleInit {
   /** level → parentId → RegionItem[] */
   private regionsByParent = new Map<number, RegionItem[]>()
+
+  constructor(
+    @InjectRepository(AddressRegion)
+    private readonly addressRegionRepo: Repository<AddressRegion>,
+  ) {}
 
   async onModuleInit() {
     await this.loadRegions()
@@ -40,7 +48,6 @@ export class RegionService implements OnModuleInit {
       const id = parseInt(c.code, 10)
       const parentId = parseInt(c.provinceCode, 10)
       const list = this.regionsByParent.get(parentId) || []
-      // 城市暂时标记有子级（后面areas会更新）
       list.push({ id, name: c.name, level: 1, code: c.code, hasChildren: true })
       this.regionsByParent.set(parentId, list)
     }
@@ -50,7 +57,8 @@ export class RegionService implements OnModuleInit {
       const id = parseInt(a.code, 10)
       const parentId = parseInt(a.cityCode, 10)
       const list = this.regionsByParent.get(parentId) || []
-      list.push({ id, name: a.name, level: 2, code: a.code, hasChildren: false })
+      // level 2 区县：标记为可能有子级（街道），由 DB 查询时动态判断
+      list.push({ id, name: a.name, level: 2, code: a.code, hasChildren: true })
       this.regionsByParent.set(parentId, list)
       hasChildrenMap.set(parentId, true)
     }
@@ -66,7 +74,28 @@ export class RegionService implements OnModuleInit {
   }
 
   async getChildren(parentId: number): Promise<RegionItem[]> {
-    return this.regionsByParent.get(parentId) || []
+    const mem = this.regionsByParent.get(parentId)
+    if (mem && mem.length > 0) return mem
+
+    // 内存未命中时回退查询 DB（第四级街道数据）
+    try {
+      const dbRegions = await this.addressRegionRepo.find({
+        where: { parentId },
+        order: { id: 'ASC' },
+      })
+      if (dbRegions.length > 0) {
+        return dbRegions.map((r) => ({
+          id: r.id,
+          name: r.name,
+          level: r.level,
+          code: r.code,
+          hasChildren: false,
+        }))
+      }
+    } catch {
+      // DB 查询失败时返回空数组
+    }
+    return []
   }
 
   async getPathById(regionId: number): Promise<{ id: number; name: string; level: number }[]> {

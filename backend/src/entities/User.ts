@@ -93,10 +93,10 @@ export class User {
   @Column({ type: 'varchar', length: 20, nullable: true })
   constellation: string
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   hometown: string
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   residence: string
 
   @Column({ type: 'varchar', length: 100, nullable: true })

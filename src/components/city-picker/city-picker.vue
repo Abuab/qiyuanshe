@@ -38,6 +38,12 @@
           :class="{ active: currentLevel > 3 }"
           @tap="switchLevel(3)"
         >{{ breadcrumb[2] }}</text>
+        <text v-if="breadcrumb.length >= 4" class="bread-sep">></text>
+        <text
+          v-if="breadcrumb.length >= 4"
+          class="bread-item"
+          :class="{ active: false }"
+        >{{ breadcrumb[3] }}</text>
       </view>
 
       <!-- 列表区域 -->
@@ -107,6 +113,7 @@ const breadcrumb = computed(() => {
   if (selectedProvince.value) parts.push(selectedProvince.value.name)
   if (selectedCity.value) parts.push(selectedCity.value.name)
   if (selectedDistrict.value) parts.push(selectedDistrict.value.name)
+  if (selectedStreet.value) parts.push(selectedStreet.value.name)
   return parts
 })
 
