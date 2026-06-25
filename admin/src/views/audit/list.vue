@@ -259,8 +259,11 @@ function truncateText(text: string | undefined, maxLen: number): string {
 function resolveVoiceUrl(content?: string): string {
   const { voiceUrl } = parseVoiceContent(content)
   if (!voiceUrl) return ''
-  if (voiceUrl.startsWith('http')) return voiceUrl
-  return (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, '') + '/' + voiceUrl.replace(/^\//, '')
+  if (voiceUrl.startsWith('http://') || voiceUrl.startsWith('https://')) return voiceUrl
+  // 相对路径补全 API 基础域名
+  const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+  if (voiceUrl.startsWith('/')) return baseUrl ? `${baseUrl}${voiceUrl}` : voiceUrl
+  return voiceUrl
 }
 
 function toggleVoicePlay(row: AuditItem) {

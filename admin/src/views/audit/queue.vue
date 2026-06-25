@@ -97,9 +97,17 @@
               </template>
               <!-- 语音类型 -->
               <template v-else-if="isVoiceType(row)">
-                <div class="voice-placeholder">
-                  <el-icon :size="24"><Microphone /></el-icon>
-                  <span>语音介绍</span>
+                <div class="voice-preview">
+                  <el-button
+                    type="primary"
+                    link
+                    :icon="VideoPlay"
+                    :loading="voicePlayingId === row.id"
+                    @click.stop="toggleVoicePlay(row)"
+                  >
+                    {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
+                  </el-button>
+                  <span class="voice-duration">{{ parseDuration(row.content) }}″</span>
                 </div>
               </template>
               <el-tag type="info" size="small" class="content-tag">{{ typeLabel(row) }}</el-tag>
@@ -244,9 +252,16 @@
                   preview-teleported
                 />
                 <!-- Voice -->
-                <div v-else-if="isVoiceType(contextDrawer.data)" class="voice-placeholder large">
-                  <el-icon :size="40"><Microphone /></el-icon>
-                  <span>语音介绍</span>
+                <div v-else-if="isVoiceType(contextDrawer.data)" class="voice-preview" style="padding:12px 0">
+                  <el-button
+                    type="primary"
+                    :icon="VideoPlay"
+                    :loading="voicePlayingId === contextDrawer.data.id"
+                    @click="toggleVoicePlay(contextDrawer.data)"
+                  >
+                    {{ voicePlayingId === contextDrawer.data.id ? '播放中...' : '播放语音' }}
+                  </el-button>
+                  <span class="voice-duration">{{ parseDuration(contextDrawer.data.content) }}″</span>
                 </div>
                 <div class="context-meta">
                   <span>类型：{{ typeLabel(contextDrawer.data) }}</span>
@@ -295,7 +310,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, RefreshRight, Check, Close, Picture, User, Microphone } from '@element-plus/icons-vue'
+import { Search, RefreshRight, Check, Close, Picture, User, VideoPlay } from '@element-plus/icons-vue'
 import { adminAudit } from '@/api'
 
 // ===== 统计 =====
@@ -333,6 +348,49 @@ const contextDrawer = reactive({
 
 // ===== 自动刷新 =====
 let pollTimer: ReturnType<typeof setInterval> | null = null
+
+// ===== 语音播放 =====
+const voicePlayingId = ref<number | null>(null)
+const voiceAudio = ref<HTMLAudioElement | null>(null)
+
+function parseVoiceContent(content?: string): { voiceUrl?: string; duration?: number } {
+  if (!content) return {}
+  try { return JSON.parse(content) } catch { return {} }
+}
+
+function parseDuration(content?: string): number {
+  return parseVoiceContent(content).duration || 0
+}
+
+function resolveVoiceUrl(content?: string): string {
+  const { voiceUrl } = parseVoiceContent(content)
+  if (!voiceUrl) return ''
+  if (voiceUrl.startsWith('http://') || voiceUrl.startsWith('https://')) return voiceUrl
+  const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+  return voiceUrl.startsWith('/') ? `${baseUrl}${voiceUrl}` : voiceUrl
+}
+
+function toggleVoicePlay(row: any) {
+  const url = resolveVoiceUrl(row.content)
+  if (!url) return
+
+  if (voiceAudio.value) {
+    voiceAudio.value.pause()
+    voiceAudio.value = null
+  }
+
+  if (voicePlayingId.value === row.id) {
+    voicePlayingId.value = null
+    return
+  }
+
+  const audio = new Audio(url)
+  voiceAudio.value = audio
+  voicePlayingId.value = row.id
+  audio.play()
+  audio.onended = () => { voicePlayingId.value = null; voiceAudio.value = null }
+  audio.onerror = () => { voicePlayingId.value = null; voiceAudio.value = null; ElMessage.warning('音频加载失败') }
+}
 
 // ===== 类型判断 =====
 const textTypes = ['chat', 'answer', 'user']
@@ -648,6 +706,13 @@ onUnmounted(() => {
   border-radius: 8px; width: fit-content;
 }
 .voice-placeholder.large { padding: 20px; font-size: 16px; }
+
+.voice-preview {
+  display: flex; align-items: center; gap: 8px;
+}
+.voice-duration {
+  font-size: 12px; color: #909399;
+}
 
 .user-info-cell { display: flex; align-items: center; gap: 10px; }
 .user-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; }

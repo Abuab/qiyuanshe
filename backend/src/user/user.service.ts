@@ -14,6 +14,7 @@ import { RecommendService, RecommendFilters } from './recommend.service'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 import { AiVoiceService } from '../ai/ai-voice.service'
+import { NotifyChannelService } from '../admin/notify-channel.service'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -63,6 +64,7 @@ export class UserService {
     private readonly recommendService: RecommendService,
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly aiVoiceService: AiVoiceService,
+    private readonly notifyService: NotifyChannelService,
   ) {}
 
   /**
@@ -722,6 +724,11 @@ export class UserService {
       // 调用 AI 转文字（不阻塞审核记录创建）
       const transcript = await this.aiVoiceService.transcribeVoice(dto.voiceUrl)
 
+      // 构建 AI 结果展示文案
+      const aiResult = transcript
+        ? `AI转录：${transcript.length > 100 ? transcript.slice(0, 100) + '...' : transcript}`
+        : 'AI转录失败'
+
       await this.auditLogRepository.update(
         { targetType: 'voice', targetId: userId, action: 'PENDING' },
         { action: 'CANCELLED' } as any,
@@ -737,8 +744,19 @@ export class UserService {
             duration: dto.voiceDuration,
             transcript,
           }),
+          aiResult,
+          aiScore: transcript ? 0.85 : 0,
         }),
       )
+
+      // 发送语音审核通知（参照照片/头像审核流程）
+      this.notifyService.sendAuditNotify({
+        type: 'voice',
+        content: `用户提交了语音介绍审核`,
+        userId,
+        userNickname: user.nickname || '',
+        source: 'voice_upload',
+      }).catch(() => {})
     }
 
     // personalityTags: 支持逗号分隔字符串或数组
