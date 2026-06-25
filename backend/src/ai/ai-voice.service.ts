@@ -175,9 +175,12 @@ export class AiVoiceService {
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
 
     try {
-      // 将音频 Blob 转为 base64
+      // 将音频 Blob 转为 base64（Data URL 格式: data:<mime>;base64,<data>）
       const arrayBuffer = await audioBlob.arrayBuffer()
       const audioBase64 = Buffer.from(arrayBuffer).toString('base64')
+      // Blob 的 type 属性可能是空字符串，默认为 audio/mpeg
+      const mimeType = audioBlob.type || 'audio/mpeg'
+      const dataUrl = `data:${mimeType};base64,${audioBase64}`
 
       // 构建 Qwen3-ASR chat/completions 请求 URL
       let baseUrl = (provider.apiBase || '').replace(/\/+$/, '')
@@ -195,12 +198,21 @@ export class AiVoiceService {
             content: [
               {
                 type: 'input_audio',
-                input_audio: audioBase64,
+                input_audio: { data: dataUrl },
               },
             ],
           },
         ],
       }
+
+      // 调试日志：打印实际 URL 和请求体摘要
+      this.logger.debug(
+        `[${provider.displayName}] Qwen3-ASR 请求 URL: ${url}`,
+      )
+      this.logger.debug(
+        `[${provider.displayName}] Qwen3-ASR body.model=${body.model}, ` +
+        `dataUrl 前缀=${dataUrl.slice(0, 60)}..., 长度=${dataUrl.length}`,
+      )
 
       const response = await fetch(url, {
         method: 'POST',
@@ -226,9 +238,19 @@ export class AiVoiceService {
 
       // 解析 chat/completions 响应：choices[0].message.content
       const data = await response.json()
-      const text = data?.choices?.[0]?.message?.content?.trim() || ''
+      const rawContent = data?.choices?.[0]?.message?.content
+      // Qwen3-ASR content 可能是 array（如 [{text: "..."}] 或 ["..."]）或 string
+      let text = ''
+      if (Array.isArray(rawContent)) {
+        text = rawContent
+          .map((item: any) => (typeof item === 'string' ? item : item?.text || ''))
+          .join('')
+          .trim()
+      } else if (typeof rawContent === 'string') {
+        text = rawContent.trim()
+      }
       if (!text) {
-        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容`)
+        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容, raw=${JSON.stringify(rawContent).slice(0, 200)}`)
         return { text: null, error: '返回空内容' }
       }
 
