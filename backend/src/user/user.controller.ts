@@ -9,12 +9,17 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Request,
   ForbiddenException,
 } from '@nestjs/common'
 import { ThrottlerGuard } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { FileInterceptor } from '@nestjs/platform-express'
+import { diskStorage } from 'multer'
+import { extname, join } from 'path'
 import { UserService } from './user.service'
 import { UserProfileDetailService } from './user-profile-detail.service'
 import { FilterUsersDto } from './dto'
@@ -470,6 +475,50 @@ export class UserController {
     const currentUserId = req?.user?.userId
     const data = await this.profileDetailService.getUserProfileDetail(id, currentUserId)
     return Result.success(data)
+  }
+
+  /** 上传语音介绍 */
+  @Post('voice-intro')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('voiceFile', {
+      storage: diskStorage({
+        destination: join(process.cwd(), 'uploads'),
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+          cb(null, `voice-${uniqueSuffix}${extname(file.originalname) || '.mp3'}`)
+        },
+      }),
+      limits: {
+        fileSize: 1024 * 1024 * 2, // 2MB
+      },
+      fileFilter: (_req, file, cb) => {
+        const allowedMime = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-m4a', 'audio/mp4', 'audio/x-wav']
+        if (allowedMime.includes(file.mimetype)) {
+          cb(null, true)
+        } else {
+          cb(new Error('只允许上传语音文件'), false)
+        }
+      },
+    }),
+  )
+  async uploadVoiceIntro(@UploadedFile() file: any, @Request() req: any) {
+    if (!file) {
+      return Result.error('请选择音频文件')
+    }
+    const baseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
+    const voiceUrl = baseUrl
+      ? `${baseUrl}/uploads/${file.filename}`
+      : `/uploads/${file.filename}`
+
+    // 保存语音URL到用户资料
+    const userId = req.user.userId
+    await this.userService.updateProfile(userId, {
+      voiceUrl,
+      voiceAuditStatus: 0,
+    } as any)
+
+    return Result.success({ voiceUrl, auditStatus: 0 })
   }
 
   /** 获取用户语音介绍（暂未实现，返回空数据告知前端不显示语音条） */

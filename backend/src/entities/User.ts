@@ -215,6 +215,14 @@ export class User {
   @Column({ type: 'boolean', default: false })
   delegateToPlatform: boolean
 
+  /** 语音介绍 URL */
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  voiceUrl: string
+
+  /** 语音审核状态: 0=待审核, 1=已通过, 2=已拒绝, null=未录制 */
+  @Column({ type: 'tinyint', nullable: true, default: null })
+  voiceAuditStatus: number
+
   @CreateDateColumn()
   createdAt: Date
 

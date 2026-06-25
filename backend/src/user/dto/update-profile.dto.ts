@@ -139,6 +139,18 @@ export class UpdateProfileDto {
   acceptChildren?: string
 
   @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  voiceUrl?: string
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2)
+  voiceAuditStatus?: number
+
+  @IsOptional()
   personalityTags?: string | string[]
 
   @IsOptional()

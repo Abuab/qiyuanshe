@@ -405,6 +405,8 @@ export class AuthService {
       protocolVersion: user.protocolVersion,
       showBasicProfile: user.showBasicProfile ?? true,
       delegateToPlatform: user.delegateToPlatform ?? false,
+      voiceUrl: user.voiceUrl || '',
+      voiceAuditStatus: user.voiceAuditStatus,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }

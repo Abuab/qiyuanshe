@@ -705,6 +705,8 @@ export class UserService {
     if (dto.housingRequirement !== undefined) user.housingRequirement = dto.housingRequirement
     if (dto.partnerMaritalStatus !== undefined) user.partnerMaritalStatus = dto.partnerMaritalStatus
     if (dto.acceptChildren !== undefined) user.acceptChildren = dto.acceptChildren
+    if (dto.voiceUrl !== undefined) user.voiceUrl = dto.voiceUrl
+    if (dto.voiceAuditStatus !== undefined) user.voiceAuditStatus = dto.voiceAuditStatus
 
     // personalityTags: 支持逗号分隔字符串或数组
     if (dto.personalityTags !== undefined) {

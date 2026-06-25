@@ -71,12 +71,12 @@
       </view>
 
       <!-- 基础资料（只读展示） -->
+      <!-- 顶部提示条：独立于卡片之外 -->
+      <view class="readonly-notice">
+        <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
+      </view>
+
       <view class="section-card">
-        <!-- 顶部提示条 -->
-        <view class="readonly-notice">
-          <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
-        </view>
-        
         <!-- 标题区 -->
         <view class="section-title-row">
           <view class="section-title-bar"></view>
@@ -347,20 +347,26 @@
         </view>
 
         <view v-else-if="voiceStatus === 'done'" class="voice-done">
-          <view class="voice-play-row">
-            <view class="wave-static">
-              <view class="wave-static-bar" style="height:20rpx"></view>
-              <view class="wave-static-bar" style="height:40rpx"></view>
-              <view class="wave-static-bar" style="height:30rpx"></view>
-              <view class="wave-static-bar" style="height:50rpx"></view>
-              <view class="wave-static-bar" style="height:25rpx"></view>
-            </view>
-            <view class="voice-play-btn" @tap="togglePlayVoice">
-              <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="48rpx" color="#FF6B6B"></uni-icons>
-            </view>
-            <text class="voice-duration">{{ voiceDuration }}″</text>
-            <view class="voice-delete-btn" @tap="deleteVoice">
-              <uni-icons type="trash" size="40rpx" color="#999999"></uni-icons>
+          <view class="voice-done-card">
+            <view class="voice-play-row">
+              <!-- 播放按钮（圆形粉色） -->
+              <view class="voice-play-btn" @tap="togglePlayVoice">
+                <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="28rpx" color="#FFFFFF"></uni-icons>
+              </view>
+              <!-- 波形图 -->
+              <view class="wave-static">
+                <view class="wave-static-bar" style="height:20rpx"></view>
+                <view class="wave-static-bar" style="height:40rpx"></view>
+                <view class="wave-static-bar" style="height:30rpx"></view>
+                <view class="wave-static-bar" style="height:50rpx"></view>
+                <view class="wave-static-bar" style="height:25rpx"></view>
+              </view>
+              <!-- 时长 -->
+              <text class="voice-duration">{{ voiceDuration }}″</text>
+              <!-- 删除按钮 -->
+              <view class="voice-delete-btn" @tap="confirmDeleteVoice">
+                <uni-icons type="trash" size="36rpx" color="#999999"></uni-icons>
+              </view>
             </view>
           </view>
           <text v-if="voiceAuditStatus === 0" class="voice-audit pending">审核中，通过后将展示</text>
@@ -1393,6 +1399,17 @@ function deleteVoice() {
   // hadVoiceSaved 保持 true，以便保存时清除服务端数据
 }
 
+function confirmDeleteVoice() {
+  uni.showModal({
+    title: '确定删除这条语音介绍？',
+    success: (res: any) => {
+      if (res.confirm) {
+        deleteVoice()
+      }
+    },
+  })
+}
+
 async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number }> {
   if (!voiceTempPath.value) return {}
   uni.showLoading({ title: '上传中...', mask: true })
@@ -1469,15 +1486,19 @@ const handleSave = async () => {
 
     // 语音字段：始终同步当前状态
     if (voiceUploadResult.voiceUrl) {
+      // 新上传的语音
       data.voiceUrl = voiceUploadResult.voiceUrl
       data.voiceAuditStatus = 0
-    } else if (hadVoiceSaved.value && voiceStatus.value === 'idle' && !voiceTempPath.value) {
+    } else if (voiceStatus.value === 'done' && voiceTempPath.value && voiceTempPath.value.startsWith('http')) {
+      // 已保存的语音，URL 未变，保持原值（无需重新上传）
+      data.voiceUrl = voiceTempPath.value
+      data.voiceAuditStatus = voiceAuditStatus.value
+    } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
       // 用户删除了之前保存的语音
       data.voiceUrl = ''
       data.voiceAuditStatus = null as any
-    } else if (!hadVoiceSaved.value && voiceStatus.value === 'idle') {
-      // 从未录制过语音，不提交语音字段
     }
+    // else: 从未录制过语音，不提交语音字段
 
     const result = await put<Record<string, unknown>>('/users/profile', data)
 
@@ -1623,16 +1644,17 @@ onShow(async () => {
 
 /* ===== 基础资料只读展示样式 ===== */
 .readonly-notice {
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
   background-color: #fff0f3;
-  padding: 16rpx 20rpx;
+  padding: 16rpx 28rpx;
   border-radius: 12rpx;
 }
 
 .readonly-notice-text {
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #ff758c;
-  line-height: 1.6;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .contact-matchmaker-btn {
@@ -2521,8 +2543,8 @@ onShow(async () => {
 
 /* ===== 语音介绍 ===== */
 .voice-section { margin-top: 48rpx; }
-.voice-title-row { display: flex; align-items: center; padding-left: 8rpx; }
-.voice-title { margin-left: 16rpx; font-size: 28rpx; font-weight: bold; color: #333333; }
+.voice-title-row { display: flex; align-items: center; padding-left: 30rpx; }
+.voice-title { margin-left: 12rpx; font-size: 28rpx; font-weight: bold; color: #333333; }
 .voice-idle { margin-top: 32rpx; display: flex; flex-direction: column; align-items: center; }
 .voice-record-btn { width: 120rpx; height: 120rpx; border-radius: 50%; background: #ff6b6b; display: flex; flex-direction: column; justify-content: center; align-items: center; &.recording { background: #ff8e8e; } }
 .voice-hint { margin-top: 16rpx; font-size: 24rpx; color: #999999; }
@@ -2533,11 +2555,12 @@ onShow(async () => {
 .wave-bar { width: 6rpx; background: #ffffff; border-radius: 3rpx; animation: waveMove ease-in-out infinite alternate; }
 @keyframes waveMove { 0%,100% { height: 20rpx; } 50% { height: 60rpx; } }
 .voice-done { margin-top: 32rpx; }
+.voice-done-card { background-color: #ffffff; border-radius: 12rpx; padding: 20rpx; margin: 0 30rpx; }
 .voice-play-row { display: flex; align-items: center; }
-.wave-static { display: flex; align-items: flex-end; gap: 8rpx; margin-right: 16rpx; }
+.voice-play-btn { width: 60rpx; height: 60rpx; border-radius: 50%; background: #ff6b81; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 20rpx; }
+.wave-static { display: flex; align-items: flex-end; gap: 8rpx; flex: 1; }
 .wave-static-bar { width: 6rpx; background: #ff6b6b; border-radius: 3rpx; }
-.voice-play-btn { flex-shrink: 0; }
-.voice-duration { font-size: 28rpx; color: #666666; margin-left: 16rpx; }
-.voice-delete-btn { margin-left: 24rpx; flex-shrink: 0; }
-.voice-audit { margin-top: 16rpx; font-size: 24rpx; display: block; &.pending { color: #ffd93d; } &.passed { color: #52c41a; } &.rejected { color: #ff4d4f; } }
+.voice-duration { font-size: 24rpx; color: #999999; margin-left: 16rpx; flex-shrink: 0; }
+.voice-delete-btn { margin-left: 20rpx; flex-shrink: 0; }
+.voice-audit { margin-top: 16rpx; font-size: 24rpx; display: block; padding-left: 30rpx; &.pending { color: #ffd93d; } &.passed { color: #52c41a; } &.rejected { color: #ff4d4f; } }
 </style>
