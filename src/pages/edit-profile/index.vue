@@ -70,41 +70,69 @@
         </view>
       </view>
 
-      <!-- 基本信息 -->
+      <!-- 基础资料（只读展示） -->
       <view class="section-card">
-        <text class="section-title">基本信息</text>
-
-        <view class="form-item">
-          <text class="form-label">昵称</text>
-          <input class="form-input disabled-input" :value="form.nickname" placeholder="昵称由系统自动生成" disabled />
+        <!-- 顶部提示条 -->
+        <view class="readonly-notice">
+          <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
         </view>
-
-        <view class="form-item">
-          <text class="form-label">性别</text>
-          <view class="gender-group">
-            <view class="gender-btn" :class="{ active: form.gender === 1 }" @tap="form.gender = 1">男</view>
-            <view class="gender-btn" :class="{ active: form.gender === 2 }" @tap="form.gender = 2">女</view>
+        
+        <!-- 标题区 -->
+        <view class="section-title-row">
+          <view class="section-title-bar"></view>
+          <text class="section-title">基础资料</text>
+          <view class="contact-matchmaker-btn" @tap="openMatchmaker">
+            <text>联系红娘修改</text>
           </view>
         </view>
+        
+        <!-- 信息展示区域 -->
+        <view class="readonly-info">
+          <!-- 昵称与性别 -->
+          <view class="nickname-gender-row">
+            <text class="nickname-large">{{ form.nickname || '--' }}</text>
+            <text v-if="form.gender === 1" class="gender-icon male">♂</text>
+            <text v-else-if="form.gender === 2" class="gender-icon female">♀</text>
+          </view>
+          
+          <!-- 基础信息一行 -->
+          <view class="info-brief-row">
+            <text>{{ birthDisplay }}</text>
+            <text v-if="form.birthYear && form.height" class="info-sep">|</text>
+            <text>{{ heightDisplay }}</text>
+            <text v-if="form.height && form.incomeRange" class="info-sep">|</text>
+            <text>{{ incomeDisplay }}</text>
+            <text v-if="form.incomeRange && form.education" class="info-sep">|</text>
+            <text>{{ form.education }}</text>
+            <text v-if="form.education && form.maritalStatus" class="info-sep">|</text>
+            <text>{{ form.maritalStatus }}</text>
+          </view>
+          
+          <!-- 分隔线 -->
+          <view class="info-divider"></view>
+          
+          <!-- 车房信息 -->
+          <view class="car-house-row">
+            <text>车：{{ carDisplay }}</text>
+            <text class="info-sep">|</text>
+            <text>房：{{ houseDisplay }}</text>
+          </view>
+        </view>
+      </view>
 
-        <view class="form-item">
-          <text class="form-label">出生年份</text>
-          <picker mode="selector" :range="birthYearOptions" :value="birthYearIndex" @change="onBirthYearChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.birthYear }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.birthYear ? form.birthYear + '年' : '请选择出生年份' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
+      <!-- 其他可编辑信息 -->
+      <view class="section-card">
+        <view class="section-title-row">
+          <view class="section-title-bar"></view>
+          <text class="section-title">其他信息</text>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">身高(cm)</text>
-          <picker mode="selector" :range="heightOptions" :value="heightIndex" @change="onHeightChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.height }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.height ? form.height + 'cm' : '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
+        <view class="form-item" @tap="openOccupationPicker">
+          <text class="form-label">职业</text>
+          <view class="form-picker">
+            <text class="picker-value" :class="{ placeholder: !form.occupation }">{{ form.occupation || '请选择' }}</text>
+            <text class="picker-arrow">></text>
+          </view>
         </view>
 
         <view class="form-item">
@@ -117,57 +145,19 @@
           </picker>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">学历</text>
-          <picker mode="selector" :range="educationLabels" :value="educationIndex" @change="onEducationChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.education }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.education || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item" @tap="openOccupationPicker">
-          <text class="form-label">职业</text>
+        <view class="form-item" @tap="openCityPicker('hometown')">
+          <text class="form-label">户籍地</text>
           <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.occupation }">{{ form.occupation || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+            <text class="picker-value" :class="{ placeholder: !form.hometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.hometown || '请选择户籍地' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
         </view>
 
-        <view class="form-item">
-          <text class="form-label">月薪</text>
-          <picker mode="selector" :range="incomeLabels" :value="incomeIndex" @change="onIncomeChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.incomeRange }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.incomeRange || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item">
-          <text class="form-label">婚姻状况</text>
-          <picker mode="selector" :range="maritalOptions" :value="maritalIndex" @change="onMaritalChange" style="flex:1">
-            <view class="form-picker">
-              <text class="picker-value" :class="{ placeholder: !form.maritalStatus }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.maritalStatus || '请选择' }}</text>
-              <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-            </view>
-          </picker>
-        </view>
-
-        <view class="form-item" @tap="openHousingStatusPicker">
-          <text class="form-label">住房情况</text>
+        <view class="form-item" @tap="openCityPicker('residence')">
+          <text class="form-label">现居地</text>
           <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.housingStatus }">{{ form.housingStatus || '请选择' }}</text>
-            <text class="picker-arrow">></text>
-          </view>
-        </view>
-
-        <view class="form-item" @tap="openCarStatusPicker">
-          <text class="form-label">车辆情况</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.carStatus }">{{ form.carStatus || '请选择' }}</text>
-            <text class="picker-arrow">></text>
+            <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
+            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
           </view>
         </view>
 
@@ -209,22 +199,6 @@
               <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
             </view>
           </picker>
-        </view>
-
-        <view class="form-item" @tap="openCityPicker('hometown')">
-          <text class="form-label">户籍地</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.hometown }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.hometown || '请选择户籍地' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
-        </view>
-
-        <view class="form-item" @tap="openCityPicker('residence')">
-          <text class="form-label">现居地</text>
-          <view class="form-picker">
-            <text class="picker-value" :class="{ placeholder: !form.residence }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.residence || '请选择现居地' }}</text>
-            <text class="picker-arrow" style="font-size:24rpx;color:#ccc;margin-left:8rpx;flex-shrink:0;">></text>
-          </view>
         </view>
       </view>
 
@@ -541,9 +515,17 @@
       :visible="showCityPicker"
       @confirm="onCityConfirm"
       @close="showCityPicker = false"
-    />
+  />
 
-    <!-- 我的特点弹窗 -->
+  <!-- 红娘联系弹窗 -->
+  <matchmaker-popup
+    :show="showMatchmakerPopup"
+    :matchmaker="selectedMatchmaker || {}"
+    @close="showMatchmakerPopup = false"
+    @more="onNextMatchmaker"
+  />
+
+  <!-- 我的特点弹窗 -->
     <view class="popup-mask" v-if="showPersonalityPopup" @tap="closePersonalityPicker"></view>
     <view class="personality-popup-panel" :class="{ show: showPersonalityPopup }">
       <view class="personality-popup-header">
@@ -623,6 +605,7 @@ import { setCropImageData } from '@/utils/crop-bridge'
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
 import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
@@ -821,6 +804,57 @@ const tempTags = ref<string[]>([])
 // 城市选择器
 const showCityPicker = ref(false)
 const cityTarget = ref<'residence' | 'hometown'>('residence')
+
+// 红娘联系弹窗
+const showMatchmakerPopup = ref(false)
+const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
+
+const openMatchmaker = async () => {
+  if (matchmakerList.value.length === 0) {
+    try {
+      const res: any = await get('/matchmakers')
+      const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+      matchmakerList.value = rawList.map((item: any) => ({
+        ...item,
+        qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || ''),
+        avatar: getFullImageUrl(item.avatar || ''),
+      }))
+    } catch { /* 获取失败时静默 */ }
+  }
+  if (matchmakerList.value.length === 0) {
+    uni.showToast({ title: '暂无红娘信息', icon: 'none' })
+    return
+  }
+  selectedMatchmaker.value = matchmakerList.value[0]
+  matchmakerIndex.value = 0
+  showMatchmakerPopup.value = true
+}
+
+const matchmakerIndex = ref(0)
+const onNextMatchmaker = () => {
+  if (matchmakerList.value.length === 0) return
+  matchmakerIndex.value = (matchmakerIndex.value + 1) % matchmakerList.value.length
+  selectedMatchmaker.value = matchmakerList.value[matchmakerIndex.value]
+  showMatchmakerPopup.value = true
+}
+
+// 只读信息展示计算属性
+const birthDisplay = computed(() => {
+  return form.value.birthYear ? `${form.value.birthYear}年` : '--'
+})
+const heightDisplay = computed(() => {
+  return form.value.height ? `${form.value.height}cm` : ''
+})
+const incomeDisplay = computed(() => {
+  return form.value.incomeRange ? `月收入${form.value.incomeRange}` : ''
+})
+const carDisplay = computed(() => {
+  return form.value.carStatus || '--'
+})
+const houseDisplay = computed(() => {
+  return form.value.housingStatus || '--'
+})
 
 // 我的特点弹窗
 const showPersonalityPopup = ref(false)
@@ -1580,6 +1614,91 @@ onShow(async () => {
 
   .section-title {
     margin-bottom: 0;
+  }
+}
+
+/* ===== 基础资料只读展示样式 ===== */
+.readonly-notice {
+  margin-bottom: 20rpx;
+}
+
+.readonly-notice-text {
+  font-size: 24rpx;
+  color: #ff758c;
+  line-height: 1.6;
+}
+
+.contact-matchmaker-btn {
+  margin-left: auto;
+  padding: 8rpx 20rpx;
+  border: 2rpx solid #ff6b81;
+  border-radius: 24rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #ff6b81;
+  }
+}
+
+.readonly-info {
+  padding-top: 4rpx;
+}
+
+.nickname-gender-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.nickname-large {
+  font-size: 44rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.gender-icon {
+  font-size: 36rpx;
+  margin-left: 10rpx;
+
+  &.male {
+    color: #4A90D9;
+  }
+
+  &.female {
+    color: #FF6B9D;
+  }
+}
+
+.info-brief-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.8;
+  }
+}
+
+.info-sep {
+  margin: 0 10rpx;
+  color: #ddd !important;
+}
+
+.info-divider {
+  height: 1rpx;
+  background-color: #eee;
+  margin: 16rpx 0;
+}
+
+.car-house-row {
+  display: flex;
+  align-items: center;
+
+  text {
+    font-size: 26rpx;
+    color: #666;
   }
 }
 
