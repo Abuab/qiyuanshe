@@ -673,10 +673,41 @@
               <el-col :span="8"><el-form-item label="星座"><el-input v-model="editForm.constellation" /></el-form-item></el-col>
               <el-col :span="8" />
             </el-row>
-            <el-row :gutter="12">
-              <el-col :span="12"><el-form-item label="家乡"><el-input v-model="editForm.hometown" placeholder="如 北京-东城" /></el-form-item></el-col>
-              <el-col :span="12"><el-form-item label="居住地"><el-input v-model="editForm.residence" placeholder="如 上海-浦东" /></el-form-item></el-col>
-            </el-row>
+            <!-- 家乡 -->
+            <el-form-item label="家乡">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <el-select v-model="hometownProvinceId" placeholder="省" style="width:160px" clearable @change="onHometownProvinceChange">
+                  <el-option v-for="p in hometownProvinces" :key="p.id" :label="p.name" :value="p.id" />
+                </el-select>
+                <el-select v-model="hometownCityId" placeholder="市" style="width:160px" clearable :disabled="!hometownProvinceId" @change="onHometownCityChange">
+                  <el-option v-for="c in hometownCities" :key="c.id" :label="c.name" :value="c.id" />
+                </el-select>
+                <el-select v-model="hometownDistrictId" placeholder="区/县" style="width:160px" clearable :disabled="!hometownCityId" @change="onHometownDistrictChange">
+                  <el-option v-for="d in hometownDistricts" :key="d.id" :label="d.name" :value="d.id" />
+                </el-select>
+                <el-select v-model="hometownStreetId" placeholder="街道" style="width:160px" clearable :disabled="!hometownDistrictId">
+                  <el-option v-for="s in hometownStreets" :key="s.id" :label="s.name" :value="s.id" />
+                </el-select>
+              </div>
+            </el-form-item>
+
+            <!-- 居住地 -->
+            <el-form-item label="居住地">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <el-select v-model="residenceProvinceId" placeholder="省" style="width:160px" clearable @change="onResidenceProvinceChange">
+                  <el-option v-for="p in residenceProvinces" :key="p.id" :label="p.name" :value="p.id" />
+                </el-select>
+                <el-select v-model="residenceCityId" placeholder="市" style="width:160px" clearable :disabled="!residenceProvinceId" @change="onResidenceCityChange">
+                  <el-option v-for="c in residenceCities" :key="c.id" :label="c.name" :value="c.id" />
+                </el-select>
+                <el-select v-model="residenceDistrictId" placeholder="区/县" style="width:160px" clearable :disabled="!residenceCityId" @change="onResidenceDistrictChange">
+                  <el-option v-for="d in residenceDistricts" :key="d.id" :label="d.name" :value="d.id" />
+                </el-select>
+                <el-select v-model="residenceStreetId" placeholder="街道" style="width:160px" clearable :disabled="!residenceDistrictId">
+                  <el-option v-for="s in residenceStreets" :key="s.id" :label="s.name" :value="s.id" />
+                </el-select>
+              </div>
+            </el-form-item>
           </el-form>
         </el-tab-pane>
         <el-tab-pane label="个性 &amp; 择偶" name="personality">
@@ -756,7 +787,11 @@
             </el-row>
             <el-row :gutter="12">
               <el-col :span="8">
-                <el-form-item label="住房要求"><el-input v-model="editForm.housingRequirement" placeholder="如 已购房" /></el-form-item>
+                <el-form-item label="住房要求">
+                  <el-select v-model="editForm.housingRequirement" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in HOUSING_REQUIREMENT_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="婚况要求">
@@ -971,6 +1006,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
+import { adminSystem } from '../../api/system'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
 import { formatDate } from '../../utils/date'
 import { useAdminStore } from '../../store/admin'
@@ -1150,6 +1186,7 @@ const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万',
 const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住']
 const CAR_OPTIONS = ['已购车', '未购车']
 const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
+const HOUSING_REQUIREMENT_OPTIONS = ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置']
 
 // 编辑资料 - 性格/爱好/恋爱准则/希望TA 下拉选项（与列表页保持一致）
 const editDicts = reactive<Record<string, string[]>>({
@@ -1244,7 +1281,190 @@ const operationLogs = ref<any[]>([])
 
 const tabDataLoaded: Record<string, boolean> = {}
 
-onMounted(() => { fetchDetail(); loadEditDicts() })
+// ===== 城市选择器（编辑资料弹窗）=====
+interface RegionOption { id: number; name: string; hasChildren: boolean }
+
+// 家乡
+const hometownProvinceId = ref<number | undefined>()
+const hometownCityId = ref<number | undefined>()
+const hometownDistrictId = ref<number | undefined>()
+const hometownStreetId = ref<number | undefined>()
+const hometownProvinces = ref<RegionOption[]>([])
+const hometownCities = ref<RegionOption[]>([])
+const hometownDistricts = ref<RegionOption[]>([])
+const hometownStreets = ref<RegionOption[]>([])
+
+async function loadHometownProvinces() {
+  const res = await adminSystem.getRegionChildren(0)
+  hometownProvinces.value = res.data || []
+}
+
+async function onHometownProvinceChange(pid: number | undefined) {
+  hometownCityId.value = undefined
+  hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
+  hometownCities.value = []
+  hometownDistricts.value = []
+  hometownStreets.value = []
+  await nextTick()
+  if (!pid) return
+  const res = await adminSystem.getRegionChildren(pid)
+  hometownCities.value = res.data || []
+}
+
+async function onHometownCityChange(cid: number | undefined) {
+  hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
+  hometownDistricts.value = []
+  hometownStreets.value = []
+  await nextTick()
+  if (!cid) return
+  const res = await adminSystem.getRegionChildren(cid)
+  hometownDistricts.value = res.data || []
+}
+
+async function onHometownDistrictChange(did: number | undefined) {
+  hometownStreetId.value = undefined
+  hometownStreets.value = []
+  await nextTick()
+  if (!did) return
+  const res = await adminSystem.getRegionChildren(did)
+  hometownStreets.value = res.data || []
+}
+
+function buildHometownLabel(): string {
+  const p = hometownProvinces.value.find(x => x.id === hometownProvinceId.value)
+  const c = hometownCities.value.find(x => x.id === hometownCityId.value)
+  const d = hometownDistricts.value.find(x => x.id === hometownDistrictId.value)
+  const s = hometownStreets.value.find(x => x.id === hometownStreetId.value)
+  return [p?.name, c?.name, d?.name, s?.name].filter(Boolean).join(',')
+}
+
+// 居住地
+const residenceProvinceId = ref<number | undefined>()
+const residenceCityId = ref<number | undefined>()
+const residenceDistrictId = ref<number | undefined>()
+const residenceStreetId = ref<number | undefined>()
+const residenceProvinces = ref<RegionOption[]>([])
+const residenceCities = ref<RegionOption[]>([])
+const residenceDistricts = ref<RegionOption[]>([])
+const residenceStreets = ref<RegionOption[]>([])
+
+async function loadResidenceProvinces() {
+  const res = await adminSystem.getRegionChildren(0)
+  residenceProvinces.value = res.data || []
+}
+
+async function onResidenceProvinceChange(pid: number | undefined) {
+  residenceCityId.value = undefined
+  residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
+  residenceCities.value = []
+  residenceDistricts.value = []
+  residenceStreets.value = []
+  await nextTick()
+  if (!pid) return
+  const res = await adminSystem.getRegionChildren(pid)
+  residenceCities.value = res.data || []
+}
+
+async function onResidenceCityChange(cid: number | undefined) {
+  residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
+  residenceDistricts.value = []
+  residenceStreets.value = []
+  await nextTick()
+  if (!cid) return
+  const res = await adminSystem.getRegionChildren(cid)
+  residenceDistricts.value = res.data || []
+}
+
+async function onResidenceDistrictChange(did: number | undefined) {
+  residenceStreetId.value = undefined
+  residenceStreets.value = []
+  await nextTick()
+  if (!did) return
+  const res = await adminSystem.getRegionChildren(did)
+  residenceStreets.value = res.data || []
+}
+
+function buildResidenceLabel(): string {
+  const p = residenceProvinces.value.find(x => x.id === residenceProvinceId.value)
+  const c = residenceCities.value.find(x => x.id === residenceCityId.value)
+  const d = residenceDistricts.value.find(x => x.id === residenceDistrictId.value)
+  const s = residenceStreets.value.find(x => x.id === residenceStreetId.value)
+  return [p?.name, c?.name, d?.name, s?.name].filter(Boolean).join(',')
+}
+
+/**
+ * 根据「省,市,区,街道」字符串回填级联选择器
+ * 兼容历史斜杠格式和当前逗号格式
+ */
+async function matchCityLabel(label: string, type: 'hometown' | 'residence') {
+  const sep = label.includes(',') ? ',' : '/'
+  const parts = label.split(sep).map(s => s.trim()).filter(Boolean)
+  if (parts.length === 0) return
+
+  const provinces = type === 'hometown' ? hometownProvinces.value : residenceProvinces.value
+  const province = provinces.find(p => p.name === parts[0])
+  if (!province) return
+
+  if (type === 'hometown') {
+    hometownProvinceId.value = province.id
+    const res = await adminSystem.getRegionChildren(province.id)
+    hometownCities.value = res.data || []
+  } else {
+    residenceProvinceId.value = province.id
+    const res = await adminSystem.getRegionChildren(province.id)
+    residenceCities.value = res.data || []
+  }
+
+  if (parts.length >= 2) {
+    const cities = type === 'hometown' ? hometownCities.value : residenceCities.value
+    const city = cities.find(c => c.name === parts[1])
+    if (city) {
+      if (type === 'hometown') {
+        hometownCityId.value = city.id
+        const res = await adminSystem.getRegionChildren(city.id)
+        hometownDistricts.value = res.data || []
+      } else {
+        residenceCityId.value = city.id
+        const res = await adminSystem.getRegionChildren(city.id)
+        residenceDistricts.value = res.data || []
+      }
+    }
+  }
+
+  if (parts.length >= 3) {
+    const districts = type === 'hometown' ? hometownDistricts.value : residenceDistricts.value
+    const district = districts.find(d => d.name === parts[2])
+    if (district) {
+      if (type === 'hometown') {
+        hometownDistrictId.value = district.id
+        const res = await adminSystem.getRegionChildren(district.id)
+        hometownStreets.value = res.data || []
+      } else {
+        residenceDistrictId.value = district.id
+        const res = await adminSystem.getRegionChildren(district.id)
+        residenceStreets.value = res.data || []
+      }
+    }
+  }
+
+  if (parts.length >= 4) {
+    const streets = type === 'hometown' ? hometownStreets.value : residenceStreets.value
+    const street = streets.find(s => s.name === parts[3])
+    if (street) {
+      if (type === 'hometown') {
+        hometownStreetId.value = street.id
+      } else {
+        residenceStreetId.value = street.id
+      }
+    }
+  }
+}
+
+onMounted(() => { fetchDetail(); loadEditDicts(); loadHometownProvinces(); loadResidenceProvinces() })
 
 // 监听路由参数变化（同页面不同用户跳转时重新加载）
 watch(() => route.params.id, async (newId) => {
@@ -1288,7 +1508,6 @@ const avatarCacheSrc = computed(() => {
 // 加载编辑弹窗标签下拉选项（与列表页共用 dict 配置）
 async function loadEditDicts() {
   try {
-    const { adminSystem } = await import('../../api/system')
     const key = 'dict.personalityTags'
     const res = await adminSystem.getConfigByKey(key)
     if (res.data) {
@@ -1679,7 +1898,7 @@ function handleSetVip() {
 }
 
 /** 编辑资料：在当前页打开编辑弹窗，从 user.value 初始化表单 */
-function handleEditProfile() {
+async function handleEditProfile() {
   if (!user.value) return
   const u = user.value
   editForm.nickname = u.nickname || ''
@@ -1701,8 +1920,15 @@ function handleEditProfile() {
   editForm.whenMarry = u.whenMarry || ''
   editForm.zodiac = u.zodiac || ''
   editForm.constellation = u.constellation || ''
-  editForm.hometown = (u.hometown || '').replace(/\//g, ',')
-  editForm.residence = (u.residence || '').replace(/\//g, ',')
+
+  // 重置城市选择器
+  hometownProvinceId.value = undefined; hometownCityId.value = undefined
+  hometownDistrictId.value = undefined; hometownStreetId.value = undefined
+  hometownCities.value = []; hometownDistricts.value = []; hometownStreets.value = []
+  residenceProvinceId.value = undefined; residenceCityId.value = undefined
+  residenceDistrictId.value = undefined; residenceStreetId.value = undefined
+  residenceCities.value = []; residenceDistricts.value = []; residenceStreets.value = []
+
   // personalityTags 可能是结构化对象 {character:[], hobby:[], loveRule:[]} 或数组或字符串
    const pt: any = u.personalityTags
    if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
@@ -1748,6 +1974,15 @@ function handleEditProfile() {
   editForm.isRealName = (u as any).isRealName || 0
   editForm.showBasicProfile = (u as any).showBasicProfile ?? true
   editForm.delegateToPlatform = (u as any).delegateToPlatform ?? false
+
+  // 回填家乡/居住地级联选择器（失败不阻塞弹窗）
+  if (u.hometown) {
+    try { await matchCityLabel(u.hometown, 'hometown') } catch {}
+  }
+  if (u.residence) {
+    try { await matchCityLabel(u.residence, 'residence') } catch {}
+  }
+
   editDialogVisible.value = true
 }
 
@@ -1766,7 +2001,7 @@ async function handleEditSave() {
       carStatus: editForm.carStatus, maritalStatus: editForm.maritalStatus,
       onlyChild: editForm.onlyChild, whenMarry: editForm.whenMarry,
       zodiac: editForm.zodiac, constellation: editForm.constellation,
-      hometown: editForm.hometown.replace(/\//g, ','), residence: editForm.residence.replace(/\//g, ','),
+      hometown: buildHometownLabel(), residence: buildResidenceLabel(),
       personalityTags: {
         character: editForm.characterTagsArr,
         hobby: editForm.hobbyTagsArr,
