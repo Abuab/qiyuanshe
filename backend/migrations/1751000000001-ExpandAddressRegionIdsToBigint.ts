@@ -37,6 +37,16 @@ export class ExpandAddressRegionIdsToBigint1751000000001 implements MigrationInt
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    // 安全检查：确认表中没有超出 INT 范围的数据
+    const [rows] = await queryRunner.query(
+      'SELECT COUNT(*) as cnt FROM address_region WHERE id > 2147483647',
+    )
+    if (Number(rows.cnt) > 0) {
+      throw new Error(
+        '无法回滚：表中存在超出 INT 范围的街道数据，请先删除 level=4 的街道数据',
+      )
+    }
+
     await queryRunner.changeColumn(
       'address_region',
       'id',

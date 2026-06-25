@@ -91,8 +91,12 @@
           <!-- 昵称与性别 -->
           <view class="nickname-gender-row">
             <text class="nickname-large">{{ form.nickname || '--' }}</text>
-            <text v-if="form.gender === 1" class="gender-icon male">♂</text>
-            <text v-else-if="form.gender === 2" class="gender-icon female">♀</text>
+            <view v-if="form.gender === 1" class="gender-icon-wrap male">
+              <text class="gender-symbol">♂</text>
+            </view>
+            <view v-else-if="form.gender === 2" class="gender-icon-wrap female">
+              <text class="gender-symbol">♀</text>
+            </view>
           </view>
           
           <!-- 基础信息一行 -->
@@ -515,17 +519,17 @@
       :visible="showCityPicker"
       @confirm="onCityConfirm"
       @close="showCityPicker = false"
-  />
+    />
 
-  <!-- 红娘联系弹窗 -->
-  <matchmaker-popup
-    :show="showMatchmakerPopup"
-    :matchmaker="selectedMatchmaker || {}"
-    @close="showMatchmakerPopup = false"
-    @more="onNextMatchmaker"
-  />
+    <!-- 红娘联系弹窗 -->
+    <matchmaker-popup
+      :show="showMatchmakerPopup"
+      :matchmaker="selectedMatchmaker || {}"
+      @close="showMatchmakerPopup = false"
+      @more="onNextMatchmaker"
+    />
 
-  <!-- 我的特点弹窗 -->
+    <!-- 我的特点弹窗 -->
     <view class="popup-mask" v-if="showPersonalityPopup" @tap="closePersonalityPicker"></view>
     <view class="personality-popup-panel" :class="{ show: showPersonalityPopup }">
       <view class="personality-popup-header">
@@ -1620,6 +1624,9 @@ onShow(async () => {
 /* ===== 基础资料只读展示样式 ===== */
 .readonly-notice {
   margin-bottom: 20rpx;
+  background-color: #fff0f3;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
 }
 
 .readonly-notice-text {
@@ -1656,16 +1663,37 @@ onShow(async () => {
   color: #333;
 }
 
-.gender-icon {
-  font-size: 36rpx;
-  margin-left: 10rpx;
+.gender-icon-wrap {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 14rpx;
+  flex-shrink: 0;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 
   &.male {
-    color: #4A90D9;
+    background: linear-gradient(135deg, #e6f7ff, #b3dfff);
   }
 
   &.female {
-    color: #FF6B9D;
+    background: linear-gradient(135deg, #fff0f6, #ffc8d8);
+  }
+}
+
+.gender-symbol {
+  font-size: 26rpx;
+  font-weight: bold;
+  line-height: 1;
+
+  .male & {
+    color: #1890ff;
+  }
+
+  .female & {
+    color: #eb2f96;
   }
 }
 

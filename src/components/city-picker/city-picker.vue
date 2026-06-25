@@ -48,13 +48,10 @@
       </view>
 
       <!-- 列表区域 -->
-      <scroll-view class="city-list" scroll-y>
-        <!-- 加载中 -->
-        <view v-if="isLoading" class="city-loading">加载中...</view>
+      <scroll-view class="city-list" scroll-y :scroll-top="scrollTop" scroll-with-animation>
         <view
-          v-else
           v-for="item in currentList"
-          :key="item.id"
+          :key="currentLevel + '-' + item.id"
           class="city-item"
           :class="{ selected: isSelected(item) }"
           @tap="selectItem(item)"
@@ -62,8 +59,8 @@
           <text class="city-item-name">{{ item.name }}</text>
           <text v-if="isSelected(item)" class="city-item-check">✓</text>
         </view>
-        <view v-if="!isLoading && currentList.length === 0 && currentLevel === 3 && selectedDistrict" class="city-empty">该区暂无街道数据，可直接完成</view>
-        <view v-else-if="!isLoading && currentList.length === 0" class="city-empty">暂无数据</view>
+        <view v-if="currentList.length === 0 && currentLevel === 3 && selectedDistrict" class="city-empty">该区暂无街道数据，可直接完成</view>
+        <view v-else-if="currentList.length === 0" class="city-empty">暂无数据</view>
       </scroll-view>
 
       <!-- 底部按钮 -->
@@ -100,6 +97,7 @@ const emit = defineEmits<{
 const currentLevel = ref(0)
 const showPanel = ref(false)
 const isLoading = ref(false)
+const scrollTop = ref(0)
 
 // 已选择的数据
 const selectedProvince = ref<RegionItem | null>(null)
@@ -163,6 +161,7 @@ const fetchRegions = async (parentId: number) => {
 }
 
 const switchLevel = (level: number) => {
+  scrollTop.value = 0
   currentLevel.value = level
   // 回退时清除后续层级的选中状态
   if (level < 1) {
@@ -191,6 +190,7 @@ const selectItem = async (item: RegionItem) => {
 
     if (item.hasChildren) {
       cityList.value = await fetchRegions(item.id)
+      scrollTop.value = 0
       currentLevel.value = 1
     }
   } else if (currentLevel.value === 1) {
@@ -202,6 +202,7 @@ const selectItem = async (item: RegionItem) => {
 
     if (item.hasChildren) {
       districtList.value = await fetchRegions(item.id)
+      scrollTop.value = 0
       currentLevel.value = 2
     }
   } else if (currentLevel.value === 2) {
@@ -211,8 +212,7 @@ const selectItem = async (item: RegionItem) => {
 
     if (item.hasChildren) {
       streetList.value = await fetchRegions(item.id)
-      // 无论是否有街道数据，都进入街道层级；
-      // 无数据时列表区会显示"该区暂无街道数据，可直接完成"提示
+      scrollTop.value = 0
       currentLevel.value = 3
     }
   } else if (currentLevel.value === 3) {
@@ -362,8 +362,7 @@ watch(() => props.visible, (val) => {
 }
 
 .city-list {
-  flex: 1;
-  max-height: 50vh;
+  height: 600rpx;
   padding: 0 32rpx;
 }
 
