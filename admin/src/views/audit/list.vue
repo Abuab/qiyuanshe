@@ -106,7 +106,7 @@
                   </template>
                 </el-image>
               </template>
-              <!-- Voice type: show audio player + transcript -->
+              <!-- Voice type: show audio player only; AI result shown in AI column -->
               <template v-else-if="row.targetType === 'voice'">
                 <div class="voice-preview">
                   <div style="display:flex;align-items:center;gap:8px">
@@ -121,13 +121,6 @@
                     </el-button>
                     <span class="voice-duration">{{ parseVoiceDuration(row.content) }}″</span>
                   </div>
-                  <div v-if="parseVoiceTranscript(row.content)" class="voice-transcript-row" style="margin-top:4px">
-                    <span
-                      class="voice-transcript"
-                      :title="parseVoiceTranscript(row.content)"
-                    >AI 转录：{{ truncateText(parseVoiceTranscript(row.content), 30) }}</span>
-                  </div>
-                  <div v-else style="margin-top:4px" class="voice-no-transcript">AI 未配置，请人工审核</div>
                 </div>
               </template>
               <span v-else class="text-muted">{{ getContentSummary(row) }}</span>
@@ -245,16 +238,6 @@ function parseVoiceContent(content?: string): { voiceUrl?: string; duration?: nu
 function parseVoiceDuration(content?: string): number {
   return parseVoiceContent(content).duration || 0
 }
-
-function parseVoiceTranscript(content?: string): string | undefined {
-   const t = parseVoiceContent(content).transcript
-   return t ?? undefined
- }
-
-function truncateText(text: string | undefined, maxLen: number): string {
-   if (!text) return ''
-   return text.length > maxLen ? text.slice(0, maxLen) + '...' : text
- }
 
 function resolveVoiceUrl(content?: string): string {
   const { voiceUrl } = parseVoiceContent(content)
@@ -498,7 +481,7 @@ function getContentSummary(row: any): string {
 function getAiTagType(row: AuditItem) {
   if (!row.aiResult) return 'info'
   const lower = row.aiResult.toLowerCase()
-  if (lower.includes('网图') || lower.includes('风险') || lower.includes('异常')) return 'danger'
+  if (lower.includes('网图') || lower.includes('风险') || lower.includes('异常') || lower.includes('失败')) return 'danger'
   if (lower.includes('完整') || lower.includes('正常') || lower.includes('可靠')) return 'success'
   return 'warning'
 }

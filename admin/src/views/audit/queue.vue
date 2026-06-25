@@ -150,8 +150,9 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="220" fixed="right" align="center">
           <template #default="{ row }">
+            <div style="display:flex;flex-wrap:nowrap;white-space:nowrap;justify-content:center;gap:4px">
             <el-button
               type="success"
               size="small"
@@ -165,7 +166,6 @@
               type="danger"
               size="small"
               :icon="Close"
-              style="margin-left:4px"
               @click="handleReject(row)"
             >
               拒绝
@@ -174,11 +174,11 @@
               type="info"
               size="small"
               plain
-              style="margin-left:4px;margin-top:4px"
               @click="viewContext(row)"
             >
               上下文
             </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>

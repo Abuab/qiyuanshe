@@ -1484,13 +1484,16 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
 const handleSave = async () => {
   if (saving.value) return
 
-  // 上传语音，捕获上传结果（仅本地临时文件才需要上传，远程 URL 或相对路径表示已保存）
-  const isLocalTemp = voiceTempPath.value && (
-    (!voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/')) ||
-    voiceTempPath.value.includes('/tmp/')
+  // 判断 voiceTempPath 是否为需要上传的本地/临时路径
+  // 微信临时路径特征：包含 /tmp/ 或以 wxfile:// 开头
+  // 纯文件名（不以 http/https/ / 开头）也需上传
+  const isTempPath = voiceTempPath.value && (
+    voiceTempPath.value.startsWith('wxfile://') ||
+    voiceTempPath.value.match(/^https?:\/\/tmp\//) ||
+    (!voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/'))
   )
   let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
-  if (voiceEnabled.value && voiceTempPath.value && isLocalTemp) {
+  if (voiceEnabled.value && voiceTempPath.value && isTempPath) {
     voiceUploadResult = await uploadVoice()
   }
 
@@ -1542,7 +1545,7 @@ const handleSave = async () => {
       data.voiceUrl = voiceUploadResult.voiceUrl
       data.voiceAuditStatus = 0
       data.voiceDuration = vd
-    } else if (voiceStatus.value === 'done' && voiceTempPath.value && !isLocalTemp) {
+    } else if (voiceStatus.value === 'done' && voiceTempPath.value && !isTempPath) {
       // 已保存的语音（URL 为 http 或 / 前缀），保持原值，防御 -1
       data.voiceUrl = voiceTempPath.value
       data.voiceAuditStatus = Math.max(0, voiceAuditStatus.value ?? 0)

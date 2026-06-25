@@ -714,7 +714,13 @@ export class UserService {
     if (dto.housingRequirement !== undefined) user.housingRequirement = dto.housingRequirement
     if (dto.partnerMaritalStatus !== undefined) user.partnerMaritalStatus = dto.partnerMaritalStatus
     if (dto.acceptChildren !== undefined) user.acceptChildren = dto.acceptChildren
-    if (dto.voiceUrl !== undefined) user.voiceUrl = dto.voiceUrl
+    if (dto.voiceUrl !== undefined) {
+      // 拒绝微信临时路径：这些路径仅小程序本地有效，服务端和管理后台无法访问
+      if (this.isWechatTempPath(dto.voiceUrl)) {
+        throw new Error('语音文件未上传，请先上传语音文件')
+      }
+      user.voiceUrl = dto.voiceUrl
+    }
     if (dto.voiceAuditStatus !== undefined) user.voiceAuditStatus = dto.voiceAuditStatus
     if (dto.voiceDuration !== undefined) user.voiceDuration = dto.voiceDuration
 
@@ -789,6 +795,13 @@ export class UserService {
     user.lastActiveAt = new Date()
     await this.userRepository.save(user)
     return user
+  }
+
+  /** 检测是否为微信临时路径（仅小程序本地有效，不可持久化） */
+  private isWechatTempPath(url: string): boolean {
+    if (!url) return false
+    if (url.startsWith('wxfile://')) return true
+    return /^https?:\/\/tmp\//.test(url)
   }
 
   async getVoiceIntro(userId: number) {
