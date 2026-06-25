@@ -32,10 +32,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, any>
         if (typeof responseObj.message === 'object' && responseObj.message !== null) {
-          const inner = responseObj.message as Record<string, any>
-          message = inner.message || exception.message
-          if (inner.reasons) errorData = { reasons: inner.reasons }
-          if (typeof inner.code === 'string') code = status
+          // class-validator 返回的 message 可能是数组，例如 ["birthMonth must not be less than 1"]
+          if (Array.isArray(responseObj.message)) {
+            message = responseObj.message.join('; ')
+          } else {
+            const inner = responseObj.message as Record<string, any>
+            message = inner.message || exception.message
+            if (inner.reasons) errorData = { reasons: inner.reasons }
+            if (typeof inner.code === 'string') code = status
+          }
         } else {
           message = responseObj.message || exception.message
         }

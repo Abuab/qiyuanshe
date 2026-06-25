@@ -738,7 +738,7 @@ export class AdminUserService {
 
   async updateUser(id: number, data: Partial<User>) {
     const allowedFields = [
-      'nickname', 'avatar', 'gender', 'birthYear', 'height', 'weight',
+      'nickname', 'avatar', 'gender', 'birthYear', 'birthMonth', 'birthDay', 'height', 'weight',
       'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
       'maritalStatus', 'hometown', 'residence', 'mateRequirement',
       'isRealName', 'status', 'phone', 'tags', 'personalityTags', 'hopeTaTags', 'adminRemark',
