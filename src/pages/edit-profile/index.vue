@@ -1435,10 +1435,14 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
         fail: reject,
       })
     })
-    if (res.code === 0 && res.data) {
+    // NestJS Result.success() 返回 code: 200
+    if ((res.code === 0 || res.code === 200) && res.data) {
       voiceAuditStatus.value = res.data.auditStatus
       return { voiceUrl: res.data.voiceUrl, auditStatus: res.data.auditStatus }
     }
+    // 上传失败时 toast 错误信息
+    const errMsg = res?.msg || res?.message || '上传失败'
+    uni.showToast({ title: errMsg, icon: 'none', duration: 2000 })
     return {}
   } catch { return {} }
   finally { uni.hideLoading() }
@@ -1497,16 +1501,17 @@ const handleSave = async () => {
     }
 
     // 语音字段：始终同步当前状态
+    const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
     if (voiceUploadResult.voiceUrl) {
       // 新上传的语音
       data.voiceUrl = voiceUploadResult.voiceUrl
       data.voiceAuditStatus = 0
-      data.voiceDuration = voiceDuration.value
+      data.voiceDuration = vd
     } else if (voiceStatus.value === 'done' && voiceTempPath.value && !isLocalTemp) {
       // 已保存的语音（URL 为 http 或 / 前缀），保持原值
       data.voiceUrl = voiceTempPath.value
       data.voiceAuditStatus = voiceAuditStatus.value
-      data.voiceDuration = voiceDuration.value
+      data.voiceDuration = vd
     } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
       // 用户删除了之前保存的语音
       data.voiceUrl = ''

@@ -67,7 +67,7 @@
             <view v-if="voiceData.auditStatus === 1" class="voice-right">
               <text class="voice-duration">{{ voiceData.duration }}″</text>
               <view class="voice-play-btn" @tap="toggleVoicePlay">
-                <uni-icons :type="isVoicePlaying ? 'pause' : 'play'" size="40rpx" color="#FF6B6B"></uni-icons>
+                <text class="voice-play-text">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
               </view>
             </view>
           </view>
@@ -1233,4 +1233,5 @@ $text-hint: #999999;
 .voice-right { margin-left: auto; display: flex; align-items: center; }
 .voice-duration { font-size: 28rpx; color: #666666; }
 .voice-play-btn { margin-left: 16rpx; }
+.voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 </style>

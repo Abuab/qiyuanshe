@@ -715,7 +715,12 @@ export class UserService {
     if (dto.voiceDuration !== undefined) user.voiceDuration = dto.voiceDuration
 
     // 语音审核：当 voiceUrl 非空且 voiceAuditStatus 为 0（待审核）时，创建待审核记录
+    // 先关闭该用户所有旧的 PENDING 语音审核记录，确保一个用户只有一条有效的 PENDING
     if (dto.voiceUrl && dto.voiceAuditStatus === 0) {
+      await this.auditLogRepository.update(
+        { targetType: 'voice', targetId: userId, action: 'PENDING' },
+        { action: 'CANCELLED' } as any,
+      )
       await this.auditLogRepository.save(
         this.auditLogRepository.create({
           targetType: 'voice',
@@ -759,7 +764,7 @@ export class UserService {
     return {
       voiceUrl: user.voiceUrl,
       duration: user.voiceDuration || 0,
-      auditStatus: user.voiceAuditStatus ?? 1,
+      auditStatus: user.voiceAuditStatus,
     }
   }
 

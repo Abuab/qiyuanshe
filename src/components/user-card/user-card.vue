@@ -22,9 +22,7 @@
           <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
-          <text v-if="voiceEnabled && user.hasVoice" class="voice-icon">
-            <uni-icons type="mic-filled" size="16rpx" color="#FF6B6B"></uni-icons>
-          </text>
+          <text v-if="voiceEnabled && user.hasVoice" class="voice-icon">🎤</text>
         </view>
         <view v-if="user.isRealName" class="real-name-badge">
           <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />

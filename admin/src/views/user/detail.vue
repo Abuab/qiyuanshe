@@ -106,7 +106,7 @@
                         <el-icon :size="14"><VideoPlay /></el-icon>
                       </el-button>
                       <span class="voice-dur">{{ user.voiceDuration || 0 }}″</span>
-                      <audio ref="adminVoiceAudio" :src="fullVoiceUrl" style="display:none" />
+                      <audio :ref="onAdminVoiceAudioRef" :src="fullVoiceUrl" style="display:none" />
                     </div>
                   </template>
                   <el-tag v-else-if="user.voiceAuditStatus === 0" type="warning" size="small">审核中</el-tag>
@@ -1025,16 +1025,34 @@ const fullVoiceUrl = computed(() => {
   if (!user.value?.voiceUrl) return ''
   const url = user.value.voiceUrl
   if (url.startsWith('http')) return url
-  // 相对路径拼接 STATIC_BASE_URL
   const base = (import.meta as any).env?.VITE_STATIC_BASE_URL || ''
   return base ? base.replace(/\/$/, '') + url : url
 })
+function onAdminVoiceAudioRef(el: any) {
+  adminVoiceAudio.value = el as HTMLAudioElement | null
+}
 function toggleAdminVoicePlay() {
   const audio = adminVoiceAudio.value
   if (!audio) return
-  if (isAdminVoicePlaying.value) { audio.pause(); isAdminVoicePlaying.value = false; return }
-  audio.play(); isAdminVoicePlaying.value = true
+  if (isAdminVoicePlaying.value) {
+    audio.pause()
+    isAdminVoicePlaying.value = false
+    return
+  }
+  const playPromise = audio.play()
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
+      isAdminVoicePlaying.value = true
+    }).catch((err) => {
+      console.error('语音播放失败:', err?.message || err)
+      isAdminVoicePlaying.value = false
+    })
+  }
   audio.onended = () => { isAdminVoicePlaying.value = false }
+  audio.onerror = () => {
+    console.error('音频加载失败')
+    isAdminVoicePlaying.value = false
+  }
 }
 
 const vipDialogVisible = ref(false)
