@@ -1485,7 +1485,10 @@ const handleSave = async () => {
   if (saving.value) return
 
   // 上传语音，捕获上传结果（仅本地临时文件才需要上传，远程 URL 或相对路径表示已保存）
-  const isLocalTemp = !voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/')
+  const isLocalTemp = voiceTempPath.value && (
+    (!voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/')) ||
+    voiceTempPath.value.includes('/tmp/')
+  )
   let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
   if (voiceEnabled.value && voiceTempPath.value && isLocalTemp) {
     voiceUploadResult = await uploadVoice()

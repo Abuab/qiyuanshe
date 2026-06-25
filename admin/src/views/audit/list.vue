@@ -109,23 +109,25 @@
               <!-- Voice type: show audio player + transcript -->
               <template v-else-if="row.targetType === 'voice'">
                 <div class="voice-preview">
-                  <el-button
-                    type="primary"
-                    link
-                    :icon="VideoPlay"
-                    :loading="voicePlayingId === row.id"
-                    @click="toggleVoicePlay(row)"
-                  >
-                    {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
-                  </el-button>
-                  <span class="voice-duration">{{ parseVoiceDuration(row.content) }}″</span>
-                  <div v-if="parseVoiceTranscript(row.content)" class="voice-transcript-row">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <el-button
+                      type="primary"
+                      link
+                      :icon="VideoPlay"
+                      :loading="voicePlayingId === row.id"
+                      @click="toggleVoicePlay(row)"
+                    >
+                      {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
+                    </el-button>
+                    <span class="voice-duration">{{ parseVoiceDuration(row.content) }}″</span>
+                  </div>
+                  <div v-if="parseVoiceTranscript(row.content)" class="voice-transcript-row" style="margin-top:4px">
                     <span
                       class="voice-transcript"
                       :title="parseVoiceTranscript(row.content)"
                     >AI 转录：{{ truncateText(parseVoiceTranscript(row.content), 30) }}</span>
                   </div>
-                  <div v-else class="voice-no-transcript">AI 未配置，请人工审核</div>
+                  <div v-else style="margin-top:4px" class="voice-no-transcript">AI 未配置，请人工审核</div>
                 </div>
               </template>
               <span v-else class="text-muted">{{ getContentSummary(row) }}</span>

@@ -181,11 +181,10 @@
                 </el-table-column>
                 <el-table-column label="操作类型" width="120">
                   <template #default="{ row }">
-                    <el-tag :type="getOpLogTypeColor(row.actionType)" size="small">{{ getOpLogTypeLabel(row.actionType) }}</el-tag>
+                    <el-tag :type="getOpLogTypeColor(row.action)" size="small">{{ getOpLogTypeLabel(row.action) }}</el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column prop="content" label="操作内容" min-width="200" show-overflow-tooltip />
-                <el-table-column prop="ip" label="IP" width="140" />
               </el-table>
               <div v-else class="text-content text-muted" style="text-align:center;padding:40px 0">暂无操作日志数据</div>
             </div>
@@ -2406,39 +2405,37 @@ async function handleSaveNote() {
 
 // ===== 操作日志函数 =====
 
-/** 加载操作日志：优先调用后端 API，失败则展示占位文本 */
+/** 加载操作日志：调用聊天监控模块的操作日志接口 */
 async function loadOpLogs() {
   if (!user.value) return
   tabLoading.opLogs = true
   try {
-    // 尝试调用后端操作日志接口
-    const res = await (adminUsers as any).getOpLogs(user.value.id)
+    const res = await adminChat.getOperationLogs({ targetUserId: user.value.id })
     if (res && res.success && res.data) {
-      operationLogs.value = Array.isArray(res.data) ? res.data : []
+      operationLogs.value = Array.isArray(res.data.items) ? res.data.items : []
     } else {
       operationLogs.value = []
     }
   } catch {
-    // 后端操作日志接口不存在，展示占位文本
     operationLogs.value = []
   }
   finally { tabLoading.opLogs = false }
 }
 
-function getOpLogTypeLabel(actionType: string) {
+function getOpLogTypeLabel(action: string) {
   const map: Record<string, string> = {
-    login: '登录', profile_update: '修改资料', recharge: '充值',
-    vip_change: 'VIP开通', audit_change: '审核变更', register: '注册',
+    view_chat: '查看聊天', send_proxy_msg: '代发消息',
+    start_monitor: '开始监控', end_monitor: '结束监控',
   }
-  return map[actionType] || actionType
+  return map[action] || action
 }
 
-function getOpLogTypeColor(actionType: string) {
+function getOpLogTypeColor(action: string) {
   const map: Record<string, string> = {
-    login: 'success', profile_update: '', recharge: 'warning',
-    vip_change: 'danger', audit_change: 'primary', register: 'info',
+    view_chat: '', send_proxy_msg: 'warning',
+    start_monitor: 'success', end_monitor: 'info',
   }
-  return map[actionType] || 'info'
+  return map[action] || 'info'
 }
 </script>
 

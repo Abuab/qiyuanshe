@@ -43,9 +43,9 @@ export class NotifyChannelService {
       return
     }
 
-    // 检查是否需要通知此类型
+    // 检查是否需要通知此类型（未配置类型列表时允许所有类型）
     const types = config.notifyTypes || []
-    if (!types.includes(type)) {
+    if (types.length > 0 && !types.includes(type)) {
       this.logger.log(`通知类型 ${type} 未在配置中勾选，跳过发送`)
       await this.writeLog(type, '', false, `通知类型 ${type} 未勾选`, userId, userNickname, source || type, content)
       return
