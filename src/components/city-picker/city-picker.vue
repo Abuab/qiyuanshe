@@ -42,7 +42,8 @@
         <text
           v-if="breadcrumb.length >= 4"
           class="bread-item"
-          :class="{ active: false }"
+          :class="{ active: currentLevel > 3 }"
+          @tap="switchLevel(3)"
         >{{ breadcrumb[3] }}</text>
       </view>
 
