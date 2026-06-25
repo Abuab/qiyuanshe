@@ -965,7 +965,7 @@ onMounted(async () => {
     // 恢复语音状态：只要 voiceUrl 有值就回显
     if (info.voiceUrl && info.voiceUrl !== '') {
       voiceTempPath.value = info.voiceUrl
-      voiceAuditStatus.value = info.voiceAuditStatus ?? 0
+      voiceAuditStatus.value = Math.max(0, info.voiceAuditStatus ?? 0)
       voiceDuration.value = info.voiceDuration || 0
       voiceStatus.value = 'done'
       hadVoiceSaved.value = true
@@ -1405,7 +1405,7 @@ function startRecord() {
     voiceTempPath.value = res.tempFilePath
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
-    voiceAuditStatus.value = -1
+    voiceAuditStatus.value = 0  // 新录制的语音，审核状态为待审核
   })
 }
 
@@ -1435,7 +1435,7 @@ function deleteVoice() {
   voiceStatus.value = 'idle'
   voiceTempPath.value = ''
   voiceDuration.value = 0
-  voiceAuditStatus.value = -1
+  voiceAuditStatus.value = 0  // 清空为合法值，避免 -1 触发后端校验
   // hadVoiceSaved 保持 true，以便保存时清除服务端数据
 }
 
@@ -1540,18 +1540,20 @@ const handleSave = async () => {
       data.voiceAuditStatus = 0
       data.voiceDuration = vd
     } else if (voiceStatus.value === 'done' && voiceTempPath.value && !isLocalTemp) {
-      // 已保存的语音（URL 为 http 或 / 前缀），保持原值
+      // 已保存的语音（URL 为 http 或 / 前缀），保持原值，防御 -1
       data.voiceUrl = voiceTempPath.value
-      data.voiceAuditStatus = voiceAuditStatus.value
+      data.voiceAuditStatus = Math.max(0, voiceAuditStatus.value ?? 0)
       data.voiceDuration = vd
     } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
-      // 用户删除了之前保存的语音
+      // 用户删除了之前保存的语音，清空数据库
       data.voiceUrl = ''
+      data.voiceAuditStatus = 0
+      data.voiceDuration = 0
     }
     // else: 从未录制过语音，不提交语音字段
 
     // 清理 null 值：@Type(() => Number) 会将 null → 0，导致 @Min(1) 验证失败
-    const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight']
+    const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight', 'voiceAuditStatus', 'voiceDuration']
     for (const key of numericKeys) {
       if ((data as any)[key] == null) delete (data as any)[key]
     }
@@ -1606,7 +1608,7 @@ onShow(async () => {
       // 恢复语音状态：只要 voiceUrl 有值就回显
       if (profile.voiceUrl && profile.voiceUrl !== '' && voiceStatus.value !== 'recording') {
         voiceTempPath.value = profile.voiceUrl
-        voiceAuditStatus.value = profile.voiceAuditStatus ?? 0
+        voiceAuditStatus.value = Math.max(0, profile.voiceAuditStatus ?? 0)
         voiceDuration.value = profile.voiceDuration || 0
         voiceStatus.value = 'done'
         hadVoiceSaved.value = true
