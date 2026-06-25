@@ -27,3 +27,37 @@ export function normalizeImageUrl(url: string | undefined | null): string {
   // 其他 HTTP URL（非 IP）直接放行
   return url
 }
+
+/** 不可用的外部头像域名 */
+const EXTERNAL_AVATAR_DOMAINS = ['api.dicebear.com']
+
+/**
+ * 将数据库 avatar 字段解析为完整可访问 URL。
+ * - 空值返回空字符串
+ * - 已是以 http/https 开头的完整 URL 直接返回
+ * - 相对路径使用 STATIC_BASE_URL 或 API_BASE_URL 拼接
+ */
+export function resolveAvatarUrl(url: string | undefined | null): string {
+  if (!url) return ''
+
+  // 过滤国内不可访问的外部头像域名
+  try {
+    const hostname = new URL(url).hostname
+    if (EXTERNAL_AVATAR_DOMAINS.includes(hostname)) return ''
+  } catch {
+    // 不是完整 URL，继续按相对路径处理
+  }
+
+  // 完整 URL 直接返回
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  // data URI 直接返回
+  if (url.startsWith('data:')) return url
+
+  // 相对路径：使用 STATIC_BASE_URL 或 API_BASE_URL 拼接
+  const baseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
+  if (!baseUrl) {
+    return url.startsWith('/') ? url : `/${url}`
+  }
+  return `${baseUrl}/${url.replace(/^\//, '')}`
+}

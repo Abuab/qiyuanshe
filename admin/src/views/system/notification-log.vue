@@ -142,34 +142,36 @@
             <span>{{ row.adminName || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button
-              v-if="row.success === 0"
-              type="primary"
-              size="small"
-              plain
-              :loading="row._retrying"
-              @click="retrySend(row)"
-            >
-              重试
-            </el-button>
-            <el-button
-              v-if="row.success === 2 || (row.notifyType && row.id)"
-              type="warning"
-              size="small"
-              @click="goAudit(row)"
-            >
-              去处理
-            </el-button>
-            <el-button
-              type="info"
-              size="small"
-              plain
-              @click="viewDetail(row)"
-            >
-              详情
-            </el-button>
+            <div class="operation-buttons">
+              <el-button
+                v-if="row.success === 0"
+                type="primary"
+                size="small"
+                plain
+                :loading="row._retrying"
+                @click="retrySend(row)"
+              >
+                重试
+              </el-button>
+              <el-button
+                v-if="row.success === 2 || (row.notifyType && row.id)"
+                type="warning"
+                size="small"
+                @click="goAudit(row)"
+              >
+                去处理
+              </el-button>
+              <el-button
+                type="info"
+                size="small"
+                plain
+                @click="viewDetail(row)"
+              >
+                详情
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -423,6 +425,13 @@ onMounted(() => { fetchLogs() })
 }
 .user-nickname { font-size: 13px; color: #303133; }
 .text-muted { color: #909399; }
+.operation-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
 
 .detail-content {
   white-space: pre-wrap; word-break: break-all;

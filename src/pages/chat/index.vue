@@ -347,9 +347,8 @@ const fetchMessages = async (isLoadMore = false) => {
     console.log('[Chat] fetchMessages noMore=', noMore.value)
 
     if (!isLoadMore) {
-      // 首次加载：nextTick 等 DOM 渲染后滚动到底部，再加 300ms fallback
+      // 首次加载：nextTick 等 DOM 渲染后滚动到底部
       nextTick(() => scrollToBottom())
-      setTimeout(() => scrollToBottom(), 300)
     }
   } catch (e) {
     logger.error('fetch messages error', e)
@@ -376,6 +375,7 @@ const handleSend = async () => {
   const content = inputContent.value.trim()
   inputContent.value = ''
   isSending.value = true
+  const tempId = --tempMsgIdCounter
 
   try {
     await request({
@@ -388,7 +388,7 @@ const handleSend = async () => {
     // 乐观更新：将消息追加到末尾（最新在下方）
     showNewMsgTip.value = false
     messages.value.push({
-      id: tempMsgIdCounter--,
+      id: tempId,
       fromUserId: userStore.userInfo?.id || 0,
       toUserId: toUserId.value,
       content,
@@ -402,6 +402,7 @@ const handleSend = async () => {
     nextTick(() => scrollToBottom())
   } catch (e: any) {
     logger.error('send message error', e)
+    messages.value = messages.value.filter(m => m.id !== tempId)
     inputContent.value = content
     const errMsg = e?.message || '发送失败'
     uni.showToast({ title: errMsg, icon: 'none', duration: 2000 })

@@ -160,6 +160,7 @@ export class AdminChatController {
       toUserId: message.toUserId,
       content: message.content,
       type: message.type,
+      isMine: false,
       isProxy: 1,
       proxyName: operatorName,
       createdAt: message.createdAt?.toISOString(),

@@ -242,6 +242,8 @@ function parseVoiceDuration(content?: string): number {
 function resolveVoiceUrl(content?: string): string {
   const { voiceUrl } = parseVoiceContent(content)
   if (!voiceUrl) return ''
+  // 拒绝微信临时路径（仅小程序本地有效，管理后台无法访问）
+  if (/^https?:\/\/tmp\//i.test(voiceUrl) || voiceUrl.startsWith('wxfile://')) return ''
   if (voiceUrl.startsWith('http://') || voiceUrl.startsWith('https://')) return voiceUrl
   // 相对路径补全 API 基础域名
   const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
@@ -251,7 +253,10 @@ function resolveVoiceUrl(content?: string): string {
 
 function toggleVoicePlay(row: AuditItem) {
   const url = resolveVoiceUrl(row.content)
-  if (!url) return
+  if (!url) {
+    ElMessage.warning('语音文件已失效，请通知用户重新上传')
+    return
+  }
 
   // 停止当前播放
   if (voiceAudio.value) {

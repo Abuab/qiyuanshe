@@ -1417,11 +1417,19 @@ function stopRecord() {
 
 function togglePlayVoice() {
   if (isVoicePlaying.value) { stopVoicePlay(); return }
+  if (!voiceTempPath.value) {
+    uni.showToast({ title: '语音文件不存在', icon: 'none' })
+    return
+  }
   innerAudioCtx = uni.createInnerAudioContext()
   innerAudioCtx.src = voiceTempPath.value
   innerAudioCtx.onPlay(() => { isVoicePlaying.value = true })
-  innerAudioCtx.onEnded(() => { isVoicePlaying.value = false })
-  innerAudioCtx.onError(() => { isVoicePlaying.value = false })
+  innerAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
+  innerAudioCtx.onError((err: any) => {
+    console.error('[EditProfile] play voice error', err, 'src=', voiceTempPath.value)
+    isVoicePlaying.value = false
+    uni.showToast({ title: '语音播放失败', icon: 'none' })
+  })
   innerAudioCtx.play()
 }
 
@@ -1485,15 +1493,15 @@ const handleSave = async () => {
   if (saving.value) return
 
   // 判断 voiceTempPath 是否为需要上传的本地/临时路径
-  // 微信临时路径特征：包含 /tmp/ 或以 wxfile:// 开头
-  // 纯文件名（不以 http/https/ / 开头）也需上传
-  const isTempPath = voiceTempPath.value && (
-    voiceTempPath.value.startsWith('wxfile://') ||
-    voiceTempPath.value.match(/^https?:\/\/tmp\//) ||
-    (!voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/'))
-  )
+  // 微信临时路径特征：以 wxfile:// 开头、或以 http(s)://tmp/ 开头、或不以 http/https/ / 开头的本地路径
+  const voicePath = voiceTempPath.value || ''
+  const isTempPath =
+    !!voicePath &&
+    (/^https?:\/\/tmp\//i.test(voicePath) ||
+      /^wxfile:\/\//i.test(voicePath) ||
+      (!voicePath.startsWith('http') && !voicePath.startsWith('/')))
   let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
-  if (voiceEnabled.value && voiceTempPath.value && isTempPath) {
+  if (voiceEnabled.value && voicePath && isTempPath) {
     voiceUploadResult = await uploadVoice()
   }
 
@@ -1611,8 +1619,11 @@ onShow(async () => {
         form.value.avatar = profile.avatar
         form.value.avatarReviewStatus = 1
       }
-      // 恢复语音状态：只要 voiceUrl 有值就回显
-      if (profile.voiceUrl && profile.voiceUrl !== '' && voiceStatus.value !== 'recording') {
+      // 恢复语音状态：过滤掉已失效的微信临时路径（旧数据无法播放，需重新录制）
+      const isTempVoiceUrl =
+        !!profile.voiceUrl &&
+        (/^https?:\/\/tmp\//i.test(profile.voiceUrl) || profile.voiceUrl.startsWith('wxfile://'))
+      if (profile.voiceUrl && profile.voiceUrl !== '' && !isTempVoiceUrl && voiceStatus.value !== 'recording') {
         voiceTempPath.value = profile.voiceUrl
         voiceAuditStatus.value = Math.max(0, profile.voiceAuditStatus ?? 0)
         voiceDuration.value = profile.voiceDuration || 0

@@ -176,7 +176,9 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (path.startsWith('/static/')) return path
   if (path.startsWith('data:')) return path
 
-  const serverBase = getServerBaseUrl()
+  // 优先使用独立的静态资源域名（CDN/OSS），否则回退到 API 域名
+  const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
+  const serverBase = (viteEnv?.VITE_STATIC_BASE_URL || getServerBaseUrl()).replace(/\/$/, '')
 
   if (path.startsWith('/uploads/')) {
     return serverBase + path

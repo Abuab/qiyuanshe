@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
+import { resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
 export class AdminChatService {
@@ -76,8 +77,8 @@ export class AdminChatService {
       toUserId: Number(r.toUserId),
       fromNickname: r.fromNickname,
       toNickname: r.toNickname,
-      fromAvatar: r.fromAvatar,
-      toAvatar: r.toAvatar,
+      fromAvatar: resolveAvatarUrl(r.fromAvatar),
+      toAvatar: resolveAvatarUrl(r.toAvatar),
       lastMessage: r.lastMessage,
       messageType: r.messageType,
       lastTime: r.lastTime ? new Date(r.lastTime).toISOString() : null,
@@ -125,6 +126,12 @@ export class AdminChatService {
       console.log('[AdminChat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
+    // 将关联用户头像解析为完整 URL（兼容数据库中遗留的相对路径）
+    list.forEach((msg: any) => {
+      if (msg.fromUser) msg.fromUser.avatar = resolveAvatarUrl(msg.fromUser.avatar)
+      if (msg.toUser) msg.toUser.avatar = resolveAvatarUrl(msg.toUser.avatar)
+    })
+
     return { list, page, limit, total }
   }
 
@@ -143,12 +150,20 @@ export class AdminChatService {
         { u1: userId, u2: targetUserId },
       )
       .orderBy('msg.createdAt', 'ASC')
+      .addOrderBy('msg.id', 'ASC')
 
     if (lastMessageId > 0) {
       qb.andWhere('msg.id > :lastId', { lastId: lastMessageId })
     }
 
     const list = await qb.getMany()
+
+    // 将关联用户头像解析为完整 URL
+    list.forEach((msg: any) => {
+      if (msg.fromUser) msg.fromUser.avatar = resolveAvatarUrl(msg.fromUser.avatar)
+      if (msg.toUser) msg.toUser.avatar = resolveAvatarUrl(msg.toUser.avatar)
+    })
+
     return { list }
   }
 
@@ -194,7 +209,7 @@ export class AdminChatService {
       return {
         userId: peerUserId,
         nickname: isFrom ? r.toUser_nickname || r.to_nickname : r.fromUser_nickname || r.from_nickname,
-        avatar: isFrom ? r.toUser_avatar || r.to_avatar : r.fromUser_avatar || r.from_avatar,
+        avatar: resolveAvatarUrl(isFrom ? r.toUser_avatar || r.to_avatar : r.fromUser_avatar || r.from_avatar),
         lastMessage: r.m_content,
         messageType: r.m_type,
         lastTime: r.m_createdAt ? new Date(r.m_createdAt).toISOString() : null,

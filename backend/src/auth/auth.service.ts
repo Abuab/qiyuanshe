@@ -12,17 +12,7 @@ import { AgreementLogStorageService } from '../agreement-log-storage/agreement-l
 import { calcProfileScore } from '../common/profile-score'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
-
-/** 过滤国内不可访问的外部头像域名，避免小程序渲染层报 Failed to load image */
-const EXTERNAL_AVATAR_DOMAINS = ['api.dicebear.com']
-function safeAvatarUrl(url: string | undefined | null): string {
-  if (!url) return ''
-  try {
-    const hostname = new URL(url).hostname
-    if (EXTERNAL_AVATAR_DOMAINS.includes(hostname)) return ''
-  } catch {}
-  return url
-}
+import { resolveAvatarUrl } from '../common/image-url'
 
 interface WechatSession {
   openid: string
@@ -365,7 +355,7 @@ export class AuthService {
       userId: user.id,
       id: user.id,
       nickname: user.nickname,
-      avatar: safeAvatarUrl(user.avatar),
+      avatar: resolveAvatarUrl(user.avatar),
       avatarReviewStatus: user.avatarReviewStatus,
       gender: user.gender,
       birthYear: user.birthYear,

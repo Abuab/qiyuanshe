@@ -12,6 +12,7 @@ import { RedisService } from '../common/redis.service'
 import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
+import { resolveAvatarUrl } from '../common/image-url'
 
 /** Redis Key 前缀：记录每对会话的最后一条消息 ID */
 const LAST_MSG_KEY_PREFIX = 'chat:last_msg_id'
@@ -23,16 +24,7 @@ const LAST_MSG_TTL = 86400
 const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_SEC = 60
 
-/** 过滤国内不可访问的外部头像域名 */
-const EXTERNAL_AVATAR_DOMAINS = ['api.dicebear.com']
-function safeAvatarUrl(url: string | undefined | null): string {
-  if (!url) return ''
-  try {
-    const hostname = new URL(url).hostname
-    if (EXTERNAL_AVATAR_DOMAINS.includes(hostname)) return ''
-  } catch {}
-  return url
-}
+
 
 @Injectable()
 export class ChatService implements OnModuleInit, OnModuleDestroy {
@@ -338,6 +330,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         toUserId: saved.toUserId,
         content: saved.content,
         type: saved.type,
+        isMine: false,
         isProxy: saved.isProxy,
         proxyName: saved.proxyName || null,
         createdAt: saved.createdAt?.toISOString(),
@@ -436,6 +429,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       console.log('[Chat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
+    // 将关联用户头像解析为完整 URL（兼容数据库中遗留的相对路径）
+    list.forEach((msg) => {
+      if (msg.fromUser) msg.fromUser.avatar = resolveAvatarUrl(msg.fromUser.avatar)
+      if (msg.toUser) msg.toUser.avatar = resolveAvatarUrl(msg.toUser.avatar)
+    })
+
     const messagesWithMine = list.map((msg) => ({
       ...msg,
       isMine: msg.fromUserId === userId,
@@ -470,8 +469,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         { fromUserId: userId, toUserId, id: MoreThan(afterId) },
         { fromUserId: toUserId, toUserId: userId, id: MoreThan(afterId) },
       ],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'ASC', id: 'ASC' },
       relations: ['fromUser', 'toUser'],
+    })
+
+    // 将关联用户头像解析为完整 URL
+    messages.forEach((msg) => {
+      if (msg.fromUser) msg.fromUser.avatar = resolveAvatarUrl(msg.fromUser.avatar)
+      if (msg.toUser) msg.toUser.avatar = resolveAvatarUrl(msg.toUser.avatar)
     })
 
     const result = messages.map((msg) => ({
@@ -543,7 +548,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       type: 'user',
       userId: conv.userId,
       nickname: conv.nickname,
-      avatar: safeAvatarUrl(conv.avatar),
+      avatar: resolveAvatarUrl(conv.avatar),
       lastMessage: conv.lastMessage,
       createdAt: conv.createdAt,
       unreadCount: unreadMap.get(conv.userId) || 0,
