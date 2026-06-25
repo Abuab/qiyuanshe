@@ -127,12 +127,12 @@
             <view v-if="profileData.basicInfo.hometown" class="loc-item">
               <text class="loc-dot blue">●</text>
               <text class="loc-label">户籍</text>
-              <text class="loc-val">{{ profileData.basicInfo.hometown }}</text>
+              <text class="loc-val">{{ profileData.basicInfo.hometown.replace(/\//g, ',') }}</text>
             </view>
             <view v-if="profileData.basicInfo.residence" class="loc-item">
               <text class="loc-dot orange">●</text>
               <text class="loc-label">现居</text>
-              <text class="loc-val">{{ profileData.basicInfo.residence }}</text>
+              <text class="loc-val">{{ profileData.basicInfo.residence.replace(/\//g, ',') }}</text>
             </view>
           </view>
         </view>

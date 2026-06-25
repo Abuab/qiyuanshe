@@ -74,8 +74,8 @@
               <el-descriptions-item label="住房">{{ user.housingStatus || '-' }}</el-descriptions-item>
               <el-descriptions-item label="车辆">{{ user.carStatus || '-' }}</el-descriptions-item>
               <el-descriptions-item label="婚况">{{ user.maritalStatus || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="家乡">{{ user.hometown || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="居住地">{{ user.residence || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="家乡">{{ formatAddress(user.hometown) }}</el-descriptions-item>
+              <el-descriptions-item label="居住地">{{ formatAddress(user.residence) }}</el-descriptions-item>
               <el-descriptions-item label="独生子女">{{ user.onlyChild || '-' }}</el-descriptions-item>
               <el-descriptions-item label="何时结婚">{{ user.whenMarry || '-' }}</el-descriptions-item>
               <el-descriptions-item label="属相">{{ user.zodiac || '-' }}</el-descriptions-item>
@@ -959,6 +959,12 @@ function goToUserDetail(userId: number) {
   router.push(`/user/detail/${userId}`)
 }
 
+/** 兼容历史斜杠格式数据，展示时统一为逗号分隔 */
+function formatAddress(addr?: string): string {
+  if (!addr) return '-'
+  return addr.replace(/\//g, ',')
+}
+
 const hasMateRequirement = computed(() => {
   const u = user.value
   if (!u) return false
@@ -1536,8 +1542,8 @@ function handleEditProfile() {
   editForm.whenMarry = u.whenMarry || ''
   editForm.zodiac = u.zodiac || ''
   editForm.constellation = u.constellation || ''
-  editForm.hometown = u.hometown || ''
-  editForm.residence = u.residence || ''
+  editForm.hometown = (u.hometown || '').replace(/\//g, ',')
+  editForm.residence = (u.residence || '').replace(/\//g, ',')
   editForm.personalityTags = Array.isArray(u.personalityTags) ? u.personalityTags.join(',') : (u.personalityTags || '')
   editForm.hopeTaTags = Array.isArray(u.hopeTaTags) ? u.hopeTaTags.join(',') : (u.hopeTaTags || '')
   editForm.partnerAgeRange = u.partnerAgeRange || ''
@@ -1568,7 +1574,7 @@ async function handleEditSave() {
       carStatus: editForm.carStatus, maritalStatus: editForm.maritalStatus,
       onlyChild: editForm.onlyChild, whenMarry: editForm.whenMarry,
       zodiac: editForm.zodiac, constellation: editForm.constellation,
-      hometown: editForm.hometown, residence: editForm.residence,
+      hometown: editForm.hometown.replace(/\//g, ','), residence: editForm.residence.replace(/\//g, ','),
       personalityTags: editForm.personalityTags.split(',').map(s => s.trim()).filter(Boolean),
       hopeTaTags: editForm.hopeTaTags.split(',').map(s => s.trim()).filter(Boolean),
       partnerAgeRange: editForm.partnerAgeRange, partnerHeightMin: editForm.partnerHeightMin,

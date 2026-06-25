@@ -44,7 +44,7 @@
       </view>
 
       <view class="meta-row">
-        <text v-if="user.residence || user.city" class="loc-text">📍 {{ user.residence || user.city }}</text>
+        <text v-if="user.residence || user.city" class="loc-text">📍 {{ (user.residence || user.city || '').replace(/\//g, ',') }}</text>
         <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
       </view>
 

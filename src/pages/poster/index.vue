@@ -340,7 +340,7 @@ const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: Pos
     { label: '身高', value: `:${userData.height ? (userData.height as number) + 'cm' : '---'}` },
     { label: '学历', value: `:${(userData.education as string) || '---'}` },
     { label: '月薪', value: `:${(userData.incomeRange as string) || '---'}` },
-    { label: '籍贯', value: `:${(userData.hometown as string) || '---'}` },
+    { label: '籍贯', value: `:${((userData.hometown as string) || '---').replace(/\//g, ',')}` },
   ]
 
   const colGap = 60 // 两列间距

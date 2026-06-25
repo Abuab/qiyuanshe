@@ -163,7 +163,7 @@
           <view class="section-title">现居地</view>
           <view class="location-row">
             <view class="location-picker" @tap="showResidencePicker">
-              <text class="location-text">{{ filterData.residence || '请选择' }}</text>
+              <text class="location-text">{{ (filterData.residence || '').replace(/\//g, ',') || '请选择' }}</text>
               <text class="picker-arrow">></text>
             </view>
             <view
@@ -180,7 +180,7 @@
           <view class="section-title">户籍地</view>
           <view class="location-row">
             <view class="location-picker" @tap="showHometownPicker">
-              <text class="location-text">{{ filterData.hometown || '请选择' }}</text>
+              <text class="location-text">{{ (filterData.hometown || '').replace(/\//g, ',') || '请选择' }}</text>
               <text class="picker-arrow">></text>
             </view>
             <view

@@ -896,8 +896,9 @@ onMounted(async () => {
       whenMarry: info.whenMarry || '',
       zodiac: info.zodiac || '',
       constellation: info.constellation || '',
-      residence: info.residence || info.city || '',
-      hometown: info.hometown || '',
+      // 兼容历史斜杠格式数据，统一展示为逗号分隔
+      residence: (info.residence || info.city || '').replace(/\//g, ','),
+      hometown: (info.hometown || '').replace(/\//g, ','),
       partnerAgeRange: info.partnerAgeRange || '',
       partnerHeightMin: info.partnerHeightMin || '',
       partnerEducation: info.partnerEducation || '',
@@ -1403,8 +1404,9 @@ const handleSave = async () => {
       whenMarry: form.value.whenMarry,
       zodiac: form.value.zodiac,
       constellation: form.value.constellation,
-      residence: form.value.residence.trim(),
-      hometown: form.value.hometown.trim(),
+      // 提交前统一将地址分隔符标准化为逗号
+      residence: form.value.residence.trim().replace(/\//g, ','),
+      hometown: form.value.hometown.trim().replace(/\//g, ','),
       partnerAgeRange: form.value.partnerAgeRange,
       partnerHeightMin: form.value.partnerHeightMin,
       partnerEducation: form.value.partnerEducation,

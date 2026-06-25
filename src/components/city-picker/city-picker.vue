@@ -194,7 +194,10 @@ const selectItem = async (item: RegionItem) => {
 
     if (item.hasChildren) {
       streetList.value = await fetchRegions(item.id)
-      currentLevel.value = 3
+      // 若无街道数据（如直辖市部分区县），停留在区县级，允许用户直接完成
+      if (streetList.value.length > 0) {
+        currentLevel.value = 3
+      }
     }
   } else if (currentLevel.value === 3) {
     selectedStreet.value = item
