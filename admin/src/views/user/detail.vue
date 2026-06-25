@@ -590,31 +590,35 @@
               </el-col>
             </el-row>
             <el-row :gutter="12">
+              <!-- 第一行：出生年月日 -->
               <el-col :span="8">
                 <el-form-item label="出生年份"><el-input-number v-model="editForm.birthYear" :min="1950" :max="2010" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="8">
                 <el-form-item label="月">
                   <el-select v-model="editForm.birthMonth" placeholder="月" clearable style="width:100%">
                     <el-option v-for="m in 12" :key="m" :label="m + '月'" :value="m" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="8">
                 <el-form-item label="日">
                   <el-select v-model="editForm.birthDay" placeholder="日" clearable style="width:100%">
                     <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="4">
+            </el-row>
+            <el-row :gutter="12">
+              <!-- 第二行：身高体重 -->
+              <el-col :span="12">
                 <el-form-item label="身高(cm)"><el-input-number v-model="editForm.height" :min="100" :max="250" controls-position="right" style="width:100%" /></el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="30" :max="200" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="12">
-              <el-col :span="8">
-                <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="30" :max="200" controls-position="right" style="width:100%" /></el-form-item>
-              </el-col>
               <el-col :span="12">
                 <el-form-item label="学历">
                   <el-select v-model="editForm.education" placeholder="请选择" style="width:100%">
@@ -677,11 +681,53 @@
         </el-tab-pane>
         <el-tab-pane label="个性 &amp; 择偶" name="personality">
           <el-form :model="editForm" label-width="100px" size="default">
-            <el-form-item label="性格标签">
-              <el-input v-model="editForm.personalityTags" placeholder="多个标签用逗号分隔，如：开朗,幽默,细心" />
+            <el-form-item label="性格">
+              <el-select
+                v-model="editForm.characterTagsArr"
+                placeholder="性格标签（多选）"
+                multiple
+                filterable
+                clearable
+                style="width:100%"
+              >
+                <el-option v-for="o in editDicts.characterTags" :key="o" :label="o" :value="o" />
+              </el-select>
             </el-form-item>
-            <el-form-item label="希望 TA">
-              <el-input v-model="editForm.hopeTaTags" placeholder="多个标签用逗号分隔，如：温柔,善良,有责任心" />
+            <el-form-item label="爱好">
+              <el-select
+                v-model="editForm.hobbyTagsArr"
+                placeholder="爱好标签（多选）"
+                multiple
+                filterable
+                clearable
+                style="width:100%"
+              >
+                <el-option v-for="o in editDicts.hobbyTags" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="恋爱准则">
+              <el-select
+                v-model="editForm.loveRuleTagsArr"
+                placeholder="恋爱准则（多选）"
+                multiple
+                filterable
+                clearable
+                style="width:100%"
+              >
+                <el-option v-for="o in editDicts.loveRuleTags" :key="o" :label="o" :value="o" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="希望TA">
+              <el-select
+                v-model="editForm.hopeTaTagsArr"
+                placeholder="请选择希望TA标签"
+                multiple
+                filterable
+                clearable
+                style="width:100%"
+              >
+                <el-option v-for="o in editDicts.hopeTaTags" :key="o" :label="o" :value="o" />
+              </el-select>
             </el-form-item>
             <el-divider content-position="left">择偶要求</el-divider>
             <el-row :gutter="12">
@@ -1091,6 +1137,7 @@ const editForm = reactive({
   maritalStatus: '', onlyChild: '', whenMarry: '', zodiac: '', constellation: '',
   hometown: '', residence: '',
   personalityTags: '' as string, hopeTaTags: '' as string,
+  characterTagsArr: [] as string[], hobbyTagsArr: [] as string[], loveRuleTagsArr: [] as string[], hopeTaTagsArr: [] as string[],
   partnerAgeRange: '', partnerHeightMin: '', partnerEducation: '', partnerIncome: '',
   housingRequirement: '', partnerMaritalStatus: '', acceptChildren: '',
   status: 1, isRealName: 0,
@@ -1103,6 +1150,14 @@ const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万',
 const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住']
 const CAR_OPTIONS = ['已购车', '未购车']
 const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
+
+// 编辑资料 - 性格/爱好/恋爱准则/希望TA 下拉选项（与列表页保持一致）
+const editDicts = reactive<Record<string, string[]>>({
+  characterTags: [],
+  hobbyTags: [],
+  loveRuleTags: [],
+  hopeTaTags: [],
+})
 
 // Tab data
 const tabLoading = reactive({ reports: false, blocks: false, notifications: false, answers: false, reviews: false, photos: false, chat: false, follow: false, likes: false, audit: false, finance: false, opLogs: false })
@@ -1189,7 +1244,7 @@ const operationLogs = ref<any[]>([])
 
 const tabDataLoaded: Record<string, boolean> = {}
 
-onMounted(() => { fetchDetail() })
+onMounted(() => { fetchDetail(); loadEditDicts() })
 
 // 监听路由参数变化（同页面不同用户跳转时重新加载）
 watch(() => route.params.id, async (newId) => {
@@ -1229,6 +1284,30 @@ const avatarCacheSrc = computed(() => {
   const sep = url.includes('?') ? '&' : '?'
   return url + sep + 't=' + (user.value?.updatedAt || Date.now())
 })
+
+// 加载编辑弹窗标签下拉选项（与列表页共用 dict 配置）
+async function loadEditDicts() {
+  try {
+    const { adminSystem } = await import('../../api/system')
+    const key = 'dict.personalityTags'
+    const res = await adminSystem.getConfigByKey(key)
+    if (res.data) {
+      const parsed = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        editDicts.characterTags = Array.isArray(parsed.character) ? parsed.character : []
+        editDicts.hobbyTags = Array.isArray(parsed.hobby) ? parsed.hobby : []
+        editDicts.loveRuleTags = Array.isArray(parsed.loveRule) ? parsed.loveRule : []
+      }
+    }
+    const hopeRes = await adminSystem.getConfigByKey('dict.hopeTaTags')
+    if (hopeRes.data) {
+      const parsed = typeof hopeRes.data === 'string' ? JSON.parse(hopeRes.data) : hopeRes.data
+      if (Array.isArray(parsed)) editDicts.hopeTaTags = parsed
+    }
+  } catch (e) {
+    // 加载失败不影响其他功能
+  }
+}
 
 async function fetchDetail() {
   loading.value = true
@@ -1626,18 +1705,38 @@ function handleEditProfile() {
   editForm.residence = (u.residence || '').replace(/\//g, ',')
   // personalityTags 可能是结构化对象 {character:[], hobby:[], loveRule:[]} 或数组或字符串
    const pt: any = u.personalityTags
-   if (Array.isArray(pt)) {
+   if (pt && typeof pt === 'object' && !Array.isArray(pt)) {
+     editForm.characterTagsArr = Array.isArray(pt.character) ? pt.character : []
+     editForm.hobbyTagsArr = Array.isArray(pt.hobby) ? pt.hobby : []
+     editForm.loveRuleTagsArr = Array.isArray(pt.loveRule) ? pt.loveRule : []
+     editForm.personalityTags = [...editForm.characterTagsArr, ...editForm.hobbyTagsArr, ...editForm.loveRuleTagsArr].join(',')
+   } else if (Array.isArray(pt)) {
+     editForm.characterTagsArr = pt
+     editForm.hobbyTagsArr = []
+     editForm.loveRuleTagsArr = []
      editForm.personalityTags = pt.join(',')
-   } else if (pt && typeof pt === 'object') {
-     const allTags = [...(pt.character || []), ...(pt.hobby || []), ...(pt.loveRule || [])]
-     editForm.personalityTags = allTags.join(',')
    } else if (typeof pt === 'string') {
      editForm.personalityTags = pt
+     editForm.characterTagsArr = pt ? pt.split(',').map(s => s.trim()).filter(Boolean) : []
+     editForm.hobbyTagsArr = []
+     editForm.loveRuleTagsArr = []
    } else {
      editForm.personalityTags = ''
+     editForm.characterTagsArr = []
+     editForm.hobbyTagsArr = []
+     editForm.loveRuleTagsArr = []
    }
-  const ht = u.hopeTaTags
-  editForm.hopeTaTags = Array.isArray(ht) ? ht.join(',') : (typeof ht === 'string' ? ht : '')
+  const ht: any = u.hopeTaTags
+  if (Array.isArray(ht)) {
+    editForm.hopeTaTagsArr = ht
+    editForm.hopeTaTags = ht.join(',')
+  } else if (typeof ht === 'string') {
+    editForm.hopeTaTags = ht
+    editForm.hopeTaTagsArr = ht ? ht.split(',').map((s: string) => s.trim()).filter(Boolean) : []
+  } else {
+    editForm.hopeTaTags = ''
+    editForm.hopeTaTagsArr = []
+  }
   editForm.partnerAgeRange = u.partnerAgeRange || ''
   editForm.partnerHeightMin = u.partnerHeightMin || ''
   editForm.partnerEducation = u.partnerEducation || ''
@@ -1668,8 +1767,12 @@ async function handleEditSave() {
       onlyChild: editForm.onlyChild, whenMarry: editForm.whenMarry,
       zodiac: editForm.zodiac, constellation: editForm.constellation,
       hometown: editForm.hometown.replace(/\//g, ','), residence: editForm.residence.replace(/\//g, ','),
-      personalityTags: editForm.personalityTags.split(',').map(s => s.trim()).filter(Boolean),
-      hopeTaTags: editForm.hopeTaTags.split(',').map(s => s.trim()).filter(Boolean),
+      personalityTags: {
+        character: editForm.characterTagsArr,
+        hobby: editForm.hobbyTagsArr,
+        loveRule: editForm.loveRuleTagsArr,
+      },
+      hopeTaTags: editForm.hopeTaTagsArr,
       partnerAgeRange: editForm.partnerAgeRange, partnerHeightMin: editForm.partnerHeightMin,
       partnerEducation: editForm.partnerEducation, partnerIncome: editForm.partnerIncome,
       housingRequirement: editForm.housingRequirement,

@@ -747,33 +747,38 @@
         </el-row>
 
         <el-row :gutter="16">
-          <el-col :span="7">
+          <!-- 第一行：出生年月日 -->
+          <el-col :span="8">
             <el-form-item label="出生年份">
               <el-select v-model="createForm.birthYear" placeholder="请选择" filterable clearable style="width:100%">
                 <el-option v-for="y in birthYearOptions" :key="y" :label="y + '年'" :value="y" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="8">
             <el-form-item label="月">
               <el-select v-model="createForm.birthMonth" placeholder="月" clearable style="width:100%">
                 <el-option v-for="m in 12" :key="m" :label="m + '月'" :value="m" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="5">
+          <el-col :span="8">
             <el-form-item label="日">
               <el-select v-model="createForm.birthDay" placeholder="日" clearable style="width:100%">
                 <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+        </el-row>
+
+        <el-row :gutter="16">
+          <!-- 第二行：身高体重 -->
+          <el-col :span="12">
             <el-form-item label="身高(cm)">
               <el-input-number v-model="createForm.height" :min="100" :max="250" placeholder="身高" style="width:100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="3">
+          <el-col :span="12">
             <el-form-item label="体重(kg)">
               <el-input-number v-model="createForm.weight" :min="20" :max="300" placeholder="体重" style="width:100%" />
             </el-form-item>
