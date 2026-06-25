@@ -502,7 +502,7 @@ export class UserController {
       },
     }),
   )
-  async uploadVoiceIntro(@UploadedFile() file: any, @Request() req: any) {
+  async uploadVoiceIntro(@UploadedFile() file: any) {
     if (!file) {
       return Result.error('请选择音频文件')
     }
@@ -511,13 +511,7 @@ export class UserController {
       ? `${baseUrl}/uploads/${file.filename}`
       : `/uploads/${file.filename}`
 
-    // 保存语音URL到用户资料
-    const userId = req.user.userId
-    await this.userService.updateProfile(userId, {
-      voiceUrl,
-      voiceAuditStatus: 0,
-    } as any)
-
+    // 只上传文件并返回 URL，不写入用户资料（由前端保存时统一提交）
     return Result.success({ voiceUrl, auditStatus: 0 })
   }
 

@@ -684,6 +684,8 @@ export class UserService {
     if (dto.wechat !== undefined) user.wechat = dto.wechat
     if (dto.gender !== undefined) user.gender = dto.gender
     if (dto.birthYear !== undefined) user.birthYear = dto.birthYear
+    if (dto.birthMonth !== undefined) user.birthMonth = dto.birthMonth
+    if (dto.birthDay !== undefined) user.birthDay = dto.birthDay
     if (dto.height !== undefined) user.height = dto.height
     if (dto.weight !== undefined) user.weight = dto.weight
     if (dto.education !== undefined) user.education = dto.education
@@ -707,6 +709,7 @@ export class UserService {
     if (dto.acceptChildren !== undefined) user.acceptChildren = dto.acceptChildren
     if (dto.voiceUrl !== undefined) user.voiceUrl = dto.voiceUrl
     if (dto.voiceAuditStatus !== undefined) user.voiceAuditStatus = dto.voiceAuditStatus
+    if (dto.voiceDuration !== undefined) user.voiceDuration = dto.voiceDuration
 
     // personalityTags: 支持逗号分隔字符串或数组
     if (dto.personalityTags !== undefined) {

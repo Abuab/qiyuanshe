@@ -369,6 +369,8 @@ export class AuthService {
       avatarReviewStatus: user.avatarReviewStatus,
       gender: user.gender,
       birthYear: user.birthYear,
+      birthMonth: user.birthMonth,
+      birthDay: user.birthDay,
       height: user.height,
       weight: user.weight,
       education: user.education,
@@ -407,6 +409,7 @@ export class AuthService {
       delegateToPlatform: user.delegateToPlatform ?? false,
       voiceUrl: user.voiceUrl || '',
       voiceAuditStatus: user.voiceAuditStatus,
+      voiceDuration: user.voiceDuration,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     }

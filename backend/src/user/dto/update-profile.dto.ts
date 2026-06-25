@@ -32,6 +32,20 @@ export class UpdateProfileDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
+  @Max(12)
+  birthMonth?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  birthDay?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   @Min(100)
   @Max(250)
   height?: number
@@ -149,6 +163,12 @@ export class UpdateProfileDto {
   @Min(0)
   @Max(2)
   voiceAuditStatus?: number
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  voiceDuration?: number
 
   @IsOptional()
   personalityTags?: string | string[]

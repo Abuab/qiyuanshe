@@ -52,6 +52,12 @@ export class User {
   @Column({ type: 'int', nullable: true })
   birthYear: number
 
+  @Column({ type: 'tinyint', nullable: true })
+  birthMonth: number
+
+  @Column({ type: 'tinyint', nullable: true })
+  birthDay: number
+
   get age(): number {
     if (!this.birthYear) return 0
     return new Date().getFullYear() - this.birthYear
@@ -222,6 +228,10 @@ export class User {
   /** 语音审核状态: 0=待审核, 1=已通过, 2=已拒绝, null=未录制 */
   @Column({ type: 'tinyint', nullable: true, default: null })
   voiceAuditStatus: number
+
+  /** 语音时长（秒） */
+  @Column({ type: 'int', nullable: true })
+  voiceDuration: number
 
   @CreateDateColumn()
   createdAt: Date

@@ -763,6 +763,8 @@ const form = ref({
   nickname: '',
   gender: 0,
   birthYear: undefined as number | undefined,
+  birthMonth: undefined as number | undefined,
+  birthDay: undefined as number | undefined,
   height: undefined as number | undefined,
   weight: undefined as number | undefined,
   education: '',
@@ -851,7 +853,10 @@ const onNextMatchmaker = () => {
 
 // 只读信息展示计算属性
 const birthDisplay = computed(() => {
-  return form.value.birthYear ? `${form.value.birthYear}年` : '--'
+  if (!form.value.birthYear) return '--'
+  const month = form.value.birthMonth ? `${form.value.birthMonth}月` : ''
+  const day = form.value.birthDay ? `${form.value.birthDay}日` : ''
+  return `${form.value.birthYear}年${month}${day}`
 })
 const heightDisplay = computed(() => {
   return form.value.height ? `${form.value.height}cm` : ''
@@ -929,6 +934,8 @@ onMounted(async () => {
       nickname: info.nickname || '',
       gender: info.gender ?? 0,
       birthYear: info.birthYear,
+      birthMonth: info.birthMonth,
+      birthDay: info.birthDay,
       height: info.height,
       weight: info.weight,
       education: info.education || '',
@@ -959,6 +966,7 @@ onMounted(async () => {
     if (info.voiceUrl && info.voiceAuditStatus != null) {
       voiceTempPath.value = info.voiceUrl
       voiceAuditStatus.value = info.voiceAuditStatus
+      voiceDuration.value = info.voiceDuration || 0
       voiceStatus.value = 'done'
       hadVoiceSaved.value = true
     }
@@ -1421,6 +1429,7 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
         url: baseUrl + '/users/voice-intro',
         filePath: voiceTempPath.value,
         name: 'voiceFile',
+        formData: { duration: String(voiceDuration.value) },
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (r) => { try { resolve(JSON.parse(r.data)) } catch { reject(new Error('parse')) } },
         fail: reject,
@@ -1439,9 +1448,10 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
 const handleSave = async () => {
   if (saving.value) return
 
-  // 上传语音，捕获上传结果（仅本地临时文件才需要上传，远程 URL 表示已保存）
+  // 上传语音，捕获上传结果（仅本地临时文件才需要上传，远程 URL 或相对路径表示已保存）
+  const isLocalTemp = !voiceTempPath.value.startsWith('http') && !voiceTempPath.value.startsWith('/')
   let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
-  if (voiceEnabled.value && voiceTempPath.value && !voiceTempPath.value.startsWith('http')) {
+  if (voiceEnabled.value && voiceTempPath.value && isLocalTemp) {
     voiceUploadResult = await uploadVoice()
   }
 
@@ -1459,6 +1469,8 @@ const handleSave = async () => {
       avatar: avatarToSave,
       gender: form.value.gender,
       birthYear: form.value.birthYear,
+      birthMonth: form.value.birthMonth,
+      birthDay: form.value.birthDay,
       height: form.value.height ? Number(form.value.height) : undefined,
       weight: form.value.weight ? Number(form.value.weight) : undefined,
       education: form.value.education,
@@ -1489,14 +1501,17 @@ const handleSave = async () => {
       // 新上传的语音
       data.voiceUrl = voiceUploadResult.voiceUrl
       data.voiceAuditStatus = 0
-    } else if (voiceStatus.value === 'done' && voiceTempPath.value && voiceTempPath.value.startsWith('http')) {
-      // 已保存的语音，URL 未变，保持原值（无需重新上传）
+      data.voiceDuration = voiceDuration.value
+    } else if (voiceStatus.value === 'done' && voiceTempPath.value && !isLocalTemp) {
+      // 已保存的语音（URL 为 http 或 / 前缀），保持原值
       data.voiceUrl = voiceTempPath.value
       data.voiceAuditStatus = voiceAuditStatus.value
+      data.voiceDuration = voiceDuration.value
     } else if (hadVoiceSaved.value && voiceStatus.value === 'idle') {
       // 用户删除了之前保存的语音
       data.voiceUrl = ''
       data.voiceAuditStatus = null as any
+      data.voiceDuration = null as any
     }
     // else: 从未录制过语音，不提交语音字段
 
@@ -1551,6 +1566,7 @@ onShow(async () => {
       if (profile.voiceUrl && profile.voiceAuditStatus != null && voiceStatus.value !== 'recording') {
         voiceTempPath.value = profile.voiceUrl
         voiceAuditStatus.value = profile.voiceAuditStatus
+        voiceDuration.value = profile.voiceDuration || 0
         voiceStatus.value = 'done'
         hadVoiceSaved.value = true
       }
@@ -1644,10 +1660,9 @@ onShow(async () => {
 
 /* ===== 基础资料只读展示样式 ===== */
 .readonly-notice {
-  margin-bottom: 12rpx;
+  margin: 0 24rpx;
   background-color: #fff0f3;
   padding: 16rpx 28rpx;
-  border-radius: 12rpx;
 }
 
 .readonly-notice-text {
