@@ -171,7 +171,7 @@ export class AiProviderBalanceService {
         })
         if (resp.ok) {
           const data = await resp.json()
-          return data?.data?.balance || 0
+          return data?.data?.available_balance ?? data?.data?.balance ?? 0
         }
       }
 
