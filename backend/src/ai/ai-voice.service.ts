@@ -40,6 +40,12 @@ export class AiVoiceService {
     // 解析完整的音频文件 URL
     const audioUrl = this.resolveFullUrl(voiceUrl)
 
+    // SSRF 防御：域名白名单校验
+    if (!this.isAllowedAudioHost(audioUrl)) {
+      this.logger.warn(`音频文件域名不在白名单中: ${audioUrl}`)
+      return null
+    }
+
     // 尝试调用 Provider 的 OpenAI-compatible 音频转录接口
     const TIMEOUT_MS = 30000
     const controller = new AbortController()
@@ -125,5 +131,32 @@ export class AiVoiceService {
       return baseUrl ? `${baseUrl}${voiceUrl}` : `http://localhost:3000${voiceUrl}`
     }
     return voiceUrl
+  }
+
+  /**
+   * SSRF 防御：校验音频文件 URL 的域名是否在白名单中
+   */
+  private isAllowedAudioHost(urlStr: string): boolean {
+    try {
+      const hostname = new URL(urlStr).hostname
+      const allowed = this.getAllowedHostnames()
+      return allowed.includes(hostname)
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * 获取允许下载音频文件的域名白名单
+   */
+  private getAllowedHostnames(): string[] {
+    const hosts = new Set<string>(['localhost', '127.0.0.1'])
+    for (const key of ['API_BASE_URL', 'STATIC_BASE_URL']) {
+      try {
+        const u = new URL(process.env[key] || '')
+        if (u.hostname) hosts.add(u.hostname)
+      } catch { /* ignore */ }
+    }
+    return [...hosts]
   }
 }

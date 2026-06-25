@@ -507,8 +507,10 @@ export class UserController {
       return Result.error('请选择音频文件')
     }
     const envBaseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
-    // 优先使用环境变量，否则基于请求 Host 头拼接绝对路径
-    const baseUrl = envBaseUrl || `${req.protocol}://${req.get('host')}`
+    // 优先使用环境变量，否则基于请求头拼接绝对路径（兼容反向代理）
+    const protocol = req.get('x-forwarded-proto') || req.protocol
+    const host = req.get('x-forwarded-host') || req.get('host')
+    const baseUrl = envBaseUrl || `${protocol}://${host}`
     const voiceUrl = `${baseUrl}/uploads/${file.filename}`
 
     // 只上传文件并返回 URL，不写入用户资料（由前端保存时统一提交）

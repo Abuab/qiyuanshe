@@ -721,19 +721,11 @@ export class UserService {
     // 语音审核：当 voiceUrl 非空且 voiceAuditStatus 为 0（待审核）时，创建待审核记录
     // 先关闭该用户所有旧的 PENDING 语音审核记录，确保一个用户只有一条有效的 PENDING
     if (dto.voiceUrl && dto.voiceAuditStatus === 0) {
-      // 调用 AI 转文字（不阻塞审核记录创建）
-      const transcript = await this.aiVoiceService.transcribeVoice(dto.voiceUrl)
-
-      // 构建 AI 结果展示文案
-      const aiResult = transcript
-        ? `AI转录：${transcript.length > 100 ? transcript.slice(0, 100) + '...' : transcript}`
-        : 'AI转录失败'
-
       await this.auditLogRepository.update(
         { targetType: 'voice', targetId: userId, action: 'PENDING' },
-        { action: 'CANCELLED' } as any,
+        { action: 'CANCELLED' },
       )
-      await this.auditLogRepository.save(
+      const newLog = await this.auditLogRepository.save(
         this.auditLogRepository.create({
           targetType: 'voice',
           targetId: userId,
@@ -742,12 +734,28 @@ export class UserService {
           content: JSON.stringify({
             voiceUrl: dto.voiceUrl,
             duration: dto.voiceDuration,
-            transcript,
           }),
-          aiResult,
-          aiScore: transcript ? 0.85 : 0,
+          aiResult: 'AI转录中...',
+          aiScore: 0,
         }),
       )
+
+      // AI 转录异步执行，不阻塞 updateProfile HTTP 响应
+      this.aiVoiceService.transcribeVoice(dto.voiceUrl).then((transcript) => {
+        const aiResult = transcript
+          ? `AI转录：${transcript.length > 100 ? transcript.slice(0, 100) + '...' : transcript}`
+          : 'AI转录失败'
+        const aiScore = transcript ? 0.85 : 0
+        // 更新 content 中的 transcript 字段，供前端展示完整转录文本
+        let contentObj: any = {}
+        try { contentObj = JSON.parse(newLog.content || '{}') } catch { /* ignore */ }
+        contentObj.transcript = transcript
+        this.auditLogRepository.update(newLog.id, {
+          aiResult,
+          aiScore,
+          content: JSON.stringify(contentObj),
+        }).catch(() => {})
+      }).catch(() => {})
 
       // 发送语音审核通知（参照照片/头像审核流程）
       this.notifyService.sendAuditNotify({
