@@ -88,8 +88,20 @@
               <text class="info-id"><text class="id-badge">ID</text> {{ profileData.top.userId }}</text>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ liked: profileData.top.isFollowed }" @tap="toggleFollow">
-              <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="40rpx" color="#FF6B6B"></uni-icons>
+              <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="36rpx" color="#FF6B6B"></uni-icons>
+              <text class="follow-text">关注</text>
             </view>
+          </view>
+
+          <!-- 基本资料行：年龄/身高/体重/学历（紧贴昵称下方） -->
+          <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
+            <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
+            <text v-if="profileData.basicInfo.age && profileData.basicInfo.height" class="dot">·</text>
+            <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
+            <text v-if="profileData.basicInfo.height && profileData.basicInfo.weight" class="dot">·</text>
+            <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
+            <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">|</text>
+            <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
           </view>
 
           <!-- 生日星座 + 职业 同行 -->
@@ -102,17 +114,6 @@
               <text class="chip-emoji">💼</text>
               <text>{{ profileData.basicInfo.occupation }}</text>
             </view>
-          </view>
-
-          <!-- 基本资料行：年龄/身高/体重/学历 -->
-          <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
-            <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
-            <text v-if="profileData.basicInfo.age && profileData.basicInfo.height" class="dot">·</text>
-            <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
-            <text v-if="profileData.basicInfo.height && profileData.basicInfo.weight" class="dot">·</text>
-            <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
-            <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">·</text>
-            <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
           </view>
 
           <!-- 户籍 + 现居（仅展示市+区县） -->
@@ -1258,7 +1259,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 26rpx; color: $text-hint;
+  font-size: 28rpx; color: $text-hint;
 }
 
 .id-badge {
@@ -1277,13 +1278,18 @@ $text-hint: #999999;
 // ===== 心动按钮（对标首页 user-card） =====
 .follow-btn {
   position: relative;
-  width: 72rpx; height: 72rpx;
+  width: 72rpx; height: 84rpx;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4rpx;
   transition: transform 300ms ease;
   flex-shrink: 0;
+}
+
+.follow-text {
+  font-size: 18rpx; color: #999; line-height: 1;
 }
 
 .follow-btn.liked {
