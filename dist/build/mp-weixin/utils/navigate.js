@@ -1,1 +1,0 @@
-"use strict";const e=require("../common/vendor.js"),i=["/pages/index/index","/pages/questions/index","/pages/vip/index","/pages/message-list/index","/pages/my/index"];exports.safeNavigateBack=function(n="/pages/index/index"){getCurrentPages().length>1?e.index.navigateBack({delta:1}):i.includes(n)?e.index.switchTab({url:n}):e.index.redirectTo({url:n})};

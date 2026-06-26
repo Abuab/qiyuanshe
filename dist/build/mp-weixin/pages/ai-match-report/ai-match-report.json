@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "AI 匹配报告",
-  "usingComponents": {
-    "uni-icons": "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons"
-  }
-}

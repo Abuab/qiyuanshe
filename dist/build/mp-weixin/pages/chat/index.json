@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "聊天",
-  "navigationStyle": "custom",
-  "enablePullDownRefresh": false,
-  "usingComponents": {
-    "ai-chat-skill-panel": "../../components/ai-chat-skill-panel/ai-chat-skill-panel"
-  }
-}

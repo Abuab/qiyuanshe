@@ -1,7 +1,0 @@
-{
-  "navigationBarTitleText": "筛选",
-  "enablePullDownRefresh": false,
-  "usingComponents": {
-    "filter-panel": "../../components/filter-panel/filter-panel"
-  }
-}
