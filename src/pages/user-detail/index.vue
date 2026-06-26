@@ -87,11 +87,8 @@
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
               <text class="info-id"><text class="id-badge">ID</text> {{ profileData.top.userId }}</text>
             </view>
-            <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
-              <view class="follow-icon-wrap">
-                <view class="follow-heart" />
-              </view>
-              <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
+            <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ liked: profileData.top.isFollowed }" @tap="toggleFollow">
+              <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="40rpx" color="#FF6B6B"></uni-icons>
             </view>
           </view>
 
@@ -1253,7 +1250,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: baseline; gap: 12rpx; flex: 1; min-width: 0;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1271,61 +1268,32 @@ $text-hint: #999999;
   font-weight: bold;
   color: #fff;
   background-color: #ccc;
-  padding: 2rpx 12rpx;
+  padding: 1rpx 7rpx;
   border-radius: 20rpx;
   line-height: 1.4;
   margin-right: 6rpx;
 }
 
+// ===== 心动按钮（对标首页 user-card） =====
 .follow-btn {
-  width: 80rpx; height: 100rpx; flex-shrink: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 6rpx; transition: all 0.25s ease;
-}
-
-.follow-icon-wrap {
-  width: 44rpx; height: 44rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-
-// ===== 心形（CSS 绘制，细线空心） =====
-.follow-heart {
   position: relative;
-  width: 22rpx; height: 36rpx;
-  &::before, &::after {
-    content: '';
-    position: absolute;
-    width: 22rpx; height: 36rpx;
-    border-radius: 22rpx 22rpx 0 0;
-    background: transparent;
-  }
-  &::before {
-    left: 0; top: 0;
-    border: 2rpx solid #FF8FA3;
-    transform: rotate(-45deg);
-    transform-origin: 0 100%;
-  }
-  &::after {
-    left: 0; top: 0;
-    border: 2rpx solid #FF8FA3;
-    transform: rotate(45deg);
-    transform-origin: 100% 100%;
-  }
+  width: 72rpx; height: 72rpx;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 300ms ease;
+  flex-shrink: 0;
 }
 
-.follow-btn.followed .follow-heart {
-  &::before, &::after {
-    background: #FF8FA3; border-color: #FF8FA3;
-  }
+.follow-btn.liked {
+  animation: heartBounce 300ms ease;
 }
 
-.follow-text {
-  font-size: 20rpx; color: #FF8FA3; line-height: 1;
-  transition: color 0.25s ease;
-}
-
-.follow-btn.followed .follow-text {
-  color: #FF8FA3;
+@keyframes heartBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
 }
 
 // ===== 生日星座 + 职业 同行 =====
@@ -1416,15 +1384,16 @@ $text-hint: #999999;
 
 // ===== 关于我 =====
 .about-tags-grid {
-  display: flex; flex-wrap: wrap; gap: 14rpx; margin-bottom: 22rpx;
+  display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 22rpx;
+  justify-content: flex-start;
 }
 
 .about-capsule {
-  width: calc(50% - 7rpx);
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 12rpx 20rpx;
-  background: #FFF0F3; border-radius: 28rpx;
-  font-size: 22rpx; color: #FF6B9D;
+  padding: 10rpx 18rpx;
+  background: #FFF5F7; border-radius: 28rpx;
+  font-size: 22rpx; color: #333;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1476,9 +1445,9 @@ $text-hint: #999999;
 }
 
 .partner-capsule {
-  width: calc(50% - 7rpx);
+  flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 12rpx 20rpx;
+  padding: 10rpx 18rpx;
   background: #EBF5FF; border-radius: 28rpx;
 }
 
@@ -1765,7 +1734,7 @@ $text-hint: #999999;
 }
 
 .character-line, .hope-line {
-  font-size: 26rpx; color: $text-secondary; line-height: 1.6;
+  font-size: 26rpx; color: #333; line-height: 1.6;
 }
 
 // ===== 照片引导（hero 区） =====
