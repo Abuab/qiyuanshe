@@ -9,7 +9,6 @@ import { AiSafetyService } from './ai-safety.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { User } from '../entities/User'
-import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { buildProfileGenPrompt } from './ai-profile-gen.prompt'
 import { parseJsonResponse } from './ai-common.util'
@@ -33,8 +32,6 @@ export class AiProfileGenService {
     private readonly profileRepo: Repository<AiUserProfile>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    @InjectRepository(UserTagSelection)
-    private readonly tagSelectionRepo: Repository<UserTagSelection>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepo: Repository<QuestionAnswer>,
     private readonly redis: RedisService,
@@ -47,9 +44,11 @@ export class AiProfileGenService {
    * 检查是否满足画像生成条件
    */
   async checkEligibility(userId: number): Promise<ProfileGenEligibility> {
-    const tagCount = await this.tagSelectionRepo.count({
-      where: { userId, isSelected: 1, isDeleted: 0 },
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'personalityTags'],
     })
+    const tagCount = user?.personalityTags?.length || 0
 
     const reasons: string[] = []
     if (tagCount < PROFILE_GEN_MIN_TAGS) {
@@ -258,13 +257,11 @@ export class AiProfileGenService {
   // ==================== 内部方法 ====================
 
   private async getSelectedTagNames(userId: number): Promise<string[]> {
-    const selections = await this.tagSelectionRepo.find({
-      where: { userId, isSelected: 1, isDeleted: 0 },
-      relations: ['tag'],
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['personalityTags'],
     })
-    return selections
-      .filter((s) => s.tag && s.tag.isEnabled === 1)
-      .map((s) => s.tag.name)
+    return user?.personalityTags || []
   }
 
   private async getApprovedAnswers(userId: number): Promise<{ question: string; answer: string }[]> {

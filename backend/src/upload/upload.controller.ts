@@ -83,10 +83,8 @@ export class UploadController {
       : null
     const baseUrl = cdnDomain
       || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
-    // 避免存储 IP 地址的绝对 URL；无域名时使用相对路径，由前端拼接
-    const url = baseUrl && !/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(baseUrl)
-      ? `${baseUrl}/uploads/${file.filename}`
-      : `/uploads/${file.filename}`
+    // 始终返回相对路径，由 resolveAvatarUrl() 在读取时拼接当前域名
+    const url = `/uploads/${file.filename}`
     // 记录上传者信息，用于后续追溯
     const uploaderId = req.user?.sub || req.user?.id || null
     console.log('Upload success:', file.originalname, '->', url, 'uploaderId:', uploaderId)

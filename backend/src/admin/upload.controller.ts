@@ -85,9 +85,7 @@ export class UploadController {
       : null
     const baseUrl = cdnDomain
       || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
-    const url = baseUrl
-      ? `${baseUrl}/uploads/${file.filename}`
-      : `/uploads/${file.filename}`
+    const url = `/uploads/${file.filename}`
     return Result.success({ url })
   }
 
