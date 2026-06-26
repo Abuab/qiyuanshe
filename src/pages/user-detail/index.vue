@@ -36,7 +36,7 @@
             </view>
           </view>
           <!-- 照片缩略图：叠放在背景图底部 -->
-          <view class="hero-thumbnails" v-if="_displayPhotos.length > 1">
+          <view class="hero-thumbnails" v-if="_displayPhotos.length">
             <view
               v-for="(photo, index) in _displayPhotos"
               :key="index"
@@ -83,8 +83,12 @@
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
               <text class="info-id">ID: {{ profileData.top.userId }}</text>
             </view>
-            <view v-if="!profileData.top.isSelf" class="follow-heart" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
-              <text>{{ profileData.top.isFollowed ? '❤️' : '🤍' }}</text>
+            <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
+              <uni-icons
+                :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'"
+                :size="profileData.top.isFollowed ? 36 : 38"
+                :color="profileData.top.isFollowed ? '#FFB3C1' : '#FF6B6B'"
+              />
             </view>
           </view>
 
@@ -1049,7 +1053,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; flex-direction: column; gap: 4rpx;
+  display: flex; align-items: baseline; gap: 12rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1060,10 +1064,21 @@ $text-hint: #999999;
   font-size: 24rpx; color: $text-hint;
 }
 
-.follow-heart {
-  font-size: 44rpx; flex-shrink: 0;
-  padding: 8rpx;
-  &.followed { transform: scale(1.1); }
+.follow-btn {
+  width: 72rpx; height: 72rpx; border-radius: 50%; flex-shrink: 0;
+  border: 2rpx solid #FF6B6B;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.25s ease;
+  &.followed {
+    background: #FF4D5A; border-color: #FF4D5A;
+    animation: followBounce 300ms ease;
+  }
+}
+
+@keyframes followBounce {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 // ===== 生日星座 + 职业 同行 =====
@@ -1223,11 +1238,11 @@ $text-hint: #999999;
 // ===== 底部空白 =====
 .bottom-spacer { height: 160rpx; }
 
-// ===== 底部悬浮按钮（固定） =====
+// ===== 底部悬浮按钮（固定，无卡片背景） =====
 .bottom-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
   display: flex; gap: 20rpx; padding: 16rpx 40rpx;
-  background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.05);
+  /* 无背景、无阴影，纯悬浮 */
 }
 
 .bb-btn {
