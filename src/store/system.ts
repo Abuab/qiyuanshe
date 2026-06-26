@@ -169,10 +169,10 @@ export const useSystemStore = defineStore('system', () => {
     }
   }
 
-  /** 加载 AI 功能开关配置（带5分钟缓存） */
-  const loadAiFeatureConfig = async () => {
+  /** 加载 AI 功能开关配置（带5分钟缓存，force=true 时跳过缓存） */
+  const loadAiFeatureConfig = async (force = false) => {
     const now = Date.now()
-    if (now - aiConfigLoadedAt < AI_CONFIG_CACHE_MS && aiConfigLoadedAt > 0) {
+    if (!force && now - aiConfigLoadedAt < AI_CONFIG_CACHE_MS && aiConfigLoadedAt > 0) {
       return // 缓存未过期，直接使用
     }
     try {

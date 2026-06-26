@@ -275,7 +275,7 @@ onMounted(() => {
 onShow(() => {
   loadStats()
   refreshProfile()
-  systemStore.loadAiFeatureConfig()
+  systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
 })
 
 const onRefresherRefresh = async () => {

@@ -290,13 +290,13 @@ onMounted(() => {
 
 // 修复 E：页面重新显示时立即轮询一次 + 重启定时器
 onShow(() => {
+  // 同步 AI 功能开关状态（force=true 确保每次显示都拉最新配置）
+  systemStore.loadAiFeatureConfig(true)
   if (!isPageMounted.value) return
   // 立即拉取最新消息（不等待 2.5 秒轮询）
   pollOnce()
   // 重启轮询定时器（如果之前被 onHide 停止了）
   startPolling()
-  // 同步 AI 功能开关状态
-  systemStore.loadAiFeatureConfig()
 })
 
 // 修复 A：页面隐藏时清除轮询，防止后台持续请求
