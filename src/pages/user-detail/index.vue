@@ -87,8 +87,10 @@
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
               <text class="info-id"><text class="id-badge">ID</text> {{ profileData.top.userId }}</text>
             </view>
-            <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ liked: profileData.top.isFollowed }" @tap="toggleFollow">
-              <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="36rpx" color="#FF6B6B"></uni-icons>
+            <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
+              <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
+                <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="40rpx" color="#FF6B6B"></uni-icons>
+              </view>
               <text class="follow-text">关注</text>
             </view>
           </view>
@@ -1247,11 +1249,11 @@ $text-hint: #999999;
 
 .info-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 20rpx;
+  margin-bottom: 6rpx;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1276,14 +1278,18 @@ $text-hint: #999999;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
+.follow-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 6rpx;
+  flex-shrink: 0;
+}
+
 .follow-btn {
   position: relative;
-  width: 72rpx; height: 84rpx;
+  width: 72rpx; height: 72rpx;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 4rpx 12rpx rgba(255, 107, 107, 0.3);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4rpx;
+  display: flex; align-items: center; justify-content: center;
   transition: transform 300ms ease;
   flex-shrink: 0;
 }
@@ -1326,7 +1332,7 @@ $text-hint: #999999;
 // ===== 基本资料 =====
 .basic-line {
   display: flex; align-items: center; flex-wrap: wrap;
-  font-size: 26rpx; color: $text-secondary; margin-bottom: 18rpx;
+  font-size: 26rpx; color: #333; margin-bottom: 14rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
