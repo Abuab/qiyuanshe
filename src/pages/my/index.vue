@@ -157,6 +157,22 @@
         <uni-icons type="arrowright" size="32rpx" color="#999999"></uni-icons>
       </view>
 
+      <!-- ===== AI 个人印象入口 ===== -->
+      <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-profile-card">
+        <view class="ai-profile-header">
+          <view class="ai-profile-title-row">
+            <text class="ai-profile-icon">✨</text>
+            <text class="ai-profile-label">AI 个人印象</text>
+          </view>
+          <view class="ai-profile-action" @tap="refreshMyProfileGen">
+            <text v-if="profileGenLoading" class="ai-profile-action-text">生成中...</text>
+            <text v-else class="ai-profile-action-text">{{ aiProfileText ? '刷新' : '生成' }}</text>
+          </view>
+        </view>
+        <text v-if="aiProfileText" class="ai-profile-content">{{ aiProfileText }}</text>
+        <text v-else class="ai-profile-placeholder">AI 根据你的资料生成魅力印象，让 TA 一眼看到你的亮点</text>
+      </view>
+
       <!-- ===== 认证状态 ===== -->
       <view class="auth-status-card">
         <text class="auth-card-title">认证状态</text>
@@ -243,7 +259,7 @@ import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
-import { getBaseUrl, get } from '@/utils/request'
+import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
 import { authSteps, initAuthSteps, goAuthWechat, goAuthPhone, goRealNameAuth } from '@/composables/useAuthSteps'
 
@@ -252,6 +268,8 @@ const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
 const refreshingVisible = ref(false)  // 下拉刷新状态
+const aiProfileText = ref('')        // AI 个人印象文本
+const profileGenLoading = ref(false) // AI 印象生成中
 
 // 会员卡片轮播
 const vipCardTexts = computed(() => systemStore.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
@@ -276,6 +294,7 @@ onShow(() => {
   loadStats()
   refreshProfile()
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
+  loadAiProfileText()
 })
 
 const onRefresherRefresh = async () => {
@@ -382,6 +401,33 @@ const goToAiMatchmaker = () => {
 }
 const goToAiQuiz = () => {
   uni.navigateTo({ url: '/pages/ai-quiz/ai-quiz' })
+}
+
+// AI 个人印象：加载已有印象
+const loadAiProfileText = async () => {
+  if (!isLoggedIn.value || !systemStore.isAiFeatureEnabled('profile_gen')) return
+  try {
+    const res: any = await get('/users/profile/detail?isSelf=1')
+    if (res?.aboutMe?.aiProfileText) {
+      aiProfileText.value = res.aboutMe.aiProfileText
+    }
+  } catch { /* 静默 */ }
+}
+
+// AI 个人印象：生成/刷新
+const refreshMyProfileGen = async () => {
+  profileGenLoading.value = true
+  try {
+    const res: any = await request({ url: '/ai/profile-gen/refresh', method: 'POST' })
+    if (res?.personaText) {
+      aiProfileText.value = res.personaText
+    }
+    uni.showToast({ title: 'AI印象已生成', icon: 'success' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.data?.message || '生成失败，请完善资料后重试', icon: 'none' })
+  } finally {
+    profileGenLoading.value = false
+  }
 }
 const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
 const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
@@ -977,6 +1023,62 @@ const toolGrid7 = [
   font-size: 28rpx;
   color: #333333;
   flex: 1;
+}
+
+/* ===== AI 个人印象卡片 ===== */
+.ai-profile-card {
+  margin: 0 24rpx 16rpx;
+  padding: 24rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.ai-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.ai-profile-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.ai-profile-icon {
+  font-size: 36rpx;
+}
+
+.ai-profile-label {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333333;
+}
+
+.ai-profile-action {
+  padding: 10rpx 24rpx;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 32rpx;
+  flex-shrink: 0;
+}
+
+.ai-profile-action-text {
+  font-size: 24rpx;
+  color: #ffffff;
+}
+
+.ai-profile-content {
+  font-size: 26rpx;
+  color: #666666;
+  line-height: 1.6;
+}
+
+.ai-profile-placeholder {
+  font-size: 24rpx;
+  color: #bbbbbb;
+  line-height: 1.5;
 }
 
 /* ===== 认证状态 ===== */
