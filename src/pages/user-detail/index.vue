@@ -140,7 +140,15 @@
             <text class="section-title">身份认证</text>
             <text class="section-hint">点亮的为已认证</text>
           </view>
-          <scroll-view class="auth-scroll" scroll-x :show-scrollbar="false">
+          <!-- 未实名认证：提示+按钮 -->
+          <view v-if="isRealNameNotVerified" class="auth-unverified">
+            <text class="auth-unverified-text">该用户未实名认证</text>
+            <view class="auth-remind-btn" @tap="remindVerify">
+              <text>提醒对方认证</text>
+            </view>
+          </view>
+          <!-- 已实名认证：显示认证图标列表 -->
+          <scroll-view v-else class="auth-scroll" scroll-x :show-scrollbar="false">
             <view class="auth-items">
               <view
                 v-for="item in profileData.identityAuth.items"
@@ -787,6 +795,19 @@ const onAuthTap = (item: any) => {
   uni.showModal({ title: item.label, content: item.verified ? '已认证' : '未认证', showCancel: false })
 }
 
+// ===== 是否未实名认证 =====
+const isRealNameNotVerified = computed(() => {
+  const items = profileData.value?.identityAuth?.items
+  if (!items) return true
+  const realName = items.find((i: any) => i.type === 'real_name')
+  return !realName?.verified
+})
+
+// ===== 提醒对方认证 =====
+const remindVerify = () => {
+  uni.showToast({ title: '已发送提醒', icon: 'success' })
+}
+
 // ===== 关注 / 取消关注 =====
 const toggleFollow = async () => {
   if (!isLoggedIn.value) {
@@ -1300,6 +1321,21 @@ $text-hint: #999999;
 .section-hint { font-size: 22rpx; color: $text-hint; }
 
 // ===== 身份认证 =====
+.auth-unverified {
+  display: flex; flex-direction: column; align-items: center; gap: 24rpx;
+  padding: 32rpx 0 16rpx;
+}
+
+.auth-unverified-text { font-size: 30rpx; color: #333; font-weight: 500; }
+
+.auth-remind-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 50%; padding: 20rpx 0;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA3); border-radius: 48rpx;
+}
+
+.auth-remind-btn text { font-size: 28rpx; color: #fff; font-weight: 500; }
+
 .auth-scroll { white-space: nowrap; }
 
 .auth-items { display: flex; gap: 40rpx; padding: 8rpx 0; }
