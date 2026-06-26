@@ -1550,7 +1550,7 @@ $text-hint: #999999;
 
 .bb-btn {
   height: 88rpx; display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 44rpx; font-size: 30rpx; font-weight: bold; color: #fff;
+  border-radius: 44rpx; font-size: 30rpx; font-weight: 400; color: #fff;
   padding: 0 48rpx; flex-shrink: 0;
 }
 
