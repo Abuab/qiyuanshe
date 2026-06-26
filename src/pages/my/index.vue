@@ -151,7 +151,7 @@
       </view>
 
       <!-- ===== AI 情感问答入口 ===== -->
-      <view class="ai-quiz-entry" @tap="goToAiQuiz">
+      <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-quiz-entry" @tap="goToAiQuiz">
         <uni-icons type="chatbubble" size="40rpx" color="#FF6B6B"></uni-icons>
         <text class="ai-quiz-label">AI 情感问答</text>
         <uni-icons type="arrowright" size="32rpx" color="#999999"></uni-icons>
@@ -275,6 +275,7 @@ onMounted(() => {
 onShow(() => {
   loadStats()
   refreshProfile()
+  systemStore.loadAiFeatureConfig()
 })
 
 const onRefresherRefresh = async () => {
