@@ -52,15 +52,21 @@
 
       <!-- 相册小图：右列内部，与上方文字共享同一左边缘 -->
       <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
-        <image
+        <view
           v-for="(photo, index) in displayPhotos"
           :key="index"
-          class="photo-thumb"
-          :src="photo"
-          mode="aspectFill"
-          @error="onPhotoError(props.user.photos![index])"
-          lazy-load
-        ></image>
+          class="photo-thumb-wrapper"
+        >
+          <image
+            class="photo-thumb"
+            :class="{ 'photo-blur': index > 0 && needBlurPhotos }"
+            :src="photo"
+            mode="aspectFill"
+            @error="onPhotoError(props.user.photos![index])"
+            lazy-load
+          ></image>
+          <view v-if="index > 0 && needBlurPhotos" class="photo-lock-icon">🔒</view>
+        </view>
       </view>
     </view>
 
@@ -106,10 +112,13 @@ export interface UserCardData {
 interface Props {
   user: UserCardData
   showPhotos?: boolean
+  /** 当前用户自己的照片数，用于判断是否对他人照片做高斯模糊 */
+  myPhotoCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showPhotos: true,
+  myPhotoCount: 0,
 })
 
 const emit = defineEmits<{
@@ -160,6 +169,9 @@ const displayPhotos = computed(() => {
     return getFullImageUrl(photo)
   })
 })
+
+/** 当前用户自己的照片数<=1时，对他人非首张照片做高斯模糊 */
+const needBlurPhotos = computed(() => props.myPhotoCount <= 1)
 
 const handleClick = () => {
   emit('click', props.user)
@@ -375,6 +387,29 @@ const onLike = async () => {
   background-color: #f5f5f5;
   margin-right: 8rpx;
   margin-bottom: 8rpx;
+}
+
+.photo-thumb.photo-blur {
+  filter: blur(8px);
+  border: 2rpx solid #E0E0E0;
+}
+
+.photo-thumb-wrapper {
+  position: relative;
+  display: inline-flex;
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.photo-lock-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20rpx;
+  color: #fff;
+  text-shadow: 0 1rpx 2rpx rgba(0,0,0,0.3);
+  z-index: 1;
 }
 
 /* ===== 心动按钮 ===== */
