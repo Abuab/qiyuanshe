@@ -17,7 +17,7 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 60%-70%） ========== -->
+        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 50%） ========== -->
         <view class="hero-section">
           <image
             v-if="activePhotoUrl"
@@ -28,6 +28,10 @@
           />
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
+          <!-- 右上角分享按钮 -->
+          <view class="hero-share-btn" @tap="openSharePopup">
+            <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
+          </view>
           <!-- 模糊照片上的上传引导 -->
           <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
             <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
@@ -223,7 +227,7 @@
         </view>
 
         <!-- ========== 6. 介绍给好友（白色胶囊卡片） ========== -->
-        <view class="share-capsule" @tap="shareProfile">
+        <view class="share-capsule" @tap="openSharePopup">
           <text class="capsule-emoji">📤</text>
           <text class="capsule-text">介绍给好友</text>
         </view>
@@ -232,7 +236,8 @@
         <view class="report-block-row">
           <text class="report-link" @tap="openReportSheet">举报</text>
           <text class="report-divider">|</text>
-          <text class="report-link" @tap="confirmBlock">拉黑</text>
+          <text v-if="isBlocked" class="report-link blocked-text">已拉黑</text>
+          <text v-else class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
 
         <view class="bottom-spacer" />
@@ -445,6 +450,30 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
+
+      <!-- ========== 分享底部弹窗 ========== -->
+      <view v-if="showSharePopup" class="share-popup-overlay" @tap="closeSharePopup">
+        <view class="share-popup-sheet" :class="{ 'sheet-up': sharePopupAnim }" @tap.stop>
+          <view class="share-popup-handle" />
+          <view class="share-popup-options">
+            <button class="share-option" open-type="share" @click="closeSharePopup">
+              <view class="share-option-icon wechat-icon">
+                <text class="share-icon-char">💬</text>
+              </view>
+              <text class="share-option-label">分享给好友</text>
+            </button>
+            <view class="share-option" @tap="generatePoster">
+              <view class="share-option-icon poster-icon">
+                <text class="share-icon-char">📥</text>
+              </view>
+              <text class="share-option-label">生成海报</text>
+            </view>
+          </view>
+          <view class="share-popup-cancel" @tap="closeSharePopup">
+            <text>取消</text>
+          </view>
+        </view>
+      </view>
     </template>
 
     <view v-else class="empty-container">
@@ -537,6 +566,7 @@ const alwaysSubscribe = ref(false)
 
 // ===== 拉黑弹窗 =====
 const showBlockDialog = ref(false)
+const isBlocked = ref(false)
 
 // ===== 举报弹窗 =====
 const showReportSheet = ref(false)
@@ -631,11 +661,23 @@ const fetchProfileDetail = async () => {
       profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || '/static/default-avatar.png'
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
+    // 检查是否已拉黑
+    if (isLoggedIn.value) {
+      checkBlockStatus()
+    }
   } catch {
     uni.showToast({ title: '获取用户信息失败', icon: 'none' })
   } finally {
     loading.value = false
   }
+}
+
+const checkBlockStatus = async () => {
+  try {
+    const res: any = await request({ url: '/users/my-blocks', method: 'GET' })
+    const blocks = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
+    isBlocked.value = blocks.some((b: any) => b.blockedUserId === userId.value || b.id === userId.value || b.userId === userId.value)
+  } catch { /* ignore */ }
 }
 
 const fetchMatchmakerList = async () => {
@@ -715,6 +757,7 @@ const doBlock = async () => {
   showBlockDialog.value = false
   try {
     await request({ url: `/users/${userId.value}/block`, method: 'POST' })
+    isBlocked.value = true
     uni.showToast({ title: '已拉黑', icon: 'success' })
   } catch {
     uni.showToast({ title: '拉黑失败', icon: 'none' })
@@ -918,8 +961,27 @@ const showMatchmakerPopup = () => {
 const openMatchmakerList = () => { showMatchmaker.value = false; showMatchmakerList.value = true }
 const onSelectMatchmaker = (m: any) => { showMatchmakerList.value = false; selectedMatchmaker.value = m; setTimeout(() => { showMatchmaker.value = true }, 300) }
 
-const shareProfile = () => {
-  uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
+// ===== 分享底部弹窗 =====
+const showSharePopup = ref(false)
+const sharePopupAnim = ref(false)
+
+const openSharePopup = () => {
+  showSharePopup.value = true
+  nextTick(() => {
+    setTimeout(() => { sharePopupAnim.value = true }, 50)
+  })
+}
+
+const closeSharePopup = () => {
+  sharePopupAnim.value = false
+  setTimeout(() => { showSharePopup.value = false }, 300)
+}
+
+const generatePoster = () => {
+  closeSharePopup()
+  setTimeout(() => {
+    uni.navigateTo({ url: `/pages/poster/index?userId=${userId.value}` })
+  }, 350)
 }
 </script>
 
@@ -978,9 +1040,10 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（60-70% 屏占比） =====
+// ===== 1. 顶部大背景图（50% 屏占比） =====
 .hero-section {
-  position: relative; width: 100%; height: 65vh; min-height: 600rpx; overflow: hidden;
+  position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
+  border-radius: 32rpx 32rpx 0 0;
 }
 
 .hero-bg {
@@ -995,6 +1058,14 @@ $text-hint: #999999;
 .hero-gradient {
   position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.45));
+}
+
+// ===== 右上角分享按钮 =====
+.hero-share-btn {
+  position: absolute; top: 88rpx; right: 24rpx; z-index: 20;
+  width: 64rpx; height: 64rpx; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex; align-items: center; justify-content: center;
 }
 
 // ===== 照片缩略图：叠放在背景图底部 =====
@@ -1043,7 +1114,7 @@ $text-hint: #999999;
 // ===== 2. 白色资料卡片 =====
 .info-card {
   background: $card-bg; border-radius: 24rpx 24rpx 0 0;
-  margin: -30rpx 0 0; padding: 32rpx 28rpx 20rpx;
+  margin: 16rpx 0 0; padding: 32rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
@@ -1241,13 +1312,14 @@ $text-hint: #999999;
 // ===== 底部悬浮按钮（固定，无卡片背景） =====
 .bottom-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
-  display: flex; gap: 20rpx; padding: 16rpx 40rpx;
+  display: flex; justify-content: center; gap: 20rpx; padding: 16rpx 40rpx;
   /* 无背景、无阴影，纯悬浮 */
 }
 
 .bb-btn {
-  flex: 1; height: 88rpx; display: flex; align-items: center; justify-content: center;
+  height: 88rpx; display: inline-flex; align-items: center; justify-content: center;
   border-radius: 44rpx; font-size: 30rpx; font-weight: bold; color: #fff;
+  padding: 0 48rpx; flex-shrink: 0;
 }
 
 .contact-btn { background: linear-gradient(135deg, $pink, #FF758C); }
@@ -1398,6 +1470,59 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   font-size: 32rpx; font-weight: bold; color: #fff;
 }
+
+// ===== 分享底部弹窗 =====
+.share-popup-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9998;
+  background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end;
+}
+
+.share-popup-sheet {
+  width: 100%; background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  &.sheet-up { transform: translateY(0); }
+}
+
+.share-popup-handle {
+  width: 60rpx; height: 8rpx; background: #ddd; border-radius: 4rpx;
+  margin: 20rpx auto 28rpx;
+}
+
+.share-popup-options {
+  display: flex; justify-content: center; gap: 80rpx; padding: 0 48rpx 36rpx;
+}
+
+.share-option {
+  display: flex; flex-direction: column; align-items: center; gap: 16rpx;
+  padding: 0; margin: 0; border: none; background: transparent;
+  &::after { border: none; }
+}
+
+.share-option-icon {
+  width: 100rpx; height: 100rpx; border-radius: 24rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.share-icon-char { font-size: 50rpx; }
+
+.wechat-icon { background: #07C160; }
+
+.poster-icon { background: linear-gradient(135deg, #FF6B8A, #FF8E9E); }
+
+.share-option-label { font-size: 24rpx; color: #333; font-weight: 500; }
+
+.share-popup-cancel {
+  display: flex; align-items: center; justify-content: center;
+  height: 88rpx; margin: 0 48rpx; border-radius: 44rpx;
+  background: #F5F5F5; font-size: 30rpx; color: #666;
+}
+
+// ===== 已拉黑文字 =====
+.blocked-text { color: #ccc; }
 
 // ===== 照片引导（hero 区） =====
 .hero-blur { filter: blur(12px); }
