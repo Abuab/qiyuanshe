@@ -66,8 +66,6 @@
             @error="onPhotoError(displayPhotos[index])"
             lazy-load
           ></image>
-          <!-- 模糊图片的半透明淡化遮罩 -->
-          <view v-if="needBlurPhotos" class="photo-blur-overlay"></view>
         </view>
       </view>
     </view>
@@ -412,19 +410,7 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(5px);
-}
-
-/* 极淡灰色遮罩，降低饱和度让模糊图片更"素" */
-.photo-blur-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(200, 200, 200, 0.15);
-  pointer-events: none;
-  z-index: 1;
+  filter: blur(4px);
 }
 
 /* ===== 心动按钮 ===== */
