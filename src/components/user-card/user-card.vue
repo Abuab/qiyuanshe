@@ -66,6 +66,8 @@
             @error="onPhotoError(displayPhotos[index])"
             lazy-load
           ></image>
+          <!-- 模糊图片的半透明淡化遮罩 -->
+          <view v-if="needBlurPhotos" class="photo-blur-overlay"></view>
         </view>
       </view>
     </view>
@@ -391,15 +393,14 @@ const onLike = async () => {
   flex-shrink: 0;
   width: 72rpx;
   height: 72rpx;
-  border-radius: 8rpx;
+  border-radius: 12rpx;
   overflow: hidden;
-  margin-right: 10rpx;
+  margin-right: 20rpx;
   margin-bottom: 8rpx;
   background-color: #f5f5f5;
-  border: 2rpx solid transparent;
-  transition: border-color 0.2s;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
   &.photo-blur-wrapper {
-    border-color: #E0E0E0;
+    /* placeholder for future blur-wrapper specific styles */
   }
 }
 
@@ -411,7 +412,20 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(8px);
+  filter: blur(6px);
+  opacity: 0.8;
+}
+
+/* 半透明白色淡化遮罩，让模糊图片更"淡"、若隐若现 */
+.photo-blur-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* ===== 心动按钮 ===== */
