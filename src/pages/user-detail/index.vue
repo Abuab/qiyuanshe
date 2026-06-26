@@ -1249,11 +1249,11 @@ $text-hint: #999999;
 
 .info-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 6rpx;
+  margin-bottom: 2rpx;
 }
 
 .info-name-id {
-  display: flex; align-items: baseline; gap: 10rpx; flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 6rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1279,7 +1279,7 @@ $text-hint: #999999;
 
 // ===== 心动按钮（对标首页 user-card） =====
 .follow-wrap {
-  display: flex; flex-direction: column; align-items: center; gap: 6rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 10rpx;
   flex-shrink: 0;
 }
 
@@ -1366,8 +1366,8 @@ $text-hint: #999999;
 
 // ===== 身份认证 =====
 .auth-unverified {
-  display: flex; flex-direction: column; align-items: center; gap: 24rpx;
-  padding: 32rpx 0 16rpx;
+  display: flex; flex-direction: column; align-items: center; gap: 14rpx;
+  padding: 16rpx 0;
 }
 
 .auth-unverified-text { font-size: 30rpx; color: #333; font-weight: 500; }
@@ -1404,7 +1404,7 @@ $text-hint: #999999;
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
-  background: #FFF5F7; border-radius: 28rpx;
+  background: #FFF8FA; border-radius: 28rpx;
   font-size: 22rpx; color: #333;
 }
 
@@ -1460,7 +1460,7 @@ $text-hint: #999999;
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
-  background: #EBF5FF; border-radius: 28rpx;
+  background: #F0F8FF; border-radius: 28rpx;
 }
 
 .pt-value { font-size: 22rpx; color: #333; font-weight: 500; }
