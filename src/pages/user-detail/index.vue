@@ -219,8 +219,8 @@
         <!-- ========== 5. Ta希望你区 ========== -->
         <view class="section-card">
           <text class="section-title">Ta希望你</text>
-          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags-grid">
-            <view v-for="pt in profileData.hopeTa.partnerTags" :key="pt.label" class="partner-capsule">
+          <view v-if="cleanedPartnerTags.length" class="partner-tags-grid">
+            <view v-for="pt in cleanedPartnerTags" :key="pt.label" class="partner-capsule">
               <view class="pt-icon" />
               <text class="pt-value">{{ pt.value }}</text>
             </view>
@@ -236,7 +236,7 @@
             <view class="section-divider" />
             <text class="hope-line">{{ hopeText }}</text>
           </view>
-          <view v-if="!profileData.hopeTa.partnerTags?.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
+          <view v-if="!cleanedPartnerTags.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
             <text>TA还没填写期待哦～</text>
           </view>
         </view>
@@ -602,6 +602,24 @@ const activePhotoNeedsBlur = computed(() => {
 })
 
 // ===== 性格/希望标签拼接文案（按管理后台简介模板） =====
+const cleanedPartnerTags = computed(() => {
+  const tags = profileData.value?.hopeTa?.partnerTags
+  if (!tags?.length) return [] as { label: string; value: string }[]
+  return tags.map((t: any) => {
+    let val = t.value || ''
+    // 身高：去除重复的 cm以上 后缀
+    if (t.label === '身高要求') {
+      val = val.replace(/([cC][mM])?以上.*$/, '').trim()
+      val = val ? `${val}cm以上` : ''
+    }
+    // 收入：添加"月收入"前缀
+    if (t.label === '收入要求' && val && !val.startsWith('月收入')) {
+      val = `月收入${val}`
+    }
+    return { label: t.label, value: val }
+  })
+})
+
 const characterText = computed(() => {
   const tags = profileData.value?.personalityTags
   if (!tags) return ''
@@ -627,11 +645,11 @@ const hopeText = computed(() => {
   // 结构化对象
   if (typeof tags === 'object' && !Array.isArray(tags)) {
     const all = [...((tags as any).character || []), ...((tags as any).hobby || []), ...((tags as any).loveRule || [])]
-    return all.length ? `希望你${all.join('、')}` : ''
+    return all.length ? `希望你${all.join('，')}` : ''
   }
   // 扁平数组
   const arr = Array.isArray(tags) ? tags : []
-  return arr.length ? `希望你${arr.join('、')}` : ''
+  return arr.length ? `希望你${arr.join('，')}` : ''
 })
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
