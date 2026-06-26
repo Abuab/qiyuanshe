@@ -236,7 +236,7 @@
         <view class="report-block-row">
           <text class="report-link" @tap="openReportSheet">举报</text>
           <text class="report-divider">|</text>
-          <text v-if="isBlocked" class="report-link blocked-text">已拉黑</text>
+          <text v-if="isBlocked" class="report-link blocked-text" @tap="confirmUnblock">已拉黑</text>
           <text v-else class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
 
@@ -282,6 +282,22 @@
               <text>取消</text>
             </view>
             <view class="dialog-btn allow-btn block-confirm-btn" @tap="doBlock">
+              <text>确定</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ========== 取消拉黑确认弹窗 ========== -->
+      <view v-if="showUnblockDialog" class="dialog-overlay" @tap="showUnblockDialog = false">
+        <view class="dialog-card" @tap.stop>
+          <text class="dialog-title">提示</text>
+          <text class="dialog-desc">确定取消拉黑该用户吗？</text>
+          <view class="dialog-buttons">
+            <view class="dialog-btn cancel-btn" @tap="showUnblockDialog = false">
+              <text>取消</text>
+            </view>
+            <view class="dialog-btn allow-btn" @tap="doUnblock">
               <text>确定</text>
             </view>
           </view>
@@ -457,20 +473,11 @@
           <view class="share-popup-handle" />
           <view class="share-popup-options">
             <button class="share-option" open-type="share" @click="closeSharePopup">
-              <view class="share-option-icon wechat-icon">
-                <text class="share-icon-char">💬</text>
-              </view>
               <text class="share-option-label">分享给好友</text>
             </button>
             <view class="share-option" @tap="generatePoster">
-              <view class="share-option-icon poster-icon">
-                <text class="share-icon-char">📥</text>
-              </view>
               <text class="share-option-label">生成海报</text>
             </view>
-          </view>
-          <view class="share-popup-cancel" @tap="closeSharePopup">
-            <text>取消</text>
           </view>
         </view>
       </view>
@@ -764,6 +771,24 @@ const doBlock = async () => {
   }
 }
 
+// ===== 取消拉黑 =====
+const showUnblockDialog = ref(false)
+
+const confirmUnblock = () => {
+  showUnblockDialog.value = true
+}
+
+const doUnblock = async () => {
+  showUnblockDialog.value = false
+  try {
+    await request({ url: `/users/${userId.value}/block`, method: 'DELETE' })
+    isBlocked.value = false
+    uni.showToast({ title: '已取消拉黑', icon: 'success' })
+  } catch {
+    uni.showToast({ title: '取消拉黑失败', icon: 'none' })
+  }
+}
+
 // ===== 举报底部弹窗 =====
 const openReportSheet = () => {
   selectedReportReasons.value = []
@@ -1005,12 +1030,10 @@ $text-hint: #999999;
   font-size: 28rpx; color: $text-hint;
 }
 
-// ===== 顶部毛玻璃昵称卡片（固定） =====
+// ===== 顶部毛玻璃昵称卡片（固定，粉色） =====
 .top-frost-card {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
 }
 
 .frost-inner {
@@ -1043,7 +1066,7 @@ $text-hint: #999999;
 // ===== 1. 顶部大背景图（50% 屏占比） =====
 .hero-section {
   position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
-  border-radius: 32rpx 32rpx 0 0;
+  border-radius: 40rpx 40rpx 0 0;
 }
 
 .hero-bg {
@@ -1282,12 +1305,13 @@ $text-hint: #999999;
   font-size: 24rpx; color: #1565C0;
 }
 
-// ===== 介绍给好友（白色胶囊卡片） =====
+// ===== 介绍给好友（粉色胶囊按钮） =====
 .share-capsule {
   display: flex; align-items: center; justify-content: center; gap: 12rpx;
-  margin: 16rpx 24rpx; padding: 28rpx;
-  background: $card-bg; border-radius: 24rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  margin: 16rpx auto; padding: 22rpx 48rpx;
+  background: linear-gradient(135deg, #FFE4EC, #FFF0F5); border-radius: 48rpx;
+  box-shadow: 0 2rpx 12rpx rgba(255, 107, 138, 0.15);
+  width: fit-content;
 }
 
 .capsule-emoji { font-size: 32rpx; }
@@ -1493,33 +1517,16 @@ $text-hint: #999999;
 }
 
 .share-popup-options {
-  display: flex; justify-content: center; gap: 80rpx; padding: 0 48rpx 36rpx;
+  display: flex; justify-content: center; gap: 120rpx; padding: 20rpx 48rpx 48rpx;
 }
 
 .share-option {
-  display: flex; flex-direction: column; align-items: center; gap: 16rpx;
+  display: flex; flex-direction: column; align-items: center;
   padding: 0; margin: 0; border: none; background: transparent;
   &::after { border: none; }
 }
 
-.share-option-icon {
-  width: 100rpx; height: 100rpx; border-radius: 24rpx;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.share-icon-char { font-size: 50rpx; }
-
-.wechat-icon { background: #07C160; }
-
-.poster-icon { background: linear-gradient(135deg, #FF6B8A, #FF8E9E); }
-
-.share-option-label { font-size: 24rpx; color: #333; font-weight: 500; }
-
-.share-popup-cancel {
-  display: flex; align-items: center; justify-content: center;
-  height: 88rpx; margin: 0 48rpx; border-radius: 44rpx;
-  background: #F5F5F5; font-size: 30rpx; color: #666;
-}
+.share-option-label { font-size: 28rpx; color: #333; font-weight: 500; }
 
 // ===== 已拉黑文字 =====
 .blocked-text { color: #ccc; }
