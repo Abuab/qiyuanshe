@@ -20,11 +20,13 @@
         <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 60%-70%） ========== -->
         <view class="hero-section">
           <image
+            v-if="activePhotoUrl"
             class="hero-bg"
             :class="{ 'hero-blur': activePhotoNeedsBlur }"
-            :src="activePhotoUrl || '/static/default-bg.png'"
+            :src="activePhotoUrl"
             mode="aspectFill"
           />
+          <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 模糊照片上的上传引导 -->
           <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
@@ -972,6 +974,11 @@ $text-hint: #999999;
 
 .hero-bg {
   width: 100%; height: 100%;
+}
+
+.hero-placeholder {
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .hero-gradient {
