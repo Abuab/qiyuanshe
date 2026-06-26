@@ -447,6 +447,20 @@
   </view>
 </template>
 
+<script lang="ts">
+export default {
+  onShareAppMessage() {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1] as any
+    return {
+      title: `${page?.profileData?.top?.nickname || ''}的个人主页`,
+      path: `/pages/user-detail/index?id=${page?.userId || 0}`,
+      imageUrl: page?.profileData?.top?.avatar || '',
+    }
+  },
+}
+</script>
+
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
@@ -454,7 +468,6 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
-import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -462,7 +475,6 @@ import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
-const systemStore = useSystemStore()
 
 const userId = ref(0)
 const loading = ref(true)
@@ -596,12 +608,6 @@ const refreshFollowStatus = async () => {
     }
   } catch { /* ignore */ }
 }
-
-const onShareAppMessage = () => ({
-  title: `${profileData.value?.top?.nickname || ''}的个人主页`,
-  path: `/pages/user-detail/index?id=${userId.value}`,
-  imageUrl: profileData.value?.top?.avatar || '',
-})
 
 const fetchProfileDetail = async () => {
   loading.value = true
@@ -902,8 +908,6 @@ const onSelectMatchmaker = (m: any) => { showMatchmakerList.value = false; selec
 const shareProfile = () => {
   uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
 }
-
-const goGifts = () => uni.showToast({ title: '礼物功能开发中', icon: 'none' })
 </script>
 
 <style lang="scss" scoped>
