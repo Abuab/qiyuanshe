@@ -585,14 +585,6 @@ const onPhotoTap = (index: number) => {
   if (!photo) return
 
   activePhotoIndex.value = index
-
-  // 如果照片清晰可见，预览大图
-  if (!photo.isBlurred && !photo.needLogin) {
-    uni.previewImage({
-      urls: profileData.value.photos.map((p: any) => getFullImageUrl(p.url)),
-      current: index,
-    })
-  }
 }
 
 const handleUploadPhoto = () => {
