@@ -5,50 +5,52 @@
     </view>
 
     <template v-else-if="profileData">
-      <!-- ========== 顶部导航栏：绝对定位覆盖在背景图之上 ========== -->
-      <view class="top-nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-        <view class="nav-inner">
-          <view class="nav-back" @tap="handleBack">
+      <!-- ========== 顶部毛玻璃昵称卡片（固定，适配状态栏） ========== -->
+      <view class="top-frost-card" :style="{ paddingTop: statusBarHeight + 'px' }">
+        <view class="frost-inner">
+          <view class="frost-back" @tap="handleBack">
             <text class="back-arrow">{{ '<' }}</text>
           </view>
-          <text class="nav-nickname">{{ profileData.top.nickname || '用户主页' }}</text>
-          <view class="nav-placeholder" />
+          <text class="frost-nickname">{{ profileData.top.nickname || '用户主页' }}</text>
+          <view class="frost-placeholder" />
         </view>
       </view>
 
-      <!-- ========== 1. 背景图容器：严格 60vh ========== -->
-      <view class="hero-section">
-        <image
-          v-if="activePhotoUrl"
-          class="hero-bg"
-          :class="{ 'hero-blur': activePhotoNeedsBlur }"
-          :src="activePhotoUrl"
-          mode="aspectFill"
-        />
-        <view v-else class="hero-placeholder" />
-        <view class="hero-gradient" />
-        <!-- 模糊照片上的上传引导 -->
-        <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
-          <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
-          <view class="blur-prompt-btn" @tap="handleUploadPhoto">
-            <text>上传照片</text>
+      <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
+        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 60%-70%） ========== -->
+        <view class="hero-section">
+          <image
+            v-if="activePhotoUrl"
+            class="hero-bg"
+            :class="{ 'hero-blur': activePhotoNeedsBlur }"
+            :src="activePhotoUrl"
+            mode="aspectFill"
+          />
+          <view v-else class="hero-placeholder" />
+          <view class="hero-gradient" />
+          <!-- 模糊照片上的上传引导 -->
+          <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
+            <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
+            <view class="blur-prompt-btn" @tap="handleUploadPhoto">
+              <text>上传照片</text>
+            </view>
           </view>
-        </view>
-        <!-- 照片缩略图：叠放在背景图底部 -->
-        <view class="hero-thumbnails" v-if="_displayPhotos.length">
-          <view
-            v-for="(photo, index) in _displayPhotos"
-            :key="index"
-            class="hero-thumb"
-            :class="{ 'thumb-active': index === activePhotoIndex, 'thumb-blur': photo.isBlurred || photo.needLogin }"
-            @tap="onPhotoTap(Number(index))"
-          >
-            <image
-              class="thumb-img"
-              :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
-              mode="aspectFill"
-              :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(4px)' } : {}"
-            />
+          <!-- 照片缩略图：叠放在背景图底部 -->
+          <view class="hero-thumbnails" v-if="_displayPhotos.length">
+            <view
+              v-for="(photo, index) in _displayPhotos"
+              :key="index"
+              class="hero-thumb"
+              :class="{ 'thumb-active': index === activePhotoIndex, 'thumb-blur': photo.isBlurred || photo.needLogin }"
+              @tap="onPhotoTap(Number(index))"
+            >
+              <image
+                class="thumb-img"
+                :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
+                mode="aspectFill"
+                :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(4px)' } : {}"
+              />
+            </view>
           </view>
         </view>
 
@@ -233,14 +235,16 @@
           <text class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
 
-        <!-- ========== 8. 底部操作按钮（卡片内部窄胶囊） ========== -->
-        <view v-if="profileData.bottomBar.visible" class="card-bottom-btns" :style="{ paddingBottom: safeAreaBottom + 'px' }">
-          <view class="cb-btn contact-btn" @tap="handleContact">
-            <text>想认识Ta</text>
-          </view>
-          <view class="cb-btn matchmaker-btn" @tap="showMatchmakerPopup">
-            <text>红娘牵线</text>
-          </view>
+        <view class="bottom-spacer" />
+      </scroll-view>
+
+      <!-- ========== 底部悬浮操作按钮（固定） ========== -->
+      <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+        <view class="bb-btn contact-btn" @tap="handleContact">
+          <text>想认识Ta</text>
+        </view>
+        <view class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
+          <text>红娘牵线</text>
         </view>
       </view>
 
@@ -939,37 +943,44 @@ $text-hint: #999999;
   font-size: 28rpx; color: $text-hint;
 }
 
-// ===== 顶部导航栏（绝对定位，覆盖在背景图上） =====
-.top-nav-bar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 300;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 100%);
+// ===== 顶部毛玻璃昵称卡片（固定） =====
+.top-frost-card {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.nav-inner {
+.frost-inner {
   display: flex; align-items: center; justify-content: space-between;
   height: 88rpx; padding: 0 24rpx;
 }
 
-.nav-back {
+.frost-back {
   width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center;
 }
 
 .back-arrow {
-  font-size: 40rpx; color: #fff; font-weight: 500;
+  font-size: 40rpx; color: $text; font-weight: 500;
 }
 
-.nav-nickname {
-  font-size: 32rpx; font-weight: bold; color: #fff;
+.frost-nickname {
+  font-size: 32rpx; font-weight: bold; color: $text;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;
 }
 
-.nav-placeholder {
+.frost-placeholder {
   width: 56rpx;
 }
 
-// ===== 1. 背景图容器：严格 60vh =====
+// ===== 滚动区域 =====
+.page-scroll {
+  height: 100vh;
+}
+
+// ===== 1. 顶部大背景图（60-70% 屏占比） =====
 .hero-section {
-  position: relative; width: 100%; height: 60vh; overflow: hidden;
+  position: relative; width: 100%; height: 65vh; min-height: 600rpx; overflow: hidden;
 }
 
 .hero-bg {
@@ -1029,10 +1040,10 @@ $text-hint: #999999;
 
 .voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 
-// ===== 2. 资料卡片（叠加在背景图之上，初始露出约 40%） =====
+// ===== 2. 白色资料卡片 =====
 .info-card {
-  background: #fff; border-radius: 40rpx 40rpx 0 0;
-  margin: -40rpx 0 0; padding: 32rpx 28rpx 20rpx;
+  background: $card-bg; border-radius: 24rpx 24rpx 0 0;
+  margin: -30rpx 0 0; padding: 32rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
@@ -1224,18 +1235,24 @@ $text-hint: #999999;
 
 .report-divider { font-size: 24rpx; color: #ddd; }
 
-// ===== 卡片内部底部按钮（窄胶囊） =====
-.card-bottom-btns {
-  display: flex; justify-content: center; gap: 20rpx;
-  padding: 24rpx 0;
+// ===== 底部空白 =====
+.bottom-spacer { height: 160rpx; }
+
+// ===== 底部悬浮按钮（固定，无卡片背景） =====
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
+  display: flex; gap: 20rpx; padding: 16rpx 40rpx;
+  /* 无背景、无阴影，纯悬浮 */
 }
 
-.cb-btn {
-  width: 280rpx; height: 88rpx; display: flex; align-items: center; justify-content: center;
-  border-radius: 999px; font-size: 28rpx; font-weight: bold; color: #fff;
-  &.contact-btn { background: linear-gradient(135deg, $pink, #FF758C); }
-  &.matchmaker-btn { background: linear-gradient(135deg, $purple, #A78BFA); }
+.bb-btn {
+  flex: 1; height: 88rpx; display: flex; align-items: center; justify-content: center;
+  border-radius: 44rpx; font-size: 30rpx; font-weight: bold; color: #fff;
 }
+
+.contact-btn { background: linear-gradient(135deg, $pink, #FF758C); }
+
+.matchmaker-btn { background: linear-gradient(135deg, $purple, #A78BFA); }
 
 // ===== 订阅弹窗 & 拉黑确认弹窗 =====
 .dialog-overlay {
