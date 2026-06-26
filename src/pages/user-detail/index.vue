@@ -91,7 +91,7 @@
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
                 <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="40rpx" color="#FF6B6B"></uni-icons>
               </view>
-              <text class="follow-text">关注</text>
+              <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
             </view>
           </view>
 
@@ -1200,7 +1200,7 @@ $text-hint: #999999;
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
   position: absolute; bottom: 80rpx; left: 24rpx; right: 24rpx; z-index: 10;
-  display: flex; gap: 12rpx; overflow-x: auto;
+  display: flex; gap: 18rpx; overflow-x: auto;
 }
 
 .hero-thumb {
@@ -1249,11 +1249,11 @@ $text-hint: #999999;
 
 .info-header {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 2rpx;
+  margin-bottom: 0;
 }
 
 .info-name-id {
-  display: flex; align-items: baseline; gap: 6rpx; flex: 1; min-width: 0;
+  display: flex; align-items: baseline; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1274,7 +1274,7 @@ $text-hint: #999999;
   padding: 1rpx 7rpx;
   border-radius: 20rpx;
   line-height: 1.4;
-  margin-right: 6rpx;
+  margin-right: 3rpx;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
@@ -1370,7 +1370,7 @@ $text-hint: #999999;
   padding: 16rpx 0;
 }
 
-.auth-unverified-text { font-size: 30rpx; color: #333; font-weight: 500; }
+.auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
 
 .auth-remind-btn {
   display: flex; align-items: center; justify-content: center;
