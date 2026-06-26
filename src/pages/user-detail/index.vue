@@ -58,29 +58,29 @@
           </view>
         </view>
 
-        <!-- ===== 语音播放条 ===== -->
-        <view
-          v-if="voiceEnabled && voiceData && voiceData.auditStatus !== 2"
-          class="voice-bar"
-          :class="{ 'voice-pending': voiceData.auditStatus === 0 }"
-        >
-          <view class="voice-bar-inner">
-            <view class="voice-mic-icon">
-              <uni-icons type="mic-filled" size="32rpx" color="#FF6B6B"></uni-icons>
-            </view>
-            <text v-if="voiceData.auditStatus === 0" class="voice-label muted">语音审核中</text>
-            <text v-else class="voice-label">听听TA的声音</text>
-            <view v-if="voiceData.auditStatus === 1" class="voice-right">
-              <text class="voice-duration">{{ voiceData.duration }}″</text>
-              <view class="voice-play-btn" @tap="toggleVoicePlay">
-                <text class="voice-play-text">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
+        <!-- ========== 2. 白色资料卡片（覆盖背景图底部） ========== -->
+        <view class="info-card">
+          <!-- ===== 语音播放条 ===== -->
+          <view
+            v-if="voiceEnabled && voiceData && voiceData.auditStatus !== 2"
+            class="voice-bar"
+            :class="{ 'voice-pending': voiceData.auditStatus === 0 }"
+          >
+            <view class="voice-bar-inner">
+              <view class="voice-mic-icon">
+                <uni-icons type="mic-filled" size="32rpx" color="#FF6B6B"></uni-icons>
+              </view>
+              <text v-if="voiceData.auditStatus === 0" class="voice-label muted">语音审核中</text>
+              <text v-else class="voice-label">听听TA的声音</text>
+              <view v-if="voiceData.auditStatus === 1" class="voice-right">
+                <text class="voice-duration">{{ voiceData.duration }}″</text>
+                <view class="voice-play-btn" @tap="toggleVoicePlay">
+                  <text class="voice-play-text">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
+                </view>
               </view>
             </view>
           </view>
-        </view>
 
-        <!-- ========== 2. 白色资料卡片 ========== -->
-        <view class="info-card">
           <!-- 头部行：昵称 + ID + 关注 -->
           <view class="info-header">
             <view class="info-name-id">
@@ -1063,9 +1063,9 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（50% 屏占比） =====
+// ===== 1. 顶部大背景图（65vh，卡片覆盖底部） =====
 .hero-section {
-  position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
+  position: relative; width: 100%; height: 65vh; min-height: 700rpx; overflow: hidden;
   border-radius: 40rpx 40rpx 0 0;
 }
 
@@ -1091,9 +1091,9 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
 }
 
-// ===== 照片缩略图：叠放在背景图底部 =====
+// ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
-  position: absolute; bottom: 24rpx; left: 24rpx; right: 24rpx; z-index: 10;
+  position: absolute; bottom: 80rpx; left: 24rpx; right: 24rpx; z-index: 10;
   display: flex; gap: 12rpx; overflow-x: auto;
 }
 
@@ -1110,7 +1110,7 @@ $text-hint: #999999;
 
 // ===== 语音播放条 =====
 .voice-bar {
-  margin: 0 24rpx 16rpx; height: 80rpx; border-radius: 40rpx;
+  margin: 0 0 20rpx; height: 80rpx; border-radius: 40rpx;
   background: #fff0f3; display: flex; align-items: center; padding: 0 32rpx;
   &.voice-pending { opacity: 0.5; }
 }
@@ -1134,10 +1134,10 @@ $text-hint: #999999;
 
 .voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 
-// ===== 2. 白色资料卡片 =====
+// ===== 2. 白色资料卡片（覆盖背景图底部，顶部圆角露出背景） =====
 .info-card {
-  background: $card-bg; border-radius: 24rpx 24rpx 0 0;
-  margin: 16rpx 0 0; padding: 32rpx 28rpx 20rpx;
+  background: $card-bg; border-radius: 40rpx 40rpx 0 0;
+  margin: -40rpx 0 0; padding: 32rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
