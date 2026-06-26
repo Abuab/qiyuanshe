@@ -407,7 +407,9 @@ const goToAiQuiz = () => {
 const loadAiProfileText = async () => {
   if (!isLoggedIn.value || !systemStore.isAiFeatureEnabled('profile_gen')) return
   try {
-    const res: any = await get('/users/profile/detail?isSelf=1')
+    const userId = userStore.userInfo?.id
+    if (!userId) return
+    const res: any = await get(`/users/${userId}/detail`)
     if (res?.aboutMe?.aiProfileText) {
       aiProfileText.value = res.aboutMe.aiProfileText
     }

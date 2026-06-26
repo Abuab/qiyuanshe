@@ -19,7 +19,6 @@ import {
   PROFILE_GEN_FREE_MONTHLY_LIMIT,
   PROFILE_GEN_VIP_MONTHLY_LIMIT,
   PROFILE_GEN_MIN_TAGS,
-  PROFILE_GEN_MIN_ANSWERS,
   PROFILE_GEN_QUOTA_KEY,
 } from './ai-profile-gen.types'
 
@@ -48,28 +47,20 @@ export class AiProfileGenService {
    * 检查是否满足画像生成条件
    */
   async checkEligibility(userId: number): Promise<ProfileGenEligibility> {
-    const [tagCount, answerCount] = await Promise.all([
-      this.tagSelectionRepo.count({
-        where: { userId, isSelected: 1, isDeleted: 0 },
-      }),
-      this.answerRepo.count({
-        where: { userId, status: 1 },
-      }),
-    ])
+    const tagCount = await this.tagSelectionRepo.count({
+      where: { userId, isSelected: 1, isDeleted: 0 },
+    })
 
     const reasons: string[] = []
     if (tagCount < PROFILE_GEN_MIN_TAGS) {
       reasons.push(`标签不足${PROFILE_GEN_MIN_TAGS}个，请完善个人标签`)
-    }
-    if (answerCount < PROFILE_GEN_MIN_ANSWERS) {
-      reasons.push(`审核通过的问答不足${PROFILE_GEN_MIN_ANSWERS}条，请回答更多问题`)
     }
 
     return {
       eligible: reasons.length === 0,
       reasons,
       tagCount,
-      answerCount,
+      answerCount: 0,
     }
   }
 
