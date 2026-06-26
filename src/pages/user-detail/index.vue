@@ -496,7 +496,11 @@ const activePhotoNeedsBlur = computed(() => {
 })
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
-const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
+const statusBarHeight = computed(() => {
+  try {
+    return uni.getSystemInfoSync().statusBarHeight || 44
+  } catch { return 44 }
+})
 const safeAreaBottom = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
   return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
@@ -617,7 +621,7 @@ const fetchProfileDetail = async () => {
 
 const fetchMatchmakerList = async () => {
   try {
-    const res = await request({ url: '/matchmakers', method: 'GET', timeout: 15000 })
+    const res: any = await request({ url: '/matchmakers', method: 'GET', timeout: 15000 })
     const rawList = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
     matchmakerList.value = rawList.map((item: any) => ({
       ...item,
@@ -925,7 +929,7 @@ $text-hint: #999999;
 // ===== 顶部毛玻璃昵称卡片（固定） =====
 .top-frost-card {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
