@@ -1200,7 +1200,7 @@ $text-hint: #999999;
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
   position: absolute; bottom: 80rpx; left: 24rpx; right: 24rpx; z-index: 10;
-  display: flex; gap: 22rpx; overflow-x: auto;
+  display: flex; gap: 26rpx; overflow-x: auto;
 }
 
 .hero-thumb {
@@ -1332,7 +1332,7 @@ $text-hint: #999999;
 // ===== 基本资料 =====
 .basic-line {
   display: flex; align-items: center; flex-wrap: wrap;
-  font-size: 26rpx; color: #333; margin-bottom: 14rpx;
+  font-size: 26rpx; color: #333; margin-bottom: 10rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
@@ -1367,7 +1367,7 @@ $text-hint: #999999;
 // ===== 身份认证 =====
 .auth-unverified {
   display: flex; flex-direction: column; align-items: center; gap: 14rpx;
-  padding: 8rpx 0;
+  padding: 2rpx 0;
 }
 
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
