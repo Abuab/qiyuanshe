@@ -73,7 +73,7 @@
       <!-- 基础资料（只读展示） -->
       <!-- 顶部提示条：独立于卡片之外 -->
       <view class="readonly-notice">
-        <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
+        <text class="readonly-notice-text">若修改昵称 · 性别 · 生日 · 身高 · 收入 · 学历 · 婚况 · 车房 · 微信，请联系红娘</text>
       </view>
 
       <view class="section-card">
@@ -216,7 +216,6 @@
           <view class="hope-ta-tags">
             <view v-for="(tag, idx) in form.personalityTags" :key="idx" class="hope-tag-item" @tap="removePersonalityEditTag(idx)">
               <text>{{ tag }}</text>
-              <text class="hope-tag-close">×</text>
             </view>
             <view class="hope-tag-add" @tap="openPersonalityPicker">
               <text>+</text>
@@ -309,7 +308,6 @@
           <view class="hope-ta-tags">
             <view v-for="(tag, idx) in form.hopeTaTags" :key="idx" class="hope-tag-item" @tap="removeHopeTaTag(idx)">
               <text>{{ tag }}</text>
-              <text class="hope-tag-close">×</text>
             </view>
             <view class="hope-tag-add" @tap="openTagPicker">
               <text>+</text>
@@ -2087,14 +2085,14 @@ onShow(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56rpx;
   height: 56rpx;
-  border-radius: 50%;
-  border: 2rpx solid #FFD0E0;
+  padding: 0 28rpx;
+  border-radius: 30rpx;
+  background-color: #FF6B9D;
 
   text {
-    font-size: 32rpx;
-    color: #FF6B9D;
+    font-size: 28rpx;
+    color: #fff;
     line-height: 1;
   }
 }
