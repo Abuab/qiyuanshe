@@ -17,14 +17,22 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图 ========== -->
+        <!-- ========== 1. 顶部大背景图（跟随当前选中的照片） ========== -->
         <view class="hero-section">
           <image
             class="hero-bg"
-            :src="profileData.top.backgroundPhoto || '/static/default-bg.png'"
+            :class="{ 'hero-blur': activePhotoNeedsBlur }"
+            :src="activePhotoUrl || '/static/default-bg.png'"
             mode="aspectFill"
           />
           <view class="hero-gradient" />
+          <!-- 模糊照片上的上传引导 -->
+          <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
+            <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
+            <view class="blur-prompt-btn" @tap="handleUploadPhoto">
+              <text>上传照片</text>
+            </view>
+          </view>
         </view>
 
         <!-- ========== 照片缩略图栏 ========== -->
@@ -35,7 +43,7 @@
                 v-for="(photo, index) in profileData.photos"
                 :key="index"
                 class="photo-thumb"
-                :class="{ 'photo-active': index === 0, 'photo-blur': photo.isBlurred || photo.needLogin }"
+                :class="{ 'photo-active': index === activePhotoIndex, 'photo-blur': photo.isBlurred || photo.needLogin }"
                 @tap="onPhotoTap(Number(index))"
               >
                 <image
@@ -44,9 +52,6 @@
                   mode="aspectFill"
                   :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(8px)' } : {}"
                 />
-                <view v-if="photo.needLogin || photo.isBlurred" class="photo-lock-overlay">
-                  <text class="lock-icon">🔒</text>
-                </view>
               </view>
             </view>
           </scroll-view>
@@ -377,44 +382,6 @@
         </view>
       </view>
 
-      <!-- ========== 登录引导弹窗（未登录点击非首张照片） ========== -->
-      <view v-if="showLoginPrompt" class="photo-prompt-overlay" @tap="showLoginPrompt = false">
-        <view class="photo-prompt-dialog" @tap.stop>
-          <text class="prompt-text">{{ (profileData?.photoGuidance?.loginPromptText) || '登录后即可查看全部照片~' }}</text>
-          <view class="prompt-btn" @tap="handlePhotoLogin">
-            <text>{{ (profileData?.photoGuidance?.loginButtonText) || '去登录' }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- ========== 上传引导弹窗（已登录但照片不足，点击他人非首张照片） ========== -->
-      <view v-if="showUploadPrompt" class="photo-prompt-overlay" @tap="showUploadPrompt = false">
-        <view class="photo-prompt-dialog upload-dialog" @tap.stop>
-          <!-- 顶部装饰图标 -->
-          <view class="upload-icons">
-            <text class="upload-deco deco-camera">📷</text>
-            <text class="upload-deco deco-photo">🖼️</text>
-            <text class="upload-deco deco-star">✨</text>
-          </view>
-          <text class="prompt-text upload-text">{{ (profileData?.photoGuidance?.uploadPromptText) || '上传你的照片，探索更多可能~' }}</text>
-          <view class="prompt-btn upload-btn" @tap="handleUploadPhoto">
-            <text>{{ (profileData?.photoGuidance?.uploadButtonText) || '上传照片' }}</text>
-          </view>
-          <!-- 底部：当前用户自己的照片缩略图 -->
-          <view class="my-photos-preview" v-if="myPhotos?.length">
-            <text class="my-photos-label">我的照片</text>
-            <view class="my-photos-row">
-              <image
-                class="my-thumb"
-                :src="getFullImageUrl(myPhotos[0]) || '/static/default-avatar.png'"
-                mode="aspectFill"
-              />
-              <view v-if="myPhotos.length <= 1" class="my-thumb my-thumb-empty" />
-            </view>
-          </view>
-        </view>
-      </view>
-
       <!-- ========== 红娘弹窗 ========== -->
       <matchmaker-popup
         :show="showMatchmaker"
@@ -471,10 +438,22 @@ const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
 
-// 照片引导弹窗
-const showLoginPrompt = ref(false)
-const showUploadPrompt = ref(false)
-const myPhotos = ref<string[]>([])
+// 照片引导弹窗（已废弃，改为 hero 区直接显示）
+const activePhotoIndex = ref(0)
+/** 当前选中照片的 URL */
+const activePhotoUrl = computed(() => {
+  const photos = profileData.value?.photos
+  if (!photos?.length) return null
+  const p = photos[activePhotoIndex.value]
+  return p ? getFullImageUrl(p.url) : null
+})
+/** 当前选中的照片是否需要模糊（触发上传引导） */
+const activePhotoNeedsBlur = computed(() => {
+  const photos = profileData.value?.photos
+  if (!photos?.length) return false
+  const p = photos[activePhotoIndex.value]
+  return !!(p?.isBlurred || p?.needLogin)
+})
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
@@ -605,30 +584,18 @@ const onPhotoTap = (index: number) => {
   const photo = profileData.value?.photos?.[index]
   if (!photo) return
 
-  if (photo.needLogin) {
-    showLoginPrompt.value = true
-    return
+  activePhotoIndex.value = index
+
+  // 如果照片清晰可见，预览大图
+  if (!photo.isBlurred && !photo.needLogin) {
+    uni.previewImage({
+      urls: profileData.value.photos.map((p: any) => getFullImageUrl(p.url)),
+      current: index,
+    })
   }
-
-  if (photo.isBlurred) {
-    showUploadPrompt.value = true
-    return
-  }
-
-  // 已登录且照片充足：预览大图
-  uni.previewImage({
-    urls: profileData.value.photos.map((p: any) => getFullImageUrl(p.url)),
-    current: index,
-  })
-}
-
-const handlePhotoLogin = () => {
-  showLoginPrompt.value = false
-  uni.navigateTo({ url: '/pages/login/index' })
 }
 
 const handleUploadPhoto = () => {
-  showUploadPrompt.value = false
   uni.navigateTo({ url: '/pages/edit-profile/index' })
 }
 
@@ -882,11 +849,6 @@ $text-hint: #999999;
 .thumb-img {
   width: 100%; height: 100%; display: block;
 }
-.photo-lock-overlay {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.15);
-}
-.lock-icon { font-size: 40rpx; }
 
 // ===== 头像卡片 =====
 .profile-header-card {
@@ -1172,56 +1134,27 @@ $text-hint: #999999;
 }
 .sheet-cancel { padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text-hint; margin-top: 16rpx; }
 
-// ===== 照片引导弹窗 =====
-.photo-prompt-overlay {
-  position: fixed; inset: 0; z-index: 9999;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+// ===== 照片引导（hero 区直接显示） =====
+.hero-blur {
+  filter: blur(12px);
 }
-.photo-prompt-dialog {
-  width: 640rpx; background: #fff; border-radius: 24rpx;
-  padding: 48rpx 40rpx 40rpx;
-  display: flex; flex-direction: column; align-items: center;
+.hero-blur-prompt {
+  position: absolute; inset: 0; z-index: 5;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 24rpx;
 }
-.prompt-text {
-  font-size: 28rpx; color: #666; text-align: center; line-height: 1.6;
-  margin-bottom: 32rpx;
+.blur-prompt-text {
+  font-size: 28rpx; color: #fff; text-align: center;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4);
+  padding: 0 48rpx;
+  line-height: 1.5;
 }
-.prompt-btn {
+.blur-prompt-btn {
   display: flex; align-items: center; justify-content: center;
   width: 320rpx; height: 80rpx; border-radius: 999px;
-  background: $pink;
+  background: linear-gradient(135deg, $pink, #FF8E9E);
   font-size: 28rpx; color: #fff; font-weight: bold;
-}
-
-// 上传弹窗
-.upload-dialog { padding: 40rpx 36rpx 32rpx; }
-.upload-icons {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12rpx; margin-bottom: 24rpx;
-}
-.upload-deco { font-size: 44rpx; }
-.upload-text { color: #333; font-size: 30rpx; margin-bottom: 28rpx; }
-.upload-btn { width: 400rpx; height: 96rpx; font-size: 30rpx; }
-
-.my-photos-preview {
-  margin-top: 32rpx; width: 100%; padding-top: 24rpx;
-  border-top: 1rpx solid #F0F0F0;
-}
-.my-photos-label { font-size: 24rpx; color: #999; display: block; text-align: center; margin-bottom: 16rpx; }
-.my-photos-row {
-  display: flex; gap: 12rpx; justify-content: center;
-}
-.my-thumb {
-  width: 100rpx; height: 100rpx; border-radius: 12rpx; background: #F5F5F5;
-  border: 3rpx solid $pink;
-}
-.my-thumb-empty {
-  background: #F0F0F0; border-color: #E0E0E0;
-  display: flex; align-items: center; justify-content: center;
-  &::after { content: '+'; font-size: 36rpx; color: #CCC; }
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
 }
 
 /* ===== 语音播放条 ===== */

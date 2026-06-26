@@ -65,7 +65,6 @@
             @error="onPhotoError(props.user.photos![index])"
             lazy-load
           ></image>
-          <view v-if="index > 0 && needBlurPhotos" class="photo-lock-icon">🔒</view>
         </view>
       </view>
     </view>
@@ -399,17 +398,6 @@ const onLike = async () => {
   display: inline-flex;
   margin-right: 8rpx;
   margin-bottom: 8rpx;
-}
-
-.photo-lock-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 20rpx;
-  color: #fff;
-  text-shadow: 0 1rpx 2rpx rgba(0,0,0,0.3);
-  z-index: 1;
 }
 
 /* ===== 心动按钮 ===== */
