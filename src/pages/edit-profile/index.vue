@@ -73,7 +73,7 @@
       <!-- 基础资料（只读展示） -->
       <!-- 顶部提示条：独立于卡片之外 -->
       <view class="readonly-notice">
-        <text class="readonly-notice-text">若修改昵称 · 性别 · 生日 · 身高 · 收入 · 学历 · 婚况 · 车房 · 微信，请联系红娘</text>
+        <text class="readonly-notice-text">若修改昵称·性别·生日·身高·收入·学历·婚况·车房·微信，请联系红娘</text>
       </view>
 
       <view class="section-card">
@@ -1750,10 +1750,9 @@ onShow(async () => {
 }
 
 .readonly-notice-text {
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: #ff758c;
   line-height: 1.4;
-  white-space: nowrap;
 }
 
 .contact-matchmaker-btn {
@@ -2086,13 +2085,13 @@ onShow(async () => {
   align-items: center;
   justify-content: center;
   height: 56rpx;
-  padding: 0 28rpx;
+  padding: 0 24rpx;
   border-radius: 30rpx;
-  background-color: #FF6B9D;
+  background-color: #FFF5F7;
 
   text {
-    font-size: 28rpx;
-    color: #fff;
+    font-size: 36rpx;
+    color: #FF6B9D;
     line-height: 1;
   }
 }
