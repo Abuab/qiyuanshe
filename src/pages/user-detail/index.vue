@@ -88,11 +88,10 @@
               <text class="info-id">ID {{ profileData.top.userId }}</text>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
-              <uni-icons
-                :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'"
-                :size="profileData.top.isFollowed ? 36 : 38"
-                :color="profileData.top.isFollowed ? '#FFB3C1' : '#FF6B6B'"
-              />
+              <view class="follow-icon-wrap">
+                <view class="follow-heart" />
+              </view>
+              <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
             </view>
           </view>
 
@@ -1248,20 +1247,54 @@ $text-hint: #999999;
 }
 
 .follow-btn {
-  width: 72rpx; height: 72rpx; border-radius: 50%; flex-shrink: 0;
-  border: 2rpx solid #FF6B6B;
+  width: 80rpx; height: 100rpx; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6rpx; transition: all 0.25s ease;
+}
+
+.follow-icon-wrap {
+  width: 44rpx; height: 44rpx;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.25s ease;
-  &.followed {
-    background: #FF4D5A; border-color: #FF4D5A;
-    animation: followBounce 300ms ease;
+}
+
+// ===== 心形（CSS 绘制，细线空心） =====
+.follow-heart {
+  position: relative;
+  width: 22rpx; height: 36rpx;
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    width: 22rpx; height: 36rpx;
+    border-radius: 22rpx 22rpx 0 0;
+    background: transparent;
+  }
+  &::before {
+    left: 0; top: 0;
+    border: 2rpx solid #FF8FA3;
+    transform: rotate(-45deg);
+    transform-origin: 0 100%;
+  }
+  &::after {
+    left: 0; top: 0;
+    border: 2rpx solid #FF8FA3;
+    transform: rotate(45deg);
+    transform-origin: 100% 100%;
   }
 }
 
-@keyframes followBounce {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+.follow-btn.followed .follow-heart {
+  &::before, &::after {
+    background: #FF8FA3; border-color: #FF8FA3;
+  }
+}
+
+.follow-text {
+  font-size: 20rpx; color: #FF8FA3; line-height: 1;
+  transition: color 0.25s ease;
+}
+
+.follow-btn.followed .follow-text {
+  color: #FF8FA3;
 }
 
 // ===== 生日星座 + 职业 同行 =====
