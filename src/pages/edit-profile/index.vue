@@ -1750,9 +1750,10 @@ onShow(async () => {
 }
 
 .readonly-notice-text {
-  font-size: 26rpx;
+  font-size: 22rpx;
   color: #ff758c;
   line-height: 1.4;
+  white-space: nowrap;
 }
 
 .contact-matchmaker-btn {

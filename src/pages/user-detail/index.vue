@@ -85,7 +85,7 @@
           <view class="info-header">
             <view class="info-name-id">
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
-              <text class="info-id">ID {{ profileData.top.userId }}</text>
+              <text class="info-id"><text class="id-badge">ID</text> {{ profileData.top.userId }}</text>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
               <view class="follow-icon-wrap">
@@ -167,8 +167,8 @@
         <!-- ========== 4. 关于我区 ========== -->
         <view class="section-card">
           <text class="section-title">关于我</text>
-          <view v-if="profileData.aboutMe.tags?.length" class="tag-cloud">
-            <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="sys-tag">
+          <view v-if="profileData.aboutMe.tags?.length" class="about-tags-grid">
+            <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="about-capsule">
               <text>{{ tag.name }}</text>
             </view>
           </view>
@@ -629,8 +629,6 @@ const characterText = computed(() => {
     const hobby = (tags as any).hobby
     const loveRule = (tags as any).loveRule
     if (char?.length) parts.push(`我是一个${char.join('、')}的人`)
-    if (hobby?.length) parts.push(`我喜欢${hobby.join('、')}`)
-    if (loveRule?.length) parts.push(`我${loveRule.join('、')}`)
     return parts.join('，')
   }
   // 扁平数组
@@ -1263,7 +1261,20 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 24rpx; color: $text-hint;
+  font-size: 26rpx; color: $text-hint;
+}
+
+.id-badge {
+  display: inline-block;
+  font-style: italic;
+  font-size: 20rpx;
+  font-weight: bold;
+  color: #fff;
+  background-color: #ccc;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
+  line-height: 1.4;
+  margin-right: 6rpx;
 }
 
 .follow-btn {
@@ -1404,11 +1415,16 @@ $text-hint: #999999;
 .auth-name { font-size: 22rpx; color: $text-hint; }
 
 // ===== 关于我 =====
-.tag-cloud { display: flex; flex-wrap: wrap; gap: 14rpx; margin-bottom: 22rpx; }
+.about-tags-grid {
+  display: flex; flex-wrap: wrap; gap: 14rpx; margin-bottom: 22rpx;
+}
 
-.sys-tag {
-  padding: 10rpx 22rpx; background: #F5F5F5; border-radius: 18rpx;
-  font-size: 24rpx; color: $text-secondary;
+.about-capsule {
+  width: calc(50% - 7rpx);
+  display: flex; align-items: center; justify-content: center;
+  padding: 12rpx 20rpx;
+  background: #FFF0F3; border-radius: 28rpx;
+  font-size: 22rpx; color: #FF6B9D;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1460,13 +1476,13 @@ $text-hint: #999999;
 }
 
 .partner-capsule {
-  width: calc(50% - 9rpx);
+  width: calc(50% - 7rpx);
   display: flex; align-items: center; justify-content: center;
-  padding: 18rpx 24rpx;
-  background: #EBF5FF; border-radius: 36rpx;
+  padding: 12rpx 20rpx;
+  background: #EBF5FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 24rpx; color: #333; font-weight: 500; }
+.pt-value { font-size: 22rpx; color: #333; font-weight: 500; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
