@@ -221,7 +221,6 @@
           <text class="section-title">Ta希望你</text>
           <view v-if="cleanedPartnerTags.length" class="partner-tags-grid">
             <view v-for="pt in cleanedPartnerTags" :key="pt.label" class="partner-capsule">
-              <view class="pt-icon" />
               <text class="pt-value">{{ pt.value }}</text>
             </view>
           </view>
@@ -1462,19 +1461,9 @@ $text-hint: #999999;
 
 .partner-capsule {
   width: calc(50% - 9rpx);
-  display: flex; align-items: center; gap: 14rpx;
-  padding: 18rpx 24rpx;
-  background: #F2F2F2; border-radius: 36rpx;
-}
-
-.pt-icon {
-  width: 32rpx; height: 32rpx; border-radius: 50%; flex-shrink: 0;
-  border: 2rpx solid #666;
   display: flex; align-items: center; justify-content: center;
-  &::after {
-    content: ''; width: 8rpx; height: 8rpx; border-radius: 50%;
-    background: #666;
-  }
+  padding: 18rpx 24rpx;
+  background: #EBF5FF; border-radius: 36rpx;
 }
 
 .pt-value { font-size: 24rpx; color: #333; font-weight: 500; }
