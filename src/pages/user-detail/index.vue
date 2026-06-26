@@ -1200,7 +1200,7 @@ $text-hint: #999999;
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
   position: absolute; bottom: 80rpx; left: 24rpx; right: 24rpx; z-index: 10;
-  display: flex; gap: 18rpx; overflow-x: auto;
+  display: flex; gap: 22rpx; overflow-x: auto;
 }
 
 .hero-thumb {
@@ -1267,10 +1267,10 @@ $text-hint: #999999;
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 20rpx;
+  font-size: 22rpx;
   font-weight: bold;
   color: #fff;
-  background-color: #ccc;
+  background-color: #999;
   padding: 1rpx 7rpx;
   border-radius: 20rpx;
   line-height: 1.4;
@@ -1367,7 +1367,7 @@ $text-hint: #999999;
 // ===== 身份认证 =====
 .auth-unverified {
   display: flex; flex-direction: column; align-items: center; gap: 14rpx;
-  padding: 16rpx 0;
+  padding: 8rpx 0;
 }
 
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
