@@ -424,7 +424,7 @@ const refreshMyProfileGen = async () => {
     }
     uni.showToast({ title: 'AI印象已生成', icon: 'success' })
   } catch (e: any) {
-    uni.showToast({ title: e?.data?.message || '生成失败，请完善资料后重试', icon: 'none' })
+    uni.showToast({ title: e?.message || '生成失败，请完善资料后重试', icon: 'none' })
   } finally {
     profileGenLoading.value = false
   }
