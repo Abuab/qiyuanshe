@@ -9,7 +9,7 @@
       <view class="top-frost-card" :style="{ paddingTop: statusBarHeight + 'px' }">
         <view class="frost-inner">
           <view class="frost-back" @tap="handleBack">
-            <text class="back-arrow">&lt;</text>
+            <text class="back-arrow">{{ '<' }}</text>
           </view>
           <text class="frost-nickname">{{ profileData.top.nickname || '用户主页' }}</text>
           <view class="frost-placeholder" />
