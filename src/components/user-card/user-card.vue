@@ -412,18 +412,17 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(6px);
-  opacity: 0.8;
+  filter: blur(5px);
 }
 
-/* 半透明白色淡化遮罩，让模糊图片更"淡"、若隐若现 */
+/* 极淡灰色遮罩，降低饱和度让模糊图片更"素" */
 .photo-blur-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(200, 200, 200, 0.15);
   pointer-events: none;
   z-index: 1;
 }
