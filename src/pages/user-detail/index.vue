@@ -36,9 +36,9 @@
             </view>
           </view>
           <!-- 照片缩略图：叠放在背景图底部 -->
-          <view class="hero-thumbnails" v-if="profileData.photos?.length">
+          <view class="hero-thumbnails" v-if="_displayPhotos.length > 1">
             <view
-              v-for="(photo, index) in profileData.photos"
+              v-for="(photo, index) in _displayPhotos"
               :key="index"
               class="hero-thumb"
               :class="{ 'thumb-active': index === activePhotoIndex, 'thumb-blur': photo.isBlurred || photo.needLogin }"
@@ -496,16 +496,23 @@ const followLoading = ref(false)
 
 // ===== 照片 =====
 const activePhotoIndex = ref(0)
+const _displayPhotos = computed(() => {
+  const photos = profileData.value?.photos || []
+  const avatar = profileData.value?.top?.avatar || ''
+  if (photos.length > 0) return photos
+  if (avatar) return [{ url: avatar, isAvatarOnly: true }]
+  return []
+})
+
 const activePhotoUrl = computed(() => {
-  const photos = profileData.value?.photos
-  if (!photos?.length) return null
+  const photos = _displayPhotos.value
+  if (!photos.length) return null
   const p = photos[activePhotoIndex.value]
   return p ? getFullImageUrl(p.url) : null
 })
 const activePhotoNeedsBlur = computed(() => {
   const photos = profileData.value?.photos
-  if (!photos?.length) return false
-  const p = photos[activePhotoIndex.value]
+  const p = photos?.[activePhotoIndex.value]
   return !!(p?.isBlurred || p?.needLogin)
 })
 
