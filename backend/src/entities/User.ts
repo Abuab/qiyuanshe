@@ -233,6 +233,10 @@ export class User {
   @Column({ type: 'int', nullable: true })
   voiceDuration: number
 
+  /** 爱情语录 */
+  @Column({ type: 'text', nullable: true })
+  loveQuote: string
+
   @CreateDateColumn()
   createdAt: Date
 

@@ -8,6 +8,7 @@ import { UserAuth } from '../entities/UserAuth'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { AiMatchReport } from '../entities/AiMatchReport'
+import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import {
@@ -24,6 +25,7 @@ import {
   PhotoItem,
   PhotoGuidanceConfig,
   UserProfileDetailResponse,
+  UserAnswerItem,
 } from './user-profile-detail.types'
 
 /**
@@ -48,6 +50,8 @@ export class UserProfileDetailService {
     private readonly aiProfileRepo: Repository<AiUserProfile>,
     @InjectRepository(AiMatchReport)
     private readonly matchReportRepo: Repository<AiMatchReport>,
+    @InjectRepository(QuestionAnswer)
+    private readonly answerRepo: Repository<QuestionAnswer>,
     private readonly aiConfigService: AiConfigService,
   ) {}
 
@@ -77,6 +81,7 @@ export class UserProfileDetailService {
       tagSelections,
       aiProfile,
       hasMatchReport,
+      answers,
     ] = await Promise.all([
       this.photoRepo.find({
         where: { userId },
@@ -102,6 +107,11 @@ export class UserProfileDetailService {
             where: { userId: currentUserId, targetUserId: userId },
           }).then((r) => !!r)
         : Promise.resolve(false),
+      this.answerRepo.find({
+        where: { userId, status: 1 },
+        relations: ['question'],
+        order: { createdAt: 'ASC' },
+      }),
     ])
 
     // AI 开关状态（决定是否展示入口）
@@ -166,6 +176,13 @@ export class UserProfileDetailService {
       photos: photoItems,
       myPhotoCount,
       photoGuidance,
+      loveQuote: user.loveQuote || '',
+      answers: answers.map((a): UserAnswerItem => ({
+        question: a.question?.title || '',
+        answer: a.content || '',
+      })),
+      personalityTags: user.personalityTags,
+      hopeTaTags: user.hopeTaTags,
     }
   }
 
@@ -293,7 +310,7 @@ export class UserProfileDetailService {
     const partnerTags: PartnerTag[] = []
 
     if (user.partnerAgeRange) partnerTags.push({ label: '年龄范围', value: user.partnerAgeRange })
-    if (user.partnerHeightMin) partnerTags.push({ label: '身高要求', value: `${user.partnerHeightMin}cm以上` })
+    if (user.partnerHeightMin) partnerTags.push({ label: '身高要求', value: user.partnerHeightMin.includes('cm') ? user.partnerHeightMin : `${user.partnerHeightMin}cm以上` })
     if (user.partnerEducation) partnerTags.push({ label: '学历要求', value: user.partnerEducation })
     if (user.partnerIncome) partnerTags.push({ label: '收入要求', value: user.partnerIncome })
     if (user.partnerMaritalStatus) partnerTags.push({ label: '婚况要求', value: user.partnerMaritalStatus })

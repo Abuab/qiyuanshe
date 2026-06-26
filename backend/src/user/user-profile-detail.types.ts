@@ -182,6 +182,22 @@ export interface UserProfileDetailResponse {
   myPhotoCount: number
   /** 照片引导提示文案配置 */
   photoGuidance: PhotoGuidanceConfig
+  /** 爱情语录 */
+  loveQuote?: string
+  /** 问答列表 */
+  answers?: UserAnswerItem[]
+  /** 性格标签原始数据 */
+  personalityTags?: any
+  /** 希望TA标签原始数据 */
+  hopeTaTags?: any
+}
+
+/** 用户问答项 */
+export interface UserAnswerItem {
+  /** 问题标题 */
+  question: string
+  /** 用户回答 */
+  answer: string
 }
 
 /** 照片区引导配置 */

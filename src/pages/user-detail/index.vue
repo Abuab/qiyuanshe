@@ -85,7 +85,7 @@
           <view class="info-header">
             <view class="info-name-id">
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
-              <text class="info-id">ID: {{ profileData.top.userId }}</text>
+              <text class="info-id">ID {{ profileData.top.userId }}</text>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
               <uni-icons
@@ -212,11 +212,8 @@
         <!-- ========== 5. Ta希望你区 ========== -->
         <view class="section-card">
           <text class="section-title">Ta希望你</text>
-          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags">
-            <view v-for="pt in profileData.hopeTa.partnerTags" :key="pt.label" class="partner-tag">
-              <text class="pt-label">{{ pt.label }}：</text>
-              <text class="pt-val">{{ pt.value }}</text>
-            </view>
+          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags-line">
+            <text>{{ profileData.hopeTa.partnerTags.map((t: any) => t.value).filter(Boolean).join('，') }}</text>
           </view>
           <view v-if="profileData.hopeTa.aiHopeText" class="ai-hope-block">
             <view class="ai-label">
@@ -234,7 +231,38 @@
           </view>
         </view>
 
-        <!-- ========== 6. 介绍给好友 ========== -->
+        <!-- ========== 6. Ta的问答 ========== -->
+        <view v-if="profileData.answers?.length" class="section-card qa-card">
+          <text class="section-title">Ta的问答</text>
+          <view v-for="(item, idx) in profileData.answers" :key="idx" class="qa-item">
+            <!-- 问题气泡（左：红心头像） -->
+            <view class="qa-row qa-question-row">
+              <view class="qa-avatar qa-question-avatar">❤️</view>
+              <view class="qa-bubble qa-bubble-question">
+                <text>{{ item.question }}</text>
+              </view>
+            </view>
+            <!-- 回答气泡（右：用户头像） -->
+            <view class="qa-row qa-answer-row">
+              <view class="qa-bubble qa-bubble-answer">
+                <text>{{ item.answer }}</text>
+              </view>
+              <image
+                class="qa-avatar qa-user-avatar"
+                :src="profileData.top.avatar"
+                mode="aspectFill"
+              />
+            </view>
+          </view>
+        </view>
+
+        <!-- ========== 7. 爱情语录 ========== -->
+        <view v-if="profileData.loveQuote" class="section-card love-quote-card">
+          <text class="section-title">Ta的爱情语录</text>
+          <text class="love-quote-text">{{ profileData.loveQuote }}</text>
+        </view>
+
+        <!-- ========== 7. 介绍给好友 ========== -->
         <view class="share-capsule" @tap="openSharePopup">
           <text class="capsule-text">介绍给好友</text>
         </view>
@@ -563,19 +591,37 @@ const activePhotoNeedsBlur = computed(() => {
   return !!(p?.isBlurred || p?.needLogin)
 })
 
-// ===== 性格/希望标签拼接文案 =====
+// ===== 性格/希望标签拼接文案（按管理后台简介模板） =====
 const characterText = computed(() => {
-  const tags = profileData.value?.aboutMe?.tags
-  if (!tags?.length) return ''
-  const names = tags.map((t: any) => t.name).filter(Boolean)
-  return names.length ? `我是一个${names.join('、')}的人` : ''
+  const tags = profileData.value?.personalityTags
+  if (!tags) return ''
+  // 结构化对象 { character:[], hobby:[], loveRule:[] }
+  if (typeof tags === 'object' && !Array.isArray(tags)) {
+    const parts: string[] = []
+    const char = (tags as any).character
+    const hobby = (tags as any).hobby
+    const loveRule = (tags as any).loveRule
+    if (char?.length) parts.push(`我是一个${char.join('、')}的人`)
+    if (hobby?.length) parts.push(`我喜欢${hobby.join('、')}`)
+    if (loveRule?.length) parts.push(`我${loveRule.join('、')}`)
+    return parts.join('，')
+  }
+  // 扁平数组
+  const arr = Array.isArray(tags) ? tags : []
+  return arr.length ? `我是一个${arr.join('、')}的人` : ''
 })
 
 const hopeText = computed(() => {
-  const tags = profileData.value?.hopeTa?.partnerTags
-  if (!tags?.length) return ''
-  const vals = tags.map((t: any) => t.value).filter(Boolean)
-  return vals.length ? `希望你${vals.join('、')}` : ''
+  const tags = profileData.value?.hopeTaTags
+  if (!tags) return ''
+  // 结构化对象
+  if (typeof tags === 'object' && !Array.isArray(tags)) {
+    const all = [...((tags as any).character || []), ...((tags as any).hobby || []), ...((tags as any).loveRule || [])]
+    return all.length ? `希望你${all.join('、')}` : ''
+  }
+  // 扁平数组
+  const arr = Array.isArray(tags) ? tags : []
+  return arr.length ? `希望你${arr.join('、')}` : ''
 })
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -1158,7 +1204,7 @@ $text-hint: #999999;
 
 // ===== 2. 白色资料卡片（覆盖背景图底部，顶部圆角露出背景） =====
 .info-card {
-  background: $card-bg; border-radius: 40rpx 40rpx 0 0;
+  background: $card-bg; border-radius: 48rpx 48rpx 0 0;
   margin: -40rpx 0 0; padding: 32rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
@@ -1177,10 +1223,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  display: inline-block;
-  font-style: italic; font-size: 22rpx; font-weight: bold; color: #fff;
-  background-color: #ccc; padding: 2rpx 14rpx; border-radius: 20rpx;
-  line-height: 1.5;
+  font-size: 24rpx; color: $text-hint;
 }
 
 .follow-btn {
@@ -1323,11 +1366,65 @@ $text-hint: #999999;
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
 // ===== Ta希望你 =====
+.partner-tags-line {
+  font-size: 28rpx; color: $text; line-height: 1.8; margin-bottom: 22rpx;
+}
+
 .partner-tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 22rpx; }
 
 .partner-tag {
   padding: 10rpx 22rpx; background: #E3F2FD; border-radius: 18rpx;
   font-size: 24rpx; color: #1565C0;
+}
+
+// ===== 爱情语录 =====
+.love-quote-card {
+  .section-title { color: $pink; }
+}
+
+.love-quote-text {
+  font-size: 28rpx; color: $text; line-height: 1.8; margin-top: 8rpx;
+  padding: 24rpx; background: #FFF0F5; border-radius: 16rpx;
+}
+
+// ===== Ta的问答（微信聊天风格） =====
+.qa-card {
+  .section-title { margin-bottom: 24rpx; }
+}
+
+.qa-item { margin-bottom: 32rpx; }
+
+.qa-row {
+  display: flex; align-items: flex-start; margin-bottom: 12rpx;
+}
+
+.qa-question-row { justify-content: flex-start; }
+
+.qa-answer-row { justify-content: flex-end; }
+
+.qa-avatar {
+  width: 64rpx; height: 64rpx; border-radius: 50%; flex-shrink: 0;
+}
+
+.qa-question-avatar {
+  background: linear-gradient(135deg, #FF8A9E, #FFB3C1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32rpx; margin-right: 12rpx;
+}
+
+.qa-user-avatar { margin-left: 12rpx; }
+
+.qa-bubble {
+  max-width: 70%; padding: 18rpx 24rpx; border-radius: 20rpx;
+  font-size: 26rpx; color: $text; line-height: 1.6;
+}
+
+.qa-bubble-question {
+  background: #F0F0F0; border-top-left-radius: 6rpx;
+}
+
+.qa-bubble-answer {
+  background: #A8E6A1; border-top-right-radius: 6rpx;
 }
 
 // ===== 介绍给好友（白色胶囊按钮） =====
@@ -1339,7 +1436,7 @@ $text-hint: #999999;
   width: fit-content;
 }
 
-.capsule-text { font-size: 28rpx; color: $text; font-weight: 500; }
+.capsule-text { font-size: 28rpx; color: $text; font-weight: 400; }
 
 // ===== 举报 / 拉黑 =====
 .report-block-row {
