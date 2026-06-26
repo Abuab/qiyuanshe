@@ -51,7 +51,7 @@
       </view>
 
       <!-- 相册小图：右列内部，与上方文字共享同一左边缘 -->
-      <view v-if="showPhotos && user.photos && user.photos.length > 0" class="photos-row">
+      <view v-if="showPhotos && displayPhotos.length > 0" class="photos-row">
         <view
           v-for="(photo, index) in displayPhotos"
           :key="index"
@@ -62,7 +62,7 @@
             :class="{ 'photo-blur': index > 0 && needBlurPhotos }"
             :src="photo"
             mode="aspectFill"
-            @error="onPhotoError(props.user.photos![index])"
+            @error="onPhotoError(displayPhotos[index])"
             lazy-load
           ></image>
         </view>
@@ -160,13 +160,22 @@ const onPhotoError = (photoUrl: string) => {
   }
 }
 
+const resolvePhotoUrl = (raw: string): string => {
+  if (photoFailedMap.value[raw]) return icons.common.defaultAvatar
+  if (raw.startsWith('http') || raw.startsWith('/static/')) return raw
+  return getFullImageUrl(raw)
+}
+
 const displayPhotos = computed(() => {
-  if (!props.user.photos || props.user.photos.length === 0) return []
-  return props.user.photos.slice(0, 4).map(photo => {
-    if (photoFailedMap.value[photo]) return icons.common.defaultAvatar
-    if (photo.startsWith('http') || photo.startsWith('/static/')) return photo
-    return getFullImageUrl(photo)
-  })
+  const photos = props.user.photos
+  if (photos && photos.length > 0) {
+    return photos.slice(0, 4).map(resolvePhotoUrl)
+  }
+  // photos 为空但有头像时，用头像兜底展示一张
+  if (props.user.avatar) {
+    return [resolvePhotoUrl(props.user.avatar)]
+  }
+  return []
 })
 
 /** 当前用户自己的照片数<=1时，对他人非首张照片做高斯模糊 */
