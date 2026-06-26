@@ -5,19 +5,19 @@
     </view>
 
     <template v-else-if="profileData">
-      <!-- ========== 自定义导航栏 ========== -->
-      <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-        <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">←</text>
-        </view>
-        <view class="nav-title">{{ profileData.top.nickname || '用户主页' }}</view>
-        <view class="nav-right">
-          <text class="more-icon" @tap="showMoreActions">⋮</text>
+      <!-- ========== 顶部毛玻璃昵称卡片（固定，适配状态栏） ========== -->
+      <view class="top-frost-card" :style="{ paddingTop: statusBarHeight + 'px' }">
+        <view class="frost-inner">
+          <view class="frost-back" @tap="handleBack">
+            <text class="back-arrow">&lt;</text>
+          </view>
+          <text class="frost-nickname">{{ profileData.top.nickname || '用户主页' }}</text>
+          <view class="frost-placeholder" />
         </view>
       </view>
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图（跟随当前选中的照片） ========== -->
+        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 60%-70%） ========== -->
         <view class="hero-section">
           <image
             class="hero-bg"
@@ -33,28 +33,23 @@
               <text>上传照片</text>
             </view>
           </view>
-        </view>
-
-        <!-- ========== 照片缩略图栏 ========== -->
-        <view class="photos-strip" v-if="profileData.photos?.length">
-          <scroll-view class="photos-scroll" scroll-x :show-scrollbar="false" :enhanced="true">
-            <view class="photos-inner">
-              <view
-                v-for="(photo, index) in profileData.photos"
-                :key="index"
-                class="photo-thumb"
-                :class="{ 'photo-active': index === activePhotoIndex, 'photo-blur': photo.isBlurred || photo.needLogin }"
-                @tap="onPhotoTap(Number(index))"
-              >
-                <image
-                  class="thumb-img"
-                  :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
-                  mode="aspectFill"
-                  :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(8px)' } : {}"
-                />
-              </view>
+          <!-- 照片缩略图：叠放在背景图底部 -->
+          <view class="hero-thumbnails" v-if="profileData.photos?.length">
+            <view
+              v-for="(photo, index) in profileData.photos"
+              :key="index"
+              class="hero-thumb"
+              :class="{ 'thumb-active': index === activePhotoIndex, 'thumb-blur': photo.isBlurred || photo.needLogin }"
+              @tap="onPhotoTap(Number(index))"
+            >
+              <image
+                class="thumb-img"
+                :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
+                mode="aspectFill"
+                :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(4px)' } : {}"
+              />
             </view>
-          </scroll-view>
+          </view>
         </view>
 
         <!-- ===== 语音播放条 ===== -->
@@ -78,72 +73,59 @@
           </view>
         </view>
 
-        <!-- ========== 头像+昵称区 ========== -->
-        <view class="profile-header-card">
-          <view class="avatar-wrapper">
-            <image
-              class="avatar-img"
-              :src="profileData.top.avatar || '/static/default-avatar.png'"
-              mode="aspectFill"
-            />
-            <view v-if="profileData.identityAuth?.items?.filter((i: any) => i.verified).length >= 2" class="verified-badge">✓</view>
-          </view>
-          <view class="name-id-row">
-            <view class="name-line">
-              <text class="nickname">{{ profileData.top.nickname }}</text>
-              <view v-if="profileData.top.isSelf" class="self-tag"><text>自己</text></view>
+        <!-- ========== 2. 白色资料卡片 ========== -->
+        <view class="info-card">
+          <!-- 头部行：昵称 + ID + 关注 -->
+          <view class="info-header">
+            <view class="info-name-id">
+              <text class="info-nickname">{{ profileData.top.nickname }}</text>
+              <text class="info-id">ID: {{ profileData.top.userId }}</text>
             </view>
-            <view class="id-line">
-              <text class="id-badge">ID</text>
-              <text class="id-num">{{ profileData.top.userId }}</text>
+            <view v-if="!profileData.top.isSelf" class="follow-heart" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
+              <text>{{ profileData.top.isFollowed ? '❤️' : '🤍' }}</text>
             </view>
           </view>
-          <!-- 关注按钮 -->
-          <view v-if="!profileData.top.isSelf" class="follow-btn-area">
-            <view class="follow-btn" :class="{ followed: profileData.top.isFollowed }" @tap="toggleFollow">
-              <text class="follow-icon">{{ profileData.top.isFollowed ? '❤️' : '🤍' }}</text>
-              <text>{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
-            </view>
-          </view>
-        </view>
 
-        <!-- ========== 2. 基础资料区 ========== -->
-        <view class="section-card basic-section">
-          <view class="basic-line">
+          <!-- 生日星座 + 职业 同行 -->
+          <view class="info-row-two" v-if="profileData.basicInfo.birthDay || profileData.basicInfo.occupation">
+            <view v-if="profileData.basicInfo.birthDay" class="info-chip left-chip">
+              <text class="chip-emoji">🎂</text>
+              <text>{{ profileData.basicInfo.birthDay }} · {{ profileData.basicInfo.zodiac || '' }}{{ profileData.basicInfo.constellation ? ' · ' + profileData.basicInfo.constellation : '' }}</text>
+            </view>
+            <view v-if="profileData.basicInfo.occupation" class="info-chip right-chip">
+              <text class="chip-emoji">💼</text>
+              <text>{{ profileData.basicInfo.occupation }}</text>
+            </view>
+          </view>
+
+          <!-- 基本资料行：年龄/身高/体重/学历 -->
+          <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
             <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
-            <text v-if="profileData.basicInfo.age" class="dot">·</text>
+            <text v-if="profileData.basicInfo.age && profileData.basicInfo.height" class="dot">·</text>
             <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
-            <text v-if="profileData.basicInfo.height" class="dot">·</text>
+            <text v-if="profileData.basicInfo.height && profileData.basicInfo.weight" class="dot">·</text>
             <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
-            <text v-if="profileData.basicInfo.weight" class="dot">·</text>
+            <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">·</text>
             <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
           </view>
-          <view class="birth-line">
-            <view v-if="profileData.basicInfo.birthDay" class="info-chip pink-chip">
-              <text class="chip-icon">🎂</text>
-              <text>{{ profileData.basicInfo.birthDay }}·{{ profileData.basicInfo.zodiac }}·{{ profileData.basicInfo.constellation }}</text>
-            </view>
-          </view>
-          <view v-if="profileData.basicInfo.occupation" class="info-chip blue-chip">
-            <text class="chip-icon">💼</text>
-            <text>{{ profileData.basicInfo.occupation }}</text>
-          </view>
+
+          <!-- 户籍 + 现居（仅展示市+区县） -->
           <view class="location-row">
             <view v-if="profileData.basicInfo.hometown" class="loc-item">
               <text class="loc-dot blue">●</text>
               <text class="loc-label">户籍</text>
-              <text class="loc-val">{{ profileData.basicInfo.hometown.replace(/\//g, ',') }}</text>
+              <text class="loc-val">{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
             </view>
             <view v-if="profileData.basicInfo.residence" class="loc-item">
               <text class="loc-dot orange">●</text>
               <text class="loc-label">现居</text>
-              <text class="loc-val">{{ profileData.basicInfo.residence.replace(/\//g, ',') }}</text>
+              <text class="loc-val">{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
             </view>
           </view>
         </view>
 
         <!-- ========== 3. 身份认证区 ========== -->
-        <view class="section-card auth-section">
+        <view class="section-card">
           <view class="section-title-bar">
             <text class="section-title">身份认证</text>
             <text class="section-hint">点亮的为已认证</text>
@@ -166,7 +148,7 @@
         </view>
 
         <!-- ========== 4. 关于我区 ========== -->
-        <view class="section-card about-section">
+        <view class="section-card">
           <text class="section-title">关于我</text>
           <view v-if="profileData.aboutMe.tags?.length" class="tag-cloud">
             <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="sys-tag">
@@ -180,56 +162,41 @@
             </view>
             <text class="ai-text">{{ profileData.aboutMe.aiProfileText }}</text>
           </view>
-          <!-- AI个人印象生成入口（仅自己） -->
           <view v-if="profileData.top.isSelf && profileData.showAiProfileGenEntry" class="ai-profile-gen-entry" @tap="refreshProfileGen">
-            <view class="entry-icon-wrap sm">
-              <text class="entry-icon">✨</text>
-            </view>
-            <view class="entry-info">
-              <text class="entry-title">{{ profileData.aboutMe.aiProfileText ? '刷新AI印象' : '生成AI印象' }}</text>
-              <text class="entry-desc">AI帮你总结个人魅力标签</text>
-            </view>
-            <text class="entry-arrow">→</text>
+            <text class="gen-entry-text">{{ profileData.aboutMe.aiProfileText ? '✨ 刷新AI印象' : '✨ 生成AI印象' }}</text>
+            <text class="gen-entry-arrow">→</text>
           </view>
           <view v-else-if="!profileData.aboutMe.tags?.length && !profileData.aboutMe.aiProfileText" class="empty-hint">
             <text>TA还没填写介绍哦～</text>
           </view>
         </view>
 
-        <!-- ========== AI缘分分析入口卡片 ========== -->
-        <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-match-entry" @tap="openAiMatch">
-          <view class="entry-ring left-ring" />
-          <view class="entry-ring right-ring" />
-          <view class="entry-content">
-            <view class="entry-icon-wrap">
-              <text class="entry-icon">💞</text>
+        <!-- ========== AI缘分分析入口 ========== -->
+        <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openAiMatch">
+          <view class="ai-entry-content">
+            <text class="ai-entry-emoji">💞</text>
+            <view class="ai-entry-info">
+              <text class="ai-entry-title">AI缘分分析</text>
+              <text class="ai-entry-desc">测测你们缘分契合度</text>
             </view>
-            <view class="entry-info">
-              <text class="entry-title">AI缘分分析</text>
-              <text class="entry-desc">测测你们缘分契合度</text>
-            </view>
-            <text class="entry-arrow">→</text>
+            <text class="ai-entry-arrow">→</text>
           </view>
         </view>
 
-        <!-- ========== AI趣味缘分测试入口卡片 ========== -->
-        <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-match-entry fun-quiz-entry" @tap="openFunQuiz">
-          <view class="entry-ring left-ring" />
-          <view class="entry-ring right-ring" />
-          <view class="entry-content">
-            <view class="entry-icon-wrap">
-              <text class="entry-icon">🔮</text>
+        <!-- ========== AI趣味测试入口 ========== -->
+        <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openFunQuiz">
+          <view class="ai-entry-content">
+            <text class="ai-entry-emoji">🔮</text>
+            <view class="ai-entry-info">
+              <text class="ai-entry-title">AI趣味测试</text>
+              <text class="ai-entry-desc">看星座生肖契合密码</text>
             </view>
-            <view class="entry-info">
-              <text class="entry-title">AI趣味测试</text>
-              <text class="entry-desc">看星座生肖契合密码</text>
-            </view>
-            <text class="entry-arrow">→</text>
+            <text class="ai-entry-arrow">→</text>
           </view>
         </view>
 
         <!-- ========== 5. Ta希望你区 ========== -->
-        <view class="section-card hope-section">
+        <view class="section-card">
           <text class="section-title">Ta希望你</text>
           <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags">
             <view v-for="pt in profileData.hopeTa.partnerTags" :key="pt.label" class="partner-tag">
@@ -249,49 +216,131 @@
           </view>
         </view>
 
-        <!-- ========== 6. 互动区 ========== -->
-        <view class="section-card interaction-section">
-          <view v-if="profileData.interaction.giftCount > 0" class="interact-item" @tap="goGifts">
-            <text class="interact-emoji">🎁</text>
-            <text class="interact-text">已收到 {{ profileData.interaction.giftCount }} 个礼物</text>
-          </view>
-          <view class="interact-row">
-            <view class="interact-item" @tap="shareProfile">
-              <text class="interact-emoji">📤</text>
-              <text class="interact-text">介绍给好友</text>
-            </view>
-            <view class="interact-item warn" @tap="reportUser">
-              <text class="interact-emoji">🚩</text>
-              <text class="interact-text">举报/拉黑</text>
-            </view>
-          </view>
+        <!-- ========== 6. 介绍给好友（白色胶囊卡片） ========== -->
+        <view class="share-capsule" @tap="shareProfile">
+          <text class="capsule-emoji">📤</text>
+          <text class="capsule-text">介绍给好友</text>
+        </view>
+
+        <!-- ========== 7. 举报 / 拉黑 ========== -->
+        <view class="report-block-row">
+          <text class="report-link" @tap="openReportSheet">举报</text>
+          <text class="report-divider">|</text>
+          <text class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
 
         <view class="bottom-spacer" />
       </scroll-view>
 
-      <!-- ========== 7. 底部固定操作栏 ========== -->
+      <!-- ========== 底部悬浮操作按钮（固定） ========== -->
       <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
         <view class="bb-btn contact-btn" @tap="handleContact">
-          <text class="bb-icon">👋</text>
-          <text>{{ profileData.bottomBar.contactText }}</text>
+          <text>想认识Ta</text>
         </view>
         <view class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
-          <text class="bb-icon">🎯</text>
-          <text>{{ profileData.bottomBar.matchmakerText }}</text>
+          <text>红娘牵线</text>
         </view>
       </view>
 
-      <!-- ========== 举报弹窗 ========== -->
-      <view v-if="showReportSheet" class="report-sheet">
-        <view class="sheet-overlay" @tap="showReportSheet = false" />
-        <view class="sheet-content">
-          <view class="sheet-title">举报{{ profileData.top.nickname }}</view>
-          <view v-for="r in reportReasons" :key="r" class="sheet-item" @tap="onReport(r)">
-            <text>{{ r }}</text>
+      <!-- ========== 关注后订阅弹窗 ========== -->
+      <view v-if="showSubscribeDialog" class="dialog-overlay" @tap="closeSubscribeDialog">
+        <view class="dialog-card" @tap.stop>
+          <text class="dialog-title">总是保持订阅，不错过重要信息</text>
+          <view class="dialog-buttons">
+            <view class="dialog-btn cancel-btn" @tap="closeSubscribeDialog">
+              <text>取消</text>
+            </view>
+            <view class="dialog-btn allow-btn" @tap="handleSubscribeAllow">
+              <text>允许</text>
+            </view>
           </view>
-          <view class="sheet-cancel" @tap="showReportSheet = false">
-            <text>取消</text>
+          <label class="dialog-check-label">
+            <checkbox :checked="alwaysSubscribe" @tap="alwaysSubscribe = !alwaysSubscribe" style="transform:scale(0.7)" />
+            <text>总是保持以上选择，不再询问</text>
+          </label>
+        </view>
+      </view>
+
+      <!-- ========== 拉黑确认弹窗 ========== -->
+      <view v-if="showBlockDialog" class="dialog-overlay" @tap="showBlockDialog = false">
+        <view class="dialog-card" @tap.stop>
+          <text class="dialog-title">提示</text>
+          <text class="dialog-desc">拉黑后，首页将不展示对方信息。\n可在'个人中心->黑名单'中解除。</text>
+          <view class="dialog-buttons">
+            <view class="dialog-btn cancel-btn" @tap="showBlockDialog = false">
+              <text>取消</text>
+            </view>
+            <view class="dialog-btn allow-btn block-confirm-btn" @tap="doBlock">
+              <text>确定</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- ========== 举报底部弹窗 ========== -->
+      <view v-if="showReportSheet" class="report-sheet-overlay" @tap="closeReportSheet">
+        <view class="report-sheet" :class="{ 'sheet-up': reportSheetAnim }" @tap.stop>
+          <!-- 标题栏 -->
+          <view class="report-header">
+            <text class="report-title">举报原因</text>
+            <view class="report-close" @tap="closeReportSheet">
+              <text>✕</text>
+            </view>
+          </view>
+
+          <!-- 原因标签 -->
+          <view class="report-tags">
+            <view
+              v-for="reason in reportReasons"
+              :key="reason"
+              class="report-tag"
+              :class="{ 'tag-selected': selectedReportReasons.includes(reason) }"
+              @tap="toggleReportReason(reason)"
+            >
+              <text>{{ reason }}</text>
+            </view>
+          </view>
+
+          <!-- 举报内容 -->
+          <view class="report-content-section">
+            <view class="textarea-wrap">
+              <textarea
+                class="report-textarea"
+                v-model="reportContent"
+                placeholder="请填写您的举报理由"
+                placeholder-style="color: #ccc; font-size: 28rpx;"
+                maxlength="200"
+                :adjust-position="true"
+                :show-confirm-bar="false"
+              />
+              <text class="char-count">{{ reportContent.length }}/200</text>
+            </view>
+          </view>
+
+          <!-- 证据截图 -->
+          <view class="report-image-section">
+            <text class="image-section-title">证据截图（最多上传6张）</text>
+            <view class="image-list">
+              <view v-for="(img, idx) in reportImages" :key="idx" class="image-item">
+                <image class="image-thumb" :src="img.url" mode="aspectFill" @tap="previewReportImage(idx)" />
+                <view class="image-delete" @tap.stop="removeReportImage(idx)">
+                  <text>✕</text>
+                </view>
+                <view v-if="img.uploading" class="image-loading-mask">
+                  <text>上传中</text>
+                </view>
+              </view>
+              <view v-if="reportImages.length < 6" class="image-add-btn" @tap="handleReportChooseImage">
+                <text class="add-plus">+</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- 提交按钮 -->
+          <view class="report-submit-area" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+            <view class="report-submit-btn" @tap="handleReportSubmit">
+              <text>提交</text>
+            </view>
           </view>
         </view>
       </view>
@@ -308,13 +357,10 @@
       <!-- ========== AI趣味测试弹窗 ========== -->
       <view v-if="showFunQuizPopup" class="funquiz-overlay" @tap="showFunQuizPopup = false">
         <view class="funquiz-panel" @tap.stop>
-          <!-- 顶部标题 -->
           <view class="funquiz-header">
             <text class="funquiz-title">AI趣味缘分测试</text>
             <view class="funquiz-close" @tap="showFunQuizPopup = false"><text>✕</text></view>
           </view>
-
-          <!-- 输入表单（按钮在外） -->
           <template v-if="!funQuizResult">
             <scroll-view class="funquiz-body" scroll-y :enhanced="true" :show-scrollbar="false">
               <view class="funquiz-body-inner">
@@ -333,15 +379,12 @@
                 </view>
               </view>
             </scroll-view>
-            <!-- 开始测试按钮固定在底部 -->
             <view class="funquiz-footer">
               <view class="funquiz-btn" :class="{ disabled: funQuizLoading }" @tap="submitFunQuiz">
                 <text>{{ funQuizLoading ? '生成中...' : '开始测试' }}</text>
               </view>
             </view>
           </template>
-
-          <!-- 结果页 -->
           <template v-else>
             <scroll-view class="funquiz-body funquiz-result-body" scroll-y :enhanced="true" :show-scrollbar="false">
               <view class="funquiz-body-inner">
@@ -372,7 +415,6 @@
                 <view class="fq-disclaimer">仅供娱乐参考，珍惜真实相处时光</view>
               </view>
             </scroll-view>
-            <!-- 重新测试按钮固定在底部 -->
             <view class="funquiz-footer">
               <view class="funquiz-btn funquiz-retry-btn" @tap="retryFunQuiz">
                 <text>重新测试</text>
@@ -406,10 +448,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
@@ -433,21 +476,18 @@ let voiceAudioCtx: any = null
 const showAiMatchPopup = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
-const showReportSheet = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
 
-// 照片引导弹窗（已废弃，改为 hero 区直接显示）
+// ===== 照片 =====
 const activePhotoIndex = ref(0)
-/** 当前选中照片的 URL */
 const activePhotoUrl = computed(() => {
   const photos = profileData.value?.photos
   if (!photos?.length) return null
   const p = photos[activePhotoIndex.value]
   return p ? getFullImageUrl(p.url) : null
 })
-/** 当前选中的照片是否需要模糊（触发上传引导） */
 const activePhotoNeedsBlur = computed(() => {
   const photos = profileData.value?.photos
   if (!photos?.length) return false
@@ -457,27 +497,45 @@ const activePhotoNeedsBlur = computed(() => {
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 const statusBarHeight = computed(() => systemStore.statusBarHeight || 44)
-
-/** 底部安全区：iOS=34, 安卓=12 近似 */
 const safeAreaBottom = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
   return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
 })
 
-const reportReasons = ['虚假信息', '冒充他人', '骚扰谩骂', '广告营销', '色情低俗', '其他']
+// ===== 订阅弹窗 =====
+const showSubscribeDialog = ref(false)
+const alwaysSubscribe = ref(false)
+
+// ===== 拉黑弹窗 =====
+const showBlockDialog = ref(false)
+
+// ===== 举报弹窗 =====
+const showReportSheet = ref(false)
+const reportSheetAnim = ref(false)
+const reportReasons = ['其他', '色情相关', '头像/资料虚假', '酒托/饭托', '诈骗钱财']
+const selectedReportReasons = ref<string[]>([])
+const reportContent = ref('')
+interface ReportImage { url: string; uploading: boolean }
+const reportImages = ref<ReportImage[]>([])
 
 const today = computed(() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
+// ===== 地址格式化：截取最后两个行政级别（市 + 区县） =====
+const formatCityDistrict = (address: string): string => {
+  if (!address) return ''
+  const parts = address.split(/[\/,，]/).map((s) => s.trim()).filter(Boolean)
+  if (parts.length >= 2) return parts.slice(-2).join('')
+  return parts.join('')
+}
+
 // ===== 语音 =====
 async function fetchVoiceEnabled() {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    if (res.code === 0 && res.data) {
-      voiceEnabled.value = res.data.value !== 'false'
-    }
+    if (res.code === 0 && res.data) voiceEnabled.value = res.data.value !== 'false'
   } catch { voiceEnabled.value = true }
 }
 
@@ -501,7 +559,7 @@ async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
     const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET' })
-    if (res.code === 0 && res.data) { voiceData.value = res.data }
+    if (res.code === 0 && res.data) voiceData.value = res.data
   } catch { /* 404 不显示 */ }
 }
 
@@ -544,12 +602,8 @@ const onShareAppMessage = () => ({
 const fetchProfileDetail = async () => {
   loading.value = true
   try {
-    const res = await request({
-      url: `/users/${userId.value}/detail`,
-      method: 'GET',
-    })
+    const res = await request({ url: `/users/${userId.value}/detail`, method: 'GET' })
     profileData.value = res
-    // 头像/背景图补全
     if (profileData.value) {
       profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || '/static/default-avatar.png'
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
@@ -579,11 +633,9 @@ const fetchMatchmakerList = async () => {
 
 const handleBack = () => safeNavigateBack()
 
-// ===== 照片点击逻辑 =====
 const onPhotoTap = (index: number) => {
   const photo = profileData.value?.photos?.[index]
   if (!photo) return
-
   activePhotoIndex.value = index
 }
 
@@ -595,6 +647,7 @@ const onAuthTap = (item: any) => {
   uni.showModal({ title: item.label, content: item.verified ? '已认证' : '未认证', showCancel: false })
 }
 
+// ===== 关注 / 取消关注 =====
 const toggleFollow = async () => {
   if (!isLoggedIn.value) {
     uni.showToast({ title: '请先登录', icon: 'none' })
@@ -607,11 +660,130 @@ const toggleFollow = async () => {
   try {
     await request({ url: `/users/${userId.value}/follow`, method: followed ? 'DELETE' : 'POST' })
     profileData.value.top.isFollowed = !followed
-    uni.showToast({ title: followed ? '已取消关注' : '关注成功', icon: 'success', duration: 1500 })
+    uni.showToast({ title: followed ? '已取消关注' : '关注成功', icon: 'success', duration: 1000 })
+    // 操作完成后弹出订阅弹窗
+    setTimeout(() => {
+      showSubscribeDialog.value = true
+    }, 1200)
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   } finally {
     followLoading.value = false
+  }
+}
+
+const closeSubscribeDialog = () => {
+  showSubscribeDialog.value = false
+}
+
+const handleSubscribeAllow = () => {
+  showSubscribeDialog.value = false
+  if (alwaysSubscribe.value) {
+    uni.setStorageSync('subscribe_always_allow', true)
+  }
+}
+
+// ===== 拉黑 =====
+const confirmBlock = () => {
+  showBlockDialog.value = true
+}
+
+const doBlock = async () => {
+  showBlockDialog.value = false
+  try {
+    await request({ url: `/users/${userId.value}/block`, method: 'POST' })
+    uni.showToast({ title: '已拉黑', icon: 'success' })
+  } catch {
+    uni.showToast({ title: '拉黑失败', icon: 'none' })
+  }
+}
+
+// ===== 举报底部弹窗 =====
+const openReportSheet = () => {
+  selectedReportReasons.value = []
+  reportContent.value = ''
+  reportImages.value = []
+  showReportSheet.value = true
+  nextTick(() => {
+    setTimeout(() => { reportSheetAnim.value = true }, 50)
+  })
+}
+
+const closeReportSheet = () => {
+  reportSheetAnim.value = false
+  setTimeout(() => { showReportSheet.value = false }, 300)
+}
+
+const toggleReportReason = (reason: string) => {
+  const idx = selectedReportReasons.value.indexOf(reason)
+  if (idx > -1) selectedReportReasons.value.splice(idx, 1)
+  else selectedReportReasons.value.push(reason)
+}
+
+const handleReportChooseImage = () => {
+  const remain = 6 - reportImages.value.length
+  uni.chooseImage({
+    count: remain,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: (res) => {
+      const paths = res.tempFilePaths as string[]
+      uploadReportImages(paths)
+    },
+    fail: (err: any) => {
+      if (err.errMsg !== 'chooseImage:fail cancel') {
+        uni.showToast({ title: '选择图片失败', icon: 'none' })
+      }
+    },
+  })
+}
+
+const uploadReportImages = async (tempFilePaths: string[]) => {
+  for (const filePath of tempFilePaths) {
+    const item: ReportImage = { url: filePath, uploading: true }
+    reportImages.value.push(item)
+    const currentIdx = reportImages.value.length - 1
+    try {
+      const result = await uploadImage(filePath, 'file')
+      reportImages.value[currentIdx] = { url: result.url, uploading: false }
+    } catch (err: any) {
+      reportImages.value.splice(currentIdx, 1)
+      uni.showToast({ title: err.message || '图片上传失败，请重试', icon: 'none', duration: 2000 })
+    }
+  }
+}
+
+const removeReportImage = (idx: number) => {
+  reportImages.value.splice(idx, 1)
+}
+
+const previewReportImage = (idx: number) => {
+  const urls = reportImages.value.map((img) => img.url)
+  uni.previewImage({ current: idx, urls })
+}
+
+const handleReportSubmit = async () => {
+  if (selectedReportReasons.value.length === 0 && !reportContent.value.trim()) {
+    uni.showToast({ title: '请选择举报原因或填写举报理由', icon: 'none' })
+    return
+  }
+  try {
+    const imageUrls = reportImages.value.filter((img) => !img.uploading).map((img) => img.url)
+    await request({
+      url: '/reports',
+      method: 'POST',
+      data: {
+        targetUserId: userId.value,
+        type: 'user',
+        reason: selectedReportReasons.value.join('、'),
+        content: reportContent.value.trim(),
+        images: imageUrls,
+      },
+    })
+    uni.showToast({ title: '举报已提交', icon: 'success' })
+    closeReportSheet()
+  } catch {
+    uni.showToast({ title: '提交失败，请重试', icon: 'none' })
   }
 }
 
@@ -629,7 +801,6 @@ const funQuizBirthday = ref({ userBirthDay: '', taBirthDay: '' })
 const funQuizLoading = ref(false)
 const funQuizResult = ref<any>(null)
 
-/** 从 birthDay 字符串（如 "1990年"）中提取年份，转成 YYYY-01-01 格式 */
 const extractBirthYear = (birthDay?: string): number | null => {
   if (!birthDay || typeof birthDay !== 'string') return null
   const match = birthDay.match(/(\d{4})/)
@@ -643,14 +814,8 @@ const openFunQuiz = () => {
     return
   }
   funQuizResult.value = null
-  // 自动填入当前用户的生日（如有）
   const myBirthYear = userStore.userInfo?.birthYear
-  if (myBirthYear) {
-    funQuizBirthday.value.userBirthDay = `${myBirthYear}-01-01`
-  } else {
-    funQuizBirthday.value.userBirthDay = ''
-  }
-  // 自动填入对方用户的生日（如有）
+  funQuizBirthday.value.userBirthDay = myBirthYear ? `${myBirthYear}-01-01` : ''
   const taBirthDay = profileData.value?.basicInfo?.birthDay
   const taYear = extractBirthYear(taBirthDay)
   funQuizBirthday.value.taBirthDay = taYear ? `${taYear}-01-01` : ''
@@ -674,11 +839,7 @@ const submitFunQuiz = async () => {
     funQuizResult.value = res
   } catch (e: any) {
     logger.error('[funQuiz] 生成失败:', e?.message || e)
-    uni.showToast({
-      title: '缘分正在生成中，请稍后再试～',
-      icon: 'none',
-      duration: 2000,
-    })
+    uni.showToast({ title: '缘分正在生成中，请稍后再试～', icon: 'none', duration: 2000 })
   } finally {
     funQuizLoading.value = false
   }
@@ -686,14 +847,8 @@ const submitFunQuiz = async () => {
 
 const retryFunQuiz = () => {
   funQuizResult.value = null
-  // 重新自动填入当前用户的生日（如有）
   const myBirthYear = userStore.userInfo?.birthYear
-  if (myBirthYear) {
-    funQuizBirthday.value.userBirthDay = `${myBirthYear}-01-01`
-  } else {
-    funQuizBirthday.value.userBirthDay = ''
-  }
-  // 重新自动填入对方用户的生日（如有）
+  funQuizBirthday.value.userBirthDay = myBirthYear ? `${myBirthYear}-01-01` : ''
   const taBirthDay2 = profileData.value?.basicInfo?.birthDay
   const taYear2 = extractBirthYear(taBirthDay2)
   funQuizBirthday.value.taBirthDay = taYear2 ? `${taYear2}-01-01` : ''
@@ -736,6 +891,7 @@ const showMatchmakerPopup = () => {
   selectedMatchmaker.value = matchmakerList.value[0]
   showMatchmaker.value = true
 }
+
 const openMatchmakerList = () => { showMatchmaker.value = false; showMatchmakerList.value = true }
 const onSelectMatchmaker = (m: any) => { showMatchmakerList.value = false; selectedMatchmaker.value = m; setTimeout(() => { showMatchmaker.value = true }, 300) }
 
@@ -743,37 +899,6 @@ const shareProfile = () => {
   uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
 }
 
-const showMoreActions = () => {
-  uni.showActionSheet({
-    itemList: ['分享主页', '举报用户', '拉黑'],
-    success: (res) => {
-      if (res.tapIndex === 0) shareProfile()
-      else if (res.tapIndex === 1) showReportSheet.value = true
-      else blockUser()
-    },
-  })
-}
-
-const reportUser = () => { showReportSheet.value = true }
-const onReport = (reason: string) => {
-  request({ url: `/reports`, method: 'POST', data: { targetUserId: userId.value, type: 'user', reason } })
-    .then(() => uni.showToast({ title: '举报已提交', icon: 'success' }))
-    .catch(() => uni.showToast({ title: '举报失败', icon: 'none' }))
-  showReportSheet.value = false
-}
-const blockUser = () => {
-  uni.showModal({
-    title: '确认拉黑',
-    content: '拉黑后将不再看到TA的动态和消息',
-    success: (res) => {
-      if (res.confirm) {
-        request({ url: `/users/${userId.value}/block`, method: 'POST' })
-          .then(() => uni.showToast({ title: '已拉黑', icon: 'success' }))
-          .catch(() => uni.showToast({ title: '拉黑失败', icon: 'none' }))
-      }
-    },
-  })
-}
 const goGifts = () => uni.showToast({ title: '礼物功能开发中', icon: 'none' })
 </script>
 
@@ -790,357 +915,466 @@ $text-hint: #999999;
 .user-detail-page {
   min-height: 100vh;
   background: $bg;
-  position: relative;
 }
+
 .loading-container, .empty-container {
   display: flex; align-items: center; justify-content: center; height: 100vh;
   font-size: 28rpx; color: $text-hint;
 }
 
-// ===== 导航栏 =====
-.nav-bar {
+// ===== 顶部毛玻璃昵称卡片（固定） =====
+.top-frost-card {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12rpx 32rpx; height: 88rpx; box-sizing: content-box;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
-.nav-left, .nav-right { display: flex; align-items: center; gap: 24rpx; }
-.back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
-.nav-title { font-size: 32rpx; font-weight: bold; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
-.more-icon { font-size: 44rpx; color: #fff; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
+
+.frost-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 88rpx; padding: 0 24rpx;
+}
+
+.frost-back {
+  width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center;
+}
+
+.back-arrow {
+  font-size: 40rpx; color: $text; font-weight: 500;
+}
+
+.frost-nickname {
+  font-size: 32rpx; font-weight: bold; color: $text;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;
+}
+
+.frost-placeholder {
+  width: 56rpx;
+}
 
 // ===== 滚动区域 =====
-.page-scroll { height: calc(100vh - 88rpx); }
+.page-scroll {
+  height: 100vh;
+}
 
-// ===== 1. 顶部大图 =====
+// ===== 1. 顶部大背景图（60-70% 屏占比） =====
 .hero-section {
-  position: relative; width: 100%; height: 520rpx; overflow: hidden;
-}
-.hero-bg { width: 100%; height: 100%; }
-.hero-gradient {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 320rpx;
-  background: linear-gradient(transparent, rgba(0,0,0,0.55));
+  position: relative; width: 100%; height: 65vh; min-height: 600rpx; overflow: hidden;
 }
 
-// ===== 照片缩略图栏 =====
-.photos-strip {
-  position: relative; z-index: 11;
-  background: $card-bg; padding: 16rpx 24rpx; margin-top: -52rpx;
-  border-radius: 24rpx 24rpx 0 0;
+.hero-bg {
+  width: 100%; height: 100%;
 }
-.photos-scroll { width: 100%; }
-.photos-inner {
-  display: flex; gap: 16rpx; flex-wrap: nowrap;
+
+.hero-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.45));
 }
-.photo-thumb {
-  flex-shrink: 0; width: 120rpx; height: 120rpx; border-radius: 16rpx;
-  overflow: hidden; position: relative;
-  border: 4rpx solid #E8E8E8; transition: border-color 0.2s;
-  &.photo-active { border-color: $pink; }
-  &.photo-blur { border-color: #E0E0E0; }
+
+// ===== 照片缩略图：叠放在背景图底部 =====
+.hero-thumbnails {
+  position: absolute; bottom: 24rpx; left: 24rpx; right: 24rpx; z-index: 10;
+  display: flex; gap: 12rpx; overflow-x: auto;
 }
+
+.hero-thumb {
+  flex-shrink: 0; width: 100rpx; height: 100rpx; border-radius: 12rpx;
+  overflow: hidden; border: 3rpx solid rgba(255, 255, 255, 0.6);
+  &.thumb-active { border-color: #fff; }
+  &.thumb-blur { border-color: rgba(255, 255, 255, 0.3); }
+}
+
 .thumb-img {
   width: 100%; height: 100%; display: block;
 }
 
-// ===== 头像卡片 =====
-.profile-header-card {
-  position: relative; z-index: 10;
+// ===== 语音播放条 =====
+.voice-bar {
+  margin: 0 24rpx 16rpx; height: 80rpx; border-radius: 40rpx;
+  background: #fff0f3; display: flex; align-items: center; padding: 0 32rpx;
+  &.voice-pending { opacity: 0.5; }
+}
+
+.voice-bar-inner { display: flex; align-items: center; width: 100%; }
+
+.voice-mic-icon { animation: voicePulse 1.5s infinite; }
+
+@keyframes voicePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.voice-label { margin-left: 16rpx; font-size: 28rpx; color: #333; &.muted { color: #999; } }
+
+.voice-right { margin-left: auto; display: flex; align-items: center; }
+
+.voice-duration { font-size: 28rpx; color: #666; }
+
+.voice-play-btn { margin-left: 16rpx; }
+
+.voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
+
+// ===== 2. 白色资料卡片 =====
+.info-card {
   background: $card-bg; border-radius: 24rpx 24rpx 0 0;
-  margin-top: -80rpx; padding: 0 32rpx 24rpx;
-  display: flex; align-items: flex-end;
+  margin: -30rpx 0 0; padding: 32rpx 28rpx 20rpx;
+  position: relative; z-index: 10;
 }
-.avatar-wrapper {
-  position: relative; margin-top: -48rpx; margin-right: 20rpx; flex-shrink: 0;
+
+.info-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20rpx;
 }
-.avatar-img {
-  width: 120rpx; height: 120rpx; border-radius: 50%;
-  border: 4rpx solid #fff; box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.12);
+
+.info-name-id {
+  display: flex; flex-direction: column; gap: 4rpx;
 }
-.verified-badge {
-  position: absolute; right: -2rpx; bottom: -2rpx;
-  width: 36rpx; height: 36rpx; border-radius: 50%;
-  background: #4CAF50; color: #fff; font-size: 22rpx;
-  display: flex; align-items: center; justify-content: center;
-  border: 3rpx solid #fff;
+
+.info-nickname {
+  font-size: 36rpx; font-weight: bold; color: $text;
 }
-.name-id-row { flex: 1; min-width: 0; }
-.name-line { display: flex; align-items: center; gap: 12rpx; margin-bottom: 6rpx; }
-.nickname { font-size: 36rpx; font-weight: bold; color: $text; }
-.self-tag {
-  font-size: 20rpx; color: $pink; background: rgba($pink, 0.08);
-  padding: 2rpx 12rpx; border-radius: 8rpx;
+
+.info-id {
+  font-size: 24rpx; color: $text-hint;
 }
-.id-line { display: flex; align-items: center; gap: 8rpx; }
-.id-badge {
-  font-style: italic; font-weight: bold; font-size: 20rpx; color: #fff;
-  background: $text-hint; padding: 2rpx 10rpx; border-radius: 4rpx;
+
+.follow-heart {
+  font-size: 44rpx; flex-shrink: 0;
+  padding: 8rpx;
+  &.followed { transform: scale(1.1); }
 }
-.id-num { font-size: 24rpx; color: $text-hint; }
-.follow-btn-area { flex-shrink: 0; }
-.follow-btn {
-  display: flex; align-items: center; gap: 6rpx;
-  padding: 14rpx 28rpx; border-radius: 40rpx;
-  background: #FFF0F3; font-size: 26rpx; color: $pink;
-  &.followed { background: #FFE0E8; }
+
+// ===== 生日星座 + 职业 同行 =====
+.info-row-two {
+  display: flex; gap: 16rpx; margin-bottom: 18rpx; flex-wrap: wrap;
 }
-.follow-icon { font-size: 28rpx; }
+
+.info-chip {
+  display: inline-flex; align-items: center; gap: 8rpx;
+  padding: 10rpx 20rpx; border-radius: 20rpx; font-size: 24rpx;
+  flex-shrink: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.left-chip {
+  background: #FFF0F3; color: $pink;
+}
+
+.right-chip {
+  background: #EEF4FF; color: #4A90E2;
+}
+
+.chip-emoji { font-size: 24rpx; flex-shrink: 0; }
+
+// ===== 基本资料 =====
+.basic-line {
+  display: flex; align-items: center; flex-wrap: wrap;
+  font-size: 26rpx; color: $text-secondary; margin-bottom: 18rpx;
+}
+
+.dot { margin: 0 8rpx; color: #ddd; }
+
+// ===== 户籍现居 =====
+.location-row { display: flex; flex-wrap: wrap; gap: 32rpx; }
+
+.loc-item { display: flex; align-items: center; gap: 8rpx; }
+
+.loc-dot { font-size: 20rpx; &.blue { color: #4A90E2; } &.orange { color: #FF9500; } }
+
+.loc-label { font-size: 22rpx; color: $text-hint; }
+
+.loc-val { font-size: 24rpx; color: $text; }
 
 // ===== 分区卡片通用 =====
 .section-card {
   background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 28rpx;
 }
+
 .section-title {
-  font-size: 30rpx; font-weight: bold; color: $text; margin-bottom: 20rpx;
+  font-size: 30rpx; font-weight: bold; color: $text; margin-bottom: 20rpx; display: block;
 }
+
 .section-title-bar {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 20rpx;
+  .section-title { margin-bottom: 0; }
 }
+
 .section-hint { font-size: 22rpx; color: $text-hint; }
 
-// ===== 2. 基础资料 =====
-.basic-line { display: flex; align-items: center; flex-wrap: wrap; font-size: 28rpx; color: $text-secondary; margin-bottom: 18rpx; }
-.dot { margin: 0 8rpx; color: #ddd; }
-.birth-line { margin-bottom: 14rpx; }
-.info-chip {
-  display: inline-flex; align-items: center; gap: 8rpx;
-  padding: 8rpx 20rpx; border-radius: 20rpx; font-size: 24rpx; margin-bottom: 14rpx; margin-right: 14rpx;
-}
-.pink-chip { background: #FFF0F3; color: $pink; }
-.blue-chip { background: #EEF4FF; color: #4A90E2; }
-.chip-icon { font-size: 24rpx; }
-.location-row { display: flex; flex-wrap: wrap; gap: 28rpx; }
-.loc-item { display: flex; align-items: center; gap: 8rpx; }
-.loc-dot { font-size: 20rpx; }
-.loc-dot.blue { color: #4A90E2; }
-.loc-dot.orange { color: #FF9500; }
-.loc-label { font-size: 22rpx; color: $text-hint; }
-.loc-val { font-size: 24rpx; color: $text; }
-
-// ===== 3. 身份认证 =====
+// ===== 身份认证 =====
 .auth-scroll { white-space: nowrap; }
+
 .auth-items { display: flex; gap: 40rpx; padding: 8rpx 0; }
+
 .auth-item { display: flex; flex-direction: column; align-items: center; gap: 12rpx; flex-shrink: 0; }
+
 .auth-circle {
-  width: 72rpx; height: 72rpx; border-radius: 50%;
-  background: #E8E8E8; display: flex; align-items: center; justify-content: center;
-  font-size: 30rpx; color: #999;
+  width: 72rpx; height: 72rpx; border-radius: 50%; background: #E8E8E8;
+  display: flex; align-items: center; justify-content: center; font-size: 30rpx; color: #999;
   &.on { background: #4A90E2; color: #fff; }
 }
+
 .auth-name { font-size: 22rpx; color: $text-hint; }
 
-// ===== 4. 关于我 =====
+// ===== 关于我 =====
 .tag-cloud { display: flex; flex-wrap: wrap; gap: 14rpx; margin-bottom: 22rpx; }
+
 .sys-tag {
   padding: 10rpx 22rpx; background: #F5F5F5; border-radius: 18rpx;
   font-size: 24rpx; color: $text-secondary;
 }
+
 .ai-profile-block, .ai-hope-block {
   background: #FAFAFA; border-radius: 16rpx; padding: 20rpx; margin-top: 6rpx;
 }
+
 .ai-label { display: flex; align-items: center; gap: 8rpx; margin-bottom: 10rpx; }
+
 .ai-dot { font-size: 24rpx; }
+
 .ai-label-text { font-size: 22rpx; color: $pink; font-weight: 500; }
+
 .ai-text { font-size: 26rpx; color: $text-secondary; line-height: 1.6; }
+
 .empty-hint { font-size: 24rpx; color: #ccc; text-align: center; padding: 20rpx 0; }
 
-// ===== AI缘分入口卡片 =====
-.ai-match-entry {
-  position: relative; margin: 0 24rpx 16rpx; padding: 24rpx 28rpx;
-  background: linear-gradient(135deg, rgba($pink, 0.06), rgba($pink-light, 0.12));
-  border: 2rpx solid rgba($pink, 0.35); border-radius: 20rpx;
-  overflow: hidden;
-}
-.entry-ring {
-  position: absolute; width: 120rpx; height: 120rpx; border-radius: 50%;
-  border: 2rpx solid rgba($pink, 0.15);
-  &.left-ring { top: -60rpx; left: -40rpx; }
-  &.right-ring { bottom: -60rpx; right: -40rpx; }
-}
-.entry-content { display: flex; align-items: center; gap: 20rpx; position: relative; z-index: 1; }
-.entry-icon-wrap {
-  width: 72rpx; height: 72rpx; border-radius: 50%;
-  background: linear-gradient(135deg, $pink, $pink-light);
-  display: flex; align-items: center; justify-content: center;
-}
-.entry-icon { font-size: 36rpx; }
-.entry-info { flex: 1; }
-.entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
-.entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
-.entry-arrow { font-size: 36rpx; color: $pink; }
-
-// AI个人印象生成入口行内样式
 .ai-profile-gen-entry {
-  display: flex; align-items: center; gap: 16rpx;
+  display: flex; align-items: center; justify-content: space-between;
   margin-top: 20rpx; padding: 20rpx;
   background: rgba($pink, 0.05); border: 1rpx solid rgba($pink, 0.2); border-radius: 16rpx;
-  .entry-icon-wrap.sm { width: 56rpx; height: 56rpx; }
-  .entry-icon { font-size: 28rpx; }
-  .entry-title { font-size: 26rpx; }
-  .entry-desc { font-size: 22rpx; }
 }
 
-// ===== AI趣味测试弹窗 =====
-.funquiz-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999;
-  background: rgba(0,0,0,0.45); display: flex; align-items: flex-end;
-}
-.funquiz-panel {
-  width: 100%; max-height: 80vh;
-  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 100%);
-  border-radius: 32rpx 32rpx 0 0;
-  display: flex; flex-direction: column;
-  box-sizing: border-box;
-}
-.funquiz-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 32rpx 32rpx 20rpx;
-  flex-shrink: 0;
-}
-.funquiz-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
-.funquiz-close {
-  width: 56rpx; height: 56rpx; border-radius: 50%; background: #F5F5F5;
-  display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #999;
+.gen-entry-text { font-size: 26rpx; color: $pink; font-weight: 500; }
+
+.gen-entry-arrow { font-size: 28rpx; color: $pink; }
+
+// ===== AI入口卡片 =====
+.ai-entry-card {
+  margin: 0 24rpx 16rpx; padding: 24rpx 28rpx;
+  background: linear-gradient(135deg, rgba($pink, 0.06), rgba($pink-light, 0.12));
+  border: 2rpx solid rgba($pink, 0.35); border-radius: 20rpx;
 }
 
-// 输入表单 body（flex: 1 撑开剩余空间）
-.funquiz-body {
-  flex: 1; overflow-y: auto;
-  box-sizing: border-box;
-}
-.funquiz-body-inner {
-  padding: 0 32rpx 24rpx;
-}
-// 结果页 body 需要独立滚动
-.funquiz-result-body {
-  overflow-y: auto;
-}
-.funquiz-desc {
-  font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block;
-  max-width: 100%; overflow-wrap: break-word;
-}
-.funquiz-field { margin-bottom: 24rpx; }
-.funquiz-label { font-size: 26rpx; color: #333; margin-bottom: 10rpx; display: block; }
-.funquiz-picker {
-  padding: 20rpx 24rpx; background: #F5F5F5; border-radius: 12rpx;
-  font-size: 28rpx; color: #333;
-}
+.ai-entry-content { display: flex; align-items: center; gap: 20rpx; }
 
-// 按钮容器（固定在 footer 中）
-.funquiz-btn {
-  display: flex; align-items: center; justify-content: center;
-  height: 96rpx; border-radius: 999px;
-  background: linear-gradient(135deg, $pink, $pink-light);
-  font-size: 30rpx; color: #fff; font-weight: bold;
-  width: 100%; box-sizing: border-box;
-  &.disabled { opacity: 0.5; }
-}
-// 重新测试按钮 — 主题粉色
-.funquiz-retry-btn {
-  background: linear-gradient(135deg, $pink, $pink-light);
-  color: #fff;
-}
-.funquiz-footer {
-  padding: 16rpx 32rpx 24rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid #FFE4E9;
-  flex-shrink: 0;
-  background: #fff;
-}
+.ai-entry-emoji { font-size: 40rpx; }
 
-.fq-result-header {
-  display: flex; align-items: center; justify-content: center; gap: 16rpx;
-  padding: 20rpx 0 28rpx;
-}
-.fq-zodiac { font-size: 26rpx; color: #666; max-width: 100%; overflow-wrap: break-word; }
-.fq-vs { font-size: 32rpx; flex-shrink: 0; }
-.fq-keywords {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 16rpx; padding-bottom: 28rpx;
-}
-.fq-keyword {
-  padding: 10rpx 24rpx; border-radius: 28rpx;
-  background: linear-gradient(135deg, #FFF0F3, #FFE8EC);
-  font-size: 24rpx; color: $pink;
-  max-width: 100%; overflow-wrap: break-word;
-}
-.fq-section { padding-bottom: 24rpx; max-width: 100%; overflow-wrap: break-word; }
-.fq-section-title { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; }
-.fq-section-text {
-  font-size: 26rpx; color: #666; line-height: 1.7;
-  max-width: 100%; overflow-wrap: break-word; word-break: break-word;
-}
-.fq-node {
-  padding: 16rpx 20rpx; background: #FFF5F7; border-radius: 12rpx; margin-bottom: 12rpx;
-  max-width: 100%; overflow-wrap: break-word; box-sizing: border-box;
-}
-.fq-node-day { font-size: 24rpx; color: $pink; font-weight: bold; margin-bottom: 4rpx; display: block; }
-.fq-node-title { font-size: 26rpx; color: #333; margin-bottom: 4rpx; display: block; }
-.fq-node-desc { font-size: 24rpx; color: #999; }
-.fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
+.ai-entry-info { flex: 1; }
 
-// ===== 5. Ta希望你 =====
+.ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
+
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
+
+.ai-entry-arrow { font-size: 36rpx; color: $pink; }
+
+// ===== Ta希望你 =====
 .partner-tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 22rpx; }
+
 .partner-tag {
   padding: 10rpx 22rpx; background: #E3F2FD; border-radius: 18rpx;
   font-size: 24rpx; color: #1565C0;
 }
 
-// ===== 6. 互动区 =====
-.interact-row { display: flex; gap: 56rpx; margin-top: 20rpx; }
-.interact-item {
-  display: flex; align-items: center; gap: 10rpx;
-  padding: 12rpx 0;
-  &.warn { margin-left: auto; }
+// ===== 介绍给好友（白色胶囊卡片） =====
+.share-capsule {
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  margin: 16rpx 24rpx; padding: 28rpx;
+  background: $card-bg; border-radius: 24rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
 }
-.interact-emoji { font-size: 32rpx; }
-.interact-text { font-size: 26rpx; color: $text-secondary; }
+
+.capsule-emoji { font-size: 32rpx; }
+
+.capsule-text { font-size: 28rpx; color: $text; font-weight: 500; }
+
+// ===== 举报 / 拉黑 =====
+.report-block-row {
+  display: flex; justify-content: center; align-items: center; gap: 16rpx;
+  padding: 16rpx 0;
+}
+
+.report-link {
+  font-size: 26rpx; color: $text-hint; padding: 8rpx;
+}
+
+.report-divider { font-size: 24rpx; color: #ddd; }
 
 // ===== 底部空白 =====
-.bottom-spacer { height: 180rpx; }
+.bottom-spacer { height: 160rpx; }
 
-// ===== 7. 底部操作栏 =====
+// ===== 底部悬浮按钮（固定） =====
 .bottom-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 150;
-  display: flex; gap: 20rpx; padding: 16rpx 24rpx;
-  background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0,0,0,0.05);
+  display: flex; gap: 20rpx; padding: 16rpx 40rpx;
+  background: $card-bg; box-shadow: 0 -2rpx 16rpx rgba(0, 0, 0, 0.05);
 }
+
 .bb-btn {
-  flex: 1; height: 92rpx; display: flex; align-items: center; justify-content: center; gap: 10rpx;
-  border-radius: 50rpx; font-size: 30rpx; font-weight: bold; color: #fff;
+  flex: 1; height: 88rpx; display: flex; align-items: center; justify-content: center;
+  border-radius: 44rpx; font-size: 30rpx; font-weight: bold; color: #fff;
 }
-.contact-btn { background: linear-gradient(135deg, $pink, $pink-light); }
+
+.contact-btn { background: linear-gradient(135deg, $pink, #FF758C); }
+
 .matchmaker-btn { background: linear-gradient(135deg, $purple, #A78BFA); }
-.bb-icon { font-size: 32rpx; }
 
-// ===== 举报弹窗 =====
-.report-sheet { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; }
-.sheet-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); }
-.sheet-content {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: #fff; border-radius: 24rpx 24rpx 0 0;
-  padding: 40rpx 32rpx; padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+// ===== 订阅弹窗 & 拉黑确认弹窗 =====
+.dialog-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+  background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center;
 }
-.sheet-title { font-size: 32rpx; font-weight: bold; text-align: center; color: $text; margin-bottom: 32rpx; }
-.sheet-item {
-  padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-.sheet-cancel { padding: 28rpx 0; text-align: center; font-size: 30rpx; color: $text-hint; margin-top: 16rpx; }
 
-// ===== 照片引导（hero 区直接显示） =====
-.hero-blur {
-  filter: blur(12px);
+.dialog-card {
+  width: 580rpx; background: #fff; border-radius: 24rpx; padding: 44rpx 36rpx 32rpx;
+  display: flex; flex-direction: column; align-items: center;
 }
+
+.dialog-title {
+  font-size: 32rpx; font-weight: bold; color: $text; text-align: center; margin-bottom: 12rpx;
+}
+
+.dialog-desc {
+  font-size: 28rpx; color: $text-secondary; text-align: center; line-height: 1.6;
+  margin-bottom: 32rpx; white-space: pre-line;
+}
+
+.dialog-buttons {
+  display: flex; gap: 24rpx; width: 100%; margin-bottom: 24rpx;
+}
+
+.dialog-btn {
+  flex: 1; height: 80rpx; display: flex; align-items: center; justify-content: center;
+  border-radius: 40rpx; font-size: 30rpx; font-weight: 500;
+}
+
+.cancel-btn { background: #F5F5F5; color: $text-secondary; }
+
+.allow-btn { background: #07C160; color: #fff; }
+
+.block-confirm-btn { background: #07C160; }
+
+.dialog-check-label {
+  display: flex; align-items: center; gap: 8rpx; font-size: 24rpx; color: $text-hint;
+}
+
+// ===== 举报底部弹窗 =====
+.report-sheet-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9998;
+  background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end;
+}
+
+.report-sheet {
+  width: 100%; max-height: 85vh; background: #fff5f5;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow-y: auto;
+  &.sheet-up { transform: translateY(0); }
+}
+
+.report-header {
+  display: flex; align-items: center; justify-content: center; position: relative;
+  padding: 36rpx 32rpx 20rpx; flex-shrink: 0;
+}
+
+.report-title { font-size: 34rpx; font-weight: bold; color: #333; }
+
+.report-close {
+  position: absolute; right: 32rpx; top: 50%; transform: translateY(-50%);
+  width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(0, 0, 0, 0.05); font-size: 28rpx; color: #999;
+}
+
+.report-tags {
+  display: flex; flex-wrap: wrap; gap: 16rpx; padding: 0 32rpx 24rpx; flex-shrink: 0;
+}
+
+.report-tag {
+  padding: 14rpx 28rpx; border-radius: 32rpx;
+  background: #fff; border: 2rpx solid #e8e8e8;
+  font-size: 26rpx; color: $text-secondary;
+  &.tag-selected { background: #FFE8EC; border-color: $pink; color: $pink; }
+}
+
+.report-content-section {
+  padding: 0 32rpx 24rpx; flex-shrink: 0;
+}
+
+.textarea-wrap {
+  position: relative; background: #fff; border-radius: 12rpx; padding: 20rpx;
+}
+
+.report-textarea {
+  width: 100%; min-height: 200rpx; font-size: 28rpx; line-height: 1.6;
+  color: #333; box-sizing: border-box;
+}
+
+.char-count {
+  text-align: right; font-size: 24rpx; color: #999; display: block; margin-top: 8rpx; padding-right: 4rpx;
+}
+
+.report-image-section {
+  padding: 0 32rpx 24rpx; flex-shrink: 0;
+}
+
+.image-section-title {
+  font-size: 28rpx; color: #333; font-weight: 500; display: block; margin-bottom: 16rpx;
+}
+
+.image-list {
+  display: flex; flex-wrap: wrap; gap: 16rpx;
+}
+
+.image-item {
+  position: relative; width: 156rpx; height: 156rpx; border-radius: 12rpx;
+  overflow: hidden; background: #f5f5f5;
+}
+
+.image-thumb { width: 100%; height: 100%; }
+
+.image-delete {
+  position: absolute; top: -4rpx; right: -4rpx; z-index: 2;
+  width: 40rpx; height: 40rpx; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.55); border-radius: 50%; font-size: 22rpx; color: #fff;
+}
+
+.image-loading-mask {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center;
+  font-size: 22rpx; color: #fff;
+}
+
+.image-add-btn {
+  width: 156rpx; height: 156rpx; border: 2rpx dashed #ffb3c1; border-radius: 12rpx;
+  display: flex; align-items: center; justify-content: center; background: #fff;
+}
+
+.add-plus { font-size: 56rpx; color: #ff6b81; line-height: 1; }
+
+.report-submit-area {
+  padding: 16rpx 32rpx; flex-shrink: 0;
+}
+
+.report-submit-btn {
+  height: 96rpx; border-radius: 48rpx;
+  background: linear-gradient(135deg, #ff6b81, #ff758c);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32rpx; font-weight: bold; color: #fff;
+}
+
+// ===== 照片引导（hero 区） =====
+.hero-blur { filter: blur(12px); }
+
 .hero-blur-prompt {
   position: absolute; inset: 0; z-index: 5;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 24rpx;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24rpx;
 }
+
 .blur-prompt-text {
   font-size: 28rpx; color: #fff; text-align: center;
-  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4);
-  padding: 0 48rpx;
-  line-height: 1.5;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.4); padding: 0 48rpx; line-height: 1.5;
 }
+
 .blur-prompt-btn {
   display: flex; align-items: center; justify-content: center;
   width: 320rpx; height: 80rpx; border-radius: 999px;
@@ -1149,14 +1383,91 @@ $text-hint: #999999;
   box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
 }
 
-/* ===== 语音播放条 ===== */
-.voice-bar { margin: 24rpx; height: 80rpx; border-radius: 40rpx; background: #fff0f3; display: flex; align-items: center; padding: 0 32rpx; &.voice-pending { opacity: 0.5; } }
-.voice-bar-inner { display: flex; align-items: center; width: 100%; }
-.voice-mic-icon { animation: voicePulse 1.5s infinite; }
-@keyframes voicePulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-.voice-label { margin-left: 16rpx; font-size: 28rpx; color: #333333; &.muted { color: #999999; } }
-.voice-right { margin-left: auto; display: flex; align-items: center; }
-.voice-duration { font-size: 28rpx; color: #666666; }
-.voice-play-btn { margin-left: 16rpx; }
-.voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
+// ===== AI趣味测试弹窗 =====
+.funquiz-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999;
+  background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-end;
+}
+
+.funquiz-panel {
+  width: 100%; max-height: 80vh; background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 100%);
+  border-radius: 32rpx 32rpx 0 0; display: flex; flex-direction: column; box-sizing: border-box;
+}
+
+.funquiz-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 32rpx 32rpx 20rpx; flex-shrink: 0;
+}
+
+.funquiz-title { font-size: 34rpx; font-weight: bold; color: #1A1A1A; }
+
+.funquiz-close {
+  width: 56rpx; height: 56rpx; border-radius: 50%; background: #F5F5F5;
+  display: flex; align-items: center; justify-content: center; font-size: 28rpx; color: #999;
+}
+
+.funquiz-body { flex: 1; overflow-y: auto; box-sizing: border-box; }
+
+.funquiz-body-inner { padding: 0 32rpx 24rpx; }
+
+.funquiz-result-body { overflow-y: auto; }
+
+.funquiz-desc {
+  font-size: 26rpx; color: #666; line-height: 1.6; margin-bottom: 32rpx; display: block;
+}
+
+.funquiz-field { margin-bottom: 24rpx; }
+
+.funquiz-label { font-size: 26rpx; color: #333; margin-bottom: 10rpx; display: block; }
+
+.funquiz-picker {
+  padding: 20rpx 24rpx; background: #F5F5F5; border-radius: 12rpx; font-size: 28rpx; color: #333;
+}
+
+.funquiz-btn {
+  display: flex; align-items: center; justify-content: center;
+  height: 96rpx; border-radius: 999px;
+  background: linear-gradient(135deg, $pink, $pink-light);
+  font-size: 30rpx; color: #fff; font-weight: bold;
+  width: 100%; box-sizing: border-box;
+  &.disabled { opacity: 0.5; }
+}
+
+.funquiz-retry-btn { background: linear-gradient(135deg, $pink, $pink-light); color: #fff; }
+
+.funquiz-footer {
+  padding: 16rpx 32rpx 24rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid #FFE4E9; flex-shrink: 0; background: #fff;
+}
+
+.fq-result-header { display: flex; align-items: center; justify-content: center; gap: 16rpx; padding: 20rpx 0 28rpx; }
+
+.fq-zodiac { font-size: 26rpx; color: #666; }
+
+.fq-vs { font-size: 32rpx; flex-shrink: 0; }
+
+.fq-keywords { display: flex; flex-wrap: wrap; justify-content: center; gap: 16rpx; padding-bottom: 28rpx; }
+
+.fq-keyword {
+  padding: 10rpx 24rpx; border-radius: 28rpx;
+  background: linear-gradient(135deg, #FFF0F3, #FFE8EC); font-size: 24rpx; color: $pink;
+}
+
+.fq-section { padding-bottom: 24rpx; }
+
+.fq-section-title { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; }
+
+.fq-section-text { font-size: 26rpx; color: #666; line-height: 1.7; }
+
+.fq-node { padding: 16rpx 20rpx; background: #FFF5F7; border-radius: 12rpx; margin-bottom: 12rpx; }
+
+.fq-node-day { font-size: 24rpx; color: $pink; font-weight: bold; margin-bottom: 4rpx; display: block; }
+
+.fq-node-title { font-size: 26rpx; color: #333; margin-bottom: 4rpx; display: block; }
+
+.fq-node-desc { font-size: 24rpx; color: #999; }
+
+.fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
 </style>
+
