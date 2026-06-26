@@ -172,6 +172,10 @@
             </view>
             <text class="ai-text">{{ profileData.aboutMe.aiProfileText }}</text>
           </view>
+          <view v-if="characterText" class="character-line-wrap">
+            <view class="section-divider" />
+            <text class="character-line">{{ characterText }}</text>
+          </view>
           <view v-if="profileData.top.isSelf && profileData.showAiProfileGenEntry" class="ai-profile-gen-entry" @tap="refreshProfileGen">
             <text class="gen-entry-text">{{ profileData.aboutMe.aiProfileText ? '✨ 刷新AI印象' : '✨ 生成AI印象' }}</text>
             <text class="gen-entry-arrow">→</text>
@@ -221,14 +225,17 @@
             </view>
             <text class="ai-text">{{ profileData.hopeTa.aiHopeText }}</text>
           </view>
+          <view v-if="hopeText" class="hope-line-wrap">
+            <view class="section-divider" />
+            <text class="hope-line">{{ hopeText }}</text>
+          </view>
           <view v-if="!profileData.hopeTa.partnerTags?.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
             <text>TA还没填写期待哦～</text>
           </view>
         </view>
 
-        <!-- ========== 6. 介绍给好友（白色胶囊卡片） ========== -->
+        <!-- ========== 6. 介绍给好友 ========== -->
         <view class="share-capsule" @tap="openSharePopup">
-          <text class="capsule-emoji">📤</text>
           <text class="capsule-text">介绍给好友</text>
         </view>
 
@@ -236,7 +243,7 @@
         <view class="report-block-row">
           <text class="report-link" @tap="openReportSheet">举报</text>
           <text class="report-divider">|</text>
-          <text v-if="isBlocked" class="report-link blocked-text" @tap="confirmUnblock">已拉黑</text>
+          <text v-if="isBlocked" class="report-link" @tap="confirmUnblock">已拉黑</text>
           <text v-else class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
 
@@ -554,6 +561,21 @@ const activePhotoNeedsBlur = computed(() => {
   const photos = profileData.value?.photos
   const p = photos?.[activePhotoIndex.value]
   return !!(p?.isBlurred || p?.needLogin)
+})
+
+// ===== 性格/希望标签拼接文案 =====
+const characterText = computed(() => {
+  const tags = profileData.value?.aboutMe?.tags
+  if (!tags?.length) return ''
+  const names = tags.map((t: any) => t.name).filter(Boolean)
+  return names.length ? `我是一个${names.join('、')}的人` : ''
+})
+
+const hopeText = computed(() => {
+  const tags = profileData.value?.hopeTa?.partnerTags
+  if (!tags?.length) return ''
+  const vals = tags.map((t: any) => t.value).filter(Boolean)
+  return vals.length ? `希望你${vals.join('、')}` : ''
 })
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
@@ -1063,10 +1085,10 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（65vh，卡片覆盖底部） =====
+// ===== 1. 顶部大背景图（50vh，卡片覆盖底部） =====
 .hero-section {
-  position: relative; width: 100%; height: 65vh; min-height: 700rpx; overflow: hidden;
-  border-radius: 40rpx 40rpx 0 0;
+  position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
+  border-radius: 48rpx 48rpx 0 0;
 }
 
 .hero-bg {
@@ -1155,7 +1177,10 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 24rpx; color: $text-hint;
+  display: inline-block;
+  font-style: italic; font-size: 22rpx; font-weight: bold; color: #fff;
+  background-color: #ccc; padding: 2rpx 14rpx; border-radius: 20rpx;
+  line-height: 1.5;
 }
 
 .follow-btn {
@@ -1305,16 +1330,14 @@ $text-hint: #999999;
   font-size: 24rpx; color: #1565C0;
 }
 
-// ===== 介绍给好友（粉色胶囊按钮） =====
+// ===== 介绍给好友（白色胶囊按钮） =====
 .share-capsule {
-  display: flex; align-items: center; justify-content: center; gap: 12rpx;
+  display: flex; align-items: center; justify-content: center;
   margin: 16rpx auto; padding: 22rpx 48rpx;
-  background: linear-gradient(135deg, #FFE4EC, #FFF0F5); border-radius: 48rpx;
-  box-shadow: 0 2rpx 12rpx rgba(255, 107, 138, 0.15);
+  background: #fff; border-radius: 48rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   width: fit-content;
 }
-
-.capsule-emoji { font-size: 32rpx; }
 
 .capsule-text { font-size: 28rpx; color: $text; font-weight: 500; }
 
@@ -1526,10 +1549,20 @@ $text-hint: #999999;
   &::after { border: none; }
 }
 
-.share-option-label { font-size: 28rpx; color: #333; font-weight: 500; }
+.share-option-label { font-size: 28rpx; color: #333; font-weight: 500; line-height: 1; }
 
-// ===== 已拉黑文字 =====
-.blocked-text { color: #ccc; }
+// ===== 分隔线 + 拼接文案 =====
+.section-divider {
+  height: 1rpx; background: #e8e8e8; margin: 22rpx 0 18rpx;
+}
+
+.character-line-wrap, .hope-line-wrap {
+  margin-top: 4rpx;
+}
+
+.character-line, .hope-line {
+  font-size: 26rpx; color: $text-secondary; line-height: 1.6;
+}
 
 // ===== 照片引导（hero 区） =====
 .hero-blur { filter: blur(12px); }
