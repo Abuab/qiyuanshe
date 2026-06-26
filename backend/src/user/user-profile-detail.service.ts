@@ -310,9 +310,15 @@ export class UserProfileDetailService {
     const partnerTags: PartnerTag[] = []
 
     if (user.partnerAgeRange) partnerTags.push({ label: '年龄范围', value: user.partnerAgeRange })
-    if (user.partnerHeightMin) partnerTags.push({ label: '身高要求', value: user.partnerHeightMin.includes('cm') ? user.partnerHeightMin : `${user.partnerHeightMin}cm以上` })
+    if (user.partnerHeightMin) {
+      const rawHeight = user.partnerHeightMin.replace(/[cC][mM].*$/, '').replace(/以上$/, '')
+      partnerTags.push({ label: '身高要求', value: `${rawHeight}cm以上` })
+    }
     if (user.partnerEducation) partnerTags.push({ label: '学历要求', value: user.partnerEducation })
-    if (user.partnerIncome) partnerTags.push({ label: '收入要求', value: user.partnerIncome })
+    if (user.partnerIncome) {
+      const incomeVal = user.partnerIncome.startsWith('月收入') ? user.partnerIncome : `月收入${user.partnerIncome}`
+      partnerTags.push({ label: '收入要求', value: incomeVal })
+    }
     if (user.partnerMaritalStatus) partnerTags.push({ label: '婚况要求', value: user.partnerMaritalStatus })
     if (user.acceptChildren) partnerTags.push({ label: '子女情况', value: user.acceptChildren })
 

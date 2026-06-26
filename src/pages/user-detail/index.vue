@@ -219,8 +219,11 @@
         <!-- ========== 5. Ta希望你区 ========== -->
         <view class="section-card">
           <text class="section-title">Ta希望你</text>
-          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags-line">
-            <text>{{ profileData.hopeTa.partnerTags.map((t: any) => t.value).filter(Boolean).join('，') }}</text>
+          <view v-if="profileData.hopeTa.partnerTags?.length" class="partner-tags-grid">
+            <view v-for="pt in profileData.hopeTa.partnerTags" :key="pt.label" class="partner-capsule">
+              <view class="pt-icon" />
+              <text class="pt-value">{{ pt.value }}</text>
+            </view>
           </view>
           <view v-if="profileData.hopeTa.aiHopeText" class="ai-hope-block">
             <view class="ai-label">
@@ -1435,16 +1438,28 @@ $text-hint: #999999;
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
 // ===== Ta希望你 =====
-.partner-tags-line {
-  font-size: 28rpx; color: $text; line-height: 1.8; margin-bottom: 22rpx;
+.partner-tags-grid {
+  display: flex; flex-wrap: wrap; gap: 18rpx; margin-bottom: 22rpx;
 }
 
-.partner-tags { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 22rpx; }
-
-.partner-tag {
-  padding: 10rpx 22rpx; background: #E3F2FD; border-radius: 18rpx;
-  font-size: 24rpx; color: #1565C0;
+.partner-capsule {
+  width: calc(50% - 9rpx);
+  display: flex; align-items: center; gap: 14rpx;
+  padding: 18rpx 24rpx;
+  background: #F2F2F2; border-radius: 36rpx;
 }
+
+.pt-icon {
+  width: 32rpx; height: 32rpx; border-radius: 50%; flex-shrink: 0;
+  border: 2rpx solid #666;
+  display: flex; align-items: center; justify-content: center;
+  &::after {
+    content: ''; width: 8rpx; height: 8rpx; border-radius: 50%;
+    background: #666;
+  }
+}
+
+.pt-value { font-size: 24rpx; color: #333; font-weight: 500; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
