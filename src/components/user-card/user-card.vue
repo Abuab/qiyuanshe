@@ -56,6 +56,7 @@
           v-for="(photo, index) in displayPhotos"
           :key="index"
           class="photo-thumb-wrapper"
+          :class="{ 'photo-blur-wrapper': needBlurPhotos }"
         >
           <image
             class="photo-thumb"
@@ -385,25 +386,32 @@ const onLike = async () => {
   flex-wrap: nowrap;
 }
 
-.photo-thumb {
+.photo-thumb-wrapper {
+  position: relative;
+  flex-shrink: 0;
   width: 72rpx;
   height: 72rpx;
   border-radius: 8rpx;
-  background-color: #f5f5f5;
-  margin-right: 8rpx;
+  overflow: hidden;
+  margin-right: 10rpx;
   margin-bottom: 8rpx;
+  background-color: #f5f5f5;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+  &.photo-blur-wrapper {
+    border-color: #E0E0E0;
+  }
+}
+
+.photo-thumb {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 0;
 }
 
 .photo-thumb.photo-blur {
   filter: blur(8px);
-  border: 2rpx solid #E0E0E0;
-}
-
-.photo-thumb-wrapper {
-  position: relative;
-  display: inline-flex;
-  margin-right: 8rpx;
-  margin-bottom: 8rpx;
 }
 
 /* ===== 心动按钮 ===== */
