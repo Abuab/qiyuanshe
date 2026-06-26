@@ -59,7 +59,7 @@
         >
           <image
             class="photo-thumb"
-            :class="{ 'photo-blur': index > 0 && needBlurPhotos }"
+            :class="{ 'photo-blur': needBlurPhotos }"
             :src="photo"
             mode="aspectFill"
             @error="onPhotoError(displayPhotos[index])"
@@ -111,13 +111,10 @@ export interface UserCardData {
 interface Props {
   user: UserCardData
   showPhotos?: boolean
-  /** 当前用户自己的照片数，用于判断是否对他人照片做高斯模糊 */
-  myPhotoCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showPhotos: true,
-  myPhotoCount: 0,
 })
 
 const emit = defineEmits<{
@@ -178,8 +175,8 @@ const displayPhotos = computed(() => {
   return []
 })
 
-/** 当前用户自己的照片数<=1时，对他人非首张照片做高斯模糊 */
-const needBlurPhotos = computed(() => props.myPhotoCount <= 1)
+/** 该用户有多张照片时全部模糊，仅一张时清晰展示 */
+const needBlurPhotos = computed(() => displayPhotos.value.length > 1)
 
 const handleClick = () => {
   emit('click', props.user)

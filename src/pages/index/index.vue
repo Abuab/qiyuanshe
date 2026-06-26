@@ -124,7 +124,6 @@
           v-for="user in userList"
           :key="user.id"
           :user="user"
-          :my-photo-count="myPhotoCount"
           @click="goToUserDetail(user)"
         />
 
@@ -294,7 +293,6 @@ const matchmakerList = ref<any[]>([])
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
-const myPhotoCount = ref(0)
 
 const filterStore = useFilterStore()
 const userStore = useUserStore()
@@ -303,14 +301,6 @@ const appName = computed(() => systemStore.appName)
 const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
 const matchmakerShowHi = computed(() => systemStore.matchmakerShowHi !== false)
 const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')
-
-const fetchMyPhotoCount = async () => {
-  try {
-    const res: any = await get('/users/photos')
-    const list = Array.isArray(res?.list) ? res.list : (Array.isArray(res) ? res : [])
-    myPhotoCount.value = list.length
-  } catch { /* ignore */ }
-}
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
@@ -575,7 +565,6 @@ onMounted(() => {
   // 公告通知栏
   showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
   fetchAnnouncements()
-  fetchMyPhotoCount()
 
   // 公告弹窗：每天首次进入弹出 popup 类型公告
   const today = new Date().toDateString()
@@ -627,7 +616,7 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
-  fetchMyPhotoCount()
+  // 暂不重复弹窗，后续可恢复
 })
 
 const onShareAppMessage = () => {
