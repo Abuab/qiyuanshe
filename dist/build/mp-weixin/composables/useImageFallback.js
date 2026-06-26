@@ -1,0 +1,1 @@
+"use strict";const t=require("../config/icons.js");exports.useImageFallback=function(){return{handleImageError:a=>{const e=(null==a?void 0:a.detail)||a;(null==e?void 0:e.target)&&(e.target.src=t.icons.common.defaultAvatar)},defaultAvatar:t.icons.common.defaultAvatar}};

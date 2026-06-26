@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "活动详情",
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "matchmaker-popup": "../../components/matchmaker-popup/matchmaker-popup",
+    "matchmaker-list-popup": "../../components/matchmaker-list-popup/matchmaker-list-popup"
+  }
+}

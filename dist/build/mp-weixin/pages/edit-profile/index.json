@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "编辑资料",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "uni-icons": "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons",
+    "city-picker": "../../components/city-picker/city-picker",
+    "photo-guide": "../../components/photo-guide/photo-guide",
+    "matchmaker-popup": "../../components/matchmaker-popup/matchmaker-popup"
+  }
+}

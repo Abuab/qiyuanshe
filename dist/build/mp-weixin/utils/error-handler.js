@@ -1,0 +1,1 @@
+"use strict";const r=require("../common/vendor.js"),e=require("./logger.js");exports.setupGlobalErrorHandling=()=>{r.index.onUnhandledRejection&&r.index.onUnhandledRejection(r=>{e.logger.error("未处理Promise:",r.reason)}),r.index.onError&&r.index.onError(r=>{e.logger.error("全局错误:",r)})};

@@ -1,0 +1,1 @@
+"use strict";require("../common/vendor.js");const e=require("../store/user.js");require("./logger.js");const r=require("./crypto.js"),o=()=>r.secureStorage.getToken();exports.checkLogin=()=>{if(!o())return!1;return e.useUserStore().isLoggedIn},exports.getToken=o;

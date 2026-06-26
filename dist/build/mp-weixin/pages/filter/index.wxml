@@ -1,0 +1,1 @@
+<view class="filter-page data-v-afdfe5d6"><filter-panel wx:if="{{d}}" class="r data-v-afdfe5d6" u-r="panelRef" bindconfirm="{{b}}" bindreset="{{c}}" u-i="afdfe5d6-0" bind:__l="__l" u-p="{{d}}"/></view>

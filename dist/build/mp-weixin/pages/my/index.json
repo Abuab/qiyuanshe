@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "我的",
+  "navigationStyle": "custom",
+  "enablePullDownRefresh": false,
+  "usingComponents": {
+    "uni-icons": "../../node-modules/@dcloudio/uni-ui/lib/uni-icons/uni-icons",
+    "tab-bar": "../../components/tab-bar/tab-bar",
+    "matchmaker-popup": "../../components/matchmaker-popup/matchmaker-popup",
+    "feedback-popup": "../../components/feedback-popup/feedback-popup"
+  }
+}
