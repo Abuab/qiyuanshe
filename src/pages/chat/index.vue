@@ -135,7 +135,7 @@
 
       <view class="input-row">
         <!-- AI帮回 -->
-        <view class="ai-btn" @tap="openAiSkillPanel">
+        <view v-if="systemStore.isAiFeatureEnabled('chat_skill')" class="ai-btn" @tap="openAiSkillPanel">
           <text class="ai-btn-icon">✨</text>
           <text class="ai-btn-text">AI帮回</text>
         </view>
@@ -196,6 +196,7 @@ import { onShow, onHide } from '@dcloudio/uni-app'
 import request, { getServerBaseUrl } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
@@ -215,6 +216,7 @@ interface ChatMessage {
 }
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const toUserId = ref(0)
 const nickname = ref('')
 const avatar = ref('')
@@ -293,6 +295,8 @@ onShow(() => {
   pollOnce()
   // 重启轮询定时器（如果之前被 onHide 停止了）
   startPolling()
+  // 同步 AI 功能开关状态
+  systemStore.loadAiFeatureConfig()
 })
 
 // 修复 A：页面隐藏时清除轮询，防止后台持续请求

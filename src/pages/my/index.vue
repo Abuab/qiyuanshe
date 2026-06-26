@@ -111,7 +111,7 @@
             </view>
             <text class="service-label">我的问答</text>
           </view>
-          <view class="service-item" @tap="goToAiMatchmaker">
+          <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="service-item" @tap="goToAiMatchmaker">
             <view class="service-icon-box pink-gradient">
               <text class="service-icon-text">💝</text>
             </view>
