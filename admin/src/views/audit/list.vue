@@ -146,6 +146,11 @@
                   {{ row.aiResult }}
                 </el-tag>
               </el-tooltip>
+              <div v-if="row.targetType === 'voice' && getTranscriptText(row)" class="ai-score">
+                <el-button type="primary" link size="small" @click="openTranscriptDialog(row)" style="padding: 0; font-size: 12px">
+                  查看转录详情
+                </el-button>
+              </div>
               <div v-if="row.aiScore" class="ai-score">置信度: {{ (row.aiScore * 100).toFixed(0) }}%</div>
             </template>
             <span v-else class="text-muted">-</span>
@@ -198,6 +203,14 @@
         <el-button type="primary" @click="confirmReject" :loading="rejectLoading">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 转录详情弹窗 -->
+    <el-dialog v-model="transcriptDialogVisible" title="AI 转录详情" width="560px">
+      <div class="transcript-content">{{ transcriptDialogText }}</div>
+      <template #footer>
+        <el-button @click="transcriptDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -234,6 +247,10 @@ const rejectDialogVisible = ref(false)
 const rejectLoading = ref(false)
 const rejectForm = reactive({ reason: '' })
 const currentRejectItem = ref<AuditItem | null>(null)
+
+// 转录详情弹窗
+const transcriptDialogVisible = ref(false)
+const transcriptDialogText = ref('')
 
 // 语音播放
 const voicePlayingId = ref<number | null>(null)
@@ -284,6 +301,22 @@ function toggleVoicePlay(row: AuditItem) {
   audio.play()
   audio.onended = () => { voicePlayingId.value = null; voiceAudio.value = null }
   audio.onerror = () => { voicePlayingId.value = null; voiceAudio.value = null; ElMessage.warning('音频加载失败') }
+}
+
+// 获取 transcript 完整文本（content.transcript 比 aiResult 更完整）
+function getTranscriptText(row: AuditItem): string | null {
+  const { transcript } = parseVoiceContent(row.content)
+  return transcript || null
+}
+
+function openTranscriptDialog(row: AuditItem) {
+  const text = getTranscriptText(row)
+  if (!text) {
+    ElMessage.info('暂无转录文本')
+    return
+  }
+  transcriptDialogText.value = text
+  transcriptDialogVisible.value = true
 }
 
 onMounted(() => {
@@ -628,5 +661,18 @@ function getTypeTagType(type: string) {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.transcript-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.8;
+  font-size: 14px;
+  color: #303133;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
 }
 </style>
