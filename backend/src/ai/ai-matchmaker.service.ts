@@ -362,7 +362,7 @@ export class AiMatchmakerService {
               const [totalAll, totalActive, totalShow, byGender, byStatus] = await Promise.all([
                 this.userRepo.count({ where: { isDeleted: 0 } }),
                 this.userRepo.count({ where: { isDeleted: 0, status: 2 } }),
-                this.userRepo.count({ where: { isDeleted: 0, showBasicProfile: 1 } }),
+                this.userRepo.count({ where: { isDeleted: 0, showBasicProfile: true } }),
                 this.userRepo.createQueryBuilder('u')
                   .select('u.gender', 'gender').addSelect('COUNT(*)', 'cnt')
                   .where('u.isDeleted = 0').andWhere('u.status = 2').andWhere('u.showBasicProfile = 1')
