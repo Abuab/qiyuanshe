@@ -1469,7 +1469,7 @@ $text-hint: #999999;
 
 .ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; display: block; }
 
-.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 12rpx; display: block; }
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 28rpx; display: block; }
 
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
