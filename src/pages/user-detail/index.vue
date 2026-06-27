@@ -16,9 +16,9 @@
         </view>
       </view>
 
-      <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false" :style="{ paddingTop: (statusBarHeight + 88) + 'px' }">
+      <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
-        <view class="hero-section">
+        <view class="hero-section" :style="{ paddingTop: (statusBarHeight + 88) + 'px' }">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
@@ -29,7 +29,7 @@
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 右上角分享按钮 -->
-          <view class="hero-share-btn" @tap="openSharePopup">
+          <view class="hero-share-btn" :style="{ top: (statusBarHeight + 88) + 'px' }" @tap="openSharePopup">
             <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
           </view>
           <!-- 模糊照片上的上传引导 -->
@@ -1209,7 +1209,7 @@ $text-hint: #999999;
 
 // ===== 右上角分享按钮（hero-section 内绝对定位） =====
 .hero-share-btn {
-  position: absolute; top: 20rpx; right: 24rpx; z-index: 20;
+  position: absolute; right: 24rpx; z-index: 20;
   width: 64rpx; height: 64rpx; border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
   display: flex; align-items: center; justify-content: center;
