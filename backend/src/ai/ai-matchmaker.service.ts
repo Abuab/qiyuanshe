@@ -500,6 +500,11 @@ export class AiMatchmakerService {
         }
 
         if (filters) {
+          // 🔴 强制异性推荐：AI红娘是相亲助手，不论用户怎么说，只推荐异性
+          if (user.gender != null) {
+            filters.gender = user.gender === 1 ? 2 : 1
+          }
+
           // 判断是否仅含性别过滤（无年龄/城市/身高/学历等具体条件）→ 智能匹配
           const hasSpecificFilters = !!(
             filters.ageMin || filters.ageMax || filters.heightMin ||
