@@ -96,14 +96,41 @@
         </view>
       </view>
 
-      <!-- ========== 信息认证 ========== -->
+      <!-- ========== 信息认证（含认证状态） ========== -->
       <view class="auth-card" @tap="goToRealnameAuth">
-        <text class="auth-label">信息认证</text>
-        <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
-        <text class="arrow">></text>
+        <view class="auth-card-header">
+          <text class="auth-label">信息认证</text>
+          <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
+          <text class="arrow">></text>
+        </view>
+        <view class="auth-steps">
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.wechat }">
+              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.wechat }">微信授权</text>
+            <text v-if="!authSteps.wechat" class="step-action" @tap.stop="goAuthWechat">去认证</text>
+          </view>
+          <view class="step-line" :class="{ done: authSteps.wechat && authSteps.phone }" />
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.phone }">
+              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.phone }">手机绑定</text>
+            <text v-if="!authSteps.phone" class="step-action" @tap.stop="goAuthPhone">去认证</text>
+          </view>
+          <view class="step-line" :class="{ done: authSteps.phone && authSteps.realName }" />
+          <view class="auth-step">
+            <view class="step-icon" :class="{ done: authSteps.realName }">
+              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+            </view>
+            <text class="step-label" :class="{ done: authSteps.realName }">实名认证</text>
+            <text v-if="!authSteps.realName" class="step-action" @tap.stop="goRealNameAuth">去认证</text>
+          </view>
+        </view>
       </view>
 
-      <!-- ========== 金刚区：我的问答 + AI红娘 + 专属红娘（合并为一张卡片，左对齐网格） ========== -->
+      <!-- ========== 金刚区：我的问答 + 专属红娘 + AI助手 ========== -->
       <view class="service-card">
         <view class="service-grid">
           <view class="service-item" @tap="goToQuestions">
@@ -113,18 +140,39 @@
             </view>
             <text class="service-label">我的问答</text>
           </view>
-          <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="service-item" @tap="goToAiMatchmaker">
-            <view class="service-icon-box pink-gradient">
-              <text class="service-icon-text">💝</text>
-            </view>
-            <text class="service-label">AI 红娘</text>
-          </view>
           <view class="service-item" @tap="goToMatchmaker">
             <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
             <view v-else class="service-icon-box purple-gradient">
               <text class="service-icon-text">👤</text>
             </view>
             <text class="service-label">专属红娘</text>
+          </view>
+          <view v-if="showAiAssistantEntry" class="service-item" @tap="aiAssistantExpanded = !aiAssistantExpanded">
+            <view class="service-icon-box ai-gradient">
+              <text class="service-icon-text">🤖</text>
+            </view>
+            <text class="service-label">AI助手</text>
+          </view>
+        </view>
+        <!-- AI助手展开面板 -->
+        <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
+          <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="ai-sub-item" @tap="goToAiMatchmaker">
+            <text class="ai-sub-emoji">💝</text>
+            <text class="ai-sub-label">AI 红娘</text>
+            <text class="ai-sub-desc">智能匹配缘分</text>
+            <text class="arrow">></text>
+          </view>
+          <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-sub-item" @tap="goToAiQuiz">
+            <text class="ai-sub-emoji">💬</text>
+            <text class="ai-sub-label">AI 情感问答</text>
+            <text class="ai-sub-desc">解答情感困惑</text>
+            <text class="arrow">></text>
+          </view>
+          <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-sub-item" @tap="goToAiImpression">
+            <text class="ai-sub-emoji">✨</text>
+            <text class="ai-sub-label">AI 个人印象</text>
+            <text class="ai-sub-desc">{{ aiProfileText ? '已生成' : '生成魅力印象' }}</text>
+            <text class="arrow">></text>
           </view>
         </view>
       </view>
@@ -148,59 +196,6 @@
               <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
               <text class="tool-label">{{ item.label }}</text>
             </template>
-          </view>
-        </view>
-      </view>
-
-      <!-- ===== AI 情感问答入口 ===== -->
-      <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-quiz-entry" @tap="goToAiQuiz">
-        <uni-icons type="chatbubble" size="40rpx" color="#FF6B6B"></uni-icons>
-        <text class="ai-quiz-label">AI 情感问答</text>
-        <uni-icons type="arrowright" size="32rpx" color="#999999"></uni-icons>
-      </view>
-
-      <!-- ===== AI 个人印象入口 ===== -->
-      <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-profile-card">
-        <view class="ai-profile-header">
-          <view class="ai-profile-title-row">
-            <text class="ai-profile-icon">✨</text>
-            <text class="ai-profile-label">AI 个人印象</text>
-          </view>
-          <view class="ai-profile-action" @tap="refreshMyProfileGen">
-            <text v-if="profileGenLoading" class="ai-profile-action-text">生成中...</text>
-            <text v-else class="ai-profile-action-text">{{ aiProfileText ? '刷新' : '生成' }}</text>
-          </view>
-        </view>
-        <text v-if="aiProfileText" class="ai-profile-content">{{ aiProfileText }}</text>
-        <text v-else class="ai-profile-placeholder">AI 根据你的资料生成魅力印象，让 TA 一眼看到你的亮点</text>
-      </view>
-
-      <!-- ===== 认证状态 ===== -->
-      <view class="auth-status-card">
-        <text class="auth-card-title">认证状态</text>
-        <view class="auth-steps">
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.wechat }">
-              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.wechat }">微信授权</text>
-            <text v-if="!authSteps.wechat" class="step-action" @tap="goAuthWechat">去认证</text>
-          </view>
-          <view class="step-line" :class="{ done: authSteps.wechat && authSteps.phone }" />
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.phone }">
-              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.phone }">手机绑定</text>
-            <text v-if="!authSteps.phone" class="step-action" @tap="goAuthPhone">去认证</text>
-          </view>
-          <view class="step-line" :class="{ done: authSteps.phone && authSteps.realName }" />
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.realName }">
-              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.realName }">实名认证</text>
-            <text v-if="!authSteps.realName" class="step-action" @tap="goRealNameAuth">去认证</text>
           </view>
         </view>
       </view>
@@ -279,6 +274,8 @@ const navTotalHeight = computed(() => {
 const refreshingVisible = ref(false)  // 下拉刷新状态
 const aiProfileText = ref('')        // AI 个人印象文本
 const profileGenLoading = ref(false) // AI 印象生成中
+const aiAssistantExpanded = ref(false) // AI助手面板展开状态
+const showAiAssistantEntry = computed(() => systemStore.isAiFeatureEnabled('ai_assistant'))
 
 // 会员卡片轮播
 // 会员卡片轮播（3条，可从后台 /system/config 的 vipCardTexts 字段配置）
@@ -419,6 +416,21 @@ const goToAiMatchmaker = () => {
 }
 const goToAiQuiz = () => {
   uni.navigateTo({ url: '/pages/ai-quiz/ai-quiz' })
+}
+
+// AI 个人印象：点击入口
+const goToAiImpression = () => {
+  if (aiProfileText.value) {
+    uni.showModal({
+      title: 'AI 个人印象',
+      content: aiProfileText.value,
+      confirmText: '刷新',
+      cancelText: '关闭',
+      success: (res) => { if (res.confirm) refreshMyProfileGen() }
+    })
+  } else {
+    refreshMyProfileGen()
+  }
 }
 
 // AI 个人印象：加载已有印象
@@ -571,7 +583,7 @@ const toolGrid7 = [
 
 .nav-title {
   font-size: 34rpx;
-  font-weight: bold;
+  font-weight: 400;
   color: #333;
 }
 
@@ -795,14 +807,17 @@ const toolGrid7 = [
   }
 }
 
-// ========== 信息认证 ==========
+// ========== 信息认证（含认证状态） ==========
 .auth-card {
-  display: flex;
-  align-items: center;
   margin: 0 24rpx 24rpx;
   padding: 20rpx 24rpx;
   background-color: #fff;
   border-radius: 16rpx;
+}
+
+.auth-card-header {
+  display: flex;
+  align-items: center;
 }
 
 .auth-label {
@@ -821,6 +836,63 @@ const toolGrid7 = [
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-left: 12rpx;
+}
+
+.auth-steps {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: flex-start;
+}
+
+.auth-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.step-icon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: #eeeeee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.done {
+    background: #52c41a;
+  }
+}
+
+.step-label {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #999999;
+
+  &.done {
+    color: #333333;
+  }
+}
+
+.step-action {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #ff6b6b;
+}
+
+.step-line {
+  height: 2rpx;
+  background: #eeeeee;
+  flex: 0.5;
+  min-width: 40rpx;
+  position: relative;
+  top: 24rpx;
+
+  &.done {
+    background: #52c41a;
+  }
 }
 
 // ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
@@ -863,6 +935,10 @@ const toolGrid7 = [
   &.pink-gradient {
     background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
   }
+
+  &.ai-gradient {
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  }
 }
 
 .service-icon-text {
@@ -881,6 +957,45 @@ const toolGrid7 = [
 .service-label {
   font-size: 26rpx;
   color: #333;
+}
+
+// ===== AI助手展开面板 =====
+.ai-assistant-panel {
+  margin-top: 20rpx;
+  border-top: 1rpx solid #f0f0f0;
+  padding-top: 16rpx;
+}
+
+.ai-sub-item {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 12rpx;
+  border-radius: 12rpx;
+
+  &:active {
+    background-color: #f8f8ff;
+  }
+}
+
+.ai-sub-emoji {
+  font-size: 36rpx;
+  margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.ai-sub-label {
+  font-size: 28rpx;
+  color: #333;
+  flex-shrink: 0;
+  margin-right: 16rpx;
+}
+
+.ai-sub-desc {
+  flex: 1;
+  font-size: 24rpx;
+  color: #999;
+  text-align: right;
+  margin-right: 8rpx;
 }
 
 // ========== 7个工具图标卡片（4列网格对齐） ==========
@@ -1039,101 +1154,6 @@ const toolGrid7 = [
 
 .bottom-safe-area {
   height: 40rpx;
-}
-
-/* ===== AI 情感问答入口 ===== */
-.ai-quiz-entry {
-  display: flex;
-  align-items: center;
-  margin: 0 24rpx 16rpx;
-  padding: 24rpx;
-  background: #ffffff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-}
-
-.ai-quiz-label {
-  margin-left: 16rpx;
-  font-size: 28rpx;
-  color: #333333;
-  flex: 1;
-}
-
-/* ===== AI 个人印象卡片 ===== */
-.ai-profile-card {
-  margin: 0 24rpx 16rpx;
-  padding: 24rpx;
-  background: #ffffff;
-  border-radius: 16rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-}
-
-.ai-profile-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16rpx;
-}
-
-.ai-profile-title-row {
-  display: flex;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.ai-profile-icon {
-  font-size: 36rpx;
-}
-
-.ai-profile-label {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333333;
-}
-
-.ai-profile-action {
-  padding: 10rpx 24rpx;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 32rpx;
-  flex-shrink: 0;
-}
-
-.ai-profile-action-text {
-  font-size: 24rpx;
-  color: #ffffff;
-}
-
-.ai-profile-content {
-  font-size: 26rpx;
-  color: #666666;
-  line-height: 1.6;
-}
-
-.ai-profile-placeholder {
-  font-size: 24rpx;
-  color: #bbbbbb;
-  line-height: 1.5;
-}
-
-/* ===== 认证状态 ===== */
-.auth-status-card {
-  margin: 24rpx;
-  padding: 24rpx;
-  border-radius: 16rpx;
-  background: #ffffff;
-  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-}
-
-.auth-card-title {
-  font-size: 28rpx;
-  font-weight: bold;
-  color: #333333;
-}
-
-.auth-steps {
-  margin-top: 24rpx;
-  display: flex;
-  align-items: flex-start;
 }
 
 .auth-step {
