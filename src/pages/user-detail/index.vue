@@ -1216,7 +1216,7 @@ $text-hint: #999999;
 
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
-  position: absolute; bottom: 50rpx; left: 24rpx; right: 24rpx; z-index: 10;
+  position: absolute; bottom: 30rpx; left: 24rpx; right: 24rpx; z-index: 10;
   display: flex; gap: 32rpx; overflow-x: auto;
 }
 
