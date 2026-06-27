@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: center; gap: 6rpx; flex: 1; min-width: 0;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1261,16 +1261,16 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 26rpx; color: $text-hint;
+  font-size: 28rpx; color: $text-hint;
 }
 
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 24rpx;
+  font-size: 26rpx;
   font-weight: bold; color: #fff; background-color: #999;
-  padding: 0 5rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: middle; margin-right: 2rpx;
+  padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
+  vertical-align: middle; margin-right: 1rpx;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
