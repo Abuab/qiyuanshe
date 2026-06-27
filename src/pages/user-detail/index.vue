@@ -1261,21 +1261,16 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 24rpx; color: $text-hint;
+  font-size: 26rpx; color: $text-hint;
 }
 
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 22rpx;
-  font-weight: bold;
-  color: #fff;
-  background-color: #999;
-  padding: 0 5rpx;
-  border-radius: 20rpx;
-  line-height: 1.2;
-  vertical-align: middle;
-  margin-right: 4rpx;
+  font-size: 24rpx;
+  font-weight: bold; color: #fff; background-color: #999;
+  padding: 0 5rpx; border-radius: 20rpx; line-height: 1.2;
+  vertical-align: middle; margin-right: 2rpx;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
