@@ -391,7 +391,7 @@ const onLike = async () => {
   flex-shrink: 0;
   width: 72rpx;
   height: 72rpx;
-  border-radius: 16rpx;
+  border-radius: 12rpx;
   overflow: hidden;
   margin-right: 20rpx;
   margin-bottom: 8rpx;

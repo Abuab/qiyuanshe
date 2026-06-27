@@ -16,22 +16,23 @@
         </view>
       </view>
 
+      <!-- 右上角分享按钮（固定，不跟随滚动） -->
+      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 70) + 'px' }" @tap="openSharePopup">
+        <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
+      </view>
+
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 50%） ========== -->
         <view class="hero-section">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
-            :class="{ 'hero-blur': activePhotoNeedsBlur }"
+            :class="{ 'hero-blur': activePhotoNeedsBlur, 'photo-slide': photoAnimating }"
             :src="activePhotoUrl"
             mode="aspectFill"
           />
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
-          <!-- 右上角分享按钮 -->
-      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 70) + 'px' }" @tap="openSharePopup">
-        <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
-      </view>
           <!-- 模糊照片上的上传引导 -->
           <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
             <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
@@ -583,6 +584,7 @@ const followLoading = ref(false)
 
 // ===== 照片 =====
 const activePhotoIndex = ref(0)
+const photoAnimating = ref(false)
 const _displayPhotos = computed(() => {
   const photos = profileData.value?.photos || []
   const avatar = profileData.value?.top?.avatar || ''
@@ -804,6 +806,10 @@ const handleBack = () => safeNavigateBack()
 const onPhotoTap = (index: number) => {
   const photo = profileData.value?.photos?.[index]
   if (!photo) return
+  if (index !== activePhotoIndex.value) {
+    photoAnimating.value = true
+    setTimeout(() => { photoAnimating.value = false }, 350)
+  }
   activePhotoIndex.value = index
 }
 
@@ -1175,11 +1181,20 @@ $text-hint: #999999;
 // ===== 1. 顶部大背景图（50vh，卡片覆盖底部） =====
 .hero-section {
   position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
-  border-radius: 48rpx 48rpx 0 0;
+  border-radius: 12rpx 12rpx 0 0;
 }
 
 .hero-bg {
   width: 100%; height: 100%;
+}
+
+.hero-bg.photo-slide {
+  animation: photoSlideIn 350ms ease;
+}
+
+@keyframes photoSlideIn {
+  0% { transform: translateX(30%); opacity: 0.6; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 .hero-placeholder {
@@ -1192,9 +1207,9 @@ $text-hint: #999999;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.45));
 }
 
-// ===== 右上角分享按钮 =====
+// ===== 右上角分享按钮（固定在页面层级） =====
 .hero-share-btn {
-  position: fixed; top: 88rpx; right: 24rpx; z-index: 210;
+  position: fixed; right: 24rpx; z-index: 210;
   width: 64rpx; height: 64rpx; border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
   display: flex; align-items: center; justify-content: center;
