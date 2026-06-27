@@ -29,7 +29,7 @@
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 右上角分享按钮 -->
-      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 20) + 'px' }" @tap="openSharePopup">
+      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 70) + 'px' }" @tap="openSharePopup">
         <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
       </view>
           <!-- 模糊照片上的上传引导 -->
@@ -1463,9 +1463,9 @@ $text-hint: #999999;
 
 .ai-entry-info { flex: 1; }
 
-.ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
+.ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; display: block; }
 
-.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 12rpx; }
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 12rpx; display: block; }
 
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
