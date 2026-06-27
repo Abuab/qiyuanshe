@@ -419,19 +419,47 @@ const showComingSoon = () => {
   uni.showToast({ title: '该功能正在开发中', icon: 'none' })
 }
 
-const goToLogin = () => uni.navigateTo({ url: '/pages/login/index' })
-const goToEditProfile = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
+// ========== 安全导航（超时自动重试） ==========
+const safeNavigateTo = (url: string, fallbackUrl?: string, fallbackFn?: () => void) => {
+  uni.navigateTo({
+    url,
+    fail: (err: any) => {
+      console.warn('[navigateTo fail]', url, err?.errMsg)
+      // 超时则延迟300ms重试一次
+      if (err?.errMsg?.includes('timeout')) {
+        setTimeout(() => {
+          uni.navigateTo({
+            url: fallbackUrl || url,
+            fail: () => {
+              uni.showToast({ title: '页面加载失败，请重试', icon: 'none' })
+              fallbackFn?.()
+            },
+          })
+        }, 300)
+      } else if (fallbackUrl) {
+        uni.navigateTo({ url: fallbackUrl, fail: () => { fallbackFn?.() } })
+      } else {
+        uni.showToast({ title: '页面跳转失败', icon: 'none' })
+        fallbackFn?.()
+      }
+    },
+  })
+}
+
+const goToLogin = () => safeNavigateTo('/pages/login/index')
+const goToEditProfile = () => safeNavigateTo('/pages/edit-profile/index')
 const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  uni.navigateTo({ url: '/pages/my-answers/index', fail: () => uni.navigateTo({ url: '/pages/questions/index' }) })
+  // 优先跳转我的回答，失败则跳转问答广场
+  safeNavigateTo('/pages/my-answers/index', '/pages/questions/index')
 }
 const goToAiMatchmaker = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  uni.navigateTo({ url: '/pages/ai-matchmaker/index' })
+  safeNavigateTo('/pages/ai-matchmaker/index')
 }
 const goToAiQuiz = () => {
-  uni.navigateTo({ url: '/pages/ai-quiz/ai-quiz' })
+  safeNavigateTo('/pages/ai-quiz/ai-quiz')
 }
 
 // AI 个人印象：点击入口
@@ -477,15 +505,15 @@ const refreshMyProfileGen = async () => {
     profileGenLoading.value = false
   }
 }
-const goToSettings = () => uni.navigateTo({ url: '/pages/settings/index' })
-const goToFollows = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=following' })
-const goToFollowers = () => uni.navigateTo({ url: '/pages/my-follows/index?tab=followers' })
-const goToVisitors = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=visitors' })
-const goToFootprints = () => uni.navigateTo({ url: '/pages/my-visitors/index?tab=views' })
-const goToPhotos = () => uni.navigateTo({ url: '/pages/edit-profile/index' })
+const goToSettings = () => safeNavigateTo('/pages/settings/index')
+const goToFollows = () => safeNavigateTo('/pages/my-follows/index?tab=following')
+const goToFollowers = () => safeNavigateTo('/pages/my-follows/index?tab=followers')
+const goToVisitors = () => safeNavigateTo('/pages/my-visitors/index?tab=visitors')
+const goToFootprints = () => safeNavigateTo('/pages/my-visitors/index?tab=views')
+const goToPhotos = () => safeNavigateTo('/pages/edit-profile/index')
 const goToRealnameAuth = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  uni.navigateTo({ url: '/pages/realname-auth/index' })
+  safeNavigateTo('/pages/realname-auth/index')
 }
 
 const showMatchmaker = ref(false)
@@ -518,11 +546,11 @@ const fetchMatchmakerList = async () => {
     matchmakerList.value = []
   }
 }
-const goToLoveQuotes = () => uni.navigateTo({ url: '/pages/love-quotes/index' })
-const goToMyLikes = () => uni.navigateTo({ url: '/pages/my-likes/my-likes' })
-const goToPrivacySettings = () => uni.navigateTo({ url: '/pages/privacy-settings/index' })
-const goToUserAgreement = () => uni.navigateTo({ url: '/pages/agreement/index?type=user' })
-const goToAntiFraud = () => uni.navigateTo({ url: '/pages/agreement/index?type=antiFraud' })
+const goToLoveQuotes = () => safeNavigateTo('/pages/love-quotes/index')
+const goToMyLikes = () => safeNavigateTo('/pages/my-likes/my-likes')
+const goToPrivacySettings = () => safeNavigateTo('/pages/privacy-settings/index')
+const goToUserAgreement = () => safeNavigateTo('/pages/agreement/index?type=user')
+const goToAntiFraud = () => safeNavigateTo('/pages/agreement/index?type=antiFraud')
 
 // 问题反馈弹窗
 const showFeedback = ref(false)
