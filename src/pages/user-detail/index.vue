@@ -1257,20 +1257,20 @@ $text-hint: #999999;
 }
 
 .info-nickname {
-  font-size: 36rpx; font-weight: bold; color: $text;
-}
-
-.info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 6rpx;
+  font-size: 36rpx; font-weight: bold; color: $text; line-height: 1.1;
 }
 
 .id-badge {
   display: inline-block;
   font-style: italic;
   font-size: 26rpx;
-  font-weight: bold; color: #fff; background-color: #999;
+  font-weight: 400; color: #fff; background-color: #999;
   padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: baseline; margin-right: 1rpx;
+  vertical-align: baseline; margin-right: 0;
+}
+
+.info-id {
+  font-size: 28rpx; color: $text-hint; padding-top: 6rpx; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
@@ -1328,7 +1328,7 @@ $text-hint: #999999;
 // ===== 基本资料 =====
 .basic-line {
   display: flex; align-items: center; flex-wrap: wrap;
-  font-size: 26rpx; color: #333; margin-bottom: 0;
+  font-size: 26rpx; color: #333; margin-bottom: 16rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
