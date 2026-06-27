@@ -59,14 +59,17 @@ export class AiMatchmakerService {
 
   /**
    * 调用 AI 解析用户消息中的搜索条件
-   * 返回 null = 不是搜索意图或解析失败
+   * 始终先尝试简单解析，AI 仅用于补充增强
    */
   private async parseSearchFilters(
     message: string,
+    userGender: number | null,
   ): Promise<MatchmakerSearchFilters | null> {
+    // 始终先执行简单解析作为兜底
+    const simpleFilters = this.parseSearchFiltersSimple(message, userGender)
+
     if (!(await this.aiApiService.isConfigured())) {
-      // 无 AI 时用简单规则提取
-      return this.parseSearchFiltersSimple(message)
+      return simpleFilters
     }
 
     try {
@@ -86,32 +89,42 @@ export class AiMatchmakerService {
       if (codeMatch) json = codeMatch[1].trim()
 
       const parsed = JSON.parse(json)
-      if (parsed.type === 'no_search') return null
-      if (!parsed.gender && !parsed.ageMin && !parsed.ageMax && !parsed.city && !parsed.province) return null
 
+      // AI 判定为非搜索 → 使用简单解析结果
+      if (parsed.type === 'no_search') {
+        return simpleFilters
+      }
+
+      // 合并 AI 解析结果与简单解析结果（AI 优先，简单兜底）
       return {
-        gender: parsed.gender,
-        ageMin: parsed.ageMin,
-        ageMax: parsed.ageMax,
-        heightMin: parsed.heightMin,
-        city: parsed.city,
-        province: parsed.province,
+        gender: parsed.gender || simpleFilters?.gender,
+        ageMin: parsed.ageMin || simpleFilters?.ageMin,
+        ageMax: parsed.ageMax || simpleFilters?.ageMax,
+        heightMin: parsed.heightMin || simpleFilters?.heightMin,
+        city: parsed.city || simpleFilters?.city,
+        province: parsed.province || simpleFilters?.province,
         education: parsed.education,
         maritalStatus: parsed.maritalStatus,
         incomeRange: parsed.incomeRange,
         housingStatus: parsed.housingStatus,
         carStatus: parsed.carStatus,
-        limit: Math.min(parsed.limit || 5, 10),
+        limit: Math.min(parsed.limit || simpleFilters?.limit || 5, 10),
       }
     } catch {
-      return this.parseSearchFiltersSimple(message)
+      // AI 调用失败，使用简单解析结果
+      return simpleFilters
     }
   }
 
   /**
-   * 简单关键词提取（AI 不可用时的降级方案）
+   * 简单关键词提取（AI 不可用或作为兜底）
+   * @param message 用户消息
+   * @param userGender 当前用户的性别，用于自动默认搜索异性
    */
-  private parseSearchFiltersSimple(message: string): MatchmakerSearchFilters | null {
+  private parseSearchFiltersSimple(
+    message: string,
+    userGender: number | null,
+  ): MatchmakerSearchFilters | null {
     const filters: MatchmakerSearchFilters = {}
     let hasFilter = false
 
@@ -119,6 +132,10 @@ export class AiMatchmakerService {
       filters.gender = 2; hasFilter = true
     } else if (message.includes('男') || message.includes('男生')) {
       filters.gender = 1; hasFilter = true
+    } else if (userGender != null) {
+      // 未明确指定性别时，默认搜索异性
+      filters.gender = userGender === 1 ? 2 : 1
+      hasFilter = true
     }
 
     // 年龄范围
@@ -352,7 +369,7 @@ export class AiMatchmakerService {
     let users: MatchmakerSearchUser[] | undefined
     if (this.isSearchIntent(message)) {
       try {
-        const filters = await this.parseSearchFilters(message)
+        const filters = await this.parseSearchFilters(message, user.gender)
         if (filters) {
           users = await this.searchUsers(filters, userId)
         }
