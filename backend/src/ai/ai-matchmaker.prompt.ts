@@ -122,3 +122,45 @@ export function checkSafetyBoundary(userMessage: string): string | null {
 
   return null
 }
+
+// ===== 搜索意图解析 =====
+
+/** 搜索意图触发关键词（快速预检，避免每次都调 AI） */
+export const SEARCH_INTENT_KEYWORDS = [
+  '推荐', '找', '搜索', '有没有', '介绍', '匹配',
+  '帮我', '看看', '想看', '找找', '找一个', '给我',
+]
+
+/** 搜索过滤解析 System Prompt */
+export const MATCHMAKER_SEARCH_PARSE_PROMPT = `你是一个搜索条件解析器。从用户的自然语言消息中提取结构化的搜索条件，只返回合法的 JSON。
+
+可用字段（全部可选，未提及则省略）：
+- gender: 1=男, 2=女
+- ageMin: 最低年龄
+- ageMax: 最高年龄
+- heightMin: 最低身高(cm)
+- city: 城市名（如"杭州"、"北京"）
+- province: 省份名（如"浙江"、"广东"）
+- education: 学历（如"本科"、"硕士"）
+- maritalStatus: 婚况（如"未婚"、"离异"）
+- incomeRange: 收入水平
+- housingStatus: 住房情况（如"有房"、"无房"）
+- carStatus: 车辆情况（如"有车"、"无车"）
+- limit: 返回条数（默认5，最大10）
+
+规则：
+1. 如果消息不是搜索/找人/推荐用户，返回: {"type":"no_search"}
+2. 如果是搜索但无明确条件，返回包含 gender 的最小条件即可
+3. 只返回 JSON，不要任何额外文字
+
+示例：
+用户: "帮我推荐3个25-30岁在杭州的女生"
+输出: {"gender":2,"ageMin":25,"ageMax":30,"city":"杭州","limit":3}
+
+用户: "有没有35岁以下、身高170以上的男生"
+输出: {"gender":1,"ageMax":35,"heightMin":170}
+
+用户: "今天天气怎么样"
+输出: {"type":"no_search"}
+
+用户消息: `

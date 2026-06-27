@@ -14,10 +14,14 @@ import {
   MATCHMAKER_SYSTEM_PROMPT,
   buildMatchmakerChatPrompt,
   checkSafetyBoundary,
+  SEARCH_INTENT_KEYWORDS,
+  MATCHMAKER_SEARCH_PARSE_PROMPT,
 } from './ai-matchmaker.prompt'
 import {
   MatchmakerMessage,
   MatchmakerChatResponse,
+  MatchmakerSearchFilters,
+  MatchmakerSearchUser,
   QUICK_QUESTIONS,
   MATCHMAKER_FREE_DAILY_ROUNDS,
 } from './ai-matchmaker.types'
@@ -45,6 +49,183 @@ export class AiMatchmakerService {
     private readonly systemService: SystemService,
     private readonly quickQuestionService: QuickQuestionService,
   ) {}
+
+  /**
+   * 快速预检：用户消息是否包含搜索/找人意图
+   */
+  private isSearchIntent(message: string): boolean {
+    return SEARCH_INTENT_KEYWORDS.some((kw) => message.includes(kw))
+  }
+
+  /**
+   * 调用 AI 解析用户消息中的搜索条件
+   * 返回 null = 不是搜索意图或解析失败
+   */
+  private async parseSearchFilters(
+    message: string,
+  ): Promise<MatchmakerSearchFilters | null> {
+    if (!(await this.aiApiService.isConfigured())) {
+      // 无 AI 时用简单规则提取
+      return this.parseSearchFiltersSimple(message)
+    }
+
+    try {
+      const raw = await this.aiApiService.call({
+        messages: [
+          { role: 'system', content: MATCHMAKER_SEARCH_PARSE_PROMPT },
+          { role: 'user', content: message },
+        ],
+        maxTokens: 300,
+        temperature: 0.1,
+        responseJson: true,
+      })
+
+      // 清理 AI 返回的 JSON（可能被 markdown 包裹）
+      let json = raw.trim()
+      const codeMatch = json.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (codeMatch) json = codeMatch[1].trim()
+
+      const parsed = JSON.parse(json)
+      if (parsed.type === 'no_search') return null
+      if (!parsed.gender && !parsed.ageMin && !parsed.ageMax && !parsed.city && !parsed.province) return null
+
+      return {
+        gender: parsed.gender,
+        ageMin: parsed.ageMin,
+        ageMax: parsed.ageMax,
+        heightMin: parsed.heightMin,
+        city: parsed.city,
+        province: parsed.province,
+        education: parsed.education,
+        maritalStatus: parsed.maritalStatus,
+        incomeRange: parsed.incomeRange,
+        housingStatus: parsed.housingStatus,
+        carStatus: parsed.carStatus,
+        limit: Math.min(parsed.limit || 5, 10),
+      }
+    } catch {
+      return this.parseSearchFiltersSimple(message)
+    }
+  }
+
+  /**
+   * 简单关键词提取（AI 不可用时的降级方案）
+   */
+  private parseSearchFiltersSimple(message: string): MatchmakerSearchFilters | null {
+    const filters: MatchmakerSearchFilters = {}
+    let hasFilter = false
+
+    if (message.includes('女') || message.includes('女生') || message.includes('女生')) {
+      filters.gender = 2; hasFilter = true
+    } else if (message.includes('男') || message.includes('男生')) {
+      filters.gender = 1; hasFilter = true
+    }
+
+    // 年龄范围
+    const ageMatch = message.match(/(\d{2})\s*[-~到至]\s*(\d{2})\s*岁/)
+    if (ageMatch) {
+      filters.ageMin = parseInt(ageMatch[1], 10)
+      filters.ageMax = parseInt(ageMatch[2], 10)
+      hasFilter = true
+    }
+
+    // 身高
+    const heightMatch = message.match(/身高\s*(\d{3})\s*(?:cm|厘米)?以[上高]/)
+    if (heightMatch) {
+      filters.heightMin = parseInt(heightMatch[1], 10)
+      hasFilter = true
+    }
+
+    // 城市
+    const cityMatch = message.match(/(?:在|是)([\u4e00-\u9fa5]{2,4})(?:的|人)?/)
+    if (cityMatch && cityMatch[1].length <= 4) {
+      filters.city = cityMatch[1]
+      hasFilter = true
+    }
+
+    return hasFilter ? { ...filters, limit: 5 } : null
+  }
+
+  /**
+   * 根据条件搜索用户库
+   */
+  private async searchUsers(
+    filters: MatchmakerSearchFilters,
+    currentUserId: number,
+  ): Promise<MatchmakerSearchUser[]> {
+    const qb = this.userRepo.createQueryBuilder('u')
+      .where('u.id != :currentUserId', { currentUserId })
+      .andWhere('u.status = :status', { status: 2 })
+      .andWhere('u.isDeleted = 0')
+      .andWhere('u.showBasicProfile = 1')
+
+    if (filters.gender) {
+      qb.andWhere('u.gender = :gender', { gender: filters.gender })
+    }
+
+    const currentYear = new Date().getFullYear()
+    if (filters.ageMin) {
+      qb.andWhere('u.birthYear <= :ageMinYear', { ageMinYear: currentYear - filters.ageMin })
+    }
+    if (filters.ageMax) {
+      qb.andWhere('u.birthYear >= :ageMaxYear', { ageMaxYear: currentYear - filters.ageMax })
+    }
+
+    if (filters.heightMin) {
+      qb.andWhere('u.height >= :heightMin', { heightMin: filters.heightMin })
+    }
+
+    if (filters.city) {
+      qb.andWhere(
+        '(u.residence LIKE :city OR u.hometown LIKE :city2)',
+        { city: `%${filters.city}%`, city2: `%${filters.city}%` },
+      )
+    }
+    if (filters.province) {
+      qb.andWhere(
+        '(u.residence LIKE :province OR u.hometown LIKE :province2)',
+        { province: `%${filters.province}%`, province2: `%${filters.province}%` },
+      )
+    }
+
+    if (filters.education) {
+      qb.andWhere('u.education LIKE :education', { education: `%${filters.education}%` })
+    }
+    if (filters.maritalStatus) {
+      qb.andWhere('u.maritalStatus LIKE :maritalStatus', { maritalStatus: `%${filters.maritalStatus}%` })
+    }
+    if (filters.incomeRange) {
+      qb.andWhere('u.incomeRange LIKE :incomeRange', { incomeRange: `%${filters.incomeRange}%` })
+    }
+    if (filters.housingStatus) {
+      qb.andWhere('u.housingStatus LIKE :housingStatus', { housingStatus: `%${filters.housingStatus}%` })
+    }
+    if (filters.carStatus) {
+      qb.andWhere('u.carStatus LIKE :carStatus', { carStatus: `%${filters.carStatus}%` })
+    }
+
+    qb.orderBy('u.profileScore', 'DESC')
+      .addOrderBy('u.lastActiveAt', 'DESC')
+      .take(filters.limit || 5)
+
+    const users = await qb.getMany()
+
+    return users.map((u) => ({
+      id: u.id,
+      nickname: u.nickname || '未设置昵称',
+      avatar: u.avatar || '',
+      gender: u.gender,
+      age: u.birthYear ? currentYear - u.birthYear : 0,
+      height: u.height || 0,
+      education: u.education || '',
+      occupation: u.occupation || '',
+      residence: u.residence || '',
+      hometown: u.hometown || '',
+      maritalStatus: u.maritalStatus || '',
+      incomeRange: u.incomeRange || '',
+      tags: u.tags || [],
+    }))
+  }
 
   /**
    * 发送消息给 AI 红娘
@@ -167,12 +348,26 @@ export class AiMatchmakerService {
       reply = '感谢您的咨询，我会继续努力为您提供更好的服务'
     }
 
-    // 10. 保存上下文
+    // 10. 搜索意图检测 → 如果用户想找对象，搜索用户库
+    let users: MatchmakerSearchUser[] | undefined
+    if (this.isSearchIntent(message)) {
+      try {
+        const filters = await this.parseSearchFilters(message)
+        if (filters) {
+          users = await this.searchUsers(filters, userId)
+        }
+      } catch (e: any) {
+        this.logger.warn(`[AI红娘] 搜索解析失败: ${e?.message}`)
+      }
+    }
+
+    // 11. 保存上下文
     await this.saveContext(userId, { role: 'user', content: message }, { role: 'ai', content: reply })
 
     return {
       reply,
       remainingRounds: isVip ? null : Math.max(0, remainingRounds! - 1),
+      users,
     }
   }
 

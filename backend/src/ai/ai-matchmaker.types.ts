@@ -26,6 +26,52 @@ export interface MatchmakerChatResponse {
   safetyNotice?: string
   /** 今日剩余轮数（null = 无限） */
   remainingRounds: number | null
+  /** 搜索结果中的匹配用户（仅搜索意图时返回） */
+  users?: MatchmakerSearchUser[]
+}
+
+/** 搜索条件映射 */
+export interface MatchmakerSearchFilters {
+  /** 1=男, 2=女 */
+  gender?: number
+  /** 年龄范围 */
+  ageMin?: number
+  ageMax?: number
+  /** 身高最低值 (cm) */
+  heightMin?: number
+  /** 城市 */
+  city?: string
+  /** 省份 */
+  province?: string
+  /** 学历 */
+  education?: string
+  /** 婚况 */
+  maritalStatus?: string
+  /** 收入 */
+  incomeRange?: string
+  /** 住房 */
+  housingStatus?: string
+  /** 车辆 */
+  carStatus?: string
+  /** 返回最大条数（默认 5） */
+  limit?: number
+}
+
+/** 搜索结果中返回的匹配用户简要信息 */
+export interface MatchmakerSearchUser {
+  id: number
+  nickname: string
+  avatar: string
+  gender: number
+  age: number
+  height: number
+  education: string
+  occupation: string
+  residence: string
+  hometown: string
+  maritalStatus: string
+  incomeRange: string
+  tags: string[]
 }
 
 /** 快捷问题列表 */

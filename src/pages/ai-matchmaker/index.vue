@@ -45,6 +45,31 @@
           <view class="bubble" :class="msg.role">
             <text class="bubble-text">{{ msg.content }}</text>
           </view>
+          <!-- 搜索匹配用户卡片 -->
+          <view v-if="msg.users?.length" class="search-users-wrap">
+            <scroll-view class="search-users-scroll" :scroll-x="true" :show-scrollbar="false">
+              <view class="search-users-inner">
+                <view
+                  v-for="u in msg.users"
+                  :key="u.id"
+                  class="search-user-card"
+                  @tap="goToUserDetail(u.id)"
+                >
+                  <image class="search-user-avatar" :src="u.avatar" mode="aspectFill" />
+                  <view class="search-user-info">
+                    <text class="search-user-name">{{ u.nickname }}</text>
+                    <text class="search-user-brief">
+                      {{ u.age }}岁 | {{ u.height }}cm | {{ u.education || '未填学历' }}
+                    </text>
+                    <text class="search-user-residence">{{ u.residence || u.hometown || '' }}</text>
+                    <view class="search-user-tags" v-if="u.tags?.length">
+                      <text v-for="(t, ti) in u.tags.slice(0, 3)" :key="ti" class="search-user-tag">{{ t }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
           <view v-if="msg.safetyNotice === 'safety_boundary'" class="safety-tag">
             <text>{{ systemStore.matchmakerSafetyBoundaryLabel }}</text>
           </view>
@@ -123,6 +148,23 @@ interface Message {
   role: 'user' | 'ai'
   content: string
   safetyNotice?: string
+  users?: MatchUser[]
+}
+
+interface MatchUser {
+  id: number
+  nickname: string
+  avatar: string
+  gender: number
+  age: number
+  height: number
+  education: string
+  occupation: string
+  residence: string
+  hometown: string
+  maritalStatus: string
+  incomeRange: string
+  tags: string[]
 }
 
 interface QuickQuestion {
@@ -164,6 +206,10 @@ const handleBack = () => {
   } else {
     uni.navigateBack()
   }
+}
+
+const goToUserDetail = (userId: number) => {
+  uni.navigateTo({ url: `/pages/user-detail/index?id=${userId}` })
 }
 
 const loadHistory = async () => {
@@ -226,6 +272,7 @@ const sendText = async () => {
         role: 'ai',
         content: res.reply || '抱歉，暂时无法回复，请稍后再试',
         safetyNotice: res.safetyNotice,
+        users: res.users?.length ? res.users : undefined,
       })
       scrollToBottom()
       if (res.remainingRounds !== undefined && res.remainingRounds !== null) {
@@ -388,6 +435,54 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
   word-break: break-word;
   overflow-wrap: break-word;
   display: block;
+}
+
+// ==================== 搜索匹配用户卡片 ====================
+.search-users-wrap {
+  margin-top: 12rpx;
+  width: 100%;
+}
+.search-users-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+.search-users-inner {
+  display: flex; gap: 16rpx;
+  padding: 4rpx 0;
+}
+.search-user-card {
+  flex-shrink: 0; width: 280rpx;
+  background: #fff; border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  &:active { opacity: 0.85; }
+}
+.search-user-avatar {
+  width: 280rpx; height: 210rpx;
+  background: #F0F0F0;
+}
+.search-user-info {
+  padding: 12rpx 16rpx 14rpx;
+}
+.search-user-name {
+  font-size: 28rpx; font-weight: bold; color: #1A1A1A;
+  display: block; margin-bottom: 4rpx;
+}
+.search-user-brief {
+  font-size: 22rpx; color: #666;
+  display: block; margin-bottom: 2rpx;
+}
+.search-user-residence {
+  font-size: 22rpx; color: #999;
+  display: block; margin-bottom: 6rpx;
+}
+.search-user-tags {
+  display: flex; flex-wrap: wrap; gap: 6rpx;
+}
+.search-user-tag {
+  padding: 2rpx 10rpx; border-radius: 6rpx;
+  background: #FFF0F3; font-size: 20rpx; color: #FF6B8A;
 }
 
 // ==================== 安全标签 ====================
