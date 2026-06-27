@@ -1251,6 +1251,7 @@ $text-hint: #999999;
 
 .info-left {
   display: flex; flex-direction: column; flex: 1; min-width: 0;
+  padding-top: 12rpx;
 }
 
 .info-name-id {
@@ -1334,7 +1335,7 @@ $text-hint: #999999;
 .basic-line {
   display: flex; align-items: baseline; flex-wrap: wrap;
   font-size: 26rpx; color: #333; margin-bottom: 0;
-  margin-top: 46rpx;
+  margin-top: 34rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
