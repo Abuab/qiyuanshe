@@ -370,12 +370,7 @@ export class AiMatchmakerService {
     // 6. 获取对话历史
     const history = await this.getContext(userId)
 
-    // 7. 搜索到的用户上下文（注入到 system prompt，放在最前面，加粗强调）
-    const userSearchHint = searchContext
-      ? `\n\n【🔴 重要指令 - 本轮搜索结果 - 必须逐条介绍】\n系统已从平台用户库中匹配到以下${users!.length}位用户。你必须逐一介绍每位用户的昵称、性别、年龄、身高、学历、所在地，并给出推荐理由。禁止说"我无法搜索"或"我不能查看"。以下是要推荐的用户：\n${searchContext}`
-      : ''
-
-    // 8. 记录调用日志
+    // 7. 记录调用日志
     const callLog = this.callLogRepo.create({
       userId,
       callType: AiCallType.MATCHMAKER,
@@ -389,49 +384,70 @@ export class AiMatchmakerService {
     })
     const savedCallLog = await this.callLogRepo.save(callLog)
 
-    // 9. 调用 AI
+    // 9. 生成回复：搜到用户 → 自己格式化，不依赖 AI
     const startMs = Date.now()
     let reply: string
 
-    try {
-      if (await this.aiApiService.isConfigured()) {
-        const systemPrompt = await this.systemService.replaceTemplateVars(MATCHMAKER_SYSTEM_PROMPT)
-        reply = await this.aiApiService.callAndLog({
-          messages: [
-            { role: 'system', content: systemPrompt + userSearchHint },
-            ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
-            { role: 'user', content: message },
-          ],
-          maxTokens: 300,
-          temperature: 0.8,
-        }, userId, 'matchmaker')
-      } else {
-        reply = this.buildFallbackReply(message, users)
+    if (users?.length) {
+      // 搜到了用户 → 直接格式化推荐列表，AI 仅作为补充说明
+      const genderLabel = users[0].gender === 1 ? '男生' : '女生'
+      const userListText = users.slice(0, 5).map((u, i) =>
+        `${i + 1}. ${u.nickname}｜${u.age}岁｜${u.height}cm｜${u.education || '学历未填'}｜${u.residence || u.hometown || '未知'}`
+      ).join('\n')
+
+      // 尝试调用 AI 生成补充点评（失败不影响主流程）
+      let aiComment = ''
+      try {
+        if (await this.aiApiService.isConfigured()) {
+          const systemPrompt = await this.systemService.replaceTemplateVars(MATCHMAKER_SYSTEM_PROMPT)
+          aiComment = await this.aiApiService.callAndLog({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
+              { role: 'user', content: `用户问："${message}"。我已经为他匹配了以下用户，请用1-2句话简单点评一下这些推荐，不要逐一介绍（我已经介绍过了）：\n${searchContext}` },
+            ],
+            maxTokens: 200,
+            temperature: 0.8,
+          }, userId, 'matchmaker')
+          aiComment = aiComment ? `\n\n💬 ${aiComment}` : ''
+        }
+      } catch {
+        // AI 点评失败，不追加
       }
-    } catch (e: any) {
-      this.logger.error(`[AI红娘] 调用失败: ${e?.message}，降级使用兜底回复`)
-      reply = this.buildFallbackReply(message, users)
-      savedCallLog.responseStatus = 'error'
-      await this.callLogRepo.save(savedCallLog).catch(() => {})
+
+      reply = `为你匹配到 ${users.length} 位${genderLabel}，快来看看吧～\n\n${userListText}${aiComment}`
+      this.logger.log(`[AI红娘] 搜索命中，直接格式化推荐列表（${users.length}位用户）`)
+    } else if (isSearch && users !== undefined) {
+      // 检测到搜索意图并执行了搜索，但无结果
+      reply = `抱歉，暂时没有找到符合条件的用户。你可以调整一下筛选条件再试试，或者告诉我你想找什么类型的人，我帮你留意～`
+      this.logger.log(`[AI红娘] 搜索完成但无结果`)
+    } else {
+      // 非搜索意图 → 正常 AI 对话
+      try {
+        if (await this.aiApiService.isConfigured()) {
+          const systemPrompt = await this.systemService.replaceTemplateVars(MATCHMAKER_SYSTEM_PROMPT)
+          reply = await this.aiApiService.callAndLog({
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
+              { role: 'user', content: message },
+            ],
+            maxTokens: 300,
+            temperature: 0.8,
+          }, userId, 'matchmaker')
+        } else {
+          reply = this.buildFallbackReply(message, users)
+        }
+      } catch (e: any) {
+        this.logger.error(`[AI红娘] 调用失败: ${e?.message}，降级使用兜底回复`)
+        reply = this.buildFallbackReply(message, users)
+        savedCallLog.responseStatus = 'error'
+        await this.callLogRepo.save(savedCallLog).catch(() => {})
+      }
     }
 
     savedCallLog.responseMs = Date.now() - startMs
     await this.callLogRepo.save(savedCallLog)
-
-    // 9.5 后置检查：如果搜到了用户但 AI 回复中未提及任何用户昵称，则强制追加推荐列表
-    if (users?.length) {
-      const mentionedNicknames = users.filter(u => reply.includes(u.nickname))
-      this.logger.log(
-        `[AI红娘] 后置检查: AI回复中提到了 ${mentionedNicknames.length}/${users.length} 位用户昵称`,
-      )
-      if (mentionedNicknames.length === 0) {
-        const userListText = users.slice(0, 5).map((u, i) =>
-          `${i + 1}. ${u.nickname}（${u.gender === 1 ? '男' : '女'}，${u.age}岁，${u.height ? u.height + 'cm，' : ''}${u.education || ''}，${u.residence || u.hometown || ''}）`
-        ).join('\n')
-        reply = `为你匹配到以下平台用户，可以了解一下哦～\n\n${userListText}\n\n${reply}`
-        this.logger.log(`[AI红娘] 后置检查: AI未提及用户，已强制追加推荐列表`)
-      }
-    }
 
     // 10. 输出敏感词安全审计
     const outputCheck = await this.safetyService.checkAndAudit(reply, savedCallLog.id)
