@@ -127,8 +127,8 @@ export function checkSafetyBoundary(userMessage: string): string | null {
 
 /** 搜索意图触发关键词（快速预检，避免每次都调 AI） */
 export const SEARCH_INTENT_KEYWORDS = [
-  '推荐', '找', '搜索', '有没有', '介绍', '匹配',
-  '帮我', '看看', '想看', '找找', '找一个', '给我',
+  '推荐', '搜索', '有没有', '介绍', '匹配',
+  '帮我找', '帮我推荐', '给我推荐', '找人', '找一个', '找个',
 ]
 
 /** 搜索过滤解析 System Prompt */

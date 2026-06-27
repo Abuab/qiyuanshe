@@ -115,7 +115,7 @@ export class AiMatchmakerService {
     const filters: MatchmakerSearchFilters = {}
     let hasFilter = false
 
-    if (message.includes('女') || message.includes('女生') || message.includes('女生')) {
+    if (message.includes('女') || message.includes('女生') || message.includes('女性')) {
       filters.gender = 2; hasFilter = true
     } else if (message.includes('男') || message.includes('男生')) {
       filters.gender = 1; hasFilter = true
