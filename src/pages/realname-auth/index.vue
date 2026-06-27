@@ -26,13 +26,6 @@
           <text class="header-title">完善认证</text>
           <text class="header-desc">获取专属认证标识，更受异性信任，牵手成功率更高</text>
         </view>
-        <view class="header-right">
-          <view class="shield-icon-box">
-            <text class="shield-shape">🛡️</text>
-            <text class="shield-check">✓</text>
-            <text class="shield-ribbon">✦</text>
-          </view>
-        </view>
       </view>
 
       <!-- ========== 认证列表 ========== -->
@@ -40,10 +33,6 @@
         <!-- 第1项：实名认证 -->
         <view class="auth-card" @tap="handleItemTap('realname')">
           <view class="card-left">
-            <view class="card-icon" style="background: #4A90D9;">
-              <image v-if="pageIcons.certRealnameIcon" class="card-icon-img" :src="pageIcons.certRealnameIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">🪪</text>
-            </view>
             <view class="card-text">
               <text class="card-title">实名认证</text>
               <text class="card-desc">腾讯实名认证，远离骗子与婚托</text>
@@ -58,10 +47,6 @@
         <!-- 第2项：单身承诺 -->
         <view class="auth-card" @tap="handleItemTap('single')">
           <view class="card-left">
-            <view class="card-icon" style="background: #FF9500;">
-              <image v-if="pageIcons.certSingleIcon" class="card-icon-img" :src="pageIcons.certSingleIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">💗</text>
-            </view>
             <view class="card-text">
               <text class="card-title">单身承诺</text>
               <text class="card-desc">单身承诺，真心诚信寻找爱情</text>
@@ -76,10 +61,6 @@
         <!-- 第3项：学历认证 -->
         <view class="auth-card" @tap="handleItemTap('education')">
           <view class="card-left">
-            <view class="card-icon" style="background: #FFCC00;">
-              <image v-if="pageIcons.certEducationIcon" class="card-icon-img" :src="pageIcons.certEducationIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">🎓</text>
-            </view>
             <view class="card-text">
               <text class="card-title">学历认证</text>
               <text class="card-desc">支持毕业证、学信网截图等认证方式</text>
@@ -94,10 +75,6 @@
         <!-- 第4项：房产认证 -->
         <view class="auth-card" @tap="handleItemTap('house')">
           <view class="card-left">
-            <view class="card-icon" style="background: #4CD964;">
-              <image v-if="pageIcons.certHouseIcon" class="card-icon-img" :src="pageIcons.certHouseIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">🏠</text>
-            </view>
             <view class="card-text">
               <text class="card-title">房产认证</text>
               <text class="card-desc">让你的优势被更多人发现</text>
@@ -112,10 +89,6 @@
         <!-- 第5项：车产认证 -->
         <view class="auth-card" @tap="handleItemTap('car')">
           <view class="card-left">
-            <view class="card-icon" style="background: #5AC8FA;">
-              <image v-if="pageIcons.certCarIcon" class="card-icon-img" :src="pageIcons.certCarIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">🏠</text>
-            </view>
             <view class="card-text">
               <text class="card-title">车产认证</text>
               <text class="card-desc">让你的优势被更多人发现</text>
@@ -130,10 +103,6 @@
         <!-- 第6项：到店认证 -->
         <view class="auth-card" @tap="handleItemTap('store')">
           <view class="card-left">
-            <view class="card-icon" style="background: #FF3B30;">
-              <image v-if="pageIcons.certStoreIcon" class="card-icon-img" :src="pageIcons.certStoreIcon" mode="aspectFit" />
-              <text v-else class="card-icon-text">🏪</text>
-            </view>
             <view class="card-text">
               <text class="card-title">到店认证</text>
               <text class="card-desc">让我们更了解你，更好地为你服务</text>
@@ -153,12 +122,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useSystemStore } from '@/store/system'
+import { ref, onMounted } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
-
-const systemStore = useSystemStore()
-const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -232,27 +197,6 @@ function handleItemTap(type: string) {
   font-size: 28rpx; color: #999; line-height: 1.6;
   max-width: 440rpx;
 }
-.header-right {
-  flex-shrink: 0; margin-left: 24rpx;
-}
-.shield-icon-box {
-  width: 160rpx; height: 160rpx; display: flex;
-  align-items: center; justify-content: center;
-  position: relative;
-}
-.shield-shape {
-  font-size: 120rpx; position: relative; z-index: 1;
-}
-.shield-check {
-  position: absolute; top: 20rpx; right: 16rpx;
-  font-size: 36rpx; color: #4CD964; z-index: 2;
-  font-weight: bold;
-}
-.shield-ribbon {
-  position: absolute; bottom: 8rpx; right: 4rpx;
-  font-size: 32rpx; color: #FFD700; z-index: 2;
-  transform: rotate(-15deg);
-}
 
 // ===== 认证卡片列表 =====
 .card-list {
@@ -273,18 +217,6 @@ function handleItemTap(type: string) {
 
 .card-left {
   display: flex; align-items: center; flex: 1; min-width: 0;
-}
-
-.card-icon {
-  width: 80rpx; height: 80rpx; border-radius: 20rpx;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; margin-right: 24rpx;
-}
-.card-icon-text {
-  font-size: 40rpx;
-}
-.card-icon-img {
-  width: 48rpx; height: 48rpx;
 }
 
 .card-text {
