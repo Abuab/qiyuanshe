@@ -42,9 +42,16 @@ export function goAuthWechat() {
   // #endif
 }
 
-/** 手机绑定：跳转至手机号绑定页面 */
+/** 手机绑定：已登录则跳转编辑资料页修改手机号，未登录则跳转登录页 */
 export function goAuthPhone() {
-  uni.navigateTo({ url: '/pages/login/index' })
+  // 检查是否已登录
+  const token = uni.getStorageSync('token')
+  if (token) {
+    // 已登录用户 → 编辑资料页可修改手机号
+    uni.navigateTo({ url: '/pages/edit-profile/index' })
+  } else {
+    uni.navigateTo({ url: '/pages/login/index' })
+  }
 }
 
 /** 实名认证：跳转至实名认证页面 */

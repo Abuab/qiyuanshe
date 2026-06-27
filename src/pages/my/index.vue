@@ -106,7 +106,7 @@
         <view class="auth-steps">
           <view class="auth-step">
             <view class="step-icon" :class="{ done: authSteps.wechat }">
-              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
             </view>
             <text class="step-label" :class="{ done: authSteps.wechat }">微信授权</text>
             <text v-if="!authSteps.wechat" class="step-action" @tap.stop="goAuthWechat">去认证</text>
@@ -114,7 +114,7 @@
           <view class="step-line" :class="{ done: authSteps.wechat && authSteps.phone }" />
           <view class="auth-step">
             <view class="step-icon" :class="{ done: authSteps.phone }">
-              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
             </view>
             <text class="step-label" :class="{ done: authSteps.phone }">手机绑定</text>
             <text v-if="!authSteps.phone" class="step-action" @tap.stop="goAuthPhone">去认证</text>
@@ -122,7 +122,7 @@
           <view class="step-line" :class="{ done: authSteps.phone && authSteps.realName }" />
           <view class="auth-step">
             <view class="step-icon" :class="{ done: authSteps.realName }">
-              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="28rpx" color="#FFFFFF"></uni-icons>
+              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
             </view>
             <text class="step-label" :class="{ done: authSteps.realName }">实名认证</text>
             <text v-if="!authSteps.realName" class="step-action" @tap.stop="goRealNameAuth">去认证</text>
@@ -157,19 +157,16 @@
         <!-- AI助手展开面板 -->
         <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
           <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="ai-sub-item" @tap="goToAiMatchmaker">
-            <text class="ai-sub-emoji">💝</text>
             <text class="ai-sub-label">AI 红娘</text>
             <text class="ai-sub-desc">智能匹配缘分</text>
             <text class="arrow">></text>
           </view>
           <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-sub-item" @tap="goToAiQuiz">
-            <text class="ai-sub-emoji">💬</text>
             <text class="ai-sub-label">AI 情感问答</text>
             <text class="ai-sub-desc">解答情感困惑</text>
             <text class="arrow">></text>
           </view>
           <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-sub-item" @tap="goToAiImpression">
-            <text class="ai-sub-emoji">✨</text>
             <text class="ai-sub-label">AI 个人印象</text>
             <text class="ai-sub-desc">{{ aiProfileText ? '已生成' : '生成魅力印象' }}</text>
             <text class="arrow">></text>
@@ -897,8 +894,8 @@ const toolGrid7 = [
 }
 
 .step-icon {
-  width: 40rpx;
-  height: 40rpx;
+  width: 32rpx;
+  height: 32rpx;
   border-radius: 50%;
   background: #eeeeee;
   display: flex;
@@ -911,7 +908,7 @@ const toolGrid7 = [
 }
 
 .step-label {
-  margin-top: 6rpx;
+  margin-top: 4rpx;
   font-size: 22rpx;
   color: #999999;
 
@@ -921,7 +918,7 @@ const toolGrid7 = [
 }
 
 .step-action {
-  margin-top: 4rpx;
+  margin-top: 2rpx;
   font-size: 22rpx;
   color: #ff6b6b;
 }
@@ -932,7 +929,7 @@ const toolGrid7 = [
   flex: 0.5;
   min-width: 40rpx;
   position: relative;
-  top: 20rpx;
+  top: 16rpx;
 
   &.done {
     background: #52c41a;
@@ -1019,12 +1016,6 @@ const toolGrid7 = [
   &:active {
     background-color: #f8f8ff;
   }
-}
-
-.ai-sub-emoji {
-  font-size: 36rpx;
-  margin-right: 16rpx;
-  flex-shrink: 0;
 }
 
 .ai-sub-label {
