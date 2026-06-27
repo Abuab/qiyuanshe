@@ -83,9 +83,21 @@
 
           <!-- 头部行：昵称 + ID + 关注 -->
           <view class="info-header">
-            <view class="info-name-id">
-              <text class="info-nickname">{{ profileData.top.nickname }}</text>
-              <text class="info-id"><text class="id-badge">ID</text>{{ profileData.top.userId }}</text>
+            <view class="info-left">
+              <view class="info-name-id">
+                <text class="info-nickname">{{ profileData.top.nickname }}</text>
+                <text class="info-id"><text class="id-badge">ID</text>{{ profileData.top.userId }}</text>
+              </view>
+              <!-- 基本资料行：年龄/身高/体重/学历（紧贴昵称下方） -->
+              <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
+                <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
+                <text v-if="profileData.basicInfo.age && profileData.basicInfo.height" class="dot">·</text>
+                <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
+                <text v-if="profileData.basicInfo.height && profileData.basicInfo.weight" class="dot">·</text>
+                <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
+                <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">|</text>
+                <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
+              </view>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
@@ -93,17 +105,6 @@
               </view>
               <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
             </view>
-          </view>
-
-          <!-- 基本资料行：年龄/身高/体重/学历（紧贴昵称下方） -->
-          <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
-            <text v-if="profileData.basicInfo.age">{{ profileData.basicInfo.age }}岁</text>
-            <text v-if="profileData.basicInfo.age && profileData.basicInfo.height" class="dot">·</text>
-            <text v-if="profileData.basicInfo.height">{{ profileData.basicInfo.height }}cm</text>
-            <text v-if="profileData.basicInfo.height && profileData.basicInfo.weight" class="dot">·</text>
-            <text v-if="profileData.basicInfo.weight">{{ profileData.basicInfo.weight }}kg</text>
-            <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">|</text>
-            <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
           </view>
 
           <!-- 生日星座 + 职业 同行 -->
@@ -118,17 +119,13 @@
             </view>
           </view>
 
-          <!-- 户籍 + 现居（仅展示市+区县） -->
-          <view class="location-row">
-            <view v-if="profileData.basicInfo.hometown" class="loc-item">
-              <text class="loc-dot blue">●</text>
-              <text class="loc-label">户籍</text>
-              <text class="loc-val">{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
+          <!-- 户籍 + 现居（chip 风格） -->
+          <view class="info-row-two" v-if="profileData.basicInfo.hometown || profileData.basicInfo.residence">
+            <view v-if="profileData.basicInfo.hometown" class="info-chip loc-chip">
+              <text>{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
             </view>
-            <view v-if="profileData.basicInfo.residence" class="loc-item">
-              <text class="loc-dot orange">●</text>
-              <text class="loc-label">现居</text>
-              <text class="loc-val">{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
+            <view v-if="profileData.basicInfo.residence" class="info-chip loc-chip">
+              <text>{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
             </view>
           </view>
         </view>
@@ -1248,12 +1245,16 @@ $text-hint: #999999;
 }
 
 .info-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 0;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.info-left {
+  display: flex; flex-direction: column; flex: 1; min-width: 0;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -34rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
@@ -1325,10 +1326,14 @@ $text-hint: #999999;
 
 .chip-emoji { font-size: 24rpx; flex-shrink: 0; }
 
+.loc-chip {
+  background: transparent; color: $text;
+}
+
 // ===== 基本资料 =====
 .basic-line {
-  display: flex; align-items: center; flex-wrap: wrap;
-  font-size: 26rpx; color: #333; margin-bottom: 16rpx;
+  display: flex; align-items: baseline; flex-wrap: wrap;
+  font-size: 26rpx; color: #333; margin-bottom: 0;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
