@@ -85,6 +85,9 @@
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useSystemStore } from '@/store/system'
+
+const systemStore = useSystemStore()
 
 interface LikeUser {
   id: number
@@ -151,6 +154,11 @@ async function handleLikeBack(item: LikeUser) {
 }
 
 function goChat(item: LikeUser) {
+  // 聊天功能关闭时，跳转到用户详情页
+  if (!systemStore.chatEnabled) {
+    uni.navigateTo({ url: `/pages/user-detail/index?id=${item.id}` })
+    return
+  }
   const name = encodeURIComponent(item.nickname)
   const avatar = encodeURIComponent(item.avatar || '')
   uni.navigateTo({

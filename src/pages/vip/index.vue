@@ -241,24 +241,17 @@ const navBarHeightPx = ref(82) // 36px level1 + 46px level2
 
 const tabs = computed(() => {
   const list: { key: string; label: string }[] = [
+    { key: 'custom', label: '定制会员' },
     { key: 'about', label: '关于我们' },
   ]
-  if (systemStore.vipEnabled) {
-    if (userStore.isLoggedIn) {
-      list.unshift(
-        { key: 'vip', label: 'VIP会员' },
-        { key: 'custom', label: '定制会员' },
-      )
-    } else {
-      // 未登录也展示定制会员
-      list.unshift(
-        { key: 'custom', label: '定制会员' },
-      )
-    }
+  if (systemStore.vipEnabled && userStore.isLoggedIn) {
+    list.unshift(
+      { key: 'vip', label: 'VIP会员' },
+    )
   }
   return list
 })
-const activeTab = ref(systemStore.vipEnabled ? (userStore.isLoggedIn ? 'vip' : 'custom') : 'about')
+const activeTab = ref(systemStore.vipEnabled && userStore.isLoggedIn ? 'vip' : 'custom')
 
 const currentTabLabel = computed(() => {
   const tab = tabs.value.find(t => t.key === activeTab.value)

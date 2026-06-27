@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Param, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common'
+import { Controller, Get, Put, Delete, Param, ParseIntPipe, Query, UseGuards, Request } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserNotification } from '../entities/UserNotification'
@@ -59,5 +59,11 @@ export class UserNotificationController {
       { isRead: 1 },
     )
     return Result.success(null, '全部已读')
+  }
+
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    await this.repo.delete({ id, userId: req.user.userId })
+    return Result.success(null, '已删除')
   }
 }

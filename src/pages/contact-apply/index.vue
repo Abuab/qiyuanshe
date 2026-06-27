@@ -279,6 +279,11 @@ const doUseRedLine = async () => {
 }
 
 const goChat = () => {
+  // 聊天功能关闭时，跳转到用户详情页
+  if (!systemStore.chatEnabled) {
+    uni.navigateTo({ url: `/pages/user-detail/index?id=${targetUserId.value}` })
+    return
+  }
   uni.navigateTo({
     url: `/pages/chat/index?userId=${targetUserId.value}&nickname=${encodeURIComponent(targetNickname.value)}&avatar=${encodeURIComponent(targetAvatar.value)}`,
   })

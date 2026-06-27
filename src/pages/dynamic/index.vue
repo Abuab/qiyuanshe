@@ -172,16 +172,6 @@
                 mode="aspectFill"
                 @error="handleImageError"
               />
-              <!-- 毛玻璃遮罩 + 提示 -->
-              <view v-if="shouldBlur(item, idx) && idx > 0" class="blur-overlay">
-                <text class="blur-text">我也更了解你</text>
-                <text class="blur-hint">请先上传你的照片吧</text>
-                <view class="upload-btn" @tap.stop="goToUploadPhoto">
-                  <text class="upload-btn-text">上传照片</text>
-                </view>
-              </view>
-              <!-- 不透明遮罩替代 blur -->
-              <view v-if="shouldBlur(item, idx) && idx > 0" class="blur-cover" />
             </view>
           </view>
         </view>
@@ -562,21 +552,6 @@ const goToQuestion = (questionId?: number) => {
 
 const handlePhotoTap = (item: DynamicItem, idx: number) => {
   // 如果该图片被模糊了，弹提示引导上传
-  if (shouldBlur(item, idx) && idx > 0) {
-    uni.showModal({
-      title: '提示',
-      content: '我也想更了解你，请先上传你的照片吧',
-      confirmText: '上传照片',
-      cancelText: '取消',
-      confirmColor: '#FF6B9D',
-      success: (res) => {
-        if (res.confirm) {
-          goToUploadPhoto()
-        }
-      },
-    })
-    return
-  }
   // 正常预览
   uni.previewImage({
     urls: item.images,
@@ -1045,7 +1020,7 @@ onShow(() => {
 
 .photo-item {
   position: relative;
-  margin-right: 10rpx;
+  margin-right: 16rpx;
   border-radius: 12rpx;
   overflow: hidden;
   background-color: #f5f5f5;
@@ -1061,54 +1036,8 @@ onShow(() => {
 }
 
 .photo-blur .photo-img {
-  opacity: 0.3;
-}
-
-.blur-cover {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.blur-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-}
-
-.blur-text {
-  font-size: 26rpx;
-  color: #FF6B9D;
-  font-weight: 600;
-  margin-bottom: 8rpx;
-}
-
-.blur-hint {
-  font-size: 22rpx;
-  color: #999;
-  margin-bottom: 20rpx;
-}
-
-.upload-btn {
-  background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
-  padding: 14rpx 44rpx;
-  border-radius: 40rpx;
-}
-
-.upload-btn-text {
-  font-size: 26rpx;
-  color: #fff;
-  font-weight: 500;
+  filter: blur(10px) brightness(0.85);
+  transform: scale(1.08);
 }
 
 /* 话题卡片 */

@@ -52,6 +52,7 @@
         <view class="msg-item-head">
           <text class="msg-title">{{ item.title }}</text>
           <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
+          <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
         </view>
         <text class="msg-content">{{ item.content }}</text>
         <view v-if="item.isRead === 0" class="unread-dot" />
@@ -160,6 +161,29 @@ const markRead = async (item: NotifyItem) => {
     })
     item.isRead = 1
   } catch { /* silent */ }
+}
+
+const confirmDelete = (item: NotifyItem) => {
+  uni.showModal({
+    title: '删除消息',
+    content: '确定要删除这条系统消息吗？',
+    confirmText: '删除',
+    confirmColor: '#FF6B9D',
+    success: async (res) => {
+      if (res.confirm) {
+        try {
+          await request({
+            url: `/notifications/${item.id}`,
+            method: 'DELETE',
+          })
+          list.value = list.value.filter(m => m.id !== item.id)
+          uni.showToast({ title: '已删除', icon: 'success' })
+        } catch {
+          uni.showToast({ title: '删除失败', icon: 'none' })
+        }
+      }
+    },
+  })
 }
 
 const handleFollowOA = () => {
@@ -284,6 +308,11 @@ const formatTime = (timeStr: string) => {
 .unread-dot {
   position: absolute; top: 28rpx; left: 12rpx;
   width: 12rpx; height: 12rpx; border-radius: 50%; background: #FF4D4F;
+}
+.delete-btn {
+  font-size: 28rpx; color: #CCC;
+  padding: 0 8rpx;
+  flex-shrink: 0;
 }
 .no-more { padding: 40rpx 0; }
 </style>

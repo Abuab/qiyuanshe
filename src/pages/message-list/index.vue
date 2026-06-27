@@ -54,7 +54,9 @@
           </view>
         </view>
 
+        <!-- 用户聊天项 -->
         <view v-else class="user-message" @tap.stop="goToChat(item)">
+          <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
           <image
             class="user-avatar"
             :src="item.avatar || icons.common.defaultAvatar"
@@ -70,6 +72,10 @@
           </view>
           <view v-if="item.unreadCount > 0" class="unread-badge">
             <text>{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</text>
+          </view>
+          <!-- 删除按钮 -->
+          <view class="delete-btn" @tap.stop="confirmDelete(item)">
+            <text>删除</text>
           </view>
         </view>
       </view>
@@ -90,9 +96,12 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useIcon } from '@/composables/useIcon'
+
+const systemStore = useSystemStore()
 
 interface SystemAggregate {
   id: number
@@ -244,9 +253,42 @@ const handleClick = (item: MessageItem) => {
 }
 
 const goToChat = (item: UserMessage) => {
+  // 聊天功能关闭时，禁止进入聊天
+  if (!systemStore.chatEnabled) {
+    uni.showToast({ title: '聊天功能暂未开放', icon: 'none' })
+    return
+  }
   uni.navigateTo({
     url: `/pages/chat/index?userId=${item.userId}&nickname=${encodeURIComponent(item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
   })
+}
+
+const confirmDelete = (item: UserMessage) => {
+  uni.showModal({
+    title: '删除会话',
+    content: `确定要删除与 ${item.nickname} 的聊天记录吗？`,
+    confirmText: '删除',
+    confirmColor: '#FF6B9D',
+    success: async (res) => {
+      if (res.confirm) {
+        await deleteConversation(item.userId)
+      }
+    },
+  })
+}
+
+const deleteConversation = async (targetUserId: number) => {
+  try {
+    await request({
+      url: `/chat/conversations/${targetUserId}`,
+      method: 'DELETE',
+    })
+    uni.showToast({ title: '已删除', icon: 'success' })
+    // 从列表中移除
+    messageList.value = messageList.value.filter(m => m.type !== 'user' || (m as UserMessage).userId !== targetUserId)
+  } catch {
+    uni.showToast({ title: '删除失败', icon: 'none' })
+  }
 }
 
 const formatTime = (timeStr: string) => {
@@ -355,6 +397,10 @@ function isImagePreview(item: UserMessage): boolean {
   padding: 24rpx 32rpx;
 }
 
+.user-message {
+  position: relative;
+}
+
 .system-icon {
   width: 96rpx;
   height: 96rpx;
@@ -453,6 +499,20 @@ function isImagePreview(item: UserMessage): boolean {
     font-size: 22rpx;
     color: #fff;
   }
+}
+
+.delete-btn {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #CCC;
+  z-index: 2;
 }
 
 .no-more-tip {
