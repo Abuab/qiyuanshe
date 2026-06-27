@@ -117,7 +117,6 @@
               <text>{{ profileData.basicInfo.birthDay }} · {{ profileData.basicInfo.zodiac || '' }}{{ profileData.basicInfo.constellation ? ' · ' + profileData.basicInfo.constellation : '' }}</text>
             </view>
             <view v-if="profileData.basicInfo.occupation" class="info-chip right-chip">
-              <text class="chip-emoji">💼</text>
               <text>{{ profileData.basicInfo.occupation }}</text>
             </view>
           </view>
@@ -141,29 +140,30 @@
             <text class="section-title">身份认证</text>
             <text class="section-hint">点亮的为已认证</text>
           </view>
-          <!-- 未实名认证：提示+按钮 -->
-          <view v-if="isRealNameNotVerified" class="auth-unverified">
-            <text class="auth-unverified-text">该用户未实名认证</text>
-            <view class="auth-remind-btn" @tap="remindVerify">
-              <text>提醒对方认证</text>
-            </view>
-          </view>
-          <!-- 已实名认证：显示认证图标列表 -->
-          <scroll-view v-else class="auth-scroll" scroll-x :show-scrollbar="false">
-            <view class="auth-items">
-              <view
-                v-for="item in profileData.identityAuth.items"
-                :key="item.type"
-                class="auth-item"
-                @tap="onAuthTap(item)"
-              >
-                <view class="auth-circle" :class="{ on: item.verified }">
-                  <text>{{ item.verified ? '✓' : '—' }}</text>
+          <!-- 认证图标列表（未认证时模糊） -->
+          <view class="auth-container" :class="{ 'auth-blur': isRealNameNotVerified }">
+            <scroll-view class="auth-scroll" scroll-x :show-scrollbar="false">
+              <view class="auth-items">
+                <view
+                  v-for="item in profileData.identityAuth.items"
+                  :key="item.type"
+                  class="auth-item"
+                >
+                  <view class="auth-circle" :class="{ on: item.verified }">
+                    <text>{{ item.verified ? '✓' : '—' }}</text>
+                  </view>
+                  <text class="auth-name">{{ item.label }}</text>
                 </view>
-                <text class="auth-name">{{ item.label }}</text>
+              </view>
+            </scroll-view>
+            <!-- 未认证覆盖层 -->
+            <view v-if="isRealNameNotVerified" class="auth-blur-overlay" @tap.stop>
+              <text class="auth-unverified-text">该用户未实名认证</text>
+              <view class="auth-remind-btn" @tap="remindVerify">
+                <text>提醒对方认证</text>
               </view>
             </view>
-          </scroll-view>
+          </view>
         </view>
 
         <!-- ========== 4. 关于我区 ========== -->
@@ -275,6 +275,7 @@
 
         <!-- ========== 7. 介绍给好友 ========== -->
         <view class="share-capsule" @tap="openSharePopup">
+          <uni-icons type="redo" size="32rpx" color="#1A1A1A"></uni-icons>
           <text class="capsule-text">介绍给好友</text>
         </view>
 
@@ -1387,9 +1388,18 @@ $text-hint: #999999;
 .section-hint { font-size: 22rpx; color: $text-hint; }
 
 // ===== 身份认证 =====
-.auth-unverified {
-  display: flex; flex-direction: column; align-items: center; gap: 14rpx;
-  padding: 16rpx 0;
+// ===== 认证容器（未认证时模糊） =====
+.auth-container { position: relative; }
+
+.auth-blur .auth-items {
+  filter: blur(8px);
+}
+
+.auth-blur-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14rpx; z-index: 5;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
@@ -1539,7 +1549,7 @@ $text-hint: #999999;
 
 // ===== 介绍给好友（白色胶囊按钮） =====
 .share-capsule {
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 12rpx;
   margin: 16rpx auto; padding: 22rpx 48rpx;
   background: #fff; border-radius: 48rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
