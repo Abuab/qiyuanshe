@@ -140,7 +140,7 @@
         </view>
 
         <view class="form-item">
-          <text class="form-label">体重(kg)</text>
+          <text class="form-label">体重</text>
           <picker mode="selector" :range="weightOptions" :value="weightIndex" @change="onWeightChange" style="flex:1">
             <view class="form-picker">
               <text class="picker-value" :class="{ placeholder: !form.weight }" style="flex:1;text-align:right;font-size:28rpx;color:#333;">{{ form.weight ? form.weight + 'kg' : '请选择' }}</text>
@@ -2070,8 +2070,9 @@ onShow(async () => {
   box-sizing: border-box;
 
   text {
-    font-size: 26rpx;
-    color: #FF6B9D;
+    font-size: 24rpx;
+    color: #FF1744;
+    font-weight: 400;
   }
 }
 
@@ -2231,7 +2232,7 @@ onShow(async () => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 200rpx);
-  gap: 6rpx;
+  gap: 12rpx;
 }
 
 .photo-cell {
@@ -2349,7 +2350,7 @@ onShow(async () => {
   text {
     font-size: 22rpx;
     color: #fff;
-    font-weight: 500;
+    font-weight: 300;
   }
 }
 
@@ -2363,15 +2364,15 @@ onShow(async () => {
 }
 
 .photo-add-plus {
-  font-size: 120rpx;
+  font-size: 140rpx;
   font-weight: 200;
-  color: #ccc;
+  color: #ddd;
   line-height: 1;
 
   &.subtle {
-    font-size: 90rpx;
+    font-size: 110rpx;
     font-weight: 200;
-    color: #ddd;
+    color: #e8e8e8;
   }
 }
 
@@ -2440,13 +2441,14 @@ onShow(async () => {
   display: flex;
   align-items: center;
   padding: 8rpx 20rpx;
-  border: 1rpx solid #FF6B9D;
+  border: 1rpx solid #FF1744;
   border-radius: 30rpx;
   background-color: #FFF0F3;
 
   text {
     font-size: 24rpx;
-    color: #FF6B9D;
+    color: #FF1744;
+    font-weight: 400;
   }
 }
 
