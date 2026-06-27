@@ -1251,7 +1251,7 @@ $text-hint: #999999;
 
 .info-left {
   display: flex; flex-direction: column; flex: 1; min-width: 0;
-  padding-top: 12rpx;
+  padding-top: 20rpx;
 }
 
 .info-name-id {
@@ -1272,7 +1272,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 26rpx; color: $text-hint; padding-top: 0; font-weight: 400;
+  font-size: 30rpx; color: $text-hint; padding-top: 0; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
@@ -1335,7 +1335,7 @@ $text-hint: #999999;
 .basic-line {
   display: flex; align-items: baseline; flex-wrap: wrap;
   font-size: 26rpx; color: #333; margin-bottom: 0;
-  margin-top: 34rpx;
+  margin-top: 26rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
