@@ -1240,7 +1240,7 @@ $text-hint: #999999;
 // ===== 2. 白色资料卡片（覆盖背景图底部，顶部圆角露出背景） =====
 .info-card {
   background: $card-bg; border-radius: 48rpx 48rpx 0 0;
-  margin: -40rpx 0 0; padding: 20rpx 28rpx 20rpx;
+  margin: -40rpx 0 0; padding: 30rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
@@ -1334,6 +1334,7 @@ $text-hint: #999999;
 .basic-line {
   display: flex; align-items: baseline; flex-wrap: wrap;
   font-size: 26rpx; color: #333; margin-bottom: 0;
+  margin-top: 46rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
