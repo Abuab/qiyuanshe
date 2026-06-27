@@ -1271,7 +1271,7 @@ $text-hint: #999999;
   font-weight: bold;
   color: #fff;
   background-color: #999;
-  padding: 2rpx 6rpx;
+  padding: 1rpx 5rpx;
   border-radius: 20rpx;
   line-height: 1.4;
   margin-right: 4rpx;
