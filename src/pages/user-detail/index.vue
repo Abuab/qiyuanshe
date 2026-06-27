@@ -1184,7 +1184,6 @@ $text-hint: #999999;
 // ===== 滚动区域 =====
 .page-scroll {
   height: 100vh;
-  background: #FFE4EC;
 }
 
 // ===== 1. 顶部大背景图（50vh，顶部大圆角） =====
