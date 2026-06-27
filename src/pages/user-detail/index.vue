@@ -1423,7 +1423,7 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
   background: #FFF8FA; border-radius: 28rpx;
-  font-size: 22rpx; color: #333; font-weight: 400;
+  font-size: 22rpx; color: #222; font-weight: 400;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1436,7 +1436,7 @@ $text-hint: #999999;
 
 .ai-label-text { font-size: 22rpx; color: $pink; font-weight: 500; }
 
-.ai-text { font-size: 26rpx; color: #333; line-height: 1.6; }
+.ai-text { font-size: 26rpx; color: #222; line-height: 1.6; font-weight: 400; }
 
 .empty-hint { font-size: 24rpx; color: #ccc; text-align: center; padding: 20rpx 0; }
 
@@ -1465,7 +1465,7 @@ $text-hint: #999999;
 
 .ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
 
-.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 8rpx; }
 
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
@@ -1481,7 +1481,7 @@ $text-hint: #999999;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #333; font-weight: 400; }
+.pt-value { font-size: 22rpx; color: #222; font-weight: 400; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
@@ -1551,10 +1551,10 @@ $text-hint: #999999;
 }
 
 .report-link {
-  font-size: 26rpx; color: $text-hint; padding: 8rpx;
+  font-size: 26rpx; color: #666; padding: 8rpx;
 }
 
-.report-divider { font-size: 24rpx; color: #ddd; }
+.report-divider { font-size: 24rpx; color: #999; }
 
 // ===== 底部空白 =====
 .bottom-spacer { height: 160rpx; }
