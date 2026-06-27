@@ -47,6 +47,14 @@
       }
     },
     {
+      "path": "pages/contact-apply/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "想认识Ta",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
       "path": "pages/filter/index",
       "style": {
         "navigationBarTitleText": "筛选",

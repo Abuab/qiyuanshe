@@ -351,6 +351,22 @@
         </view>
       </view>
 
+      <!-- ========== 对方未实名认证提示弹窗 ========== -->
+      <view v-if="showRealNameDialog" class="dialog-overlay" @tap="showRealNameDialog = false">
+        <view class="dialog-card" @tap.stop>
+          <text class="dialog-title">提示</text>
+          <text class="dialog-desc">对方未实名认证，确认继续查看？</text>
+          <view class="dialog-buttons">
+            <view class="dialog-btn cancel-btn" @tap="showRealNameDialog = false">
+              <text>取消</text>
+            </view>
+            <view class="dialog-btn allow-btn" @tap="showRealNameDialog = false; navigateToContactApply()">
+              <text>确认</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
       <!-- ========== 举报底部弹窗 ========== -->
       <view v-if="showReportSheet" class="report-sheet-overlay" @tap="closeReportSheet">
         <view class="report-sheet" :class="{ 'sheet-up': reportSheetAnim }" @tap.stop>
@@ -1091,17 +1107,39 @@ const refreshProfileGen = async () => {
   }
 }
 
+// ===== 对方未实名认证提示弹窗 =====
+const showRealNameDialog = ref(false)
+
 const handleContact = () => {
   if (!isLoggedIn.value) {
     uni.showToast({ title: '请先登录', icon: 'none' })
     setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
     return
   }
-  if (!userStore.isVip) {
-    uni.switchTab({ url: '/pages/vip/index' })
+  // 检查目标用户是否实名认证
+  if (isRealNameNotVerified.value) {
+    showRealNameDialog.value = true
     return
   }
-  uni.navigateTo({ url: `/pages/chat/index?userId=${userId.value}&nickname=${encodeURIComponent(profileData.value.top.nickname || '')}&avatar=${encodeURIComponent(profileData.value.top.avatar || '')}` })
+  navigateToContactApply()
+}
+
+const navigateToContactApply = () => {
+  const p = profileData.value
+  const top = p?.top || {}
+  const basic = p?.basicInfo || {}
+  const params = [
+    `userId=${userId.value}`,
+    `nickname=${encodeURIComponent(top.nickname || '')}`,
+    `avatar=${encodeURIComponent(top.avatar || '')}`,
+    `isRealName=${isRealNameNotVerified.value ? '0' : '1'}`,
+    `age=${basic.age || ''}`,
+    `height=${basic.height || ''}`,
+    `weight=${basic.weight || ''}`,
+    `education=${encodeURIComponent(basic.education || '')}`,
+    `occupation=${encodeURIComponent(basic.occupation || '')}`,
+  ].join('&')
+  uni.navigateTo({ url: `/pages/contact-apply/index?${params}` })
 }
 
 const showMatchmakerPopup = () => {
