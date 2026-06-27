@@ -1148,7 +1148,7 @@ $text-hint: #999999;
 // ===== 顶部毛玻璃昵称卡片（固定，粉色） =====
 .top-frost-card {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+  background: linear-gradient(180deg, rgba(255, 228, 236, 0.6) 0%, rgba(255, 255, 255, 0.85) 100%);
 }
 
 .frost-inner {
@@ -1186,6 +1186,7 @@ $text-hint: #999999;
 
 .hero-bg {
   width: 100%; height: 100%;
+  border-radius: 12rpx 12rpx 0 0;
 }
 
 .hero-bg.photo-slide {
