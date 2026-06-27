@@ -1122,7 +1122,7 @@ const generatePoster = () => {
 $pink: #FF6B8A;
 $pink-light: #FF8FA8;
 $purple: #7C3AED;
-$bg: #F5F5F5;
+$bg: #FAFAFA;
 $card-bg: #FFFFFF;
 $text: #1A1A1A;
 $text-secondary: #666666;
@@ -1338,7 +1338,7 @@ $text-hint: #999999;
 .chip-emoji { font-size: 24rpx; flex-shrink: 0; }
 
 .loc-chip {
-  background: #F5F5F5; color: $text;
+  background: #F0F0F0; color: $text;
   gap: 4rpx;
 }
 
@@ -1368,7 +1368,7 @@ $text-hint: #999999;
 
 // ===== 分区卡片通用 =====
 .section-card {
-  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 28rpx;
+  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 28rpx 28rpx 38rpx;
 }
 
 .section-title {
