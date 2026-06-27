@@ -163,7 +163,156 @@ export class AiMatchmakerService {
   }
 
   /**
-   * 根据条件搜索用户库
+   * 智能匹配：根据当前用户资料对候选人打分排序
+   * 适用于用户模糊推荐（如"帮我推荐几个女生"）而非精确筛选
+   */
+  private async smartMatch(
+    currentUserId: number,
+    targetGender: number,
+    limit: number = 5,
+  ): Promise<MatchmakerSearchUser[]> {
+    // 加载当前用户的完整资料
+    const me = await this.userRepo.findOne({ where: { id: currentUserId } })
+    if (!me) return []
+
+    // 加载所有符合基本条件的异性候选人
+    const candidates = await this.userRepo.createQueryBuilder('u')
+      .where('u.id != :currentUserId', { currentUserId })
+      .andWhere('u.status IN (:...statuses)', { statuses: [1, 2] })
+      .andWhere('u.isDeleted = 0')
+      .andWhere('u.showBasicProfile = true')
+      .andWhere('u.gender = :gender', { gender: targetGender })
+      .getMany()
+
+    if (candidates.length === 0) return []
+
+    const currentYear = new Date().getFullYear()
+    const myAge = me.birthYear ? currentYear - me.birthYear : 0
+    const myCity = this.extractCity(me.residence || '')
+    const myProvince = this.extractProvince(me.residence || '')
+    const myTags = new Set(me.tags || [])
+    const myEdLevel = this.getEducationLevel(me.education || '')
+
+    const now = Date.now()
+    const WEEK_MS = 7 * 24 * 3600 * 1000
+
+    // 为每个候选人打分
+    const scored = candidates.map((c) => {
+      const age = c.birthYear ? currentYear - c.birthYear : 0
+      const cCity = this.extractCity(c.residence || '')
+      const cProvince = this.extractProvince(c.residence || '')
+      const cTags = c.tags || []
+      const cEdLevel = this.getEducationLevel(c.education || '')
+
+      let score = 0
+
+      // 1. 年龄匹配 (25分)
+      const ageDiff = Math.abs(myAge - age)
+      if (ageDiff <= 3) score += 25
+      else if (ageDiff <= 5) score += 20
+      else if (ageDiff <= 8) score += 15
+      else if (ageDiff <= 12) score += 8
+      else score += 3
+
+      // 2. 地域匹配 (25分)
+      if (myCity && cCity && myCity === cCity) {
+        score += 25
+      } else if (myProvince && cProvince && myProvince === cProvince) {
+        score += 15
+      } else if (myCity && (c.residence || '').includes(myCity)) {
+        score += 8
+      }
+
+      // 3. 学历匹配 (15分)
+      const edDiff = Math.abs(myEdLevel - cEdLevel)
+      if (edDiff === 0) score += 15
+      else if (edDiff <= 1) score += 10
+      else if (edDiff <= 2) score += 5
+
+      // 4. 兴趣标签匹配 (15分)
+      if (cTags.length > 0 && myTags.size > 0) {
+        const shared = cTags.filter((t) => myTags.has(t)).length
+        const overlap = shared / Math.max(myTags.size, cTags.length)
+        score += Math.round(overlap * 15)
+      }
+
+      // 5. 身高匹配 (10分)
+      if (me.height && c.height) {
+        const idealDiff = targetGender === 2 ? 12 : 10 // 男找女差12cm，女找男差10cm
+        const actualDiff = me.gender === 1 ? me.height - c.height : c.height - me.height
+        if (Math.abs(actualDiff - idealDiff) <= 5) score += 10
+        else if (Math.abs(actualDiff - idealDiff) <= 10) score += 5
+      }
+
+      // 6. 收入匹配 (5分)
+      if (me.incomeRange && c.incomeRange && me.incomeRange === c.incomeRange) {
+        score += 5
+      }
+
+      // 7. 活跃度加分 (5分)
+      if (c.lastActiveAt) {
+        const inactiveMs = now - c.lastActiveAt.getTime()
+        if (inactiveMs < WEEK_MS) score += 5
+        else if (inactiveMs < WEEK_MS * 4) score += 3
+      }
+
+      return { user: c, score, age }
+    })
+
+    // 按分数降序排列
+    scored.sort((a, b) => b.score - a.score)
+
+    const topN = scored.slice(0, limit)
+
+    return topN.map(({ user: u, score, age }) => ({
+      id: u.id,
+      nickname: u.nickname || '未设置昵称',
+      avatar: u.avatar || '',
+      gender: u.gender,
+      age,
+      height: u.height || 0,
+      education: u.education || '',
+      occupation: u.occupation || '',
+      residence: u.residence || '',
+      hometown: u.hometown || '',
+      maritalStatus: u.maritalStatus || '',
+      incomeRange: u.incomeRange || '',
+      tags: u.tags || [],
+      matchScore: score,
+    }))
+  }
+
+  /** 从地址字符串中提取城市名（如"浙江省杭州市"→"杭州"） */
+  private extractCity(address: string): string {
+    const m = address.match(/([\u4e00-\u9fa5]{2,4})(?:市|区|县)$/)
+    if (m) return m[1]
+    // 尝试匹配"XX市"格式
+    const m2 = address.match(/([\u4e00-\u9fa5]{2,4})市/)
+    if (m2) return m2[1]
+    return address
+  }
+
+  /** 从地址字符串中提取省份名 */
+  private extractProvince(address: string): string {
+    const m = address.match(/^([\u4e00-\u9fa5]{2,3})(?:省|市|自治区)/)
+    if (m) return m[1]
+    // 直辖市
+    const m2 = address.match(/^(北京|上海|天津|重庆)/)
+    if (m2) return m2[1]
+    return ''
+  }
+
+  /** 学历转等级：博士=5, 硕士=4, 本科=3, 大专=2, 高中=1, 其他=0 */
+  private getEducationLevel(edu: string): number {
+    if (/博/.test(edu)) return 5
+    if (/硕|研究/.test(edu)) return 4
+    if (/本|大学/.test(edu)) return 3
+    if (/专|大/.test(edu)) return 2
+    if (/高|中/.test(edu)) return 1
+    return 0
+  }
+  /**
+   * 根据条件搜索用户库（精确筛选）
    */
   private async searchUsers(
     filters: MatchmakerSearchFilters,
@@ -312,6 +461,7 @@ export class AiMatchmakerService {
     // 5. 搜索用户库
     let users: MatchmakerSearchUser[] | undefined
     let searchContext = ''
+    let isSmartMatch = false
     const isSearch = this.isSearchIntent(message)
     this.logger.log(`[AI红娘] 搜索意图预检: isSearch=${isSearch}, message="${message.slice(0, 30)}"`)
 
@@ -341,14 +491,30 @@ export class AiMatchmakerService {
         }
 
         if (filters) {
-          users = await this.searchUsers(filters, userId)
-          this.logger.log(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
+          // 判断是否仅含性别过滤（无年龄/城市/身高/学历等具体条件）→ 智能匹配
+          const hasSpecificFilters = !!(
+            filters.ageMin || filters.ageMax || filters.heightMin ||
+            filters.city || filters.province || filters.education ||
+            filters.maritalStatus || filters.incomeRange ||
+            filters.housingStatus || filters.carStatus
+          )
 
-          // 如果没搜到，用更宽松的条件再搜一次（仅性别 + 更大 limit）
-          if (users.length === 0 && filters.gender) {
-            this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
-            users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
-            this.logger.log(`[AI红娘] 宽松搜索: 找到 ${users.length} 位用户`)
+          if (!hasSpecificFilters && filters.gender) {
+            // 模糊推荐 → 智能匹配
+            users = await this.smartMatch(userId, filters.gender, filters.limit || 5)
+            isSmartMatch = true
+            this.logger.log(`[AI红娘] 智能匹配: 找到 ${users.length} 位用户`)
+          } else {
+            // 精确筛选 → 普通搜索
+            users = await this.searchUsers(filters, userId)
+            this.logger.log(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
+
+            // 如果没搜到，用更宽松的条件再搜一次（仅性别 + 更大 limit）
+            if (users.length === 0 && filters.gender) {
+              this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
+              users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
+              this.logger.log(`[AI红娘] 宽松搜索: 找到 ${users.length} 位用户`)
+            }
           }
 
           if (users.length > 0) {
@@ -408,7 +574,6 @@ export class AiMatchmakerService {
     let reply: string
 
     if (users?.length) {
-      // 搜到了用户 → 直接格式化推荐列表，AI 仅作为补充说明
       const genderLabel = users[0].gender === 1 ? '男生' : '女生'
       const userListText = users.slice(0, 5).map((u, i) =>
         `${i + 1}. ${u.nickname}｜${u.age}岁｜${u.height}cm｜${u.education || '学历未填'}｜${u.residence || u.hometown || '未知'}`
@@ -434,8 +599,10 @@ export class AiMatchmakerService {
         // AI 点评失败，不追加
       }
 
-      reply = `为你匹配到 ${users.length} 位${genderLabel}，快来看看吧～\n\n${userListText}${aiComment}`
-      this.logger.log(`[AI红娘] 搜索命中，直接格式化推荐列表（${users.length}位用户）`)
+      reply = isSmartMatch
+        ? `根据你的资料，为你智能匹配了 ${users.length} 位最优${genderLabel}：\n\n${userListText}${aiComment}`
+        : `为你匹配到 ${users.length} 位${genderLabel}，快来看看吧～\n\n${userListText}${aiComment}`
+      this.logger.log(`[AI红娘] ${isSmartMatch ? '智能匹配' : '搜索'}命中，直接格式化推荐列表（${users.length}位用户）`)
     } else if (isSearch && users !== undefined) {
       // 检测到搜索意图并执行了搜索，但无结果
       reply = `抱歉，暂时没有找到符合条件的用户。你可以调整一下筛选条件再试试，或者告诉我你想找什么类型的人，我帮你留意～`

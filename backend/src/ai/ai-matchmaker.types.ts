@@ -72,6 +72,8 @@ export interface MatchmakerSearchUser {
   maritalStatus: string
   incomeRange: string
   tags: string[]
+  /** 智能匹配分数 (0-100)，简单搜索时为 undefined */
+  matchScore?: number
 }
 
 /** 快捷问题列表 */
