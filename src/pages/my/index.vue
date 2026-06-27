@@ -589,6 +589,11 @@ const toolGrid7 = [
   position: relative;
   flex-shrink: 0;
   margin-right: 20rpx;
+  padding: 4rpx;
+  background: #fff;
+  border-radius: 18rpx;
+  border: 2px solid #3B82F6;
+  box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.4);
 }
 
 .profile-avatar {
@@ -596,6 +601,7 @@ const toolGrid7 = [
   height: 100rpx;
   border-radius: 14rpx;
   background-color: #f5f5f5;
+  display: block;
 }
 
 .avatar-review-overlay {
