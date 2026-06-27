@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -8rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -14rpx;
 }
 
 .info-nickname {
@@ -1264,13 +1264,13 @@ $text-hint: #999999;
   display: inline-block;
   font-style: italic;
   font-size: 26rpx;
-  font-weight: 600; color: #fff; background-color: #999;
-  padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: baseline; margin-right: 2rpx;
+  font-weight: 600; color: #fff; background-color: #bbb;
+   padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
+   vertical-align: baseline; margin-right: 4rpx;
 }
 
 .info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 2rpx; font-weight: 400;
+  font-size: 28rpx; color: $text-hint; padding-top: 0; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
