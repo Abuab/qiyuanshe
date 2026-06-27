@@ -22,7 +22,7 @@ export function goAuthWechat() {
   uni.getUserProfile({
     desc: '用于完善用户资料',
     success: (res) => {
-      const { nickName, avatarUrl } = res.userInfo || {}
+      const nickName = res.userInfo?.nickName
       if (nickName) {
         uni.setStorageSync('user_nickname', nickName)
         authSteps.value.wechat = true
