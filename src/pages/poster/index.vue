@@ -10,7 +10,7 @@
       </view>
     </view>
 
-    <view class="page-content" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
+    <view class="page-content" :style="{ paddingTop: navTotalHeight + 'px' }">
       <view class="tip-text">点击模板生成推广卡</view>
 
       <view class="template-grid">
@@ -22,12 +22,6 @@
         >
           <view class="template-preview" :style="{ background: template.bgColor }">
             <image class="preview-photo" :src="template.previewPhoto" mode="aspectFill" />
-            <view class="preview-overlay">
-              <view class="preview-info">
-                <text class="preview-id">ID: 10001</text>
-                <text class="preview-basic">26岁 · 168cm · 本科</text>
-              </view>
-            </view>
             <view class="preview-tag" :style="{ background: template.tagColor }">
               <text>{{ template.name }}</text>
             </view>
@@ -92,7 +86,7 @@ interface PosterTemplate {
 const templateList: PosterTemplate[] = [
   {
     id: 1,
-    name: '推荐女嘉宾',
+    name: '推荐嘉宾',
     bgColor: 'linear-gradient(135deg, #FFB6C1, #FFC0CB)',
     tagColor: '#FF6B9D',
     previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
@@ -100,7 +94,7 @@ const templateList: PosterTemplate[] = [
   },
   {
     id: 2,
-    name: '推荐男嘉宾',
+    name: '佳期如梦',
     bgColor: 'linear-gradient(135deg, #87CEEB, #ADD8E6)',
     tagColor: '#4A90E2',
     previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
@@ -154,6 +148,14 @@ const statusBarHeight = ref(44)
 try {
   statusBarHeight.value = uni.getSystemInfoSync().statusBarHeight || 44
 } catch { /* keep default */ }
+
+// 导航栏总高度（px）：statusBar + 88rpx → px
+const navTotalHeight = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const screenWidth = sysInfo.screenWidth || 390
+  const rpxRatio = screenWidth / 750
+  return statusBarHeight.value + 88 * rpxRatio
+})
 
 // 目标用户性别（用于过滤模板）
 const userGender = ref<string>('')
@@ -235,17 +237,13 @@ const generatePoster = async (template: PosterTemplate) => {
     ctx.setFillStyle('#FFFFFF')
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-    // 2. 顶部粉色渐变装饰条
-    ctx.setFillStyle('#FF6B9D')
-    ctx.fillRect(0, 0, canvasWidth, 8)
-
-    // 3. 圆形头像
+    // 2. 圆形头像
     await drawAvatar(ctx, userData.avatar)
 
-    // 4. 昵称
+    // 3. 昵称
     drawNickname(ctx, userData.nickname, template)
 
-    // 5. 分隔线（昵称下方）
+    // 4. 分隔线（昵称下方）
     ctx.beginPath()
     ctx.setStrokeStyle('#F0F0F0')
     ctx.setLineWidth(2)
@@ -253,10 +251,10 @@ const generatePoster = async (template: PosterTemplate) => {
     ctx.lineTo(canvasWidth - PADDING - 120, NICKNAME_Y + 12)
     ctx.stroke()
 
-    // 6. 两列信息
+    // 5. 两列信息
     drawUserInfo(ctx, userData, template)
 
-    // 7. 信息区底部分隔线
+    // 6. 信息区底部分隔线
     ctx.beginPath()
     ctx.setStrokeStyle('#F0F0F0')
     ctx.setLineWidth(2)
@@ -264,7 +262,7 @@ const generatePoster = async (template: PosterTemplate) => {
     ctx.lineTo(canvasWidth - PADDING, DIVIDER_Y)
     ctx.stroke()
 
-    // 9. 底部分隔线
+    // 7. 底部分隔线
     const afterIntroY = INTRO_Y + INTRO_MAX_LINES * INTRO_LINE_HEIGHT + 30
     ctx.beginPath()
     ctx.setStrokeStyle('#F0F0F0')
@@ -273,10 +271,10 @@ const generatePoster = async (template: PosterTemplate) => {
     ctx.lineTo(canvasWidth - PADDING, afterIntroY)
     ctx.stroke()
 
-    // 10. 小程序码（从完整 URL 下载真实图片）
+    // 8. 小程序码（从完整 URL 下载真实图片）
     await drawQRCode(ctx, template)
 
-    // 11. 底部 footer
+    // 9. 底部 footer
     drawFooter(ctx)
 
     ctx.draw()
@@ -707,8 +705,9 @@ const savePoster = async () => {
 
 .tip-text {
   text-align: center;
-  font-size: 28rpx;
-  color: #999;
+  font-size: 26rpx;
+  font-weight: 300;
+  color: #333;
   margin-bottom: 32rpx;
 }
 
