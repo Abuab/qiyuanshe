@@ -331,10 +331,10 @@ export class AiMatchmakerService {
     // 6. 获取对话历史
     const history = await this.getContext(userId)
 
-    // 7. 构建 Prompt（搜索结果作为上下文附加到用户消息中）
-    const userMessageWithContext = searchContext
-      ? message + '\n\n【系统提示：平台用户库里已为你匹配到以下用户，请在回复中自然地向用户介绍他们：】\n' + searchContext
-      : message
+    // 7. 搜索到的用户上下文（注入到 system prompt）
+    const userSearchHint = searchContext
+      ? `\n\n【本轮搜索结果 - 请必须引用】平台用户库里已匹配到以下用户，你必须一一介绍给他们：\n${searchContext}`
+      : ''
 
     // 8. 记录调用日志
     const callLog = this.callLogRepo.create({
@@ -359,9 +359,9 @@ export class AiMatchmakerService {
         const systemPrompt = await this.systemService.replaceTemplateVars(MATCHMAKER_SYSTEM_PROMPT)
         reply = await this.aiApiService.callAndLog({
           messages: [
-            { role: 'system', content: systemPrompt },
+            { role: 'system', content: systemPrompt + userSearchHint },
             ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
-            { role: 'user', content: userMessageWithContext },
+            { role: 'user', content: message },
           ],
           maxTokens: 300,
           temperature: 0.8,

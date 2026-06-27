@@ -82,6 +82,7 @@
       refresher-threshold="80"
       @refresherrefresh="onRefresherRefresh"
       :style="{ height: 'calc(100vh - 100rpx - ' + navTotalHeight + 'px)' }"
+      :key="'scroll-' + (aiAssistantExpanded ? '1' : '0')"
     >
       <!-- ========== 会员卡片 ========== -->
       <view class="vip-card" @tap="goToVip">
@@ -1109,6 +1110,6 @@ const toolGrid7 = [
 }
 
 .bottom-safe-area {
-  height: 40rpx;
+  height: 120rpx;
 }
 </style>
