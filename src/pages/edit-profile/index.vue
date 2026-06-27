@@ -1825,7 +1825,7 @@ onShow(async () => {
 
   text {
     font-size: 26rpx;
-    color: #666;
+    color: #333;
     line-height: 1.8;
   }
 }
@@ -1847,7 +1847,7 @@ onShow(async () => {
 
   text {
     font-size: 26rpx;
-    color: #666;
+    color: #333;
   }
 }
 
@@ -1907,7 +1907,7 @@ onShow(async () => {
 .form-label {
   width: 140rpx;
   font-size: 28rpx;
-  color: #666;
+  color: #333;
   flex-shrink: 0;
 }
 
