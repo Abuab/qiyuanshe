@@ -1257,10 +1257,10 @@ $text-hint: #999999;
 
 .voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 
-// ===== 2. 白色资料卡片（负 margin 覆盖背景图底部，顶部大圆角浮层） =====
+// ===== 2. 白色资料卡片（微覆盖背景图 4rpx，顶部大圆角浮层） =====
 .info-card {
   background: $card-bg; border-radius: 43rpx 43rpx 0 0;
-  margin: 0; padding: 30rpx 28rpx 20rpx;
+  margin: -4rpx 0 0; padding: 34rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
