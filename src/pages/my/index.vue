@@ -944,7 +944,7 @@ const toolGrid7 = [
 
 .ai-sub-star {
   font-size: 36rpx;
-  color: $primary-color;
+  color: #FF6B9D;
   margin-right: 8rpx;
   flex-shrink: 0;
 }
