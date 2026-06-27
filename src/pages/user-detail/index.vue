@@ -85,7 +85,7 @@
           <view class="info-header">
             <view class="info-name-id">
               <text class="info-nickname">{{ profileData.top.nickname }}</text>
-              <text class="info-id"><text class="id-badge">ID</text> {{ profileData.top.userId }}</text>
+              <text class="info-id"><text class="id-badge">ID</text>{{ profileData.top.userId }}</text>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -4rpx;
 }
 
 .info-nickname {
@@ -1270,7 +1270,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 4rpx; font-weight: 400;
+  font-size: 28rpx; color: $text-hint; padding-top: 2rpx; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
