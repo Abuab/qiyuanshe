@@ -1,12 +1,14 @@
 <template>
   <view class="my-page">
-    <!-- 顶部粉色连续区域：导航 + 用户信息 -->
-    <view class="top-pink-area" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
-      <!-- 导航 -->
-      <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 12) + 'px' }">
-        <view class="nav-title">我的</view>
+    <!-- 顶部固定导航 -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-inner">
+        <text class="nav-title">个人中心</text>
       </view>
+    </view>
 
+    <!-- 顶部粉色区域：用户信息 -->
+    <view class="top-pink-area" :style="{ paddingTop: navTotalHeight + 'px' }">
       <!-- 用户信息区 -->
       <view class="profile-section" @tap="isLoggedIn ? undefined : goToLogin()">
         <!-- 未登录 -->
@@ -79,7 +81,7 @@
       :refresher-triggered="refreshingVisible"
       refresher-threshold="80"
       @refresherrefresh="onRefresherRefresh"
-      :style="{ height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight + 6) + 'px)' }"
+      :style="{ height: 'calc(100vh - 100rpx - ' + navTotalHeight + 'px)' }"
     >
       <!-- ========== 会员卡片 ========== -->
       <view class="vip-card" @tap="goToVip">
@@ -267,6 +269,13 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
+// 导航栏总高度（px）：statusBar + 88rpx → px
+const navTotalHeight = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const screenWidth = sysInfo.screenWidth || 390
+  const rpxRatio = screenWidth / 750
+  return statusBarHeight.value + 88 * rpxRatio
+})
 const refreshingVisible = ref(false)  // 下拉刷新状态
 const aiProfileText = ref('')        // AI 个人印象文本
 const profileGenLoading = ref(false) // AI 印象生成中
@@ -541,7 +550,10 @@ const toolGrid7 = [
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: transparent;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+}
+
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -623,13 +635,15 @@ const toolGrid7 = [
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 20rpx;
-  font-weight: bold;
+  font-size: 26rpx;
+  font-weight: 500;
   color: #fff;
-  background-color: #ccc;
-  padding: 2rpx 12rpx;
+  background-color: #aaa;
+  padding: 0 7rpx;
   border-radius: 20rpx;
-  line-height: 1.4;
+  line-height: 1.2;
+  vertical-align: baseline;
+  margin-right: 4rpx;
 }
 
 .id-number {

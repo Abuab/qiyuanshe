@@ -708,6 +708,7 @@ const savePoster = async () => {
   font-size: 26rpx;
   font-weight: 300;
   color: #333;
+  padding-top: 20rpx;
   margin-bottom: 32rpx;
 }
 
