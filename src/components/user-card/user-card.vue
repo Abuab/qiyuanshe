@@ -391,15 +391,12 @@ const onLike = async () => {
   flex-shrink: 0;
   width: 72rpx;
   height: 72rpx;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   overflow: hidden;
   margin-right: 20rpx;
   margin-bottom: 8rpx;
   background-color: #f5f5f5;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
-  &.photo-blur-wrapper {
-    /* placeholder for future blur-wrapper specific styles */
-  }
 }
 
 .photo-thumb {
@@ -410,7 +407,7 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(4px);
+  filter: blur(3px);
 }
 
 /* ===== 心动按钮 ===== */
