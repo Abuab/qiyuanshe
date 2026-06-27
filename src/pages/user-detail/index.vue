@@ -1406,7 +1406,7 @@ $text-hint: #999999;
 .auth-container { position: relative; }
 
 .auth-blur .auth-items {
-  filter: blur(8px);
+  filter: blur(4px);
 }
 
 .auth-blur-overlay {

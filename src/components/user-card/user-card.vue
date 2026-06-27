@@ -407,7 +407,8 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(3px) saturate(0.5);
+  filter: blur(2px) saturate(0.3) brightness(0.9);
+  transform: scale(1.08);
 }
 
 /* ===== 心动按钮 ===== */
