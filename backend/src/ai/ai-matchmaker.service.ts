@@ -357,6 +357,26 @@ export class AiMatchmakerService {
             ).join('\n')
             this.logger.log(`[AI红娘] 搜索上下文: ${searchContext.slice(0, 200)}`)
           } else {
+            // 诊断：输出数据库中用户分布
+            try {
+              const [totalAll, totalActive, totalShow, byGender, byStatus] = await Promise.all([
+                this.userRepo.count({ where: { isDeleted: 0 } }),
+                this.userRepo.count({ where: { isDeleted: 0, status: 2 } }),
+                this.userRepo.count({ where: { isDeleted: 0, showBasicProfile: 1 } }),
+                this.userRepo.createQueryBuilder('u')
+                  .select('u.gender', 'gender').addSelect('COUNT(*)', 'cnt')
+                  .where('u.isDeleted = 0').andWhere('u.status = 2').andWhere('u.showBasicProfile = 1')
+                  .groupBy('u.gender').getRawMany(),
+                this.userRepo.createQueryBuilder('u')
+                  .select('u.status', 'status').addSelect('COUNT(*)', 'cnt')
+                  .where('u.isDeleted = 0')
+                  .groupBy('u.status').getRawMany(),
+              ])
+              this.logger.log(
+                `[AI红娘] 📊 数据库诊断: 总用户=${totalAll}, status=2=${totalActive}, showBasicProfile=1=${totalShow}, ` +
+                `性别分布=${JSON.stringify(byGender)}, status分布=${JSON.stringify(byStatus)}`
+              )
+            } catch {}
             this.logger.log(`[AI红娘] 搜索无结果，可能数据库无匹配用户`)
           }
         } else {
