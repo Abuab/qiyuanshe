@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -4rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -8rpx;
 }
 
 .info-nickname {
@@ -1266,7 +1266,7 @@ $text-hint: #999999;
   font-size: 26rpx;
   font-weight: 600; color: #fff; background-color: #999;
   padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: baseline; margin-right: 0;
+  vertical-align: baseline; margin-right: 2rpx;
 }
 
 .info-id {
