@@ -1313,7 +1313,7 @@ $text-hint: #999999;
 
 // ===== 生日星座 + 职业 + 家乡 + 现居（info-card 外） =====
 .info-tags-row {
-  padding: 0 28rpx 16rpx;
+  padding: 16rpx 28rpx 16rpx;
 }
 
 // ===== 生日星座 + 职业 同行 =====
@@ -1368,7 +1368,7 @@ $text-hint: #999999;
 
 // ===== 分区卡片通用 =====
 .section-card {
-  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 28rpx 28rpx 38rpx;
+  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 32rpx 28rpx 48rpx;
 }
 
 .section-title {
@@ -1392,7 +1392,7 @@ $text-hint: #999999;
 
 .auth-remind-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 50%; padding: 14rpx 0;
+  width: auto; padding: 14rpx 50rpx;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA3); border-radius: 48rpx;
 }
 
@@ -1423,7 +1423,7 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
   background: #FFF8FA; border-radius: 28rpx;
-  font-size: 22rpx; color: #333;
+  font-size: 22rpx; color: #333; font-weight: 500;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1481,7 +1481,7 @@ $text-hint: #999999;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #333; font-weight: 400; }
+.pt-value { font-size: 22rpx; color: #333; font-weight: 500; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
