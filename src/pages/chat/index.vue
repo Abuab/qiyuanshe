@@ -579,7 +579,7 @@ const showChatMenu = () => {
           success: async (modalRes) => {
             if (modalRes.confirm) {
               try {
-                await request({ url: `/chat/messages/clear/${toUserId.value}`, method: 'DELETE' })
+                await request({ url: `/chat/conversations/${toUserId.value}`, method: 'DELETE' })
                 messages.value = []
                 uni.showToast({ title: '已清空', icon: 'success' })
               } catch { uni.showToast({ title: '操作失败', icon: 'none' }) }
@@ -605,7 +605,7 @@ const reportUser = () => {
         success: async (modalRes) => {
           if (modalRes.confirm) {
             try {
-              await request({ url: `/reports`, method: 'POST', data: { targetUserId: toUserId.value, reason } })
+              await request({ url: `/users/reports`, method: 'POST', data: { targetId: toUserId.value, type: 'user', reason } })
               uni.showToast({ title: '已举报，我们会尽快处理', icon: 'success' })
             } catch {
               uni.showToast({ title: '举报失败，请稍后重试', icon: 'none' })

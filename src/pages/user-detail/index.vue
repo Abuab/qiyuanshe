@@ -984,10 +984,10 @@ const handleReportSubmit = async () => {
   try {
     const imageUrls = reportImages.value.filter((img) => !img.uploading).map((img) => img.url)
     await request({
-      url: '/reports',
+      url: '/users/reports',
       method: 'POST',
       data: {
-        targetUserId: userId.value,
+        targetId: userId.value,
         type: 'user',
         reason: selectedReportReasons.value.join('、'),
         content: reportContent.value.trim(),
