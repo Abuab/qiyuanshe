@@ -103,31 +103,6 @@
           <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
           <text class="arrow">></text>
         </view>
-        <view class="auth-steps">
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.wechat }">
-              <uni-icons v-if="authSteps.wechat" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.wechat }">微信授权</text>
-            <text v-if="!authSteps.wechat" class="step-action" @tap.stop="goAuthWechat">去认证</text>
-          </view>
-          <view class="step-line" :class="{ done: authSteps.wechat && authSteps.phone }" />
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.phone }">
-              <uni-icons v-if="authSteps.phone" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.phone }">手机绑定</text>
-            <text v-if="!authSteps.phone" class="step-action" @tap.stop="goAuthPhone">去认证</text>
-          </view>
-          <view class="step-line" :class="{ done: authSteps.phone && authSteps.realName }" />
-          <view class="auth-step">
-            <view class="step-icon" :class="{ done: authSteps.realName }">
-              <uni-icons v-if="authSteps.realName" type="checkmarkempty" size="24rpx" color="#FFFFFF"></uni-icons>
-            </view>
-            <text class="step-label" :class="{ done: authSteps.realName }">实名认证</text>
-            <text v-if="!authSteps.realName" class="step-action" @tap.stop="goRealNameAuth">去认证</text>
-          </view>
-        </view>
       </view>
 
       <!-- ========== 金刚区：我的问答 + 专属红娘 + AI助手 ========== -->
@@ -255,7 +230,6 @@ import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
-import { authSteps, initAuthSteps, goAuthWechat, goAuthPhone, goRealNameAuth } from '@/composables/useAuthSteps'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -314,8 +288,6 @@ onMounted(() => {
       currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
     }, 3000)
   }
-  // 在已有 onMounted 末尾追加：
-  initAuthSteps()
 })
 
 onShow(() => {
@@ -879,63 +851,6 @@ const toolGrid7 = [
   margin-left: 12rpx;
 }
 
-.auth-steps {
-  margin-top: 20rpx;
-  display: flex;
-  align-items: flex-start;
-}
-
-.auth-step {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-.step-icon {
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: 50%;
-  background: #eeeeee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.done {
-    background: #52c41a;
-  }
-}
-
-.step-label {
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  color: #999999;
-
-  &.done {
-    color: #333333;
-  }
-}
-
-.step-action {
-  margin-top: 2rpx;
-  font-size: 22rpx;
-  color: #ff6b6b;
-}
-
-.step-line {
-  height: 2rpx;
-  background: #eeeeee;
-  flex: 0.5;
-  min-width: 40rpx;
-  position: relative;
-  top: 16rpx;
-
-  &.done {
-    background: #52c41a;
-  }
-}
-
 // ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
 .service-card {
   margin: 0 24rpx 24rpx;
@@ -1189,56 +1104,5 @@ const toolGrid7 = [
 
 .bottom-safe-area {
   height: 40rpx;
-}
-
-.auth-step {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-.step-icon {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  background: #eeeeee;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.done {
-    background: #52c41a;
-  }
-}
-
-.step-label {
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #999999;
-
-  &.done {
-    color: #333333;
-  }
-}
-
-.step-action {
-  margin-top: 4rpx;
-  font-size: 24rpx;
-  color: #ff6b6b;
-}
-
-.step-line {
-  height: 2rpx;
-  background: #eeeeee;
-  flex: 0.5;
-  min-width: 40rpx;
-  position: relative;
-  top: 24rpx;
-
-  &.done {
-    background: #52c41a;
-  }
 }
 </style>
