@@ -17,7 +17,7 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占用 frost card 下方空间） ========== -->
+        <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
         <view class="hero-section" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
           <image
             v-if="activePhotoUrl"
@@ -58,7 +58,7 @@
           </view>
         </view>
 
-        <!-- ========== 2. 白色资料卡片（覆盖背景图底部） ========== -->
+        <!-- ========== 2. 白色资料卡片（负 margin 覆盖背景图底部，浮层效果） ========== -->
         <view class="info-card">
           <!-- ===== 语音播放条 ===== -->
           <view
@@ -1177,10 +1177,10 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（占50vh，卡片在下方各占一半） =====
+// ===== 1. 顶部大背景图（50vh，顶部大圆角） =====
 .hero-section {
   position: relative; width: 100%; height: 50vh; overflow: hidden;
-  border-radius: 12rpx 12rpx 0 0; box-sizing: border-box;
+  border-radius: 43rpx 43rpx 0 0; box-sizing: border-box;
 }
 
 .hero-bg {
@@ -1257,10 +1257,10 @@ $text-hint: #999999;
 
 .voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 
-// ===== 2. 白色资料卡片（背景图下方各占一半） =====
+// ===== 2. 白色资料卡片（负 margin 覆盖背景图底部，顶部大圆角浮层） =====
 .info-card {
-  background: $card-bg; border-radius: 24rpx 24rpx 0 0;
-  margin: 0; padding: 30rpx 28rpx 20rpx;
+  background: $card-bg; border-radius: 43rpx 43rpx 0 0;
+  margin: -43rpx 0 0; padding: 43rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
