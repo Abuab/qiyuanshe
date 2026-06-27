@@ -55,15 +55,24 @@
                   class="search-user-card"
                   @tap="goToUserDetail(u.id)"
                 >
-                  <image class="search-user-avatar" :src="u.avatar" mode="aspectFill" />
+                  <image
+                    class="search-user-avatar"
+                    :src="u.avatar"
+                    mode="aspectFill"
+                    @error="onAvatarError"
+                  />
                   <view class="search-user-info">
                     <text class="search-user-name">{{ u.nickname }}</text>
                     <text class="search-user-brief">
                       {{ u.age }}岁 | {{ u.height }}cm | {{ u.education || '未填学历' }}
                     </text>
                     <text class="search-user-residence">{{ u.residence || u.hometown || '' }}</text>
-                    <view class="search-user-tags" v-if="u.tags?.length">
-                      <text v-for="(t, ti) in u.tags.slice(0, 3)" :key="ti" class="search-user-tag">{{ t }}</text>
+                    <view class="search-user-tags" v-if="u.personalityLabels?.length">
+                      <text
+                        v-for="(t, ti) in u.personalityLabels.slice(0, 4)"
+                        :key="ti"
+                        class="search-user-tag"
+                      >{{ t }}</text>
                     </view>
                   </view>
                 </view>
@@ -167,6 +176,7 @@ interface MatchUser {
   maritalStatus: string
   incomeRange: string
   tags: string[]
+  personalityLabels: string[]
 }
 
 interface QuickQuestion {
@@ -212,6 +222,13 @@ const handleBack = () => {
 
 const goToUserDetail = (userId: number) => {
   uni.navigateTo({ url: `/pages/user-detail/index?id=${userId}` })
+}
+
+// 图片加载失败兜底
+const onAvatarError = (e: any) => {
+  if (e?.detail?.target) {
+    e.detail.target.src = '/static/default-avatar.png'
+  }
 }
 
 const loadHistory = async () => {

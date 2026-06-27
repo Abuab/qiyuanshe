@@ -72,6 +72,8 @@ export interface MatchmakerSearchUser {
   maritalStatus: string
   incomeRange: string
   tags: string[]
+  /** 性格+爱好标签（从 personalityTags JSON 解析展平） */
+  personalityLabels: string[]
   /** 智能匹配分数 (0-100)，简单搜索时为 undefined */
   matchScore?: number
 }

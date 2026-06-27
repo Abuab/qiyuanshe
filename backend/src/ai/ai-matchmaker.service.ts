@@ -264,22 +264,9 @@ export class AiMatchmakerService {
 
     const topN = scored.slice(0, limit)
 
-    return topN.map(({ user: u, score, age }) => ({
-      id: u.id,
-      nickname: u.nickname || '未设置昵称',
-      avatar: u.avatar || '',
-      gender: u.gender,
-      age,
-      height: u.height || 0,
-      education: u.education || '',
-      occupation: u.occupation || '',
-      residence: u.residence || '',
-      hometown: u.hometown || '',
-      maritalStatus: u.maritalStatus || '',
-      incomeRange: u.incomeRange || '',
-      tags: u.tags || [],
-      matchScore: score,
-    }))
+    return topN.map(({ user: u, score, age }) =>
+      this.mapUserToSearchResult(u, currentYear, { matchScore: score, age })
+    )
   }
 
   /** 从地址字符串中提取城市名（如"浙江省杭州市"→"杭州"） */
@@ -310,6 +297,42 @@ export class AiMatchmakerService {
     if (/专|大/.test(edu)) return 2
     if (/高|中/.test(edu)) return 1
     return 0
+  }
+
+  /** 将 personalityTags JSON 字符串展平为标签数组 */
+  private flattenPersonalityTags(raw?: string): string[] {
+    if (!raw) return []
+    try {
+      const obj = JSON.parse(raw)
+      const labels: string[] = []
+      if (obj.character && Array.isArray(obj.character)) labels.push(...obj.character)
+      if (obj.hobby && Array.isArray(obj.hobby)) labels.push(...obj.hobby)
+      if (obj.loveRule && Array.isArray(obj.loveRule)) labels.push(...obj.loveRule)
+      return labels
+    } catch {
+      return []
+    }
+  }
+
+  /** 将 User 实体映射为 MatchmakerSearchUser（抽公共映射逻辑） */
+  private mapUserToSearchResult(u: any, currentYear: number, extraFields?: Partial<MatchmakerSearchUser>): MatchmakerSearchUser {
+    return {
+      id: u.id,
+      nickname: u.nickname || '未设置昵称',
+      avatar: u.avatar || '',
+      gender: u.gender,
+      age: u.birthYear ? currentYear - u.birthYear : 0,
+      height: u.height || 0,
+      education: u.education || '',
+      occupation: u.occupation || '',
+      residence: u.residence || '',
+      hometown: u.hometown || '',
+      maritalStatus: u.maritalStatus || '',
+      incomeRange: u.incomeRange || '',
+      tags: u.tags || [],
+      personalityLabels: this.flattenPersonalityTags(u.personalityTags),
+      ...extraFields,
+    }
   }
   /**
    * 根据条件搜索用户库（精确筛选）
@@ -375,21 +398,7 @@ export class AiMatchmakerService {
 
     const users = await qb.getMany()
 
-    return users.map((u) => ({
-      id: u.id,
-      nickname: u.nickname || '未设置昵称',
-      avatar: u.avatar || '',
-      gender: u.gender,
-      age: u.birthYear ? currentYear - u.birthYear : 0,
-      height: u.height || 0,
-      education: u.education || '',
-      occupation: u.occupation || '',
-      residence: u.residence || '',
-      hometown: u.hometown || '',
-      maritalStatus: u.maritalStatus || '',
-      incomeRange: u.incomeRange || '',
-      tags: u.tags || [],
-    }))
+    return users.map((u) => this.mapUserToSearchResult(u, currentYear))
   }
 
   /**
