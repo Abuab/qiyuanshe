@@ -1270,7 +1270,7 @@ $text-hint: #999999;
   font-size: 26rpx;
   font-weight: bold; color: #fff; background-color: #999;
   padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: middle; margin-right: 1rpx;
+  vertical-align: baseline; margin-right: 1rpx;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
