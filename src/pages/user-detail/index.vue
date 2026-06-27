@@ -29,7 +29,7 @@
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 右上角分享按钮 -->
-          <view class="hero-share-btn" :style="{ top: (frostTotalHeight + 20) + 'px' }" @tap="openSharePopup">
+          <view class="hero-share-btn" :style="{ top: (frostTotalHeight + 10) + 'px' }" @tap="openSharePopup">
             <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
           </view>
           <!-- 模糊照片上的上传引导 -->
@@ -1226,7 +1226,7 @@ $text-hint: #999999;
 
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
-  position: absolute; bottom: 30rpx; left: 24rpx; right: 24rpx; z-index: 10;
+  position: absolute; bottom: 48rpx; left: 24rpx; right: 24rpx; z-index: 10;
   display: flex; gap: 32rpx; overflow-x: auto;
 }
 
@@ -1270,7 +1270,7 @@ $text-hint: #999999;
 // ===== 2. 白色资料卡片（微覆盖背景图 4rpx，顶部大圆角浮层） =====
 .info-card {
   background: $card-bg; border-radius: 43rpx 43rpx 0 0;
-  margin: -20rpx 0 0; padding: 34rpx 28rpx 20rpx;
+  margin: -36rpx 0 0; padding: 34rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
