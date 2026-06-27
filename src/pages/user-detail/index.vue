@@ -29,9 +29,9 @@
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 右上角分享按钮 -->
-          <view class="hero-share-btn" @tap="openSharePopup">
-            <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
-          </view>
+      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 20) + 'px' }" @tap="openSharePopup">
+        <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
+      </view>
           <!-- 模糊照片上的上传引导 -->
           <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
             <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
@@ -1193,7 +1193,7 @@ $text-hint: #999999;
 
 // ===== 右上角分享按钮 =====
 .hero-share-btn {
-  position: absolute; top: 88rpx; right: 24rpx; z-index: 20;
+  position: fixed; top: 88rpx; right: 24rpx; z-index: 210;
   width: 64rpx; height: 64rpx; border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
   display: flex; align-items: center; justify-content: center;
@@ -1423,7 +1423,7 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
   background: #FFF8FA; border-radius: 28rpx;
-  font-size: 22rpx; color: #222; font-weight: 400;
+  font-size: 22rpx; color: #111; font-weight: 400;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1436,7 +1436,7 @@ $text-hint: #999999;
 
 .ai-label-text { font-size: 22rpx; color: $pink; font-weight: 500; }
 
-.ai-text { font-size: 26rpx; color: #222; line-height: 1.6; font-weight: 400; }
+.ai-text { font-size: 26rpx; color: #111; line-height: 1.6; font-weight: 300; }
 
 .empty-hint { font-size: 24rpx; color: #ccc; text-align: center; padding: 20rpx 0; }
 
@@ -1465,7 +1465,7 @@ $text-hint: #999999;
 
 .ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
 
-.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 8rpx; }
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 12rpx; }
 
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
@@ -1481,7 +1481,7 @@ $text-hint: #999999;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #222; font-weight: 400; }
+.pt-value { font-size: 22rpx; color: #111; font-weight: 400; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
