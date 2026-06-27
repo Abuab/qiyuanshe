@@ -171,9 +171,9 @@ export class AiMatchmakerService {
   ): Promise<MatchmakerSearchUser[]> {
     const qb = this.userRepo.createQueryBuilder('u')
       .where('u.id != :currentUserId', { currentUserId })
-      .andWhere('u.status = :status', { status: 2 })
+      .andWhere('u.status IN (:...statuses)', { statuses: [1, 2] })
       .andWhere('u.isDeleted = 0')
-      .andWhere('u.showBasicProfile = 1')
+      .andWhere('u.showBasicProfile = true')
 
     if (filters.gender) {
       qb.andWhere('u.gender = :gender', { gender: filters.gender })
@@ -359,13 +359,12 @@ export class AiMatchmakerService {
           } else {
             // 诊断：输出数据库中用户分布
             try {
-              const [totalAll, totalActive, totalShow, byGender, byStatus] = await Promise.all([
+              const [totalAll, totalActive, byGender, byStatus] = await Promise.all([
                 this.userRepo.count({ where: { isDeleted: 0 } }),
-                this.userRepo.count({ where: { isDeleted: 0, status: 2 } }),
-                this.userRepo.count({ where: { isDeleted: 0, showBasicProfile: true } }),
+                this.userRepo.count({ where: { isDeleted: 0 } }),
                 this.userRepo.createQueryBuilder('u')
                   .select('u.gender', 'gender').addSelect('COUNT(*)', 'cnt')
-                  .where('u.isDeleted = 0').andWhere('u.status = 2').andWhere('u.showBasicProfile = 1')
+                  .where('u.isDeleted = 0').andWhere('u.status IN (:...statuses)', { statuses: [1, 2] }).andWhere('u.showBasicProfile = true')
                   .groupBy('u.gender').getRawMany(),
                 this.userRepo.createQueryBuilder('u')
                   .select('u.status', 'status').addSelect('COUNT(*)', 'cnt')
@@ -373,7 +372,7 @@ export class AiMatchmakerService {
                   .groupBy('u.status').getRawMany(),
               ])
               this.logger.log(
-                `[AI红娘] 📊 数据库诊断: 总用户=${totalAll}, status=2=${totalActive}, showBasicProfile=1=${totalShow}, ` +
+                `[AI红娘] 📊 数据库诊断: 总用户=${totalAll}, status IN(1,2)=${totalActive}, ` +
                 `性别分布=${JSON.stringify(byGender)}, status分布=${JSON.stringify(byStatus)}`
               )
             } catch {}
