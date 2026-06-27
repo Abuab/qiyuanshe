@@ -611,7 +611,7 @@ const reportUser = () => {
           if (modalRes.confirm) {
             try {
               await request({ url: `/users/reports`, method: 'POST', data: { targetId: toUserId.value, type: 'user', reason: item.value } })
-              uni.showToast({ title: '已举报，我们会尽快处理', icon: 'success' })
+              uni.showToast({ title: '举报已提交', icon: 'success' })
             } catch {
               uni.showToast({ title: '举报失败，请稍后重试', icon: 'none' })
             }

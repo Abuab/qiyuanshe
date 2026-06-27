@@ -533,11 +533,18 @@ export class AiMatchmakerService {
             users = await this.searchUsers(filters, userId)
             this.logger.log(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
 
-            // 如果没搜到，用更宽松的条件再搜一次（仅性别 + 更大 limit）
+            // 如果没搜到，用更宽松的条件再搜一次
             if (users.length === 0 && filters.gender) {
-              this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
-              users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
-              this.logger.log(`[AI红娘] 宽松搜索: 找到 ${users.length} 位用户`)
+              // 同乡搜索：精确城市没匹配上 → 回退到智能匹配（按地理位置打分优先）
+              if (/家乡|同乡/.test(message)) {
+                this.logger.log(`[AI红娘] 同乡精确匹配无结果，回退到智能匹配（地理位置优先）`)
+                users = await this.smartMatch(userId, filters.gender, filters.limit || 5)
+                isSmartMatch = true
+              } else {
+                this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
+                users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
+              }
+              this.logger.log(`[AI红娘] 回退搜索: 找到 ${users.length} 位用户`)
             }
           }
 
