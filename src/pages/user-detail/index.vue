@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -28rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -34rpx;
 }
 
 .info-nickname {
@@ -1263,14 +1263,14 @@ $text-hint: #999999;
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 28rpx;
+  font-size: 26rpx;
   font-weight: 500; color: #fff; background-color: #aaa;
-   padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-   vertical-align: baseline; margin-right: 4rpx;
+  padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
+  vertical-align: baseline; margin-right: 4rpx;
 }
 
 .info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 0; font-weight: 400;
+  font-size: 26rpx; color: $text-hint; padding-top: 0; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
@@ -1350,7 +1350,7 @@ $text-hint: #999999;
 }
 
 .section-title {
-  font-size: 30rpx; font-weight: bold; color: $text; margin-bottom: 20rpx; display: block;
+  font-size: 30rpx; font-weight: 500; color: $text; margin-bottom: 20rpx; display: block;
 }
 
 .section-title-bar {
@@ -1363,7 +1363,7 @@ $text-hint: #999999;
 // ===== 身份认证 =====
 .auth-unverified {
   display: flex; flex-direction: column; align-items: center; gap: 14rpx;
-  padding: 0;
+  padding: 16rpx 0;
 }
 
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
