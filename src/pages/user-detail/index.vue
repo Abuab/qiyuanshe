@@ -281,7 +281,7 @@
         <!-- ========== 7. 举报 / 拉黑 ========== -->
         <view class="report-block-row">
           <text class="report-link" @tap="openReportSheet">举报</text>
-          <text class="report-divider">|</text>
+          <text class="report-divider">/</text>
           <text v-if="isBlocked" class="report-link" @tap="confirmUnblock">已拉黑</text>
           <text v-else class="report-link" @tap="confirmBlock">拉黑</text>
         </view>
@@ -1343,7 +1343,7 @@ $text-hint: #999999;
 }
 
 .loc-label-text {
-  font-size: 20rpx; color: $text-hint; flex-shrink: 0;
+  font-size: 20rpx; color: #777; flex-shrink: 0;
 }
 
 // ===== 基本资料 =====
@@ -1393,7 +1393,7 @@ $text-hint: #999999;
 .auth-remind-btn {
   display: flex; align-items: center; justify-content: center;
   width: auto; padding: 14rpx 50rpx;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA3); border-radius: 48rpx;
+  background: linear-gradient(135deg, #FF5A7A, #FF7096); border-radius: 48rpx;
 }
 
 .auth-remind-btn text { font-size: 28rpx; color: #fff; font-weight: 500; }
@@ -1423,7 +1423,7 @@ $text-hint: #999999;
   display: flex; align-items: center; justify-content: center;
   padding: 10rpx 18rpx;
   background: #FFF8FA; border-radius: 28rpx;
-  font-size: 22rpx; color: #333; font-weight: 500;
+  font-size: 22rpx; color: #333; font-weight: 400;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1436,7 +1436,7 @@ $text-hint: #999999;
 
 .ai-label-text { font-size: 22rpx; color: $pink; font-weight: 500; }
 
-.ai-text { font-size: 26rpx; color: $text-secondary; line-height: 1.6; }
+.ai-text { font-size: 26rpx; color: #333; line-height: 1.6; }
 
 .empty-hint { font-size: 24rpx; color: #ccc; text-align: center; padding: 20rpx 0; }
 
@@ -1481,7 +1481,7 @@ $text-hint: #999999;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #333; font-weight: 500; }
+.pt-value { font-size: 22rpx; color: #333; font-weight: 400; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
