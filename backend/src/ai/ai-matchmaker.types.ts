@@ -80,6 +80,11 @@ export interface MatchmakerSearchUser {
 
 /** 快捷问题列表 */
 export const QUICK_QUESTIONS = [
+  '帮我推荐几个女生',
+  '有没有合适的男生',
+  '帮我推荐同个家乡的',
+  '帮我推荐身高160cm以上的',
+  '帮我找25-30岁的',
   '第一次约会去哪',
   '怎么开场',
   '对方冷淡怎么办',

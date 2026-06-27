@@ -366,12 +366,12 @@
           <view class="report-tags">
             <view
               v-for="reason in reportReasons"
-              :key="reason"
+              :key="reason.value"
               class="report-tag"
-              :class="{ 'tag-selected': selectedReportReasons.includes(reason) }"
-              @tap="toggleReportReason(reason)"
+              :class="{ 'tag-selected': selectedReportReasons.includes(reason.value) }"
+              @tap="toggleReportReason(reason.value)"
             >
-              <text>{{ reason }}</text>
+              <text>{{ reason.label }}</text>
             </view>
           </view>
 
@@ -684,7 +684,13 @@ const isBlocked = ref(false)
 // ===== 举报弹窗 =====
 const showReportSheet = ref(false)
 const reportSheetAnim = ref(false)
-const reportReasons = ['其他', '色情相关', '头像/资料虚假', '酒托/饭托', '诈骗钱财']
+const reportReasons = [
+  { label: '其他', value: 'other' },
+  { label: '色情相关', value: 'other' },
+  { label: '头像/资料虚假', value: 'fake_info' },
+  { label: '酒托/饭托', value: 'fraud' },
+  { label: '诈骗钱财', value: 'fraud' },
+]
 const selectedReportReasons = ref<string[]>([])
 const reportContent = ref('')
 interface ReportImage { url: string; uploading: boolean }
@@ -989,9 +995,9 @@ const handleReportSubmit = async () => {
       data: {
         targetId: userId.value,
         type: 'user',
-        reason: selectedReportReasons.value.join('、'),
-        content: reportContent.value.trim(),
-        images: imageUrls,
+        reason: selectedReportReasons.value[0] || 'other',
+        description: reportContent.value.trim() || undefined,
+        evidence: imageUrls.join(',') || undefined,
       },
     })
     uni.showToast({ title: '举报已提交', icon: 'success' })

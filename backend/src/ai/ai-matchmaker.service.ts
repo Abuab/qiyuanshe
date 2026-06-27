@@ -500,6 +500,16 @@ export class AiMatchmakerService {
         }
 
         if (filters) {
+          // 处理"同个家乡"：用当前用户家乡作为筛选条件
+          if (/家乡|同乡/.test(message)) {
+            const me = await this.userRepo.findOne({ where: { id: userId }, select: ['hometown', 'residence'] })
+            const myCity = me?.hometown || me?.residence
+            if (myCity) {
+              filters.city = myCity
+              this.logger.log(`[AI红娘] 同乡搜索: city="${myCity}"`)
+            }
+          }
+
           // 🔴 强制异性推荐：AI红娘是相亲助手，不论用户怎么说，只推荐异性
           if (user.gender != null) {
             filters.gender = user.gender === 1 ? 2 : 1

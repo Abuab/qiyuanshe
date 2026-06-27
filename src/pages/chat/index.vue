@@ -594,18 +594,23 @@ const showChatMenu = () => {
 }
 
 const reportUser = () => {
+  const reasonItems = [
+    { label: '骚扰', value: 'harassment' },
+    { label: '诈骗', value: 'fraud' },
+    { label: '虚假资料', value: 'fake_info' },
+    { label: '其他', value: 'other' },
+  ]
   uni.showActionSheet({
-    itemList: ['骚扰', '诈骗', '虚假资料', '其他'],
+    itemList: reasonItems.map(r => r.label),
     success: (res) => {
-      const reasons = ['骚扰', '诈骗', '虚假资料', '其他']
-      const reason = reasons[res.tapIndex] || '其他'
+      const item = reasonItems[res.tapIndex] || reasonItems[3]
       uni.showModal({
         title: '确认举报',
-        content: `确定以"${reason}"为由举报该用户吗？`,
+        content: `确定以"${item.label}"为由举报该用户吗？`,
         success: async (modalRes) => {
           if (modalRes.confirm) {
             try {
-              await request({ url: `/users/reports`, method: 'POST', data: { targetId: toUserId.value, type: 'user', reason } })
+              await request({ url: `/users/reports`, method: 'POST', data: { targetId: toUserId.value, type: 'user', reason: item.value } })
               uni.showToast({ title: '已举报，我们会尽快处理', icon: 'success' })
             } catch {
               uni.showToast({ title: '举报失败，请稍后重试', icon: 'none' })

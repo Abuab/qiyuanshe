@@ -51,12 +51,14 @@ export class AiMatchmakerController {
       return Result.success([
         { id: 0, content: '帮我推荐几个女生', sort: 0 },
         { id: 0, content: '有没有合适的男生', sort: 1 },
-        { id: 0, content: '第一次约会去哪', sort: 2 },
-        { id: 0, content: '怎么开场', sort: 3 },
-        { id: 0, content: '对方冷淡怎么办', sort: 4 },
-        { id: 0, content: '约会穿搭建议', sort: 5 },
-        { id: 0, content: '怎么判断对方真心', sort: 6 },
-        { id: 0, content: '帮我找25-30岁的', sort: 7 },
+        { id: 0, content: '帮我推荐同个家乡的', sort: 2 },
+        { id: 0, content: '帮我推荐身高160cm以上的', sort: 3 },
+        { id: 0, content: '帮我找25-30岁的', sort: 4 },
+        { id: 0, content: '第一次约会去哪', sort: 5 },
+        { id: 0, content: '怎么开场', sort: 6 },
+        { id: 0, content: '对方冷淡怎么办', sort: 7 },
+        { id: 0, content: '约会穿搭建议', sort: 8 },
+        { id: 0, content: '怎么判断对方真心', sort: 9 },
       ])
     }
     return Result.success(list)
