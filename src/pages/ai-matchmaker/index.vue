@@ -141,8 +141,10 @@
 import { ref, onMounted, nextTick } from 'vue'
 import request from '@/utils/request'
 import { useSystemStore } from '@/store/system'
+import { useUserStore } from '@/store/user'
 
 const systemStore = useSystemStore()
+const userStore = useUserStore()
 
 interface Message {
   role: 'user' | 'ai'
@@ -229,21 +231,33 @@ const loadQuickQuestions = async () => {
   try {
     const res: any = await request({ url: '/ai/matchmaker/quick-questions', method: 'GET' })
     if (Array.isArray(res)) {
-      quickQuestions.value = res
+      quickQuestions.value = adaptGenderPrompts(res as QuickQuestion[])
     }
   } catch {
     // 后端不返回时使用默认问题
-    quickQuestions.value = [
-      { id: 0, content: '第一次约会去哪', sort: 0 },
-      { id: 0, content: '怎么开场聊天', sort: 1 },
-      { id: 0, content: '对方冷淡怎么办', sort: 2 },
-      { id: 0, content: '约会穿搭建议', sort: 3 },
-      { id: 0, content: '怎么判断对方真心', sort: 4 },
-      { id: 0, content: '帮我推荐几个女生', sort: 5 },
-      { id: 0, content: '有没有合适的男生', sort: 6 },
+    quickQuestions.value = adaptGenderPrompts([
+      { id: 0, content: '帮我推荐几个女生', sort: 0 },
+      { id: 0, content: '有没有合适的男生', sort: 1 },
+      { id: 0, content: '第一次约会去哪', sort: 2 },
+      { id: 0, content: '怎么开场聊天', sort: 3 },
+      { id: 0, content: '对方冷淡怎么办', sort: 4 },
+      { id: 0, content: '约会穿搭建议', sort: 5 },
+      { id: 0, content: '怎么判断对方真心', sort: 6 },
       { id: 0, content: '帮我找25-30岁的', sort: 7 },
-    ]
+    ])
   }
+}
+
+/** 根据用户性别适配提示词中的性别称呼 */
+const adaptGenderPrompts = (list: QuickQuestion[]): QuickQuestion[] => {
+  const userGender = userStore.userInfo?.gender
+  if (userGender == null) return list
+  return list.map(q => ({
+    ...q,
+    content: userGender === 1
+      ? q.content.replace(/男生/g, '女生').replace(/男性/g, '女性')   // 男用户→搜女生
+      : q.content.replace(/女生/g, '男生').replace(/女性/g, '男性'),  // 女用户→搜男生
+  }))
 }
 
 const sendQuick = (q: QuickQuestion) => {

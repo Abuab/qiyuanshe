@@ -49,13 +49,13 @@ export class AiMatchmakerController {
     // 如果数据库无数据，返回默认数组
     if (list.length === 0) {
       return Result.success([
-        { id: 0, content: '第一次约会去哪', sort: 0 },
-        { id: 0, content: '怎么开场', sort: 1 },
-        { id: 0, content: '对方冷淡怎么办', sort: 2 },
-        { id: 0, content: '约会穿搭建议', sort: 3 },
-        { id: 0, content: '怎么判断对方真心', sort: 4 },
-        { id: 0, content: '帮我推荐几个女生', sort: 5 },
-        { id: 0, content: '有没有合适的男生', sort: 6 },
+        { id: 0, content: '帮我推荐几个女生', sort: 0 },
+        { id: 0, content: '有没有合适的男生', sort: 1 },
+        { id: 0, content: '第一次约会去哪', sort: 2 },
+        { id: 0, content: '怎么开场', sort: 3 },
+        { id: 0, content: '对方冷淡怎么办', sort: 4 },
+        { id: 0, content: '约会穿搭建议', sort: 5 },
+        { id: 0, content: '怎么判断对方真心', sort: 6 },
         { id: 0, content: '帮我找25-30岁的', sort: 7 },
       ])
     }
