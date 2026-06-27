@@ -25,7 +25,7 @@
 
         <!-- 已登录 -->
         <view v-else class="profile-row">
-          <view class="avatar-wrap">
+          <view class="avatar-wrap" :class="{ 'avatar-wrap-female': userInfo?.gender === 2 }">
             <image class="profile-avatar" :src="avatarSrc" mode="aspectFill" @error="onAvatarError" :key="avatarSrc" />
             <view v-if="userInfo?.avatarReviewStatus === 0" class="avatar-review-overlay">
               <text>待审核</text>
@@ -589,17 +589,20 @@ const toolGrid7 = [
   position: relative;
   flex-shrink: 0;
   margin-right: 20rpx;
-  padding: 4rpx;
-  background: #fff;
   border-radius: 18rpx;
   border: 2px solid #3B82F6;
   box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.4);
 }
 
+.avatar-wrap-female {
+  border-color: #FF6B9D;
+  box-shadow: 0 0 6px 2px rgba(255, 107, 157, 0.4);
+}
+
 .profile-avatar {
   width: 100rpx;
   height: 100rpx;
-  border-radius: 14rpx;
+  border-radius: 16rpx;
   background-color: #f5f5f5;
   display: block;
 }
