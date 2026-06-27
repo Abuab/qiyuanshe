@@ -132,16 +132,19 @@
         <!-- AI助手展开面板 -->
         <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
           <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="ai-sub-item" @tap="goToAiMatchmaker">
+            <text class="ai-sub-star">✦</text>
             <text class="ai-sub-label">AI 红娘</text>
             <text class="ai-sub-desc">智能匹配缘分</text>
             <text class="arrow">></text>
           </view>
           <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-sub-item" @tap="goToAiQuiz">
+            <text class="ai-sub-star">✦</text>
             <text class="ai-sub-label">AI 情感问答</text>
             <text class="ai-sub-desc">解答情感困惑</text>
             <text class="arrow">></text>
           </view>
           <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-sub-item" @tap="goToAiImpression">
+            <text class="ai-sub-star">✦</text>
             <text class="ai-sub-label">AI 个人印象</text>
             <text class="ai-sub-desc">{{ aiProfileText ? '已生成' : '生成魅力印象' }}</text>
             <text class="arrow">></text>
@@ -195,10 +198,6 @@
         </view>
         <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
       </view>
-      <view class="footer-version">
-        <text>v1.0.0</text>
-      </view>
-
       <view class="bottom-safe-area"></view>
     </scroll-view>
 
@@ -220,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, reactive } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -288,6 +287,9 @@ onMounted(() => {
       currentCarouselIdx.value = (currentCarouselIdx.value + 1) % vipCardTexts.value.length
     }, 3000)
   }
+  // 启动陪伴天数计算（每60分钟更新一次，跨天即可更新）
+  calcDays()
+  _daysTimer = setInterval(calcDays, 60 * 60 * 1000)
 })
 
 onShow(() => {
@@ -305,6 +307,7 @@ const onRefresherRefresh = async () => {
 
 onUnmounted(() => {
   if (carouselTimer) clearInterval(carouselTimer)
+  if (_daysTimer) clearInterval(_daysTimer)
 })
 
 const avatarSrc = computed(() => {
@@ -336,12 +339,18 @@ const formattedUserId = computed(() => {
 // 后台可配置的页面图标（通过 systemStore.icons.page 下发）
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
-const daysSinceCreation = computed(() => {
-  if (!userStore.userInfo?.createTime) return 0
+const daysSinceCreation = ref(0)
+let _daysTimer: ReturnType<typeof setInterval> | null = null
+
+const calcDays = () => {
+  if (!userStore.userInfo?.createTime) {
+    daysSinceCreation.value = 0
+    return
+  }
   const created = new Date(userStore.userInfo.createTime).getTime()
   const now = Date.now()
-  return Math.max(0, Math.floor((now - created) / 86400000))
-})
+  daysSinceCreation.value = Math.max(0, Math.floor((now - created) / 86400000))
+}
 
 const stats = reactive({
   following: 0,
@@ -933,9 +942,17 @@ const toolGrid7 = [
   }
 }
 
+.ai-sub-star {
+  font-size: 36rpx;
+  color: $primary-color;
+  margin-right: 8rpx;
+  flex-shrink: 0;
+}
+
 .ai-sub-label {
   font-size: 28rpx;
   color: #333;
+  font-weight: bold;
   flex-shrink: 0;
   margin-right: 16rpx;
 }
@@ -1089,17 +1106,6 @@ const toolGrid7 = [
 .footer-text {
   font-size: 24rpx;
   color: #999;
-}
-
-.footer-version {
-  display: flex;
-  justify-content: center;
-  padding-bottom: 20rpx;
-
-  text {
-    font-size: 22rpx;
-    color: #ccc;
-  }
 }
 
 .bottom-safe-area {

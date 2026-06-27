@@ -54,17 +54,29 @@ export const MATCHMAKER_SYSTEM_PROMPT = `你是一位资深婚恋红娘，在"{{
 export function buildMatchmakerChatPrompt(
   history: { role: 'user' | 'ai'; content: string }[],
   userMessage: string,
+  searchContext?: string,
 ): string {
-  const recentHistory = history.slice(-10) // 取最近10轮
+  const recentHistory = history.slice(-10)
+
+  // 搜索到的用户列表作为额外上下文
+  let fullMessage = userMessage
+  if (searchContext) {
+    fullMessage = [
+      userMessage,
+      '',
+      '【系统提示：平台用户库里已为你匹配到以下用户，请在回复中自然地向用户介绍他们：】',
+      searchContext,
+    ].join('\n')
+  }
 
   if (recentHistory.length === 0) {
-    return userMessage
+    return fullMessage
   }
 
   return [
     '以下是之前的对话记录：',
     ...recentHistory.map((m) => `${m.role === 'user' ? '用户' : '红娘'}: ${m.content}`),
-    `\n用户的当前问题: ${userMessage}\n请回复：`,
+    `\n用户的当前问题: ${fullMessage}\n请回复：`,
   ].join('\n')
 }
 

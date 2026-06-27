@@ -12,7 +12,6 @@ import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { User } from '../entities/User'
 import {
   MATCHMAKER_SYSTEM_PROMPT,
-  buildMatchmakerChatPrompt,
   checkSafetyBoundary,
   SEARCH_INTENT_KEYWORDS,
   MATCHMAKER_SEARCH_PARSE_PROMPT,
@@ -310,13 +309,34 @@ export class AiMatchmakerService {
       }
     }
 
-    // 5. 获取对话历史
+    // 5. 搜索意图检测 → 在调用 AI 之前搜索用户库（AI 可引用搜索结果）
+    let users: MatchmakerSearchUser[] | undefined
+    let searchContext = ''
+    if (this.isSearchIntent(message)) {
+      try {
+        const filters = await this.parseSearchFilters(message, user.gender)
+        if (filters) {
+          users = await this.searchUsers(filters, userId)
+          if (users.length > 0) {
+            searchContext = users.map((u, i) =>
+              `${i + 1}. ${u.nickname}，${u.gender === 1 ? '男' : '女'}，${u.age}岁，${u.height ? u.height + 'cm' : ''}，${u.education || ''}，${u.residence || u.hometown || ''}`
+            ).join('\n')
+          }
+        }
+      } catch (e: any) {
+        this.logger.warn(`[AI红娘] 搜索解析失败: ${e?.message}`)
+      }
+    }
+
+    // 6. 获取对话历史
     const history = await this.getContext(userId)
 
-    // 6. 构建 Prompt
-    const fullPrompt = buildMatchmakerChatPrompt(history, message)
+    // 7. 构建 Prompt（搜索结果作为上下文附加到用户消息中）
+    const userMessageWithContext = searchContext
+      ? message + '\n\n【系统提示：平台用户库里已为你匹配到以下用户，请在回复中自然地向用户介绍他们：】\n' + searchContext
+      : message
 
-    // 7. 记录调用日志
+    // 8. 记录调用日志
     const callLog = this.callLogRepo.create({
       userId,
       callType: AiCallType.MATCHMAKER,
@@ -325,11 +345,12 @@ export class AiMatchmakerService {
       requestSummary: JSON.stringify({
         messageLength: message.length,
         historyRounds: history.length,
+        userCount: users?.length || 0,
       }),
     })
     const savedCallLog = await this.callLogRepo.save(callLog)
 
-    // 8. 调用 AI
+    // 9. 调用 AI
     const startMs = Date.now()
     let reply: string
 
@@ -340,42 +361,28 @@ export class AiMatchmakerService {
           messages: [
             { role: 'system', content: systemPrompt },
             ...history.map(h => ({ role: (h.role === 'ai' ? 'assistant' : h.role) as 'system' | 'user' | 'assistant', content: h.content })),
-            { role: 'user', content: message },
+            { role: 'user', content: userMessageWithContext },
           ],
           maxTokens: 300,
           temperature: 0.8,
         }, userId, 'matchmaker')
       } else {
-        reply = this.buildFallbackReply(message)
+        reply = this.buildFallbackReply(message, users)
       }
     } catch (e: any) {
       this.logger.error(`[AI红娘] 调用失败: ${e?.message}，降级使用兜底回复`)
-      reply = this.buildFallbackReply(message)
+      reply = this.buildFallbackReply(message, users)
       savedCallLog.responseStatus = 'error'
       await this.callLogRepo.save(savedCallLog).catch(() => {})
-      // 不抛出异常，返回兜底回复保证用户体验
     }
 
     savedCallLog.responseMs = Date.now() - startMs
     await this.callLogRepo.save(savedCallLog)
 
-    // 9. 输出敏感词安全审计
+    // 10. 输出敏感词安全审计
     const outputCheck = await this.safetyService.checkAndAudit(reply, savedCallLog.id)
     if (!outputCheck.passed) {
       reply = '感谢您的咨询，我会继续努力为您提供更好的服务'
-    }
-
-    // 10. 搜索意图检测 → 如果用户想找对象，搜索用户库
-    let users: MatchmakerSearchUser[] | undefined
-    if (this.isSearchIntent(message)) {
-      try {
-        const filters = await this.parseSearchFilters(message, user.gender)
-        if (filters) {
-          users = await this.searchUsers(filters, userId)
-        }
-      } catch (e: any) {
-        this.logger.warn(`[AI红娘] 搜索解析失败: ${e?.message}`)
-      }
     }
 
     // 11. 保存上下文
@@ -483,7 +490,14 @@ export class AiMatchmakerService {
   /**
    * 占位 AI 回复（正式部署时删除）
    */
-  private buildFallbackReply(message: string): string {
+  private buildFallbackReply(message: string, users?: MatchmakerSearchUser[]): string {
+    // 有搜索结果时，优先输出推荐
+    if (users?.length) {
+      const list = users.slice(0, 5).map((u, i) =>
+        `${i + 1}. ${u.nickname}（${u.gender === 1 ? '男' : '女'}，${u.age || '?'}岁，${u.height ? u.height + 'cm' : ''}，${u.residence || u.hometown || ''}）`
+      ).join('\n')
+      return `为你匹配到${users.length}位用户：\n${list}\n\n点击卡片查看详情，或继续告诉我你的偏好哦～`
+    }
     const msg = message.toLowerCase()
 
     if (msg.includes('约会') && (msg.includes('去哪') || msg.includes('第一次'))) {
