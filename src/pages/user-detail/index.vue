@@ -1148,7 +1148,7 @@ $text-hint: #999999;
 // ===== 顶部毛玻璃昵称卡片（固定，粉色） =====
 .top-frost-card {
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-  background: linear-gradient(180deg, rgba(255, 228, 236, 0.6) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
 }
 
 .frost-inner {
@@ -1178,15 +1178,13 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（50vh，卡片覆盖底部） =====
+// ===== 1. 顶部大背景图（占50vh，卡片在下方各占一半） =====
 .hero-section {
-  position: relative; width: 100%; height: 50vh; min-height: 600rpx; overflow: hidden;
-  border-radius: 12rpx 12rpx 0 0;
+  position: relative; width: 100%; height: 50vh; overflow: hidden;
 }
 
 .hero-bg {
   width: 100%; height: 100%;
-  border-radius: 12rpx 12rpx 0 0;
 }
 
 .hero-bg.photo-slide {
@@ -1259,10 +1257,10 @@ $text-hint: #999999;
 
 .voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
 
-// ===== 2. 白色资料卡片（覆盖背景图底部，顶部圆角露出背景） =====
+// ===== 2. 白色资料卡片（背景图下方各占一半） =====
 .info-card {
-  background: $card-bg; border-radius: 48rpx 48rpx 0 0;
-  margin: -40rpx 0 0; padding: 30rpx 28rpx 20rpx;
+  background: $card-bg; border-radius: 24rpx 24rpx 0 0;
+  margin: 0; padding: 30rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
