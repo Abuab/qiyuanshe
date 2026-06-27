@@ -1271,9 +1271,10 @@ $text-hint: #999999;
   font-weight: bold;
   color: #fff;
   background-color: #999;
-  padding: 1rpx 5rpx;
+  padding: 0 5rpx;
   border-radius: 20rpx;
-  line-height: 1.4;
+  line-height: 1.2;
+  vertical-align: middle;
   margin-right: 4rpx;
 }
 
