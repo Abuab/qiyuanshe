@@ -16,11 +16,6 @@
         </view>
       </view>
 
-      <!-- 右上角分享按钮（固定，不跟随滚动） -->
-      <view class="hero-share-btn" :style="{ top: (statusBarHeight + 70) + 'px' }" @tap="openSharePopup">
-        <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
-      </view>
-
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占用 frost card 下方空间） ========== -->
         <view class="hero-section" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
@@ -33,6 +28,10 @@
           />
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
+          <!-- 右上角分享按钮 -->
+          <view class="hero-share-btn" :style="{ top: (statusBarHeight + 60) + 'px' }" @tap="openSharePopup">
+            <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
+          </view>
           <!-- 模糊照片上的上传引导 -->
           <view v-if="activePhotoNeedsBlur" class="hero-blur-prompt">
             <text class="blur-prompt-text">我也想更了解你，请先上传你的照片吧～</text>
@@ -1207,9 +1206,9 @@ $text-hint: #999999;
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.45));
 }
 
-// ===== 右上角分享按钮（固定在页面层级） =====
+// ===== 右上角分享按钮（hero-section 内绝对定位） =====
 .hero-share-btn {
-  position: fixed; right: 24rpx; z-index: 210;
+  position: absolute; right: 24rpx; z-index: 20;
   width: 64rpx; height: 64rpx; border-radius: 50%;
   background: rgba(0, 0, 0, 0.35);
   display: flex; align-items: center; justify-content: center;
@@ -1217,7 +1216,7 @@ $text-hint: #999999;
 
 // ===== 照片缩略图：叠放在背景图底部（卡片上方） =====
 .hero-thumbnails {
-  position: absolute; bottom: 80rpx; left: 24rpx; right: 24rpx; z-index: 10;
+  position: absolute; bottom: 50rpx; left: 24rpx; right: 24rpx; z-index: 10;
   display: flex; gap: 32rpx; overflow-x: auto;
 }
 
