@@ -1467,9 +1467,9 @@ $text-hint: #999999;
 
 .ai-entry-info { flex: 1; }
 
-.ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; display: block; }
+.ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
 
-.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 28rpx; display: block; }
+.ai-entry-desc { font-size: 24rpx; color: $text-hint; margin-top: 4rpx; }
 
 .ai-entry-arrow { font-size: 36rpx; color: $pink; }
 
