@@ -130,6 +130,14 @@ export const adminSystem = {
   testWebhook(channel: string, url: string): Promise<ApiResponse> {
     return request.post('/admin/system/test-webhook', { channel, url })
   },
+
+  // 用量限额配置
+  getQuotaConfig(): Promise<ApiResponse<any>> {
+    return request.get('/admin/system/quota')
+  },
+  saveQuotaConfig(config: any): Promise<ApiResponse> {
+    return request.put('/admin/system/quota', config)
+  },
 }
 
 export const mfaApi = {

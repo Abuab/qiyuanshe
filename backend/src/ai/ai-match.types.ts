@@ -148,6 +148,8 @@ export const MATCH_MIN_ANSWERS = 3
 
 export interface MatchQuotaInfo {
   dailyLimit: number
+  vipLimit: number
+  isFree: boolean
   usedToday: number
   remaining: number
 }

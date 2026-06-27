@@ -160,6 +160,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '快捷问题管理', requiresAuth: true },
       },
       {
+        path: '/system/quota',
+        name: 'SystemQuota',
+        component: () => import('../views/system/quota.vue'),
+        meta: { title: '用量限额', requiresAuth: true },
+      },
+      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),

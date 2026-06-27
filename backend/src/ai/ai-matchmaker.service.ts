@@ -8,6 +8,7 @@ import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { SystemService } from '../system/system.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
+import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { User } from '../entities/User'
 import {
@@ -22,7 +23,6 @@ import {
   MatchmakerSearchFilters,
   MatchmakerSearchUser,
   QUICK_QUESTIONS,
-  MATCHMAKER_FREE_DAILY_ROUNDS,
 } from './ai-matchmaker.types'
 
 /** Redis 对话上下文 key 前缀 */
@@ -47,6 +47,7 @@ export class AiMatchmakerService {
     private readonly safetyService: AiSafetyService,
     private readonly systemService: SystemService,
     private readonly quickQuestionService: QuickQuestionService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   /**
@@ -445,26 +446,29 @@ export class AiMatchmakerService {
 
     const isVip = user.isVip === 1 && user.vipExpireTime && new Date(user.vipExpireTime) > new Date()
 
-    let remainingRounds: number | null = null
-    if (!isVip) {
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
+    // 从配额配置读取限额
+    const quota = await this.quotaService.getConfig()
+    const dailyLimit = isVip ? quota.matchmaker.vipPerDay : quota.matchmaker.freePerDay
 
-      const usedToday = await this.callLogRepo.count({
-        where: {
-          userId,
-          callType: AiCallType.MATCHMAKER,
-          createdAt: MoreThanOrEqual(todayStart),
-        },
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const usedToday = await this.callLogRepo.count({
+      where: {
+        userId,
+        callType: AiCallType.MATCHMAKER,
+        createdAt: MoreThanOrEqual(todayStart),
+      },
+    })
+
+    const remainingRounds = Math.max(0, dailyLimit - usedToday)
+    if (remainingRounds <= 0) {
+      throw new BadRequestException({
+        code: 'QUOTA_EXCEEDED',
+        message: isVip
+          ? `今日咨询次数已用完（${dailyLimit}轮/天）`
+          : `今日免费咨询次数已用完（${dailyLimit}轮/天），开通会员享${quota.matchmaker.vipPerDay}次/天`,
       })
-
-      remainingRounds = Math.max(0, MATCHMAKER_FREE_DAILY_ROUNDS - usedToday)
-      if (remainingRounds <= 0) {
-        throw new BadRequestException({
-          code: 'QUOTA_EXCEEDED',
-          message: `今日免费咨询次数已用完（${MATCHMAKER_FREE_DAILY_ROUNDS}轮/天），开通会员享无限次红娘咨询`,
-        })
-      }
     }
 
     // 5. 搜索用户库
@@ -677,7 +681,7 @@ export class AiMatchmakerService {
 
     return {
       reply,
-      remainingRounds: isVip ? null : Math.max(0, remainingRounds! - 1),
+      remainingRounds: Math.max(0, remainingRounds - 1),
       users,
     }
   }
@@ -695,20 +699,20 @@ export class AiMatchmakerService {
 
     const isVip = user.isVip === 1 && user.vipExpireTime && new Date(user.vipExpireTime) > new Date()
 
-    let remainingRounds: number | null = null
-    if (!isVip) {
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
+    const quota = await this.quotaService.getConfig()
+    const dailyLimit = isVip ? quota.matchmaker.vipPerDay : quota.matchmaker.freePerDay
 
-      const used = await this.callLogRepo.count({
-        where: {
-          userId,
-          callType: AiCallType.MATCHMAKER,
-          createdAt: MoreThanOrEqual(todayStart),
-        },
-      })
-      remainingRounds = Math.max(0, MATCHMAKER_FREE_DAILY_ROUNDS - used)
-    }
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const used = await this.callLogRepo.count({
+      where: {
+        userId,
+        callType: AiCallType.MATCHMAKER,
+        createdAt: MoreThanOrEqual(todayStart),
+      },
+    })
+    const remainingRounds = Math.max(0, dailyLimit - used)
 
     return {
       messages: messages.map((m, i) => ({

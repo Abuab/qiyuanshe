@@ -5,6 +5,7 @@ import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
+import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { AiFunQuizReport } from '../entities/AiFunQuizReport'
 import { User } from '../entities/User'
@@ -14,8 +15,6 @@ import {
   FunQuizRequest,
   FunQuizReportResponse,
   FunTimeNode,
-  FUN_QUIZ_FREE_DAILY_LIMIT,
-  FUN_QUIZ_VIP_DAILY_LIMIT,
   FUN_QUIZ_CACHE_DAYS,
   calcConstellation,
   calcZodiac,
@@ -42,6 +41,7 @@ export class AiFunQuizService {
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   /**
@@ -184,9 +184,9 @@ export class AiFunQuizService {
     if (quota.remaining <= 0) {
       throw new BadRequestException({
         code: 'QUOTA_EXCEEDED',
-        message: quota.limit === FUN_QUIZ_FREE_DAILY_LIMIT
-          ? `今日趣味测试次数已用完（${FUN_QUIZ_FREE_DAILY_LIMIT}/天），开通会员享受${FUN_QUIZ_VIP_DAILY_LIMIT}次/天`
-          : `今日趣味测试次数已用完（${FUN_QUIZ_VIP_DAILY_LIMIT}/天）`,
+        message: quota.isFree
+          ? `今日趣味测试次数已用完（${quota.limit}/天），开通会员享受${quota.vipLimit}次/天`
+          : `今日趣味测试次数已用完（${quota.limit}/天）`,
       })
     }
 
@@ -276,12 +276,13 @@ export class AiFunQuizService {
   }
 
   /** 获取今日剩余配额 */
-  async getQuota(userId: number): Promise<{ limit: number; used: number; remaining: number }> {
+  async getQuota(userId: number): Promise<{ limit: number; vipLimit: number; isFree: boolean; used: number; remaining: number }> {
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) throw new BadRequestException('用户不存在')
 
     const isVip = user.isVip === 1 && user.vipExpireTime && new Date(user.vipExpireTime) > new Date()
-    const limit = isVip ? FUN_QUIZ_VIP_DAILY_LIMIT : FUN_QUIZ_FREE_DAILY_LIMIT
+    const quotaConfig = await this.quotaService.getConfig()
+    const limit = isVip ? quotaConfig.quiz.vipPerDay : quotaConfig.quiz.freePerDay
 
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
@@ -294,7 +295,7 @@ export class AiFunQuizService {
       },
     })
 
-    return { limit, used, remaining: Math.max(0, limit - used) }
+    return { limit, vipLimit: quotaConfig.quiz.vipPerDay, isFree: !isVip, used, remaining: Math.max(0, limit - used) }
   }
 
   // ==================== 内部方法 ====================

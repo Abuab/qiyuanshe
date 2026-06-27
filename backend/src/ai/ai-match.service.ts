@@ -5,6 +5,7 @@ import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
+import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog } from '../entities/AiCallLog'
 import { AiCallType } from '../entities/AiCallLog'
 import { AiMatchReport } from '../entities/AiMatchReport'
@@ -22,8 +23,6 @@ import {
   MatchReportResponse,
   MatchQuotaInfo,
   AiMatchResultRaw,
-  MATCH_FREE_DAILY_LIMIT,
-  MATCH_VIP_DAILY_LIMIT,
   MATCH_MIN_TAGS,
   MATCH_MIN_ANSWERS,
   COMPLETENESS_WEIGHTS,
@@ -50,6 +49,7 @@ export class AiMatchService {
     private readonly redis: RedisService,
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   // ==================== 公开 API ====================
@@ -191,9 +191,9 @@ export class AiMatchService {
     if (quota.remaining < 0) {
       throw new BadRequestException({
         code: 'QUOTA_EXCEEDED',
-        message: quota.dailyLimit === MATCH_FREE_DAILY_LIMIT
-          ? `今日免费次数已用完（${MATCH_FREE_DAILY_LIMIT}/天），开通会员享受${MATCH_VIP_DAILY_LIMIT}次/天`
-          : `今日分析次数已用完（${MATCH_VIP_DAILY_LIMIT}/天）`,
+        message: quota.isFree
+          ? `今日免费次数已用完（${quota.dailyLimit}/天），开通会员享受${quota.vipLimit}次/天`
+          : `今日分析次数已用完（${quota.dailyLimit}/天）`,
         quota,
       })
     }
@@ -340,7 +340,8 @@ export class AiMatchService {
     if (!user) throw new BadRequestException('用户不存在')
 
     const isVip = user.isVip === 1 && user.vipExpireTime && new Date(user.vipExpireTime) > new Date()
-    const dailyLimit = isVip ? MATCH_VIP_DAILY_LIMIT : MATCH_FREE_DAILY_LIMIT
+    const quotaConfig = await this.quotaService.getConfig()
+    const dailyLimit = isVip ? quotaConfig.match.vipPerDay : quotaConfig.match.freePerDay
 
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
@@ -355,6 +356,8 @@ export class AiMatchService {
 
     return {
       dailyLimit,
+      vipLimit: quotaConfig.match.vipPerDay,
+      isFree: !isVip,
       usedToday,
       remaining: Math.max(0, dailyLimit - usedToday),
     }

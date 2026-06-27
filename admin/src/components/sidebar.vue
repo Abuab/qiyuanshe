@@ -141,6 +141,7 @@
         <el-menu-item index="/ai/provider">AI Provider管理</el-menu-item>
         <el-menu-item index="/ai/call-logs">AI调用日志</el-menu-item>
         <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
+        <el-menu-item index="/system/quota">用量限额</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
       </el-sub-menu>

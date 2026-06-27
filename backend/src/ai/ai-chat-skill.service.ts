@@ -6,6 +6,7 @@ import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
+import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
@@ -14,8 +15,6 @@ import { parseJsonResponse } from './ai-common.util'
 import {
   ChatSkillSuggestion,
   ChatSkillResponse,
-  CHAT_SKILL_FREE_DAILY_LIMIT,
-  CHAT_SKILL_VIP_DAILY_LIMIT,
   CHAT_SKILL_MAX_VIOLATIONS,
 } from './ai-chat-skill.types'
 
@@ -43,6 +42,7 @@ export class AiChatSkillService {
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   /**
@@ -68,13 +68,13 @@ export class AiChatSkillService {
     }
 
     // 3. 校验次数限制
-    const quota = await this.checkAndGetQuota(userId)
-    if (quota.remaining <= 0) {
+    const quotaInfo = await this.checkAndGetQuota(userId)
+    if (quotaInfo.remaining <= 0) {
       throw new BadRequestException({
         code: 'QUOTA_EXCEEDED',
-        message: quota.limit === CHAT_SKILL_FREE_DAILY_LIMIT
-          ? `今日AI帮回次数已用完（${CHAT_SKILL_FREE_DAILY_LIMIT}/天），开通会员享受${CHAT_SKILL_VIP_DAILY_LIMIT}次/天`
-          : `今日AI帮回次数已用完（${CHAT_SKILL_VIP_DAILY_LIMIT}/天）`,
+        message: quotaInfo.isFree
+          ? `今日AI帮回次数已用完（${quotaInfo.limit}/天），开通会员享受${quotaInfo.vipLimit}次/天`
+          : `今日AI帮回次数已用完（${quotaInfo.limit}/天）`,
       })
     }
 
@@ -174,7 +174,7 @@ export class AiChatSkillService {
 
     return {
       suggestions,
-      remainingQuota: quota.remaining - 1,
+      remainingQuota: quotaInfo.remaining - 1,
     }
   }
 
@@ -238,7 +238,9 @@ export class AiChatSkillService {
       user.vipExpireTime &&
       new Date(user.vipExpireTime) > new Date()
 
-    const limit = isVip ? CHAT_SKILL_VIP_DAILY_LIMIT : CHAT_SKILL_FREE_DAILY_LIMIT
+    const quotaConfig = await this.quotaService.getConfig()
+    const limit = isVip ? quotaConfig.emotion.vipPerDay : quotaConfig.emotion.freePerDay
+    const vipLimit = quotaConfig.emotion.vipPerDay
 
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
@@ -251,7 +253,7 @@ export class AiChatSkillService {
       },
     })
 
-    return { limit, used, remaining: Math.max(0, limit - used) }
+    return { limit, vipLimit, isFree: !isVip, used, remaining: Math.max(0, limit - used) }
   }
 
   /**

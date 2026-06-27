@@ -1,11 +1,12 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
+import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { User } from '../entities/User'
@@ -15,9 +16,8 @@ import { parseJsonResponse } from './ai-common.util'
 import {
   ProfileGenEligibility,
   ProfileGenResponse,
-  PROFILE_GEN_FREE_MONTHLY_LIMIT,
-  PROFILE_GEN_VIP_MONTHLY_LIMIT,
   PROFILE_GEN_MIN_TAGS,
+  PROFILE_GEN_MIN_ANSWERS,
   PROFILE_GEN_QUOTA_KEY,
 } from './ai-profile-gen.types'
 
@@ -38,6 +38,7 @@ export class AiProfileGenService {
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   /**
@@ -89,9 +90,9 @@ export class AiProfileGenService {
       if (quota.remaining <= 0) {
         throw new BadRequestException({
           code: 'QUOTA_EXCEEDED',
-          message: quota.limit === PROFILE_GEN_FREE_MONTHLY_LIMIT
-            ? `本月AI印象刷新次数已用完（${PROFILE_GEN_FREE_MONTHLY_LIMIT}/月），开通会员享受${PROFILE_GEN_VIP_MONTHLY_LIMIT}次/月`
-            : `本月AI印象刷新次数已用完（${PROFILE_GEN_VIP_MONTHLY_LIMIT}/月）`,
+          message: quota.isFree
+            ? `本周AI印象刷新次数已用完（${quota.limit}/周），开通会员享受${quota.vipLimit}次/天`
+            : `今日AI印象刷新次数已用完（${quota.limit}/天）`,
         })
       }
     }
@@ -279,36 +280,53 @@ export class AiProfileGenService {
   }
 
   /**
-   * 按月配额：Redis key = ai:profile-gen:quota:{userId}:{YYYY-MM}
+   * 非会员按周配额，会员按日配额
    */
   private async checkAndGetQuota(userId: number) {
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) throw new BadRequestException('用户不存在')
 
     const isVip = user.isVip === 1 && user.vipExpireTime && new Date(user.vipExpireTime) > new Date()
-    const limit = isVip ? PROFILE_GEN_VIP_MONTHLY_LIMIT : PROFILE_GEN_FREE_MONTHLY_LIMIT
+    const quotaConfig = await this.quotaService.getConfig()
+    const limit = isVip ? quotaConfig.impression.vipPerDay : quotaConfig.impression.freePerWeek
 
     const now = new Date()
-    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const key = `${PROFILE_GEN_QUOTA_KEY}${userId}:${yearMonth}`
+    let periodStart: Date
+    if (isVip) {
+      // 会员：当日 0 点
+      periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    } else {
+      // 非会员：本周一 0 点
+      const dayOfWeek = now.getDay()
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+      periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset)
+    }
 
-    const usedStr = await this.redis.get(key)
-    const used = parseInt(usedStr || '0', 10)
+    // 从 AiCallLog 计数（同时也保留 Redis 增量，兼容老代码）
+    const used = await this.callLogRepo.count({
+      where: {
+        userId,
+        callType: AiCallType.PROFILE_GEN,
+        createdAt: MoreThanOrEqual(periodStart),
+      },
+    })
 
-    return { limit, used, remaining: Math.max(0, limit - used) }
+    return {
+      limit,
+      vipLimit: quotaConfig.impression.vipPerDay,
+      isFree: !isVip,
+      used,
+      remaining: Math.max(0, limit - used),
+    }
   }
 
   private async incrementQuota(userId: number): Promise<void> {
+    // AiCallLog 已由 generate() 方法创建，此处保留兼容逻辑（无需额外操作）
     const now = new Date()
-    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const key = `${PROFILE_GEN_QUOTA_KEY}${userId}:${yearMonth}`
-
+    const yearWeek = `${now.getFullYear()}-w${Math.ceil((now.getDate() + (now.getDay() || 7) - 1) / 7)}`
+    const key = `${PROFILE_GEN_QUOTA_KEY}${userId}:${yearWeek}`
     await this.redis.incr(key)
-
-    // 首次设置过期（下月初）
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
-    const ttl = Math.ceil((nextMonth.getTime() - now.getTime()) / 1000)
-    await this.redis.expire(key, ttl)
+    await this.redis.expire(key, 7 * 86400)
   }
 
   private buildFallbackProfile(

@@ -15,6 +15,7 @@ import { User } from '../entities/User'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { ChatMessage } from '../entities/ChatMessage'
+import { AiQuotaService } from './ai-quota.service'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiSafetyService } from './ai-safety.service'
@@ -64,6 +65,7 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
   ],
   providers: [
     AiConfigService, AiApiService, AiSafetyService, AiRateLimitService,
+    AiQuotaService,
     AiMatchService, AiChatSkillService, AiMatchmakerService,
     AiFunQuizService, AiProfileGenService, AiVoiceService,
     AiProviderConfigService, AiProviderSelector, AiProviderBalanceService,
@@ -71,7 +73,7 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
     RedisService, SystemService,
   ],
   exports: [
-    AiConfigService, AiRateLimitService, AiProviderConfigService, AiProviderSelector,
+    AiConfigService, AiRateLimitService, AiQuotaService, AiProviderConfigService, AiProviderSelector,
     AiVoiceService,
   ],
 })

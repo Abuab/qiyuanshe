@@ -26,10 +26,17 @@ const RATE_LIMIT_WINDOW_SEC = 60
 
 
 
+/** 默认限额（数据库无配置时回退） */
+const DEFAULT_QUOTA = {
+  chatFreePerMatch: 2,
+  chatVipPerDay: 10,
+}
+
 @Injectable()
 export class ChatService implements OnModuleInit, OnModuleDestroy {
-  private readonly dailyFreeMessages = 3
   private messageCountCache: Map<number, { count: number; date: string }> = new Map()
+  /** 按匹配对的计数缓存: key = `${userId}_${targetUserId}` */
+  private perMatchCountCache: Map<number, Map<number, number>> = new Map()
 
   /** 敏感词库，从远程 URL 或本地 config/sensitive-words.json 加载，文件不存在时回退到硬编码 */
   private bannedKeywords: string[] = []
@@ -264,10 +271,20 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
 
     const isVip = await this.checkUserVipStatus(userId)
 
+    // 用量限额检查
     if (!isVip) {
+      // 非会员：按匹配对限制（每对 freePerMatch 条免费消息）
+      const freePerMatch = await this.getQuotaNumber('quota.chat.freePerMatch', DEFAULT_QUOTA.chatFreePerMatch)
+      const perMatchCount = await this.getPerMatchMessageCount(userId, toUserId)
+      if (perMatchCount >= freePerMatch) {
+        throw new ForbiddenException(`已向该用户发送${freePerMatch}条免费消息，开通会员即可无限畅聊`)
+      }
+    } else {
+      // 会员：按每日限制
+      const vipPerDay = await this.getQuotaNumber('quota.chat.vipPerDay', DEFAULT_QUOTA.chatVipPerDay)
       const todayCount = await this.getTodayMessageCount(userId)
-      if (todayCount >= this.dailyFreeMessages) {
-        throw new ForbiddenException('今日消息已用完，开通会员即可无限畅聊')
+      if (todayCount >= vipPerDay) {
+        throw new ForbiddenException(`今日消息已用完（${vipPerDay}条/天）`)
       }
     }
 
@@ -734,6 +751,30 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     } catch {
       return null
     }
+  }
+
+  /**
+   * 从配额配置中读取数字值，数据库无配置时回退默认值
+   */
+  private async getQuotaNumber(key: string, fallback: number): Promise<number> {
+    const val = await this.getConfigValue(key)
+    if (val != null) {
+      const n = parseInt(val, 10)
+      if (!isNaN(n) && n >= 0) return n
+    }
+    return fallback
+  }
+
+  /**
+   * 查询用户向指定目标发送的消息数（不限时间，用于按匹配对限制）
+   */
+  private async getPerMatchMessageCount(userId: number, targetUserId: number): Promise<number> {
+    return this.messageRepository.count({
+      where: {
+        fromUserId: userId,
+        toUserId: targetUserId,
+      },
+    })
   }
 
   private async getTodayMessageCount(userId: number): Promise<number> {

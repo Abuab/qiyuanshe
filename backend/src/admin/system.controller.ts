@@ -4,6 +4,7 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminSystemService, SystemConfigs } from './system.service'
 import { NotifyChannelService } from './notify-channel.service'
+import { AiQuotaService, QuotaConfig } from '../ai/ai-quota.service'
 import { Result } from '../common/result'
 
 @Controller('admin/system')
@@ -13,6 +14,7 @@ export class AdminSystemController {
   constructor(
     private readonly systemService: AdminSystemService,
     private readonly notifyService: NotifyChannelService,
+    private readonly quotaService: AiQuotaService,
   ) {}
 
   @Get('configs')
@@ -37,6 +39,20 @@ export class AdminSystemController {
   async updateConfig(@Param('key') key: string, @Body('value') value: string) {
     await this.systemService.updateConfig(key, value)
     return Result.success(null, '更新成功')
+  }
+
+  /** 获取用量限额配置 */
+  @Get('quota')
+  async getQuotaConfig() {
+    const config = await this.quotaService.getConfig()
+    return Result.success(config)
+  }
+
+  /** 保存用量限额配置 */
+  @Put('quota')
+  async saveQuotaConfig(@Body() body: QuotaConfig) {
+    await this.quotaService.saveConfig(body)
+    return Result.success(null, '保存成功')
   }
 
   @Get('notify-logs')

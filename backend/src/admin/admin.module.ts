@@ -75,6 +75,7 @@ import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
+import { AiModule } from '../ai/ai.module'
 
 @Module({
   imports: [
@@ -114,8 +115,9 @@ import { Feedback } from '../entities/Feedback'
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
     PassportModule,
-     AppDynamicModule,
-   ],
+    AppDynamicModule,
+    AiModule,
+  ],
   controllers: [
     AdminUserController,
     AdminMatchmakerController,
