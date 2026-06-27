@@ -275,7 +275,23 @@ const refreshingVisible = ref(false)  // 下拉刷新状态
 const aiProfileText = ref('')        // AI 个人印象文本
 const profileGenLoading = ref(false) // AI 印象生成中
 const aiAssistantExpanded = ref(false) // AI助手面板展开状态
-const showAiAssistantEntry = computed(() => systemStore.isAiFeatureEnabled('ai_assistant'))
+
+// AI助手入口是否显示：优先看 ai_assistant 开关，若后端未配置则看任意子功能是否开启
+const showAiAssistantEntry = computed(() => {
+  // 总开关关闭则入口不显示
+  if (!systemStore.aiMasterEnabled) return false
+  const features = systemStore.aiFeatures as Record<string, boolean>
+  // 有明确的 ai_assistant 配置就用它
+  if ('ai_assistant' in features) return features.ai_assistant === true
+  // 后端未配置时，只要有任意 AI 子功能开启就显示入口
+  return !!(
+    features.matchmaker ||
+    features.fun_quiz ||
+    features.profile_gen ||
+    features.match ||
+    features.chat_skill
+  )
+})
 
 // 会员卡片轮播
 // 会员卡片轮播（3条，可从后台 /system/config 的 vipCardTexts 字段配置）
@@ -853,8 +869,8 @@ const toolGrid7 = [
 }
 
 .step-icon {
-  width: 48rpx;
-  height: 48rpx;
+  width: 40rpx;
+  height: 40rpx;
   border-radius: 50%;
   background: #eeeeee;
   display: flex;
@@ -867,8 +883,8 @@ const toolGrid7 = [
 }
 
 .step-label {
-  margin-top: 8rpx;
-  font-size: 24rpx;
+  margin-top: 6rpx;
+  font-size: 22rpx;
   color: #999999;
 
   &.done {
@@ -878,7 +894,7 @@ const toolGrid7 = [
 
 .step-action {
   margin-top: 4rpx;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #ff6b6b;
 }
 
@@ -888,7 +904,7 @@ const toolGrid7 = [
   flex: 0.5;
   min-width: 40rpx;
   position: relative;
-  top: 24rpx;
+  top: 20rpx;
 
   &.done {
     background: #52c41a;

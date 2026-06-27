@@ -22,6 +22,7 @@ const FEATURE_LABELS: Record<AiFeatureKey, string> = {
   [AiFeatureKey.MATCHMAKER]: 'AI红娘机器人',
   [AiFeatureKey.FUN_QUIZ]: 'AI趣味缘分测试',
   [AiFeatureKey.PROFILE_GEN]: 'AI个人印象生成',
+  [AiFeatureKey.AI_ASSISTANT]: 'AI助手入口（小程序金刚区）',
 }
 
 const FEATURE_KEY_NAMES: Record<AiFeatureKey, string> = {
@@ -30,6 +31,7 @@ const FEATURE_KEY_NAMES: Record<AiFeatureKey, string> = {
   [AiFeatureKey.MATCHMAKER]: 'matchmaker',
   [AiFeatureKey.FUN_QUIZ]: 'fun_quiz',
   [AiFeatureKey.PROFILE_GEN]: 'profile_gen',
+  [AiFeatureKey.AI_ASSISTANT]: 'ai_assistant',
 }
 
 @Injectable()

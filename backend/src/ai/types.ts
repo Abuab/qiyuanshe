@@ -14,6 +14,8 @@ export enum AiFeatureKey {
   FUN_QUIZ = 'fun_quiz',
   /** AI 个人印象生成 */
   PROFILE_GEN = 'profile_gen',
+  /** AI助手入口（小程序端金刚区折叠面板） */
+  AI_ASSISTANT = 'ai_assistant',
 }
 
 /** 开关配置的 DB key 前缀 */
@@ -29,6 +31,7 @@ export const AI_FEATURE_KEYS: Record<AiFeatureKey, string> = {
   [AiFeatureKey.MATCHMAKER]: `${AI_FEATURE_PREFIX}.matchmaker.enabled`,
   [AiFeatureKey.FUN_QUIZ]: `${AI_FEATURE_PREFIX}.fun_quiz.enabled`,
   [AiFeatureKey.PROFILE_GEN]: `${AI_FEATURE_PREFIX}.profile_gen.enabled`,
+  [AiFeatureKey.AI_ASSISTANT]: `${AI_FEATURE_PREFIX}.ai_assistant.enabled`,
 }
 
 /** 所有 DB key 列表 */
