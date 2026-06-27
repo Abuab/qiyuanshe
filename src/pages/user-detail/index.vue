@@ -52,7 +52,7 @@
                 class="thumb-img"
                 :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
                 mode="aspectFill"
-                :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(4px)' } : {}"
+                :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(6px)' } : {}"
               />
             </view>
           </view>

@@ -407,7 +407,7 @@ const onLike = async () => {
 }
 
 .photo-thumb.photo-blur {
-  filter: blur(2px) brightness(0.9);
+  filter: blur(3px) brightness(0.9);
   transform: scale(1.08);
 }
 
