@@ -54,6 +54,9 @@ export class PublicSystemController {
       photoGuidanceUploadPrompt: configs.basic?.photoGuidanceUploadPrompt || '上传你的照片，探索更多可能~',
       photoGuidanceUploadBtn: configs.basic?.photoGuidanceUploadBtn || '上传照片',
       photoGuidanceMinCount: Number(configs.basic?.photoGuidanceMinCount ?? 1),
+      // 功能开关
+      chatEnabled: configs.basic?.chatEnabled !== false,
+      vipEnabled: configs.basic?.vipEnabled !== false,
     }
 
     return Result.success(result)

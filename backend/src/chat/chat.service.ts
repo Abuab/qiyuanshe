@@ -269,6 +269,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       throw new NotFoundException('用户不存在')
     }
 
+    // 聊天功能开关检查
+    const chatEnabled = await this.getConfigValue('basic.chatEnabled')
+    if (chatEnabled === 'false') {
+      throw new ForbiddenException('聊天功能暂未开放')
+    }
+
     const isVip = await this.checkUserVipStatus(userId)
 
     // 用量限额检查

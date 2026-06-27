@@ -1,5 +1,13 @@
 <template>
   <view class="vip-page">
+    <!-- ===== VIP功能已关闭 ===== -->
+    <view v-if="!systemStore.vipEnabled" class="disabled-page" :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }">
+      <view class="disabled-icon">🚫</view>
+      <text class="disabled-title">功能暂未开放</text>
+      <text class="disabled-desc">会员功能暂时关闭，请稍后再来</text>
+    </view>
+
+    <view v-else>
     <!-- ===== 顶部导航：两级导航栏 ===== -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <!-- 第一级：当前页面标题 + 返回 -->
@@ -198,6 +206,7 @@
     </view>
 
     <tab-bar />
+  </view>
   </view>
 </template>
 
@@ -1104,5 +1113,32 @@ onShow(() => {
   font-size: 12px;
   color: #999;
   line-height: 1.5;
+}
+
+/* ===== 功能关闭占位页 ===== */
+.disabled-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.disabled-icon {
+  font-size: 80rpx;
+  margin-bottom: 32rpx;
+}
+
+.disabled-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.disabled-desc {
+  font-size: 28rpx;
+  color: #999;
 }
 </style>

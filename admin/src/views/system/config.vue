@@ -135,6 +135,18 @@
               <div class="form-tip" style="margin-left:12px">控制"我的"页面底部和系统消息页顶部的公众号关注提示横幅</div>
             </el-form-item>
 
+            <el-divider content-position="left">功能开关</el-divider>
+
+            <el-form-item label="聊天功能">
+              <el-switch v-model="basicConfig.chatEnabled" active-text="开启" inactive-text="关闭" />
+              <div class="form-tip" style="margin-left:12px">关闭后所有用户无法发送聊天消息</div>
+            </el-form-item>
+
+            <el-form-item label="VIP 会员">
+              <el-switch v-model="basicConfig.vipEnabled" active-text="开启" inactive-text="关闭" />
+              <div class="form-tip" style="margin-left:12px">关闭后会员页面显示"功能暂未开放"</div>
+            </el-form-item>
+
             <el-form-item label="登录页插画">
               <div class="upload-item">
                 <el-image
@@ -599,6 +611,8 @@ const basicConfig = reactive({
   photoGuidanceUploadPrompt: '上传你的照片，探索更多可能~',
   photoGuidanceUploadBtn: '上传照片',
   photoGuidanceMinCount: 1,
+  chatEnabled: true,
+  vipEnabled: true,
 })
 
 const shareConfig = reactive({
