@@ -1,36 +1,170 @@
 <template>
   <view class="poster-page">
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+    <!-- ===== 导航栏（适配安全区） ===== -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-inner">
+        <view class="nav-left" @tap="handleBack">
+          <text class="back-icon">←</text>
+        </view>
+        <text class="nav-title">{{ appName }}</text>
+        <view class="nav-right" @tap="toggleTemplateView">
+          <text class="nav-more-icon">{{ showTemplateGrid ? '⋯' : '👁' }}</text>
+        </view>
       </view>
-      <view class="nav-title">生成海报</view>
-      <view class="nav-right"></view>
     </view>
 
-    <view class="page-content">
-      <view class="tip-text">点击模板生成推广卡</view>
-
-      <view class="template-grid">
-        <view
-          v-for="template in templateList"
-          :key="template.id"
-          class="template-item"
-          @tap="selectTemplate(template)"
-        >
-          <view class="template-preview" :style="{ background: template.bgColor }">
-            <image class="preview-photo" :src="template.previewPhoto" mode="aspectFill" />
-            <view class="preview-overlay">
-              <view class="preview-info">
-                <text class="preview-id">ID: 10001</text>
-                <text class="preview-basic">26岁 · 168cm · 本科</text>
+    <view class="page-body" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
+      <!-- ===== 模板选择区 ===== -->
+      <view v-if="showTemplateGrid">
+        <view class="section-hint">点击模板生成推广卡</view>
+        <view class="template-grid">
+          <view
+            v-for="template in filteredTemplates"
+            :key="template.id"
+            class="template-card"
+            @tap="selectTemplate(template)"
+          >
+            <view class="card-preview" :style="{ background: template.bgGradient }">
+              <!-- 模板缩略图内照片 -->
+              <view class="card-photo-area">
+                <image
+                  class="card-photo"
+                  :src="userPhotoUrl || '/static/default-avatar.png'"
+                  mode="aspectFill"
+                />
+                <!-- 信息浮层 -->
+                <view class="card-photo-info">
+                  <text class="card-info-text">ID:{{ userId || '---' }}</text>
+                  <text class="card-info-text">{{ userAge || '--' }}岁 · {{ userHeight || '--' }}cm · {{ userEducation || '--' }}</text>
+                </view>
+                <!-- 彩色标签（右上角） -->
+                <view class="card-tag" :style="{ background: template.tagColor }">
+                  <text>{{ template.tagLabel }}</text>
+                </view>
+              </view>
+              <!-- 不同模板的底部信息排版 -->
+              <view v-if="template.layout === 'info-card'" class="card-bottom-info">
+                <text class="card-bottom-name">{{ userNickname || '用户' }}</text>
+                <text class="card-bottom-detail">{{ userOccupation || '' }}</text>
+              </view>
+              <view v-else-if="template.layout === 'side-info'" class="card-side-info">
+                <view class="card-side-avatar">
+                  <image class="card-side-avatar-img" :src="userPhotoUrl || '/static/default-avatar.png'" mode="aspectFill" />
+                </view>
+                <view class="card-side-text">
+                  <text class="card-side-name">{{ userNickname || '用户' }}</text>
+                  <text class="card-side-detail">ID:{{ userId || '---' }}</text>
+                </view>
+              </view>
+              <view v-else class="card-simple-footer">
+                <text class="card-footer-text">{{ userNickname || '用户' }}</text>
               </view>
             </view>
-            <view class="preview-tag" :style="{ background: template.tagColor }">
-              <text>{{ template.name }}</text>
+            <text class="card-name">{{ template.name }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- ===== 预览区：已选模板的放大效果 ===== -->
+      <view v-if="!showTemplateGrid && selectedTemplate" class="preview-section">
+        <view class="preview-header">
+          <view class="preview-back-btn" @tap="toggleTemplateView">
+            <text class="back-icon">←</text>
+          </view>
+          <text class="preview-title">{{ appName }}</text>
+          <view class="preview-placeholder" />
+        </view>
+        <view class="preview-hint">点击按钮保存图片，分享到群或朋友圈</view>
+
+        <!-- 海报预览卡片 -->
+        <view class="poster-preview-card">
+          <!-- 照片区 -->
+          <view class="poster-photo-section">
+            <image
+              class="poster-photo"
+              :src="userPhotoUrl || '/static/default-avatar.png'"
+              mode="aspectFill"
+            />
+            <!-- 实名认证徽章 -->
+            <view v-if="userRealNameVerified" class="auth-badge">
+              <text class="auth-badge-text">✓ 实名认证</text>
+            </view>
+            <!-- 标签 -->
+            <view class="poster-tag" :style="{ background: selectedTemplate.tagColor }">
+              <text>{{ selectedTemplate.tagLabel }}</text>
             </view>
           </view>
-          <view class="template-name">{{ template.name }}</view>
+          <!-- 信息区：两列 -->
+          <view class="poster-info-section">
+            <view class="poster-info-row">
+              <view class="poster-info-col">
+                <text class="info-label">ID</text>
+                <text class="info-value">:{{ userId || '---' }}</text>
+              </view>
+              <view class="poster-info-col">
+                <text class="info-label">婚况</text>
+                <text class="info-value">:{{ userMaritalStatus || '---' }}</text>
+              </view>
+            </view>
+            <view class="poster-info-row">
+              <view class="poster-info-col">
+                <text class="info-label">年龄</text>
+                <text class="info-value">:{{ userAge ? userAge + '岁' : '---' }}</text>
+              </view>
+              <view class="poster-info-col">
+                <text class="info-label">身高</text>
+                <text class="info-value">:{{ userHeight ? userHeight + 'cm' : '---' }}</text>
+              </view>
+            </view>
+            <view class="poster-info-row">
+              <view class="poster-info-col">
+                <text class="info-label">学历</text>
+                <text class="info-value">:{{ userEducation || '---' }}</text>
+              </view>
+              <view class="poster-info-col">
+                <text class="info-label">月薪</text>
+                <text class="info-value">:{{ userIncome || '---' }}</text>
+              </view>
+            </view>
+            <view class="poster-info-row">
+              <view class="poster-info-col">
+                <text class="info-label">职业</text>
+                <text class="info-value">:{{ userOccupation || '---' }}</text>
+              </view>
+              <view class="poster-info-col">
+                <text class="info-label">籍贯</text>
+                <text class="info-value">:{{ userHometown || '---' }}</text>
+              </view>
+            </view>
+          </view>
+          <!-- 择偶要求 -->
+          <view v-if="partnerRequirements" class="poster-partner-section">
+            <text class="partner-section-title">择偶要求</text>
+            <text class="partner-section-text">{{ partnerRequirements }}</text>
+          </view>
+          <!-- 底部分隔 -->
+          <view class="poster-divider" />
+          <!-- 二维码 + 品牌 -->
+          <view class="poster-footer">
+            <view class="poster-brand">
+              <text class="brand-name">{{ appName }}</text>
+              <text class="brand-desc">值得信赖的相亲平台</text>
+            </view>
+            <view class="poster-qr">
+              <image class="qr-img" src="/static/qr-placeholder.png" mode="aspectFit" />
+              <text class="qr-tip">长按识别认识TA</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 底部操作按钮 -->
+        <view class="preview-actions">
+          <view class="preview-action-btn cancel-btn" @tap="cancelGenerate">
+            <text>取消</text>
+          </view>
+          <view class="preview-action-btn save-btn" @tap="savePosterAction">
+            <text>保存</text>
+          </view>
         </view>
       </view>
     </view>
@@ -51,17 +185,17 @@
       </view>
     </view>
 
-    <!-- 预览弹窗 -->
+    <!-- 生成成功后预览弹窗（展示 Canvas 生成的图片） -->
     <view v-if="showPreview" class="preview-popup">
-      <view class="preview-overlay" @tap="closePreview"></view>
-      <view class="preview-card">
-        <view class="preview-tip">点击按钮保存图片，分享到群或朋友圈</view>
-        <image class="preview-image" :src="generatedImagePath" mode="widthFix" />
-        <view class="preview-actions">
-          <view class="action-btn cancel-btn" @tap="closePreview">
+      <view class="preview-popup-mask" @tap="closePreview"></view>
+      <view class="preview-popup-card">
+        <text class="popup-hint">点击按钮保存图片，分享到群或朋友圈</text>
+        <image class="popup-image" :src="generatedImagePath" mode="widthFix" />
+        <view class="popup-actions">
+          <view class="popup-btn cancel-btn" @tap="closePreview">
             <text>取消</text>
           </view>
-          <view class="action-btn save-btn" @tap="savePoster">
+          <view class="popup-btn save-btn" @tap="savePoster">
             <text>保存</text>
           </view>
         </view>
@@ -71,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import request, { getServerBaseUrl } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
@@ -81,76 +215,119 @@ import { safeNavigateBack } from '@/utils/navigate'
 interface PosterTemplate {
   id: number
   name: string
-  bgColor: string
   tagColor: string
-  previewPhoto: string
+  tagLabel: string
+  bgGradient: string
+  gender: 'male' | 'female' | 'all'
+  layout: 'photo-only' | 'info-card' | 'side-info'
 }
 
-const templateList: PosterTemplate[] = [
+const TEMPLATES: PosterTemplate[] = [
   {
     id: 1,
     name: '推荐女嘉宾',
-    bgColor: 'linear-gradient(135deg, #FFB6C1, #FFC0CB)',
     tagColor: '#FF6B9D',
-    previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
+    tagLabel: '推荐女嘉宾',
+    bgGradient: 'linear-gradient(135deg, #FFE4EC 0%, #FFF0F5 100%)',
+    gender: 'female',
+    layout: 'info-card',
   },
   {
     id: 2,
     name: '推荐男嘉宾',
-    bgColor: 'linear-gradient(135deg, #87CEEB, #ADD8E6)',
     tagColor: '#4A90E2',
-    previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
+    tagLabel: '推荐男嘉宾',
+    bgGradient: 'linear-gradient(135deg, #E3F0FF 0%, #EDF6FF 100%)',
+    gender: 'male',
+    layout: 'info-card',
   },
   {
     id: 3,
     name: '甜蜜约会',
-    bgColor: 'linear-gradient(135deg, #FFFACD, #FFF8DC)',
-    tagColor: '#FFB347',
-    previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
+    tagColor: '#FF8C42',
+    tagLabel: '甜蜜约会',
+    bgGradient: 'linear-gradient(135deg, #FFF5EC 0%, #FFF0E0 100%)',
+    gender: 'all',
+    layout: 'side-info',
   },
   {
     id: 4,
     name: '缘定今生',
-    bgColor: 'linear-gradient(135deg, #DDA0DD, #EE82EE)',
-    tagColor: '#722ED1',
-    previewPhoto: 'https://img.yzcdn.cn/vant/cat.jpeg',
+    tagColor: '#7C3AED',
+    tagLabel: '缘定今生',
+    bgGradient: 'linear-gradient(135deg, #F3EDFF 0%, #EDE0FF 100%)',
+    gender: 'all',
+    layout: 'photo-only',
+  },
+  {
+    id: 5,
+    name: '基本资料',
+    tagColor: '#555555',
+    tagLabel: '基本资料',
+    bgGradient: 'linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%)',
+    gender: 'all',
+    layout: 'info-card',
   },
 ]
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+
 const userId = ref<number>(0)
 const showLoading = ref(false)
 const showPreview = ref(false)
+const showTemplateGrid = ref(true)
 const generatedImagePath = ref('')
 const selectedTemplate = ref<PosterTemplate | null>(null)
 
-const canvasId = 'poster-canvas'
+// 用户展示数据
+const userPhotoUrl = ref('')
+const userNickname = ref('')
+const userAge = ref<string | number>('')
+const userHeight = ref<string | number>('')
+const userEducation = ref('')
+const userOccupation = ref('')
+const userIncome = ref('')
+const userMaritalStatus = ref('')
+const userHometown = ref('')
+const userGender = ref<string>('')
+const userRealNameVerified = ref(false)
+const partnerRequirements = ref('')
+
+const appName = computed(() => systemStore.appName || '灵通相亲')
+
 const canvasWidth = 750
 const canvasHeight = 1200
 
-// ============ 布局常量 ============
-const PADDING = 50
-const AVATAR_SIZE = 240 // 圆形头像直径
-const AVATAR_Y = 60 // 头像区域顶部
-const NICKNAME_Y = AVATAR_Y + AVATAR_SIZE + 40
-const INFO_Y = NICKNAME_Y + 50 // 两列信息起始 Y
-const ROW_HEIGHT = 52
-const DIVIDER_Y = INFO_Y + ROW_HEIGHT * 4 + 16
-const INTRO_Y = DIVIDER_Y + 40
-const INTRO_MAX_LINES = 6
-const INTRO_LINE_HEIGHT = 38
-const FOOTER_Y = canvasHeight - 300 // 底部区域
+// 安全区高度
+const statusBarHeight = ref(44)
+try {
+  statusBarHeight.value = uni.getSystemInfoSync().statusBarHeight || 44
+} catch { /* keep default */ }
 
-onMounted(() => {
+// 性别过滤模板
+const filteredTemplates = computed(() => {
+  return TEMPLATES.filter((t) => {
+    if (t.gender === 'all') return true
+    if (userGender.value === 'male') return t.gender !== 'female'
+    if (userGender.value === 'female') return t.gender !== 'male'
+    return true // 未知性别显示全部
+  })
+})
+
+onMounted(async () => {
   const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1]
-  const options = (currentPage as Record<string, unknown>)?.options || {}
+  const currentPage = pages[pages.length - 1] as Record<string, any>
+  const options = currentPage?.options || {}
 
   if (options.userId) {
     userId.value = parseInt(String(options.userId))
   } else {
     userId.value = userStore.userInfo?.id || 0
+  }
+
+  if (userId.value) {
+    await fetchUserData()
   }
 })
 
@@ -158,88 +335,258 @@ const handleBack = () => {
   safeNavigateBack()
 }
 
-const selectTemplate = async (template: PosterTemplate) => {
-  selectedTemplate.value = template
-  await generatePoster(template)
+const toggleTemplateView = () => {
+  showTemplateGrid.value = !showTemplateGrid.value
 }
 
-// ==================== 海报生成主流程 ====================
+const fetchUserData = async () => {
+  try {
+    const res = await request({ url: `/users/${userId.value}`, method: 'GET' })
+    const data = (res as Record<string, any>).user || res || {}
+
+    userNickname.value = data.nickname || ''
+    userAge.value = data.age || (data.birthYear ? new Date().getFullYear() - data.birthYear : '')
+    userHeight.value = data.height || ''
+    userEducation.value = data.education || ''
+    userOccupation.value = data.occupation || ''
+    userIncome.value = data.incomeRange || data.income || ''
+    userMaritalStatus.value = data.maritalStatus || ''
+    userHometown.value = (data.hometown || '').replace(/\//g, ',')
+    userGender.value = data.gender || ''
+    userRealNameVerified.value = !!(data.realNameVerified || data.isRealNameVerified)
+
+    // 照片：优先取相册第一张，其次头像
+    const photos = data.photos || []
+    if (photos.length > 0 && photos[0].url) {
+      userPhotoUrl.value = getFullImageUrl(photos[0].url) || ''
+    } else if (data.avatar) {
+      userPhotoUrl.value = getFullImageUrl(data.avatar) || ''
+    }
+
+    // 择偶要求
+    const partnerTags = data.partnerTags || data.hopeTa?.partnerTags || []
+    if (partnerTags.length) {
+      partnerRequirements.value = partnerTags
+        .map((t: any) => `${t.label || ''}${t.value || ''}`)
+        .filter(Boolean)
+        .join('，')
+    } else if (data.hopeTa?.hopeText) {
+      partnerRequirements.value = data.hopeTa.hopeText
+    }
+  } catch (e) {
+    console.error('fetch user data error', e)
+  }
+}
+
+const selectTemplate = async (template: PosterTemplate) => {
+  selectedTemplate.value = template
+  showTemplateGrid.value = false
+  // 切换到预览视图，不立即生成 Canvas
+}
+
+const cancelGenerate = () => {
+  showTemplateGrid.value = true
+  selectedTemplate.value = null
+}
+
+const savePosterAction = async () => {
+  if (!selectedTemplate.value) return
+  await generatePoster(selectedTemplate.value)
+}
+
+// ==================== Canvas 海报生成 ====================
 
 const generatePoster = async (template: PosterTemplate) => {
   try {
     showLoading.value = true
+    showPreview.value = false
 
-    const userData = await fetchUserData()
-
-    const ctx = uni.createCanvasContext(canvasId) as CanvasRenderingContext2D & {
-      setFillStyle: (c: string) => void
-      setStrokeStyle: (c: string) => void
-      setFontSize: (n: number) => void
-      fillText: (t: string, x: number, y: number) => void
-      strokeRect: (x: number, y: number, w: number, h: number) => void
-      fillRect: (x: number, y: number, w: number, h: number) => void
-      save: () => void
-      restore: () => void
-      beginPath: () => void
-      moveTo: (x: number, y: number) => void
-      lineTo: (x: number, y: number) => void
-      stroke: () => void
-      clip: () => void
-      arc: (x: number, y: number, r: number, s: number, e: number, ccw?: boolean) => void
-      drawImage: (src: string, x: number, y: number, w: number, h: number) => void
-      measureText: (t: string) => { width: number }
-      closePath: () => void
-      setLineWidth: (n: number) => void
-      draw: (reserve?: boolean, cb?: () => void) => void
-    }
+    const ctx = uni.createCanvasContext('poster-canvas') as any
 
     // 1. 白色背景
     ctx.setFillStyle('#FFFFFF')
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
-    // 2. 顶部粉色渐变装饰条
+    // 2. 顶部照片区域（750 x 560）
+    const photoH = 560
+    await drawPhoto(ctx, photoH)
+
+    // 3. 照片底部渐变遮罩
+    const gradientY = photoH - 100
+    ctx.save()
+    const grad = ctx.createLinearGradient(0, gradientY, 0, photoH)
+    grad.addColorStop(0, 'rgba(0,0,0,0)')
+    grad.addColorStop(1, 'rgba(0,0,0,0.3)')
+    ctx.setFillStyle(grad)
+    ctx.fillRect(0, gradientY, canvasWidth, 100)
+    ctx.restore()
+
+    // 4. 实名认证徽章（照片左上角）
+    if (userRealNameVerified.value) {
+      ctx.setFillStyle('rgba(212, 175, 55, 0.9)')
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(60, 50, 28, 0, 2 * Math.PI)  // dummy
+      ctx.restore()
+      ctx.setFillStyle('#D4AF37')
+      ctx.setFontSize(22)
+      ctx.fillText('✓ 实名认证', 36, 56)
+    }
+
+    // 5. 标签（照片右上角）
+    ctx.setFillStyle(template.tagColor)
+    const tagText = template.tagLabel
+    ctx.setFontSize(26)
+    const tagW = ctx.measureText(tagText).width + 40
+    ctx.save()
+    ctx.beginPath()
+    // 使用简单矩形代替圆角（微信 canvas 可能不支持 roundRect）
+    ctx.setFillStyle(template.tagColor)
+    ctx.fillRect(canvasWidth - 40 - tagW, 36, tagW, 48)
+    ctx.setFillStyle('#FFFFFF')
+    ctx.fillText(tagText, canvasWidth - 40 - tagW + 20, 68)
+    ctx.restore()
+
+    // 6. 照片下方信息区
+    const infoStartY = photoH + 40
+    const leftX = 50
+    const rightX = 400
+
+    // 信息标题行
+    ctx.setFillStyle('#333333')
+    ctx.setFontSize(34)
+    ctx.fillText(userNickname.value || '用户', leftX, infoStartY)
+
+    // 基本信息行
+    const basicParts: string[] = []
+    if (userAge.value) basicParts.push(`${userAge.value}岁`)
+    if (userHeight.value) basicParts.push(`${userHeight.value}cm`)
+    if (userEducation.value) basicParts.push(userEducation.value)
+    const basicText = basicParts.join(' · ')
+    ctx.setFillStyle('#999999')
+    ctx.setFontSize(24)
+    ctx.fillText(basicText, leftX, infoStartY + 40)
+
+    // 分隔线
+    const divider1Y = infoStartY + 70
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.beginPath()
+    ctx.moveTo(leftX, divider1Y)
+    ctx.lineTo(canvasWidth - 50, divider1Y)
+    ctx.stroke()
+
+    // 两列信息
+    const infoItems = [
+      { label: 'ID', value: `:${userId.value || '---'}` },
+      { label: '婚况', value: `:${userMaritalStatus.value || '---'}` },
+      { label: '年龄', value: `:${userAge.value ? userAge.value + '岁' : '---'}` },
+      { label: '身高', value: `:${userHeight.value ? userHeight.value + 'cm' : '---'}` },
+      { label: '学历', value: `:${userEducation.value || '---'}` },
+      { label: '月薪', value: `:${userIncome.value || '---'}` },
+      { label: '职业', value: `:${userOccupation.value || '---'}` },
+      { label: '籍贯', value: `:${userHometown.value || '---'}` },
+    ]
+
+    const rowH = 46
+    const col1X = leftX
+    const col2X = rightX
+
+    infoItems.forEach((item, i) => {
+      const col = i % 2 === 0 ? col1X : col2X
+      const row = Math.floor(i / 2)
+      const y = divider1Y + 30 + row * rowH
+
+      ctx.setFillStyle('#999999')
+      ctx.setFontSize(22)
+      ctx.fillText(item.label, col, y)
+
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(24)
+      ctx.fillText(item.value, col + 90, y)
+    })
+
+    const infoEndY = divider1Y + 30 + 4 * rowH + 20
+
+    // 分割线
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.beginPath()
+    ctx.moveTo(leftX, infoEndY)
+    ctx.lineTo(canvasWidth - 50, infoEndY)
+    ctx.stroke()
+
+    // 择偶要求
+    if (partnerRequirements.value) {
+      const partnerY = infoEndY + 30
+      ctx.setFillStyle('#FF6B9D')
+      ctx.setFontSize(22)
+      ctx.fillText('择偶要求', leftX, partnerY)
+
+      // 换行绘制择偶要求
+      const maxWidth = canvasWidth - 100
+      ctx.setFillStyle('#333333')
+      ctx.setFontSize(24)
+      const reqLines = wrapText(ctx, partnerRequirements.value, maxWidth, 4)
+      reqLines.forEach((line, i) => {
+        ctx.fillText(line, leftX, partnerY + 36 + i * 36)
+      })
+    }
+
+    // 底部：二维码 + 品牌
+    const footerY = canvasHeight - 220
+    ctx.setStrokeStyle('#F0F0F0')
+    ctx.setLineWidth(2)
+    ctx.beginPath()
+    ctx.moveTo(leftX, footerY)
+    ctx.lineTo(canvasWidth - 50, footerY)
+    ctx.stroke()
+
+    // 左侧品牌
     ctx.setFillStyle('#FF6B9D')
-    ctx.fillRect(0, 0, canvasWidth, 8)
+    ctx.setFontSize(30)
+    ctx.fillText(appName.value, leftX, footerY + 50)
 
-    // 3. 圆形头像
-    await drawAvatar(ctx, userData.avatar)
+    ctx.setFillStyle('#CCCCCC')
+    ctx.setFontSize(20)
+    ctx.fillText('值得信赖的相亲平台', leftX, footerY + 80)
 
-    // 4. 昵称
-    drawNickname(ctx, userData.nickname, template)
+    // 右侧二维码
+    const qrSize = 160
+    const qrX = canvasWidth - 50 - qrSize
+    const qrY = footerY + 16
 
-    // 5. 分隔线（昵称下方）
-    ctx.beginPath()
+    ctx.setFillStyle('#FFFFFF')
     ctx.setStrokeStyle('#F0F0F0')
     ctx.setLineWidth(2)
-    ctx.moveTo(PADDING + 120, NICKNAME_Y + 12)
-    ctx.lineTo(canvasWidth - PADDING - 120, NICKNAME_Y + 12)
-    ctx.stroke()
+    ctx.fillRect(qrX, qrY, qrSize, qrSize)
+    ctx.strokeRect(qrX, qrY, qrSize, qrSize)
 
-    // 6. 两列信息
-    drawUserInfo(ctx, userData, template)
+    // 尝试加载二维码图片
+    try {
+      const qrUrl = `${getServerBaseUrl()}/qr/4.png`
+      const qrTempPath = await downloadImage(qrUrl)
+      ctx.drawImage(qrTempPath, qrX + 8, qrY + 8, qrSize - 16, qrSize - 16)
+    } catch {
+      ctx.setFillStyle('#F5F5F5')
+      ctx.fillRect(qrX + 8, qrY + 8, qrSize - 16, qrSize - 16)
+      ctx.setFillStyle('#CCCCCC')
+      ctx.setFontSize(18)
+      ctx.fillText('小程序码', qrX + qrSize / 2 - 36, qrY + qrSize / 2 + 6)
+    }
 
-    // 7. 信息区底部分隔线
-    ctx.beginPath()
-    ctx.setStrokeStyle('#F0F0F0')
-    ctx.setLineWidth(2)
-    ctx.moveTo(PADDING, DIVIDER_Y)
-    ctx.lineTo(canvasWidth - PADDING, DIVIDER_Y)
-    ctx.stroke()
+    // 二维码下方文字
+    ctx.setFillStyle('#666666')
+    ctx.setFontSize(18)
+    const qrTip = '长按识别认识TA'
+    const qrTipW = ctx.measureText(qrTip).width
+    ctx.fillText(qrTip, qrX + qrSize / 2 - qrTipW / 2, qrY + qrSize + 24)
 
-    // 9. 底部分隔线
-    const afterIntroY = INTRO_Y + INTRO_MAX_LINES * INTRO_LINE_HEIGHT + 30
-    ctx.beginPath()
-    ctx.setStrokeStyle('#F0F0F0')
-    ctx.setLineWidth(2)
-    ctx.moveTo(PADDING, afterIntroY)
-    ctx.lineTo(canvasWidth - PADDING, afterIntroY)
-    ctx.stroke()
-
-    // 10. 小程序码（从完整 URL 下载真实图片）
-    await drawQRCode(ctx, template)
-
-    // 11. 底部 footer
-    drawFooter(ctx)
+    ctx.setFillStyle('#CCCCCC')
+    ctx.setFontSize(16)
+    const fromText = `来自${appName.value}`
+    const fromW = ctx.measureText(fromText).width
+    ctx.fillText(fromText, qrX + qrSize / 2 - fromW / 2, qrY + qrSize + 48)
 
     ctx.draw()
 
@@ -248,23 +595,22 @@ const generatePoster = async (template: PosterTemplate) => {
         try {
           const res = await new Promise<{ tempFilePath: string }>((resolve, reject) => {
             uni.canvasToTempFilePath({
-              canvasId,
+              canvasId: 'poster-canvas',
               quality: 0.9,
               success: (res) => resolve(res as { tempFilePath: string }),
               fail: reject,
             })
           })
-
           generatedImagePath.value = res.tempFilePath
           showLoading.value = false
           showPreview.value = true
-
           await trackShareEvent(template.id)
         } catch (e) {
           console.error('canvas to temp file error', e)
           showLoading.value = false
           uni.showToast({ title: '生成失败', icon: 'none' })
         }
+        resolve()
       }, 500)
     })
   } catch (e) {
@@ -274,276 +620,52 @@ const generatePoster = async (template: PosterTemplate) => {
   }
 }
 
-// ==================== Canvas 绘制函数 ====================
-
-/** 绘制圆形头像 */
-const drawAvatar = async (ctx: any, avatarUrl: string) => {
-  const cx = canvasWidth / 2
-  const cy = AVATAR_Y + AVATAR_SIZE / 2
-  const r = AVATAR_SIZE / 2
-
-  // 绘制底部粉色光环
-  ctx.beginPath()
-  ctx.arc(cx, cy, r + 8, 0, 2 * Math.PI)
-  ctx.setFillStyle('#FFF0F3')
-  ctx.fill()
-
-  try {
-    const fullUrl = getFullImageUrl(avatarUrl) || avatarUrl
-    const tempFilePath = await downloadImage(fullUrl)
-
-    // 圆形裁剪
-    ctx.save()
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, 0, 2 * Math.PI)
-    ctx.clip()
-
-    // 绘制头像图片，居中填充
-    ctx.drawImage(tempFilePath, cx - r, cy - r, AVATAR_SIZE, AVATAR_SIZE)
-    ctx.restore()
-  } catch (_) {
-    // 加载失败：显示默认占位圆
-    ctx.beginPath()
-    ctx.arc(cx, cy, r, 0, 2 * Math.PI)
-    ctx.setFillStyle('#FFE0E8')
-    ctx.fill()
-    ctx.setFillStyle('#FF6B9D')
-    ctx.setFontSize(48)
-    ctx.fillText('?', cx - 14, cy + 16)
+const drawPhoto = async (ctx: any, photoH: number) => {
+  if (userPhotoUrl.value) {
+    try {
+      const tempPath = await downloadImage(userPhotoUrl.value)
+      ctx.drawImage(tempPath, 0, 0, canvasWidth, photoH)
+      return
+    } catch { /* fallback */ }
   }
+  // 占位渐变
+  const grad = ctx.createLinearGradient(0, 0, canvasWidth, photoH)
+  grad.addColorStop(0, '#FFE4EC')
+  grad.addColorStop(1, '#FFF0F5')
+  ctx.setFillStyle(grad)
+  ctx.fillRect(0, 0, canvasWidth, photoH)
 }
 
-/** 绘制昵称 */
-const drawNickname = (ctx: any, nickname: string, template: PosterTemplate) => {
-  const name = nickname || `${systemStore.appName}用户`
-  ctx.setFillStyle('#333333')
-  ctx.setFontSize(36)
-  const nameWidth = ctx.measureText(name).width
-  const nameX = (canvasWidth - nameWidth) / 2
-  ctx.fillText(name, nameX, NICKNAME_Y)
-}
-
-/** 两列信息 */
-const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: PosterTemplate) => {
-  type InfoRow = { label: string; value: string }
-
-  // 左列
-  const leftItems: InfoRow[] = [
-    { label: 'ID', value: `:${userData.id || '---'}` },
-    { label: '婚况', value: `:${userData.maritalStatus as string || '---'}` },
-    { label: '年龄', value: `:${userData.age ? (userData.age as number) + '岁' : '---'}` },
-    { label: '职业', value: `:${(userData.occupation as string) || '---'}` },
-  ]
-
-  // 右列
-  const rightItems: InfoRow[] = [
-    { label: '身高', value: `:${userData.height ? (userData.height as number) + 'cm' : '---'}` },
-    { label: '学历', value: `:${(userData.education as string) || '---'}` },
-    { label: '月薪', value: `:${(userData.incomeRange as string) || '---'}` },
-    { label: '籍贯', value: `:${((userData.hometown as string) || '---').replace(/\//g, ',')}` },
-  ]
-
-  const colGap = 60 // 两列间距
-  const colWidth = (canvasWidth - PADDING * 2 - colGap) / 2
-
-  // 标签列固定宽度，值列自适应
-  const labelWidth = 80
-
-  const drawInfoRow = (
-    items: InfoRow[],
-    xBase: number,
-  ) => {
-    items.forEach((item, index) => {
-      const y = INFO_Y + index * ROW_HEIGHT
-
-      // 标签：灰色、右对齐
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(22)
-      const labelW = ctx.measureText(item.label).width
-      ctx.fillText(item.label, xBase + labelWidth - labelW, y)
-
-      // 值：深色、左对齐
-      ctx.setFillStyle('#333333')
-      ctx.setFontSize(24)
-      ctx.fillText(item.value, xBase + labelWidth + 12, y)
-    })
-  }
-
-  const leftX = PADDING
-  const rightX = leftX + colWidth + colGap
-
-  drawInfoRow(leftItems, leftX)
-  drawInfoRow(rightItems, rightX)
-}
-
-/** 文字自动换行 */
 const wrapText = (ctx: any, text: string, maxWidth: number, maxLines: number): string[] => {
   const chars = text.split('')
   const lines: string[] = []
   let currentLine = ''
-
   for (const char of chars) {
     const testLine = currentLine + char
-    const testWidth = ctx.measureText(testLine).width
-
-    if (testWidth > maxWidth && currentLine) {
+    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
       lines.push(currentLine)
       currentLine = char
-
-      if (lines.length >= maxLines) {
-        break
-      }
+      if (lines.length >= maxLines) break
     } else {
       currentLine = testLine
     }
   }
-
-  if (lines.length < maxLines && currentLine) {
-    lines.push(currentLine)
+  if (lines.length < maxLines && currentLine) lines.push(currentLine)
+  if (lines.length >= maxLines && currentLine.length > lines[lines.length - 1]?.length + 2) {
+    lines[lines.length - 1] = lines[lines.length - 1].substring(0, lines[lines.length - 1].length - 1) + '…'
   }
-
-  if (lines.length >= maxLines) {
-    const lastLine = lines[lines.length - 1]
-    if (lastLine.length + 2 < currentLine.length) {
-      lines[lines.length - 1] = lastLine.substring(0, lastLine.length - 1) + '…'
-    }
-  }
-
   return lines
-}
-
-/** 底部小程序码 */
-const drawQRCode = async (ctx: any, template: PosterTemplate) => {
-  const qrSize = 180
-  const qrX = canvasWidth - PADDING - qrSize
-  const qrY = canvasHeight - qrSize - 100
-
-  // 小程序码白色背景 + 边框
-  ctx.setFillStyle('#FFFFFF')
-  ctx.setStrokeStyle(template.tagColor)
-  ctx.setLineWidth(3)
-  ctx.beginPath()
-  ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
-  ctx.fill()
-  ctx.stroke()
-
-  // 尝试加载真实小程序码图片（后台返回完整 URL）
-  const qrCodeUrl = `${getServerBaseUrl()}/qr/4.png`
-
-  try {
-    const tempFilePath = await downloadImage(qrCodeUrl)
-    ctx.save()
-    ctx.beginPath()
-    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
-    ctx.clip()
-    ctx.drawImage(tempFilePath, qrX, qrY, qrSize, qrSize)
-    ctx.restore()
-  } catch (_) {
-    // 加载失败：显示灰色占位
-    ctx.setFillStyle('#F5F5F5')
-    ctx.beginPath()
-    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
-    ctx.fill()
-    ctx.setFillStyle('#CCCCCC')
-    ctx.setFontSize(16)
-    ctx.fillText('小程序码', qrX + qrSize / 2 - 32, qrY + qrSize / 2 + 6)
-  }
-}
-
-/** 底部文字 */
-const drawFooter = (ctx: any) => {
-  const qrSize = 180
-  const qrBottom = canvasHeight - 100 // QR 图底部 Y
-  const textY1 = qrBottom + 24
-  const textY2 = textY1 + 22
-  const textY3 = textY2 + 22
-
-  // 左侧：品牌名
-  ctx.setFillStyle('#FF6B9D')
-  ctx.setFontSize(28)
-  ctx.fillText(systemStore.appName, PADDING, qrBottom - qrSize / 2 + 40)
-
-  ctx.setFillStyle('#CCCCCC')
-  ctx.setFontSize(18)
-  ctx.fillText('值得信赖的相亲平台', PADDING, qrBottom - qrSize / 2 + 68)
-
-  // 右侧：二维码下方说明（居中对齐于 QR 码）
-  const qrCenterX = canvasWidth - PADDING - qrSize / 2
-
-  ctx.setFillStyle('#666666')
-  ctx.setFontSize(18)
-  const line1 = '长按识别认识TA'
-  const line1W = ctx.measureText(line1).width
-  ctx.fillText(line1, qrCenterX - line1W / 2, textY1)
-
-  ctx.setFillStyle('#CCCCCC')
-  ctx.setFontSize(16)
-  const line2 = `来自${systemStore.appName}`
-  const line2W = ctx.measureText(line2).width
-  ctx.fillText(line2, qrCenterX - line2W / 2, textY2)
-
-  const line3 = '值得您信赖的相亲平台'
-  const line3W = ctx.measureText(line3).width
-  ctx.fillText(line3, qrCenterX - line3W / 2, textY3)
-}
-
-// ==================== 数据与工具函数 ====================
-
-const fetchUserData = async () => {
-  try {
-    const res = await request({
-      url: `/users/${userId.value}`,
-      method: 'GET',
-    })
-
-    const userData = (res as Record<string, unknown>).user || res
-
-    if (userData && (userData as Record<string, unknown>).birthYear && !(userData as Record<string, unknown>).age) {
-      (userData as Record<string, unknown>).age =
-        new Date().getFullYear() - ((userData as Record<string, unknown>).birthYear as number)
-    }
-
-    // 处理图片 URL
-    if (userData && (userData as Record<string, unknown>).avatar) {
-      (userData as Record<string, unknown>).avatar = getFullImageUrl(
-        (userData as Record<string, unknown>).avatar as string,
-      )
-    }
-
-    return userData as Record<string, unknown>
-  } catch (e) {
-    console.error('fetch user data error', e)
-    return {
-      id: userId.value,
-      nickname: '用户',
-      avatar: '',
-      age: 26,
-      height: 168,
-      education: '本科',
-      incomeRange: '8千-1.2万',
-      maritalStatus: '未婚',
-    }
-  }
 }
 
 const downloadImage = (url: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (!url) {
-      reject(new Error('No URL'))
-      return
-    }
-
-    // 确保使用完整 URL
+    if (!url) { reject(new Error('No URL')); return }
     const fullUrl = url.startsWith('http') ? url : getFullImageUrl(url)
-
     uni.downloadFile({
       url: fullUrl,
       success: (res) => {
-        if (res.statusCode === 200) {
-          resolve(res.tempFilePath)
-        } else {
-          reject(new Error('Download failed with status ' + res.statusCode))
-        }
+        if (res.statusCode === 200) resolve(res.tempFilePath)
+        else reject(new Error('Download failed'))
       },
       fail: reject,
     })
@@ -555,14 +677,9 @@ const trackShareEvent = async (templateId: number) => {
     await request({
       url: '/poster/track',
       method: 'POST',
-      data: {
-        userId: userId.value,
-        templateId,
-      },
+      data: { userId: userId.value, templateId },
     })
-  } catch (e) {
-    console.error('track share event error', e)
-  }
+  } catch { /* ignore */ }
 }
 
 const closePreview = () => {
@@ -572,21 +689,16 @@ const closePreview = () => {
 const savePoster = async () => {
   try {
     uni.showLoading({ title: '保存中...' })
-
     await new Promise<void>((resolve, reject) => {
       uni.saveImageToPhotosAlbum({
         filePath: generatedImagePath.value,
         success: () => {
           uni.hideLoading()
-          uni.showToast({
-            title: '已保存到相册',
-            icon: 'success',
-          })
+          uni.showToast({ title: '已保存到相册', icon: 'success' })
           resolve()
         },
         fail: (err) => {
           uni.hideLoading()
-
           if (err.errMsg.includes('auth deny')) {
             uni.authorize({
               scope: 'scope.writePhotosAlbum',
@@ -620,7 +732,7 @@ const savePoster = async () => {
 <style lang="scss" scoped>
 .poster-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #FAFAFA;
 }
 
 .poster-canvas {
@@ -629,122 +741,404 @@ const savePoster = async () => {
   top: 0;
 }
 
+// ===== 导航栏（适配安全区） =====
 .nav-bar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 88rpx;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+}
+
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  height: 88rpx;
+  padding: 0 24rpx;
 }
 
-.nav-left,
-.nav-right {
-  width: 100rpx;
+.nav-left {
+  width: 56rpx; height: 56rpx;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .back-icon {
-  font-size: 40rpx;
-  color: #333;
+  font-size: 40rpx; color: #333; font-weight: 500;
 }
 
 .nav-title {
-  font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  font-size: 32rpx; font-weight: bold; color: #333;
 }
 
-.page-content {
-  padding-top: 108rpx;
-  padding: 108rpx 32rpx 32rpx;
+.nav-right {
+  width: 56rpx; height: 56rpx;
+  display: flex; align-items: center; justify-content: center;
 }
 
-.tip-text {
+.nav-more-icon {
+  font-size: 38rpx; color: #333;
+}
+
+// ===== 页面主体 =====
+.page-body {
+  min-height: 100vh;
+}
+
+// ===== 模板选择区 =====
+.section-hint {
   text-align: center;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #999;
-  margin-bottom: 32rpx;
+  padding: 24rpx 0 20rpx;
 }
 
 .template-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20rpx;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 24rpx;
+  gap: 16rpx;
 }
 
-.template-item {
-  background-color: #fff;
-  border-radius: 16rpx;
+.template-card {
+  width: calc(50% - 8rpx);
+  background: #fff;
+  border-radius: 18rpx;
   overflow: hidden;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
 }
 
-.template-preview {
+.card-preview {
+  width: 100%;
+  height: 360rpx;
   position: relative;
-  height: 400rpx;
   overflow: hidden;
 }
 
-.preview-photo {
+.card-photo-area {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-.preview-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 16rpx;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.5));
+.card-photo {
+  width: 100%;
+  height: 100%;
 }
 
-.preview-info {
+.card-photo-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 20rpx 16rpx 14rpx;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
   display: flex;
   flex-direction: column;
   gap: 4rpx;
 }
 
-.preview-id {
-  font-size: 22rpx;
+.card-info-text {
+  font-size: 20rpx;
   color: #fff;
+  line-height: 1.3;
 }
 
-.preview-basic {
-  font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.preview-tag {
+.card-tag {
   position: absolute;
-  top: 16rpx;
-  right: 16rpx;
+  top: 12rpx;
+  right: 12rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  color: #fff;
+}
+
+.card-bottom-info {
+  position: absolute;
+  bottom: 60rpx;
+  left: 16rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-bottom-name {
+  font-size: 26rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.card-bottom-detail {
+  font-size: 20rpx;
+  color: #666;
+  margin-top: 4rpx;
+}
+
+.card-side-info {
+  position: absolute;
+  bottom: 50rpx;
+  left: 16rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.card-side-avatar {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2rpx solid #fff;
+}
+
+.card-side-avatar-img {
+  width: 100%;
+  height: 100%;
+}
+
+.card-side-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-side-name {
+  font-size: 24rpx;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.3);
+}
+
+.card-side-detail {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.card-simple-footer {
+  position: absolute;
+  bottom: 40rpx;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.card-footer-text {
+  font-size: 24rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.card-name {
+  display: block;
+  text-align: center;
+  font-size: 24rpx;
+  color: #333;
+  padding: 14rpx 0;
+}
+
+// ===== 预览区 =====
+.preview-section {
+  padding: 0 24rpx 40rpx;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80rpx;
+}
+
+.preview-back-btn {
+  width: 56rpx; height: 56rpx;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.preview-title {
+  font-size: 30rpx; font-weight: bold; color: #333;
+}
+
+.preview-placeholder {
+  width: 56rpx;
+}
+
+.preview-hint {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  padding: 8rpx 0 24rpx;
+}
+
+// ===== 海报预览卡片 =====
+.poster-preview-card {
+  background: #fff;
+  border-radius: 28rpx;
+  overflow: hidden;
+  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.12);
+  margin-bottom: 32rpx;
+}
+
+.poster-photo-section {
+  position: relative;
+  width: 100%;
+  height: 500rpx;
+  overflow: hidden;
+}
+
+.poster-photo {
+  width: 100%;
+  height: 100%;
+}
+
+.auth-badge {
+  position: absolute;
+  top: 20rpx;
+  left: 20rpx;
   padding: 8rpx 16rpx;
-  border-radius: 8rpx;
+  background: linear-gradient(135deg, #D4AF37, #F0D060);
+  border-radius: 20rpx;
+}
+
+.auth-badge-text {
+  font-size: 20rpx;
+  color: #fff;
+  font-weight: 500;
+}
+
+.poster-tag {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 10rpx 22rpx;
+  border-radius: 24rpx;
   font-size: 22rpx;
   color: #fff;
 }
 
-.template-name {
-  padding: 16rpx;
+.poster-info-section {
+  padding: 28rpx 28rpx 0;
+}
+
+.poster-info-row {
+  display: flex;
+  margin-bottom: 18rpx;
+}
+
+.poster-info-col {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+}
+
+.info-label {
+  font-size: 24rpx;
+  color: #999;
+  min-width: 60rpx;
+}
+
+.info-value {
   font-size: 26rpx;
   color: #333;
-  text-align: center;
+  margin-left: 8rpx;
 }
 
+.poster-partner-section {
+  padding: 0 28rpx 0;
+  margin-top: 8rpx;
+}
+
+.partner-section-title {
+  font-size: 22rpx;
+  color: #FF6B9D;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.partner-section-text {
+  font-size: 24rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.poster-divider {
+  height: 1rpx;
+  background: #F0F0F0;
+  margin: 24rpx 28rpx;
+}
+
+.poster-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28rpx 28rpx;
+}
+
+.poster-brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: 28rpx;
+  color: #FF6B9D;
+  font-weight: 600;
+}
+
+.brand-desc {
+  font-size: 20rpx;
+  color: #CCC;
+  margin-top: 4rpx;
+}
+
+.poster-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.qr-img {
+  width: 120rpx;
+  height: 120rpx;
+  border: 2rpx solid #F0F0F0;
+  border-radius: 8rpx;
+}
+
+.qr-tip {
+  font-size: 18rpx;
+  color: #666;
+  margin-top: 4rpx;
+}
+
+// ===== 预览区底部操作 =====
+.preview-actions {
+  display: flex;
+  justify-content: center;
+  gap: 32rpx;
+  padding: 0 24rpx;
+}
+
+.preview-action-btn {
+  flex: 1;
+  max-width: 280rpx;
+  height: 84rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 44rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.cancel-btn {
+  background: #F5F5F5;
+  color: #666;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  color: #fff;
+}
+
+// ===== 加载遮罩 =====
 .loading-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -768,9 +1162,7 @@ const savePoster = async () => {
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .loading-text {
@@ -778,73 +1170,62 @@ const savePoster = async () => {
   color: #fff;
 }
 
+// ===== 预览弹窗（Canvas 生成的图片） =====
 .preview-popup {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.preview-overlay {
+.preview-popup-mask {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
 }
 
-.preview-card {
+.preview-popup-card {
   position: relative;
-  width: 90%;
-  max-width: 600rpx;
-  background-color: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx;
   z-index: 1;
+  width: 88%;
+  max-width: 660rpx;
+  background: #fff;
+  border-radius: 28rpx;
+  padding: 28rpx;
 }
 
-.preview-tip {
+.popup-hint {
   text-align: center;
-  font-size: 24rpx;
+  font-size: 22rpx;
   color: #999;
-  margin-bottom: 20rpx;
+  display: block;
+  margin-bottom: 16rpx;
 }
 
-.preview-image {
+.popup-image {
   width: 100%;
   border-radius: 12rpx;
+  display: block;
 }
 
-.preview-actions {
+.popup-actions {
   display: flex;
-  justify-content: space-around;
-  margin-top: 32rpx;
+  justify-content: center;
   gap: 24rpx;
+  margin-top: 24rpx;
 }
 
-.action-btn {
+.popup-btn {
   flex: 1;
-  height: 80rpx;
+  max-width: 240rpx;
+  height: 76rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 40rpx;
-  font-size: 30rpx;
-}
-
-.cancel-btn {
-  background-color: #f5f5f5;
-  color: #666;
-}
-
-.save-btn {
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  color: #fff;
+  font-size: 28rpx;
+  font-weight: 500;
 }
 </style>
