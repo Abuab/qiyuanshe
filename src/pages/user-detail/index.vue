@@ -106,7 +106,10 @@
               <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
             </view>
           </view>
+        </view>
 
+        <!-- ========== 生日星座 + 职业 + 家乡 + 现居 ========== -->
+        <view class="info-tags-row">
           <!-- 生日星座 + 职业 同行 -->
           <view class="info-row-two" v-if="profileData.basicInfo.birthDay || profileData.basicInfo.occupation">
             <view v-if="profileData.basicInfo.birthDay" class="info-chip left-chip">
@@ -119,12 +122,14 @@
             </view>
           </view>
 
-          <!-- 户籍 + 现居（chip 风格） -->
+          <!-- 户籍 + 现居 -->
           <view class="info-row-two" v-if="profileData.basicInfo.hometown || profileData.basicInfo.residence">
             <view v-if="profileData.basicInfo.hometown" class="info-chip loc-chip">
+              <text class="loc-label-text">家乡</text>
               <text>{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
             </view>
             <view v-if="profileData.basicInfo.residence" class="info-chip loc-chip">
+              <text class="loc-label-text">现居</text>
               <text>{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
             </view>
           </view>
@@ -1251,7 +1256,7 @@ $text-hint: #999999;
 
 .info-left {
   display: flex; flex-direction: column; flex: 1; min-width: 0;
-  padding-top: 26rpx;
+  padding-top: 32rpx;
 }
 
 .info-name-id {
@@ -1272,7 +1277,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 4rpx; font-weight: 400;
+  font-size: 28rpx; color: $text-hint; padding-top: 0rpx; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====
@@ -1306,6 +1311,11 @@ $text-hint: #999999;
   100% { transform: scale(1); }
 }
 
+// ===== 生日星座 + 职业 + 家乡 + 现居（info-card 外） =====
+.info-tags-row {
+  padding: 0 28rpx 16rpx;
+}
+
 // ===== 生日星座 + 职业 同行 =====
 .info-row-two {
   display: flex; gap: 16rpx; margin-bottom: 18rpx; flex-wrap: wrap;
@@ -1328,14 +1338,19 @@ $text-hint: #999999;
 .chip-emoji { font-size: 24rpx; flex-shrink: 0; }
 
 .loc-chip {
-  background: transparent; color: $text;
+  background: #F5F5F5; color: $text;
+  gap: 4rpx;
+}
+
+.loc-label-text {
+  font-size: 20rpx; color: $text-hint; flex-shrink: 0;
 }
 
 // ===== 基本资料 =====
 .basic-line {
   display: flex; align-items: baseline; flex-wrap: wrap;
   font-size: 26rpx; color: #333; margin-bottom: 0;
-  margin-top: 20rpx;
+  margin-top: 14rpx;
 }
 
 .dot { margin: 0 8rpx; color: #ddd; }
@@ -1466,7 +1481,7 @@ $text-hint: #999999;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #333; font-weight: 500; }
+.pt-value { font-size: 22rpx; color: #333; font-weight: 400; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
