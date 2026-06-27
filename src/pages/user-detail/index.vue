@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -20rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -28rpx;
 }
 
 .info-nickname {
@@ -1264,7 +1264,7 @@ $text-hint: #999999;
   display: inline-block;
   font-style: italic;
   font-size: 28rpx;
-  font-weight: 600; color: #fff; background-color: #aaa;
+  font-weight: 500; color: #fff; background-color: #aaa;
    padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
    vertical-align: baseline; margin-right: 4rpx;
 }
@@ -1370,7 +1370,7 @@ $text-hint: #999999;
 
 .auth-remind-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 50%; padding: 20rpx 0;
+  width: 50%; padding: 14rpx 0;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA3); border-radius: 48rpx;
 }
 
@@ -1545,7 +1545,7 @@ $text-hint: #999999;
 }
 
 .bb-btn {
-  height: 88rpx; display: inline-flex; align-items: center; justify-content: center;
+  height: 76rpx; display: inline-flex; align-items: center; justify-content: center;
   border-radius: 44rpx; font-size: 30rpx; font-weight: 400; color: #fff;
   padding: 0 48rpx; flex-shrink: 0;
 }
