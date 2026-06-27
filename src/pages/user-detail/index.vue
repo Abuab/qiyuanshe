@@ -18,7 +18,7 @@
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
-        <view class="hero-section" :style="{ paddingTop: (statusBarHeight + 88) + 'px' }">
+        <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px' }">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
@@ -29,7 +29,7 @@
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
           <!-- 右上角分享按钮 -->
-          <view class="hero-share-btn" :style="{ top: (statusBarHeight + 88) + 'px' }" @tap="openSharePopup">
+          <view class="hero-share-btn" :style="{ top: frostTotalHeight + 'px' }" @tap="openSharePopup">
             <uni-icons type="redo" size="40rpx" color="#fff"></uni-icons>
           </view>
           <!-- 模糊照片上的上传引导 -->
@@ -658,6 +658,15 @@ const statusBarHeight = computed(() => {
   try {
     return uni.getSystemInfoSync().statusBarHeight || 44
   } catch { return 44 }
+})
+// frost 卡片总高度（px）：statusBarHeight + frost-inner 的 88rpx 转为 px
+const frostTotalHeight = computed(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  const statusBarH = sysInfo.statusBarHeight || 44
+  const screenWidth = sysInfo.screenWidth || 390
+  const rpxRatio = screenWidth / 750
+  const frostInnerPx = 88 * rpxRatio // 88rpx → px
+  return statusBarH + frostInnerPx
 })
 const safeAreaBottom = computed(() => {
   const sysInfo = uni.getSystemInfoSync()

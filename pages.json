@@ -42,7 +42,8 @@
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "个人主页",
-        "enablePullDownRefresh": false
+        "enablePullDownRefresh": false,
+        "disableScroll": true
       }
     },
     {
