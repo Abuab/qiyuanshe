@@ -74,13 +74,13 @@ const onTouchEnd = () => {
 .hi-text {
   font-size: 28rpx;
   font-weight: bold;
-  color: #fff;
+  color: #C62828;
   line-height: 1.2;
 }
 
 .label-text {
   font-size: 20rpx;
-  color: #fff;
+  color: #C62828;
   line-height: 1.2;
 }
 </style>

@@ -309,31 +309,70 @@ export class AiMatchmakerService {
       }
     }
 
-    // 5. 搜索意图检测 → 在调用 AI 之前搜索用户库（AI 可引用搜索结果）
+    // 5. 搜索用户库
     let users: MatchmakerSearchUser[] | undefined
     let searchContext = ''
-    if (this.isSearchIntent(message)) {
+    const isSearch = this.isSearchIntent(message)
+    this.logger.log(`[AI红娘] 搜索意图预检: isSearch=${isSearch}, message="${message.slice(0, 30)}"`)
+
+    if (isSearch) {
       try {
-        const filters = await this.parseSearchFilters(message, user.gender)
+        // 先执行简单解析
+        let filters: MatchmakerSearchFilters | null = this.parseSearchFiltersSimple(message, user.gender)
+        this.logger.log(`[AI红娘] 简单解析结果: ${JSON.stringify(filters)}`)
+
+        // 如果简单解析无结果，但用户有性别，构造默认搜索（搜异性）
+        if (!filters && user.gender != null) {
+          filters = { gender: user.gender === 1 ? 2 : 1, limit: 5 }
+          this.logger.log(`[AI红娘] 简单解析无结果，使用默认异性搜索: gender=${filters.gender}`)
+        }
+
+        // AI 增强解析
+        if (filters && (await this.aiApiService.isConfigured())) {
+          try {
+            const aiFilters = await this.parseSearchFilters(message, user.gender)
+            this.logger.log(`[AI红娘] AI解析结果: ${JSON.stringify(aiFilters)}`)
+            if (aiFilters) {
+              filters = aiFilters
+            }
+          } catch (e: any) {
+            this.logger.warn(`[AI红娘] AI搜索解析失败，沿用简单解析: ${e?.message}`)
+          }
+        }
+
         if (filters) {
           users = await this.searchUsers(filters, userId)
+          this.logger.log(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
+
+          // 如果没搜到，用更宽松的条件再搜一次（仅性别 + 更大 limit）
+          if (users.length === 0 && filters.gender) {
+            this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
+            users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
+            this.logger.log(`[AI红娘] 宽松搜索: 找到 ${users.length} 位用户`)
+          }
+
           if (users.length > 0) {
             searchContext = users.map((u, i) =>
               `${i + 1}. ${u.nickname}，${u.gender === 1 ? '男' : '女'}，${u.age}岁，${u.height ? u.height + 'cm' : ''}，${u.education || ''}，${u.residence || u.hometown || ''}`
             ).join('\n')
+            this.logger.log(`[AI红娘] 搜索上下文: ${searchContext.slice(0, 200)}`)
+          } else {
+            this.logger.log(`[AI红娘] 搜索无结果，可能数据库无匹配用户`)
           }
+        } else {
+          this.logger.log(`[AI红娘] 无法提取搜索条件，跳过搜索`)
         }
       } catch (e: any) {
-        this.logger.warn(`[AI红娘] 搜索解析失败: ${e?.message}`)
+        this.logger.warn(`[AI红娘] 搜索流程异常: ${e?.message}`)
       }
     }
 
     // 6. 获取对话历史
     const history = await this.getContext(userId)
 
-    // 7. 搜索到的用户上下文（注入到 system prompt）
+    // 7. 搜索到的用户上下文（注入到 system prompt，放在最前面，加粗强调）
     const userSearchHint = searchContext
-      ? `\n\n【本轮搜索结果 - 请必须引用】平台用户库里已匹配到以下用户，你必须一一介绍给他们：\n${searchContext}`
+      ? `\n\n【🔴 重要指令 - 本轮搜索结果 - 必须逐条介绍】\n系统已从平台用户库中匹配到以下${users!.length}位用户。你必须逐一介绍每位用户的昵称、性别、年龄、身高、学历、所在地，并给出推荐理由。禁止说"我无法搜索"或"我不能查看"。以下是要推荐的用户：\n${searchContext}`
       : ''
 
     // 8. 记录调用日志
@@ -378,6 +417,21 @@ export class AiMatchmakerService {
 
     savedCallLog.responseMs = Date.now() - startMs
     await this.callLogRepo.save(savedCallLog)
+
+    // 9.5 后置检查：如果搜到了用户但 AI 回复中未提及任何用户昵称，则强制追加推荐列表
+    if (users?.length) {
+      const mentionedNicknames = users.filter(u => reply.includes(u.nickname))
+      this.logger.log(
+        `[AI红娘] 后置检查: AI回复中提到了 ${mentionedNicknames.length}/${users.length} 位用户昵称`,
+      )
+      if (mentionedNicknames.length === 0) {
+        const userListText = users.slice(0, 5).map((u, i) =>
+          `${i + 1}. ${u.nickname}（${u.gender === 1 ? '男' : '女'}，${u.age}岁，${u.height ? u.height + 'cm，' : ''}${u.education || ''}，${u.residence || u.hometown || ''}）`
+        ).join('\n')
+        reply = `为你匹配到以下平台用户，可以了解一下哦～\n\n${userListText}\n\n${reply}`
+        this.logger.log(`[AI红娘] 后置检查: AI未提及用户，已强制追加推荐列表`)
+      }
+    }
 
     // 10. 输出敏感词安全审计
     const outputCheck = await this.safetyService.checkAndAudit(reply, savedCallLog.id)
