@@ -281,7 +281,16 @@ const aiProfileText = ref('')        // AI 个人印象文本
 const profileGenLoading = ref(false) // AI 印象生成中
 
 // 会员卡片轮播
-const vipCardTexts = computed(() => systemStore.vipCardTexts || ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA'])
+// 会员卡片轮播（3条，可从后台 /system/config 的 vipCardTexts 字段配置）
+const vipCardTexts = computed(() => {
+  const texts = systemStore.vipCardTexts || []
+  const defaults = ['限时特惠，尊享VIP特权', '每日签到领金币，解锁更多功能', '开通VIP，优先匹配心仪TA']
+  const result: string[] = []
+  for (let i = 0; i < 3; i++) {
+    result.push(texts[i] || defaults[i])
+  }
+  return result
+})
 const currentCarouselIdx = ref(0)
 let carouselTimer: ReturnType<typeof setInterval> | null = null
 

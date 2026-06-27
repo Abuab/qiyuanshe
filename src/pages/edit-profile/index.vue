@@ -2341,7 +2341,7 @@ onShow(async () => {
   position: absolute;
   top: 12rpx;
   right: 12rpx;
-  background: rgba(#FF6B9D, 0.85);
+  background: rgba(#FF6B9D, 0.55);
   border-radius: 999px;
   padding: 6rpx 20rpx;
   z-index: 3;
@@ -2363,13 +2363,15 @@ onShow(async () => {
 }
 
 .photo-add-plus {
-  font-size: 90rpx;
+  font-size: 120rpx;
+  font-weight: 200;
   color: #ccc;
   line-height: 1;
 
   &.subtle {
-    font-size: 72rpx;
-    color: #e0e0e0;
+    font-size: 90rpx;
+    font-weight: 200;
+    color: #ddd;
   }
 }
 
