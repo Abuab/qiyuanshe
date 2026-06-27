@@ -149,6 +149,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import request from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 
@@ -227,7 +228,7 @@ const goToUserDetail = (userId: number) => {
 // 图片加载失败兜底
 const onAvatarError = (e: any) => {
   if (e?.detail?.target) {
-    e.detail.target.src = '/static/default-avatar.png'
+    e.detail.target.src = getFullImageUrl('/static/default-avatar.png')
   }
 }
 
@@ -306,7 +307,9 @@ const sendText = async () => {
         role: 'ai',
         content: res.reply || '抱歉，暂时无法回复，请稍后再试',
         safetyNotice: res.safetyNotice,
-        users: res.users?.length ? res.users : undefined,
+        users: res.users?.length
+          ? res.users.map((u: MatchUser) => ({ ...u, avatar: getFullImageUrl(u.avatar) }))
+          : undefined,
       })
       scrollToBottom()
       if (res.remainingRounds !== undefined && res.remainingRounds !== null) {
