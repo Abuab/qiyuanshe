@@ -1184,17 +1184,18 @@ $text-hint: #999999;
 // ===== 滚动区域 =====
 .page-scroll {
   height: 100vh;
+  background: #FFE4EC;
 }
 
 // ===== 1. 顶部大背景图（50vh，顶部大圆角） =====
 .hero-section {
   position: relative; width: 100%; height: 50vh; overflow: hidden;
-  border-radius: 43rpx 43rpx 0 0; box-sizing: border-box;
+  border-radius: 33rpx 33rpx 0 0; box-sizing: border-box;
 }
 
 .hero-bg {
   width: 100%; height: 100%;
-  border-radius: 43rpx 43rpx 0 0;
+  border-radius: 33rpx 33rpx 0 0;
 }
 
 .hero-bg.photo-slide {
@@ -1269,7 +1270,7 @@ $text-hint: #999999;
 
 // ===== 2. 白色资料卡片（微覆盖背景图 4rpx，顶部大圆角浮层） =====
 .info-card {
-  background: $card-bg; border-radius: 38rpx 38rpx 0 0;
+  background: $card-bg; border-radius: 33rpx 33rpx 0 0;
   margin: -36rpx 0 0; padding: 34rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
