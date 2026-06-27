@@ -22,8 +22,8 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占屏 50%） ========== -->
-        <view class="hero-section">
+        <!-- ========== 1. 顶部大背景图 + 缩略图叠放（占用 frost card 下方空间） ========== -->
+        <view class="hero-section" :style="{ paddingTop: (statusBarHeight + 44) + 'px' }">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
@@ -1181,6 +1181,7 @@ $text-hint: #999999;
 // ===== 1. 顶部大背景图（占50vh，卡片在下方各占一半） =====
 .hero-section {
   position: relative; width: 100%; height: 50vh; overflow: hidden;
+  border-radius: 12rpx 12rpx 0 0; box-sizing: border-box;
 }
 
 .hero-bg {
