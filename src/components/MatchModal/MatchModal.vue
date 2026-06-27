@@ -18,7 +18,7 @@
       <view class="tip-text">你们互相喜欢了对方，现在可以无限畅聊啦</view>
 
       <view class="btn-area">
-        <view class="btn-chat" @tap="goChat">立即聊天</view>
+        <view class="btn-chat" @tap="goMyLikes">去看看</view>
         <view class="btn-later" @tap="close">再看看</view>
       </view>
     </view>
@@ -65,10 +65,9 @@ function close() {
   visible.value = false
 }
 
-function goChat() {
-  if (!matchUser.value) return
+function goMyLikes() {
   visible.value = false
-  uni.navigateTo({ url: `/pages/chat/index?userId=${matchUser.value.id}` })
+  uni.navigateTo({ url: '/pages/my-likes/my-likes?tab=2' })
 }
 </script>
 

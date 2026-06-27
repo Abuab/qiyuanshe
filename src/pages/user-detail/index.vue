@@ -895,9 +895,8 @@ const closeSubscribeDialog = () => {
 
 const handleSubscribeAllow = () => {
   showSubscribeDialog.value = false
-  if (alwaysSubscribe.value) {
-    uni.setStorageSync('subscribe_always_allow', true)
-  }
+  // 只要点击允许，就全局不再弹窗
+  uni.setStorageSync('subscribe_always_allow', true)
 }
 
 // ===== 拉黑 =====

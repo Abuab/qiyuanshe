@@ -1,13 +1,5 @@
 <template>
   <view class="vip-page">
-    <!-- ===== VIP功能已关闭 ===== -->
-    <view v-if="!systemStore.vipEnabled" class="disabled-page" :style="{ paddingTop: (statusBarHeight + 88) + 'rpx' }">
-      <view class="disabled-icon">🚫</view>
-      <text class="disabled-title">功能暂未开放</text>
-      <text class="disabled-desc">会员功能暂时关闭，请稍后再来</text>
-    </view>
-
-    <view v-else>
     <!-- ===== 顶部导航：两级导航栏 ===== -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <!-- 第一级：当前页面标题 + 返回 -->
@@ -42,19 +34,15 @@
         <text class="header-title">开通会员，享受专属特权</text>
         <view class="benefits-row">
           <view class="benefit-item">
-            <view class="benefit-icon">💬</view>
             <text class="benefit-label">无限畅聊</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon">🔥</view>
             <text class="benefit-label">优先推荐</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon">👁</view>
             <text class="benefit-label">查看访客</text>
           </view>
           <view class="benefit-item">
-            <view class="benefit-icon">👑</view>
             <text class="benefit-label">专属标识</text>
           </view>
         </view>
@@ -128,9 +116,6 @@
         <text class="section-title">{{ customConfig.suitableTitle || '哪些人适合1对1定制服务' }}</text>
         <view class="suitable-grid">
           <view class="suitable-item" v-for="(item, idx) in customConfig.suitableList" :key="idx">
-            <view class="suitable-icon" :style="{ background: item.color || '#FFF0F3' }">
-              <text>{{ item.icon }}</text>
-            </view>
             <text class="suitable-name">{{ item.name }}</text>
             <text class="suitable-desc">{{ item.desc }}</text>
           </view>
@@ -142,9 +127,6 @@
         <text class="section-title">{{ customConfig.serviceTitle || '专属服务 助你脱单' }}</text>
         <view class="service-list">
           <view class="service-item" v-for="(item, idx) in customConfig.serviceList" :key="idx">
-            <view class="service-icon" :style="{ background: item.color || '#FFF0F3' }">
-              <text>{{ item.icon }}</text>
-            </view>
             <view class="service-text">
               <text class="service-name">{{ item.name }}</text>
               <text class="service-desc">{{ item.desc }}</text>
@@ -173,9 +155,6 @@
         <text class="section-title">{{ aboutConfig.title }}</text>
         <view class="feature-list">
           <view class="feature-card" v-for="(item, idx) in aboutConfig.features" :key="idx">
-            <view class="feature-icon" :style="{ background: item.color || '#FFF0F3' }">
-              <text>{{ item.icon }}</text>
-            </view>
             <view class="feature-text">
               <text class="feature-name">{{ item.name }}</text>
               <text class="feature-desc">{{ item.desc }}</text>
@@ -206,7 +185,6 @@
     </view>
 
     <tab-bar />
-  </view>
   </view>
 </template>
 
@@ -265,20 +243,22 @@ const tabs = computed(() => {
   const list: { key: string; label: string }[] = [
     { key: 'about', label: '关于我们' },
   ]
-  if (userStore.isLoggedIn) {
-    list.unshift(
-      { key: 'vip', label: 'VIP会员' },
-      { key: 'custom', label: '定制会员' },
-    )
-  } else {
-    // 未登录也展示定制会员
-    list.unshift(
-      { key: 'custom', label: '定制会员' },
-    )
+  if (systemStore.vipEnabled) {
+    if (userStore.isLoggedIn) {
+      list.unshift(
+        { key: 'vip', label: 'VIP会员' },
+        { key: 'custom', label: '定制会员' },
+      )
+    } else {
+      // 未登录也展示定制会员
+      list.unshift(
+        { key: 'custom', label: '定制会员' },
+      )
+    }
   }
   return list
 })
-const activeTab = ref(userStore.isLoggedIn ? 'vip' : 'custom')
+const activeTab = ref(systemStore.vipEnabled ? (userStore.isLoggedIn ? 'vip' : 'custom') : 'about')
 
 const currentTabLabel = computed(() => {
   const tab = tabs.value.find(t => t.key === activeTab.value)
@@ -667,17 +647,6 @@ onShow(() => {
   gap: 6px;
 }
 
-.benefit-icon {
-  width: 48px;
-  height: 48px;
-  background: #FFF0F3;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
 .benefit-label {
   font-size: 12px;
   color: #666;
@@ -999,17 +968,6 @@ onShow(() => {
   border-radius: 12px;
 }
 
-.suitable-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 8px;
-}
-
 .suitable-name {
   font-size: 14px;
   font-weight: 700;
@@ -1037,18 +995,6 @@ onShow(() => {
   border: 1px solid #f5f5f5;
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-.service-icon {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  margin-right: 14px;
 }
 
 .service-text {
@@ -1085,18 +1031,6 @@ onShow(() => {
   border-radius: 12px;
 }
 
-.feature-icon {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-right: 14px;
-}
-
 .feature-text {
   flex: 1;
 }
@@ -1115,30 +1049,4 @@ onShow(() => {
   line-height: 1.5;
 }
 
-/* ===== 功能关闭占位页 ===== */
-.disabled-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #fff;
-}
-
-.disabled-icon {
-  font-size: 80rpx;
-  margin-bottom: 32rpx;
-}
-
-.disabled-title {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 16rpx;
-}
-
-.disabled-desc {
-  font-size: 28rpx;
-  color: #999;
-}
 </style>

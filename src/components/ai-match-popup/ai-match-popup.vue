@@ -112,8 +112,8 @@
         </view>
 
         <view class="panel-footer">
-          <view class="footer-btn chat-btn" @tap="goChat">
-            <text>去聊聊 💬</text>
+          <view class="footer-btn chat-btn" @tap="goToUserDetail">
+            <text>查看详情 👤</text>
           </view>
           <view class="footer-btn close-footer" @tap="close">
             <text>收起</text>
@@ -272,15 +272,11 @@ const remindTarget = async () => {
   }
 }
 
-const goChat = () => {
+const goToUserDetail = () => {
   close()
   setTimeout(() => {
-    if (!userStore.isVip) {
-      uni.switchTab({ url: '/pages/vip/index' })
-      return
-    }
     uni.navigateTo({
-      url: `/pages/chat/index?userId=${props.targetUserId}&nickname=${encodeURIComponent(props.targetNickname)}`,
+      url: `/pages/user-detail/index?id=${props.targetUserId}`,
     })
   }, 300)
 }

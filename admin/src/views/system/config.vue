@@ -144,7 +144,7 @@
 
             <el-form-item label="VIP 会员">
               <el-switch v-model="basicConfig.vipEnabled" active-text="开启" inactive-text="关闭" />
-              <div class="form-tip" style="margin-left:12px">关闭后会员页面显示"功能暂未开放"</div>
+              <div class="form-tip" style="margin-left:12px">VIP 会员页不显示</div>
             </el-form-item>
 
             <el-form-item label="登录页插画">

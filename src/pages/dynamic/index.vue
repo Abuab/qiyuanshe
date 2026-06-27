@@ -596,7 +596,7 @@ const handleHi = (item: DynamicItem) => {
     return
   }
   uni.navigateTo({
-    url: `/pages/chat/index?userId=${item.userId}`,
+    url: `/pages/user-detail/index?id=${item.userId}`,
   })
 }
 

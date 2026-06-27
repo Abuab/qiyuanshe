@@ -32,7 +32,7 @@
       <!-- 底部按钮栏 -->
       <view class="btn-area">
         <view class="btn-back" @tap="goBack">返回</view>
-        <view class="btn-chat" @tap="goChat">去聊天</view>
+        <view class="btn-chat" @tap="goToUserDetail">查看详情</view>
       </view>
 
       <!-- AI 合规声明 -->
@@ -84,8 +84,8 @@ function goBack() {
   uni.navigateBack()
 }
 
-function goChat() {
-  uni.navigateTo({ url: `/pages/chat/chat?userId=${targetUserId.value}` })
+function goToUserDetail() {
+  uni.navigateTo({ url: `/pages/user-detail/index?id=${targetUserId.value}` })
 }
 </script>
 

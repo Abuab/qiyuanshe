@@ -165,6 +165,12 @@ function goToUser(item: LikeUser) {
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
+  // 支持从 query 参数指定初始 tab
+  const pages = getCurrentPages()
+  const opts = (pages[pages.length - 1] as any)?.options || {}
+  if (opts.tab === '2') {
+    currentTab.value = 2
+  }
   loadData()
 })
 </script>

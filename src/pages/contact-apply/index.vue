@@ -41,9 +41,30 @@
       </view>
 
       <!-- ===== 确认按钮 ===== -->
-      <view class="confirm-section">
+      <view v-if="!showSuccess" class="confirm-section">
         <view class="confirm-btn" :class="{ disabled: applying }" @tap="handleConfirm">
           <text>{{ applying ? '处理中...' : '确认想认识Ta' }}</text>
+        </view>
+      </view>
+
+      <!-- ===== 交换成功后去聊天 ===== -->
+      <view v-if="showSuccess" class="success-section">
+        <view class="success-card">
+          <text class="success-icon">🎉</text>
+          <text class="success-title">联系方式已解锁</text>
+          <text class="success-desc">你现在可以与 {{ targetNickname }} 自由聊天了</text>
+          <view v-if="unlockedContact" class="success-contact">
+            <text class="contact-label">手机号：</text>
+            <text class="contact-value">{{ unlockedContact }}</text>
+          </view>
+        </view>
+        <view class="success-btns">
+          <view class="success-btn chat-btn" @tap="goChat">
+            <text>去聊天</text>
+          </view>
+          <view class="success-btn back-btn" @tap="handleBack">
+            <text>返回</text>
+          </view>
         </view>
       </view>
 
@@ -62,7 +83,7 @@
           <view class="ins-btn copy-btn" @tap="handleCopyAndContact">
             <text>复制以上信息并联系专属红娘</text>
           </view>
-          <view class="ins-btn vip-btn" @tap="handleGoVip">
+          <view v-if="systemStore.vipEnabled" class="ins-btn vip-btn" @tap="handleGoVip">
             <text>去开通会员</text>
           </view>
         </view>
@@ -132,6 +153,31 @@ const targetWeight = ref('')
 const targetEducation = ref('')
 const targetOccupation = ref('')
 
+// ===== 已解锁用户本地缓存（含联系方式） =====
+interface UnlockedInfo {
+  userId: number
+  contact: string
+}
+
+const getUnlockedTargets = (): UnlockedInfo[] => {
+  try {
+    const data = uni.getStorageSync('unlocked_targets')
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
+}
+
+const addUnlockedTarget = (userId: number, contact: string) => {
+  const list = getUnlockedTargets()
+  if (!list.find(item => item.userId === userId)) {
+    list.push({ userId, contact })
+    uni.setStorageSync('unlocked_targets', list)
+  }
+}
+
+const unlockedContact = ref('')
+
 onLoad((options: any) => {
   targetUserId.value = parseInt(options.userId) || 0
   targetNickname.value = decodeURIComponent(options.nickname || '')
@@ -142,6 +188,14 @@ onLoad((options: any) => {
   targetWeight.value = options.weight || ''
   targetEducation.value = decodeURIComponent(options.education || '')
   targetOccupation.value = decodeURIComponent(options.occupation || '')
+
+  // 检查是否已解锁过该用户
+  const unlockedList = getUnlockedTargets()
+  const found = unlockedList.find(item => item.userId === targetUserId.value)
+  if (found) {
+    unlockedContact.value = found.contact
+    showSuccess.value = true
+  }
 })
 
 // ===== 简要信息行 =====
@@ -185,14 +239,14 @@ const closeSubscribeDialog = () => {
 
 const handleSubscribeAllow = () => {
   showSubscribeDialog.value = false
-  if (alwaysSubscribe.value) {
-    uni.setStorageSync('subscribe_always_allow', true)
-  }
+  // 只要点击允许，就全局不再弹窗
+  uni.setStorageSync('subscribe_always_allow', true)
   // 订阅确认后执行红线扣除
   doUseRedLine()
 }
 
 // ===== 红线扣除 =====
+const showSuccess = ref(false)
 const doUseRedLine = async () => {
   applying.value = true
   try {
@@ -203,15 +257,17 @@ const doUseRedLine = async () => {
     })
     if (res.success || res.code === 0) {
       const already = res.data?.alreadyUnlocked || res.alreadyUnlocked
+      const contact = (res.data?.contact || res.contact || '').toString()
       uni.showToast({
-        title: already ? '已解锁过该用户' : '交换成功，已消耗一根红线',
+        title: already ? '已解锁过该用户' : '解锁成功',
         icon: 'success',
         duration: 2000,
       })
-      // 成功后延迟返回上一页
-      setTimeout(() => {
-        uni.navigateBack()
-      }, 2000)
+      // 缓存已解锁用户及联系方式
+      addUnlockedTarget(targetUserId.value, contact)
+      unlockedContact.value = contact
+      // 显示成功状态和去聊天按钮
+      showSuccess.value = true
     } else {
       uni.showToast({ title: res.message || '操作失败', icon: 'none' })
     }
@@ -222,9 +278,15 @@ const doUseRedLine = async () => {
   }
 }
 
+const goChat = () => {
+  uni.navigateTo({
+    url: `/pages/chat/index?userId=${targetUserId.value}&nickname=${encodeURIComponent(targetNickname.value)}&avatar=${encodeURIComponent(targetAvatar.value)}`,
+  })
+}
+
 // ===== 确认申请 =====
 const handleConfirm = async () => {
-  if (applying.value) return
+  if (applying.value || showSuccess.value) return
   applying.value = true
   showInsufficient.value = false
 
@@ -498,6 +560,98 @@ onMounted(() => {
 
   &.disabled {
     opacity: 0.6;
+  }
+}
+
+// ===== 交换成功区 =====
+.success-section {
+  padding: 40rpx 24rpx;
+}
+
+.success-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 48rpx 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
+
+.success-icon {
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.success-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+
+.success-desc {
+  font-size: 28rpx;
+  color: #666;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.success-contact {
+  margin-top: 24rpx;
+  padding: 20rpx 32rpx;
+  background: #FFF5F7;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.contact-label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.contact-value {
+  font-size: 32rpx;
+  color: #FF6B9D;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+.success-btns {
+  display: flex;
+  gap: 24rpx;
+}
+
+.success-btn {
+  flex: 1;
+  height: 96rpx;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 32rpx;
+    font-weight: 600;
+  }
+}
+
+.success-btn.chat-btn {
+  background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
+
+  text {
+    color: #fff;
+  }
+}
+
+.success-btn.back-btn {
+  background: #f5f5f5;
+  border: 2rpx solid #e0e0e0;
+
+  text {
+    color: #666;
   }
 }
 
