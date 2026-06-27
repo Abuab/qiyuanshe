@@ -1261,7 +1261,7 @@ $text-hint: #999999;
 }
 
 .info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 2rpx;
+  font-size: 28rpx; color: $text-hint; padding-top: 6rpx;
 }
 
 .id-badge {
