@@ -1243,7 +1243,7 @@ $text-hint: #999999;
 // ===== 2. 白色资料卡片（覆盖背景图底部，顶部圆角露出背景） =====
 .info-card {
   background: $card-bg; border-radius: 48rpx 48rpx 0 0;
-  margin: -40rpx 0 0; padding: 32rpx 28rpx 20rpx;
+  margin: -40rpx 0 0; padding: 20rpx 28rpx 20rpx;
   position: relative; z-index: 10;
 }
 
@@ -1253,7 +1253,7 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -14rpx;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0; margin-bottom: -20rpx;
 }
 
 .info-nickname {
@@ -1263,8 +1263,8 @@ $text-hint: #999999;
 .id-badge {
   display: inline-block;
   font-style: italic;
-  font-size: 26rpx;
-  font-weight: 600; color: #fff; background-color: #bbb;
+  font-size: 28rpx;
+  font-weight: 600; color: #fff; background-color: #aaa;
    padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
    vertical-align: baseline; margin-right: 4rpx;
 }
