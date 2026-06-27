@@ -125,11 +125,11 @@
           <!-- 户籍 + 现居 -->
           <view class="info-row-two" v-if="profileData.basicInfo.hometown || profileData.basicInfo.residence">
             <view v-if="profileData.basicInfo.hometown" class="info-chip loc-chip">
-              <text class="loc-label-text">家乡</text>
+              <text class="loc-label-text loc-label-hometown">家乡</text>
               <text>{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
             </view>
             <view v-if="profileData.basicInfo.residence" class="info-chip loc-chip">
-              <text class="loc-label-text">现居</text>
+              <text class="loc-label-text loc-label-residence">现居</text>
               <text>{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
             </view>
           </view>
@@ -1343,8 +1343,12 @@ $text-hint: #999999;
 }
 
 .loc-label-text {
-  font-size: 20rpx; color: #777; flex-shrink: 0;
+  font-size: 20rpx; flex-shrink: 0;
 }
+
+.loc-label-hometown { color: #5DADE2; }
+
+.loc-label-residence { color: #F5B041; }
 
 // ===== 基本资料 =====
 .basic-line {
