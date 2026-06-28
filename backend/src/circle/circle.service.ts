@@ -37,7 +37,7 @@ export class CircleService {
     const qb = this.userRepo.createQueryBuilder('user')
       .innerJoin('circle_members', 'cm', 'cm.userId = user.id')
       .where('cm.circleId = :circleId', { circleId })
-      .andWhere('user.status = 2')
+      .andWhere('user.status = 1')
       .andWhere('user.isDeleted = 0')
       .orderBy('cm.sortOrder', 'ASC')
       .addOrderBy('cm.createdAt', 'ASC')
@@ -146,7 +146,7 @@ export class CircleService {
         'user.status',
         'user.isDeleted',
       ])
-      .where('user.status = 2')
+      .where('user.status = 1')
       .andWhere('user.isDeleted = 0')
 
     if (keyword && keyword.trim().length > 0) {
@@ -242,7 +242,7 @@ export class CircleService {
     return this.userRepo.createQueryBuilder('user')
       .select(['user.id', 'user.nickname', 'user.avatar'])
       .where('user.nickname LIKE :kw', { kw: `%${keyword.trim()}%` })
-      .andWhere('user.status = 2')
+      .andWhere('user.status = 1')
       .andWhere('user.isDeleted = 0')
       .take(20)
       .getMany()
