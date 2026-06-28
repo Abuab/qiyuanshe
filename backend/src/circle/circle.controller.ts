@@ -79,7 +79,7 @@ export class CircleController {
   @Delete('post/:postId')
   async deletePost(@Param('postId', ParseIntPipe) postId: number) {
     await this.circleService.deletePost(postId)
-    return Result.success(null, '删除成功')
+    return Result.success({ postId }, '删除成功')
   }
 }
 
@@ -113,7 +113,7 @@ export class AdminCircleController {
   @Delete(':id')
   async deleteCircle(@Param('id', ParseIntPipe) id: number) {
     await this.circleService.deleteCircle(id)
-    return Result.success(null, '删除成功')
+    return Result.success({ id }, '删除成功')
   }
 
   // ========== 圈子成员管理 ==========
@@ -192,6 +192,6 @@ export class AdminCircleController {
   @Roles('super_admin', 'admin')
   async deletePost(@Param('id', ParseIntPipe) id: number) {
     await this.circleService.deletePost(id)
-    return Result.success(null, '删除成功')
+    return Result.success({ id }, '删除成功')
   }
 }
