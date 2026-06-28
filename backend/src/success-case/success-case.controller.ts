@@ -107,6 +107,6 @@ export class AdminSuccessCaseController {
   @Roles('super_admin', 'admin')
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.successCaseService.remove(id)
-    return Result.success(null, '删除成功')
+    return Result.success({ id }, '删除成功')
   }
 }

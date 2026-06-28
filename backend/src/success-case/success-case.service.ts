@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Between, FindOptionsWhere } from 'typeorm'
+import { Repository, Between, Not, FindOptionsWhere } from 'typeorm'
 import { SuccessCase } from '../entities/SuccessCase'
 import { User } from '../entities/User'
 import { SystemConfig } from '../entities/SystemConfig'
@@ -51,7 +51,7 @@ export class SuccessCaseService {
     limit = 10,
     search?: { keyword?: string; dateFrom?: string; dateTo?: string },
   ) {
-    const where: FindOptionsWhere<SuccessCase> = {}
+    const where: FindOptionsWhere<SuccessCase> = { status: Not(0) }
 
     if (search?.keyword) {
       // 标题或显示昵称模糊搜索
@@ -76,6 +76,7 @@ export class SuccessCaseService {
 
   private async searchList(page: number, limit: number, search: { keyword?: string; dateFrom?: string; dateTo?: string }) {
     const qb = this.caseRepo.createQueryBuilder('sc')
+      .where('sc.status != 0')
       .orderBy('sc.sort', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
