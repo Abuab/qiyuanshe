@@ -32,7 +32,6 @@
         v-for="item in list"
         :key="item.id"
         class="feed-card"
-        @tap="goToDetail(item.id)"
       >
         <!-- 头部：头像 + 昵称 -->
         <view class="card-header">
@@ -196,10 +195,6 @@ function handleBack() {
   safeNavigateBack()
 }
 
-function goToDetail(id: number) {
-  uni.navigateTo({ url: `/pages/success-case-detail/index?id=${id}` })
-}
-
 function previewImage(urls: string[], current: number) {
   uni.previewImage({ urls, current })
 }
@@ -284,16 +279,16 @@ function onAvatarError(e: any) {
   background: #f0f0f0;
 }
 .nickname {
-  font-size: 30rpx;
-  font-weight: bold;
+  font-size: 26rpx;
+  font-weight: 500;
   color: #333;
 }
 
 // 粉色标题
 .pink-title {
   display: block;
-  font-size: 34rpx;
-  font-weight: bold;
+  font-size: 30rpx;
+  font-weight: 600;
   color: #FF4D6A;
   line-height: 1.4;
   margin-bottom: 16rpx;
@@ -302,7 +297,7 @@ function onAvatarError(e: any) {
 // 正文
 .story-text {
   display: block;
-  font-size: 28rpx;
+  font-size: 26rpx;
   color: #333;
   line-height: 1.6;
   margin-bottom: 20rpx;
