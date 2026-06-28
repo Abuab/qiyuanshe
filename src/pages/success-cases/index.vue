@@ -27,72 +27,60 @@
         mode="aspectFill"
       />
 
-      <!-- 朋友圈动态卡片 -->
-      <view
-        v-for="item in list"
-        :key="item.id"
-        class="feed-card"
-      >
-        <!-- 头部：头像 + 昵称 -->
-        <view class="card-header">
-          <image
-            class="avatar"
-            :src="item.userAvatar || '/static/default-avatar.png'"
-            mode="aspectFill"
-            @error="onAvatarError($event)"
-          />
-          <text class="nickname">{{ item.displayNickname || '幸福恋人' }}</text>
-        </view>
+      <!-- 白色卡片（负margin覆盖Banner底部，所有内容在一个卡片内） -->
+      <view v-if="list.length > 0" class="info-card">
+        <view
+          v-for="(item, index) in list"
+          :key="item.id"
+        >
+          <!-- 分割线（第一条不显示） -->
+          <view v-if="index > 0" class="item-divider"></view>
 
-        <!-- 标题行（粉色大字） -->
-        <text class="pink-title">{{ item.title }}</text>
+          <!-- 单条动态内容 -->
+          <view class="item-section">
+            <!-- 头部：头像 + 昵称 -->
+            <view class="card-header">
+              <image
+                class="avatar"
+                :src="item.userAvatar || '/static/default-avatar.png'"
+                mode="aspectFill"
+                @error="onAvatarError($event)"
+              />
+              <text class="nickname">{{ item.displayNickname || '幸福恋人' }}</text>
+            </view>
 
-        <!-- 正文内容 -->
-        <text v-if="item.storyContent" class="story-text">{{ item.storyContent }}</text>
+            <!-- 标题行（粉色大字） -->
+            <text class="pink-title">{{ item.title }}</text>
 
-        <!-- 图片区 -->
-        <view v-if="item.photos && item.photos.length > 0" class="photos-area" @tap.stop>
-          <!-- 单张图片 -->
-          <view v-if="item.photos.length === 1" class="photo-single">
-            <image
-              class="photo-single-img"
-              :src="item.photos[0]"
-              mode="widthFix"
-              @tap="previewImage(item.photos, 0)"
-            />
-          </view>
+            <!-- 正文内容 -->
+            <text v-if="item.storyContent" class="story-text">{{ item.storyContent }}</text>
 
-          <!-- 两张图片：2列 -->
-          <view v-else-if="item.photos.length === 2" class="photo-grid photo-grid-2">
-            <image
-              v-for="(p, idx) in item.photos"
-              :key="idx"
-              class="photo-grid-item"
-              :src="p"
-              mode="aspectFill"
-              @tap="previewImage(item.photos, Number(idx))"
-            />
-          </view>
+            <!-- 图片区 -->
+            <view v-if="item.photos && item.photos.length > 0" class="photos-area" @tap.stop>
+              <view v-if="item.photos.length === 1" class="photo-single">
+                <image class="photo-single-img" :src="item.photos[0]" mode="widthFix" @tap="previewImage(item.photos, 0)" />
+              </view>
+              <view v-else-if="item.photos.length === 2" class="photo-grid photo-grid-2">
+                <image v-for="(p, idx) in item.photos" :key="idx" class="photo-grid-item" :src="p" mode="aspectFill" @tap="previewImage(item.photos, Number(idx))" />
+              </view>
+              <view v-else class="photo-grid photo-grid-3">
+                <image v-for="(p, idx) in item.photos" :key="idx" class="photo-grid-item" :src="p" mode="aspectFill" @tap="previewImage(item.photos, Number(idx))" />
+              </view>
+            </view>
 
-          <!-- 三张及以上：3列 -->
-          <view v-else class="photo-grid photo-grid-3">
-            <image
-              v-for="(p, idx) in item.photos"
-              :key="idx"
-              class="photo-grid-item"
-              :src="p"
-              mode="aspectFill"
-              @tap="previewImage(item.photos, Number(idx))"
-            />
+            <!-- 底部日期 -->
+            <text class="card-date">{{ item.publishDate || '' }}</text>
           </view>
         </view>
+      </view>
 
-        <!-- 底部日期 -->
-        <text class="card-date">{{ item.publishDate || '' }}</text>
+      <!-- Banner 无内容时的占位 -->
+      <view v-else-if="pageBanner" class="info-card-empty">
+        <view v-if="!loading" class="status-tip"><text>暂无成功案例</text></view>
       </view>
 
       <!-- 加载更多 -->
-      <view v-if="loadingMore" class="status-tip">
+      <view v-if="loadingMore && list.length > 0" class="status-tip">
         <text>加载中...</text>
       </view>
 
@@ -101,8 +89,8 @@
         <text>没有更多了</text>
       </view>
 
-      <!-- 空状态 -->
-      <view v-if="list.length === 0 && !loading" class="empty-state">
+      <!-- 空状态（无Banner也无内容） -->
+      <view v-if="list.length === 0 && !pageBanner && !loading" class="empty-state">
         <text>暂无成功案例</text>
       </view>
 
@@ -261,12 +249,35 @@ function onAvatarError(e: any) {
   display: block;
 }
 
-// ===== 朋友圈动态卡片 =====
-.feed-card {
+// ===== 白色资料卡片（负margin覆盖Banner底部，参考用户详情页） =====
+.info-card {
   background: #fff;
-  border-radius: 16rpx;
-  padding: 24rpx 30rpx;
-  margin: 20rpx 24rpx;
+  border-radius: 33rpx 33rpx 0 0;
+  margin: -36rpx 0 0;
+  padding: 24rpx 30rpx 20rpx;
+  position: relative;
+  z-index: 10;
+}
+
+.info-card-empty {
+  background: #fff;
+  border-radius: 33rpx 33rpx 0 0;
+  margin: -36rpx 0 0;
+  padding: 60rpx 30rpx;
+  position: relative;
+  z-index: 10;
+}
+
+// 分割线
+.item-divider {
+  height: 1rpx;
+  background: #EEEEEE;
+  margin: 24rpx 0;
+}
+
+// 单条内容区域
+.item-section {
+  // 内容上下间距由分割线控制
 }
 
 // 头部：头像 + 昵称

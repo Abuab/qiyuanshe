@@ -298,7 +298,7 @@ function onBannerError() {
   background: #F5F5F5;
   transition: all 0.25s;
   &.active {
-    background: #FF4D6A;
+    background: #FF8899;
     .tab-text {
       color: #fff;
     }
