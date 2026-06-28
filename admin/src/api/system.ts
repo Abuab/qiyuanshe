@@ -123,8 +123,11 @@ export const adminSystem = {
   },
 
   // 成功案例
-  getSuccessCases(page = 1, limit = 20): Promise<ApiResponse> {
-    return request.get('/admin/success-cases', { params: { page, limit } })
+  getSuccessCases(params?: { page?: number; limit?: number; keyword?: string; dateFrom?: string; dateTo?: string }): Promise<ApiResponse> {
+    return request.get('/admin/success-cases', { params: { page: params?.page ?? 1, limit: params?.limit ?? 20, ...params } })
+  },
+  getSuccessCaseDetail(id: number): Promise<ApiResponse> {
+    return request.get(`/admin/success-cases/${id}`)
   },
   createSuccessCase(data: any): Promise<ApiResponse> {
     return request.post('/admin/success-cases', data)
@@ -134,6 +137,12 @@ export const adminSystem = {
   },
   deleteSuccessCase(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/success-cases/${id}`)
+  },
+  getSuccessCaseBanner(): Promise<ApiResponse> {
+    return request.get('/admin/success-cases/banner')
+  },
+  saveSuccessCaseBanner(data: { bannerImage?: string; pageTitle?: string }): Promise<ApiResponse> {
+    return request.put('/admin/success-cases/banner', data)
   },
 
   // 通知日志

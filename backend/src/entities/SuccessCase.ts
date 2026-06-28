@@ -18,16 +18,19 @@ export class SuccessCase {
   cover: string
 
   @Column({ type: 'bigint', nullable: true })
-  maleUserId: number
+  senderUserId: number
 
-  @Column({ type: 'bigint', nullable: true })
-  femaleUserId: number
+  @Column({ type: 'varchar', length: 50, default: '' })
+  displayNickname: string
 
   @Column({ type: 'text', nullable: true })
   storyContent: string
 
   @Column({ type: 'json', nullable: true })
   photos: string[]
+
+  @Column({ type: 'date', nullable: true })
+  publishDate: string
 
   @Column({ type: 'tinyint', default: 1 })
   status: number
