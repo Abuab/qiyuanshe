@@ -32,7 +32,7 @@ export class CircleService {
   async getCircleUsers(circleId: number, page = 1, limit = 10) {
     const [list, total] = await this.userRepo.findAndCount({
       select: [
-        'id', 'nickname', 'avatar', 'age', 'gender', 'height',
+        'id', 'nickname', 'avatar', 'gender', 'height',
         'education', 'occupation', 'incomeRange', 'housingStatus',
         'residence', 'isRealName', 'status', 'birthYear',
       ],
