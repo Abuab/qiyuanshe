@@ -251,8 +251,7 @@ async function handleLogin() {
       mfaType.value = result.mfaType || ''
       tempToken.value = result.tempToken || ''
     }
-  } catch (error: any) {
-    ElMessage.error(error.message || '网络错误，请稍后重试')
+  } catch {
     refreshCaptcha()
   } finally {
     loading.value = false
@@ -273,8 +272,7 @@ async function handleMfaSubmit() {
   mfaLoading.value = true
   try {
     await adminStore.mfaLoginVerify(tempToken.value, mfaCode.value)
-  } catch (error: any) {
-    ElMessage.error(error.message || '验证失败')
+  } catch {
   } finally {
     mfaLoading.value = false
   }
