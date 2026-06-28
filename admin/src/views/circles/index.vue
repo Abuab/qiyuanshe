@@ -1,118 +1,148 @@
 <template>
   <div class="page">
+    <!-- 面包屑 -->
+    <el-breadcrumb separator="/">
+      <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
+      <el-breadcrumb-item>圈子管理</el-breadcrumb-item>
+    </el-breadcrumb>
+
     <div class="page-header">
       <h2 class="page-title">圈子管理</h2>
     </div>
 
     <el-card class="content-card">
       <div class="toolbar">
-        <el-button type="primary" @click="openDialog()">新增圈子</el-button>
+        <el-button type="primary" @click="openFormDrawer()">新增圈子</el-button>
       </div>
 
       <el-table :data="list" border stripe v-loading="loading">
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="name" label="名称" width="120" />
+        <el-table-column prop="id" label="ID" width="70" />
+        <el-table-column prop="name" label="名称" width="140" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="60" />
-        <el-table-column label="成员" width="80" align="center">
+        <el-table-column prop="sort" label="排序" width="70" align="center" />
+        <el-table-column label="成员数量" width="90" align="center">
           <template #default="{ row }">
             {{ memberCountMap[row.id] ?? 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80">
+        <el-table-column label="状态" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'danger'">{{ row.status === 1 ? '启用' : '禁用' }}</el-tag>
+            <el-tag :type="row.status === 1 ? 'success' : 'info'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="260" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
+            <el-button type="primary" size="small" link @click="openFormDrawer(row)">编辑</el-button>
+            <el-button type="danger" size="small" link @click="handleDelete(row)">删除</el-button>
+            <el-button type="warning" size="small" link @click="openMemberDialog(row)">配置成员</el-button>
+            <el-button size="small" link @click="openBannerDialog(row)">配置Banner</el-button>
           </template>
         </el-table-column>
       </el-table>
     </el-card>
 
-    <el-dialog v-model="showDialog" :title="isEdit ? '编辑圈子' : '新增圈子'" width="560px">
+    <!-- ==================== 新增/编辑抽屉 ==================== -->
+    <el-drawer
+      v-model="showFormDrawer"
+      :title="isEdit ? '编辑圈子' : '新增圈子'"
+      direction="rtl"
+      size="480px"
+    >
       <el-form :model="form" label-width="80px">
-        <el-form-item label="名称"><el-input v-model="form.name" placeholder="圈子名称" /></el-form-item>
-        <el-form-item label="图标">
-          <div style="display:flex;align-items:center;gap:12px">
-            <el-upload
-              :show-file-list="false"
-              :http-request="handleIconUpload"
-              :before-upload="beforeUpload"
-              accept="image/*"
-            >
-              <el-button type="primary" :loading="iconUploading">上传图片</el-button>
-            </el-upload>
-            <el-image v-if="form.icon" :src="form.icon" style="width:60px;height:60px;border-radius:4px;border:1px solid #dcdfe6" fit="cover" />
-          </div>
+        <el-form-item label="名称" required>
+          <el-input v-model="form.name" placeholder="请输入圈子名称" maxlength="50" show-word-limit />
         </el-form-item>
-        <el-form-item label="Banner">
-          <div style="display:flex;align-items:center;gap:12px">
+        <el-form-item label="描述">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入圈子描述（选填）"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="form.sort" :min="0" :max="9999" />
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-switch v-model="form.statusBool" active-text="启用" inactive-text="禁用" />
+        </el-form-item>
+        <el-form-item label="Banner图">
+          <div class="upload-area">
             <el-upload
               :show-file-list="false"
               :http-request="handleBannerUpload"
               :before-upload="beforeUpload"
               accept="image/*"
             >
-              <el-button :loading="bannerUploading">上传图片</el-button>
+              <el-button type="primary" :loading="bannerUploading">
+                {{ form.bannerImage ? '更换图片' : '上传图片' }}
+              </el-button>
             </el-upload>
-            <el-image v-if="form.bannerImage" :src="form.bannerImage" style="width:80px;height:40px;border-radius:4px;border:1px solid #dcdfe6" fit="cover" />
-          </div>
-        </el-form-item>
-        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="2" placeholder="圈子描述" /></el-form-item>
-        <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
-        <el-form-item v-if="isEdit" label="状态">
-          <el-switch v-model="form.statusBool" active-text="启用" inactive-text="禁用" />
-        </el-form-item>
-
-        <!-- 成员管理（仅编辑时） -->
-        <el-form-item v-if="isEdit" label="成员">
-          <div style="width:100%">
-            <div style="display:flex;gap:8px;margin-bottom:8px">
-              <el-select
-                v-model="selectedUserId"
-                filterable
-                remote
-                :remote-method="searchUser"
-                :loading="searchingUser"
-                placeholder="搜索用户昵称"
-                clearable
-                value-key="id"
-                style="flex:1"
-              >
-                <el-option
-                  v-for="u in userOptions"
-                  :key="u.id"
-                  :label="u.nickname"
-                  :value="u.id"
-                />
-              </el-select>
-              <el-button type="primary" @click="addMember" :disabled="!selectedUserId">添加</el-button>
+            <div v-if="form.bannerImage" class="upload-preview">
+              <el-image
+                :src="form.bannerImage"
+                style="width:200px;height:93px;border-radius:6px;border:1px solid #dcdfe6"
+                fit="cover"
+                :preview-src-list="[form.bannerImage]"
+                preview-teleported
+              />
+              <el-button type="danger" size="small" link @click="form.bannerImage = ''">删除</el-button>
             </div>
-            <div class="member-list">
-              <el-tag
-                v-for="m in currentMembers"
-                :key="m.id"
-                closable
-                @close="removeMember(m.id)"
-                style="margin:4px"
-              >
-                <el-avatar :src="m.avatar" :size="20" style="margin-right:4px;vertical-align:middle" />
-                {{ m.nickname }}
-              </el-tag>
-              <span v-if="currentMembers.length === 0" style="color:#999;font-size:13px">暂无成员</span>
-            </div>
+            <span v-else class="upload-tip">建议尺寸 750×350</span>
           </div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showDialog = false">取消</el-button>
+        <el-button @click="showFormDrawer = false">取消</el-button>
         <el-button type="primary" @click="handleSave" :loading="saving">保存</el-button>
       </template>
+    </el-drawer>
+
+    <!-- ==================== Banner管理弹窗 ==================== -->
+    <el-dialog v-model="showBannerDialog" title="配置Banner" width="500px">
+      <div class="banner-dialog-content">
+        <el-upload
+          :show-file-list="false"
+          :http-request="handleBannerDialogUpload"
+          :before-upload="beforeUpload"
+          accept="image/*"
+          class="banner-upload-btn"
+        >
+          <el-button type="primary" :loading="bannerDialogUploading">
+            {{ bannerDialogImage ? '更换图片' : '上传图片' }}
+          </el-button>
+        </el-upload>
+        <span class="banner-tip">建议尺寸 750×350，支持 JPG/PNG，大小不超过5MB</span>
+        <div v-if="bannerDialogImage" class="banner-preview-wrap">
+          <el-image
+            :src="bannerDialogImage"
+            style="width:100%;max-width:400px;border-radius:6px;border:1px solid #dcdfe6"
+            fit="cover"
+            :preview-src-list="[bannerDialogImage]"
+            preview-teleported
+          />
+          <el-button type="danger" size="small" link @click="bannerDialogImage = ''">删除图片</el-button>
+        </div>
+        <div v-else class="banner-empty">
+          <span>尚未上传Banner图片</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showBannerDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleBannerSave" :loading="bannerSaving">保存</el-button>
+      </template>
     </el-dialog>
+
+    <!-- ==================== 成员管理（穿梭框） ==================== -->
+    <MemberTransfer
+      v-model:visible="showMemberDialog"
+      :circle-id="memberCircleId"
+      @saved="onMemberSaved"
+    />
   </div>
 </template>
 
@@ -120,23 +150,36 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminSystem } from '../../api'
+import MemberTransfer from './MemberTransfer.vue'
 
 const loading = ref(false)
 const list = ref<any[]>([])
 const memberCountMap = ref<Record<number, number>>({})
-const showDialog = ref(false)
+
+// ===== 表单抽屉 =====
+const showFormDrawer = ref(false)
 const isEdit = ref(false)
 const editId = ref(0)
 const saving = ref(false)
-const iconUploading = ref(false)
 const bannerUploading = ref(false)
-const form = reactive({ name: '', icon: '', bannerImage: '', description: '', sort: 0, statusBool: true })
+const form = reactive({
+  name: '',
+  description: '',
+  sort: 0,
+  statusBool: true,
+  bannerImage: '',
+})
 
-// 成员管理
-const selectedUserId = ref<number | null>(null)
-const userOptions = ref<any[]>([])
-const searchingUser = ref(false)
-const currentMembers = ref<any[]>([])
+// ===== Banner 弹窗 =====
+const showBannerDialog = ref(false)
+const bannerDialogCircleId = ref(0)
+const bannerDialogImage = ref('')
+const bannerDialogUploading = ref(false)
+const bannerSaving = ref(false)
+
+// ===== 成员管理 =====
+const showMemberDialog = ref(false)
+const memberCircleId = ref(0)
 
 function beforeUpload(file: File) {
   if (!file.type.startsWith('image/')) {
@@ -150,156 +193,236 @@ function beforeUpload(file: File) {
   return true
 }
 
-async function handleIconUpload(options: any) {
-  iconUploading.value = true
-  try {
-    const fd = new FormData()
-    fd.append('file', options.file)
-    const res = await adminSystem.upload(fd)
-    if (res.success && res.data?.url) {
-      form.icon = res.data.url
-      ElMessage.success('上传成功')
-    }
-  } catch (e) {
-    ElMessage.error('上传失败')
+async function doUpload(file: File): Promise<string> {
+  const fd = new FormData()
+  fd.append('file', file)
+  const res = await adminSystem.upload(fd)
+  if ((res as any).success && (res as any).data?.url) {
+    return (res as any).data.url
   }
-  iconUploading.value = false
+  throw new Error('上传失败')
 }
 
 async function handleBannerUpload(options: any) {
   bannerUploading.value = true
   try {
-    const fd = new FormData()
-    fd.append('file', options.file)
-    const res = await adminSystem.upload(fd)
-    if (res.success && res.data?.url) {
-      form.bannerImage = res.data.url
-      ElMessage.success('上传成功')
-    }
-  } catch (e) {
+    form.bannerImage = await doUpload(options.file)
+    ElMessage.success('上传成功')
+  } catch {
     ElMessage.error('上传失败')
   }
   bannerUploading.value = false
+}
+
+async function handleBannerDialogUpload(options: any) {
+  bannerDialogUploading.value = true
+  try {
+    bannerDialogImage.value = await doUpload(options.file)
+    ElMessage.success('上传成功')
+  } catch {
+    ElMessage.error('上传失败')
+  }
+  bannerDialogUploading.value = false
 }
 
 onMounted(() => fetchList())
 
 async function fetchList() {
   loading.value = true
-  try { const res = await adminSystem.getCircles(); list.value = (res.data as any) || [] }
-  catch (e) { console.error(e) }
-  finally { loading.value = false }
+  try {
+    const res = await adminSystem.getCircles()
+    list.value = ((res as any).data as any[]) || []
+  } catch (e) {
+    console.error(e)
+  }
+  loading.value = false
   // 加载每个圈子的成员数
   for (const c of list.value) {
     try {
       const res = await adminSystem.getCircleMembers(c.id)
-      memberCountMap.value[c.id] = (res.data as any[])?.length ?? 0
-    } catch { /* ignore */ }
-  }
-}
-
-async function searchUser(keyword: string) {
-  if (!keyword || keyword.trim().length === 0) { userOptions.value = []; return }
-  searchingUser.value = true
-  try {
-    const res = await adminSystem.searchUsers(keyword)
-    userOptions.value = (res.data as any[]) || []
-  } catch { /* ignore */ }
-  searchingUser.value = false
-}
-
-async function addMember() {
-  if (!selectedUserId.value || !editId.value) return
-  try {
-    await adminSystem.addCircleMember(editId.value, selectedUserId.value)
-    const found = userOptions.value.find(u => u.id === selectedUserId.value)
-    if (found && !currentMembers.value.some(m => m.id === found.id)) {
-      currentMembers.value.push({ id: found.id, nickname: found.nickname, avatar: found.avatar })
+      memberCountMap.value[c.id] = ((res as any).data as any[])?.length ?? 0
+    } catch {
+      /* ignore */
     }
-    selectedUserId.value = null
-    userOptions.value = []
-    memberCountMap.value[editId.value] = currentMembers.value.length
-  } catch {
-    ElMessage.error('添加失败')
   }
 }
 
-async function removeMember(userId: number) {
-  if (!editId.value) return
-  try {
-    await adminSystem.removeCircleMember(editId.value, userId)
-    currentMembers.value = currentMembers.value.filter(m => m.id !== userId)
-    memberCountMap.value[editId.value] = currentMembers.value.length
-    ElMessage.success('已移除')
-  } catch {
-    ElMessage.error('移除失败')
-  }
-}
-
-async function loadMembers(circleId: number) {
-  try {
-    const res = await adminSystem.getCircleMembers(circleId)
-    currentMembers.value = (res.data as any[]) || []
-  } catch { currentMembers.value = [] }
-}
-
-function openDialog(row?: any) {
+// ===== 表单抽屉 =====
+function openFormDrawer(row?: any) {
   if (row) {
     isEdit.value = true
     editId.value = row.id
-    Object.assign(form, { name: row.name, icon: row.icon || '', bannerImage: row.bannerImage || '', description: row.description || '', sort: row.sort, statusBool: row.status === 1 })
-    loadMembers(row.id)
+    form.name = row.name || ''
+    form.description = row.description || ''
+    form.sort = row.sort ?? 0
+    form.statusBool = row.status === 1
+    form.bannerImage = row.bannerImage || ''
   } else {
     isEdit.value = false
     editId.value = 0
-    Object.assign(form, { name: '', icon: '', bannerImage: '', description: '', sort: 0, statusBool: true })
-    currentMembers.value = []
+    form.name = ''
+    form.description = ''
+    form.sort = 0
+    form.statusBool = true
+    form.bannerImage = ''
   }
-  selectedUserId.value = null
-  userOptions.value = []
-  showDialog.value = true
+  showFormDrawer.value = true
 }
 
 async function handleSave() {
+  if (!form.name.trim()) {
+    ElMessage.warning('请输入圈子名称')
+    return
+  }
   saving.value = true
   try {
     const data = {
-      name: form.name,
-      icon: form.icon,
-      bannerImage: form.bannerImage,
-      description: form.description,
+      name: form.name.trim(),
+      description: form.description.trim(),
       sort: form.sort,
       status: form.statusBool ? 1 : 0,
+      bannerImage: form.bannerImage,
     }
-    let res
-    if (isEdit.value) res = await adminSystem.updateCircle(editId.value, data)
-    else res = await adminSystem.createCircle(data)
-    if (res.success) { ElMessage.success(isEdit.value ? '已更新' : '已创建'); showDialog.value = false; fetchList() }
-  } catch (e) { ElMessage.error('保存失败') }
-  finally { saving.value = false }
+    let res: any
+    if (isEdit.value) {
+      res = await adminSystem.updateCircle(editId.value, data)
+    } else {
+      res = await adminSystem.createCircle(data)
+    }
+    if ((res as any).success) {
+      ElMessage.success(isEdit.value ? '已更新' : '已创建')
+      showFormDrawer.value = false
+      fetchList()
+    }
+  } catch {
+    ElMessage.error('保存失败')
+  }
+  saving.value = false
 }
 
-async function handleDelete(id: number) {
+// ===== 删除 =====
+async function handleDelete(row: any) {
+  const memberCount = memberCountMap.value[row.id] ?? 0
+  const message =
+    memberCount > 0
+      ? `该圈子下有 ${memberCount} 个成员，确定要删除吗？删除后成员关联将一并清除。`
+      : '确定删除该圈子吗？'
+
   try {
-    await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' })
+    await ElMessageBox.confirm(message, '删除确认', {
+      type: 'warning',
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+    })
   } catch {
     return
   }
   try {
-    await adminSystem.deleteCircle(id)
+    await adminSystem.deleteCircle(row.id)
     ElMessage.success('已删除')
     fetchList()
   } catch {
     ElMessage.error('删除失败，请稍后重试')
   }
 }
+
+// ===== Banner 弹窗 =====
+function openBannerDialog(row: any) {
+  bannerDialogCircleId.value = row.id
+  bannerDialogImage.value = row.bannerImage || ''
+  showBannerDialog.value = true
+}
+
+async function handleBannerSave() {
+  bannerSaving.value = true
+  try {
+    const res = await adminSystem.updateCircle(bannerDialogCircleId.value, {
+      bannerImage: bannerDialogImage.value,
+    })
+    if ((res as any).success) {
+      ElMessage.success('Banner已保存')
+      showBannerDialog.value = false
+      fetchList()
+    }
+  } catch {
+    ElMessage.error('保存失败')
+  }
+  bannerSaving.value = false
+}
+
+// ===== 成员管理 =====
+function openMemberDialog(row: any) {
+  memberCircleId.value = row.id
+  showMemberDialog.value = true
+}
+
+function onMemberSaved(circleId: number) {
+  // 更新成员数缓存
+  adminSystem.getCircleMembers(circleId).then(res => {
+    memberCountMap.value[circleId] = ((res as any).data as any[])?.length ?? 0
+  })
+}
 </script>
 
 <style scoped>
-.page { padding: 20px; }
-.page-header { margin-bottom: 20px; }
-.page-title { font-size: 20px; font-weight: 600; color: #303133; margin: 0; }
-.content-card { margin-bottom: 20px; }
-.toolbar { margin-bottom: 16px; }
-.member-list { min-height: 32px; }
+.page {
+  padding: 20px;
+}
+.page-header {
+  margin: 16px 0 20px;
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0;
+}
+.content-card {
+  margin-bottom: 20px;
+}
+.toolbar {
+  margin-bottom: 16px;
+}
+
+/* 上传区域 */
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.upload-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.upload-tip {
+  color: #909399;
+  font-size: 12px;
+}
+
+/* Banner 弹窗 */
+.banner-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.banner-upload-btn {
+  margin-bottom: 4px;
+}
+.banner-tip {
+  color: #909399;
+  font-size: 13px;
+}
+.banner-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.banner-empty {
+  padding: 40px 0;
+  color: #c0c4cc;
+  font-size: 14px;
+}
 </style>

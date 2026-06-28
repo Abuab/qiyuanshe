@@ -33,13 +33,14 @@ export class CircleService {
   }
 
   async getCircleUsers(circleId: number, page = 1, limit = 10) {
-    // 通过圈子成员关联表查询
+    // 通过圈子成员关联表查询，按 sortOrder 排序
     const qb = this.userRepo.createQueryBuilder('user')
       .innerJoin('circle_members', 'cm', 'cm.userId = user.id')
       .where('cm.circleId = :circleId', { circleId })
       .andWhere('user.status = 2')
       .andWhere('user.isDeleted = 0')
-      .orderBy('user.id', 'DESC')
+      .orderBy('cm.sortOrder', 'ASC')
+      .addOrderBy('cm.createdAt', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
 
@@ -132,20 +133,96 @@ export class CircleService {
     await this.circleRepo.delete(id)
   }
 
+  // ========== 管理后台 - 用户全量搜索（穿梭框左侧数据源） ==========
+
+  async getAllUsers(page = 1, limit = 20, keyword?: string) {
+    const qb = this.userRepo.createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.nickname',
+        'user.avatar',
+        'user.gender',
+        'user.birthYear',
+        'user.status',
+        'user.isDeleted',
+      ])
+      .where('user.status = 2')
+      .andWhere('user.isDeleted = 0')
+
+    if (keyword && keyword.trim().length > 0) {
+      qb.andWhere(
+        '(user.nickname LIKE :kw OR CAST(user.id AS CHAR) LIKE :kw)',
+        { kw: `%${keyword.trim()}%` },
+      )
+    }
+
+    qb.orderBy('user.id', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [list, total] = await qb.getManyAndCount()
+
+    const result = list.map(user => {
+      const age = user.birthYear ? new Date().getFullYear() - user.birthYear : 0
+      return {
+        id: user.id,
+        nickname: user.nickname,
+        avatar: user.avatar,
+        gender: user.gender,
+        age,
+      }
+    })
+
+    return { list: result, total, page, limit }
+  }
+
   // ========== 圈子成员管理 ==========
 
   async getCircleMembers(circleId: number) {
     const members = await this.memberRepo.find({
       where: { circleId } as any,
-      order: { createdAt: 'DESC' },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
     })
     if (members.length === 0) return []
     const userIds = members.map(m => m.userId)
+    // 构建 userId → sortOrder 的映射
+    const sortMap = new Map<number, number>()
+    for (const m of members) {
+      sortMap.set(m.userId, m.sortOrder ?? 0)
+    }
     const users = await this.userRepo.createQueryBuilder('user')
-      .select(['user.id', 'user.nickname', 'user.avatar'])
+      .select(['user.id', 'user.nickname', 'user.avatar', 'user.gender', 'user.birthYear'])
       .where('user.id IN (:...ids)', { ids: userIds })
       .getMany()
-    return users
+    // 按 members 中的排序顺序返回
+    const userMap = new Map(users.map(u => [u.id, u]))
+    return members.map(m => {
+      const u = userMap.get(m.userId)
+      if (!u) return null
+      const age = u.birthYear ? new Date().getFullYear() - u.birthYear : 0
+      return {
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+        gender: u.gender,
+        age,
+        sortOrder: sortMap.get(u.id) ?? 0,
+      }
+    }).filter(Boolean)
+  }
+
+  async saveCircleMembersBatch(circleId: number, members: { userId: number; sortOrder: number }[]) {
+    // 删除该圈子所有现有成员
+    await this.memberRepo.delete({ circleId } as any)
+    // 批量插入新成员
+    if (members.length > 0) {
+      const entities = members.map(m => this.memberRepo.create({
+        circleId,
+        userId: m.userId,
+        sortOrder: m.sortOrder,
+      }))
+      await this.memberRepo.save(entities)
+    }
   }
 
   async addCircleMember(circleId: number, userId: number) {

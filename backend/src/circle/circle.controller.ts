@@ -148,6 +148,27 @@ export class AdminCircleController {
     return Result.success(users)
   }
 
+  // 用户全量分页查询（穿梭框左侧数据源）
+  @Get('users')
+  async getAllUsers(
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Query('keyword') keyword?: string,
+  ) {
+    const result = await this.circleService.getAllUsers(+page, +limit, keyword)
+    return Result.success(result)
+  }
+
+  // 批量保存圈子成员（含排序）
+  @Put(':id/members')
+  async saveMembers(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { members: { userId: number; sortOrder: number }[] },
+  ) {
+    await this.circleService.saveCircleMembersBatch(id, body.members || [])
+    return Result.success(null, '保存成功')
+  }
+
   @Get('posts')
   async getPosts(
     @Query('page') page = 1,

@@ -102,6 +102,14 @@ export const adminSystem = {
   searchUsers(keyword: string): Promise<ApiResponse> {
     return request.get('/admin/circles/users/search', { params: { keyword } })
   },
+  // 所有用户分页列表（穿梭框左侧数据源）
+  getAllUsers(page = 1, limit = 20, keyword = ''): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
+    return request.get('/admin/circles/users', { params: { page, limit, keyword } })
+  },
+  // 批量保存圈子成员（含排序）
+  saveCircleMembersBatch(id: number, members: { userId: number; sortOrder: number }[]): Promise<ApiResponse> {
+    return request.put(`/admin/circles/${id}/members`, { members })
+  },
 
   // 帖子审核
   getCirclePosts(page = 1, limit = 20): Promise<ApiResponse> {

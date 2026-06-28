@@ -18,6 +18,9 @@ export class CircleMember {
   @Column({ type: 'bigint', comment: '用户ID' })
   userId: number
 
+  @Column({ type: 'int', default: 0, comment: '排序权重，越小越靠前' })
+  sortOrder: number
+
   @CreateDateColumn()
   createdAt: Date
 }

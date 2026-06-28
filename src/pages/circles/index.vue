@@ -13,18 +13,18 @@
     <scroll-view
       class="content-scroll"
       scroll-y
-      :style="scrollViewStyle"
+      :style="{ paddingTop: navBarTop + 'px' }"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
     >
-      <!-- Banner -->
+      <!-- Banner：固定高度35vh，aspectFill填充 -->
       <view v-if="currentBanner" class="banner-area">
         <image
           class="banner-image"
           :src="currentBanner"
-          mode="widthFix"
+          mode="aspectFill"
           @error="onBannerError"
         />
       </view>
@@ -66,6 +66,18 @@
 
         <!-- 空状态 -->
         <view v-if="userList.length === 0 && !loading && !loadingMore" class="empty-state">
+          <!-- 粉色星球插图（纯CSS） -->
+          <view class="empty-planet">
+            <view class="planet-body">
+              <view class="planet-ring"></view>
+              <view class="planet-crater crater-1"></view>
+              <view class="planet-crater crater-2"></view>
+              <view class="planet-crater crater-3"></view>
+            </view>
+            <view class="planet-star star-1"></view>
+            <view class="planet-star star-2"></view>
+            <view class="planet-star star-3"></view>
+          </view>
           <text class="empty-desc">暂时找不到匹配的对象，</text>
           <text class="empty-link" @tap="goHome">返回首页~</text>
         </view>
@@ -89,6 +101,7 @@ const appName = computed(() => systemStore.appName || '志趣相投')
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const navBarTop = computed(() => statusBarHeight.value + navBarHeightPx.value)
 
 const circles = ref<any[]>([])
 const activeCircleId = ref<number>(0)
@@ -99,11 +112,6 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const noMore = ref(false)
 const isRefreshing = ref(false)
-
-const scrollViewStyle = computed(() => {
-  const top = statusBarHeight.value + navBarHeightPx.value
-  return `height: calc(100vh - ${top}px); padding-top: ${top}px;`
-})
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any
@@ -120,7 +128,7 @@ async function loadCircles() {
     circles.value = list.filter((c: any) => c.status === 1)
     if (circles.value.length > 0) {
       activeCircleId.value = circles.value[0].id
-      currentBanner.value = circles.value[0].bannerImage || circles.value[0].icon || ''
+      currentBanner.value = circles.value[0].bannerImage || ''
       await loadUsers(true)
     } else {
       loading.value = false
@@ -167,7 +175,7 @@ async function loadUsers(reset = false) {
 function switchCircle(circle: any) {
   if (activeCircleId.value === circle.id) return
   activeCircleId.value = circle.id
-  currentBanner.value = circle.bannerImage || circle.icon || ''
+  currentBanner.value = circle.bannerImage || ''
   loadUsers(true)
 }
 
@@ -187,7 +195,9 @@ function onLoadMore() {
 }
 
 // ========== 跳转 ==========
-function handleBack() { safeNavigateBack() }
+function handleBack() {
+  safeNavigateBack()
+}
 function goToUserDetail(user: UserCardData) {
   uni.navigateTo({ url: `/pages/user-detail/index?id=${user.id}` })
 }
@@ -201,54 +211,225 @@ function onBannerError() {
 </script>
 
 <style lang="scss" scoped>
-.page { min-height: 100vh; background: #FFF5F7; }
+.page {
+  min-height: 100vh;
+  background: #FFF5F7;
+}
 
 // ===== 导航 =====
-.nav-wrap { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: #fff; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.05); }
-.nav-bar { height: 88rpx; display: flex; align-items: center; justify-content: space-between; padding: 0 32rpx; }
-.nav-left, .nav-right { width: 100rpx; }
-.back-icon { font-size: 40rpx; color: #333; font-weight: 300; }
-.nav-title { font-size: 34rpx; font-weight: 400; color: #333; }
+.nav-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #fff;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+.nav-bar {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+}
+.nav-left,
+.nav-right {
+  width: 100rpx;
+}
+.back-icon {
+  font-size: 40rpx;
+  color: #333;
+  font-weight: 300;
+}
+.nav-title {
+  font-size: 34rpx;
+  font-weight: 400;
+  color: #333;
+}
 
 // ===== 滚动区 =====
-.content-scroll { height: 100vh; box-sizing: border-box; }
-
-// ===== Banner =====
-.banner-area { width: 100%; }
-.banner-image { width: 100%; display: block; }
-.banner-placeholder {
-  width: 100%; height: 35vh; background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
-  display: flex; align-items: center; justify-content: center;
+.content-scroll {
+  height: 100vh;
+  box-sizing: border-box;
 }
-.placeholder-text { font-size: 48rpx; color: #fff; font-weight: 300; letter-spacing: 8rpx; }
+
+// ===== Banner：固定 35vh 高度 =====
+.banner-area {
+  width: 100%;
+  height: 35vh;
+  overflow: hidden;
+}
+.banner-image {
+  width: 100%;
+  height: 100%;
+}
+.banner-placeholder {
+  width: 100%;
+  height: 35vh;
+  background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.placeholder-text {
+  font-size: 48rpx;
+  color: #fff;
+  font-weight: 300;
+  letter-spacing: 8rpx;
+}
 
 // ===== 标签栏 =====
-.tab-scroll { white-space: nowrap; background: #fff; padding: 20rpx 0; }
-.tab-list { display: flex; padding: 0 24rpx; }
+.tab-scroll {
+  white-space: nowrap;
+  background: #fff;
+  padding: 20rpx 0;
+}
+.tab-list {
+  display: flex;
+  padding: 0 24rpx;
+}
 .tab-item {
-  flex-shrink: 0; padding: 14rpx 32rpx; margin-right: 16rpx; border-radius: 40rpx;
-  background: #F5F5F5; transition: all 0.25s;
+  flex-shrink: 0;
+  padding: 14rpx 32rpx;
+  margin-right: 16rpx;
+  border-radius: 40rpx;
+  background: #F5F5F5;
+  transition: all 0.25s;
   &.active {
     background: #FF4D6A;
-    .tab-text { color: #fff; }
+    .tab-text {
+      color: #fff;
+    }
   }
 }
-.tab-text { font-size: 28rpx; color: #666; font-weight: 400; }
+.tab-text {
+  font-size: 28rpx;
+  color: #666;
+  font-weight: 400;
+}
 
 // ===== 用户列表 =====
-.user-list { padding: 16rpx 0; }
-.loading-more, .no-more {
-  text-align: center; padding: 30rpx 0; color: #999; font-size: 26rpx;
+.user-list {
+  padding: 16rpx 0;
+}
+.loading-more,
+.no-more {
+  text-align: center;
+  padding: 30rpx 0;
+  color: #999;
+  font-size: 26rpx;
 }
 
 // ===== 空状态 =====
 .empty-state {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 80rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0 80rpx;
 }
-.empty-desc { color: #999; font-size: 28rpx; margin-top: 30rpx; }
-.empty-link { color: #FF4D6A; font-size: 28rpx; margin-top: 10rpx; }
+.empty-desc {
+  color: #999;
+  font-size: 28rpx;
+  margin-top: 40rpx;
+}
+.empty-link {
+  color: #FF4D6A;
+  font-size: 28rpx;
+  margin-top: 10rpx;
+}
+
+// ===== 粉色星球插图（纯CSS） =====
+.empty-planet {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+}
+
+.planet-body {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFB3C6 0%, #FF6B81 100%);
+  box-shadow: 0 8rpx 30rpx rgba(255, 107, 129, 0.3);
+}
+
+.planet-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-20deg);
+  width: 200rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 6rpx solid rgba(255, 179, 198, 0.5);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.planet-crater {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+.crater-1 {
+  top: 30rpx;
+  left: 30rpx;
+  width: 24rpx;
+  height: 24rpx;
+}
+.crater-2 {
+  top: 80rpx;
+  right: 25rpx;
+  width: 18rpx;
+  height: 18rpx;
+}
+.crater-3 {
+  bottom: 35rpx;
+  left: 50rpx;
+  width: 14rpx;
+  height: 14rpx;
+}
+
+.planet-star {
+  position: absolute;
+  background: #FFB3C6;
+  border-radius: 50%;
+  animation: star-twinkle 2s ease-in-out infinite;
+}
+.star-1 {
+  top: 0;
+  right: 20rpx;
+  width: 10rpx;
+  height: 10rpx;
+  animation-delay: 0s;
+}
+.star-2 {
+  top: 40rpx;
+  left: 0;
+  width: 14rpx;
+  height: 14rpx;
+  animation-delay: 0.6s;
+}
+.star-3 {
+  bottom: 20rpx;
+  right: -10rpx;
+  width: 8rpx;
+  height: 8rpx;
+  animation-delay: 1.2s;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
 
 // ===== 底部安全区 =====
-.bottom-safe { height: 80rpx; }
+.bottom-safe {
+  height: 80rpx;
+}
 </style>
