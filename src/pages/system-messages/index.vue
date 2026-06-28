@@ -51,8 +51,10 @@
       >
         <view class="msg-item-head">
           <text class="msg-title">{{ item.title }}</text>
-          <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
-          <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
+          <view class="msg-head-right">
+            <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
+            <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
+          </view>
         </view>
         <text class="msg-content">{{ item.content }}</text>
         <view v-if="item.isRead === 0" class="unread-dot" />
@@ -296,7 +298,10 @@ const formatTime = (timeStr: string) => {
   font-size: 30rpx; font-weight: 600; color: #1A1A1A;
 }
 .msg-time {
-  font-size: 22rpx; color: #999; flex-shrink: 0; margin-left: 16rpx;
+  font-size: 22rpx; color: #999; flex-shrink: 0;
+}
+.msg-head-right {
+  display: flex; align-items: center; flex-shrink: 0; margin-left: 16rpx;
 }
 .msg-content {
   font-size: 26rpx; color: #666; line-height: 1.5;
@@ -310,9 +315,10 @@ const formatTime = (timeStr: string) => {
   width: 12rpx; height: 12rpx; border-radius: 50%; background: #FF4D4F;
 }
 .delete-btn {
-  font-size: 28rpx; color: #CCC;
+  font-size: 22rpx; color: #CCC;
   padding: 0 8rpx;
   flex-shrink: 0;
+  margin-left: 12rpx;
 }
 .no-more { padding: 40rpx 0; }
 </style>
