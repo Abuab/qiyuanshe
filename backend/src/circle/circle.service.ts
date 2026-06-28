@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { FindOptionsWhere, Repository } from 'typeorm'
 import { Circle } from '../entities/Circle'
 import { CirclePost } from '../entities/CirclePost'
+import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 
 @Injectable()
@@ -12,6 +13,8 @@ export class CircleService {
     private readonly circleRepo: Repository<Circle>,
     @InjectRepository(CirclePost)
     private readonly postRepo: Repository<CirclePost>,
+    @InjectRepository(CircleMember)
+    private readonly memberRepo: Repository<CircleMember>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
@@ -30,17 +33,18 @@ export class CircleService {
   }
 
   async getCircleUsers(circleId: number, page = 1, limit = 10) {
-    const [list, total] = await this.userRepo.findAndCount({
-      select: [
-        'id', 'nickname', 'avatar', 'gender', 'height',
-        'education', 'occupation', 'incomeRange', 'housingStatus',
-        'residence', 'isRealName', 'status', 'birthYear',
-      ],
-      where: { status: 2, isDeleted: 0 } as any,
-      order: { id: 'DESC' } as any,
-      skip: (page - 1) * limit,
-      take: limit,
-    })
+    // 通过圈子成员关联表查询
+    const qb = this.userRepo.createQueryBuilder('user')
+      .innerJoin('circle_members', 'cm', 'cm.userId = user.id')
+      .where('cm.circleId = :circleId', { circleId })
+      .andWhere('user.status = 2')
+      .andWhere('user.isDeleted = 0')
+      .orderBy('user.id', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [list, total] = await qb.getManyAndCount()
+
     // 查询每个用户的头像/照片
     const userIds = list.map(u => u.id)
     const photosQuery = userIds.length > 0
@@ -121,7 +125,49 @@ export class CircleService {
   }
 
   async deleteCircle(id: number) {
-    await this.circleRepo.update(id, { status: 0 })
+    // 先删除该圈子下的成员、帖子
+    await this.memberRepo.delete({ circleId: id } as any)
+    await this.postRepo.delete({ circleId: id } as any)
+    // 再硬删除圈子
+    await this.circleRepo.delete(id)
+  }
+
+  // ========== 圈子成员管理 ==========
+
+  async getCircleMembers(circleId: number) {
+    const members = await this.memberRepo.find({
+      where: { circleId } as any,
+      order: { createdAt: 'DESC' },
+    })
+    if (members.length === 0) return []
+    const userIds = members.map(m => m.userId)
+    const users = await this.userRepo.createQueryBuilder('user')
+      .select(['user.id', 'user.nickname', 'user.avatar'])
+      .where('user.id IN (:...ids)', { ids: userIds })
+      .getMany()
+    return users
+  }
+
+  async addCircleMember(circleId: number, userId: number) {
+    const exist = await this.memberRepo.findOne({ where: { circleId, userId } as any })
+    if (exist) return exist
+    const member = this.memberRepo.create({ circleId, userId })
+    return this.memberRepo.save(member)
+  }
+
+  async removeCircleMember(circleId: number, userId: number) {
+    await this.memberRepo.delete({ circleId, userId } as any)
+  }
+
+  async searchUsers(keyword: string) {
+    if (!keyword || keyword.trim().length === 0) return []
+    return this.userRepo.createQueryBuilder('user')
+      .select(['user.id', 'user.nickname', 'user.avatar'])
+      .where('user.nickname LIKE :kw', { kw: `%${keyword.trim()}%` })
+      .andWhere('user.status = 2')
+      .andWhere('user.isDeleted = 0')
+      .take(20)
+      .getMany()
   }
 
   async getPostsAll(page = 1, limit = 10, status?: number) {

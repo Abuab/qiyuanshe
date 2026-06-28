@@ -90,6 +90,18 @@ export const adminSystem = {
   deleteCircle(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/circles/${id}`)
   },
+  getCircleMembers(id: number): Promise<ApiResponse> {
+    return request.get(`/admin/circles/${id}/members`)
+  },
+  addCircleMember(id: number, userId: number): Promise<ApiResponse> {
+    return request.post(`/admin/circles/${id}/members`, { userId })
+  },
+  removeCircleMember(id: number, userId: number): Promise<ApiResponse> {
+    return request.delete(`/admin/circles/${id}/members/${userId}`)
+  },
+  searchUsers(keyword: string): Promise<ApiResponse> {
+    return request.get('/admin/circles/users/search', { params: { keyword } })
+  },
 
   // 帖子审核
   getCirclePosts(page = 1, limit = 20): Promise<ApiResponse> {

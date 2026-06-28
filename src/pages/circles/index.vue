@@ -66,11 +66,6 @@
 
         <!-- 空状态 -->
         <view v-if="userList.length === 0 && !loading && !loadingMore" class="empty-state">
-          <image
-            class="empty-img"
-            src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=cute%20pink%20planet%20with%20stars%20kawaii%20style%20transparent%20background%20flat%20illustration&image_size=square_hd"
-            mode="aspectFit"
-          />
           <text class="empty-desc">暂时找不到匹配的对象，</text>
           <text class="empty-link" @tap="goHome">返回首页~</text>
         </view>
@@ -249,9 +244,8 @@ function onBannerError() {
 // ===== 空状态 =====
 .empty-state {
   display: flex; flex-direction: column; align-items: center;
-  padding: 120rpx 0;
+  padding: 80rpx 0;
 }
-.empty-img { width: 280rpx; height: 280rpx; }
 .empty-desc { color: #999; font-size: 28rpx; margin-top: 30rpx; }
 .empty-link { color: #FF4D6A; font-size: 28rpx; margin-top: 10rpx; }
 

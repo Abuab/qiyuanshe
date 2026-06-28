@@ -116,6 +116,38 @@ export class AdminCircleController {
     return Result.success(null, '删除成功')
   }
 
+  // ========== 圈子成员管理 ==========
+
+  @Get(':id/members')
+  async getMembers(@Param('id', ParseIntPipe) id: number) {
+    const members = await this.circleService.getCircleMembers(id)
+    return Result.success(members)
+  }
+
+  @Post(':id/members')
+  async addMember(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { userId: number },
+  ) {
+    await this.circleService.addCircleMember(id, body.userId)
+    return Result.success(null, '添加成功')
+  }
+
+  @Delete(':id/members/:userId')
+  async removeMember(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    await this.circleService.removeCircleMember(id, userId)
+    return Result.success(null, '移除成功')
+  }
+
+  @Get('users/search')
+  async searchUsers(@Query('keyword') keyword: string) {
+    const users = await this.circleService.searchUsers(keyword || '')
+    return Result.success(users)
+  }
+
   @Get('posts')
   async getPosts(
     @Query('page') page = 1,
