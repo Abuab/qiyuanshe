@@ -312,7 +312,7 @@ function onBannerError() {
 
 // ===== 用户列表 =====
 .user-list {
-  padding: 16rpx 0;
+  padding: 0 24rpx;
 }
 .loading-more,
 .no-more {
