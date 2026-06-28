@@ -1,17 +1,33 @@
 <template>
   <view class="dynamic-page">
-    <!-- 顶部固定品牌栏 -->
-    <view class="nav-bar" :style="{ paddingTop: (statusBarHeight + 6) + 'px' }">
-      <view class="nav-left" @tap="goHome">
-        <image
-          class="home-icon-img"
-          :src="dynamicHomeIcon"
-          mode="aspectFit"
-          @error="handleImageError"
-        />
+    <!-- ===== 顶部导航：两级固定导航栏 ===== -->
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <!-- 第一级：标题 -->
+      <view class="nav-level1">
+        <view class="nav-left" @tap="goHome">
+          <image
+            class="home-icon-img"
+            :src="dynamicHomeIcon"
+            mode="aspectFit"
+            @error="handleImageError"
+          />
+        </view>
+        <text class="nav-title">动态</text>
+        <view class="nav-right" />
       </view>
-      <text class="nav-title">动态</text>
-      <view class="nav-right" />
+      <!-- 第二级：Tab 切换栏 -->
+      <view class="nav-level2">
+        <view
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="tab-item"
+          :class="{ active: currentTab === tab.key }"
+          @tap="switchTab(tab.key)"
+        >
+          <text class="tab-text">{{ tab.label }}</text>
+          <view v-if="currentTab === tab.key" class="tab-underline" />
+        </view>
+      </view>
     </view>
 
     <scroll-view
@@ -26,20 +42,6 @@
       :scroll-top="scrollToVal"
       :scroll-with-animation="true"
     >
-      <!-- 内联标签栏（滚动时跟随） -->
-      <view class="tab-bar-inline">
-        <view
-          v-for="tab in tabs"
-          :key="tab.key"
-          class="tab-item"
-          :class="{ active: currentTab === tab.key }"
-          @tap="switchTab(tab.key)"
-        >
-          <text class="tab-text">{{ tab.label }}</text>
-          <view v-if="currentTab === tab.key" class="tab-underline" />
-        </view>
-      </view>
-
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无动态</text>
       </view>
@@ -219,20 +221,6 @@
       <view class="bottom-safe" />
     </scroll-view>
 
-    <!-- 固定标签栏（原位置标签栏滚出视野后固定到品牌栏下方） -->
-    <view v-if="showFixedTab" class="tab-bar-fixed" :style="{ top: (statusBarHeight + 50) + 'px' }">
-      <view
-        v-for="tab in tabs"
-        :key="tab.key"
-        class="tab-item"
-        :class="{ active: currentTab === tab.key }"
-        @tap="switchTab(tab.key)"
-      >
-        <text class="tab-text">{{ tab.label }}</text>
-        <view v-if="currentTab === tab.key" class="tab-underline" />
-      </view>
-    </view>
-
     <tab-bar />
 
     <!-- 一键回到顶部按钮 -->
@@ -330,19 +318,16 @@ const mmEyeIcon = computed(() => {
 
 // scroll-view 绝对定位样式（使 @scroll 事件生效）
 const scrollViewStyle = computed(() => {
-  const top = (statusBarHeight.value || 20) + 50
+  const top = (statusBarHeight.value || 20) + 82
   return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
 })
 
 // 一键回到顶部 & 固定标签栏
 const showBackTop = ref(false)
-const showFixedTab = ref(false)
 const scrollToVal = ref(0)
 
 const onScroll = (e: any) => {
   const top = e.detail.scrollTop
-  // 内联标签栏高度约 46px，滚出视野后显示固定版
-  showFixedTab.value = top > 46
   // 滚动超过 600px 时显示回到顶部按钮
   showBackTop.value = top > 600
 }
@@ -350,7 +335,6 @@ const onScroll = (e: any) => {
 const scrollToTop = () => {
   scrollToVal.value = scrollToVal.value ? 0 : 0.001
   showBackTop.value = false
-  showFixedTab.value = false
 }
 
 // 当前登录用户的照片数量（用于判断是否模糊）
@@ -672,18 +656,26 @@ onShow(() => {
   background: #FFF8FA;
 }
 
-.nav-bar {
+.nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  z-index: 101;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 70%, #FFF0F5 100%);
+}
+.nav-level1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
   height: 44px;
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 70%, #FFF0F5 100%);
-  z-index: 101;
+  padding: 0 32rpx;
+}
+.nav-level2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
 }
 
 .nav-left {
@@ -703,31 +695,8 @@ onShow(() => {
 
 .nav-title {
   font-size: 36rpx;
-  font-weight: bold;
+  font-weight: 400;
   color: #333;
-}
-
-// 内联标签栏（随内容滚动）
-.tab-bar-inline {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12rpx 0;
-  background: linear-gradient(180deg, #FFF0F5 0%, #FFF0F5 30%, #FFF8FA 100%);
-}
-
-// 固定标签栏（滚出视野后固定）
-.tab-bar-fixed {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12rpx 0;
-  background-color: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
 }
 
 .tab-item {

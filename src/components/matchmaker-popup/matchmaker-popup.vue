@@ -215,7 +215,6 @@ const handleCall = () => {
 }
 
 const handleMore = () => {
-  handleClose()
   emit('more')
 }
 

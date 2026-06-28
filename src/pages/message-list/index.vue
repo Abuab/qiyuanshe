@@ -355,7 +355,7 @@ function isImagePreview(item: UserMessage): boolean {
 
 .nav-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 400;
   color: #333;
 }
 
@@ -455,10 +455,10 @@ function isImagePreview(item: UserMessage): boolean {
 .official-tag {
   background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
   border-radius: 6rpx;
-  padding: 2rpx 10rpx;
+  padding: 2rpx 6rpx;
 
   text {
-    font-size: 20rpx;
+    font-size: 18rpx;
     color: #fff;
     font-weight: 500;
   }

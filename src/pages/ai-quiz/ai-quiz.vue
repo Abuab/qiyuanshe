@@ -159,8 +159,8 @@ function sendMessage() {
   align-items: center;
   justify-content: center;
   height: 88rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
+  background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
+  border-bottom: none;
   flex-shrink: 0;
   box-sizing: content-box;
   position: relative;
@@ -178,8 +178,7 @@ function sendMessage() {
 
 .back-icon {
   font-size: 44rpx;
-  color: #333333;
-  font-weight: bold;
+  color: #fff;
 }
 
 .title-right {
@@ -188,8 +187,7 @@ function sendMessage() {
 
 .title-text {
   font-size: 32rpx;
-  color: #333333;
-  font-weight: 500;
+  color: #fff;
 }
 
 /* ===== 消息区 ===== */

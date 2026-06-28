@@ -589,7 +589,6 @@ const profileData = ref<any>(null)
 const voiceEnabled = ref(true)
 const voiceData = ref<{ voiceUrl: string; duration: number; auditStatus: number } | null>(null)
 const isVoicePlaying = ref(false)
-let voiceAudioCtx: any = null
 const showAiMatchPopup = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -736,16 +735,29 @@ async function fetchVoiceEnabled() {
 function toggleVoicePlay() {
   if (isVoicePlaying.value) { stopVoice(); return }
   if (!voiceData.value?.voiceUrl) return
-  voiceAudioCtx = uni.createInnerAudioContext()
-  voiceAudioCtx.src = voiceData.value.voiceUrl
-  voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
-  voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
-  voiceAudioCtx.onError(() => { isVoicePlaying.value = false })
-  voiceAudioCtx.play()
+  // 真机上直接播放远程 URL 可能失败，先下载到本地再播放
+  uni.downloadFile({
+    url: voiceData.value.voiceUrl,
+    success: (res: any) => {
+      if (res.statusCode === 200) {
+        (uni as any).playVoice({
+          filePath: res.tempFilePath,
+          success: () => { isVoicePlaying.value = true },
+          fail: (err: any) => {
+            console.error('[UserDetail] playVoice error', JSON.stringify(err))
+          },
+        })
+        ;(uni as any).onVoicePlayEnd(() => { isVoicePlaying.value = false })
+      }
+    },
+    fail: (err: any) => {
+      console.error('[UserDetail] download voice error', JSON.stringify(err))
+    },
+  })
 }
 
 function stopVoice() {
-  if (voiceAudioCtx) { voiceAudioCtx.stop(); voiceAudioCtx.destroy(); voiceAudioCtx = null }
+  (uni as any).stopVoice()
   isVoicePlaying.value = false
 }
 

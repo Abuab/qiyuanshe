@@ -17,6 +17,9 @@ export class Circle {
   @Column({ type: 'varchar', length: 500, nullable: true })
   icon: string
 
+  @Column({ type: 'varchar', length: 500, nullable: true, comment: '圈子顶部Banner图' })
+  bannerImage: string
+
   @Column({ type: 'text', nullable: true })
   description: string
 

@@ -224,14 +224,14 @@ const formatTime = (timeStr: string) => {
   flex-shrink: 0;
   display: flex; align-items: center;
   height: 88rpx; padding: 0 32rpx; box-sizing: content-box;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
   z-index: 100;
 }
 .nav-left { width: 80rpx; flex-shrink: 0; }
-.back-icon { font-size: 44rpx; color: #fff; font-weight: bold; }
+.back-icon { font-size: 44rpx; color: #333; }
 .nav-title {
   flex: 1; text-align: center;
-  font-size: 34rpx; font-weight: 600; color: #fff;
+  font-size: 34rpx; color: #333;
 }
 .nav-right { width: 80rpx; flex-shrink: 0; }
 

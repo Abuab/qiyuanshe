@@ -538,8 +538,8 @@ onShow(() => {
 }
 
 .nav-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 34rpx;
+  font-weight: 400;
   color: #333;
   text-align: center;
   flex: 1;
@@ -583,7 +583,7 @@ onShow(() => {
   text {
     font-size: 14px;
     color: #999;
-    font-weight: 500;
+    font-weight: 400;
     white-space: nowrap;
     transition: color 0.25s;
   }

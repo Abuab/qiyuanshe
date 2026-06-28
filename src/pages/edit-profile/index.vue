@@ -531,7 +531,14 @@
       :show="showMatchmakerPopup"
       :matchmaker="selectedMatchmaker || {}"
       @close="showMatchmakerPopup = false"
-      @more="onNextMatchmaker"
+      @more="openMatchmakerList"
+    />
+    <matchmaker-list-popup
+      :show="showMatchmakerList"
+      :matchmakers="matchmakerList"
+      @update:show="showMatchmakerList = $event"
+      @close="showMatchmakerList = false"
+      @contact="onSelectMatchmaker"
     />
 
     <!-- 我的特点弹窗 -->
@@ -616,6 +623,7 @@ const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
 import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 
 const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
@@ -819,6 +827,7 @@ const cityTarget = ref<'residence' | 'hometown'>('residence')
 
 // 红娘联系弹窗
 const showMatchmakerPopup = ref(false)
+const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
@@ -839,15 +848,17 @@ const openMatchmaker = async () => {
     return
   }
   selectedMatchmaker.value = matchmakerList.value[0]
-  matchmakerIndex.value = 0
   showMatchmakerPopup.value = true
 }
 
-const matchmakerIndex = ref(0)
-const onNextMatchmaker = () => {
-  if (matchmakerList.value.length === 0) return
-  matchmakerIndex.value = (matchmakerIndex.value + 1) % matchmakerList.value.length
-  selectedMatchmaker.value = matchmakerList.value[matchmakerIndex.value]
+const openMatchmakerList = () => {
+  showMatchmakerPopup.value = false
+  showMatchmakerList.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  showMatchmakerList.value = false
+  selectedMatchmaker.value = matchmaker
   showMatchmakerPopup.value = true
 }
 
@@ -1392,7 +1403,6 @@ const recordTime = ref('00:00')
 const hadVoiceSaved = ref(false)  // 标记进入页面时是否有已保存的语音
 let voiceTimer: ReturnType<typeof setTimeout> | null = null
 let voiceCountdown: ReturnType<typeof setInterval> | null = null
-let innerAudioCtx: any = null
 
 async function fetchVoiceEnabled() {
   try {
@@ -1412,12 +1422,17 @@ function startRecord() {
     recordTime.value = '00:' + remaining.toString().padStart(2, '0')
   }, 1000)
   const recorder = uni.getRecorderManager()
-  recorder.start({ duration: 10000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' })
+  recorder.start({ duration: 10000, format: 'aac' })
   recorder.onStop((res: any) => {
-    voiceTempPath.value = res.tempFilePath
+    if (!res.tempFilePath) {
+      uni.showToast({ title: '录音保存失败', icon: 'none' })
+      voiceStatus.value = 'idle'
+      return
+    }
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
-    voiceAuditStatus.value = 0  // 新录制的语音，审核状态为待审核
+    voiceAuditStatus.value = 0
+    voiceTempPath.value = res.tempFilePath
   })
 }
 
@@ -1433,22 +1448,19 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  // onMounted/onShow 已过滤服务端返回的临时路径，此处 voiceTempPath 要么是刚录制的有效临时路径，
-  // 要么是已上传的服务器 URL，均可播放
-  innerAudioCtx = uni.createInnerAudioContext()
-  innerAudioCtx.src = voiceTempPath.value
-  innerAudioCtx.onPlay(() => { isVoicePlaying.value = true })
-  innerAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
-  innerAudioCtx.onError((err: any) => {
-    console.error('[EditProfile] play voice error', err, 'src=', voiceTempPath.value)
-    isVoicePlaying.value = false
-    uni.showToast({ title: '语音播放失败', icon: 'none' })
+  (uni as any).playVoice({
+    filePath: voiceTempPath.value,
+    success: () => { isVoicePlaying.value = true },
+    fail: (err: any) => {
+      console.error('[EditProfile] playVoice error', JSON.stringify(err))
+      uni.showToast({ title: '播放失败，请重试', icon: 'none' })
+    },
   })
-  innerAudioCtx.play()
+  (uni as any).onVoicePlayEnd(() => { isVoicePlaying.value = false })
 }
 
 function stopVoicePlay() {
-  if (innerAudioCtx) { innerAudioCtx.stop(); innerAudioCtx.destroy(); innerAudioCtx = null }
+  (uni as any).stopVoice()
   isVoicePlaying.value = false
 }
 

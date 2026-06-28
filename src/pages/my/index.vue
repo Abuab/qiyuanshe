@@ -209,6 +209,15 @@
       :show="showMatchmaker"
       :matchmaker="selectedMatchmaker || {}"
       @close="showMatchmaker = false"
+      @more="openMatchmakerList"
+    />
+
+    <matchmaker-list-popup
+      :show="showMatchmakerList"
+      :matchmakers="matchmakerList"
+      @update:show="showMatchmakerList = $event"
+      @close="showMatchmakerList = false"
+      @contact="onSelectMatchmaker"
     />
 
     <!-- 问题反馈弹窗 -->
@@ -226,6 +235,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import request, { getBaseUrl, get } from '@/utils/request'
@@ -496,6 +506,7 @@ const goToRealnameAuth = () => {
 }
 
 const showMatchmaker = ref(false)
+const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 
@@ -525,6 +536,18 @@ const fetchMatchmakerList = async () => {
     matchmakerList.value = []
   }
 }
+
+const openMatchmakerList = () => {
+  showMatchmaker.value = false
+  showMatchmakerList.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  showMatchmakerList.value = false
+  selectedMatchmaker.value = matchmaker
+  showMatchmaker.value = true
+}
+
 const goToLoveQuotes = () => safeNavigateTo('/pages/love-quotes/index')
 const goToMyLikes = () => safeNavigateTo('/pages/my-likes/my-likes')
 const goToPrivacySettings = () => safeNavigateTo('/pages/privacy-settings/index')

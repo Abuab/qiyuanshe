@@ -249,7 +249,7 @@ interface FilterTab {
 const quickEntries: QuickEntry[] = [
   { id: 1, name: '红娘评语', icon: icons.quickEntry.matchmakerComment, bgColor: '#FFE4EC' },
   { id: 2, name: '最新活动', icon: icons.quickEntry.latestActivity, bgColor: '#D6F0FF' },
-  { id: 3, name: '相亲圈子', icon: icons.quickEntry.datingCircle, bgColor: '#EDE0FF' },
+  { id: 3, name: '志趣相投', icon: icons.quickEntry.datingCircle, bgColor: '#EDE0FF' },
   { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF0D6' },
 ]
 

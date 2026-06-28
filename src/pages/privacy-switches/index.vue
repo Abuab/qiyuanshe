@@ -67,6 +67,14 @@
       :matchmaker="selectedMatchmaker || defaultMatchmaker"
       @update:show="showMatchmakerPopup = $event"
       @close="showMatchmakerPopup = false"
+      @more="openMatchmakerList"
+    />
+    <matchmaker-list-popup
+      :show="showMatchmakerList"
+      :matchmakers="matchmakerList"
+      @update:show="showMatchmakerList = $event"
+      @close="showMatchmakerList = false"
+      @contact="onSelectMatchmaker"
     />
   </view>
 </template>
@@ -76,6 +84,7 @@ import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const statusBarHeight = ref(20)
@@ -89,7 +98,9 @@ const showTipDialog = ref(false)
 
 // 红娘弹窗
 const showMatchmakerPopup = ref(false)
+const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<MatchmakerData | null>(null)
+const matchmakerList = ref<MatchmakerData[]>([])
 const defaultMatchmaker: MatchmakerData = {
   id: 0,
   name: '红娘',
@@ -156,10 +167,30 @@ const handleGoContact = async () => {
       phone: item.phone || '',
       qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
     }
+    matchmakerList.value = rawList.map((m: any) => ({
+      id: m.id || 0,
+      name: m.name || '红娘',
+      avatar: getFullImageUrl(m.avatar),
+      title: m.title || '专属红娘',
+      wechat: m.wechat || '',
+      phone: m.phone || '',
+      qrCode: getFullImageUrl(m.qrCode || m.qr_code || m.qrcode),
+    }))
     showMatchmakerPopup.value = true
   } catch {
     uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })
   }
+}
+
+const openMatchmakerList = () => {
+  showMatchmakerPopup.value = false
+  showMatchmakerList.value = true
+}
+
+const onSelectMatchmaker = (matchmaker: any) => {
+  showMatchmakerList.value = false
+  selectedMatchmaker.value = matchmaker
+  showMatchmakerPopup.value = true
 }
 </script>
 

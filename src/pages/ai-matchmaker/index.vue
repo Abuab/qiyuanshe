@@ -370,7 +370,7 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
   flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32rpx; height: 88rpx; box-sizing: content-box;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
 }
 .nav-bar-placeholder {
   display: none;
@@ -382,11 +382,10 @@ $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 }
 .nav-left { justify-content: flex-start; }
 .nav-right { justify-content: flex-end; }
-.back-icon { font-size: 44rpx; color: #fff; font-weight: bold; text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4); }
+.back-icon { font-size: 44rpx; color: #333; }
 .nav-title {
   flex: 1; text-align: center;
-  font-size: 32rpx; color: #fff; font-weight: bold;
-  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.4);
+  font-size: 32rpx; color: #333;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 

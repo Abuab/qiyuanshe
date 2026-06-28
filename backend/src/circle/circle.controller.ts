@@ -44,6 +44,16 @@ export class CircleController {
     return Result.success(result)
   }
 
+  @Get(':id/users')
+  async getCircleUsers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ) {
+    const result = await this.circleService.getCircleUsers(id, +page, +limit)
+    return Result.success(result)
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('posts')
   async createPost(
@@ -86,7 +96,7 @@ export class AdminCircleController {
   }
 
   @Post()
-  async createCircle(@Body() body: { name: string; icon: string; description: string; sort: number }) {
+  async createCircle(@Body() body: { name: string; icon: string; bannerImage?: string; description: string; sort: number }) {
     const circle = await this.circleService.createCircle(body)
     return Result.success(circle)
   }
@@ -94,7 +104,7 @@ export class AdminCircleController {
   @Put(':id')
   async updateCircle(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { name: string; icon: string; description: string; sort: number; status: number },
+    @Body() body: { name?: string; icon?: string; bannerImage?: string; description?: string; sort?: number; status?: number },
   ) {
     const circle = await this.circleService.updateCircle(id, body)
     return Result.success(circle)
