@@ -34,17 +34,20 @@ export class CircleService {
 
   async getCircleUsers(circleId: number, page = 1, limit = 10) {
     // 通过圈子成员关联表查询，按 sortOrder 排序
-    const qb = this.userRepo.createQueryBuilder('user')
+    const baseQb = this.userRepo.createQueryBuilder('user')
       .innerJoin('circle_members', 'cm', 'cm.userId = user.id')
       .where('cm.circleId = :circleId', { circleId })
       .andWhere('user.status = 1')
       .andWhere('user.isDeleted = 0')
+
+    const total = await baseQb.getCount()
+
+    const list = await baseQb
       .orderBy('cm.sortOrder', 'ASC')
       .addOrderBy('cm.createdAt', 'ASC')
       .skip((page - 1) * limit)
       .take(limit)
-
-    const [list, total] = await qb.getManyAndCount()
+      .getMany()
 
     // 查询每个用户的头像/照片
     const userIds = list.map(u => u.id)
