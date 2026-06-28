@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between, FindOptionsWhere } from 'typeorm'
 import { SuccessCase } from '../entities/SuccessCase'
-import { User } from '../entities/User'
 import { SystemConfig } from '../entities/SystemConfig'
 
 @Injectable()
@@ -10,8 +9,6 @@ export class SuccessCaseService {
   constructor(
     @InjectRepository(SuccessCase)
     private readonly caseRepo: Repository<SuccessCase>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
     @InjectRepository(SystemConfig)
     private readonly configRepo: Repository<SystemConfig>,
   ) {}
@@ -26,7 +23,7 @@ export class SuccessCaseService {
       take: limit,
     })
 
-    const result = await this.enrichWithUserInfo(list)
+    const result = this.mapList(list)
     return { list: result, total, page, limit }
   }
 
@@ -54,7 +51,6 @@ export class SuccessCaseService {
     const where: FindOptionsWhere<SuccessCase> = {}
 
     if (search?.keyword) {
-      // 标题或显示昵称模糊搜索
       return this.searchList(page, limit, search)
     }
     if (search?.dateFrom || search?.dateTo) {
@@ -70,8 +66,7 @@ export class SuccessCaseService {
       take: limit,
     })
 
-    const result = await this.enrichWithUserInfo(list)
-    return { list: result, total, page, limit }
+    return { list: this.mapList(list), total, page, limit }
   }
 
   private async searchList(page: number, limit: number, search: { keyword?: string; dateFrom?: string; dateTo?: string }) {
@@ -90,35 +85,42 @@ export class SuccessCaseService {
     }
 
     const [list, total] = await qb.getManyAndCount()
-    const result = await this.enrichWithUserInfo(list)
-    return { list: result, total, page, limit }
+    return { list: this.mapList(list), total, page, limit }
   }
 
   async getById(id: number) {
     const item = await this.caseRepo.findOne({ where: { id } })
     if (!item) return null
-    const enriched = await this.enrichWithUserInfo([item])
-    return enriched[0]
+    return this.mapOne(item)
   }
 
   async create(data: {
     title: string
-    senderUserId?: number
     displayNickname?: string
+    senderAvatar?: string
     storyContent?: string
     photos?: string[]
     publishDate?: string
     sort?: number
     status?: number
   }) {
-    const item = this.caseRepo.create({ ...data, status: data.status ?? 1 })
+    const item = this.caseRepo.create({
+      title: data.title,
+      displayNickname: data.displayNickname || '',
+      senderAvatar: data.senderAvatar || '',
+      storyContent: data.storyContent || '',
+      photos: data.photos || [],
+      publishDate: data.publishDate || null,
+      sort: data.sort ?? 0,
+      status: data.status ?? 1,
+    })
     return this.caseRepo.save(item)
   }
 
   async update(id: number, data: {
     title?: string
-    senderUserId?: number
     displayNickname?: string
+    senderAvatar?: string
     storyContent?: string
     photos?: string[]
     publishDate?: string
@@ -164,39 +166,23 @@ export class SuccessCaseService {
 
   // ========== 私有方法 ==========
 
-  /** 批量填充发送者用户信息（头像 + 昵称） */
-  private async enrichWithUserInfo(list: SuccessCase[]) {
-    const userIds = new Set<number>()
-    for (const item of list) {
-      if (item.senderUserId) userIds.add(item.senderUserId)
+  private mapOne(item: SuccessCase) {
+    return {
+      id: item.id,
+      title: item.title,
+      displayNickname: item.displayNickname || '',
+      userAvatar: item.senderAvatar || '',
+      storyContent: item.storyContent,
+      photos: item.photos || [],
+      publishDate: item.publishDate,
+      sort: item.sort,
+      status: item.status,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
     }
-    const userMap = new Map<number, User>()
-    if (userIds.size > 0) {
-      const users = await this.userRepo.createQueryBuilder('user')
-        .select(['user.id', 'user.nickname', 'user.avatar'])
-        .where('user.id IN (:...ids)', { ids: [...userIds] })
-        .getMany()
-      for (const u of users) {
-        userMap.set(u.id, u)
-      }
-    }
+  }
 
-    return list.map(item => {
-      const sender = item.senderUserId ? userMap.get(item.senderUserId) : null
-      return {
-        id: item.id,
-        title: item.title,
-        senderUserId: item.senderUserId,
-        displayNickname: item.displayNickname || sender?.nickname || '',
-        userAvatar: sender?.avatar || '',
-        storyContent: item.storyContent,
-        photos: item.photos || [],
-        publishDate: item.publishDate,
-        sort: item.sort,
-        status: item.status,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      }
-    })
+  private mapList(list: SuccessCase[]) {
+    return list.map(item => this.mapOne(item))
   }
 }

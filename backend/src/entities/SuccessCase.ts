@@ -23,6 +23,9 @@ export class SuccessCase {
   @Column({ type: 'varchar', length: 50, default: '' })
   displayNickname: string
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  senderAvatar: string
+
   @Column({ type: 'text', nullable: true })
   storyContent: string
 

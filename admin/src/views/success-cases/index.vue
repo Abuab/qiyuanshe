@@ -94,38 +94,34 @@
       :close-on-click-modal="false"
     >
       <el-form :model="form" label-width="100px">
-        <!-- 发送者选择 -->
-        <el-form-item label="发送者" required>
-          <el-select
-            v-model="selectedUserId"
-            filterable
-            remote
-            reserve-keyword
-            placeholder="输入昵称或ID搜索用户"
-            :remote-method="searchUserRemote"
-            :loading="userSearchLoading"
-            clearable
-            style="width: 100%"
-            @change="onUserSelect"
-          >
-            <el-option
-              v-for="u in userOptions"
-              :key="u.id"
-              :label="`${u.nickname} (ID:${u.id})`"
-              :value="u.id"
+        <!-- 发送者头像 -->
+        <el-form-item label="发送者头像">
+          <div style="display:flex;align-items:center;gap:12px">
+            <el-avatar v-if="form.senderAvatar" :src="form.senderAvatar" :size="48" />
+            <el-upload
+              :show-file-list="false"
+              :http-request="handleAvatarUpload"
+              :before-upload="beforeUpload"
+              accept="image/*"
             >
-              <div style="display:flex;align-items:center;gap:8px">
-                <el-avatar :src="u.avatar" :size="28" />
-                <span>{{ u.nickname }}</span>
-                <span style="color:#999;font-size:12px">ID:{{ u.id }}</span>
-              </div>
-            </el-option>
-          </el-select>
+              <el-button :loading="avatarUploading">
+                {{ form.senderAvatar ? '替换头像' : '上传头像' }}
+              </el-button>
+            </el-upload>
+            <el-button
+              v-if="form.senderAvatar"
+              size="small"
+              type="danger"
+              @click="form.senderAvatar = ''"
+            >
+              删除
+            </el-button>
+          </div>
         </el-form-item>
 
         <!-- 显示昵称 -->
-        <el-form-item label="显示昵称">
-          <el-input v-model="form.displayNickname" placeholder="默认取用户昵称，可手动修改" />
+        <el-form-item label="显示昵称" required>
+          <el-input v-model="form.displayNickname" placeholder="如：小张&小李" maxlength="50" show-word-limit />
         </el-form-item>
 
         <!-- 标题 -->
@@ -299,6 +295,7 @@ const photoUploading = ref(false)
 const form = reactive<Record<string, any>>({
   title: '',
   displayNickname: '',
+  senderAvatar: '',
   storyContent: '',
   photos: [] as string[],
   publishDate: '',
@@ -306,11 +303,6 @@ const form = reactive<Record<string, any>>({
   status: 1,
   statusBool: true,
 })
-const selectedUserId = ref<number | null>(null)
-
-// 用户搜索
-const userSearchLoading = ref(false)
-const userOptions = ref<any[]>([])
 
 // Banner
 const showBannerDialog = ref(false)
@@ -349,10 +341,10 @@ function openDialog(row?: any) {
   if (row) {
     isEdit.value = true
     editId.value = row.id
-    selectedUserId.value = row.senderUserId || null
     Object.assign(form, {
       title: row.title || '',
       displayNickname: row.displayNickname || '',
+      senderAvatar: row.userAvatar || '',
       storyContent: row.storyContent || '',
       photos: row.photos || [],
       publishDate: row.publishDate || '',
@@ -367,33 +359,28 @@ function openDialog(row?: any) {
 function resetForm() {
   isEdit.value = false
   editId.value = 0
-  selectedUserId.value = null
-  userOptions.value = []
   Object.assign(form, {
-    title: '', displayNickname: '', storyContent: '', photos: [],
+    title: '', displayNickname: '', senderAvatar: '', storyContent: '', photos: [],
     publishDate: '', sort: 0, status: 1, statusBool: true,
   })
 }
 
-// 用户搜索（远程）
-async function searchUserRemote(query: string) {
-  if (!query) { userOptions.value = []; return }
-  userSearchLoading.value = true
+// 发送者头像上传
+const avatarUploading = ref(false)
+const handleAvatarUpload = async (options: any) => {
+  avatarUploading.value = true
   try {
-    const res = await adminSystem.searchUsers(query)
-    userOptions.value = (res.data as any)?.list || (res.data as any) || []
-  } catch (e) { console.error(e) }
-  userSearchLoading.value = false
-}
-
-// 选择用户后自动填充昵称
-function onUserSelect(userId: number | null) {
-  if (userId) {
-    const user = userOptions.value.find((u: any) => u.id === userId)
-    if (user && !form.displayNickname) {
-      form.displayNickname = user.nickname || ''
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const res = await adminSystem.upload(fd)
+    if (res.success && res.data?.url) {
+      form.senderAvatar = res.data.url
+      ElMessage.success('上传成功')
+    } else {
+      ElMessage.error('上传失败')
     }
-  }
+  } catch (e) { ElMessage.error('上传失败') }
+  avatarUploading.value = false
 }
 
 // 图片上传
@@ -436,8 +423,8 @@ async function handleSave() {
   try {
     const data: Record<string, any> = {
       title: form.title,
-      senderUserId: selectedUserId.value || null,
       displayNickname: form.displayNickname,
+      senderAvatar: form.senderAvatar,
       storyContent: form.storyContent,
       photos: form.photos,
       publishDate: form.publishDate || null,

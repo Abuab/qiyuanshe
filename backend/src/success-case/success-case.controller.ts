@@ -81,8 +81,8 @@ export class AdminSuccessCaseController {
   async create(
     @Body() body: {
       title: string
-      senderUserId?: number
       displayNickname?: string
+      senderAvatar?: string
       storyContent?: string
       photos?: string[]
       publishDate?: string
