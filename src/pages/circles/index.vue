@@ -94,10 +94,12 @@ import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
+import { useUserStore } from '@/store/user'
 import UserCard from '@/components/user-card/user-card.vue'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 
 const systemStore = useSystemStore()
+const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '志趣相投')
 
 const statusBarHeight = ref(20)
@@ -109,6 +111,7 @@ const activeCircleId = ref<number>(0)
 const currentBanner = ref<string>('')
 const userList = ref<UserCardData[]>([])
 const pageNum = ref(1)
+const pageSize = 10
 const loading = ref(true)
 const loadingMore = ref(false)
 const noMore = ref(false)
@@ -149,19 +152,34 @@ async function loadUsers(reset = false) {
     loading.value = true
   }
   try {
-    const res = await get<any>(`/circles/${activeCircleId.value}/users`, {
+    const res = await get<{ list: UserCardData[]; total: number }>(`/circles/${activeCircleId.value}/users`, {
       page: pageNum.value,
-      limit: 10,
+      limit: pageSize,
     })
-    const result = res?.list || res || []
-    if (reset) {
-      userList.value = Array.isArray(result) ? result : result.list || []
+
+    if (res && res.list) {
+      // 过滤掉当前登录用户自己（与首页逻辑一致）
+      const currentUserId = userStore.userInfo?.id
+      let filteredList = res.list
+      if (currentUserId) {
+        filteredList = res.list.filter((u: UserCardData) => u.id !== currentUserId)
+      }
+
+      if (reset) {
+        userList.value = filteredList
+      } else {
+        // 去重：已在列表中的用户不再追加，避免 wx:key 重复警告
+        const existingIds = new Set(userList.value.map(u => u.id))
+        const newUsers = filteredList.filter((u: UserCardData) => !existingIds.has(u.id))
+        userList.value = [...userList.value, ...newUsers]
+      }
+
+      if (res.list.length < pageSize) {
+        noMore.value = true
+      } else {
+        pageNum.value++
+      }
     } else {
-      const newItems = Array.isArray(result) ? result : result.list || []
-      userList.value = [...userList.value, ...newItems]
-    }
-    const total = res?.total ?? (Array.isArray(result) ? result.length : 0)
-    if (userList.value.length >= total && total > 0) {
       noMore.value = true
     }
   } catch (e) {
@@ -191,7 +209,6 @@ async function onRefresh() {
 function onLoadMore() {
   if (noMore.value || loadingMore.value) return
   loadingMore.value = true
-  pageNum.value++
   loadUsers()
 }
 

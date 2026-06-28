@@ -5,6 +5,7 @@ import { Circle } from '../entities/Circle'
 import { CirclePost } from '../entities/CirclePost'
 import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
+import { MatchmakerComment } from '../entities/MatchmakerComment'
 
 @Injectable()
 export class CircleService {
@@ -17,6 +18,8 @@ export class CircleService {
     private readonly memberRepo: Repository<CircleMember>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(MatchmakerComment)
+    private readonly commentRepo: Repository<MatchmakerComment>,
   ) {}
 
   // ========== 小程序端 ==========
@@ -60,20 +63,13 @@ export class CircleService {
     const userMap = new Map(users.map(u => [u.id, u]))
     const list = pagedUserIds.map(id => userMap.get(id)).filter(Boolean)
 
-    // 查询每个用户的头像/照片
+    // 查询每个用户的头像/照片、红娘评语
     const userIds = list.map(u => u.id)
-    const photosQuery = userIds.length > 0
-      ? await this.userRepo.createQueryBuilder('user')
-          .leftJoinAndSelect('user.photos', 'photo')
-          .where('user.id IN (:...ids)', { ids: userIds })
-          .andWhere('photo.isMain = 1 OR photo.auditStatus = 1')
-          .orderBy('photo.sortOrder', 'ASC')
-          .getMany()
-      : []
-    const photoMap = new Map<number, string[]>()
-    for (const u of photosQuery) {
-      photoMap.set(u.id, (u as any).photos?.map((p: any) => p.photoUrl) || [])
-    }
+    const [photosMap, commentsMap] = await Promise.all([
+      this.getPhotosMap(userIds),
+      this.getCommentsMap(userIds),
+    ])
+
     const result = list.map(user => {
       const age = user.birthYear ? new Date().getFullYear() - user.birthYear : 0
       return {
@@ -89,10 +85,45 @@ export class CircleService {
         housingStatus: user.housingStatus,
         residence: user.residence,
         isRealName: user.isRealName === 1,
-        photos: photoMap.get(user.id) || [],
+        photos: photosMap.get(user.id) || [],
+        matchmakerComment: commentsMap.get(user.id) || '',
+        hasVoice: !!(user.voiceUrl && user.voiceAuditStatus === 1),
       }
     })
     return { list: result, total, page, limit }
+  }
+
+  private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
+    if (userIds.length === 0) return new Map()
+    const photosQuery = await this.userRepo.createQueryBuilder('user')
+      .leftJoinAndSelect('user.photos', 'photo')
+      .where('user.id IN (:...ids)', { ids: userIds })
+      .orderBy('photo.sortOrder', 'ASC')
+      .getMany()
+    const map = new Map<number, string[]>()
+    for (const u of photosQuery) {
+      map.set(u.id, (u as any).photos?.map((p: any) => p.photoUrl) || [])
+    }
+    return map
+  }
+
+  private async getCommentsMap(userIds: number[]): Promise<Map<number, string>> {
+    if (userIds.length === 0) return new Map()
+    const comments = await this.commentRepo
+      .createQueryBuilder('c')
+      .select('c.userId', 'userId')
+      .addSelect('c.content', 'content')
+      .where('c.userId IN (:...ids)', { ids: userIds })
+      .andWhere('c.status = :status', { status: 1 })
+      .orderBy('c.createdAt', 'DESC')
+      .getRawMany<{ userId: number; content: string }>()
+    const map = new Map<number, string>()
+    for (const c of comments) {
+      if (!map.has(Number(c.userId))) {
+        map.set(Number(c.userId), c.content)
+      }
+    }
+    return map
   }
 
   async getPosts(circleId: number, page = 1, limit = 10) {
