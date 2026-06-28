@@ -33,21 +33,32 @@ export class CircleService {
   }
 
   async getCircleUsers(circleId: number, page = 1, limit = 10) {
-    // 通过圈子成员关联表查询，按 sortOrder 排序
-    const baseQb = this.userRepo.createQueryBuilder('user')
-      .innerJoin('circle_members', 'cm', 'cm.userId = user.id')
-      .where('cm.circleId = :circleId', { circleId })
+    // 第一步：从 circle_members 查出该圈子的成员，按 sortOrder 排序
+    const members = await this.memberRepo.find({
+      where: { circleId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    })
+
+    const total = members.length
+
+    // 第二步：分页取 userIds
+    const pagedUserIds = members.slice((page - 1) * limit, page * limit).map(m => m.userId)
+
+    if (pagedUserIds.length === 0) {
+      return { list: [], total }
+    }
+
+    // 第三步：查询用户（保持 sortOrder 顺序）
+    const users = await this.userRepo
+      .createQueryBuilder('user')
+      .where('user.id IN (:...ids)', { ids: pagedUserIds })
       .andWhere('user.status = 1')
       .andWhere('user.isDeleted = 0')
-
-    const total = await baseQb.getCount()
-
-    const list = await baseQb
-      .orderBy('cm.sortOrder', 'ASC')
-      .addOrderBy('cm.createdAt', 'ASC')
-      .skip((page - 1) * limit)
-      .take(limit)
       .getMany()
+
+    // 按成员 sortOrder 恢复顺序
+    const userMap = new Map(users.map(u => [u.id, u]))
+    const list = pagedUserIds.map(id => userMap.get(id)).filter(Boolean)
 
     // 查询每个用户的头像/照片
     const userIds = list.map(u => u.id)
