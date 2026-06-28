@@ -119,29 +119,15 @@
         </view>
       </view>
 
-      <view class="user-list-section">
-        <user-card
-          v-for="user in userList"
-          :key="user.id"
-          :user="user"
-          @click="goToUserDetail(user)"
-        />
-
-        <view v-if="loadingMore" class="loading-more">
-          <text class="loading-text">加载中...</text>
-        </view>
-
-        <view v-if="noMoreData && userList.length > 0" class="no-more-data">
-          <text class="no-more-text">没有更多了</text>
-        </view>
-
-        <view v-if="userList.length === 0 && !loadingMore" class="empty-list">
-          <text class="empty-text">{{ isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户' }}</text>
-          <view v-if="isEmptyFromFilter" class="clear-filter-btn" @tap="handleClearFilter">
-            <text>清除筛选</text>
-          </view>
-        </view>
-      </view>
+      <user-list-section
+        :users="userList"
+        :loading-more="loadingMore"
+        :no-more="noMoreData"
+        :empty-text="isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户'"
+        :show-clear-filter="isEmptyFromFilter"
+        @user-click="goToUserDetail"
+        @clear-filter="handleClearFilter"
+      />
 
       <view class="bottom-safe-area"></view>
     </scroll-view>
@@ -216,7 +202,8 @@ import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
-import UserCard, { UserCardData } from '@/components/user-card/user-card.vue'
+import type { UserCardData } from '@/components/user-card/user-card.vue'
+import UserListSection from '@/components/user-list-section/user-list-section.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import { useUserStore } from '@/store/user'
@@ -939,39 +926,6 @@ const onShareTimeline = () => {
 .filter-btn-text {
   font-size: 24rpx;
   color: #FF6B9D;
-}
-
-.user-list-section {
-  padding: 0 24rpx;
-}
-
-.loading-more,
-.no-more-data,
-.empty-list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20rpx 0;
-}
-
-.loading-text,
-.no-more-text,
-.empty-text {
-  font-size: 26rpx;
-  color: var(--text-secondary);
-}
-
-.clear-filter-btn {
-  margin-top: 24rpx;
-  padding: 12rpx 40rpx;
-  border: 2rpx solid #FF6B9D;
-  border-radius: 32rpx;
-
-  text {
-    font-size: 26rpx;
-    color: #FF6B9D;
-  }
 }
 
 .bottom-safe-area {
