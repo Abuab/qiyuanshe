@@ -92,6 +92,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import UserCard from '@/components/user-card/user-card.vue'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
@@ -128,7 +129,7 @@ async function loadCircles() {
     circles.value = list.filter((c: any) => c.status === 1)
     if (circles.value.length > 0) {
       activeCircleId.value = circles.value[0].id
-      currentBanner.value = circles.value[0].bannerImage || ''
+      currentBanner.value = getFullImageUrl(circles.value[0].bannerImage) || ''
       await loadUsers(true)
     } else {
       loading.value = false
@@ -175,7 +176,7 @@ async function loadUsers(reset = false) {
 function switchCircle(circle: any) {
   if (activeCircleId.value === circle.id) return
   activeCircleId.value = circle.id
-  currentBanner.value = circle.bannerImage || ''
+  currentBanner.value = getFullImageUrl(circle.bannerImage) || ''
   loadUsers(true)
 }
 

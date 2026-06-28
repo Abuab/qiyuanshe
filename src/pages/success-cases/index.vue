@@ -115,6 +115,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 
 const systemStore = useSystemStore()
@@ -151,7 +152,11 @@ async function fetchList(reset = false) {
       page: pageNum.value,
       limit: 10,
     })
-    const items = res?.list || []
+    const items = (res?.list || []).map((item: any) => ({
+      ...item,
+      userAvatar: getFullImageUrl(item.userAvatar),
+      photos: (item.photos || []).map((p: string) => getFullImageUrl(p)),
+    }))
     if (reset) {
       list.value = items
     } else {
@@ -178,7 +183,7 @@ function onRefresh() {
 async function fetchPageBanner() {
   try {
     const res = await get<any>('/success-cases/banner')
-    pageBanner.value = res?.bannerImage || ''
+    pageBanner.value = getFullImageUrl(res?.bannerImage) || ''
   } catch (e) {
     console.error('[SuccessCases] fetchPageBanner error:', e)
   }
