@@ -212,17 +212,18 @@ export class CircleService {
   }
 
   async saveCircleMembersBatch(circleId: number, members: { userId: number; sortOrder: number }[]) {
-    // 删除该圈子所有现有成员
-    await this.memberRepo.delete({ circleId } as any)
-    // 批量插入新成员
-    if (members.length > 0) {
-      const entities = members.map(m => this.memberRepo.create({
-        circleId,
-        userId: m.userId,
-        sortOrder: m.sortOrder,
-      }))
-      await this.memberRepo.save(entities)
-    }
+    // 使用事务：确保删除旧成员和插入新成员原子执行
+    await this.memberRepo.manager.transaction(async (manager) => {
+      await manager.delete(CircleMember, { circleId } as any)
+      if (members.length > 0) {
+        const entities = members.map(m => manager.create(CircleMember, {
+          circleId,
+          userId: m.userId,
+          sortOrder: m.sortOrder,
+        }))
+        await manager.save(entities)
+      }
+    })
   }
 
   async addCircleMember(circleId: number, userId: number) {

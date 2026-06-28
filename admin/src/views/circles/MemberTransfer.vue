@@ -91,7 +91,7 @@
           <el-icon><Rank /></el-icon>
           <span>可拖拽调整排序</span>
         </div>
-        <div class="panel-list" ref="rightListRef">
+        <div class="panel-list">
           <div
             v-for="(item, index) in rightList"
             :key="item.id"
