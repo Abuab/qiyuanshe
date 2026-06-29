@@ -54,12 +54,7 @@
           </view>
           <view class="like-actions" @tap.stop>
             <view
-              v-if="currentTab === 1 && item.isMutual"
-              class="action-btn chat-btn"
-              @tap="goChat(item)"
-            >发消息</view>
-            <view
-              v-else-if="currentTab === 1"
+              v-if="currentTab === 1"
               class="action-btn like-back-btn"
               @tap="handleLikeBack(item)"
             >回喜欢</view>
