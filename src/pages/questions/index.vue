@@ -1,57 +1,61 @@
 <template>
   <view class="questions-page">
-    <view class="nav-bar">
-      <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+    <!-- 顶部导航栏 -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-inner">
+        <view class="nav-left" @tap="handleBack">
+          <text class="back-icon">←</text>
+        </view>
+        <text class="nav-title">问答列表</text>
+        <view class="nav-right" />
       </view>
-      <view class="nav-title">问答列表</view>
-      <view class="nav-right"></view>
     </view>
 
-    <view class="page-content">
-      <view class="header-section">
-        <text class="header-title">热门问答</text>
-        <text class="header-tip">回答感兴趣的话题，增加曝光率哦！</text>
+    <!-- 标题区 -->
+    <view class="header-section" :style="{ paddingTop: (statusBarHeight + navInnerHeight) + 'px' }">
+      <text class="header-title">热门问答</text>
+      <text class="header-tip">回答感兴趣的话题，增加曝光率哦！</text>
+    </view>
+
+    <!-- 问题列表 -->
+    <scroll-view
+      class="question-scroll"
+      scroll-y
+      :refresher-enabled="true"
+      :refresher-triggered="refreshing"
+      @refresherrefresh="onRefresh"
+      @scrolltolower="loadMore"
+    >
+      <view
+        v-for="question in questionList"
+        :key="question.id"
+        class="question-card"
+        @tap="goToDetail(question)"
+      >
+        <text class="card-title"># {{ question.title }}</text>
+        <view class="card-tag" :class="question.isAnsweredByUser ? 'answered' : 'pending'">
+          <text>{{ question.isAnsweredByUser ? '已回答' : '待回答' }}</text>
+        </view>
       </view>
 
-      <scroll-view
-        class="question-list"
-        scroll-y
-        enable-flex
-        @scrolltolower="loadMore"
-        :refresher-enabled="true"
-        @refresherrefresh="onRefresh"
-        :refresher-triggered="refreshing"
-      >
-        <view
-          v-for="question in questionList"
-          :key="question.id"
-          class="question-card"
-          @tap="goToDetail(question)"
-        >
-          <view class="question-header">
-            <text class="question-title"># {{ question.title }}</text>
-            <view class="status-tag" :class="{ active: question.answerCount > 0 }">
-              <text>{{ question.answerCount > 0 ? question.answerCount + '人回答' : '待回答' }}</text>
-            </view>
-          </view>
-          <view class="question-action" @tap.stop="goToAnswer(question)">
-            <text>回答 ></text>
-          </view>
-        </view>
+      <view v-if="loading" class="status-tip">
+        <text>加载中...</text>
+      </view>
+      <view v-if="!loading && questionList.length === 0" class="status-tip">
+        <text>暂无问题</text>
+      </view>
+      <view v-if="noMore && questionList.length > 0" class="status-tip">
+        <text>没有更多了</text>
+      </view>
 
-        <view v-if="loading" class="loading-tip">
-          <text>加载中...</text>
-        </view>
+      <!-- 底部占位，给悬浮按钮留空间 -->
+      <view class="bottom-placeholder" />
+    </scroll-view>
 
-        <view v-if="!loading && questionList.length === 0" class="empty-tip">
-          <text>暂无问题</text>
-        </view>
-
-        <view v-if="noMore && questionList.length > 0" class="no-more-tip">
-          <text>没有更多了</text>
-        </view>
-      </scroll-view>
+    <!-- 底部悬浮回答按钮 -->
+    <view class="float-btn" @tap="goToAnswer(questionList[0])">
+      <text class="float-btn-text">回答</text>
+      <text class="float-btn-arrow"> ></text>
     </view>
   </view>
 </template>
@@ -60,6 +64,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface Question {
   id: number
@@ -67,6 +72,7 @@ interface Question {
   content: string
   answerCount: number
   isActive: number
+  isAnsweredByUser: boolean
 }
 
 const userStore = useUserStore()
@@ -76,8 +82,12 @@ const limit = 20
 const loading = ref(false)
 const refreshing = ref(false)
 const noMore = ref(false)
+const statusBarHeight = ref(0)
+const navInnerHeight = 44
 
 onMounted(() => {
+  const sysInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchQuestions()
 })
 
@@ -87,20 +97,16 @@ const fetchQuestions = async (isRefresh = false) => {
       page.value = 1
       noMore.value = false
     }
-
     loading.value = true
-
     const res = await request({
       url: '/questions',
       method: 'GET',
-      data: {
-        page: page.value,
-        limit,
-      },
+      data: { page: page.value, limit },
     })
-
-    const list = res.list || res || []
-
+    const list = (res.list || res || []).map((item: any) => ({
+      ...item,
+      isAnsweredByUser: item.isAnsweredByUser || false,
+    }))
     if (isRefresh) {
       questionList.value = list
       refreshing.value = false
@@ -111,11 +117,7 @@ const fetchQuestions = async (isRefresh = false) => {
         questionList.value.push(...list)
       }
     }
-
-    if (list.length < limit) {
-      noMore.value = true
-    }
-
+    if (list.length < limit) noMore.value = true
     page.value++
   } catch (e) {
     console.error('fetch questions error', e)
@@ -126,17 +128,13 @@ const fetchQuestions = async (isRefresh = false) => {
 }
 
 const loadMore = () => {
-  if (!loading.value && !noMore.value) {
-    fetchQuestions()
-  }
+  if (!loading.value && !noMore.value) fetchQuestions()
 }
 
 const onRefresh = () => {
   refreshing.value = true
   fetchQuestions(true)
 }
-
-import { safeNavigateBack } from '@/utils/navigate'
 
 const handleBack = () => {
   safeNavigateBack()
@@ -153,7 +151,6 @@ const goToAnswer = (question: Question) => {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
-
   uni.navigateTo({
     url: `/pages/answer/index?questionId=${question.id}&title=${encodeURIComponent(question.title)}`,
   })
@@ -163,132 +160,157 @@ const goToAnswer = (question: Question) => {
 <style lang="scss" scoped>
 .questions-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--bg, #FFF5F7);
+  position: relative;
 }
 
+// ===== 导航栏 =====
 .nav-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 88rpx;
+  z-index: 100;
+  background-color: #ffffff;
+}
+
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
-  background-color: #fff;
-  z-index: 100;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  height: 88rpx;
+  padding: 0 24rpx;
 }
 
-.nav-left,
+.nav-left {
+  width: 80rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+}
+
 .nav-right {
-  width: 100rpx;
+  width: 80rpx;
 }
 
 .back-icon {
   font-size: 40rpx;
-  color: #333;
+  color: var(--text, #333333);
+  font-weight: bold;
+  line-height: 1;
 }
 
 .nav-title {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  color: var(--text, #333333);
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
 }
 
-.page-content {
-  padding-top: 108rpx;
-}
-
+// ===== 标题区 =====
 .header-section {
-  padding: 20rpx 32rpx;
-  background-color: #fff;
-  margin-bottom: 12rpx;
+  padding: 24rpx 32rpx;
+  background-color: #ffffff;
 }
 
 .header-title {
   display: block;
-  font-size: 30rpx;
+  font-size: 36rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 6rpx;
+  color: #000000;
+  margin-bottom: 8rpx;
 }
 
 .header-tip {
   font-size: 24rpx;
-  color: #999;
+  color: var(--text-secondary, #999999);
 }
 
-.question-list {
-  height: calc(100vh - 160rpx);
-  padding: 0 24rpx;
+// ===== 滚动列表 =====
+.question-scroll {
+  height: calc(100vh - 200rpx);
+  padding: 20rpx 24rpx 0;
 }
 
 .question-card {
-  background-color: #fff;
-  border-radius: 12rpx;
-  padding: 20rpx 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  padding: 28rpx 24rpx;
   margin-bottom: 16rpx;
 }
 
-.question-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12rpx;
-}
-
-.question-title {
+.card-title {
   flex: 1;
   font-size: 28rpx;
   font-weight: bold;
-  color: #333;
+  color: #000000;
   line-height: 1.4;
-  padding-right: 16rpx;
+  padding-right: 20rpx;
 }
 
-.status-tag {
-  padding: 4rpx 12rpx;
-  background-color: #FFF0F3;
-  border-radius: 6rpx;
+// ===== 状态标签 =====
+.card-tag {
   flex-shrink: 0;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
 
   text {
     font-size: 22rpx;
-    color: #FF6B9D;
+    color: #ffffff;
+    white-space: nowrap;
+  }
+
+  &.pending {
+    background-color: var(--primary, #FF6B9D);
   }
 
   &.answered {
-    background-color: #F5F5F5;
-
-    text {
-      color: #999;
-    }
+    background-color: var(--text-secondary, #999999);
   }
 }
 
-.question-action {
+// ===== 底部悬浮按钮 =====
+.float-btn {
+  position: fixed;
+  bottom: 60rpx;
+  left: 32rpx;
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  padding: 18rpx 40rpx;
+  background-color: var(--primary, #FF6B9D);
+  border-radius: 48rpx;
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.35);
+  z-index: 99;
 
-  text {
-    padding: 6rpx 20rpx;
-    border: 2rpx solid #FF6B9D;
-    border-radius: 24rpx;
-    font-size: 24rpx;
-    color: #FF6B9D;
+  .float-btn-text {
+    font-size: 28rpx;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .float-btn-arrow {
+    font-size: 28rpx;
+    color: #ffffff;
+    margin-left: 8rpx;
+    font-weight: bold;
   }
 }
 
-.loading-tip,
-.empty-tip,
-.no-more-tip {
+// ===== 状态提示 =====
+.status-tip {
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32rpx 0;
   font-size: 28rpx;
-  color: #999;
+  color: var(--text-secondary, #999999);
+}
+
+.bottom-placeholder {
+  height: 120rpx;
 }
 </style>

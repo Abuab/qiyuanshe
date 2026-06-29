@@ -1,26 +1,33 @@
 <template>
   <view class="detail-page">
-    <!-- 自定义导航栏（含状态栏占位） -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
+    <!-- 导航栏 -->
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-inner">
         <view class="nav-left" @tap="handleBack">
           <text class="back-icon">←</text>
         </view>
-        <view class="nav-title">问答详情</view>
-        <view class="nav-right"></view>
+        <text class="nav-title">问答详情</text>
+        <view class="nav-right" />
       </view>
     </view>
 
-    <scroll-view class="content" scroll-y enable-flex :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
-      <view class="question-section">
-        <text class="question-title">{{ questionTitle }}</text>
+    <!-- 页面内容 -->
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      :style="{ paddingTop: (statusBarHeight + navInnerHeight) + 'px' }"
+    >
+      <!-- 标题区 + 更多链接 -->
+      <view class="question-header">
+        <text class="question-title"># {{ questionTitle }}</text>
         <view class="more-link" @tap="goToQuestions">
           <text>查看更多热门问答 ></text>
         </view>
       </view>
 
-      <view class="answers-section">
-        <view v-if="loading" class="loading-tip">
+      <!-- 回答列表 -->
+      <view class="answer-list">
+        <view v-if="loading" class="status-tip">
           <text>加载中...</text>
         </view>
 
@@ -29,65 +36,62 @@
           :key="answer.id"
           class="answer-card"
         >
-          <view class="answer-user" @tap="goToUserProfile(answer.userId)">
+          <!-- 回答者头部 -->
+          <view class="answerer-header" @tap="goToUserProfile(answer.userId)">
             <image
-              class="user-avatar"
+              class="answerer-avatar"
               :src="answer.user?.avatar || icons.common.defaultAvatar"
               mode="aspectFill"
             />
-            <view class="user-info">
-              <text class="user-nickname">{{ answer.user?.nickname || '匿名用户' }}</text>
-              <text class="user-detail">
-                {{ answer.user?.age || '--' }}岁 |
-                {{ answer.user?.height || '--' }}cm |
-                {{ answer.user?.education || '--' }} |
-                {{ answer.user?.incomeRange || '--' }}
+            <view class="answerer-info">
+              <text class="answerer-name">{{ answer.user?.nickname || '匿名用户' }}</text>
+              <text class="answerer-tags">
+                {{ answer.user?.age || '--' }} | {{ answer.user?.height || '--' }}cm | {{ answer.user?.weight || '--' }}kg | {{ answer.user?.education || '--' }} | {{ answer.user?.incomeRange || '--' }}
               </text>
             </view>
           </view>
 
-          <view class="answer-content">
-            <text>{{ answer.content }}</text>
+          <!-- 回答内容 -->
+          <view class="answer-body">
+            <text class="answer-text">{{ answer.content }}</text>
           </view>
 
-          <view v-if="answer.photos && answer.photos.length > 0" class="answer-photos">
+          <!-- 回答图片 -->
+          <view v-if="answer.photos && answer.photos.length > 0" class="answer-images">
             <image
               v-for="(photo, index) in answer.photos.slice(0, 3)"
               :key="index"
-              class="photo-item"
+              class="answer-img-item"
               :src="photo"
               mode="aspectFill"
-              @tap="previewImage(answer.photos, index)"
+              @tap.stop="previewImage(answer.photos, index)"
             />
           </view>
 
-          <view class="answer-footer">
+          <!-- 回答底部：时间 + 点赞 -->
+          <view class="answer-meta">
             <text class="answer-time">{{ formatTime(answer.createdAt) }}</text>
-            <view class="like-btn" @tap="handleLike(answer)">
-              <text class="heart-icon" :class="{ liked: answer.isLiked }">
-                {{ answer.isLiked ? '♥' : '♡' }}
-              </text>
-              <text class="like-count">{{ answer.likeCount || 0 }}</text>
+            <view class="like-action" @tap.stop="handleLike(answer)">
+              <text class="like-icon" :class="{ liked: answer.isLiked }">{{ answer.isLiked ? '♥' : '♡' }}</text>
+              <text v-if="answer.likeCount" class="like-num">{{ answer.likeCount }}</text>
             </view>
           </view>
         </view>
 
-        <view v-if="!loading && answerList.length === 0" class="empty-tip">
+        <view v-if="!loading && answerList.length === 0" class="status-tip">
           <text>暂无回答，快来抢沙发吧~</text>
         </view>
-
-        <view v-if="!loading && noMore" class="no-more-tip">
+        <view v-if="!loading && noMore && answerList.length > 0" class="status-tip">
           <text>没有更多了</text>
         </view>
+        <view class="scroll-bottom-spacer" />
       </view>
-
-      <view class="bottom-spacer"></view>
     </scroll-view>
 
-    <view class="fixed-bottom">
-      <view class="answer-btn" @tap="goToAnswer">
-        <text>回答</text>
-      </view>
+    <!-- 底部悬浮回答按钮 -->
+    <view class="float-answer-btn" @tap="goToAnswer">
+      <text class="answer-btn-icon">✏️</text>
+      <text class="answer-btn-text">回答</text>
     </view>
   </view>
 </template>
@@ -130,30 +134,22 @@ const page = ref(1)
 const limit = 20
 const loading = ref(false)
 const noMore = ref(false)
-const refreshing = ref(false)
 const statusBarHeight = ref(20)
-const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
+const navInnerHeight = 44
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
-  // 开启分享菜单
   uni.showShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
-    fail: () => {
-      console.log('[分享]showShareMenu 开发工具跳过')
-    },
+    fail: () => {},
   })
-
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}
-
   questionId.value = parseInt(options.id) || 0
   questionTitle.value = decodeURIComponent(options.title || '问答详情')
-
   fetchAnswers()
 })
 
@@ -163,18 +159,12 @@ const fetchAnswers = async (isRefresh = false) => {
       page.value = 1
       noMore.value = false
     }
-
     loading.value = true
-
     const res = await request({
       url: `/questions/${questionId.value}`,
       method: 'GET',
-      data: {
-        page: page.value,
-        limit,
-      },
+      data: { page: page.value, limit },
     })
-
     const list = (res.answers || []).map((answer: any) => ({
       ...answer,
       photos: (answer.photos || []).map((p: string) => getFullImageUrl(p)),
@@ -183,22 +173,13 @@ const fetchAnswers = async (isRefresh = false) => {
         avatar: getFullImageUrl(answer.user.avatar) || icons.common.defaultAvatar,
       } : undefined,
     }))
-
     if (isRefresh) {
       answerList.value = list
-      refreshing.value = false
     } else {
-      if (page.value === 1) {
-        answerList.value = list
-      } else {
-        answerList.value.push(...list)
-      }
+      if (page.value === 1) answerList.value = list
+      else answerList.value.push(...list)
     }
-
-    if (list.length < limit) {
-      noMore.value = true
-    }
-
+    if (list.length < limit) noMore.value = true
     page.value++
   } catch (e) {
     console.error('fetch answers error', e)
@@ -212,13 +193,8 @@ const handleLike = async (answer: Answer) => {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
-
   try {
-    await request({
-      url: `/answers/${answer.id}/like`,
-      method: 'POST',
-    })
-
+    await request({ url: `/answers/${answer.id}/like`, method: 'POST' })
     answer.isLiked = !answer.isLiked
     answer.likeCount += answer.isLiked ? 1 : -1
   } catch (e) {
@@ -227,34 +203,25 @@ const handleLike = async (answer: Answer) => {
 }
 
 const previewImage = (photos: string[], index: number) => {
-  uni.previewImage({
-    urls: photos,
-    current: index,
-  })
+  uni.previewImage({ urls: photos, current: index })
 }
 
 const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
-
   const date = new Date(timeStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
-
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
-
   if (minutes < 1) return '刚刚'
   if (minutes < 60) return `${minutes}分钟前`
   if (hours < 24) return `${hours}小时前`
   if (days < 7) return `${days}天前`
-
   return `${date.getMonth() + 1}-${date.getDate()}`
 }
 
-const handleBack = () => {
-  safeNavigateBack()
-}
+const handleBack = () => safeNavigateBack()
 
 const goToQuestions = () => {
   uni.navigateTo({
@@ -264,9 +231,7 @@ const goToQuestions = () => {
 }
 
 const goToUserProfile = (userId: number) => {
-  uni.navigateTo({
-    url: `/pages/user-detail/index?id=${userId}`,
-  })
+  uni.navigateTo({ url: `/pages/user-detail/index?id=${userId}` })
 }
 
 const goToAnswer = () => {
@@ -274,7 +239,6 @@ const goToAnswer = () => {
     uni.showToast({ title: '请先登录', icon: 'none' })
     return
   }
-
   uni.navigateTo({
     url: `/pages/answer/index?questionId=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
   })
@@ -291,50 +255,63 @@ const onShareAppMessage = () => {
 <style lang="scss" scoped>
 .detail-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--bg, #FFF5F7);
+  position: relative;
 }
 
-.nav-wrap {
+// ===== 导航栏 =====
+.nav-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: #fff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
 }
 
-.nav-bar {
-  height: 88rpx;
+.nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 32rpx;
+  height: 88rpx;
+  padding: 0 24rpx;
 }
 
-.nav-left,
+.nav-left {
+  width: 80rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+}
+
 .nav-right {
-  width: 100rpx;
+  width: 80rpx;
 }
 
 .back-icon {
   font-size: 40rpx;
-  color: #333;
+  color: var(--text, #333333);
+  font-weight: bold;
+  line-height: 1;
 }
 
 .nav-title {
   font-size: 32rpx;
-  font-weight: bold;
-  color: #333;
+  color: var(--text, #333333);
+  font-weight: 600;
+  text-align: center;
+  flex: 1;
 }
 
-.content {
+// ===== 滚动内容 =====
+.content-scroll {
   height: 100vh;
 }
 
-.question-section {
-  padding: 32rpx;
-  background-color: #fff;
+// ===== 标题区 =====
+.question-header {
+  padding: 24rpx 32rpx 20rpx;
+  background-color: #ffffff;
   margin-bottom: 16rpx;
 }
 
@@ -342,151 +319,164 @@ const onShareAppMessage = () => {
   display: block;
   font-size: 36rpx;
   font-weight: bold;
-  color: #333;
-  line-height: 1.5;
-  margin-bottom: 20rpx;
+  color: #000000;
+  line-height: 1.4;
+  margin-bottom: 16rpx;
 }
 
 .more-link {
   text {
-    font-size: 28rpx;
-    color: #FF6B9D;
+    font-size: 26rpx;
+    color: var(--primary, #FF6B9D);
   }
 }
 
-.answers-section {
-  padding: 0 32rpx;
+// ===== 回答列表 =====
+.answer-list {
+  padding: 0 24rpx;
 }
 
 .answer-card {
-  background-color: #fff;
+  background-color: #ffffff;
   border-radius: 16rpx;
-  padding: 32rpx;
-  margin-bottom: 24rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 16rpx;
 }
 
-.answer-user {
+// ===== 回答者头部 =====
+.answerer-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20rpx;
 }
 
-.user-avatar {
+.answerer-avatar {
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  margin-right: 20rpx;
+  flex-shrink: 0;
+  background-color: #f5f5f5;
 }
 
-.user-info {
+.answerer-info {
   flex: 1;
+  margin-left: 20rpx;
+  min-width: 0;
 }
 
-.user-nickname {
+.answerer-name {
   display: block;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 8rpx;
+  color: #000000;
+  margin-bottom: 6rpx;
 }
 
-.user-detail {
+.answerer-tags {
   display: block;
-  font-size: 24rpx;
-  color: #999;
+  font-size: 22rpx;
+  color: var(--text-secondary, #999999);
+  line-height: 1.4;
+  word-break: break-all;
 }
 
-.answer-content {
-  margin-bottom: 20rpx;
-
-  text {
-    font-size: 28rpx;
-    color: #333;
-    line-height: 1.6;
-  }
+// ===== 回答内容 =====
+.answer-body {
+  margin-bottom: 16rpx;
 }
 
-.answer-photos {
+.answer-text {
+  font-size: 28rpx;
+  color: var(--text, #333333);
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+// ===== 回答图片 =====
+.answer-images {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 20rpx;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
 }
 
-.photo-item {
-  width: 240rpx;
-  height: 240rpx;
-  border-radius: 8rpx;
+.answer-img-item {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background-color: #f5f5f5;
 }
 
-.answer-footer {
+// ===== 回答底部 =====
+.answer-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .answer-time {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 22rpx;
+  color: var(--text-secondary, #999999);
 }
 
-.like-btn {
+.like-action {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 6rpx;
+}
 
-  .heart-icon {
-    font-size: 36rpx;
-    color: #ccc;
+.like-icon {
+  font-size: 32rpx;
+  color: #cccccc;
 
-    &.liked {
-      color: #FF6B9D;
-    }
-  }
-
-  .like-count {
-    font-size: 26rpx;
-    color: #999;
+  &.liked {
+    color: var(--primary, #FF6B9D);
   }
 }
 
-.loading-tip,
-.empty-tip,
-.no-more-tip {
+.like-num {
+  font-size: 24rpx;
+  color: var(--text-secondary, #999999);
+}
+
+// ===== 状态提示 =====
+.status-tip {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32rpx 0;
+  padding: 48rpx 0;
   font-size: 28rpx;
-  color: #999;
+  color: var(--text-secondary, #999999);
 }
 
-.bottom-spacer {
+.scroll-bottom-spacer {
   height: 140rpx;
 }
 
-.fixed-bottom {
+// ===== 底部悬浮按钮 =====
+.float-answer-btn {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background-color: #fff;
-  box-shadow: 0 -2rpx 8rpx rgba(0, 0, 0, 0.05);
-}
-
-.answer-btn {
-  height: 96rpx;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
-  border-radius: 48rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx 56rpx;
+  background-color: var(--primary, #FF6B9D);
+  border-radius: 48rpx;
+  box-shadow: 0 6rpx 20rpx rgba(255, 107, 157, 0.4);
+  z-index: 99;
+}
 
-  text {
-    font-size: 34rpx;
-    font-weight: bold;
-    color: #fff;
-  }
+.answer-btn-icon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.answer-btn-text {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #ffffff;
 }
 </style>

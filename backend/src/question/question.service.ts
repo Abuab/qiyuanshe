@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { Repository, DataSource, In } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
@@ -67,7 +67,7 @@ export class QuestionService {
     private readonly redisService?: RedisService,
   ) {}
 
-  async getQuestions(page: number = 1, limit: number = 20): Promise<QuestionListResult> {
+  async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {
     const skip = (page - 1) * limit
 
     const [questions, total] = await this.questionRepository.findAndCount({
@@ -77,8 +77,26 @@ export class QuestionService {
       take: limit,
     })
 
+    // 如果用户已登录，查询哪些问题已被该用户回答
+    let answeredIds: Set<number> = new Set()
+    if (userId) {
+      const questionIds = questions.map(q => q.id)
+      if (questionIds.length > 0) {
+        const answers = await this.answerRepository.find({
+          where: { questionId: In(questionIds), userId },
+          select: ['questionId'],
+        })
+        answeredIds = new Set(answers.map(a => a.questionId))
+      }
+    }
+
+    const list = questions.map(q => ({
+      ...q,
+      isAnsweredByUser: answeredIds.has(q.id),
+    }))
+
     return {
-      list: questions,
+      list: list as any,
       total,
       page,
       limit,

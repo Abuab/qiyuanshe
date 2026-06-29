@@ -8,10 +8,11 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common'
 import { QuestionService } from './question.service'
 import { GetQuestionsDto, CreateAnswerDto } from './dto'
-import { JwtAuthGuard } from '../auth/guards'
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 
 @Controller('questions')
 export class QuestionController {
@@ -24,10 +25,13 @@ export class QuestionController {
   }
 
   @Get()
-  async getQuestions(@Query() query: GetQuestionsDto) {
+  @UseGuards(OptionalJwtAuthGuard)
+  async getQuestions(@Query() query: GetQuestionsDto, @Req() req: any) {
+    const userId = req.user?.userId || null
     const result = await this.questionService.getQuestions(
       query.page,
       query.limit,
+      userId,
     )
 
     return {
