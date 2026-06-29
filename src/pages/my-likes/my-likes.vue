@@ -64,10 +64,10 @@
               @tap="handleLikeBack(item)"
             >回喜欢</view>
             <view
-              v-if="currentTab === 2"
+              v-if="currentTab === 2 && systemStore.leaveMessageEnabled"
               class="action-btn chat-btn"
               @tap="goChat(item)"
-            >发消息</view>
+            >去留言</view>
           </view>
         </view>
       </view>
