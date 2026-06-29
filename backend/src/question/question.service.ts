@@ -411,7 +411,7 @@ export class QuestionService {
   /**
    * 本地敏感词检查
    */
-  private checkLocalBannedContent(content: string): 'pass' | 'reject' {
+  private checkLocalBannedContent(content: string): 'pass' | 'reject' | 'review' {
     const bannedKeywords = [
       '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
       '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
@@ -424,7 +424,7 @@ export class QuestionService {
         return 'reject'
       }
     }
-    return 'pass'
+    return 'review'
   }
 
   /**
