@@ -9,6 +9,7 @@ import {
 import { QuestionController, AnswerController } from './question.controller'
 import { QuestionService } from './question.service'
 import { DynamicModule } from '../dynamic/dynamic.module'
+import { AdminModule } from '../admin/admin.module'
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DynamicModule } from '../dynamic/dynamic.module'
       AnswerLike,
     ]),
     DynamicModule,
+    AdminModule,
   ],
   controllers: [QuestionController, AnswerController],
   providers: [QuestionService],

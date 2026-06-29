@@ -10,6 +10,7 @@ import { DynamicService } from '../dynamic/dynamic.service'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 import { RedisService } from '../common/redis.service'
+import { NotifyChannelService } from '../admin/notify-channel.service'
 
 /** 答案状态 */
 export const ANSWER_STATUS = {
@@ -65,6 +66,8 @@ export class QuestionService {
     private readonly systemService?: SystemService,
     @Optional()
     private readonly redisService?: RedisService,
+    @Optional()
+    private readonly notifyChannelService?: NotifyChannelService,
   ) {}
 
   async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {
@@ -274,11 +277,14 @@ export class QuestionService {
 
     // 如果进入人工审核，通知 webhook
     if (answerStatus === ANSWER_STATUS.PENDING) {
-      console.log('[QuestionService] 回答进入人工审核队列', {
+      const user = await this.userRepository.findOne({ where: { id: userId }, select: ['nickname'] })
+      this.notifyChannelService?.sendAuditNotify({
+        type: 'answer',
         userId,
-        questionId,
-        content: content.substring(0, 50),
-        time: new Date().toISOString(),
+        userNickname: user?.nickname || '',
+        content: `问题：${question.title}\n回答内容：${content.substring(0, 100)}`,
+      }).catch((e) => {
+        console.error('[QuestionService] 发送审核通知失败:', e.message)
       })
     }
 

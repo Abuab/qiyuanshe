@@ -1,7 +1,10 @@
 <template>
   <view class="questions-page">
-    <!-- 顶部导航栏 -->
-    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+    <!-- 全屏粉色到灰白渐变的固定背景 -->
+    <view class="page-gradient-bg" />
+
+    <!-- 顶部固定导航卡片 -->
+    <view class="nav-fixed-card" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-inner">
         <view class="nav-left" @tap="handleBack">
           <text class="back-icon">←</text>
@@ -11,30 +14,43 @@
       </view>
     </view>
 
-    <!-- 标题区 -->
-    <view class="header-section" :style="{ paddingTop: (statusBarHeight + navInnerHeight) + 'px' }">
-      <text class="header-title">热门问答</text>
-      <text class="header-tip">回答感兴趣的话题，增加曝光率哦！</text>
-    </view>
-
-    <!-- 问题列表 -->
+    <!-- 可滚动内容：热门问答标题 + 问题卡片列表 -->
     <scroll-view
-      class="question-scroll"
+      class="content-scroll"
       scroll-y
       :refresher-enabled="true"
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="loadMore"
+      :style="{ paddingTop: (statusBarHeight + navInnerHeight) + 'px' }"
     >
+      <!-- 热门问答标题 -->
+      <view class="header-area">
+        <text class="header-title">热门问答</text>
+        <text class="header-tip">回答感兴趣的话题，增加曝光率哦！</text>
+      </view>
+
+      <!-- 问题卡片 -->
       <view
-        v-for="question in questionList"
+        v-for="(question, index) in questionList"
         :key="question.id"
         class="question-card"
+        :class="index === 0 ? 'card-first' : 'card-normal'"
         @tap="goToDetail(question)"
       >
-        <text class="card-title"># {{ question.title }}</text>
-        <view class="card-tag" :class="question.isAnsweredByUser ? 'answered' : 'pending'">
-          <text>{{ question.isAnsweredByUser ? '已回答' : '待回答' }}</text>
+        <view class="card-top">
+          <text class="card-title" :class="index === 0 ? 'title-first' : 'title-normal'">
+            # {{ question.title }}
+          </text>
+          <view class="card-tag" :class="question.isAnsweredByUser ? 'answered' : 'pending'">
+            <text>{{ question.isAnsweredByUser ? '已回答' : '待回答' }}</text>
+          </view>
+        </view>
+
+        <view v-if="index === 0 && !question.isAnsweredByUser" class="card-bottom">
+          <view class="answer-btn-inline" @tap.stop="goToAnswer(question)">
+            <text>回答 ></text>
+          </view>
         </view>
       </view>
 
@@ -47,16 +63,8 @@
       <view v-if="noMore && questionList.length > 0" class="status-tip">
         <text>没有更多了</text>
       </view>
-
-      <!-- 底部占位，给悬浮按钮留空间 -->
-      <view class="bottom-placeholder" />
+      <view class="bottom-spacer" />
     </scroll-view>
-
-    <!-- 底部悬浮回答按钮 -->
-    <view class="float-btn" @tap="goToAnswer(questionList[0])">
-      <text class="float-btn-text">回答</text>
-      <text class="float-btn-arrow"> ></text>
-    </view>
   </view>
 </template>
 
@@ -111,11 +119,8 @@ const fetchQuestions = async (isRefresh = false) => {
       questionList.value = list
       refreshing.value = false
     } else {
-      if (page.value === 1) {
-        questionList.value = list
-      } else {
-        questionList.value.push(...list)
-      }
+      if (page.value === 1) questionList.value = list
+      else questionList.value.push(...list)
     }
     if (list.length < limit) noMore.value = true
     page.value++
@@ -136,9 +141,7 @@ const onRefresh = () => {
   fetchQuestions(true)
 }
 
-const handleBack = () => {
-  safeNavigateBack()
-}
+const handleBack = () => safeNavigateBack()
 
 const goToDetail = (question: Question) => {
   uni.navigateTo({
@@ -158,22 +161,34 @@ const goToAnswer = (question: Question) => {
 </script>
 
 <style lang="scss" scoped>
-.questions-page {
-  min-height: 100vh;
-  background-color: var(--bg, #FFF5F7);
-  position: relative;
-}
-
-// ===== 导航栏 =====
-.nav-bar {
+// ===== 全屏渐变背景 =====
+.page-gradient-bg {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  background-color: #ffffff;
+  bottom: 0;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    #FFE4EC 0%,
+    #FFF0F5 25%,
+    var(--bg, #FFF5F7) 55%,
+    var(--bg, #FFF5F7) 100%
+  );
 }
 
+// ===== 固定顶部导航栏（透明融入渐变背景） =====
+.nav-fixed-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 60%, #FFF0F5 100%);
+}
+
+// ===== 导航栏 =====
 .nav-inner {
   display: flex;
   align-items: center;
@@ -208,95 +223,125 @@ const goToAnswer = (question: Question) => {
   flex: 1;
 }
 
-// ===== 标题区 =====
-.header-section {
-  padding: 24rpx 32rpx;
-  background-color: #ffffff;
+// ===== 标题区（继承渐变，无缝衔接导航栏） =====
+.header-area {
+  padding: 20rpx 40rpx 24rpx;
+  background: linear-gradient(180deg, #FFF0F5 0%, transparent 100%);
 }
 
 .header-title {
   display: block;
-  font-size: 36rpx;
-  font-weight: bold;
+  font-size: 44rpx;
+  font-weight: 500;
   color: #000000;
-  margin-bottom: 8rpx;
+  margin-bottom: 10rpx;
 }
 
 .header-tip {
-  font-size: 24rpx;
+  font-size: 26rpx;
+  font-weight: 400;
   color: var(--text-secondary, #999999);
 }
 
-// ===== 滚动列表 =====
-.question-scroll {
-  height: calc(100vh - 200rpx);
-  padding: 20rpx 24rpx 0;
+// ===== 内容滚动区 =====
+.content-scroll {
+  height: 100vh;
+  position: relative;
+  z-index: 5;
 }
 
+// ===== 问题卡片 =====
 .question-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
   background-color: #ffffff;
-  border-radius: 16rpx;
-  padding: 28rpx 24rpx;
-  margin-bottom: 16rpx;
+  border-radius: 20rpx;
+  margin: 0 24rpx 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+// 首条卡片（更大）
+.card-first {
+  padding: 56rpx 40rpx 48rpx;
+}
+
+// 普通卡片
+.card-normal {
+  padding: 44rpx 36rpx 36rpx;
+}
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
 }
 
 .card-title {
   flex: 1;
-  font-size: 28rpx;
-  font-weight: bold;
   color: #000000;
-  line-height: 1.4;
+  line-height: 1.5;
   padding-right: 20rpx;
 }
 
-// ===== 状态标签 =====
+// 首条标题（加粗）
+.title-first {
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+// 普通标题（较小、细体）
+.title-normal {
+  font-size: 30rpx;
+  font-weight: 400;
+}
+
+// ===== 右上角角标 =====
 .card-tag {
-  flex-shrink: 0;
-  padding: 8rpx 20rpx;
-  border-radius: 24rpx;
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 8rpx 24rpx 10rpx 30rpx;
+  border-radius: 0 0 0 20rpx;
 
   text {
     font-size: 22rpx;
-    color: #ffffff;
     white-space: nowrap;
   }
 
   &.pending {
-    background-color: var(--primary, #FF6B9D);
+    background-color: rgba(255, 107, 157, 0.1);
+    box-shadow: 0 2rpx 6rpx rgba(255, 107, 157, 0.08);
+
+    text {
+      color: var(--primary, #FF6B9D);
+    }
   }
 
   &.answered {
-    background-color: var(--text-secondary, #999999);
+    background-color: rgba(153, 153, 153, 0.1);
+
+    text {
+      color: var(--text-secondary, #999999);
+    }
   }
 }
 
-// ===== 底部悬浮按钮 =====
-.float-btn {
-  position: fixed;
-  bottom: 60rpx;
-  left: 32rpx;
+.card-bottom {
   display: flex;
-  align-items: center;
-  padding: 18rpx 40rpx;
-  background-color: var(--primary, #FF6B9D);
-  border-radius: 48rpx;
-  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.35);
-  z-index: 99;
+  justify-content: flex-start;
+  margin-top: 28rpx;
+}
 
-  .float-btn-text {
-    font-size: 28rpx;
+.answer-btn-inline {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 28rpx;
+  background-color: var(--primary, #FF6B9D);
+  border-radius: 24rpx;
+
+  text {
+    font-size: 24rpx;
     color: #ffffff;
     font-weight: 500;
-  }
-
-  .float-btn-arrow {
-    font-size: 28rpx;
-    color: #ffffff;
-    margin-left: 8rpx;
-    font-weight: bold;
   }
 }
 
@@ -310,7 +355,7 @@ const goToAnswer = (question: Question) => {
   color: var(--text-secondary, #999999);
 }
 
-.bottom-placeholder {
-  height: 120rpx;
+.bottom-spacer {
+  height: 40rpx;
 }
 </style>

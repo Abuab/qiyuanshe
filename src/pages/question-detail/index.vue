@@ -68,13 +68,9 @@
             />
           </view>
 
-          <!-- 回答底部：时间 + 点赞 -->
+          <!-- 回答底部：时间 -->
           <view class="answer-meta">
             <text class="answer-time">{{ formatTime(answer.createdAt) }}</text>
-            <view class="like-action" @tap.stop="handleLike(answer)">
-              <text class="like-icon" :class="{ liked: answer.isLiked }">{{ answer.isLiked ? '♥' : '♡' }}</text>
-              <text v-if="answer.likeCount" class="like-num">{{ answer.likeCount }}</text>
-            </view>
           </view>
         </view>
 
@@ -90,7 +86,6 @@
 
     <!-- 底部悬浮回答按钮 -->
     <view class="float-answer-btn" @tap="goToAnswer">
-      <text class="answer-btn-icon">✏️</text>
       <text class="answer-btn-text">回答</text>
     </view>
   </view>
@@ -111,8 +106,6 @@ interface Answer {
   userId: number
   content: string
   photos: string[]
-  likeCount: number
-  isLiked: boolean
   createdAt: string
   user?: {
     nickname: string
@@ -188,20 +181,6 @@ const fetchAnswers = async (isRefresh = false) => {
   }
 }
 
-const handleLike = async (answer: Answer) => {
-  if (!userStore.isLoggedIn) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    return
-  }
-  try {
-    await request({ url: `/answers/${answer.id}/like`, method: 'POST' })
-    answer.isLiked = !answer.isLiked
-    answer.likeCount += answer.isLiked ? 1 : -1
-  } catch (e) {
-    console.error('like error', e)
-  }
-}
-
 const previewImage = (photos: string[], index: number) => {
   uni.previewImage({ urls: photos, current: index })
 }
@@ -209,16 +188,12 @@ const previewImage = (photos: string[], index: number) => {
 const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
   const date = new Date(timeStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
-  return `${date.getMonth() + 1}-${date.getDate()}`
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = String(date.getHours()).padStart(2, '0')
+  const min = String(date.getMinutes()).padStart(2, '0')
+  return `${y}-${m}-${d} ${h}:${min}`
 }
 
 const handleBack = () => safeNavigateBack()
@@ -409,32 +384,11 @@ const onShareAppMessage = () => {
 // ===== 回答底部 =====
 .answer-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
 }
 
 .answer-time {
   font-size: 22rpx;
-  color: var(--text-secondary, #999999);
-}
-
-.like-action {
-  display: flex;
-  align-items: center;
-  gap: 6rpx;
-}
-
-.like-icon {
-  font-size: 32rpx;
-  color: #cccccc;
-
-  &.liked {
-    color: var(--primary, #FF6B9D);
-  }
-}
-
-.like-num {
-  font-size: 24rpx;
   color: var(--text-secondary, #999999);
 }
 
@@ -461,17 +415,11 @@ const onShareAppMessage = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12rpx;
   padding: 20rpx 56rpx;
   background-color: var(--primary, #FF6B9D);
   border-radius: 48rpx;
   box-shadow: 0 6rpx 20rpx rgba(255, 107, 157, 0.4);
   z-index: 99;
-}
-
-.answer-btn-icon {
-  font-size: 32rpx;
-  line-height: 1;
 }
 
 .answer-btn-text {

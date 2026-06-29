@@ -175,6 +175,7 @@ export class NotifyChannelService {
       report: '举报通知',
       voice: '语音审核',
       user_create: '用户创建',
+      answer: '回答审核',
     }
     const title = `【审核通知】${typeLabel[type] || type}`
     const userInfo = userId ? `\n用户ID：${userId}${userNickname ? `（${userNickname}）` : ''}` : ''

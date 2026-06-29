@@ -33,7 +33,8 @@
     {
       "path": "pages/questions/index",
       "style": {
-        "navigationBarTitleText": "问答",
+        "navigationBarTitleText": "问答列表",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": true
       }
     },
@@ -72,7 +73,8 @@
     {
       "path": "pages/answer/index",
       "style": {
-        "navigationBarTitleText": "回答",
+        "navigationBarTitleText": "回答问题",
+        "navigationStyle": "custom",
         "enablePullDownRefresh": false
       }
     },

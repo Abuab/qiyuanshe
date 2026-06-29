@@ -68,7 +68,7 @@
             :style="{ height: '100rpx' }"
           >
             <swiper-item v-for="q in hotQuestions" :key="q.id">
-              <view class="question-slide" @tap="goToQuestionDetail(q.id)">
+              <view class="question-slide" @tap="goToQuestionDetail(q)">
                 <view class="question-text-area">
                   <text class="question-slide-title">{{ q.title }}</text>
                 </view>
@@ -416,9 +416,9 @@ const loadHotQuestions = async () => {
   }
 }
 
-const goToQuestionDetail = (id: number) => {
+const goToQuestionDetail = (q: { id: number; title: string }) => {
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${id}`,
+    url: `/pages/question-detail/index?id=${q.id}&title=${encodeURIComponent(q.title)}`,
   })
 }
 
