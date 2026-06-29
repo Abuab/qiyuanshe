@@ -43,7 +43,7 @@
         >
           <image
             class="like-avatar"
-            :src="item.avatar || '/static/default-avatar.png'"
+            :src="item.avatar || icons.common.defaultAvatar"
             mode="aspectFill"
           />
           <view class="like-info">

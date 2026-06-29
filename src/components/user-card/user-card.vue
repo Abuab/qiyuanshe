@@ -87,6 +87,7 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useIcon } from '@/composables/useIcon'
+import { useSystemStore } from '@/store/system'
 
 export interface UserCardData {
   id: number
@@ -138,10 +139,13 @@ const computedSecondLine = computed(() => {
   return parts
 })
 
+const store = useSystemStore()
+const defaultAvatar = computed(() => store.defaultAvatar || icons.common.defaultAvatar)
+
 const avatarUrl = computed(() => {
-  if (avatarError.value) return icons.common.defaultAvatar
+  if (avatarError.value) return defaultAvatar.value
   const avatar = props.user.avatar
-  if (!avatar) return icons.common.defaultAvatar
+  if (!avatar) return defaultAvatar.value
   if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
   return getFullImageUrl(avatar)
 })
@@ -159,7 +163,7 @@ const onPhotoError = (photoUrl: string) => {
 }
 
 const resolvePhotoUrl = (raw: string): string => {
-  if (photoFailedMap.value[raw]) return icons.common.defaultAvatar
+  if (photoFailedMap.value[raw]) return defaultAvatar.value
   if (raw.startsWith('http') || raw.startsWith('/static/')) return raw
   return getFullImageUrl(raw)
 }

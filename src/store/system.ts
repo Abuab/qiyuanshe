@@ -47,6 +47,7 @@ interface SystemConfig {
   showOfficialAccountPrompt: boolean
   chatEnabled: boolean
   vipEnabled: boolean
+  defaultAvatar: string
 }
 
 const DEFAULT_ICONS: IconConfig = {
@@ -79,6 +80,7 @@ export const useSystemStore = defineStore('system', () => {
   const showOfficialAccountPrompt = ref<boolean>(true)
   const chatEnabled = ref<boolean>(true)
   const vipEnabled = ref<boolean>(true)
+  const defaultAvatar = ref<string>('')
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -112,6 +114,7 @@ export const useSystemStore = defineStore('system', () => {
         showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
         chatEnabled.value = res.chatEnabled !== undefined ? res.chatEnabled : chatEnabled.value
         vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
+        defaultAvatar.value = res.defaultAvatar || defaultAvatar.value
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -158,6 +161,7 @@ export const useSystemStore = defineStore('system', () => {
           showOfficialAccountPrompt.value = config.showOfficialAccountPrompt !== undefined ? config.showOfficialAccountPrompt : showOfficialAccountPrompt.value
           chatEnabled.value = config.chatEnabled !== undefined ? config.chatEnabled : chatEnabled.value
           vipEnabled.value = config.vipEnabled !== undefined ? config.vipEnabled : vipEnabled.value
+          defaultAvatar.value = config.defaultAvatar || defaultAvatar.value
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -228,6 +232,7 @@ export const useSystemStore = defineStore('system', () => {
       icons: icons.value,
       chatEnabled: chatEnabled.value,
       vipEnabled: vipEnabled.value,
+      defaultAvatar: defaultAvatar.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
   }
@@ -253,6 +258,7 @@ export const useSystemStore = defineStore('system', () => {
     showOfficialAccountPrompt,
     chatEnabled,
     vipEnabled,
+    defaultAvatar,
     icons,
     dicts,
     loadSystemConfig,

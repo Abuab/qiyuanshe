@@ -42,7 +42,7 @@
             <view class="card-header">
               <image
                 class="avatar"
-                :src="item.userAvatar || '/static/default-avatar.png'"
+                :src="item.userAvatar || icons.common.defaultAvatar"
                 mode="aspectFill"
                 @error="onAvatarError($event)"
               />
@@ -104,6 +104,7 @@ import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 
 const systemStore = useSystemStore()

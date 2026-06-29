@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { icons } from '@/config/icons'
 import { getFullImageUrl } from '@/utils/common'
 
 interface VisitorData {
@@ -49,7 +50,7 @@ const emit = defineEmits<{
 
 const isBlurred = computed(() => props.type === 'like' && !props.currentUserIsVip)
 
-const avatarUrl = computed(() => getFullImageUrl(props.visitor.avatar) || '/static/default-avatar.png')
+const avatarUrl = computed(() => getFullImageUrl(props.visitor.avatar) || icons.common.defaultAvatar)
 
 const displayNickname = computed(() => {
   if (isBlurred.value) return '一位神秘用户'

@@ -86,6 +86,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 
@@ -199,7 +200,7 @@ async function fetchMoreVisitors() {
 function handleBack() { safeNavigateBack() }
 function goToUser(id: number) { uni.navigateTo({ url: `/pages/user-detail/index?id=${id}` }) }
 function resolveAvatar(avatar: string) {
-  if (!avatar) return '/static/default-avatar.png'
+  if (!avatar) return icons.common.defaultAvatar
   if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
   return getFullImageUrl(avatar)
 }

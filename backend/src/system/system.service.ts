@@ -157,6 +157,17 @@ export class SystemService implements OnModuleInit {
   }
 
   /**
+   * 校验 VIP/支付功能开关是否开启
+   * 对应管理后台 basic.vipEnabled 配置，默认 true
+   */
+  async isVipEnabled(): Promise<boolean> {
+    const value = await this.getConfig('basic.vipEnabled')
+    // 未配置时默认开启
+    if (value === null || value === undefined) return true
+    return value !== 'false' && value !== '0'
+  }
+
+  /**
    * 获取当前项目名称，用于模板变量替换
    */
   async getAppName(): Promise<string> {

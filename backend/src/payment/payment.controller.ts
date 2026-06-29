@@ -16,17 +16,25 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { PaymentService } from './payment.service'
 import { CreateOrderDto, QueryOrdersDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
+import { SystemService } from '../system/system.service'
+import { Result } from '../common/result'
 
 @Controller('payment')
 export class PaymentController {
   private readonly logger = new Logger(PaymentController.name)
 
-  constructor(private readonly paymentService: PaymentService) {}
+  constructor(
+    private readonly paymentService: PaymentService,
+    private readonly systemService: SystemService,
+  ) {}
 
   @Post('create-order')
   @UseGuards(JwtAuthGuard, ThrottlerGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async createOrder(@Body() dto: CreateOrderDto, @Request() req: any) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     const result = await this.paymentService.createOrder(req.user.userId, dto)
     return { success: true, orderNo: result.orderNo, payParams: result.payParams }
   }
@@ -52,6 +60,9 @@ export class PaymentController {
   @Post('mock-pay')
   @UseGuards(JwtAuthGuard)
   async mockPay(@Body('orderNo') orderNo: string, @Request() req: any) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     await this.paymentService.mockPay(orderNo, req.user.userId)
     return { success: true, message: '支付成功（测试模式）' }
   }

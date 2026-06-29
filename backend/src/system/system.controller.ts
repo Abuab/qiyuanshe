@@ -57,6 +57,8 @@ export class PublicSystemController {
       // 功能开关
       chatEnabled: configs.basic?.chatEnabled !== false,
       vipEnabled: configs.basic?.vipEnabled !== false,
+      // 默认头像（管理后台可配置，为空则前端使用内置默认图）
+      defaultAvatar: configs.basic?.defaultAvatar || '',
     }
 
     return Result.success(result)

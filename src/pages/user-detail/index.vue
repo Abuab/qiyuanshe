@@ -50,7 +50,7 @@
             >
               <image
                 class="thumb-img"
-                :src="getFullImageUrl(photo.url) || '/static/default-avatar.png'"
+                :src="getFullImageUrl(photo.url) || defaultAvatar"
                 mode="aspectFill"
                 :style="(photo.isBlurred || photo.needLogin) ? { filter: 'blur(6px)' } : {}"
               />
@@ -573,6 +573,8 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
+import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -580,6 +582,8 @@ import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const defaultAvatar = computed(() => systemStore.defaultAvatar || icons.common.defaultAvatar)
 
 const userId = ref(0)
 const loading = ref(true)
@@ -805,7 +809,7 @@ const fetchProfileDetail = async () => {
     const res = await request({ url: `/users/${userId.value}/detail`, method: 'GET' })
     profileData.value = res
     if (profileData.value) {
-      profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || '/static/default-avatar.png'
+      profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || defaultAvatar.value
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
     // 检查是否已拉黑
@@ -838,7 +842,7 @@ const fetchMatchmakerList = async () => {
     }))
   } catch {
     matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+      { id: 1, name: '小红娘', avatar: defaultAvatar.value, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
   }
 }
@@ -1155,7 +1159,7 @@ const navigateToContactApply = () => {
 
 const showMatchmakerPopup = () => {
   if (!matchmakerList.value.length) {
-    matchmakerList.value = [{ id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' }]
+    matchmakerList.value = [{ id: 1, name: '小红娘', avatar: defaultAvatar.value, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' }]
   }
   selectedMatchmaker.value = matchmakerList.value[0]
   showMatchmaker.value = true

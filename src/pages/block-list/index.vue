@@ -60,6 +60,7 @@
 import { ref, onMounted } from 'vue'
 import { get, del } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 
 interface BlockItem {
   id: number
@@ -83,7 +84,7 @@ onMounted(() => {
 })
 
 const resolveAvatar = (avatar: string) => {
-  if (!avatar) return '/static/default-avatar.png'
+  if (!avatar) return icons.common.defaultAvatar
   if (avatar.startsWith('http') || avatar.startsWith('/static/')) return avatar
   return getFullImageUrl(avatar)
 }

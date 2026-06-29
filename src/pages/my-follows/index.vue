@@ -37,7 +37,7 @@
         <!-- 列表 -->
         <view v-else>
           <view v-for="item in followingList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="avatar" :src="item.avatar || iconConfig.common.defaultAvatar" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -62,7 +62,7 @@
         <!-- 列表 -->
         <view v-else>
           <view v-for="item in followerList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+            <image class="avatar" :src="item.avatar || iconConfig.common.defaultAvatar" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -88,6 +88,7 @@ import { get, del } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
+import { icons as iconConfig } from '@/config/icons'
 
 const systemStore = useSystemStore()
 const { appName, followEmptyText, followerEmptyText, icons } = storeToRefs(systemStore)

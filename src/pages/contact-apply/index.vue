@@ -134,6 +134,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -181,7 +182,7 @@ const unlockedContact = ref('')
 onLoad((options: any) => {
   targetUserId.value = parseInt(options.userId) || 0
   targetNickname.value = decodeURIComponent(options.nickname || '')
-  targetAvatar.value = decodeURIComponent(options.avatar || '') || '/static/default-avatar.png'
+  targetAvatar.value = decodeURIComponent(options.avatar || '') || icons.common.defaultAvatar
   targetIsRealName.value = options.isRealName === '1'
   targetAge.value = options.age || ''
   targetHeight.value = options.height || ''
@@ -343,7 +344,7 @@ const fetchMatchmakerList = async () => {
     }
   } catch {
     matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+      { id: 1, name: '小红娘', avatar: icons.common.defaultAvatar, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
     selectedMatchmaker.value = matchmakerList.value[0]
   }

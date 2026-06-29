@@ -12,7 +12,7 @@
         <view class="heart-anim">
           <uni-icons type="heart-filled" size="48rpx" color="#FF6B6B"></uni-icons>
         </view>
-        <image class="avatar-img" :src="matchUser?.avatar || '/static/default-avatar.png'" mode="aspectFill" />
+        <image class="avatar-img" :src="matchUser?.avatar || icons.common.defaultAvatar" mode="aspectFill" />
       </view>
 
       <view class="tip-text">你们互相喜欢了对方，现在可以无限畅聊啦</view>
@@ -27,6 +27,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { icons } from '@/config/icons'
 
 interface MatchUser {
   id: number
@@ -36,12 +37,12 @@ interface MatchUser {
 
 const visible = ref(false)
 const matchUser = ref<MatchUser | null>(null)
-const currentAvatar = ref('/static/default-avatar.png')
+const currentAvatar = ref(icons.common.defaultAvatar)
 
 onMounted(() => {
   try {
     const app = getApp()
-    currentAvatar.value = app?.globalData?.userInfo?.avatar || '/static/default-avatar.png'
+    currentAvatar.value = app?.globalData?.userInfo?.avatar || icons.common.defaultAvatar
   } catch {}
 
   uni.$on('match:success', (data: unknown) => {

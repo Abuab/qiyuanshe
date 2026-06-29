@@ -81,6 +81,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 
 export interface MatchmakerData {
@@ -117,8 +118,8 @@ const avatarError = ref(false)
 const qrcodeError = ref(false)
 
 const avatarUrl = computed(() => {
-  if (avatarError.value) return '/static/default-avatar.png'
-  return props.matchmaker.avatar || '/static/default-avatar.png'
+  if (avatarError.value) return icons.common.defaultAvatar
+  return props.matchmaker.avatar || icons.common.defaultAvatar
 })
 
 const qrcodeUrl = computed(() => {

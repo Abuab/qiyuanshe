@@ -4,6 +4,7 @@ import { VipOrder, VipPackage, User, AuditLog } from '../entities'
 import { PaymentController } from './payment.controller'
 import { PaymentService } from './payment.service'
 import { RedisService } from '../common/redis.service'
+import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { RedisService } from '../common/redis.service'
       User,
       AuditLog,
     ]),
+    SystemModule,
   ],
   controllers: [PaymentController],
   providers: [PaymentService, RedisService],

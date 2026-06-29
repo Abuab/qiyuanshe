@@ -206,6 +206,7 @@ import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 
 interface Activity {
@@ -236,7 +237,7 @@ const matchmakerList = ref<any[]>([])
 const selectedMatchmaker = ref({
   id: 1,
   name: '红娘老师',
-  avatar: '/static/default-avatar.png',
+  avatar: icons.common.defaultAvatar,
   title: '资深红娘',
   wechat: 'hongniang123',
   phone: '15703592518',
@@ -300,7 +301,7 @@ function handleShare() {
 function showMatchmakerPopup() {
   if (!matchmakerList.value || matchmakerList.value.length === 0) {
     matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+      { id: 1, name: '小红娘', avatar: icons.common.defaultAvatar, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
   }
   selectedMatchmaker.value = matchmakerList.value[0]
@@ -340,7 +341,7 @@ const fetchMatchmakerList = async () => {
   } catch (e: any) {
     console.log('[红娘] 接口调用失败，使用 Mock 数据', e?.message || e)
     matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: '/static/default-avatar.png', title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
+      { id: 1, name: '小红娘', avatar: icons.common.defaultAvatar, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
     ]
     selectedMatchmaker.value = matchmakerList.value[0]
   }

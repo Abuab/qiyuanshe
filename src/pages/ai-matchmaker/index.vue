@@ -150,6 +150,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 
@@ -228,7 +229,7 @@ const goToUserDetail = (userId: number) => {
 // 图片加载失败兜底
 const onAvatarError = (e: any) => {
   if (e?.detail?.target) {
-    e.detail.target.src = getFullImageUrl('/static/default-avatar.png')
+    e.detail.target.src = icons.common.defaultAvatar
   }
 }
 

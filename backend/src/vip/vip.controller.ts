@@ -12,11 +12,15 @@ import {
 } from '@nestjs/common'
 import { VipService } from './vip.service'
 import { JwtAuthGuard } from '../auth/guards'
+import { SystemService } from '../system/system.service'
 import { Result } from '../common/result'
 
 @Controller('vip')
 export class VipController {
-  constructor(private readonly vipService: VipService) {}
+  constructor(
+    private readonly vipService: VipService,
+    private readonly systemService: SystemService,
+  ) {}
 
   /** 上架套餐列表 */
   @Get('packages')
@@ -32,6 +36,9 @@ export class VipController {
     @Body('packageId') packageId: number,
     @Body('payType') payType?: string,
   ) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     try {
       const result = await this.vipService.createOrder(
         req.user.userId, packageId, payType,
@@ -52,6 +59,9 @@ export class VipController {
     @Param('orderNo') orderNo: string,
     @Body('transactionId') transactionId?: string,
   ) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     try {
       const result = await this.vipService.handlePaymentSuccess(
         orderNo, transactionId,
@@ -73,6 +83,9 @@ export class VipController {
   @Post('top-card/use')
   @UseGuards(JwtAuthGuard)
   async useTopCard(@Request() req: any) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     try {
       const result = await this.vipService.useTopCard(req.user.userId)
       return Result.success(result, '置顶成功')
@@ -117,6 +130,9 @@ export class VipController {
     @Request() req: any,
     @Body('targetUserId') targetUserId: number,
   ) {
+    if (!(await this.systemService.isVipEnabled())) {
+      return Result.success(null, '功能维护中，请稍后再试')
+    }
     try {
       const result = await this.vipService.useRedLine(req.user.userId, targetUserId)
       return Result.success(result, result.alreadyUnlocked ? '您已解锁过该用户' : '解锁成功')

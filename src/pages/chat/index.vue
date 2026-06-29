@@ -201,6 +201,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
 import { useImageFallback } from '@/composables/useImageFallback'
+import { icons } from '@/config/icons'
 import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
 
@@ -257,7 +258,7 @@ const seenMsgIds = new Set<number>() // 已处理消息 ID，防重复
 
 const canSend = computed(() => inputContent.value.trim().length > 0)
 
-const otherAvatar = computed(() => getFullImageUrl(avatar.value) || '/static/default-avatar.png')
+const otherAvatar = computed(() => getFullImageUrl(avatar.value) || icons.common.defaultAvatar)
 
 const placeholder = computed(() => {
   if (!userStore.isVip && todayMessageCount.value >= maxDailyMessages) return '今日消息已用完'

@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { icons } from '@/config/icons'
 import { getServerBaseUrl } from './request'
 
 export const formatDate = (date: string | Date | number, format: string = 'YYYY-MM-DD'): string => {
@@ -163,7 +164,7 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
   // 过滤 picsum.photos / placeholder 等不可用外部图片源
   if (/picsum\.photos|placeholder\.com|lorempixel/i.test(path)) {
-    return '/static/default-avatar.png'
+    return icons.common.defaultAvatar
   }
   if (path.startsWith('http://') || path.startsWith('https://')) {
     // 替换旧 IP 地址为当前域名

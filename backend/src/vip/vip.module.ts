@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ScheduleModule } from '@nestjs/schedule'
 import { VipController } from './vip.controller'
@@ -13,6 +13,7 @@ import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
+import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RedisService } from '../common/redis.service'
       SystemConfig,
     ]),
     ScheduleModule.forRoot(),
+    forwardRef(() => SystemModule),
   ],
   controllers: [VipController],
   providers: [VipService, VipScheduler, RedisService],

@@ -32,7 +32,7 @@
           <view class="answer-user" @tap="goToUserProfile(answer.userId)">
             <image
               class="user-avatar"
-              :src="answer.user?.avatar || '/static/default-avatar.png'"
+              :src="answer.user?.avatar || icons.common.defaultAvatar"
               mode="aspectFill"
             />
             <view class="user-info">
@@ -96,6 +96,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -179,7 +180,7 @@ const fetchAnswers = async (isRefresh = false) => {
       photos: (answer.photos || []).map((p: string) => getFullImageUrl(p)),
       user: answer.user ? {
         ...answer.user,
-        avatar: getFullImageUrl(answer.user.avatar) || '/static/default-avatar.png',
+        avatar: getFullImageUrl(answer.user.avatar) || icons.common.defaultAvatar,
       } : undefined,
     }))
 
