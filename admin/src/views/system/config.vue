@@ -147,6 +147,11 @@
               <div class="form-tip" style="margin-left:12px">VIP 会员页不显示</div>
             </el-form-item>
 
+            <el-form-item label="去留言按钮">
+              <el-switch v-model="basicConfig.leaveMessageEnabled" active-text="开启" inactive-text="关闭" />
+              <div class="form-tip" style="margin-left:12px">互相喜欢页"去留言"按钮显隐</div>
+            </el-form-item>
+
             <el-form-item label="登录页插画">
               <div class="upload-item">
                 <el-image
@@ -613,6 +618,7 @@ const basicConfig = reactive({
   photoGuidanceMinCount: 1,
   chatEnabled: true,
   vipEnabled: true,
+  leaveMessageEnabled: true,
 })
 
 const shareConfig = reactive({
