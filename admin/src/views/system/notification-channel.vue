@@ -166,6 +166,7 @@ const notifyTypes = reactive<NotifyTypeConfig[]>([
   { key: 'chat', label: '聊天消息审核', desc: '用户发送聊天内容触发人工审核时触发', enabled: true, todayCount: 0 },
   { key: 'report', label: '举报通知', desc: '用户举报其他用户时触发', enabled: true, todayCount: 0 },
   { key: 'user_create', label: '用户创建', desc: '管理员后台创建新用户时触发', enabled: true, todayCount: 0 },
+  { key: 'answer', label: '问答审核', desc: '用户提交问答回复进入审核时触发', enabled: true, todayCount: 0 },
 ])
 
 const confirmDialog = reactive({ visible: false, message: '' })
