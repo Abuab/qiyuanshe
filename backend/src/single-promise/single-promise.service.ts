@@ -79,11 +79,15 @@ export class SinglePromiseService {
 
   /** 管理后台：分页查询 */
   async adminList(params: {
-    page: number
-    pageSize: number
-    status?: number
+    page?: number | string
+    pageSize?: number | string
+    status?: any
   }) {
-    const { page, pageSize, status } = params
+    const page = Math.max(1, parseInt(String(params.page || 1), 10) || 1)
+    const pageSize = Math.min(100, Math.max(1, parseInt(String(params.pageSize || 15), 10) || 15))
+    const status = params.status !== undefined && params.status !== null && params.status !== ''
+      ? parseInt(String(params.status), 10)
+      : undefined
     const qb = this.spRepo
       .createQueryBuilder('sp')
       .leftJoinAndSelect('sp.user', 'user')
