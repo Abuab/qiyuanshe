@@ -20,4 +20,6 @@ export const ICON_MAP: Record<string, string> = {
   questionThin: 'icon-question-thin',
   /** 盾牌勾选 */
   shieldCheckThin: 'icon-shield-check-thin',
+  /** 日元/收入 */
+  currencyJpyThin: 'icon-currency-jpy-thin',
 } as const

@@ -185,6 +185,7 @@
           <text class="section-title">关于我</text>
           <view v-if="profileData.aboutMe.tags?.length" class="about-tags-grid">
             <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="about-capsule">
+              <AppIcon v-if="getAboutTagIcon(tag.name)" :name="getAboutTagIcon(tag.name)" size="28" color="#999999" />
               <text>{{ tag.name }}</text>
             </view>
           </view>
@@ -909,6 +910,24 @@ const getAuthIconName = (type: string): string => {
   return AUTH_ICON_MAP[type] || 'icon-identification-badge-thin'
 }
 
+// ===== 关于我标签 → AppIcon name 映射 =====
+const HOUSING_VALUES = ['已购房', '已购房（无贷款）', '已购房（有贷款）', '租房', '与父母同住', '单位宿舍', '其他']
+const CAR_VALUES = ['已购车', '未购车', '计划购车']
+const MARITAL_VALUES = ['未婚', '离异', '离异未育', '离异带孩', '丧偶', '已婚']
+const ONLY_CHILD_VALUES = ['独生', '非独生']
+const WHEN_MARRY_VALUES = ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然']
+
+const getAboutTagIcon = (name: string): string => {
+  if (!name) return ''
+  if (name.startsWith('月收入')) return 'icon-currency-jpy-thin'
+  if (HOUSING_VALUES.includes(name)) return 'icon-house-line-thin'
+  if (CAR_VALUES.includes(name)) return 'icon-car-thin'
+  if (MARITAL_VALUES.includes(name)) return 'icon-list-heart-thin'
+  if (ONLY_CHILD_VALUES.includes(name)) return 'icon-identification-badge-thin'
+  if (WHEN_MARRY_VALUES.includes(name)) return 'icon-heartbeat-thin'
+  return ''
+}
+
 // ===== 是否未实名认证 =====
 const isRealNameNotVerified = computed(() => {
   const items = profileData.value?.identityAuth?.items
@@ -1602,7 +1621,7 @@ $text-hint: #999999;
 
 .about-capsule {
   flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 8rpx;
   padding: 10rpx 18rpx;
   background: #FFF8FA; border-radius: 28rpx;
   font-size: 22rpx; color: #111; font-weight: 400;
