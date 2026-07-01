@@ -77,10 +77,6 @@
       class="content-scroll"
       scroll-y
       enable-flex
-      refresher-enabled
-      :refresher-triggered="refreshingVisible"
-      refresher-threshold="80"
-      @refresherrefresh="onRefresherRefresh"
       :style="{ height: 'calc(100vh - 100rpx - ' + navTotalHeight + 'px)' }"
       :key="'scroll-' + (aiAssistantExpanded ? '1' : '0')"
     >
@@ -110,22 +106,20 @@
       <view class="service-card">
         <view class="service-grid">
           <view class="service-item" @tap="goToQuestions">
-            <image v-if="pageIcons.qaIcon" class="service-icon-img" :src="pageIcons.qaIcon" mode="aspectFit" />
-            <view v-else class="service-icon-box orange-gradient">
-              <text class="service-icon-text">#</text>
+            <view class="service-icon-box" style="background-color: #FFF3E0;">
+              <image class="service-icon-img" src="/static/icons/home-grid/jinghao.png" mode="aspectFit" />
             </view>
             <text class="service-label">我的问答</text>
           </view>
           <view class="service-item" @tap="goToMatchmaker">
-            <image v-if="pageIcons.matchmakerIcon" class="service-icon-img" :src="pageIcons.matchmakerIcon" mode="aspectFit" />
-            <view v-else class="service-icon-box purple-gradient">
-              <text class="service-icon-text">👤</text>
+            <view class="service-icon-box" style="background-color: #F3E5F5;">
+              <image class="service-icon-img" src="/static/icons/home-grid/nvxing.png" mode="aspectFit" />
             </view>
             <text class="service-label">专属红娘</text>
           </view>
           <view v-if="showAiAssistantEntry" class="service-item" @tap="aiAssistantExpanded = !aiAssistantExpanded">
-            <view class="service-icon-box ai-gradient">
-              <text class="service-icon-text">🤖</text>
+            <view class="service-icon-box" style="background-color: #E3F2FD;">
+              <image class="service-icon-img" src="/static/icons/home-grid/ai-audit.png" mode="aspectFit" />
             </view>
             <text class="service-label">AI助手</text>
           </view>
@@ -165,11 +159,7 @@
             @tap="item.placeholder ? undefined : handleToolClick(item.key)"
           >
             <template v-if="!item.placeholder">
-              <image v-if="pageIcons[item.key]" class="tool-icon-img" :src="pageIcons[item.key]" mode="aspectFit" />
-              <view v-else-if="item.key === 'myLikes'" class="tool-icon-likes">
-                <uni-icons type="heart-filled" size="36rpx" color="#fff"></uni-icons>
-              </view>
-              <text v-else class="tool-icon-emoji">{{ item.emoji }}</text>
+              <AppIcon :name="item.iconName" size="56" color="#333333" />
               <text class="tool-label">{{ item.label }}</text>
             </template>
           </view>
@@ -237,6 +227,7 @@ import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { getFullImageUrl } from '@/utils/common'
 import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
@@ -587,14 +578,14 @@ const handleToolClick = (key: string) => {
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = [
-  { key: 'myPhotos',    label: '我的相册', emoji: '🖼' },
-  { key: 'loveQuotes',  label: '爱情语录', emoji: '💌' },
-  { key: 'myLikes',     label: '我的喜欢', emoji: '❤️' },
-  { key: 'privacy',     label: '隐私设置', emoji: '🔒' },
-  { key: 'feedback',    label: '问题反馈', emoji: '📝' },
-  { key: 'userAgreement', label: '用户协议', emoji: '📄' },
-  { key: 'antiFraud',   label: '防骗提醒', emoji: '🛡' },
-  { key: 'dummy',       label: '',        emoji: '',      placeholder: true },
+  { key: 'myPhotos',    label: '我的相册', iconName: 'icon-image', emoji: '🖼' },
+  { key: 'loveQuotes',  label: '爱情语录', iconName: 'icon-list-heart', emoji: '💌' },
+  { key: 'myLikes',     label: '我的喜欢', iconName: 'icon-heart', emoji: '❤️' },
+  { key: 'privacy',     label: '隐私设置', iconName: 'icon-shield-warning', emoji: '🔒' },
+  { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '📝' },
+  { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '📄' },
+  { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '🛡' },
+  { key: 'dummy',       label: '',        iconName: '', emoji: '',      placeholder: true },
 ]
 </script>
 
@@ -905,47 +896,23 @@ const toolGrid7 = [
 }
 
 .service-icon-box {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 18rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 12rpx;
-
-  &.orange-gradient {
-    background: linear-gradient(135deg, #FF9F43, #FFB347);
-  }
-
-  &.purple-gradient {
-    background: linear-gradient(135deg, #A78BFA, #C4B5FD);
-  }
-
-  &.pink-gradient {
-    background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  }
-
-  &.ai-gradient {
-    background: linear-gradient(135deg, #6366F1, #8B5CF6);
-  }
-}
-
-.service-icon-text {
-  font-size: 36rpx;
-  font-weight: bold;
-  color: #fff;
 }
 
 .service-icon-img {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 18rpx;
-  margin-bottom: 12rpx;
+  width: 52rpx;
+  height: 52rpx;
 }
 
 .service-label {
-  font-size: 26rpx;
-  color: #333;
+  font-size: 24rpx;
+  color: #333333;
 }
 
 // ===== AI助手展开面板 =====
@@ -1011,35 +978,14 @@ const toolGrid7 = [
   &.tool-placeholder {
     visibility: hidden;
   }
-}
 
-.tool-icon-emoji {
-  font-size: 64rpx;
-  margin-bottom: 12rpx;
-  filter: grayscale(1) opacity(0.7);
-}
-
-.tool-icon-likes {
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12rpx;
-}
-
-.tool-icon-img {
-  width: 64rpx;
-  height: 64rpx;
-  margin-bottom: 12rpx;
 }
 
 .tool-label {
   font-size: 28rpx;
   color: #333;
   text-align: center;
+  margin-top: 8rpx;
 }
 
 // ========== 公众号卡片 ==========

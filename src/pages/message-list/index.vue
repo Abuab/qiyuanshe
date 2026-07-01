@@ -453,14 +453,17 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .official-tag {
+  display: inline-flex;
+  align-items: center;
   background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
   border-radius: 6rpx;
-  padding: 2rpx 6rpx;
+  padding: 3rpx 4rpx;
 
   text {
     font-size: 18rpx;
     color: #fff;
     font-weight: 500;
+    line-height: 1;
   }
 }
 

@@ -246,7 +246,7 @@ function onAvatarError(e: any) {
 // ===== 页面 Banner =====
 .page-banner {
   width: 100%;
-  height: 35vh;
+  height: 25vh;
   display: block;
 }
 

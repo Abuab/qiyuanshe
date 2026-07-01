@@ -113,10 +113,11 @@
           <!-- 生日星座 + 职业 同行 -->
           <view class="info-row-two" v-if="profileData.basicInfo.birthDay || profileData.basicInfo.occupation">
             <view v-if="profileData.basicInfo.birthDay" class="info-chip left-chip">
-              <text class="chip-emoji">🎂</text>
+              <image class="chip-icon" src="/static/icons/user-tags/birthday.png" mode="aspectFit" />
               <text>{{ profileData.basicInfo.birthDay }} · {{ profileData.basicInfo.zodiac || '' }}{{ profileData.basicInfo.constellation ? ' · ' + profileData.basicInfo.constellation : '' }}</text>
             </view>
             <view v-if="profileData.basicInfo.occupation" class="info-chip right-chip">
+              <image class="chip-icon" src="/static/icons/user-tags/industry.png" mode="aspectFit" />
               <text>{{ profileData.basicInfo.occupation }}</text>
             </view>
           </view>
@@ -124,11 +125,11 @@
           <!-- 户籍 + 现居 -->
           <view class="info-row-two" v-if="profileData.basicInfo.hometown || profileData.basicInfo.residence">
             <view v-if="profileData.basicInfo.hometown" class="info-chip loc-chip">
-              <text class="loc-label-text loc-label-hometown">家乡</text>
+              <image class="loc-tag-icon" src="/static/icons/user-tags/hometown.png" mode="aspectFit" />
               <text>{{ formatCityDistrict(profileData.basicInfo.hometown) }}</text>
             </view>
             <view v-if="profileData.basicInfo.residence" class="info-chip loc-chip">
-              <text class="loc-label-text loc-label-residence">现居</text>
+              <image class="loc-tag-icon" src="/static/icons/user-tags/location.png" mode="aspectFit" />
               <text>{{ formatCityDistrict(profileData.basicInfo.residence) }}</text>
             </view>
           </view>
@@ -137,25 +138,38 @@
         <!-- ========== 3. 身份认证区 ========== -->
         <view class="section-card">
           <view class="section-title-bar">
-            <text class="section-title">身份认证</text>
-            <text class="section-hint">点亮的为已认证</text>
+            <view class="section-title">
+              <view class="auth-title-icon">
+                <AppIcon name="icon-shield-check-thin" size="40" color="#333333" />
+              </view>
+              身份认证
+            </view>
+            <view class="section-hint">
+              <AppIcon name="icon-question-thin" size="28" color="#999999" />
+              点亮的为已认证
+            </view>
           </view>
           <!-- 认证图标列表（未认证时模糊） -->
           <view class="auth-container" :class="{ 'auth-blur': isRealNameNotVerified }">
-            <scroll-view class="auth-scroll" scroll-x :show-scrollbar="false">
-              <view class="auth-items">
+            <view class="auth-section">
+              <view class="auth-list">
                 <view
                   v-for="item in profileData.identityAuth.items"
                   :key="item.type"
                   class="auth-item"
+                  @tap="onAuthTap(item)"
                 >
-                  <view class="auth-circle" :class="{ on: item.verified }">
-                    <text>{{ item.verified ? '✓' : '—' }}</text>
+                  <view class="auth-icon-wrapper" :class="{ 'auth-verified': item.verified }">
+                    <AppIcon
+                      :name="getAuthIconName(item.type)"
+                      size="36"
+                      :color="item.verified ? '#FFFFFF' : '#999999'"
+                    />
                   </view>
-                  <text class="auth-name">{{ item.label }}</text>
+                  <text class="auth-label">{{ item.label === '单身承诺' ? '单身承\n诺' : item.label }}</text>
                 </view>
               </view>
-            </scroll-view>
+            </view>
             <!-- 未认证覆盖层 -->
             <view v-if="isRealNameNotVerified" class="auth-blur-overlay" @tap.stop>
               <text class="auth-unverified-text">该用户未实名认证</text>
@@ -580,6 +594,7 @@ import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -593,6 +608,7 @@ const profileData = ref<any>(null)
 const voiceEnabled = ref(true)
 const voiceData = ref<{ voiceUrl: string; duration: number; auditStatus: number } | null>(null)
 const isVoicePlaying = ref(false)
+let voiceAudioCtx: ReturnType<typeof uni.createInnerAudioContext> | null = null
 const showAiMatchPopup = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
@@ -744,14 +760,17 @@ function toggleVoicePlay() {
     url: voiceData.value.voiceUrl,
     success: (res: any) => {
       if (res.statusCode === 200) {
-        (uni as any).playVoice({
-          filePath: res.tempFilePath,
-          success: () => { isVoicePlaying.value = true },
-          fail: (err: any) => {
-            console.error('[UserDetail] playVoice error', JSON.stringify(err))
-          },
-        })
-        ;(uni as any).onVoicePlayEnd(() => { isVoicePlaying.value = false })
+        if (!voiceAudioCtx) {
+          voiceAudioCtx = uni.createInnerAudioContext()
+          voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+          voiceAudioCtx.onError((err: any) => {
+            console.error('[UserDetail] voice play error', JSON.stringify(err))
+            isVoicePlaying.value = false
+          })
+        }
+        voiceAudioCtx.src = res.tempFilePath
+        voiceAudioCtx.play()
+        isVoicePlaying.value = true
       }
     },
     fail: (err: any) => {
@@ -761,7 +780,9 @@ function toggleVoicePlay() {
 }
 
 function stopVoice() {
-  (uni as any).stopVoice()
+  if (voiceAudioCtx) {
+    voiceAudioCtx.stop()
+  }
   isVoicePlaying.value = false
 }
 
@@ -865,6 +886,27 @@ const handleUploadPhoto = () => {
 
 const onAuthTap = (item: any) => {
   uni.showModal({ title: item.label, content: item.verified ? '已认证' : '未认证', showCancel: false })
+}
+
+// ===== 认证类型 → AppIcon name 映射 =====
+const AUTH_ICON_MAP: Record<string, string> = {
+  real_name: 'icon-identification-badge-thin',
+  education: 'icon-graduation-cap-thin',
+  house: 'icon-house-line-thin',
+  car: 'icon-car-thin',
+  single: 'icon-heartbeat-thin',
+  single_pro: 'icon-heartbeat-thin',
+  single_proof: 'icon-heartbeat-thin',
+  single_commit: 'icon-heartbeat-thin',
+  marriage: 'icon-list-heart-thin',
+  marriage_status: 'icon-list-heart-thin',
+  marital: 'icon-list-heart-thin',
+  marital_status: 'icon-list-heart-thin',
+  relationship: 'icon-list-heart-thin',
+}
+
+const getAuthIconName = (type: string): string => {
+  return AUTH_ICON_MAP[type] || 'icon-identification-badge-thin'
 }
 
 // ===== 是否未实名认证 =====
@@ -1419,20 +1461,24 @@ $text-hint: #999999;
   background: #EEF4FF; color: #4A90E2;
 }
 
-.chip-emoji { font-size: 24rpx; flex-shrink: 0; }
+.chip-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 8rpx;
+  flex-shrink: 0;
+}
 
 .loc-chip {
   background: #F0F0F0; color: $text;
   gap: 4rpx;
 }
 
-.loc-label-text {
-  font-size: 20rpx; flex-shrink: 0;
+.loc-tag-icon {
+  width: 36rpx;
+  height: 36rpx;
+  margin-right: 8rpx;
+  flex-shrink: 0;
 }
-
-.loc-label-hometown { color: #5DADE2; }
-
-.loc-label-residence { color: #F5B041; }
 
 // ===== 基本资料 =====
 .basic-line {
@@ -1456,7 +1502,7 @@ $text-hint: #999999;
 
 // ===== 分区卡片通用 =====
 .section-card {
-  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 32rpx 28rpx 48rpx;
+  background: $card-bg; margin: 16rpx 24rpx; border-radius: 20rpx; padding: 8rpx 16rpx 24rpx;
 }
 
 .section-title {
@@ -1464,18 +1510,70 @@ $text-hint: #999999;
 }
 
 .section-title-bar {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10rpx;
-  .section-title { margin-bottom: 0; }
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 48rpx;
+  .section-title { margin-bottom: 0; display: flex; align-items: center; }
 }
 
-.section-hint { font-size: 22rpx; color: $text-hint; }
+.section-hint { font-size: 22rpx; color: $text-hint; display: flex; align-items: center; }
+
+.auth-title-icon {
+  margin-right: 12rpx;
+  display: flex;
+  align-items: center;
+}
 
 // ===== 身份认证 =====
 // ===== 认证容器（未认证时模糊） =====
 .auth-container { position: relative; }
 
-.auth-blur .auth-items {
+.auth-blur .auth-section {
   filter: blur(4px);
+}
+
+.auth-section {
+  width: 100%;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+.auth-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding: 0 0;
+  width: 100%;
+}
+
+.auth-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100rpx;
+  flex-shrink: 0;
+}
+
+.auth-icon-wrapper {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #F5F5F5;
+  margin-bottom: 16rpx;
+
+  &.auth-verified {
+    background-color: #4A90D9;
+  }
+}
+
+.auth-label {
+  font-size: 22rpx;
+  color: #666666;
+  text-align: center;
+  width: 100rpx;
+  line-height: 1.3;
 }
 
 .auth-blur-overlay {
@@ -1483,6 +1581,7 @@ $text-hint: #999999;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 14rpx; z-index: 5;
   background: rgba(255, 255, 255, 0.4);
+  padding-bottom: 80rpx;  // 整体上移，平衡上下留白
 }
 
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
@@ -1494,20 +1593,6 @@ $text-hint: #999999;
 }
 
 .auth-remind-btn text { font-size: 28rpx; color: #fff; font-weight: 500; }
-
-.auth-scroll { white-space: nowrap; }
-
-.auth-items { display: flex; gap: 40rpx; padding: 8rpx 0; }
-
-.auth-item { display: flex; flex-direction: column; align-items: center; gap: 12rpx; flex-shrink: 0; }
-
-.auth-circle {
-  width: 72rpx; height: 72rpx; border-radius: 50%; background: #E8E8E8;
-  display: flex; align-items: center; justify-content: center; font-size: 30rpx; color: #999;
-  &.on { background: #4A90E2; color: #fff; }
-}
-
-.auth-name { font-size: 22rpx; color: $text-hint; }
 
 // ===== 关于我 =====
 .about-tags-grid {

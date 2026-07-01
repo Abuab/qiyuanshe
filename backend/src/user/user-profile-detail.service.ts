@@ -292,11 +292,18 @@ export class UserProfileDetailService {
 
     // 补充用户资料中的标签（收入/住房/购车/婚况 作为展示标签）
     const extraTags: TagItem[] = []
-    if (user.incomeRange) extraTags.push({ name: user.incomeRange, category: 'basic', iconUrl: '' })
+    if (user.incomeRange) {
+      const incomeName = user.incomeRange.startsWith('月收入') ? user.incomeRange : '月收入' + user.incomeRange
+      extraTags.push({ name: incomeName, category: 'basic', iconUrl: '' })
+    }
     if (user.housingStatus) extraTags.push({ name: user.housingStatus, category: 'basic', iconUrl: '' })
     if (user.carStatus) extraTags.push({ name: user.carStatus, category: 'basic', iconUrl: '' })
     if (user.maritalStatus) extraTags.push({ name: user.maritalStatus, category: 'basic', iconUrl: '' })
     if (user.whenMarry) extraTags.push({ name: user.whenMarry, category: 'basic', iconUrl: '' })
+    if (user.onlyChild) {
+      const onlyChildName = user.onlyChild === '是' ? '独生' : user.onlyChild === '否' ? '非独生' : user.onlyChild
+      extraTags.push({ name: onlyChildName, category: 'basic', iconUrl: '' })
+    }
 
     return {
       title: '关于我',

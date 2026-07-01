@@ -203,8 +203,6 @@
               <text class="hi-text">认识Ta</text>
             </view>
             <view class="btn-matchmaker" @tap="handleMatchmaker(item)">
-              <image v-if="mmEyeIcon" class="mm-eye" :src="mmEyeIcon" mode="aspectFit" />
-              <text v-else class="mm-eye-fallback">👁</text>
               <text class="mm-text">红娘牵线</text>
             </view>
           </view>
@@ -807,15 +805,17 @@ onShow(() => {
 }
 
 .mm-official-tag {
+  display: inline-flex;
+  align-items: center;
   margin-left: 6rpx;
-  padding: 0 6rpx 1rpx;
+  padding: 3rpx 4rpx;
   background-color: #FF6B9D;
   border-radius: 4rpx;
-  line-height: 1;
 
   text {
     font-size: 18rpx;
     color: #fff;
+    font-weight: 500;
     line-height: 1;
   }
 }
@@ -1087,17 +1087,6 @@ onShow(() => {
   padding: 10rpx 24rpx;
   border-radius: 40rpx;
   background: linear-gradient(135deg, #FF6B9D, #FF8EAF);
-}
-
-.mm-eye {
-  width: 28rpx;
-  height: 28rpx;
-  margin-right: 4rpx;
-}
-
-.mm-eye-fallback {
-  font-size: 24rpx;
-  margin-right: 4rpx;
 }
 
 .mm-text {

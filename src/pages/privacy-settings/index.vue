@@ -14,8 +14,7 @@
       <view class="menu-group">
         <view class="menu-row" @tap="goToBlockList">
           <view class="menu-left">
-            <image v-if="pageIcons.blockListIcon" class="menu-icon" :src="pageIcons.blockListIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">🚫</text>
+            <AppIcon name="icon-prohibit" size="40" color="#333333" />
             <text class="menu-label">黑名单</text>
           </view>
           <text class="menu-arrow">></text>
@@ -23,8 +22,7 @@
 
         <view class="menu-row" @tap="goToAgreement">
           <view class="menu-left">
-            <image v-if="pageIcons.privacyPolicyIcon" class="menu-icon" :src="pageIcons.privacyPolicyIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">📄</text>
+            <AppIcon name="icon-shield-warning" size="40" color="#333333" />
             <text class="menu-label">隐私政策</text>
           </view>
           <text class="menu-arrow">></text>
@@ -32,8 +30,7 @@
 
         <view class="menu-row" @tap="goToSelfDiscipline">
           <view class="menu-left">
-            <image v-if="pageIcons.selfDisciplineIcon" class="menu-icon" :src="pageIcons.selfDisciplineIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">📋</text>
+            <AppIcon name="icon-scroll" size="40" color="#333333" />
             <text class="menu-label">平台自律声明</text>
           </view>
           <text class="menu-arrow">></text>
@@ -41,8 +38,7 @@
 
         <view class="menu-row" @tap="goToPrivacySwitches">
           <view class="menu-left">
-            <image v-if="pageIcons.privacySettingIcon" class="menu-icon" :src="pageIcons.privacySettingIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">⚙️</text>
+            <AppIcon name="icon-lock-key" size="40" color="#333333" />
             <text class="menu-label">隐私设置</text>
           </view>
           <text class="menu-arrow">></text>
@@ -50,11 +46,13 @@
 
         <view class="menu-row" @tap="handleDeactivate">
           <view class="menu-left">
-            <image v-if="pageIcons.deactivateIcon" class="menu-icon" :src="pageIcons.deactivateIcon" mode="aspectFit" />
-            <text v-else class="menu-icon-emoji">🚪</text>
+            <AppIcon name="icon-file-x" size="40" color="#333333" />
             <text class="menu-label">注销账号</text>
           </view>
-          <text class="menu-arrow">></text>
+          <view class="menu-right">
+            <text class="menu-deactivate-hint">注销后无法恢复，请谨慎操作</text>
+            <text class="menu-arrow">></text>
+          </view>
         </view>
       </view>
 
@@ -88,6 +86,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { put } from '@/utils/request'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
@@ -212,15 +211,6 @@ const handleDeactivate = () => {
   gap: 16rpx;
 }
 
-.menu-icon {
-  width: 40rpx;
-  height: 40rpx;
-}
-
-.menu-icon-emoji {
-  font-size: 36rpx;
-}
-
 .menu-label {
   font-size: 30rpx;
   color: #333;
@@ -231,8 +221,22 @@ const handleDeactivate = () => {
   color: #ccc;
 }
 
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+}
+
+.menu-deactivate-hint {
+  font-size: 22rpx;
+  color: #FF1744;
+}
+
 .deactivate-hint {
   padding: 16rpx 32rpx;
+  display: flex;
+  justify-content: center;
 }
 
 .hint-text {

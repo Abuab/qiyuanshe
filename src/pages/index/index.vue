@@ -33,16 +33,48 @@
         </view>
 
         <view class="quick-entry-section">
-          <view
-            v-for="entry in quickEntriesText"
-            :key="entry.id"
-            class="quick-entry-item"
-            @tap="handleQuickEntry(entry)"
-          >
-            <view class="quick-entry-icon" :style="{ backgroundColor: entry.bgColor }">
-              <image class="entry-icon" :src="entry.icon" mode="aspectFit"></image>
+          <view class="grid-item" @tap="handleQuickEntry(1)">
+            <view class="icon-wrapper" style="background-color: #FFF0F3;">
+              <image
+                class="grid-icon"
+                src="/static/icons/home-grid/letter.png"
+                mode="aspectFit"
+              />
             </view>
-            <text class="quick-entry-text">{{ entry.displayName }}</text>
+            <text class="grid-text">媒妁之言</text>
+          </view>
+
+          <view class="grid-item" @tap="handleQuickEntry(2)">
+            <view class="icon-wrapper" style="background-color: #E3F2FD;">
+              <image
+                class="grid-icon"
+                src="/static/icons/home-grid/hot-air.png"
+                mode="aspectFit"
+              />
+            </view>
+            <text class="grid-text">佳会新启</text>
+          </view>
+
+          <view class="grid-item" @tap="handleQuickEntry(3)">
+            <view class="icon-wrapper" style="background-color: #F3E5F5;">
+              <image
+                class="grid-icon"
+                src="/static/icons/home-grid/balloon.png"
+                mode="aspectFit"
+              />
+            </view>
+            <text class="grid-text">志趣相投</text>
+          </view>
+
+          <view class="grid-item" @tap="handleQuickEntry(4)">
+            <view class="icon-wrapper" style="background-color: #FFF8E1;">
+              <image
+                class="grid-icon"
+                src="/static/icons/home-grid/love.png"
+                mode="aspectFit"
+              />
+            </view>
+            <text class="grid-text">佳偶天成</text>
           </view>
         </view>
       </view>
@@ -214,14 +246,6 @@ import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
 
-interface QuickEntry {
-  id: number
-  name: string
-  displayName?: string
-  icon: string
-  bgColor: string
-}
-
 interface HotQuestion {
   id: number
   title: string
@@ -232,18 +256,6 @@ interface FilterTab {
   label: string
   value: string
 }
-
-const quickEntries: QuickEntry[] = [
-  { id: 1, name: '红娘评语', icon: icons.quickEntry.matchmakerComment, bgColor: '#FFE4EC' },
-  { id: 2, name: '最新活动', icon: icons.quickEntry.latestActivity, bgColor: '#D6F0FF' },
-  { id: 3, name: '志趣相投', icon: icons.quickEntry.datingCircle, bgColor: '#EDE0FF' },
-  { id: 4, name: '我们脱单了', icon: icons.quickEntry.successCouple, bgColor: '#FFF0D6' },
-]
-
-const quickEntriesText = computed(() => {
-  const names = systemStore.quickEntryNames || []
-  return quickEntries.map((e, i) => ({ ...e, displayName: names[i] || e.name }))
-})
 
 const filterTabs: FilterTab[] = [
   { label: '活跃', value: 'active' },
@@ -380,18 +392,18 @@ const switchFilter = (value: string) => {
   loadUserList(true, activeFilterData.value || undefined)
 }
 
-const handleQuickEntry = (entry: QuickEntry) => {
-  if (entry.id === 1) {
+const handleQuickEntry = (id: number) => {
+  if (id === 1) {
     // 跳转到动态页面的红娘区
     const app = getApp()
     app.globalData = app.globalData || {}
     app.globalData.dynamicTab = 'matchmaker'
     uni.switchTab({ url: '/pages/dynamic/index' })
-  } else if (entry.id === 2) {
+  } else if (id === 2) {
     uni.navigateTo({ url: '/pages/activity-list/index' })
-  } else if (entry.id === 3) {
+  } else if (id === 3) {
     uni.navigateTo({ url: '/pages/circles/index' })
-  } else if (entry.id === 4) {
+  } else if (id === 4) {
     uni.navigateTo({ url: '/pages/success-cases/index' })
   } else {
     showToast('功能开发中', 'none')
@@ -708,30 +720,31 @@ const onShareTimeline = () => {
   border: none;
 }
 
-.quick-entry-item {
+.grid-item {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
 }
 
-.quick-entry-icon {
-  width: 110rpx;
-  height: 110rpx;
-  border-radius: 28rpx;
+.icon-wrapper {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 32rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16rpx;
 }
 
-.entry-icon {
-  width: 60rpx;
-  height: 60rpx;
+.grid-icon {
+  width: 64rpx;
+  height: 64rpx;
 }
 
-.quick-entry-text {
+.grid-text {
   font-size: 24rpx;
-  color: var(--text);
+  color: #333333;
+  margin-top: 12rpx;
 }
 
 .hot-questions-card {

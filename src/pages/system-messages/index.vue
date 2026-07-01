@@ -274,7 +274,6 @@ const formatTime = (timeStr: string) => {
 // ==================== 消息列表 ====================
 .msg-scroll {
   flex: 1; min-height: 0;
-  padding: 0 24rpx;
 }
 
 .loading-tip, .empty-tip, .no-more {
@@ -285,8 +284,10 @@ const formatTime = (timeStr: string) => {
 .empty-icon { font-size: 80rpx; margin-bottom: 20rpx; }
 
 .msg-item {
+  width: calc(100% - 48rpx);
+  margin: 0 auto 12rpx;
   background: #fff; border-radius: 16rpx;
-  padding: 24rpx 28rpx; margin-bottom: 12rpx;
+  padding: 24rpx 28rpx;
   position: relative;
   &.unread { background: #FFF0F5; }
 }

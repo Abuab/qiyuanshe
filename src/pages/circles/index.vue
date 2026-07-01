@@ -237,7 +237,7 @@ function onBannerError() {
 // ===== Banner：固定 35vh 高度 =====
 .banner-area {
   width: 100%;
-  height: 35vh;
+  height: 25vh;
   overflow: hidden;
 }
 .banner-image {
@@ -246,7 +246,7 @@ function onBannerError() {
 }
 .banner-placeholder {
   width: 100%;
-  height: 35vh;
+  height: 25vh;
   background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
   display: flex;
   align-items: center;

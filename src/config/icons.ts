@@ -5,24 +5,24 @@
 export const icons = {
   tabbar: {
     home: {
-      default: '/static/tabbar/tab-home-default.png',
-      active: '/static/tabbar/tab-home-active.png',
+      default: '/static/tabbar/home.png',
+      active: '/static/tabbar/home-active.png',
     },
     dynamic: {
-      default: '/static/tabbar/tab-dynamic-default.png',
-      active: '/static/tabbar/tab-dynamic-active.png',
+      default: '/static/tabbar/moment.png',
+      active: '/static/tabbar/moment-active.png',
     },
     vip: {
-      default: '/static/tabbar/tab-vip-default.png',
-      active: '/static/tabbar/tab-vip-active.png',
+      default: '/static/tabbar/vip.png',
+      active: '/static/tabbar/vip-active.png',
     },
     message: {
-      default: '/static/tabbar/tab-message-default.png',
-      active: '/static/tabbar/tab-message-active.png',
+      default: '/static/tabbar/message.png',
+      active: '/static/tabbar/message-active.png',
     },
     my: {
-      default: '/static/tabbar/tab-my-default.png',
-      active: '/static/tabbar/tab-my-active.png',
+      default: '/static/tabbar/mine.png',
+      active: '/static/tabbar/mine-active.png',
     },
   },
   quickEntry: {

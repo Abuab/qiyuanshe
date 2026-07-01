@@ -30,7 +30,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { useIcon } from '@/composables/useIcon'
+import { icons } from '@/config/icons'
 
 interface TabItem {
   label: string
@@ -38,7 +38,9 @@ interface TabItem {
   name: 'home' | 'dynamic' | 'vip' | 'message' | 'my'
 }
 
-const { getTabbarIcon, iconConfig } = useIcon()
+const getTabbarIcon = (name: TabItem['name'], active = false) => {
+  return active ? icons.tabbar[name].active : icons.tabbar[name].default
+}
 
 const tabs: TabItem[] = [
   { label: '首页', pagePath: '/pages/index/index', name: 'home' },
@@ -55,9 +57,7 @@ const iconErrorMap = ref<Record<string, boolean>>({})
 
 const iconKey = (name: string) => {
   const active = currentPath.value === tabs.find((t) => t.name === name)?.pagePath
-  const dynamic = (iconConfig.value?.tabbar as any)?.[name]
-  const dynamicUrl = active ? dynamic?.active : dynamic?.default
-  return `${name}-${active ? 'active' : 'default'}-${dynamicUrl || 'fallback'}-${iconErrorMap.value[name] ? 'error' : 'ok'}`
+  return `${name}-${active ? 'active' : 'default'}-${iconErrorMap.value[name] ? 'error' : 'ok'}`
 }
 
 const onIconError = (name: string) => {

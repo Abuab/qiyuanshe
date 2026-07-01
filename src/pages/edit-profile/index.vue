@@ -1403,6 +1403,7 @@ const recordTime = ref('00:00')
 const hadVoiceSaved = ref(false)  // 标记进入页面时是否有已保存的语音
 let voiceTimer: ReturnType<typeof setTimeout> | null = null
 let voiceCountdown: ReturnType<typeof setInterval> | null = null
+let voiceAudioCtx: ReturnType<typeof uni.createInnerAudioContext> | null = null
 
 async function fetchVoiceEnabled() {
   try {
@@ -1448,19 +1449,24 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  (uni as any).playVoice({
-    filePath: voiceTempPath.value,
-    success: () => { isVoicePlaying.value = true },
-    fail: (err: any) => {
-      console.error('[EditProfile] playVoice error', JSON.stringify(err))
+  if (!voiceAudioCtx) {
+    voiceAudioCtx = uni.createInnerAudioContext()
+    voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+    voiceAudioCtx.onError((err: any) => {
+      console.error('[EditProfile] voice play error', JSON.stringify(err))
       uni.showToast({ title: '播放失败，请重试', icon: 'none' })
-    },
-  })
-  (uni as any).onVoicePlayEnd(() => { isVoicePlaying.value = false })
+      isVoicePlaying.value = false
+    })
+  }
+  voiceAudioCtx.src = voiceTempPath.value
+  voiceAudioCtx.play()
+  isVoicePlaying.value = true
 }
 
 function stopVoicePlay() {
-  (uni as any).stopVoice()
+  if (voiceAudioCtx) {
+    voiceAudioCtx.stop()
+  }
   isVoicePlaying.value = false
 }
 
