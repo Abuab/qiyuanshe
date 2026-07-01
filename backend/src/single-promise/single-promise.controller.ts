@@ -17,7 +17,9 @@ import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { AdminGuard } from '../auth/guards/admin.guard'
+import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { RoleGuard } from '../admin/role.guard'
+import { Roles } from '../admin/roles.decorator'
 import { Result } from '../common/result'
 import { SinglePromiseService } from './single-promise.service'
 
@@ -77,7 +79,8 @@ export class SinglePromiseController {
 
   /** 管理后台：查询列表 */
   @Get('admin/list')
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles('super_admin', 'operator')
   async adminList(
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 20,
@@ -93,7 +96,8 @@ export class SinglePromiseController {
 
   /** 管理后台：审核 */
   @Put('admin/audit/:id')
-  @UseGuards(JwtAuthGuard, AdminGuard)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles('super_admin', 'operator')
   async audit(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { status: number; rejectReason?: string; adminId?: number },
