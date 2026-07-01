@@ -22,4 +22,12 @@ export const ICON_MAP: Record<string, string> = {
   shieldCheckThin: 'icon-shield-check-thin',
   /** 日元/收入 */
   currencyJpyThin: 'icon-currency-jpy-thin',
+  /** 蛋糕/年龄 */
+  cakeThin: 'icon-cake-thin',
+  /** 尺子/身高 */
+  rulerThin: 'icon-ruler-thin',
+  /** 卷轴/关于 */
+  scrollThin: 'icon-scroll-thin',
+  /** 日历爱心/期望 */
+  calendarHeartThin: 'icon-calendar-heart-thin',
 } as const

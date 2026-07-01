@@ -47,6 +47,7 @@ import {
   QuickQuestionCategory,
   UserAgreement,
   Feedback,
+  SinglePromise,
 } from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
@@ -68,6 +69,7 @@ import { MatchmakerCommentModule } from './matchmaker-comment/matchmaker-comment
 import { AiModule } from './ai/ai.module'
 import { QuickQuestionModule } from './quick-question/quick-question.module'
 import { AgreementLogStorageModule } from './agreement-log-storage/agreement-log-storage.module'
+import { SinglePromiseModule } from './single-promise/single-promise.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
@@ -129,6 +131,7 @@ import { DatabaseIndexService } from './common/database-index.service'
       QuickQuestionCategory,
       UserAgreement,
       Feedback,
+      SinglePromise,
     ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
@@ -155,6 +158,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     AiModule,
     QuickQuestionModule,
     AgreementLogStorageModule,
+    SinglePromiseModule,
   ],
   controllers: [HealthController],
   providers: [RedisService, DatabaseIndexService],

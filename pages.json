@@ -259,6 +259,13 @@
       }
     },
     {
+      "path": "pages/single-promise/index",
+      "style": {
+        "navigationBarTitleText": "单身承诺",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/help/index",
       "style": {
         "navigationBarTitleText": "帮助与反馈",

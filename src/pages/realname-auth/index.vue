@@ -139,6 +139,10 @@ function handleBack() {
 }
 
 function handleItemTap(type: string) {
+  if (type === 'single') {
+    uni.navigateTo({ url: '/pages/single-promise/index' })
+    return
+  }
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }</script>
 

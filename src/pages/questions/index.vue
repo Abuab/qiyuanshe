@@ -47,7 +47,7 @@
           </view>
         </view>
 
-        <view v-if="index === 0 && !question.isAnsweredByUser" class="card-bottom">
+        <view v-if="index === 0" class="card-bottom">
           <view class="answer-btn-inline" @tap.stop="goToAnswer(question)">
             <text>回答 ></text>
           </view>
@@ -70,6 +70,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -99,6 +100,13 @@ onMounted(() => {
   fetchQuestions()
 })
 
+// 从回答页返回后刷新列表，使「已回答」标签正确更新
+onShow(() => {
+  if (questionList.value.length > 0) {
+    fetchQuestions(true)
+  }
+})
+
 const fetchQuestions = async (isRefresh = false) => {
   try {
     if (isRefresh) {
@@ -111,9 +119,15 @@ const fetchQuestions = async (isRefresh = false) => {
       method: 'GET',
       data: { page: page.value, limit },
     })
-    const list = (res.list || res || []).map((item: any) => ({
+    const rawList = res.list || res || []
+    console.log('[questions] API response keys:', Object.keys(res || {}))
+    console.log('[questions] rawList length:', Array.isArray(rawList) ? rawList.length : 'not array')
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      console.log('[questions] first item isAnsweredByUser:', (rawList[0] as any).isAnsweredByUser)
+    }
+    const list = rawList.map((item: any) => ({
       ...item,
-      isAnsweredByUser: item.isAnsweredByUser || false,
+      isAnsweredByUser: Boolean(item.isAnsweredByUser),
     }))
     if (isRefresh) {
       questionList.value = list
@@ -218,7 +232,7 @@ const goToAnswer = (question: Question) => {
 .nav-title {
   font-size: 32rpx;
   color: var(--text, #333333);
-  font-weight: 600;
+  font-weight: 400;
   text-align: center;
   flex: 1;
 }
@@ -232,13 +246,13 @@ const goToAnswer = (question: Question) => {
 .header-title {
   display: block;
   font-size: 44rpx;
-  font-weight: 500;
+  font-weight: 400;
   color: #000000;
   margin-bottom: 10rpx;
 }
 
 .header-tip {
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 400;
   color: var(--text-secondary, #999999);
 }
@@ -291,7 +305,7 @@ const goToAnswer = (question: Question) => {
 // 普通标题（较小、细体）
 .title-normal {
   font-size: 30rpx;
-  font-weight: 400;
+  font-weight: 350;
 }
 
 // ===== 右上角角标 =====
@@ -312,12 +326,12 @@ const goToAnswer = (question: Question) => {
     box-shadow: 0 2rpx 6rpx rgba(255, 107, 157, 0.08);
 
     text {
-      color: var(--primary, #FF6B9D);
+      color: var(--primary, #FF1744);
     }
   }
 
   &.answered {
-    background-color: rgba(153, 153, 153, 0.1);
+    background-color: transparent;
 
     text {
       color: var(--text-secondary, #999999);
@@ -328,7 +342,7 @@ const goToAnswer = (question: Question) => {
 .card-bottom {
   display: flex;
   justify-content: flex-start;
-  margin-top: 28rpx;
+  margin-top: 36rpx;
 }
 
 .answer-btn-inline {

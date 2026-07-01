@@ -182,7 +182,10 @@
 
         <!-- ========== 4. 关于我区 ========== -->
         <view class="section-card">
-          <text class="section-title">关于我</text>
+          <view class="section-title-row">
+            <AppIcon name="icon-scroll-thin" size="32" color="#333333" />
+            <text class="section-title">关于我</text>
+          </view>
           <view v-if="profileData.aboutMe.tags?.length" class="about-tags-grid">
             <view v-for="tag in profileData.aboutMe.tags" :key="tag.name" class="about-capsule">
               <AppIcon v-if="getAboutTagIcon(tag.name)" :name="getAboutTagIcon(tag.name)" size="28" color="#999999" />
@@ -235,9 +238,13 @@
 
         <!-- ========== 5. Ta希望你区 ========== -->
         <view class="section-card">
-          <text class="section-title">Ta希望你</text>
+          <view class="section-title-row">
+            <AppIcon name="icon-calendar-heart-thin" size="32" color="#333333" />
+            <text class="section-title">Ta希望你</text>
+          </view>
           <view v-if="cleanedPartnerTags.length" class="partner-tags-grid">
             <view v-for="pt in cleanedPartnerTags" :key="pt.label" class="partner-capsule">
+              <AppIcon v-if="getPartnerTagIcon(pt.label)" :name="getPartnerTagIcon(pt.label)" size="24" color="#999999" />
               <text class="pt-value">{{ pt.value }}</text>
             </view>
           </view>
@@ -644,7 +651,9 @@ const activePhotoNeedsBlur = computed(() => {
 const cleanedPartnerTags = computed(() => {
   const tags = profileData.value?.hopeTa?.partnerTags
   if (!tags?.length) return [] as { label: string; value: string }[]
-  return tags.map((t: any) => {
+  return tags
+    .filter((t: any) => t.label !== '子女情况')
+    .map((t: any) => {
     let val = t.value || ''
     // 身高：去除重复的 cm以上 后缀
     if (t.label === '身高要求') {
@@ -925,6 +934,17 @@ const getAboutTagIcon = (name: string): string => {
   if (MARITAL_VALUES.includes(name)) return 'icon-list-heart-thin'
   if (ONLY_CHILD_VALUES.includes(name)) return 'icon-identification-badge-thin'
   if (WHEN_MARRY_VALUES.includes(name)) return 'icon-heartbeat-thin'
+  return ''
+}
+
+// ===== Ta希望你区域标签图标映射 =====
+const getPartnerTagIcon = (label: string): string => {
+  if (!label) return ''
+  if (label === '年龄范围') return 'icon-cake-thin'
+  if (label === '身高要求') return 'icon-ruler-thin'
+  if (label === '学历要求') return 'icon-identification-badge-thin'
+  if (label === '收入要求') return 'icon-currency-jpy-thin'
+  if (label === '婚况要求') return 'icon-list-heart-thin'
   return ''
 }
 
@@ -1528,6 +1548,17 @@ $text-hint: #999999;
   font-size: 30rpx; font-weight: 500; color: $text; margin-bottom: 20rpx; display: block;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+
+  .section-title {
+    margin-bottom: 0;
+    margin-left: 12rpx;
+  }
+}
+
 .section-title-bar {
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 48rpx;
   .section-title { margin-bottom: 0; display: flex; align-items: center; }
@@ -1615,16 +1646,16 @@ $text-hint: #999999;
 
 // ===== 关于我 =====
 .about-tags-grid {
-  display: flex; flex-wrap: wrap; gap: 12rpx; margin-bottom: 22rpx;
+  display: flex; flex-wrap: wrap; gap: 12rpx 12rpx; row-gap: 18rpx; margin-bottom: 22rpx;
   justify-content: flex-start;
 }
 
 .about-capsule {
-  flex-shrink: 0;
+  width: calc((100% - 24rpx) / 3);
   display: flex; align-items: center; justify-content: center; gap: 8rpx;
-  padding: 10rpx 18rpx;
+  padding: 10rpx 8rpx;
   background: #FFF8FA; border-radius: 28rpx;
-  font-size: 22rpx; color: #111; font-weight: 400;
+  font-size: 24rpx; color: #111; font-weight: 400;
 }
 
 .ai-profile-block, .ai-hope-block {
@@ -1672,17 +1703,17 @@ $text-hint: #999999;
 
 // ===== Ta希望你 =====
 .partner-tags-grid {
-  display: flex; flex-wrap: wrap; gap: 18rpx; margin-bottom: 22rpx;
+  display: flex; flex-wrap: wrap; gap: 18rpx 18rpx; row-gap: 24rpx; margin-bottom: 22rpx;
 }
 
 .partner-capsule {
-  flex-shrink: 0;
+  width: calc((100% - 36rpx) / 3);
   display: flex; align-items: center; justify-content: center;
-  padding: 10rpx 18rpx;
+  padding: 10rpx 8rpx;
   background: #F0F8FF; border-radius: 28rpx;
 }
 
-.pt-value { font-size: 22rpx; color: #111; font-weight: 400; }
+.pt-value { font-size: 24rpx; color: #111; font-weight: 400; margin-left: 6rpx; }
 
 // ===== 爱情语录 =====
 .love-quote-card {
