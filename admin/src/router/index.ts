@@ -255,6 +255,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/feedback/index.vue'),
         meta: { title: '问题反馈', requiresAuth: true },
       },
+      {
+        path: '/single-promise',
+        name: 'SinglePromiseList',
+        component: () => import('../views/single-promise/index.vue'),
+        meta: { title: '单身承诺审核', requiresAuth: true },
+      },
     ],
   },
 ]

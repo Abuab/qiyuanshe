@@ -214,7 +214,7 @@ async function initCanvas() {
       .select('#signCanvas')
       .fields({ node: true, size: true })
       .exec((res: any) => {
-        if (!res || !res[0]) {
+        if (!res || !res[0] || !res[0].node) {
           // 降级使用旧版 Canvas API
           initLegacyCanvas()
           return
@@ -298,6 +298,7 @@ function onTouchEnd() {
 function handleResign() {
   if (isSigned.value) {
     isResigning.value = true
+    existingSignatureUrl.value = ''
     nextTick(() => initCanvas())
     strokeCount.value = 0
   } else {
@@ -364,7 +365,6 @@ async function confirmSubmit() {
         url: uploadUrl,
         filePath: tempPath,
         name: 'file',
-        formData: { realName: realName.value },
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (uploadRes) => {
           try {

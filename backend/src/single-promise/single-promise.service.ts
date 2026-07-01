@@ -1,13 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SinglePromise } from '../entities/SinglePromise'
+import { UserAuth } from '../entities/UserAuth'
 
 @Injectable()
 export class SinglePromiseService {
   constructor(
     @InjectRepository(SinglePromise)
     private readonly spRepo: Repository<SinglePromise>,
+    @InjectRepository(UserAuth)
+    private readonly userAuthRepo: Repository<UserAuth>,
   ) {}
 
   /** 获取用户当前单身承诺状态 */
@@ -31,7 +34,21 @@ export class SinglePromiseService {
   }
 
   /** 提交/更新单身承诺 */
-  async submit(userId: number, realName: string, signatureUrl: string) {
+  async submit(userId: number, signatureUrl: string) {
+    // 从实名认证记录中获取真实姓名
+    const authRecord = await this.userAuthRepo.findOne({
+      where: { userId, authType: 'realname', status: 1 },
+      order: { createdAt: 'DESC' },
+    })
+    if (!authRecord) {
+      throw new ForbiddenException('请先完成实名认证')
+    }
+    const authData = authRecord.authData || {}
+    const realName = authData.realName || authData.name
+    if (!realName) {
+      throw new ForbiddenException('无法获取实名认证信息，请联系客服')
+    }
+
     let record = await this.spRepo.findOne({
       where: { userId },
       order: { createdAt: 'DESC' },

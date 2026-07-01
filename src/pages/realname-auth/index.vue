@@ -53,7 +53,7 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去签署</text>
+            <text class="card-action" :class="singlePromiseActionClass">{{ singlePromiseAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
@@ -124,15 +124,42 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
+import { get } from '@/utils/request'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 
-onMounted(() => {
+// 单身承诺状态
+const singlePromiseAction = ref('去签署')
+const singlePromiseActionClass = ref('')
+
+onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+  await fetchSinglePromiseStatus()
 })
+
+async function fetchSinglePromiseStatus() {
+  try {
+    const res: any = await get('/single-promise/status')
+    const data = res?.data || res
+    if (data?.exists) {
+      if (data.status === 1) {
+        singlePromiseAction.value = '已签署'
+        singlePromiseActionClass.value = 'done'
+      } else if (data.status === 0) {
+        singlePromiseAction.value = '待审核'
+        singlePromiseActionClass.value = 'pending'
+      } else if (data.status === 2) {
+        singlePromiseAction.value = '去签署'
+        singlePromiseActionClass.value = ''
+      }
+    }
+  } catch (_) {
+    // 接口失败时保持默认"去签署"
+  }
+}
 
 function handleBack() {
   safeNavigateBack()
@@ -240,6 +267,8 @@ function handleItemTap(type: string) {
 }
 .card-action {
   font-size: 28rpx; color: #FF6B8A;
+  &.done { color: #07C160; }
+  &.pending { color: #FF9F43; }
 }
 .card-arrow {
   font-size: 28rpx; color: #CCC; margin-left: 8rpx;

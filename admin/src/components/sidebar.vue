@@ -60,6 +60,7 @@
         </template>
         <el-menu-item index="/audit/list">审核列表</el-menu-item>
         <el-menu-item index="/audit/queue">人工审核队列</el-menu-item>
+        <el-menu-item index="/single-promise">单身承诺审核</el-menu-item>
       </el-sub-menu>
 
       <el-menu-item v-if="canManageAudit" index="/chat/monitor">

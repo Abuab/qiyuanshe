@@ -17,6 +17,7 @@ import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { AdminGuard } from '../auth/guards/admin.guard'
 import { Result } from '../common/result'
 import { SinglePromiseService } from './single-promise.service'
 
@@ -64,23 +65,19 @@ export class SinglePromiseController {
   async submit(
     @Request() req: any,
     @UploadedFile() file: any,
-    @Body('realName') realName?: string,
   ) {
     const userId = req.user.userId || req.user.sub
     if (!file) {
       return Result.error('请上传签名图片')
     }
-    if (!realName) {
-      return Result.error('缺少真实姓名')
-    }
     const signatureUrl = `/uploads/${file.filename}`
-    const data = await this.spService.submit(userId, realName, signatureUrl)
+    const data = await this.spService.submit(userId, signatureUrl)
     return Result.success(data)
   }
 
   /** 管理后台：查询列表 */
   @Get('admin/list')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async adminList(
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 20,
@@ -96,7 +93,7 @@ export class SinglePromiseController {
 
   /** 管理后台：审核 */
   @Put('admin/audit/:id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   async audit(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { status: number; rejectReason?: string; adminId?: number },
