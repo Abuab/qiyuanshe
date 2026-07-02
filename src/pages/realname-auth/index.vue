@@ -166,6 +166,10 @@ function handleBack() {
 }
 
 function handleItemTap(type: string) {
+  if (type === 'realname') {
+    uni.navigateTo({ url: '/pages/realname-auth-input/index' })
+    return
+  }
   if (type === 'single') {
     uni.navigateTo({ url: '/pages/single-promise/index' })
     return

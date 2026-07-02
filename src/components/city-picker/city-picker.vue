@@ -86,6 +86,7 @@ interface RegionItem {
 
 const props = defineProps<{
   visible: boolean
+  defaultLocation?: { province: string; city: string }
 }>()
 
 const emit = defineEmits<{
@@ -264,8 +265,34 @@ watch(() => props.visible, (val) => {
     districtList.value = []
     streetList.value = []
     // 加载省份
-    fetchRegions(0).then((list) => {
+    fetchRegions(0).then(async (list) => {
       provinceList.value = list
+      // 支持默认预选省份+城市
+      const dl = props.defaultLocation
+      if (dl && dl.province) {
+        const prov = list.find((r: RegionItem) => r.name.includes(dl.province))
+        if (prov && prov.hasChildren) {
+          selectedProvince.value = prov
+          const cities = await fetchRegions(prov.id)
+          cityList.value = cities
+          if (dl.city) {
+            const city = cities.find((r: RegionItem) => r.name.includes(dl.city))
+            if (city && city.hasChildren) {
+              selectedCity.value = city
+              const districts = await fetchRegions(city.id)
+              districtList.value = districts
+              currentLevel.value = 2
+            } else if (city) {
+              selectedCity.value = city
+              currentLevel.value = 1
+            } else {
+              currentLevel.value = 1
+            }
+          } else {
+            currentLevel.value = 1
+          }
+        }
+      }
     })
     // 下一帧触发面板滑入动画
     nextTick(() => {

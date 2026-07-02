@@ -32,7 +32,14 @@
             </view>
           </view>
           <view class="profile-info">
-            <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
+            <view class="profile-nickname-row">
+              <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
+              <text
+                v-if="!userInfo?.isRealName || userInfo?.avatarReviewStatus === 0"
+                class="speed-review-btn"
+                @tap.stop="goToMatchmaker"
+              >加快审核 ></text>
+            </view>
             <view class="profile-id-row">
               <text class="id-badge">ID</text>
               <text class="id-number">{{ formattedUserId }}</text>
@@ -680,12 +687,21 @@ const toolGrid7 = [
   min-width: 0;
 }
 
+.profile-nickname-row {
+  display: flex; align-items: center; gap: 12rpx;
+  margin-bottom: 8rpx;
+}
 .profile-nickname {
   display: block;
   font-size: 34rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 8rpx;
+}
+
+.speed-review-btn {
+  font-size: 24rpx;
+  color: #FF4D6A;
+  flex-shrink: 0;
 }
 
 .profile-sub {

@@ -53,6 +53,7 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   const isVip = ref<boolean>(false)
   const vipExpireTime = ref<string>('')
+  const isProfileComplete = ref<boolean>(true)
 
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
 
@@ -62,14 +63,16 @@ export const useUserStore = defineStore('user', () => {
     return expireDate > new Date()
   })
 
-  const login = (newToken: string, newUserInfo: UserInfo) => {
+  const login = (newToken: string, newUserInfo: UserInfo, profileComplete?: boolean) => {
     token.value = newToken
     userInfo.value = newUserInfo
     isVip.value = newUserInfo.isVip || false
     vipExpireTime.value = newUserInfo.vipExpireTime || ''
+    isProfileComplete.value = profileComplete ?? true
 
     secureStorage.setToken(newToken)
     secureStorage.setUserInfo(newUserInfo)
+    uni.setStorageSync('_qys_pc', isProfileComplete.value ? '1' : '0')
   }
 
   const logout = () => {
@@ -77,8 +80,10 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     isVip.value = false
     vipExpireTime.value = ''
+    isProfileComplete.value = true
 
     secureStorage.clearAll()
+    try { uni.removeStorageSync('_qys_pc') } catch (_) { /* ignore */ }
 
     uni.reLaunch({
       url: '/pages/index/index'
@@ -168,6 +173,11 @@ export const useUserStore = defineStore('user', () => {
       userInfo.value = storedUserInfo
       isVip.value = storedUserInfo.isVip || false
       vipExpireTime.value = storedUserInfo.vipExpireTime || ''
+      try {
+        isProfileComplete.value = uni.getStorageSync('_qys_pc') !== '0'
+      } catch (_) {
+        isProfileComplete.value = true
+      }
     }
   }
 
@@ -178,6 +188,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo,
     isVip,
     vipExpireTime,
+    isProfileComplete,
     isLoggedIn,
     isVipValid,
     login,

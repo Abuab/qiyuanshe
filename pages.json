@@ -301,6 +301,55 @@
       }
     },
     {
+      "path": "pages/basic-info/index",
+      "style": {
+        "navigationBarTitleText": "灵通相亲",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/upload-avatar/index",
+      "style": {
+        "navigationBarTitleText": "灵通相亲",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/detail-info/index",
+      "style": {
+        "navigationBarTitleText": "灵通相亲",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/mate-requirement/index",
+      "style": {
+        "navigationBarTitleText": "灵通相亲",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/real-name-auth/index",
+      "style": {
+        "navigationBarTitleText": "灵通相亲",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/realname-auth-input/index",
+      "style": {
+        "navigationBarTitleText": "实名认证",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/tencent-eid-auth/index",
+      "style": {
+        "navigationBarTitleText": "腾讯云E证通授权",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/privacy-switches/index",
       "style": {
         "navigationBarTitleText": "隐私设置",

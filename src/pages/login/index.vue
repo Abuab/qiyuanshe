@@ -19,7 +19,7 @@
       <view class="protocol-card">
         <text class="protocol-title">用户协议及隐私协议</text>
 
-        <scroll-view class="protocol-body" scroll-y>
+        <view class="protocol-body">
           <text class="protocol-p">
             欢迎使用{{ appName }}及相关服务。您需要同意
             <text class="link" @tap="openAgreement">《用户协议》</text>
@@ -27,7 +27,7 @@
             <text class="link" @tap="openPrivacy">《隐私政策》</text>
             才可以继续使用，我们将严格按照您同意的各项条款保护您的个人信息，请点击同意以继续。
           </text>
-        </scroll-view>
+        </view>
 
         <view class="protocol-actions">
           <view class="btn-agree" @tap="handleAgree">
@@ -36,8 +36,6 @@
           <text class="btn-disagree" @tap="handleDisagree">不同意</text>
         </view>
       </view>
-
-      <text class="skip-auth" @tap="handleSkipAuth">暂不授权</text>
     </view>
 
     <!-- ===== 登录区域 ===== -->
@@ -123,13 +121,15 @@ const checkLogin = () => {
     handleLoginSuccess()
     return
   }
-  // 未登录用户检查是否已同意协议（本地缓存兜底）
-  if (!secureStorage.isProtocolAgreed()) {
+  // 未登录用户检查是否已同意协议（uniStorage + 本地缓存兜底）
+  const hasAgreed = uni.getStorageSync('hasAgreedProtocol') === true
+  if (!hasAgreed && !secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
   }
 }
 
 const handleAgree = () => {
+  uni.setStorageSync('hasAgreedProtocol', true)
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
   // 上报同意记录到后端
@@ -143,7 +143,8 @@ const handleAgree = () => {
 }
 
 const handleDisagree = () => {
-  uni.showToast({ title: '需要同意才能继续使用', icon: 'none' })
+  showProtocol.value = false
+  uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
 }
 
 const handleSkipAuth = () => {
@@ -191,7 +192,8 @@ const performWechatLogin = async () => {
 
     const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code })
     if (result?.user && result?.tokens) {
-      userStore.login(result.tokens.accessToken, result.user)
+      const profileComplete = result.user.isProfileComplete !== false
+      userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
       showToast('登录成功', 'success')
       handleLoginSuccess()
@@ -222,7 +224,8 @@ const onGetPhoneNumber = async (e: any) => {
       iv: e.detail.iv,
     })
     if (result?.user && result?.tokens) {
-      userStore.login(result.tokens.accessToken, result.user)
+      const profileComplete = result.user.isProfileComplete !== false
+      userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
       showToast('登录成功', 'success')
       handleLoginSuccess()
@@ -283,40 +286,40 @@ const handleLoginSuccess = () => {
 // ===== 协议弹窗 =====
 .protocol-fullscreen {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000;
-  display: flex; flex-direction: column; align-items: center;
-  padding-top: 120rpx;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 30vh;
 }
 .protocol-mask {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.6);
 }
 .protocol-card {
   position: relative; z-index: 1;
-  width: 85%; max-width: 640rpx;
-  background: #fff; border-radius: 40rpx;
-  padding: 48rpx 40rpx 32rpx;
-  display: flex; flex-direction: column;
+  width: 620rpx;
+  background: #fff; border-radius: 24rpx;
+  padding: 40rpx 0 0;
+  display: flex; flex-direction: column; align-items: center;
 }
 .protocol-title {
-  font-size: 36rpx; font-weight: 700; color: #1A1A1A;
-  text-align: center; margin-bottom: 28rpx;
+  font-size: 32rpx; font-weight: 700; color: #333333;
+  text-align: center; margin-bottom: 24rpx;
 }
 .protocol-body {
-  max-height: 300rpx; margin-bottom: 32rpx;
+  padding: 0 48rpx; margin-bottom: 40rpx;
 }
 .protocol-p {
-  font-size: 28rpx; color: #666; line-height: 1.8;
+  font-size: 26rpx; color: #666666; line-height: 1.8; text-align: center;
 }
 .link {
-  color: #4A90D9; text-decoration: underline;
+  color: #3B82F6;
 }
 .protocol-actions {
-  display: flex; flex-direction: column; align-items: center; gap: 20rpx;
+  width: 100%; display: flex; flex-direction: column; align-items: center;
+  padding: 0 48rpx 40rpx; gap: 24rpx; box-sizing: border-box;
 }
 .btn-agree {
   width: 100%; height: 88rpx;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 48rpx;
+  background: #FF4D6A; border-radius: 48rpx;
   display: flex; align-items: center; justify-content: center;
   text { font-size: 32rpx; color: #fff; font-weight: 600; }
   &:active { opacity: 0.85; }

@@ -4,18 +4,15 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">&#xe60f;</text>
+          <text class="back-icon">{{ '<' }}</text>
         </view>
         <text class="nav-title">单身承诺</text>
         <view class="nav-right" />
       </view>
     </view>
 
-    <scroll-view
+    <view
       class="content"
-      scroll-y
-      :enhanced="true"
-      :show-scrollbar="false"
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
     >
       <!-- ========== 粉色渐变背景区域 ========== -->
@@ -70,17 +67,16 @@
           :class="{ 'disabled': isSigned && !isResigning }"
         >
           <canvas
-            v-if="!isSigned || isResigning"
+            v-show="!isSigned || isResigning"
             class="sign-canvas"
             canvas-id="signCanvas"
             id="signCanvas"
-            disable-scroll
-            @touchstart="onTouchStart"
-            @touchmove="onTouchMove"
-            @touchend="onTouchEnd"
+            @touchstart.stop="onTouchStart"
+            @touchmove.stop="onTouchMove"
+            @touchend.stop="onTouchEnd"
           />
           <image
-            v-else
+            v-show="isSigned && !isResigning"
             class="sign-canvas-img"
             :src="existingSignatureUrl"
             mode="aspectFit"
@@ -112,7 +108,7 @@
           <text class="submit-text">提交审核</text>
         </view>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- ========== 提交确认弹窗 ========== -->
     <view v-if="showConfirm" class="modal-mask" @tap="cancelSubmit">
@@ -206,83 +202,47 @@ async function loadStatus() {
 }
 
 // ========== Canvas 初始化 ==========
-async function initCanvas() {
-  await nextTick()
-  try {
-    const query = uni.createSelectorQuery()
-    query
-      .select('#signCanvas')
-      .fields({ node: true, size: true })
-      .exec((res: any) => {
-        if (!res || !res[0] || !res[0].node) {
-          // 降级使用旧版 Canvas API
-          initLegacyCanvas()
-          return
-        }
-        const canvas = res[0].node
-        const ctx2d = canvas.getContext('2d')
-        const dpr = uni.getWindowInfo().pixelRatio || 2
-        canvasWidth = res[0].width
-        canvasHeight = res[0].height
-        canvas.width = canvasWidth * dpr
-        canvas.height = canvasHeight * dpr
-        ctx2d.scale(dpr, dpr)
-        ctx2d.lineCap = 'round'
-        ctx2d.lineJoin = 'round'
-        ctx2d.lineWidth = 2
-        ctx2d.strokeStyle = '#000000'
-        ctx = ctx2d
-      })
-  } catch (_) {
-    initLegacyCanvas()
-  }
-}
-
-function initLegacyCanvas() {
-  const query = uni.createSelectorQuery()
-  query
-    .select('#signCanvas')
-    .boundingClientRect()
-    .exec((res: any) => {
-      if (!res || !res[0]) return
-      canvasWidth = res[0].width
-      canvasHeight = res[0].height
+async function initCanvas(): Promise<void> {
+  return new Promise((resolve) => {
+    // 延迟确保 canvas 原生组件渲染就绪
+    setTimeout(() => {
       ctx = uni.createCanvasContext('signCanvas')
-    })
+      const query = uni.createSelectorQuery()
+      query.select('#signCanvas').boundingClientRect()
+      query.exec((res: any) => {
+        if (res && res[0]) {
+          canvasWidth = res[0].width
+          canvasHeight = res[0].height
+        }
+        resolve()
+      })
+    }, 500)
+  })
 }
 
-// ========== 签名事件 ==========
+// ========== 签名事件（触摸坐标 = 画布内坐标） ==========
 function onTouchStart(e: any) {
   if (isSigned.value && !isResigning.value) return
   isDrawing.value = true
   const touch = e.touches[0]
   lastX = touch.x
   lastY = touch.y
-
-  if (ctx?.draw) {
-    // 新版 Canvas API
-    ctx.beginPath()
-    ctx.moveTo(lastX, lastY)
-  } else if (ctx?.moveTo) {
-    // 旧版 Canvas Context
-    ctx.moveTo(lastX, lastY)
-  }
+  ctx.setStrokeStyle('#000000')
+  ctx.setLineWidth(3)
+  ctx.setLineCap('round')
+  ctx.setLineJoin('round')
 }
 
 function onTouchMove(e: any) {
-  if (!isDrawing.value) return
+  if (!isDrawing.value || !ctx) return
   const touch = e.touches[0]
   const x = touch.x
   const y = touch.y
-
-  if (ctx?.draw) {
-    ctx.lineTo(x, y)
-    ctx.stroke()
-  } else if (ctx?.lineTo) {
-    ctx.lineTo(x, y)
-    ctx.stroke()
-    ctx.draw(true)
-  }
+  ctx.beginPath()
+  ctx.moveTo(lastX, lastY)
+  ctx.lineTo(x, y)
+  ctx.stroke()
+  ctx.draw(true)
   lastX = x
   lastY = y
 }
@@ -309,28 +269,30 @@ function handleResign() {
 
 function clearCanvas() {
   if (!ctx) return
-  if (ctx?.clearRect) {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight)
-    if (ctx.draw) ctx.draw()
-  } else if (ctx) {
-    // 重新创建画板上下文来清空
-    ctx = uni.createCanvasContext('signCanvas')
-  }
+  ctx.clearRect(0, 0, canvasWidth || 300, canvasHeight || 200)
+  ctx.draw()
 }
 
-// ========== 导出签名 base64 ==========
+// ========== 导出签名图片 ==========
 function exportSignature(): Promise<string> {
   return new Promise((resolve, reject) => {
-    uni.canvasToTempFilePath({
-      canvasId: 'signCanvas',
-      destWidth: canvasWidth * 2,
-      destHeight: canvasHeight * 2,
-      fileType: 'png',
-      success: (res: any) => {
-        resolve(res.tempFilePath)
-      },
-      fail: reject,
-    })
+    // 延迟确保画布渲染完毕（参考 poster 页面做法）
+    setTimeout(() => {
+      uni.canvasToTempFilePath({
+        canvasId: 'signCanvas',
+        destWidth: (canvasWidth || 300) * 2,
+        destHeight: (canvasHeight || 200) * 2,
+        fileType: 'png',
+        success: (res: any) => {
+          console.log('[签名导出] 成功:', res.tempFilePath)
+          resolve(res.tempFilePath)
+        },
+        fail: (err: any) => {
+          console.error('[签名导出] 失败:', err)
+          reject(err)
+        },
+      })
+    }, 500)
   })
 }
 
@@ -353,12 +315,15 @@ async function confirmSubmit() {
 
   try {
     // 导出签名图片
+    console.log('[提交] 开始导出签名...')
     const tempPath = await exportSignature()
+    console.log('[提交] 签名导出成功:', tempPath)
 
     // 上传签名图片并提交
     const token = getToken()
     const baseUrl = getBaseUrl()
     const uploadUrl = `${baseUrl}/single-promise/submit`
+    console.log('[提交] 上传至:', uploadUrl)
 
     const res = await new Promise<any>((resolve, reject) => {
       uni.uploadFile({
@@ -367,26 +332,29 @@ async function confirmSubmit() {
         name: 'file',
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (uploadRes) => {
+          console.log('[提交] 上传响应:', uploadRes.statusCode, uploadRes.data)
           try {
             resolve(JSON.parse(uploadRes.data))
           } catch {
             reject(new Error('响应解析失败'))
           }
         },
-        fail: reject,
+        fail: (err) => {
+          console.error('[提交] 上传失败:', err)
+          reject(err)
+        },
       })
     })
 
     uni.hideLoading()
+    console.log('[提交] 服务端响应:', res)
 
     if (res?.code === 200 || res?.success) {
-      // 显示成功弹窗
       showSuccess.value = true
       setTimeout(() => {
         showSuccess.value = false
         isSigned.value = true
         isResigning.value = false
-        // 重新加载状态
         loadStatus()
       }, 1500)
     } else {
@@ -394,6 +362,7 @@ async function confirmSubmit() {
     }
   } catch (e: any) {
     uni.hideLoading()
+    console.error('[提交] 异常:', e)
     uni.showToast({ title: e?.message || '提交失败，请重试', icon: 'none' })
   }
 }
@@ -448,7 +417,7 @@ $pink-bg-end: #FF8FA3;
   position: absolute; left: 20rpx; width: 60rpx; height: 60rpx;
   display: flex; align-items: center; justify-content: center;
 }
-.back-icon { font-family: iconfont; font-size: 40rpx; color: #333; }
+.back-icon { font-size: 40rpx; color: #333; font-weight: 500; }
 .nav-title { font-size: 32rpx; font-weight: 600; color: #333; }
 .nav-right { position: absolute; right: 20rpx; width: 60rpx; }
 

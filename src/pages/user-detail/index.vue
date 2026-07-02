@@ -173,7 +173,10 @@
             <!-- 未认证覆盖层 -->
             <view v-if="isRealNameNotVerified" class="auth-blur-overlay" @tap.stop>
               <text class="auth-unverified-text">该用户未实名认证</text>
-              <view class="auth-remind-btn" @tap="remindVerify">
+              <view v-if="!isLoggedIn" class="auth-remind-btn" @tap="goToLogin">
+                <text>去登录</text>
+              </view>
+              <view v-else class="auth-remind-btn" @tap="remindVerify">
                 <text>提醒对方认证</text>
               </view>
             </view>
@@ -242,6 +245,16 @@
             <AppIcon name="icon-calendar-heart-thin" size="32" color="#333333" />
             <text class="section-title">Ta希望你</text>
           </view>
+
+          <!-- 未登录态：提示登录卡片 -->
+          <view v-if="!isLoggedIn" class="auth-blur-overlay auth-login-gate" @tap.stop>
+            <text class="auth-unverified-text">登录用户可见～</text>
+            <view class="auth-remind-btn" @tap="goToLogin">
+              <text>去登录</text>
+            </view>
+          </view>
+
+          <template v-else>
           <view v-if="cleanedPartnerTags.length" class="partner-tags-grid">
             <view v-for="pt in cleanedPartnerTags" :key="pt.label" class="partner-capsule">
               <AppIcon v-if="getPartnerTagIcon(pt.label)" :name="getPartnerTagIcon(pt.label)" size="24" color="#999999" />
@@ -262,11 +275,23 @@
           <view v-if="!cleanedPartnerTags.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
             <text>TA还没填写期待哦～</text>
           </view>
+          </template>
         </view>
 
         <!-- ========== 6. Ta的问答 ========== -->
-        <view v-if="profileData.answers?.length" class="section-card qa-card">
+        <view class="section-card qa-card">
           <text class="section-title">Ta的问答</text>
+
+          <!-- 未登录态：提示登录卡片 -->
+          <view v-if="!isLoggedIn" class="auth-blur-overlay auth-login-gate" @tap.stop>
+            <text class="auth-unverified-text">登录用户可见～</text>
+            <view class="auth-remind-btn" @tap="goToLogin">
+              <text>去登录</text>
+            </view>
+          </view>
+
+          <template v-else>
+          <view v-if="profileData.answers?.length">
           <view v-for="(item, idx) in profileData.answers" :key="idx" class="qa-item">
             <!-- 问题气泡（左：红心头像） -->
             <view class="qa-row qa-question-row">
@@ -286,7 +311,16 @@
                 mode="aspectFill"
               />
             </view>
+            <!-- 回答按钮 -->
+            <view class="qa-answer-btn" @tap="goToAnswer(item)">
+              <text>回答</text>
+            </view>
           </view>
+          </view>
+          <view v-else class="empty-hint">
+            <text>TA还没回答过问题哦～</text>
+          </view>
+          </template>
         </view>
 
         <!-- ========== 7. 爱情语录 ========== -->
@@ -957,15 +991,29 @@ const isRealNameNotVerified = computed(() => {
 })
 
 // ===== 提醒对方认证 =====
+const goToLogin = () => {
+  const params = `from=detail&userId=${userId.value}`
+  uni.navigateTo({ url: `/pages/login/index?${params}` })
+}
+
+const goToAnswer = (item: any) => {
+  const questionId = item.id || item.questionId
+  const title = encodeURIComponent(item.question || '')
+  uni.navigateTo({ url: `/pages/answer/index?questionId=${questionId}&title=${title}` })
+}
+
 const remindVerify = () => {
+  if (!isLoggedIn.value) {
+    goToLogin()
+    return
+  }
   uni.showToast({ title: '已发送提醒', icon: 'success' })
 }
 
 // ===== 关注 / 取消关注 =====
 const toggleFollow = async () => {
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    goToLogin()
     return
   }
   if (!profileData.value || followLoading.value) return
@@ -998,6 +1046,10 @@ const handleSubscribeAllow = () => {
 
 // ===== 拉黑 =====
 const confirmBlock = () => {
+  if (!isLoggedIn.value) {
+    goToLogin()
+    return
+  }
   showBlockDialog.value = true
 }
 
@@ -1016,6 +1068,10 @@ const doBlock = async () => {
 const showUnblockDialog = ref(false)
 
 const confirmUnblock = () => {
+  if (!isLoggedIn.value) {
+    goToLogin()
+    return
+  }
   showUnblockDialog.value = true
 }
 
@@ -1032,6 +1088,15 @@ const doUnblock = async () => {
 
 // ===== 举报底部弹窗 =====
 const openReportSheet = () => {
+  if (!isLoggedIn.value) {
+    // 举报未登录特殊处理：显示 loading 蒙层 + "您还未登录" 1.5s 后跳转
+    uni.showLoading({ title: '您还未登录', mask: true })
+    setTimeout(() => {
+      uni.hideLoading()
+      goToLogin()
+    }, 1500)
+    return
+  }
   selectedReportReasons.value = []
   reportContent.value = ''
   reportImages.value = []
@@ -1121,8 +1186,7 @@ const handleReportSubmit = async () => {
 
 const openAiMatch = () => {
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    goToLogin()
     return
   }
   showAiMatchPopup.value = true
@@ -1141,8 +1205,7 @@ const extractBirthYear = (birthDay?: string): number | null => {
 
 const openFunQuiz = () => {
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    goToLogin()
     return
   }
   funQuizResult.value = null
@@ -1208,8 +1271,7 @@ const showRealNameDialog = ref(false)
 
 const handleContact = () => {
   if (!isLoggedIn.value) {
-    uni.showToast({ title: '请先登录', icon: 'none' })
-    setTimeout(() => uni.navigateTo({ url: '/pages/login/index' }), 1000)
+    goToLogin()
     return
   }
   // 检查目标用户是否实名认证
@@ -1239,6 +1301,10 @@ const navigateToContactApply = () => {
 }
 
 const showMatchmakerPopup = () => {
+  if (!isLoggedIn.value) {
+    goToLogin()
+    return
+  }
   if (!matchmakerList.value.length) {
     matchmakerList.value = [{ id: 1, name: '小红娘', avatar: defaultAvatar.value, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' }]
   }
@@ -1634,6 +1700,12 @@ $text-hint: #999999;
   padding-bottom: 80rpx;  // 整体上移，平衡上下留白
 }
 
+// 登录拦截卡片（独立显示，非覆盖层）
+.auth-login-gate {
+  position: relative; top: auto; left: auto; right: auto; bottom: auto;
+  padding: 48rpx 0; background: rgba(255, 255, 255, 0.6);
+}
+
 .auth-unverified-text { font-size: 26rpx; color: #333; font-weight: 400; }
 
 .auth-remind-btn {
@@ -1790,6 +1862,13 @@ $text-hint: #999999;
 
 // ===== 底部空白 =====
 .bottom-spacer { height: 160rpx; }
+
+// ===== 问答回答按钮 =====
+.qa-answer-btn {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 16rpx; padding: 12rpx 0;
+  text { font-size: 26rpx; color: #FF4D6A; }
+}
 
 // ===== 底部悬浮按钮（固定，无卡片背景） =====
 .bottom-bar {
