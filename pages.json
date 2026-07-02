@@ -294,6 +294,13 @@
       }
     },
     {
+      "path": "pages/account-cancel/index",
+      "style": {
+        "navigationBarTitleText": "注销账号",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/privacy-switches/index",
       "style": {
         "navigationBarTitleText": "隐私设置",

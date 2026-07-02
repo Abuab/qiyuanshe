@@ -143,7 +143,7 @@ const confirmDeactivate = async () => {
 }
 
 const handleDeactivate = () => {
-  showDeactivateDialog()
+  uni.navigateTo({ url: '/pages/account-cancel/index' })
 }
 </script>
 

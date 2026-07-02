@@ -1020,6 +1020,31 @@ export class UserService {
     await this.userRepository.save(user)
   }
 
+  /** 注销账号（含审计日志） */
+  async cancelAccount(userId: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) throw new NotFoundException('用户不存在')
+    if (user.isDeleted === 1) return // 已注销，幂等
+
+    user.isDeleted = 1
+    user.status = 0
+    user.deleteReason = '用户自行注销'
+    await this.userRepository.save(user)
+
+    // 写入审计日志
+    await this.auditLogRepository.save({
+      targetType: 'user_cancel',
+      targetId: userId,
+      action: 'CANCEL',
+      reason: '用户主动注销',
+      content: JSON.stringify({
+        nickname: user.nickname,
+        phone: user.phone,
+        canceledAt: new Date().toISOString(),
+      }),
+    })
+  }
+
   /** 查询我喜欢/喜欢我/互相喜欢的人列表 */
   async getMyLikes(
     userId: number,

@@ -25,6 +25,7 @@
           <span>用户管理</span>
         </template>
         <el-menu-item index="/user/list">用户列表</el-menu-item>
+        <el-menu-item index="/user/deactivated">已注销用户</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="isSuperAdmin" index="/matchmaker">

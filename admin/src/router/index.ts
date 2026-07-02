@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '用户详情', requiresAuth: true },
       },
       {
+        path: '/user/deactivated',
+        name: 'UserDeactivated',
+        component: () => import('../views/user/deactivated.vue'),
+        meta: { title: '已注销用户', requiresAuth: true },
+      },
+      {
         path: '/matchmaker/list',
         name: 'MatchmakerList',
         component: () => import('../views/matchmaker/list.vue'),

@@ -61,6 +61,12 @@ export class AdminUserController {
     return Result.success(result)
   }
 
+  @Get('deactivated')
+  async listDeactivated(@Query() query: { page?: number; limit?: number; keyword?: string }) {
+    const result = await this.userService.listDeactivated(query)
+    return Result.success(result)
+  }
+
   @Get('export')
   async export(@Query() filter: any) {
     const ids = filter.ids ? filter.ids.split(',').map(Number) : []
@@ -165,6 +171,18 @@ export class AdminUserController {
   async batchDelete(@Body() body: { ids: number[] }) {
     await this.userService.batchSoftDelete(body.ids)
     return Result.success(null, '批量删除成功')
+  }
+
+  @Put(':id/restore')
+  async restoreUser(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.restoreUser(id)
+    return Result.success(null, '用户已恢复')
+  }
+
+  @Delete(':id/permanent')
+  async permanentDelete(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.permanentDelete(id)
+    return Result.success(null, '用户已彻底删除')
   }
 
   @Post()

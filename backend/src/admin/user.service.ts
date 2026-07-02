@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Like, In } from 'typeorm'
 import * as crypto from 'crypto'
@@ -593,6 +593,61 @@ export class AdminUserService {
 
   async batchSoftDelete(ids: number[]) {
     await this.userRepository.update(ids, { isDeleted: 1 })
+  }
+
+  /** 查询已注销用户列表 */
+  async listDeactivated(filter: { page?: number; limit?: number; keyword?: string }) {
+    const page = Math.max(1, parseInt(String(filter.page || 1), 10) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(String(filter.limit || 20), 10) || 20))
+    const skip = (page - 1) * limit
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user')
+      .where('user.isDeleted = :isDeleted', { isDeleted: 1 })
+      .orderBy('user.updatedAt', 'DESC')
+      .skip(skip)
+      .take(limit)
+
+    if (filter.keyword) {
+      queryBuilder.andWhere(
+        '(user.nickname LIKE :keyword OR user.phone LIKE :keyword)',
+        { keyword: `%${filter.keyword}%` },
+      )
+    }
+
+    const [list, total] = await queryBuilder.getManyAndCount()
+
+    return {
+      list: list.map(u => ({
+        id: u.id,
+        nickname: u.nickname,
+        avatar: u.avatar,
+        phone: u.phone,
+        gender: u.gender,
+        deleteReason: u.deleteReason,
+        createdAt: u.createdAt,
+        canceledAt: u.updatedAt,
+      })),
+      page,
+      limit,
+      total,
+    }
+  }
+
+  /** 恢复已注销用户 */
+  async restoreUser(id: number) {
+    const user = await this.userRepository.findOne({ where: { id, isDeleted: 1 } })
+    if (!user) throw new NotFoundException('用户不存在或未注销')
+    user.isDeleted = 0
+    user.status = 1
+    user.deleteReason = null
+    await this.userRepository.save(user)
+  }
+
+  /** 彻底删除用户（物理删除） */
+  async permanentDelete(id: number) {
+    const user = await this.userRepository.findOne({ where: { id, isDeleted: 1 } })
+    if (!user) throw new NotFoundException('用户不存在或未注销')
+    await this.userRepository.remove(user)
   }
 
   async createUser(data: {

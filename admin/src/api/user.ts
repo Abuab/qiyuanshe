@@ -293,4 +293,15 @@ export const adminUsers = {
   getUserOrders(id: number): Promise<ApiResponse<{ list: any[]; total: number; stats: { totalPaid: number; orderCount: number; paidCount: number } }>> {
     return request.get(`/admin/users/${id}/orders`)
   },
+
+  // 已注销用户管理
+  getDeactivated(params: { page?: number; limit?: number; keyword?: string }): Promise<ApiResponse<{ list: any[]; page: number; limit: number; total: number }>> {
+    return request.get('/admin/users/deactivated', { params })
+  },
+  restoreUser(id: number): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}/restore`)
+  },
+  permanentDeleteUser(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}/permanent`)
+  },
 }

@@ -377,6 +377,13 @@ export class UserController {
     return Result.success(null, '账户已注销')
   }
 
+  @Post('cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelAccount(@Request() req: any) {
+    await this.userService.cancelAccount(req.user.userId)
+    return Result.success(null, '账户已注销')
+  }
+
   @Get('matches')
   @UseGuards(JwtAuthGuard)
   async getMatches(@Request() req: any) {
