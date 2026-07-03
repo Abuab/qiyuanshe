@@ -50,7 +50,15 @@ let envFilePath = path.join(__dirname, '..', '.env')
 if (!fs.existsSync(envFilePath)) {
   envFilePath = path.join(__dirname, '..', 'backend', '.env')
 }
-const env = loadEnv(envFilePath)
+
+let env = {}
+if (fs.existsSync(envFilePath)) {
+  env = loadEnv(envFilePath)
+} else {
+  // 容器内运行时 .env 不挂载，变量通过 docker-compose 注入为 process.env
+  console.log('INFO: .env file not found, reading from process.env (Docker container mode)')
+  env = process.env
+}
 
 // ========== 校验 COS 配置 ==========
 if (env.COS_ENABLED !== 'true') {
