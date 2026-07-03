@@ -3,7 +3,7 @@
  * 本地静态资源迁移到腾讯云 COS 的一次性脚本
  *
  * 用法：
- *   node scripts/migrate-to-cos.js
+ *   node scripts/migrate-to-cos.cjs
  *
  * 功能：
  *   - 扫描 backend/.env 中 UPLOAD_DIR 下的所有文件（递归）
@@ -45,7 +45,7 @@ function loadEnv(envPath) {
   return env
 }
 
-// 兼容两种目录结构：项目根目录运行 scripts/migrate-to-cos.js 或容器内 /app/ 运行
+// 兼容两种目录结构：项目根目录运行 scripts/migrate-to-cos.cjs 或容器内 /app/ 运行
 let envFilePath = path.join(__dirname, '..', '.env')
 if (!fs.existsSync(envFilePath)) {
   envFilePath = path.join(__dirname, '..', 'backend', '.env')
