@@ -1,7 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import COS = require('cos-nodejs-sdk-v5')
 import * as fs from 'fs'
 import * as path from 'path'
+import { UserNotification } from '../entities/UserNotification'
+
+/** COS 健康状态 */
+export type CosHealthStatus = 'healthy' | 'unhealthy' | 'disabled' | 'unknown'
+
+/** 图片服务模式 */
+export type ImageServeMode = 'cos' | 'local'
 
 @Injectable()
 export class CosService {
@@ -9,7 +18,24 @@ export class CosService {
   private cosClient: COS | null = null
   private enabled = false
 
-  constructor() {
+  /** 当前 COS 健康状态 */
+  private healthStatus: CosHealthStatus = 'unknown'
+  /** 上一次图片代理的服务模式（用于检测切换） */
+  private lastServeMode: ImageServeMode | null = null
+  /** 健康检查定时器 */
+  private healthCheckTimer: ReturnType<typeof setInterval> | null = null
+  /** 连续失败次数（用于避免抖动） */
+  private consecutiveFailures = 0
+  /** 健康检查开关 */
+  private static readonly HEALTH_CHECK_INTERVAL_MS = 5 * 60 * 1000 // 5 分钟
+  /** 切换通知冷却时间（避免频繁通知） */
+  private static readonly NOTIFY_COOLDOWN_MS = 10 * 60 * 1000 // 10 分钟
+  private lastNotifyTime = 0
+
+  constructor(
+    @InjectRepository(UserNotification)
+    private readonly notificationRepo: Repository<UserNotification>,
+  ) {
     this.initClient()
   }
 
@@ -23,17 +49,21 @@ export class CosService {
     const secretKey = process.env.COS_SECRET_KEY
 
     if (!cosEnabled) {
-      this.logger.log('COS_ENABLED is false, COS client will not be initialized. Using local-only mode.')
+      this.logger.log('[COS 状态] COS_ENABLED=false，COS 客户端未初始化，使用本地存储模式。')
       this.enabled = false
+      this.healthStatus = 'disabled'
+      this.stopHealthCheck()
       return
     }
 
     if (!secretId || !secretKey) {
       this.logger.warn(
-        'COS_ENABLED is true but COS_SECRET_ID or COS_SECRET_KEY is missing. ' +
-        'COS client will not be initialized. Falling back to local-only mode.',
+        '[COS 状态] COS_ENABLED=true 但 COS_SECRET_ID 或 COS_SECRET_KEY 缺失。' +
+        'COS 客户端未初始化，降级为本地存储模式。',
       )
       this.enabled = false
+      this.healthStatus = 'disabled'
+      this.stopHealthCheck()
       return
     }
 
@@ -43,12 +73,245 @@ export class CosService {
         SecretKey: secretKey,
       })
       this.enabled = true
-      this.logger.log('COS client initialized successfully.')
+      this.healthStatus = 'unknown'
+      this.consecutiveFailures = 0
+      this.logger.log('[COS 状态] COS 客户端初始化成功，即将执行健康检查...')
+      this.startHealthCheck()
     } catch (error: any) {
-      this.logger.error(`Failed to initialize COS client: ${error?.message || error}`)
+      this.logger.error(`[COS 状态] COS 客户端初始化失败: ${error?.message || error}`)
       this.enabled = false
       this.cosClient = null
+      this.healthStatus = 'unhealthy'
     }
+  }
+
+  /**
+   * 启动定时健康检查。
+   */
+  private startHealthCheck(): void {
+    this.stopHealthCheck()
+    // 首次立即检查
+    this.performHealthCheck()
+    this.healthCheckTimer = setInterval(
+      () => this.performHealthCheck(),
+      CosService.HEALTH_CHECK_INTERVAL_MS,
+    )
+    this.logger.log(`[COS 健康检查] 已启动，间隔=${CosService.HEALTH_CHECK_INTERVAL_MS / 1000}s`)
+  }
+
+  /**
+   * 停止健康检查。
+   */
+  private stopHealthCheck(): void {
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer)
+      this.healthCheckTimer = null
+      this.logger.log('[COS 健康检查] 已停止')
+    }
+  }
+
+  /**
+   * 执行单次健康检查：尝试 HEAD Bucket。
+   */
+  private async performHealthCheck(): Promise<void> {
+    if (!this.isCosEnabled()) {
+      this.healthStatus = 'disabled'
+      return
+    }
+
+    const config = this.getConfig()
+    if (!config.Bucket || !config.Region) {
+      this.transitionToUnhealthy('COS Bucket 或 Region 未配置')
+      return
+    }
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.cosClient!.headBucket(
+          { Bucket: config.Bucket, Region: config.Region },
+          (err) => {
+            if (err) reject(err)
+            else resolve()
+          },
+        )
+      })
+
+      // 健康检查通过
+      this.consecutiveFailures = 0
+      if (this.healthStatus !== 'healthy') {
+        this.logger.log('[COS 状态] 健康检查通过 - COS 服务可用')
+        this.transitionToHealthy()
+      } else {
+        this.logger.log('[COS 健康检查] 通过')
+      }
+    } catch (error: any) {
+      this.consecutiveFailures++
+      const errMsg = error?.message || String(error)
+      this.logger.warn(`[COS 健康检查] 失败 (连续 ${this.consecutiveFailures} 次): ${errMsg}`)
+
+      // 连续失败 2 次才标记为 unhealthy，避免网络瞬时抖动
+      if (this.consecutiveFailures >= 2 && this.healthStatus === 'healthy') {
+        this.transitionToUnhealthy(errMsg)
+      }
+    }
+  }
+
+  /**
+   * 状态变为健康。
+   */
+  private transitionToHealthy(): void {
+    const previous = this.healthStatus
+    this.healthStatus = 'healthy'
+    // 从 unhealthy/unknown 恢复时发送通知
+    if (previous !== 'healthy') {
+      this.sendNotify(
+        'COS 服务已恢复',
+        `COS 对象存储服务已恢复正常。\nBucket: ${process.env.COS_BUCKET || '-'}\nRegion: ${process.env.COS_REGION || '-'}\n时刻: ${new Date().toLocaleString('zh-CN')}`,
+      )
+    }
+  }
+
+  /**
+   * 状态变为不健康。
+   */
+  private transitionToUnhealthy(reason: string): void {
+    const previous = this.healthStatus
+    this.healthStatus = 'unhealthy'
+    if (previous === 'healthy' || previous === 'unknown') {
+      this.sendNotify(
+        'COS 服务不可用',
+        `COS 对象存储服务不可用，已自动降级为本地存储。\n原因: ${reason}\nBucket: ${process.env.COS_BUCKET || '-'}\n时刻: ${new Date().toLocaleString('zh-CN')}`,
+      )
+    }
+  }
+
+  /**
+   * 检测图片服务模式是否发生切换，并记录日志 / 发送通知。
+   */
+  private trackServeModeSwitch(mode: ImageServeMode, key?: string): void {
+    if (this.lastServeMode !== null && this.lastServeMode !== mode) {
+      const msg = `[存储切换] 图片服务从 ${this.lastServeMode.toUpperCase()} 切换为 ${mode.toUpperCase()}` +
+        (key ? ` (触发 key="${key}")` : '')
+      this.logger.warn(msg)
+
+      // 冷却期内不重复发送通知
+      const now = Date.now()
+      if (now - this.lastNotifyTime > CosService.NOTIFY_COOLDOWN_MS) {
+        this.lastNotifyTime = now
+        this.sendNotify(
+          '存储模式切换',
+          `图片服务模式已切换: ${this.lastServeMode.toUpperCase()} → ${mode.toUpperCase()}` +
+          `\n时刻: ${new Date().toLocaleString('zh-CN')}`,
+        )
+      }
+    }
+    this.lastServeMode = mode
+  }
+
+  /**
+   * 发送通知：写入 UserNotification 表并记录日志。
+   */
+  private async sendNotify(title: string, content: string): Promise<void> {
+    this.logger.warn(`[COS 通知] ${title}: ${content.replace(/\n/g, ' | ')}`)
+
+    try {
+      // 通知所有活跃管理员用户
+      const admins = await this.notificationRepo.manager.query(
+        `SELECT id FROM admin_users WHERE status = 1`,
+      )
+      const adminIds: number[] = (admins || []).map((a: any) => a.id)
+
+      if (adminIds.length === 0) {
+        // 回退：通知 user ID 1
+        adminIds.push(1)
+      }
+
+      for (const adminId of adminIds) {
+        await this.notificationRepo.save(
+          this.notificationRepo.create({
+            userId: adminId,
+            title,
+            content,
+            senderType: 'system',
+          }),
+        )
+      }
+
+      this.logger.log(`[COS 通知] 已向 ${adminIds.length} 个管理员发送通知`)
+    } catch (error: any) {
+      this.logger.error(`[COS 通知] 发送失败: ${error?.message || error}`)
+    }
+
+    // 同时尝试调用 webhook（如果配置了）
+    await this.tryWebhookNotify(title, content)
+  }
+
+  /**
+   * 尝试通过 webhook 发送通知（兼容 NotifyChannelService 的 webhook URL 配置）。
+   */
+  private async tryWebhookNotify(title: string, content: string): Promise<void> {
+    try {
+      const notifyEnabled = process.env.COS_NOTIFY_WEBHOOK_URL
+      if (!notifyEnabled) return
+
+      const webhookUrls = notifyEnabled
+        .split(',')
+        .map((url) => url.trim())
+        .filter(Boolean)
+
+      for (const url of webhookUrls) {
+        try {
+          await this.sendSingleWebhook(url, title, content)
+        } catch (e: any) {
+          this.logger.warn(`[COS Webhook] 发送失败 (${url}): ${e?.message || e}`)
+        }
+      }
+    } catch (error: any) {
+      this.logger.debug(`[COS Webhook] 配置缺失或发送异常: ${error?.message || error}`)
+    }
+  }
+
+  /**
+   * 发送单条 webhook 消息（Markdown 格式，兼容企微机器人）。
+   */
+  private async sendSingleWebhook(
+    url: string,
+    title: string,
+    content: string,
+  ): Promise<void> {
+    const https = require('https')
+    const { URL } = require('url')
+    const parsed = new URL(url)
+
+    const body = JSON.stringify({
+      msgtype: 'markdown',
+      markdown: {
+        content: `## ${title}\n${content}\n> 系统: 亲缘社后端\n> 时间: ${new Date().toLocaleString('zh-CN')}`,
+      },
+    })
+
+    await new Promise<void>((resolve, reject) => {
+      const req = https.request(
+        {
+          hostname: parsed.hostname,
+          port: 443,
+          path: parsed.pathname + parsed.search,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        },
+        (res: any) => {
+          if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+            this.logger.log('[COS Webhook] 发送成功')
+            resolve()
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}`))
+          }
+        },
+      )
+      req.on('error', reject)
+      req.write(body)
+      req.end()
+    })
   }
 
   /**
@@ -56,6 +319,13 @@ export class CosService {
    */
   isCosEnabled(): boolean {
     return this.enabled && this.cosClient !== null
+  }
+
+  /**
+   * 获取当前 COS 健康状态。
+   */
+  getHealthStatus(): CosHealthStatus {
+    return this.healthStatus
   }
 
   /**
@@ -97,11 +367,8 @@ export class CosService {
             Expires: config.SignExpires,
           },
           (err, data) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(data)
-            }
+            if (err) reject(err)
+            else resolve(data)
           },
         )
       })
@@ -148,20 +415,17 @@ export class CosService {
             ContentLength: fs.statSync(localPath).size,
           },
           (err) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
+            if (err) reject(err)
+            else resolve()
           },
         )
       })
 
-      this.logger.log(`COS upload success: ${localPath} -> ${key}`)
+      this.logger.log(`[COS 上传] 成功: ${localPath} → ${key}`)
     } catch (error: any) {
       // 上传失败记录日志，但不抛异常 —— 本地文件已保存，COS 可后续补偿同步
       this.logger.error(
-        `COS upload failed for key="${key}" (localPath="${localPath}"): ${error?.message || error}`,
+        `[COS 上传] 失败: key="${key}" (localPath="${localPath}"): ${error?.message || error}`,
       )
     }
   }
@@ -190,19 +454,16 @@ export class CosService {
             Key: key,
           },
           (err) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve()
-            }
+            if (err) reject(err)
+            else resolve()
           },
         )
       })
 
-      this.logger.log(`COS delete success: ${key}`)
+      this.logger.log(`[COS 删除] 成功: ${key}`)
     } catch (error: any) {
       this.logger.error(
-        `COS delete failed for key="${key}": ${error?.message || error}`,
+        `[COS 删除] 失败: key="${key}": ${error?.message || error}`,
       )
     }
   }
@@ -234,11 +495,15 @@ export class CosService {
    * @returns { data: Buffer, contentType: string } 或 null
    */
   async getImageFromCos(key: string): Promise<{ data: Buffer; contentType: string } | null> {
-    if (!this.isCosEnabled()) return null
+    if (!this.isCosEnabled()) {
+      this.trackServeModeSwitch('local', key)
+      return null
+    }
 
     const config = this.getConfig()
     if (!config.Bucket || !config.Region) {
-      this.logger.warn('COS Bucket or Region not configured, cannot proxy image.')
+      this.logger.warn('[COS 代理] Bucket 或 Region 未配置，无法代理图片。')
+      this.trackServeModeSwitch('local', key)
       return null
     }
 
@@ -264,9 +529,11 @@ export class CosService {
         this.getContentTypeByExt(key) ||
         'application/octet-stream'
 
+      this.trackServeModeSwitch('cos', key)
       return { data: result.Body, contentType }
     } catch (error: any) {
-      this.logger.error(`COS getObject failed for key="${key}": ${error?.message || error}`)
+      this.logger.error(`[COS 代理] getObject 失败: key="${key}": ${error?.message || error}`)
+      this.trackServeModeSwitch('local', key)
       return null
     }
   }
@@ -284,17 +551,18 @@ export class CosService {
     const resolvedPath = path.resolve(filePath)
     const resolvedUploadDir = path.resolve(uploadDir)
     if (!resolvedPath.startsWith(resolvedUploadDir)) {
-      this.logger.warn(`Path traversal blocked: key="${key}" -> "${resolvedPath}"`)
+      this.logger.warn(`[COS 本地] 路径穿越拦截: key="${key}" -> "${resolvedPath}"`)
       return null
     }
 
     if (!fs.existsSync(resolvedPath)) {
-      this.logger.warn(`Local file not found: ${filePath}`)
+      this.logger.warn(`[COS 本地] 文件不存在: ${filePath}`)
       return null
     }
 
     const data = fs.readFileSync(resolvedPath)
     const contentType = this.getContentTypeByExt(key) || 'application/octet-stream'
+    this.trackServeModeSwitch('local', key)
     return { data, contentType }
   }
 
@@ -317,5 +585,12 @@ export class CosService {
       '.mp3': 'audio/mpeg',
     }
     return mimeMap[ext] || null
+  }
+
+  /**
+   * 应用关闭时清理。
+   */
+  onModuleDestroy(): void {
+    this.stopHealthCheck()
   }
 }
