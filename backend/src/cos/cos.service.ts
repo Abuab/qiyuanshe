@@ -227,4 +227,95 @@ export class CosService {
   getLocalUploadPath(): string {
     return process.env.UPLOAD_DIR || path.join(process.cwd(), 'uploads')
   }
+
+  /**
+   * 从 COS 获取图片文件数据（代理模式，避免 302 重定向在小程序端失效）。
+   * @param key - COS 对象 Key
+   * @returns { data: Buffer, contentType: string } 或 null
+   */
+  async getImageFromCos(key: string): Promise<{ data: Buffer; contentType: string } | null> {
+    if (!this.isCosEnabled()) return null
+
+    const config = this.getConfig()
+    if (!config.Bucket || !config.Region) {
+      this.logger.warn('COS Bucket or Region not configured, cannot proxy image.')
+      return null
+    }
+
+    try {
+      const result = await new Promise<{ Body: Buffer; headers: Record<string, string> }>(
+        (resolve, reject) => {
+          this.cosClient!.getObject(
+            {
+              Bucket: config.Bucket,
+              Region: config.Region,
+              Key: key,
+            },
+            (err, data) => {
+              if (err) reject(err)
+              else resolve(data as any)
+            },
+          )
+        },
+      )
+
+      const contentType =
+        result.headers?.['content-type'] ||
+        this.getContentTypeByExt(key) ||
+        'application/octet-stream'
+
+      return { data: result.Body, contentType }
+    } catch (error: any) {
+      this.logger.error(`COS getObject failed for key="${key}": ${error?.message || error}`)
+      return null
+    }
+  }
+
+  /**
+   * 从本地磁盘读取图片文件（代理降级）。
+   */
+  getImageFromLocal(key: string): { data: Buffer; contentType: string } | null {
+    const uploadDir = this.getLocalUploadPath()
+    // key 格式: uploads/xxx.jpg，去掉前缀后拼接到上传目录
+    const relativePath = key.startsWith('uploads/') ? key.slice('uploads/'.length) : key
+    const filePath = path.join(uploadDir, relativePath)
+
+    // 二次安全校验：确保最终路径在 uploadDir 内
+    const resolvedPath = path.resolve(filePath)
+    const resolvedUploadDir = path.resolve(uploadDir)
+    if (!resolvedPath.startsWith(resolvedUploadDir)) {
+      this.logger.warn(`Path traversal blocked: key="${key}" -> "${resolvedPath}"`)
+      return null
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+      this.logger.warn(`Local file not found: ${filePath}`)
+      return null
+    }
+
+    const data = fs.readFileSync(resolvedPath)
+    const contentType = this.getContentTypeByExt(key) || 'application/octet-stream'
+    return { data, contentType }
+  }
+
+  /**
+   * 根据文件扩展名获取 MIME 类型。
+   */
+  private getContentTypeByExt(filePath: string): string | null {
+    const ext = path.extname(filePath).toLowerCase()
+    const mimeMap: Record<string, string> = {
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+      '.bmp': 'image/bmp',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.pdf': 'application/pdf',
+      '.mp4': 'video/mp4',
+      '.mp3': 'audio/mpeg',
+    }
+    return mimeMap[ext] || null
+  }
 }

@@ -1806,7 +1806,7 @@ onShow(async () => {
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-left: 14rpx;
@@ -1826,6 +1826,8 @@ onShow(async () => {
   font-size: 26rpx;
   font-weight: bold;
   line-height: 1;
+  text-align: center;
+  width: 100%;
 
   .male & {
     color: #1890ff;

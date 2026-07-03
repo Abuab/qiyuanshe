@@ -23,15 +23,15 @@ export class CosController {
   ) {}
 
   /**
-   * 图片读取接口：302 重定向到 COS 签名 URL 或本地静态资源。
+   * 图片读取接口：代理返回图片数据（适配小程序不支持 302 重定向到外部域名）。
    *
    * GET /api/cos/image?key=uploads/avatar/123.jpg&token=<jwt>
    * - 认证方式（两种之一即可）：
    *   a. Authorization: Bearer <token> 请求头（web 端 fetch 自动携带）
    *   b. ?token=<jwt> 查询参数（uni-app <image> 组件无法发送自定义头时使用）
    * - key 格式严格校验（防路径穿越）
-   * - COS 可用 → 302 到 COS 签名 URL
-   * - COS 不可用 → 302 降级到本地静态资源
+   * - COS 可用 → 从 COS 获取并以流返回
+   * - COS 不可用 → 从本地磁盘读取返回
    */
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
@@ -91,27 +91,37 @@ export class CosController {
       })
     }
 
-    // 5. 尝试 COS 签名 URL
+    // 5. 尝试从 COS 代理获取
     if (this.cosService.isCosEnabled()) {
       try {
-        const signedUrl = await this.cosService.generateSignedUrl(key)
-        if (signedUrl) {
-          this.logger.log(`COS signed URL served for key="${key}"`)
-          res.setHeader('Cache-Control', 'no-cache')
-          return res.redirect(HttpStatus.FOUND, signedUrl)
+        const result = await this.cosService.getImageFromCos(key)
+        if (result) {
+          this.logger.log(`COS proxy served for key="${key}"`)
+          res.setHeader('Content-Type', result.contentType)
+          res.setHeader('Cache-Control', 'public, max-age=86400')
+          return res.send(result.data)
         }
       } catch (error: any) {
         this.logger.warn(
-          `COS signed URL generation failed for key="${key}", falling back to local. ` +
+          `COS proxy failed for key="${key}", falling back to local. ` +
           `Error: ${error?.message || error}`,
         )
       }
     }
 
-    // 6. 降级：302 到本地静态资源
-    const localUrl = this.cosService.getLocalFallbackUrl(key)
-    this.logger.log(`Falling back to local URL for key="${key}": ${localUrl}`)
-    res.setHeader('Cache-Control', 'no-cache')
-    return res.redirect(HttpStatus.FOUND, localUrl)
+    // 6. 降级：从本地磁盘读取
+    const localResult = this.cosService.getImageFromLocal(key)
+    if (localResult) {
+      this.logger.log(`Local file served for key="${key}"`)
+      res.setHeader('Content-Type', localResult.contentType)
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      return res.send(localResult.data)
+    }
+
+    // 7. 彻底失败
+    return res.status(HttpStatus.NOT_FOUND).json({
+      code: 404,
+      message: '图片不存在',
+    })
   }
 }
