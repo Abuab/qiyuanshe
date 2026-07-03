@@ -91,31 +91,42 @@ export class CosController {
       })
     }
 
-    // 5. 尝试从 COS 代理获取
+    // 5. 尝试从 COS 代理获取（流式传输，避免 OOM）
     if (this.cosService.isCosEnabled()) {
-      try {
-        const result = await this.cosService.getImageFromCos(key)
-        if (result) {
-          this.logger.log(`COS proxy served for key="${key}"`)
-          res.setHeader('Content-Type', result.contentType)
-          res.setHeader('Cache-Control', 'public, max-age=86400')
-          return res.send(result.data)
-        }
-      } catch (error: any) {
-        this.logger.warn(
-          `COS proxy failed for key="${key}", falling back to local. ` +
-          `Error: ${error?.message || error}`,
-        )
+      const result = this.cosService.getImageFromCos(key)
+      if (result) {
+        this.logger.log(`COS proxy streaming for key="${key}"`)
+        res.setHeader('Content-Type', result.contentType)
+        res.setHeader('Cache-Control', 'public, max-age=86400')
+        result.stream.on('error', (err: Error) => {
+          this.logger.error(`COS stream error for key="${key}": ${err.message}`)
+          if (!res.headersSent) {
+            res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: '图片加载失败' })
+          } else {
+            res.end()
+          }
+        })
+        result.stream.pipe(res)
+        return
       }
     }
 
-    // 6. 降级：从本地磁盘读取
+    // 6. 降级：从本地磁盘流式读取
     const localResult = this.cosService.getImageFromLocal(key)
     if (localResult) {
-      this.logger.log(`Local file served for key="${key}"`)
+      this.logger.log(`Local file streaming for key="${key}"`)
       res.setHeader('Content-Type', localResult.contentType)
       res.setHeader('Cache-Control', 'public, max-age=86400')
-      return res.send(localResult.data)
+      localResult.stream.on('error', (err: Error) => {
+        this.logger.error(`Local stream error for key="${key}": ${err.message}`)
+        if (!res.headersSent) {
+          res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: '图片加载失败' })
+        } else {
+          res.end()
+        }
+      })
+      localResult.stream.pipe(res)
+      return
     }
 
     // 7. 彻底失败

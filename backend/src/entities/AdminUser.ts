@@ -6,13 +6,10 @@ import {
   UpdateDateColumn,
   Index,
 } from 'typeorm'
+import { AdminRole } from '../shared/enums'
 
-export enum AdminRole {
-  SUPER_ADMIN = 'super_admin',
-  MATCHMAKER = 'matchmaker',
-  OPERATOR = 'operator',
-  READONLY = 'readonly',
-}
+// 重新导出以保持向后兼容（旧代码可能从 entities/AdminUser 导入 AdminRole）
+export { AdminRole }
 
 @Entity('admin_users')
 export class AdminUser {

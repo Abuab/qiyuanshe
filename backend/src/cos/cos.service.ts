@@ -4,6 +4,7 @@ import { Repository } from 'typeorm'
 import COS = require('cos-nodejs-sdk-v5')
 import * as fs from 'fs'
 import * as path from 'path'
+import { Readable, PassThrough } from 'stream'
 import { UserNotification } from '../entities/UserNotification'
 
 /** COS 健康状态 */
@@ -483,11 +484,12 @@ export class CosService {
   }
 
   /**
-   * 从 COS 获取图片文件数据（代理模式，避免 302 重定向在小程序端失效）。
+   * 从 COS 获取图片文件流（代理模式，避免 302 重定向在小程序端失效）。
+   * 使用 PassThrough 流式传输，避免将整张图片加载进内存导致 OOM。
    * @param key - COS 对象 Key
-   * @returns { data: Buffer, contentType: string } 或 null
+   * @returns { stream: Readable, contentType: string } 或 null
    */
-  async getImageFromCos(key: string): Promise<{ data: Buffer; contentType: string } | null> {
+  getImageFromCos(key: string): { stream: Readable; contentType: string } | null {
     if (!this.isCosEnabled()) {
       this.trackServeModeSwitch('local', key)
       return null
@@ -500,41 +502,40 @@ export class CosService {
       return null
     }
 
-    try {
-      const result = await new Promise<{ Body: Buffer; headers: Record<string, string> }>(
-        (resolve, reject) => {
-          this.cosClient!.getObject(
-            {
-              Bucket: config.Bucket,
-              Region: config.Region,
-              Key: key,
-            },
-            (err, data) => {
-              if (err) reject(err)
-              else resolve(data as any)
-            },
-          )
-        },
-      )
+    const passThrough = new PassThrough()
+    const contentType = this.getContentTypeByExt(key) || 'application/octet-stream'
 
-      const contentType =
-        result.headers?.['content-type'] ||
-        this.getContentTypeByExt(key) ||
-        'application/octet-stream'
+    // 预绑定 error 处理，防止未监听的 error 事件导致进程崩溃
+    passThrough.on('error', (err: Error) => {
+      this.logger.error(`[COS 代理] Stream error for key="${key}": ${err?.message || err}`)
+    })
 
-      this.trackServeModeSwitch('cos', key)
-      return { data: result.Body, contentType }
-    } catch (error: any) {
-      this.logger.error(`[COS 代理] getObject 失败: key="${key}": ${error?.message || error}`)
-      this.trackServeModeSwitch('local', key)
-      return null
-    }
+    this.cosClient!.getObject(
+      {
+        Bucket: config.Bucket,
+        Region: config.Region,
+        Key: key,
+        Output: passThrough,
+      },
+      (err) => {
+        if (err) {
+          const errMsg = (err as any)?.message || String(err)
+          this.logger.error(`[COS 代理] getObject 失败: key="${key}": ${errMsg}`)
+          passThrough.destroy(new Error(errMsg))
+          this.trackServeModeSwitch('local', key)
+        }
+      },
+    )
+
+    this.trackServeModeSwitch('cos', key)
+    return { stream: passThrough, contentType }
   }
 
   /**
-   * 从本地磁盘读取图片文件（代理降级）。
+   * 从本地磁盘读取图片文件流（代理降级）。
+   * 使用 createReadStream 流式读取，避免大文件 OOM。
    */
-  getImageFromLocal(key: string): { data: Buffer; contentType: string } | null {
+  getImageFromLocal(key: string): { stream: Readable; contentType: string } | null {
     const uploadDir = this.getLocalUploadPath()
     // key 格式: uploads/xxx.jpg，去掉前缀后拼接到上传目录
     const relativePath = key.startsWith('uploads/') ? key.slice('uploads/'.length) : key
@@ -553,10 +554,10 @@ export class CosService {
       return null
     }
 
-    const data = fs.readFileSync(resolvedPath)
+    const stream = fs.createReadStream(resolvedPath)
     const contentType = this.getContentTypeByExt(key) || 'application/octet-stream'
     this.trackServeModeSwitch('local', key)
-    return { data, contentType }
+    return { stream, contentType }
   }
 
   /**

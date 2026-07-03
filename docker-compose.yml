@@ -118,7 +118,7 @@ services:
       NODE_ENV: production
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
       CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
-      NODE_OPTIONS: --max-old-space-size=384
+      NODE_OPTIONS: --max-old-space-size=512
     volumes:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
       - ./data/uploads:/app/uploads
@@ -139,7 +139,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    mem_limit: 768m
+    mem_limit: 1024m
     cpus: 0.5
 
   # ============ 管理后台 ============
