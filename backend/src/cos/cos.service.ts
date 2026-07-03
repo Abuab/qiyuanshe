@@ -215,16 +215,9 @@ export class CosService {
     this.logger.warn(`[COS 通知] ${title}: ${content.replace(/\n/g, ' | ')}`)
 
     try {
-      // 通知所有活跃管理员用户
-      const admins = await this.notificationRepo.manager.query(
-        `SELECT id FROM admin_users WHERE status = 1`,
-      )
-      const adminIds: number[] = (admins || []).map((a: any) => a.id)
-
-      if (adminIds.length === 0) {
-        // 回退：通知 user ID 1
-        adminIds.push(1)
-      }
+      // 通知系统主用户（users 表 ID 1，外键约束要求）
+      // user_notifications.userId 必须引用 users.id，不能引用 admin_users.id
+      const adminIds: number[] = [1]
 
       for (const adminId of adminIds) {
         await this.notificationRepo.save(
@@ -237,9 +230,9 @@ export class CosService {
         )
       }
 
-      this.logger.log(`[COS 通知] 已向 ${adminIds.length} 个管理员发送通知`)
+      this.logger.log(`[COS 通知] 已向主用户发送通知: "${title}"`)
     } catch (error: any) {
-      this.logger.error(`[COS 通知] 发送失败: ${error?.message || error}`)
+      this.logger.error(`[COS 通知] 写入失败: ${error?.message || error}`)
     }
 
     // 同时尝试调用 webhook（如果配置了）
