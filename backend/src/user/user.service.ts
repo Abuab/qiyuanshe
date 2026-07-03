@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, SelectQueryBuilder, In } from 'typeorm'
+import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
@@ -45,6 +45,8 @@ export interface UserListItem {
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name)
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -65,6 +67,7 @@ export class UserService {
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly aiVoiceService: AiVoiceService,
     private readonly notifyService: NotifyChannelService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -1011,6 +1014,87 @@ export class UserService {
     return { list, total, page: pageNum, pageSize, totalPages: Math.ceil(total / pageSize) }
   }
 
+  /** 清理已注销用户的关联数据（问答、报名、关注、喜欢等） */
+  private async cleanupDeletedUserData(userId: number): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+    try {
+      const tables = [
+        // 关注关系（我关注的 + 关注我的）
+        { sql: 'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?', desc: 'follows' },
+        // 问答
+        { sql: 'DELETE FROM answer_likes WHERE userId = ?', desc: 'answer_likes' },
+        { sql: `DELETE al FROM answer_likes al INNER JOIN question_answers qa ON al.answerId = qa.id WHERE qa.userId = ?`, desc: 'answer_likes_on_own_answers' },
+        { sql: 'DELETE FROM question_answers WHERE userId = ?', desc: 'question_answers' },
+        // 动态
+        { sql: 'DELETE FROM dynamic_likes WHERE userId = ?', desc: 'dynamic_likes' },
+        { sql: `DELETE dl FROM dynamic_likes dl INNER JOIN dynamics d ON dl.dynamicId = d.id WHERE d.userId = ?`, desc: 'dynamic_likes_on_own' },
+        { sql: 'DELETE FROM dynamics WHERE userId = ?', desc: 'dynamics' },
+        // 活动报名
+        { sql: 'DELETE FROM activity_signups WHERE userId = ?', desc: 'activity_signups' },
+        // 照片
+        { sql: 'DELETE FROM user_photos WHERE userId = ?', desc: 'user_photos' },
+        // 浏览记录
+        { sql: 'DELETE FROM profile_visits WHERE user_id = ? OR visitor_user_id = ?', desc: 'profile_visits' },
+        // 聊天消息
+        { sql: 'DELETE FROM chat_messages WHERE fromUserId = ? OR toUserId = ?', desc: 'chat_messages' },
+        // 匹配记录
+        { sql: 'DELETE FROM match_records WHERE userId = ? OR matchedUserId = ?', desc: 'match_records' },
+        // 圈子
+        { sql: 'DELETE FROM circle_members WHERE userId = ?', desc: 'circle_members' },
+        // 拉黑
+        { sql: 'DELETE FROM user_blocks WHERE blockerId = ? OR blockedUserId = ?', desc: 'user_blocks' },
+        // 红娘评价
+        { sql: 'DELETE FROM matchmaker_reviews WHERE userId = ?', desc: 'matchmaker_reviews' },
+        // 反馈
+        { sql: 'DELETE FROM feedbacks WHERE userId = ?', desc: 'feedbacks' },
+        // 通知
+        { sql: 'DELETE FROM user_notifications WHERE userId = ?', desc: 'user_notifications' },
+        // 认证
+        { sql: 'DELETE FROM user_auths WHERE userId = ?', desc: 'user_auths' },
+        // 标签
+        { sql: 'DELETE FROM user_tag_selections WHERE userId = ?', desc: 'user_tag_selections' },
+        // 协议
+        { sql: 'DELETE FROM user_agreements WHERE userId = ?', desc: 'user_agreements' },
+        // VIP
+        { sql: 'DELETE FROM vip_orders WHERE userId = ?', desc: 'vip_orders' },
+        // 置顶
+        { sql: 'DELETE FROM user_top_records WHERE userId = ?', desc: 'user_top_records' },
+        { sql: 'DELETE FROM user_top_card_quotas WHERE userId = ?', desc: 'user_top_card_quotas' },
+        // 红线
+        { sql: 'DELETE FROM user_red_line_quotas WHERE userId = ?', desc: 'user_red_line_quotas' },
+        { sql: 'DELETE FROM user_red_line_usage_records WHERE userId = ? OR targetUserId = ?', desc: 'user_red_line_usage_records' },
+        { sql: 'DELETE FROM red_line_usages WHERE userId = ? OR targetUserId = ?', desc: 'red_line_usages' },
+        // AI
+        { sql: 'DELETE FROM ai_user_profiles WHERE userId = ?', desc: 'ai_user_profiles' },
+        { sql: 'DELETE FROM ai_call_logs WHERE userId = ?', desc: 'ai_call_logs' },
+        // 承诺
+        { sql: 'DELETE FROM single_promises WHERE userId = ?', desc: 'single_promises' },
+        // 快问
+        { sql: 'DELETE FROM quick_questions WHERE userId = ?', desc: 'quick_questions' },
+      ]
+
+      for (const { sql, desc } of tables) {
+        const params = sql.split('?').length - 1
+        const values = params === 2 ? [userId, userId] : [userId]
+        await queryRunner.query(sql, values)
+      }
+
+      // 清除推荐缓存
+      try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
+
+      await queryRunner.commitTransaction()
+      this.logger.log(`用户 ${userId} 注销：已清理关联数据`)
+    } catch (error) {
+      await queryRunner.rollbackTransaction()
+      this.logger.error(`用户 ${userId} 注销清理数据失败: ${error.message}`)
+      // 不抛异常，不影响主流程（用户状态已标记为已删除）
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
   async deactivateAccount(userId: number): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (!user) throw new NotFoundException('用户不存在')
@@ -1018,6 +1102,8 @@ export class UserService {
     user.status = 0
     user.deleteReason = '用户自行注销'
     await this.userRepository.save(user)
+    // 异步清理关联数据，不阻塞响应
+    this.cleanupDeletedUserData(userId)
   }
 
   /** 注销账号（含审计日志） */
@@ -1043,6 +1129,9 @@ export class UserService {
         canceledAt: new Date().toISOString(),
       }),
     })
+
+    // 异步清理关联数据
+    this.cleanupDeletedUserData(userId)
   }
 
   /** 查询我喜欢/喜欢我/互相喜欢的人列表 */
