@@ -1,0 +1,117 @@
+import { Controller, Get, Query, Res, UseGuards, Req, HttpStatus } from '@nestjs/common'
+import { Response, Request } from 'express'
+import { CosService } from './cos.service'
+import { OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { JwtService } from '@nestjs/jwt'
+import { Logger } from '@nestjs/common'
+
+/**
+ * 图片安全 Key 格式校验正则：
+ * - 必须以 uploads/ 开头
+ * - 只允许字母、数字、下划线、连字符、点、斜线
+ * - 禁止 ..（路径穿越）和绝对路径（以 / 开头的不符合 uploads/ 前缀）
+ */
+const SAFE_KEY_REGEX = /^uploads\/[a-zA-Z0-9_\-.]+(?:\/[a-zA-Z0-9_\-.]+)*$/
+
+@Controller('cos/image')
+export class CosController {
+  private readonly logger = new Logger(CosController.name)
+
+  constructor(
+    private readonly cosService: CosService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  /**
+   * 图片读取接口：302 重定向到 COS 签名 URL 或本地静态资源。
+   *
+   * GET /api/cos/image?key=uploads/avatar/123.jpg&token=<jwt>
+   * - 认证方式（两种之一即可）：
+   *   a. Authorization: Bearer <token> 请求头（web 端 fetch 自动携带）
+   *   b. ?token=<jwt> 查询参数（uni-app <image> 组件无法发送自定义头时使用）
+   * - key 格式严格校验（防路径穿越）
+   * - COS 可用 → 302 到 COS 签名 URL
+   * - COS 不可用 → 302 降级到本地静态资源
+   */
+  @Get()
+  @UseGuards(OptionalJwtAuthGuard)
+  async getImage(
+    @Query('key') key: string,
+    @Query('token') token: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    // 1. 认证校验：优先从 JWT guard (Authorization header)，回退到 ?token= 查询参数
+    const userFromGuard = (req as any).user
+    let userId: number | null = null
+
+    if (userFromGuard && userFromGuard.sub) {
+      userId = userFromGuard.sub
+    } else if (token && typeof token === 'string') {
+      try {
+        const payload = this.jwtService.verify(token)
+        if (payload && payload.sub && payload.type === 'access') {
+          userId = payload.sub
+        }
+      } catch {
+        // token 无效，继续返回 401
+      }
+    }
+
+    if (!userId) {
+      return res.status(HttpStatus.UNAUTHORIZED).json({
+        code: 401,
+        message: '请先登录',
+      })
+    }
+
+    // 2. 校验 key 存在且格式安全
+    if (!key || typeof key !== 'string') {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        code: 400,
+        message: '参数 key 缺失或格式不正确',
+      })
+    }
+
+    // 3. 严格正则校验：防路径穿越，只允许 uploads/ 前缀
+    if (!SAFE_KEY_REGEX.test(key)) {
+      this.logger.warn(`Rejected unsafe key: "${key}"`)
+      return res.status(HttpStatus.FORBIDDEN).json({
+        code: 403,
+        message: '非法的图片路径',
+      })
+    }
+
+    // 4. 二次校验：显式拒绝 .. 和绝对路径（兜底）
+    if (key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
+      this.logger.warn(`Rejected path traversal attempt: "${key}"`)
+      return res.status(HttpStatus.FORBIDDEN).json({
+        code: 403,
+        message: '非法的图片路径',
+      })
+    }
+
+    // 5. 尝试 COS 签名 URL
+    if (this.cosService.isCosEnabled()) {
+      try {
+        const signedUrl = await this.cosService.generateSignedUrl(key)
+        if (signedUrl) {
+          this.logger.log(`COS signed URL served for key="${key}"`)
+          res.setHeader('Cache-Control', 'no-cache')
+          return res.redirect(HttpStatus.FOUND, signedUrl)
+        }
+      } catch (error: any) {
+        this.logger.warn(
+          `COS signed URL generation failed for key="${key}", falling back to local. ` +
+          `Error: ${error?.message || error}`,
+        )
+      }
+    }
+
+    // 6. 降级：302 到本地静态资源
+    const localUrl = this.cosService.getLocalFallbackUrl(key)
+    this.logger.log(`Falling back to local URL for key="${key}": ${localUrl}`)
+    res.setHeader('Cache-Control', 'no-cache')
+    return res.redirect(HttpStatus.FOUND, localUrl)
+  }
+}

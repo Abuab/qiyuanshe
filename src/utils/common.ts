@@ -1,6 +1,7 @@
 import dayjs from 'dayjs'
 import { icons } from '@/config/icons'
 import { getServerBaseUrl } from './request'
+import { getToken } from './auth'
 
 export const formatDate = (date: string | Date | number, format: string = 'YYYY-MM-DD'): string => {
   if (!date) return ''
@@ -158,7 +159,45 @@ export const reLaunch = (url: string): void => {
 }
 
 /**
- * 将相对图片路径转换为完整 URL（formatImageUrl 别名）
+ * 将相对图片路径转换为通过后端 COS 网关访问的 URL。
+ * 所有图片统一走 /api/cos/image?key= 接口，由后端负责 COS 签名 URL 或降级到本地。
+ *
+ * uni-app <image> 组件无法发送自定义 HTTP 头（Authorization），
+ * 因此将 JWT token 作为 ?token= 查询参数一并携带。
+ *
+ * @param key - 图片相对路径，如 "uploads/avatar/123.jpg" 或 "/uploads/avatar/123.jpg"
+ * @returns 后端 COS 网关 URL（含 token）
+ */
+export const getImageUrl = (key: string | null | undefined): string => {
+  if (!key) return ''
+  // 过滤 picsum.photos / placeholder 等不可用外部图片源
+  if (/picsum\.photos|placeholder\.com|lorempixel/i.test(key)) {
+    return icons.common.defaultAvatar
+  }
+  // 静态资源和 data URI 直接返回
+  if (key.startsWith('/static/') || key.startsWith('data:')) return key
+
+  const serverBase = getServerBaseUrl()
+  // 如果已经是完整的 HTTP(S) URL，且不是本地服务器地址，直接返回
+  if (key.startsWith('http://') || key.startsWith('https://')) {
+    // 替换旧 IP 地址为当前域名后走 COS 网关
+    const ipMatch = key.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/)
+    if (ipMatch) {
+      return key.replace(ipMatch[0], serverBase)
+    }
+    return key
+  }
+  // 相对路径：去掉开头的 / 后传给 COS 网关
+  const cleanKey = key.replace(/^\//, '')
+  const token = getToken()
+  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
+  return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
+}
+
+/**
+ * 将相对图片路径转换为完整 URL。
+ * @deprecated 请使用 getImageUrl 替代，新方法统一走 COS 网关（/api/cos/image）。
+ * uni-app <image> 组件无法发送自定义 HTTP 头，JWT token 通过 ?token= 查询参数携带。
  */
 export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
@@ -181,14 +220,15 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
   const serverBase = (viteEnv?.VITE_STATIC_BASE_URL || getServerBaseUrl()).replace(/\/$/, '')
 
-  if (path.startsWith('/uploads/')) {
-    return serverBase + path
-  }
-  return serverBase + '/uploads/' + path.replace(/^\//, '')
+  // 相对路径走 COS 网关
+  const cleanKey = path.replace(/^\//, '')
+  const token = getToken()
+  const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
+  return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }
 
-/** @deprecated 使用 getFullImageUrl 替代 */
-export const formatImageUrl = getFullImageUrl
+/** @deprecated 使用 getImageUrl 替代 */
+export const formatImageUrl = getImageUrl
 
 export const switchTab = (url: string): void => {
   uni.switchTab({ url })

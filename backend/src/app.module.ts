@@ -73,6 +73,7 @@ import { SinglePromiseModule } from './single-promise/single-promise.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
+import { CosModule } from './cos/cos.module'
 import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
 
@@ -159,6 +160,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     QuickQuestionModule,
     AgreementLogStorageModule,
     SinglePromiseModule,
+    CosModule,
   ],
   controllers: [HealthController],
   providers: [RedisService, DatabaseIndexService],
