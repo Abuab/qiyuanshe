@@ -45,7 +45,11 @@ function loadEnv(envPath) {
   return env
 }
 
-const envFilePath = path.join(__dirname, '..', 'backend', '.env')
+// 兼容两种目录结构：项目根目录运行 scripts/migrate-to-cos.js 或容器内 /app/ 运行
+let envFilePath = path.join(__dirname, '..', '.env')
+if (!fs.existsSync(envFilePath)) {
+  envFilePath = path.join(__dirname, '..', 'backend', '.env')
+}
 const env = loadEnv(envFilePath)
 
 // ========== 校验 COS 配置 ==========
