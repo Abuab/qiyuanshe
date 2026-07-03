@@ -15,6 +15,7 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { SuccessCaseService } from './success-case.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('success-cases')
 export class SuccessCaseController {
@@ -42,7 +43,7 @@ export class SuccessCaseController {
 
 @Controller('admin/success-cases')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 export class AdminSuccessCaseController {
   constructor(private readonly successCaseService: SuccessCaseService) {}
 
@@ -104,7 +105,7 @@ export class AdminSuccessCaseController {
   }
 
   @Delete(':id')
-  @Roles('super_admin', 'admin')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.MATCHMAKER)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.successCaseService.remove(id)
     return Result.success({ id }, '删除成功')

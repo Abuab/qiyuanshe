@@ -6,13 +6,14 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entities/ContentSafetyAudit'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /**
  * 管理后台 - AI 内容安全审核接口
  */
 @Controller('admin/ai/safety-audits')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 export class AdminAiSafetyAuditController {
   constructor(
     @InjectRepository(ContentSafetyAudit)

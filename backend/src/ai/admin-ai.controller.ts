@@ -5,10 +5,11 @@ import { Roles } from '../admin/roles.decorator'
 import { AiConfigService } from './ai-config.service'
 import { AiFeatureKey } from './types'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/ai')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 export class AdminAiController {
   constructor(private readonly aiConfigService: AiConfigService) {}
 
@@ -21,7 +22,7 @@ export class AdminAiController {
 
   /** 更新子功能开关（运营人员可操作） */
   @Put('switch')
-  @Roles('super_admin', 'matchmaker', 'operator')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
   async updateSubSwitch(
     @Body('key') key: AiFeatureKey,
     @Body('enabled') enabled: boolean,
@@ -39,7 +40,7 @@ export class AdminAiController {
 
   /** 更新总开关（仅超级管理员） */
   @Put('master-switch')
-  @Roles('super_admin')
+  @Roles(AdminRole.SUPER_ADMIN)
   async updateMasterSwitch(
     @Body('enabled') enabled: boolean,
     @Req() req: any,

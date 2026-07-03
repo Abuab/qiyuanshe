@@ -4,13 +4,14 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { AiRateLimitService } from './ai-rate-limit.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /**
  * 管理后台：AI 防刷黑名单管理接口
  */
 @Controller('admin/ai/blacklist')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 export class AdminAiBlacklistController {
   constructor(private readonly rateLimitService: AiRateLimitService) {}
 

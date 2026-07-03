@@ -20,6 +20,7 @@ import { AdminUserService } from './user.service'
 import { AdminPaymentService } from './payment.service'
 import { VipService } from '../vip/vip.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 interface UserFilter {
   page?: number
@@ -46,7 +47,7 @@ interface UserFilter {
 }
 
 @Controller('admin/users')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminUserController {
   constructor(

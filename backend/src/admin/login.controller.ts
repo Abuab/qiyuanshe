@@ -9,7 +9,7 @@ import { MfaService } from './mfa.service'
 import { AdminAccountService } from './admin-account.service'
 import { RedisService } from '../common/redis.service'
 import { adminJwtConfig } from '../config/jwt'
-import { AdminRole } from '../entities/AdminUser'
+import { AdminRole } from '../shared/enums'
 
 interface LoginDto {
   username: string
@@ -236,7 +236,7 @@ export class AdminLoginController {
   // ===== 子账号管理接口（仅超级管理员） =====
 
   @Get('admin-users')
-  @Roles('super_admin')
+  @Roles(AdminRole.SUPER_ADMIN)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async list() {
     const list = await this.adminAccountService.list()
@@ -244,7 +244,7 @@ export class AdminLoginController {
   }
 
   @Post('admin-users')
-  @Roles('super_admin')
+  @Roles(AdminRole.SUPER_ADMIN)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async create(@Body() dto: CreateAdminUserDto) {
     await this.adminAccountService.create(dto)
@@ -252,7 +252,7 @@ export class AdminLoginController {
   }
 
   @Put('admin-users/:id')
-  @Roles('super_admin')
+  @Roles(AdminRole.SUPER_ADMIN)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAdminUserDto) {
     await this.adminAccountService.update(id, dto)
@@ -260,7 +260,7 @@ export class AdminLoginController {
   }
 
   @Delete('admin-users/:id')
-  @Roles('super_admin')
+  @Roles(AdminRole.SUPER_ADMIN)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async delete(@Param('id', ParseIntPipe) id: number) {
     await this.adminAccountService.delete(id)

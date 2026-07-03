@@ -17,6 +17,7 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { CircleService } from './circle.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('circles')
 export class CircleController {
@@ -85,7 +86,7 @@ export class CircleController {
 
 @Controller('admin/circles')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 export class AdminCircleController {
   constructor(private readonly circleService: CircleService) {}
 
@@ -189,7 +190,7 @@ export class AdminCircleController {
   }
 
   @Delete('posts/:id')
-  @Roles('super_admin', 'admin')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.MATCHMAKER)
   async deletePost(@Param('id', ParseIntPipe) id: number) {
     await this.circleService.deletePost(id)
     return Result.success({ id }, '删除成功')

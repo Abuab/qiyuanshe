@@ -15,9 +15,10 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { UserProfileService } from './user-profile.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/user-profiles')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class UserProfileController {
   constructor(private readonly profileService: UserProfileService) {}

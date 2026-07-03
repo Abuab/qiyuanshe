@@ -18,6 +18,7 @@ import { Roles } from '../admin/roles.decorator'
 import { ActivityService } from './activity.service'
 import { CreateActivityDto, UpdateActivityDto } from './dto'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('activities')
 export class ActivityController {
@@ -70,7 +71,7 @@ export class ActivityController {
 }
 
 @Controller('admin/activities')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminActivityController {
   constructor(private readonly activityService: ActivityService) {}
@@ -156,7 +157,7 @@ export class AdminActivityController {
 }
 
 @Controller('admin/signups')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSignupController {
   constructor(private readonly activityService: ActivityService) {}

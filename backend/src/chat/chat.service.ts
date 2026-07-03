@@ -13,6 +13,7 @@ import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 import { resolveAvatarUrl } from '../common/image-url'
+import { ALL_ADMIN_ROLES } from '../shared/enums'
 
 /** Redis Key 前缀：记录每对会话的最后一条消息 ID */
 const LAST_MSG_KEY_PREFIX = 'chat:last_msg_id'
@@ -325,9 +326,9 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       type,
       isRead: 0,
       // 修复 P1：管理员代发时保留 dto 中的代发标记；普通用户强制重置
-      isProxy: currentUser?.role === 'admin' ? (dto.isProxy ?? 0) : 0,
-      proxyBy: currentUser?.role === 'admin' ? (dto.proxyBy ?? null) : null,
-      proxyName: currentUser?.role === 'admin' ? (dto.proxyName ?? null) : null,
+      isProxy: currentUser?.role && ALL_ADMIN_ROLES.includes(currentUser.role) ? (dto.isProxy ?? 0) : 0,
+      proxyBy: currentUser?.role && ALL_ADMIN_ROLES.includes(currentUser.role) ? (dto.proxyBy ?? null) : null,
+      proxyName: currentUser?.role && ALL_ADMIN_ROLES.includes(currentUser.role) ? (dto.proxyName ?? null) : null,
     })
 
     const saved = await this.messageRepository.save(message)

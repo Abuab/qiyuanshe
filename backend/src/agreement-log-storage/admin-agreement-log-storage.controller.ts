@@ -14,13 +14,14 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { AgreementLogStorageService } from './agreement-log-storage.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /**
  * 管理后台：协议日志存储配置 & 日志查询
  */
 @Controller('admin/agreement-log-storage')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 export class AdminAgreementLogStorageController {
   constructor(private readonly service: AgreementLogStorageService) {}
 

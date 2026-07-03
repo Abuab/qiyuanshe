@@ -4,9 +4,10 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminDashboardService } from './dashboard.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/dashboard')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminDashboardController {
   constructor(private readonly dashboardService: AdminDashboardService) {}

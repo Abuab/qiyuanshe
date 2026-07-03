@@ -13,10 +13,11 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { VipService } from '../vip/vip.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /** 管理后台 — VIP 页面内容配置 */
 @Controller('admin/vip-config')
-@Roles('super_admin', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminVipConfigController {
   constructor(private readonly vipService: VipService) {}

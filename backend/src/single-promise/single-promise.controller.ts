@@ -21,6 +21,7 @@ import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 import { SinglePromiseService } from './single-promise.service'
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
@@ -80,7 +81,7 @@ export class SinglePromiseController {
   /** 管理后台：查询列表 */
   @Get('admin/list')
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
-  @Roles('super_admin', 'operator')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async adminList(
     @Query('page') page = 1,
     @Query('pageSize') pageSize = 20,
@@ -97,7 +98,7 @@ export class SinglePromiseController {
   /** 管理后台：审核 */
   @Put('admin/audit/:id')
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
-  @Roles('super_admin', 'operator')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async audit(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { status: number; rejectReason?: string; adminId?: number },

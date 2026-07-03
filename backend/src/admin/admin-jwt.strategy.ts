@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { adminJwtConfig } from '../config/jwt'
+import { ALL_ADMIN_ROLES } from '../shared/enums'
 
 export interface AdminJwtPayload {
   sub: number
@@ -9,8 +10,6 @@ export interface AdminJwtPayload {
   role: string
   type: string
 }
-
-const VALID_ROLES = ['super_admin', 'matchmaker', 'operator', 'readonly', 'admin']
 
 @Injectable()
 export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
@@ -27,7 +26,7 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       throw new UnauthorizedException('无效的管理员令牌')
     }
 
-    if (!VALID_ROLES.includes(payload.role)) {
+    if (!ALL_ADMIN_ROLES.includes(payload.role)) {
       throw new UnauthorizedException('无效的管理员角色')
     }
 

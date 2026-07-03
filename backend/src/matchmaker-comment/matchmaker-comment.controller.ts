@@ -16,6 +16,7 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { MatchmakerCommentService } from './matchmaker-comment.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('matchmaker-comments')
 export class MatchmakerCommentController {
@@ -62,7 +63,7 @@ export class MatchmakerCommentController {
 
 @Controller('admin/matchmaker-comments')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 export class AdminMatchmakerCommentController {
   constructor(private readonly commentService: MatchmakerCommentService) {}
 
@@ -84,7 +85,7 @@ export class AdminMatchmakerCommentController {
   }
 
   @Delete(':id')
-  @Roles('super_admin', 'admin')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.MATCHMAKER)
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.commentService.remove(id)
     return Result.success(null, '删除成功')

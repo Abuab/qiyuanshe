@@ -13,13 +13,14 @@ import { AiProviderCallLog } from '../entities/AiProviderCallLog'
 import { LoadBalanceStrategy } from '../entities/AiProviderConfig'
 import { ProviderConfigInput, SwitchProviderInput } from './ai-provider.types'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /**
  * 管理后台：AI Provider 多源管理接口
  */
 @Controller('admin/ai/provider')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 export class AdminAiProviderController {
   constructor(
     private readonly configService: AiProviderConfigService,

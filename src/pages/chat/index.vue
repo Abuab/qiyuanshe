@@ -705,7 +705,7 @@ const stopPolling = () => {
 
 // ---- VIP ----
 const goToVip = () => { showVipLimit.value = false; uni.switchTab({ url: '/pages/vip/index' }) }
-const goToVipFromMask = () => { uni.navigateTo({ url: '/pages/vip/vip' }) }
+const goToVipFromMask = () => { uni.navigateTo({ url: '/pages/vip/index' }) }
 const closeVipLimit = () => { showVipLimit.value = false }
 
 // ===== 聊天权限检查 =====

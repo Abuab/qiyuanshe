@@ -6,9 +6,10 @@ import { AdminSystemService, SystemConfigs } from './system.service'
 import { NotifyChannelService } from './notify-channel.service'
 import { AiQuotaService, QuotaConfig } from '../ai/ai-quota.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/system')
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSystemController {
   constructor(

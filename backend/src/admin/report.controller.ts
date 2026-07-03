@@ -7,9 +7,10 @@ import { Repository } from 'typeorm'
 import { Report } from '../entities/Report'
 import { User } from '../entities/User'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/reports')
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminReportController {
   constructor(

@@ -15,9 +15,10 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/matchmaker-dynamics')
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminMatchmakerDynamicController {
   constructor(private readonly service: AdminMatchmakerDynamicService) {}

@@ -16,6 +16,7 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminQuestionService } from './question.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 interface QuestionFilter {
   page?: number
@@ -26,7 +27,7 @@ interface QuestionFilter {
 }
 
 @Controller('admin/questions')
-@Roles('super_admin', 'matchmaker', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminQuestionController {
   constructor(private readonly questionService: AdminQuestionService) {}

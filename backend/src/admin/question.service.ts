@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { AdminRole } from '../shared/enums'
 
 interface QuestionFilter {
   page?: number
@@ -39,7 +40,7 @@ export class AdminQuestionService {
     }
 
     // 红娘只能看自己创建的问答
-    if (user && user.role === 'matchmaker') {
+    if (user && user.role === AdminRole.MATCHMAKER) {
       queryBuilder.andWhere('question.creatorId = :creatorId', { creatorId: user.id })
     }
 

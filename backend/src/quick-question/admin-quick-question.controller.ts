@@ -14,13 +14,14 @@ import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { QuickQuestionService } from './quick-question.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 /**
  * 管理后台：快捷问题 & 分类管理
  */
 @Controller('admin/quick-questions')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles('super_admin', 'matchmaker', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 export class AdminQuickQuestionController {
   constructor(private readonly service: QuickQuestionService) {}
 

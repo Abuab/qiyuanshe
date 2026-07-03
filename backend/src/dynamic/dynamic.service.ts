@@ -9,6 +9,7 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
 import { SystemService } from '../system/system.service'
+import { DynamicType } from '../shared/enums'
 
 @Injectable()
 export class DynamicService {
@@ -39,7 +40,7 @@ export class DynamicService {
     type?: string,
   ) {
     // 红娘动态：从 match_records 表查询
-    if (type === 'matchmaker') {
+    if (type === DynamicType.MATCHMAKER) {
       return this.getMatchmakerDynamics(page, limit, currentUserId)
     }
 

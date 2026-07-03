@@ -15,6 +15,7 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminMatchmakerService } from './matchmaker.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 interface MatchmakerFilter {
   page?: number
@@ -24,7 +25,7 @@ interface MatchmakerFilter {
 }
 
 @Controller('admin/matchmakers')
-@Roles('super_admin', 'matchmaker', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminMatchmakerController {
   constructor(private readonly matchmakerService: AdminMatchmakerService) {}

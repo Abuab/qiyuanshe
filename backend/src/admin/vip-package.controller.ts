@@ -15,9 +15,10 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/vip-packages')
-@Roles('super_admin', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class VipPackageController {
   constructor(private readonly service: VipPackageService) {}

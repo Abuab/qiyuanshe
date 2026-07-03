@@ -13,6 +13,7 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { AdminPaymentService } from './payment.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 interface OrderFilter {
   page?: number
@@ -26,7 +27,7 @@ interface OrderFilter {
 }
 
 @Controller('admin/payment')
-@Roles('super_admin', 'operator', 'readonly')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.READONLY)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminPaymentController {
   constructor(private readonly paymentService: AdminPaymentService) {}

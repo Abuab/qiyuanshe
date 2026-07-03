@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
 import { AdminUser } from '../entities/AdminUser'
+import { AdminRole } from '../shared/enums'
 
 @Injectable()
 export class AdminAccountService {
@@ -43,7 +44,7 @@ export class AdminAccountService {
       throw new NotFoundException('子账号不存在')
     }
 
-    if (user.role === 'super_admin') {
+    if (user.role === AdminRole.SUPER_ADMIN) {
       throw new ForbiddenException('无权操作超级管理员账号')
     }
 
@@ -66,7 +67,7 @@ export class AdminAccountService {
     if (!user) {
       throw new NotFoundException('子账号不存在')
     }
-    if (user.role === 'super_admin') {
+    if (user.role === AdminRole.SUPER_ADMIN) {
       throw new ForbiddenException('禁止删除超级管理员账号')
     }
     await this.repo.delete(id)

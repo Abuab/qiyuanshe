@@ -5,6 +5,7 @@ import { Activity } from '../entities/Activity'
 import { ActivitySignup } from '../entities/ActivitySignup'
 import { User } from '../entities/User'
 import { CreateActivityDto, UpdateActivityDto } from './dto'
+import { AdminRole } from '../shared/enums'
 
 interface ActivityFilter {
   page?: number
@@ -173,7 +174,7 @@ export class ActivityService {
     }
 
     // 红娘只能看自己创建的活动
-    if (user && user.role === 'matchmaker') {
+    if (user && user.role === AdminRole.MATCHMAKER) {
       queryBuilder.andWhere('activity.creatorId = :creatorId', { creatorId: user.id })
     }
 

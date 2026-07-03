@@ -17,9 +17,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Notice } from '../entities/Notice'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/notices')
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminNoticeController {
   constructor(

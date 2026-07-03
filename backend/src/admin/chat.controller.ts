@@ -20,9 +20,10 @@ import { AdminChatService } from './chat.service'
 import { ChatMonitorService } from '../chat/chat-monitor.service'
 import { ChatMonitorGateway } from '../chat/chat-monitor.gateway'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/chat')
-@Roles('super_admin', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminChatController {
   constructor(

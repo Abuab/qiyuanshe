@@ -14,9 +14,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Feedback, FeedbackStatus } from '../entities/Feedback'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('admin/feedbacks')
-@Roles('super_admin')
+@Roles(AdminRole.SUPER_ADMIN)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminFeedbackController {
   constructor(

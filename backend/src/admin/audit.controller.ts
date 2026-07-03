@@ -14,6 +14,7 @@ import { Roles } from './roles.decorator'
 import { AdminAuditService } from './audit.service'
 import { NotifyChannelService } from './notify-channel.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 interface AuditFilter {
   page?: number
@@ -25,7 +26,7 @@ interface AuditFilter {
 }
 
 @Controller('admin/audit')
-@Roles('super_admin', 'operator')
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminAuditController {
   constructor(
