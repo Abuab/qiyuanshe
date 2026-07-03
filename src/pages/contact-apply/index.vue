@@ -182,7 +182,7 @@ const unlockedContact = ref('')
 onLoad((options: any) => {
   targetUserId.value = parseInt(options.userId) || 0
   targetNickname.value = decodeURIComponent(options.nickname || '')
-  targetAvatar.value = decodeURIComponent(options.avatar || '') || icons.common.defaultAvatar
+  targetAvatar.value = getFullImageUrl(decodeURIComponent(options.avatar || '')) || icons.common.defaultAvatar
   targetIsRealName.value = options.isRealName === '1'
   targetAge.value = options.age || ''
   targetHeight.value = options.height || ''

@@ -40,6 +40,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { icons } from '@/config/icons'
+import { getFullImageUrl } from '@/utils/common'
 import type { MatchmakerData } from '../matchmaker-popup/matchmaker-popup.vue'
 
 interface Props {
@@ -62,7 +63,7 @@ const failedAvatars = ref<Record<string, true>>({})
 
 const getAvatarUrl = (avatar: string) => {
   if (failedAvatars.value[avatar]) return icons.common.defaultAvatar
-  return avatar || icons.common.defaultAvatar
+  return getFullImageUrl(avatar) || icons.common.defaultAvatar
 }
 
 const onAvatarError = (avatar: string) => {

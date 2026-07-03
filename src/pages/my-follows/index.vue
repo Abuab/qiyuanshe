@@ -37,7 +37,7 @@
         <!-- 列表 -->
         <view v-else>
           <view v-for="item in followingList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || iconConfig.common.defaultAvatar" mode="aspectFill" />
+            <image class="avatar" :src="resolveAvatar(item.avatar || '')" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -62,7 +62,7 @@
         <!-- 列表 -->
         <view v-else>
           <view v-for="item in followerList" :key="item.id" class="follow-card" @tap="goToUser(item.id)">
-            <image class="avatar" :src="item.avatar || iconConfig.common.defaultAvatar" mode="aspectFill" />
+            <image class="avatar" :src="resolveAvatar(item.avatar || '')" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
                 <text class="name">{{ item.nickname || '用户' }}</text>
@@ -86,6 +86,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { get, del } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 import { icons as iconConfig } from '@/config/icons'
@@ -140,6 +141,10 @@ function formatTime(dateStr: string) {
   const h = String(d.getHours()).padStart(2, '0')
   const min = String(d.getMinutes()).padStart(2, '0')
   return `${y}-${m}-${day} ${h}:${min} 关注`
+}
+
+function resolveAvatar(avatar: string) {
+  return getFullImageUrl(avatar) || iconConfig.common.defaultAvatar
 }
 
 function switchTab(tab: 'following' | 'followers') {

@@ -11,7 +11,7 @@
       <view v-if="loading" class="loading">加载中...</view>
       <view v-else-if="comments.length === 0" class="empty">暂无评语</view>
       <view v-for="item in comments" :key="item.id" class="comment-card" @tap="goToUser(item.userId)">
-        <image class="avatar" :src="item.matchmaker?.avatar || icons.common.defaultAvatar" mode="aspectFill" />
+        <image class="avatar" :src="resolveAvatar(item.matchmaker?.avatar || '')" mode="aspectFill" />
         <view class="body">
           <view class="header">
             <text class="name">{{ item.matchmaker?.name || '红娘' }}</text>
@@ -33,6 +33,7 @@ import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { icons } from '@/config/icons'
+import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 
 const systemStore = useSystemStore()
@@ -56,6 +57,7 @@ onMounted(async () => {
 
 function handleBack() { safeNavigateBack() }
 function goToUser(userId: number) { uni.navigateTo({ url: `/pages/user-detail/index?id=${userId}` }) }
+function resolveAvatar(avatar: string) { return getFullImageUrl(avatar) || icons.common.defaultAvatar }
 </script>
 
 <style lang="scss" scoped>
