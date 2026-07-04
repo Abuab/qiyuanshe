@@ -15,7 +15,13 @@ export function normalizeImageUrl(url: string | undefined | null): string {
   // 相对路径、data URI 直接放行
   if (url.startsWith('/') || url.startsWith('data:')) return url
 
-  // HTTPS 域名 URL 放行
+  // 自身域名的 HTTPS URL → 提取路径转为相对路径，确保小程序通过 COS 网关加载
+  const ownBaseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
+  if (ownBaseUrl && url.startsWith(ownBaseUrl)) {
+    return url.slice(ownBaseUrl.length) || '/'
+  }
+
+  // 外部 HTTPS 域名 URL 放行
   if (url.startsWith('https://')) return url
 
   // HTTP IP 地址 URL → 提取路径部分转为相对路径

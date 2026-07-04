@@ -186,6 +186,14 @@ export const getImageUrl = (key: string | null | undefined): string => {
     if (ipMatch) {
       return key.replace(ipMatch[0], serverBase)
     }
+    // 自身域名的 HTTPS URL，提取路径走 COS 网关
+    if (key.startsWith(serverBase)) {
+      const relative = key.slice(serverBase.length)
+      const cleanKey = relative.replace(/^\//, '')
+      const token = secureStorage.getRefreshToken() || getToken()
+      const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
+      return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
+    }
     return key
   }
   // 相对路径：去掉开头的 / 后传给 COS 网关
@@ -207,20 +215,29 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (/picsum\.photos|placeholder\.com|lorempixel/i.test(path)) {
     return icons.common.defaultAvatar
   }
+
+  // 优先使用独立的静态资源域名（CDN/OSS），否则回退到 API 域名
+  const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
+  const serverBase = (viteEnv?.VITE_STATIC_BASE_URL || getServerBaseUrl()).replace(/\/$/, '')
+
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    // 替换旧 IP 地址为当前域名
+    // 替换旧 IP 地址为当前域名后走 COS 网关
     const ipMatch = path.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/)
     if (ipMatch) {
-      return path.replace(ipMatch[0], getServerBaseUrl())
+      return path.replace(ipMatch[0], serverBase)
+    }
+    // 自身域名的 HTTPS URL，提取路径走 COS 网关
+    if (path.startsWith(serverBase)) {
+      const relative = path.slice(serverBase.length)
+      const cleanKey = relative.replace(/^\//, '')
+      const token = secureStorage.getRefreshToken() || getToken()
+      const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
+      return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
     }
     return path
   }
   if (path.startsWith('/static/')) return path
   if (path.startsWith('data:')) return path
-
-  // 优先使用独立的静态资源域名（CDN/OSS），否则回退到 API 域名
-  const viteEnv = (import.meta as unknown as Record<string, Record<string, string>>).env
-  const serverBase = (viteEnv?.VITE_STATIC_BASE_URL || getServerBaseUrl()).replace(/\/$/, '')
 
   // 相对路径走 COS 网关
   const cleanKey = path.replace(/^\//, '')
