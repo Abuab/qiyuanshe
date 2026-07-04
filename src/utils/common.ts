@@ -197,7 +197,12 @@ export const getImageUrl = (key: string | null | undefined): string => {
     return key
   }
   // 相对路径：去掉开头的 / 后传给 COS 网关
-  const cleanKey = key.replace(/^\//, '')
+  let cleanKey = key.replace(/^\//, '')
+  // 如果相对路径本身是 COS 代理 URL（双层嵌套），提取原始 key
+  const cosNestedMatch = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
+  if (cosNestedMatch) {
+    cleanKey = decodeURIComponent(cosNestedMatch[1]).replace(/^\//, '')
+  }
   // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
   const token = secureStorage.getRefreshToken() || getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
@@ -240,7 +245,12 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (path.startsWith('data:')) return path
 
   // 相对路径走 COS 网关
-  const cleanKey = path.replace(/^\//, '')
+  let cleanKey = path.replace(/^\//, '')
+  // 如果相对路径本身是 COS 代理 URL（双层嵌套），提取原始 key
+  const cosNestedMatch = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
+  if (cosNestedMatch) {
+    cleanKey = decodeURIComponent(cosNestedMatch[1]).replace(/^\//, '')
+  }
   // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
   const token = secureStorage.getRefreshToken() || getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''

@@ -22,7 +22,10 @@ export const AppDataSource = new DataSource({
   password: options.password || process.env.DB_PASSWORD || '',
   database: options.database || process.env.DB_DATABASE || 'qiyuanshe',
   entities: options.entities || [__dirname + '/../entities/*{.ts,.js}'],
-  migrations: [__dirname + '/../../migrations/*{.ts,.js}'],
+  migrations: [
+    __dirname + '/../migrations/*.js',       // 生产: dist/migrations/*.js (编译后)
+    __dirname + '/../../migrations/*.ts',    // 开发: migrations/*.ts (ts-node)
+  ],
   synchronize: false, // Migration 模式下强制关闭 synchronize
   charset: 'utf8mb4',
   timezone: '+08:00',

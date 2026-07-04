@@ -4,6 +4,19 @@
  *
  * 新上传的图片后端已存为相对路径，此函数对相对路径和域名 URL 透传不做处理。
  */
+
+/**
+ * 检测 COS 代理 URL 并提取原始文件 key（防止双层嵌套）
+ * /api/cos/image?key=uploads/xxx.jpg → /uploads/xxx.jpg
+ * 若非 COS 代理 URL 返回 null
+ */
+function extractCosProxyKey(pathOrUrl: string): string | null {
+  const match = pathOrUrl.match(/\/api\/cos\/image\?key=([^&]+)/)
+  if (!match) return null
+  const rawKey = decodeURIComponent(match[1])
+  return rawKey.startsWith('/') ? rawKey : '/' + rawKey
+}
+
 export function normalizeImageUrl(url: string | undefined | null): string {
   if (!url) return ''
 
@@ -13,12 +26,21 @@ export function normalizeImageUrl(url: string | undefined | null): string {
   }
 
   // 相对路径、data URI 直接放行
-  if (url.startsWith('/') || url.startsWith('data:')) return url
+  if (url.startsWith('/') || url.startsWith('data:')) {
+    // 如果相对路径是 COS 代理 URL（数据库存储了完整代理 URL），提取原始 key
+    const key = extractCosProxyKey(url)
+    if (key) return key
+    return url
+  }
 
   // 自身域名的 HTTPS URL → 提取路径转为相对路径，确保小程序通过 COS 网关加载
   const ownBaseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
   if (ownBaseUrl && url.startsWith(ownBaseUrl)) {
-    return url.slice(ownBaseUrl.length) || '/'
+    const relative = url.slice(ownBaseUrl.length) || '/'
+    // 如果剥离域名后是 COS 代理 URL，提取原始 key
+    const key = extractCosProxyKey(relative)
+    if (key) return key
+    return relative
   }
 
   // 外部 HTTPS 域名 URL 放行
@@ -27,7 +49,11 @@ export function normalizeImageUrl(url: string | undefined | null): string {
   // HTTP IP 地址 URL → 提取路径部分转为相对路径
   const ipMatch = url.match(/https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?(\/.+)/)
   if (ipMatch) {
-    return ipMatch[2] // 路径部分，如 /uploads/xxx.png
+    const relative = ipMatch[2]
+    // IP 地址的 COS 代理 URL 也要提取 key
+    const key = extractCosProxyKey(relative)
+    if (key) return key
+    return relative
   }
 
   // 其他 HTTP URL（非 IP）直接放行

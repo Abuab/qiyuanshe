@@ -33,7 +33,6 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # 复制编译产物
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nestjs:nodejs /app/migrations ./migrations
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 
