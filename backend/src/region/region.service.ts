@@ -25,51 +25,57 @@ export class RegionService implements OnModuleInit {
     await this.loadRegions()
   }
 
+  /**
+   * 从数据库加载省/市/区数据到内存 Map，替代 require('china-division')。
+   * china-division 包高达 182MB（含 villages.json 81MB），
+   * require 整个包会导致堆内存暴涨 OOM。数据库已有 RegionSeedService 播种的相同数据。
+   */
   private async loadRegions() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const data = require('china-division') as {
-      provinces: { code: string; name: string }[]
-      cities: { code: string; name: string; provinceCode: string }[]
-      areas: { code: string; name: string; cityCode: string; provinceCode: string }[]
-    }
+    try {
+      // 仅加载省/市/区（DB level 1-3），不加载街道（level 4，按需从 DB 查询）
+      const regions = await this.addressRegionRepo.find({
+        where: [{ level: 1 }, { level: 2 }, { level: 3 }],
+        order: { id: 'ASC' },
+      })
 
-    const hasChildrenMap = new Map<number, boolean>()
+      if (regions.length === 0) {
+        // 数据库尚未播种（首次启动时 RegionSeedService 可能尚未执行）
+        return
+      }
 
-    // 省份 (level=0)
-    for (const p of data.provinces) {
-      const id = parseInt(p.code, 10)
-      const list = this.regionsByParent.get(0) || []
-      list.push({ id, name: p.name, level: 0, code: p.code, hasChildren: true })
-      this.regionsByParent.set(0, list)
-    }
+      const hasChildrenMap = new Map<number, boolean>()
 
-    // 城市 (level=1)
-    for (const c of data.cities) {
-      const id = parseInt(c.code, 10)
-      const parentId = parseInt(c.provinceCode, 10)
-      const list = this.regionsByParent.get(parentId) || []
-      list.push({ id, name: c.name, level: 1, code: c.code, hasChildren: true })
-      this.regionsByParent.set(parentId, list)
-    }
+      for (const r of regions) {
+        const parentId = r.parentId || 0
+        // DB level: 1=省→0, 2=市→1, 3=区→2（与旧 china-division 代码的 level 约定对齐）
+        const memLevel = r.level - 1
 
-    // 区县 (level=2)
-    for (const a of data.areas) {
-      const id = parseInt(a.code, 10)
-      const parentId = parseInt(a.cityCode, 10)
-      const list = this.regionsByParent.get(parentId) || []
-      // 区县数据：标记为可能有子级（街道），后续由数据库查询判断
-      list.push({ id, name: a.name, level: 2, code: a.code, hasChildren: true })
-      this.regionsByParent.set(parentId, list)
-      hasChildrenMap.set(parentId, true)
-    }
+        const list = this.regionsByParent.get(parentId) || []
+        list.push({
+          id: r.id,
+          name: r.name,
+          level: memLevel,
+          code: r.code,
+          hasChildren: true, // 默认 true，后续修正
+        })
+        this.regionsByParent.set(parentId, list)
 
-    // 修正：没有 areas 的城市标记 hasChildren=false（直辖市等特殊情况）
-    for (const [, list] of this.regionsByParent) {
-      for (const item of list) {
-        if (item.level === 1 && !hasChildrenMap.has(item.id)) {
-          item.hasChildren = false
+        // 区级数据标记其父级（市）有子节点
+        if (r.level === 3) {
+          hasChildrenMap.set(parentId, true)
         }
       }
+
+      // 修正：没有子区县的城市标记 hasChildren=false
+      for (const [, list] of this.regionsByParent) {
+        for (const item of list) {
+          if (item.level === 1 && !hasChildrenMap.has(item.id)) {
+            item.hasChildren = false
+          }
+        }
+      }
+    } catch (error: any) {
+      console.warn(`[RegionService] 加载行政区划数据失败: ${error?.message || error}`)
     }
   }
 
