@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import { icons } from '@/config/icons'
 import { getServerBaseUrl } from './request'
 import { getToken } from './auth'
+import { secureStorage } from './crypto'
 
 export const formatDate = (date: string | Date | number, format: string = 'YYYY-MM-DD'): string => {
   if (!date) return ''
@@ -189,7 +190,8 @@ export const getImageUrl = (key: string | null | undefined): string => {
   }
   // 相对路径：去掉开头的 / 后传给 COS 网关
   const cleanKey = key.replace(/^\//, '')
-  const token = getToken()
+  // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
+  const token = secureStorage.getRefreshToken() || getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }
@@ -222,7 +224,8 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
 
   // 相对路径走 COS 网关
   const cleanKey = path.replace(/^\//, '')
-  const token = getToken()
+  // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
+  const token = secureStorage.getRefreshToken() || getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }

@@ -50,7 +50,9 @@ export class CosController {
     } else if (token && typeof token === 'string') {
       try {
         const payload = this.jwtService.verify(token)
-        if (payload && payload.sub && payload.type === 'access') {
+        // 接受 access token（15min）和 refresh token（7d），
+        // 因为图片 URL 嵌入在页面中无法随 access token 自动刷新
+        if (payload && payload.sub && (payload.type === 'access' || payload.type === 'refresh')) {
           userId = payload.sub
         }
       } catch {
