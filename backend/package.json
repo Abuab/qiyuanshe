@@ -44,7 +44,8 @@
     "rxjs": "^7.8.1",
     "speakeasy": "^2.0.0",
     "svg-captcha": "^1.4.0",
-    "tencentcloud-sdk-nodejs": "^4.1.239",
+    "tencentcloud-sdk-nodejs-ims": "^4.1.257",
+    "tencentcloud-sdk-nodejs-tms": "^4.1.257",
     "typeorm": "^0.3.19",
     "ws": "^8.21.0"
   },

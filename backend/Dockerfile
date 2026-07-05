@@ -10,13 +10,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # 安装依赖（包括开发依赖，用于编译 TypeScript）
-RUN npm install
+RUN npm ci
 
 # 复制源代码
 COPY . .
 
 # 编译 TypeScript
 RUN npm run build
+
+# 删除开发依赖，减小生产镜像体积
+RUN npm prune --omit=dev
 
 # 生产阶段镜像
 FROM node:20-alpine AS production

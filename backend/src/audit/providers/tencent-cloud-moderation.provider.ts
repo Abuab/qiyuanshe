@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common'
-import * as tencentcloud from 'tencentcloud-sdk-nodejs'
+import * as tmsSdk from 'tencentcloud-sdk-nodejs-tms'
+import * as imsSdk from 'tencentcloud-sdk-nodejs-ims'
 
-const Tms = tencentcloud.tms.v20201229
-const Ims = tencentcloud.ims.v20201229
+const TmsModule = (tmsSdk as any).tms || tmsSdk
+const ImsModule = (imsSdk as any).ims || imsSdk
+const TmsClient = TmsModule.v20201229.Client
+const ImsClient = ImsModule.v20201229.Client
 
 export type ModerationResult = 'pass' | 'reject' | 'review'
 
@@ -45,8 +48,8 @@ export class TencentCloudModerationProvider {
       region: this.region,
     }
 
-    this.textClient = new Tms.Client(clientConfig)
-    this.imageClient = new Ims.Client(clientConfig)
+    this.textClient = new TmsClient(clientConfig)
+    this.imageClient = new ImsClient(clientConfig)
   }
 
   async moderateText(text: string): Promise<TextModerationResponse> {
