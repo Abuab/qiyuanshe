@@ -48,6 +48,9 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   /** 定时刷新敏感词库的定时器 ID */
   private sensitiveWordsRefreshTimer: ReturnType<typeof setInterval> | null = null
 
+  /** 定时清理 messageCountCache 过期条目的定时器 ID */
+  private messageCountCacheCleanupTimer: ReturnType<typeof setInterval> | null = null
+
   /** 硬编码兜底敏感词库（文件不存在时使用） */
   private static readonly FALLBACK_KEYWORDS: string[] = [
     // ===== 脏话/辱骂 =====
@@ -90,6 +93,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         console.warn('[ChatService] 定时刷新敏感词库失败:', e?.message)
       })
     }, REFRESH_INTERVAL_MS)
+
+    // 每 1 小时清理 messageCountCache 中过期条目，防止内存泄露
+    const CACHE_CLEANUP_INTERVAL_MS = 60 * 60 * 1000
+    this.messageCountCacheCleanupTimer = setInterval(() => {
+      this.cleanupMessageCountCache()
+    }, CACHE_CLEANUP_INTERVAL_MS)
   }
 
   onModuleDestroy() {
@@ -97,6 +106,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       clearInterval(this.sensitiveWordsRefreshTimer)
       this.sensitiveWordsRefreshTimer = null
     }
+    if (this.messageCountCacheCleanupTimer) {
+      clearInterval(this.messageCountCacheCleanupTimer)
+      this.messageCountCacheCleanupTimer = null
+    }
+    this.messageCountCache.clear()
+    this.perMatchCountCache.clear()
   }
 
   /**
@@ -831,5 +846,22 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     this.messageCountCache.set(cacheKey, { count, date: today })
 
     return count
+  }
+
+  /**
+   * 定时清理 messageCountCache 中非今天的过期条目，防止内存泄露
+   */
+  private cleanupMessageCountCache(): void {
+    const today = new Date().toISOString().split('T')[0]
+    let removed = 0
+    for (const [key, entry] of this.messageCountCache) {
+      if (entry.date !== today) {
+        this.messageCountCache.delete(key)
+        removed++
+      }
+    }
+    if (removed > 0) {
+      console.log(`[ChatService] messageCountCache 清理了 ${removed} 条过期记录，当前缓存 ${this.messageCountCache.size} 条`)
+    }
   }
 }
