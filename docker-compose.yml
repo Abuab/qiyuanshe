@@ -118,7 +118,10 @@ services:
       NODE_ENV: production
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
       CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
-      NODE_OPTIONS: --max-old-space-size=512
+      # 堆上限提升到 768MB（容器 mem_limit 1280m，为非堆内存/缓冲区预留约 512MB）
+      # 原 512MB 对本应用（30+ 模块 + TypeORM + WebSocket + AI + DFA 过滤器）过小，
+      # 运行约 23 分钟后堆逼近上限触发颠簸式 GC（日志 mu≈0.008）最终 OOM。
+      NODE_OPTIONS: --max-old-space-size=768
     volumes:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
       - ./data/uploads:/app/uploads
@@ -139,7 +142,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    mem_limit: 1024m
+    mem_limit: 1280m
     cpus: 0.5
 
   # ============ 管理后台 ============

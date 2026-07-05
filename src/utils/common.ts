@@ -189,7 +189,10 @@ export const getImageUrl = (key: string | null | undefined): string => {
     // 自身域名的 HTTPS URL，提取路径走 COS 网关
     if (key.startsWith(serverBase)) {
       const relative = key.slice(serverBase.length)
-      const cleanKey = relative.replace(/^\//, '')
+      let cleanKey = relative.replace(/^\//, '')
+      // 若本身已是 COS 代理 URL（双层嵌套），提取原始 key，保证幂等
+      const nested = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
+      if (nested) cleanKey = decodeURIComponent(nested[1]).replace(/^\//, '')
       const token = secureStorage.getRefreshToken() || getToken()
       const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
       return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
@@ -234,7 +237,10 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
     // 自身域名的 HTTPS URL，提取路径走 COS 网关
     if (path.startsWith(serverBase)) {
       const relative = path.slice(serverBase.length)
-      const cleanKey = relative.replace(/^\//, '')
+      let cleanKey = relative.replace(/^\//, '')
+      // 若本身已是 COS 代理 URL（双层嵌套），提取原始 key，保证幂等
+      const nested = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
+      if (nested) cleanKey = decodeURIComponent(nested[1]).replace(/^\//, '')
       const token = secureStorage.getRefreshToken() || getToken()
       const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
       return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
