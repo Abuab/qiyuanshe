@@ -35,7 +35,7 @@ export class PaymentController {
     if (!(await this.systemService.isVipEnabled())) {
       return Result.success(null, '功能维护中，请稍后再试')
     }
-    const result = await this.paymentService.createOrder(req.user.userId, dto)
+    const result = await this.paymentService.createOrder(req.user.id, dto)
     return { success: true, orderNo: result.orderNo, payParams: result.payParams }
   }
 
@@ -63,21 +63,21 @@ export class PaymentController {
     if (!(await this.systemService.isVipEnabled())) {
       return Result.success(null, '功能维护中，请稍后再试')
     }
-    await this.paymentService.mockPay(orderNo, req.user.userId)
+    await this.paymentService.mockPay(orderNo, req.user.id)
     return { success: true, message: '支付成功（测试模式）' }
   }
 
   @Get('orders')
   @UseGuards(JwtAuthGuard)
   async getOrders(@Query() query: QueryOrdersDto, @Request() req: any) {
-    const result = await this.paymentService.getOrders(req.user.userId, query.page, query.limit)
+    const result = await this.paymentService.getOrders(req.user.id, query.page, query.limit)
     return { success: true, ...result }
   }
 
   @Get('orders/:orderNo')
   @UseGuards(JwtAuthGuard)
   async getOrderByNo(@Param('orderNo') orderNo: string, @Request() req: any) {
-    const result = await this.paymentService.getOrderByNo(orderNo, req.user.userId)
+    const result = await this.paymentService.getOrderByNo(orderNo, req.user.id)
     return { success: true, data: result }
   }
 }

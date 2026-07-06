@@ -44,7 +44,7 @@ export class MatchmakerCommentController {
     @Body() body: { userId: number; content: string; rating: number },
   ) {
     const comment = await this.commentService.create({
-      matchmakerId: req.user.userId,
+      matchmakerId: req.user.id,
       userId: body.userId,
       content: body.content,
       rating: body.rating || 5,

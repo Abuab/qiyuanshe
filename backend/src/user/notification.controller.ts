@@ -19,14 +19,14 @@ export class UserNotificationController {
     const l = parseInt(limit as string, 10) || 20
 
     const [list, total] = await this.repo.findAndCount({
-      where: { userId: req.user.userId },
+      where: { userId: req.user.id },
       order: { createdAt: 'DESC' },
       skip: (p - 1) * l,
       take: l,
     })
 
     const unreadCount = await this.repo.count({
-      where: { userId: req.user.userId, isRead: 0 },
+      where: { userId: req.user.id, isRead: 0 },
     })
 
     return Result.success({
@@ -46,7 +46,7 @@ export class UserNotificationController {
   @Put(':id/read')
   async markAsRead(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     await this.repo.update(
-      { id, userId: req.user.userId },
+      { id, userId: req.user.id },
       { isRead: 1 },
     )
     return Result.success(null, '已读')
@@ -55,7 +55,7 @@ export class UserNotificationController {
   @Put('read-all')
   async markAllAsRead(@Request() req: any) {
     await this.repo.update(
-      { userId: req.user.userId, isRead: 0 },
+      { userId: req.user.id, isRead: 0 },
       { isRead: 1 },
     )
     return Result.success(null, '全部已读')
@@ -63,7 +63,7 @@ export class UserNotificationController {
 
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
-    await this.repo.delete({ id, userId: req.user.userId })
+    await this.repo.delete({ id, userId: req.user.id })
     return Result.success(null, '已删除')
   }
 }

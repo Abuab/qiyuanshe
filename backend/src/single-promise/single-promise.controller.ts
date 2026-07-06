@@ -37,7 +37,7 @@ export class SinglePromiseController {
   @Get('status')
   @UseGuards(JwtAuthGuard)
   async getStatus(@Request() req: any) {
-    const userId = req.user.userId || req.user.sub
+    const userId = req.user.id || req.user.sub
     const data = await this.spService.getStatus(userId)
     return Result.success(data)
   }
@@ -69,7 +69,7 @@ export class SinglePromiseController {
     @Request() req: any,
     @UploadedFile() file: any,
   ) {
-    const userId = req.user.userId || req.user.sub
+    const userId = req.user.id || req.user.sub
     if (!file) {
       return Result.error('请上传签名图片')
     }

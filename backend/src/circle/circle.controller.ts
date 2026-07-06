@@ -63,7 +63,7 @@ export class CircleController {
   ) {
     const post = await this.circleService.createPost({
       circleId: body.circleId,
-      userId: req.user.userId,
+      userId: req.user.id,
       content: body.content,
       images: body.images || [],
     })

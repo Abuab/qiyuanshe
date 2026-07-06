@@ -53,7 +53,7 @@ export class DynamicController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ) {
-    const result = await this.dynamicService.toggleLike(id, req.user.userId)
+    const result = await this.dynamicService.toggleLike(id, req.user.id)
     return { success: true, ...result }
   }
 

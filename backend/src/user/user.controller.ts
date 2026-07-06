@@ -112,7 +112,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Body() dto: UpdateProfileDto, @Request() req: any) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       const user = await this.userService.updateProfile(userId, dto)
       return Result.success(user, '保存成功')
     } catch (error: any) {
@@ -126,7 +126,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async submitProfileReview(@Body() body: any, @Request() req: any) {
     // 创建审核记录到 audit_logs 表
-    const userId = req.user.userId
+    const userId = req.user.id
     const auditLog = this.auditLogRepo.create({
       action: 'PENDING',
       targetType: 'user',
@@ -141,7 +141,7 @@ export class UserController {
   @Post('avatar-review')
   @UseGuards(JwtAuthGuard)
   async submitAvatarReview(@Body() body: { avatarUrl: string }, @Request() req: any) {
-    const userId = req.user.userId
+    const userId = req.user.id
 
     // ===== 修改点 B：头像上传限流（Redis 计数器，每天 10 次） =====
     if (this.redisService) {
@@ -185,7 +185,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async getUserAnswers(@Request() req: any) {
     const answers = await this.answerRepo.find({
-      where: { userId: req.user.userId },
+      where: { userId: req.user.id },
       relations: ['question'],
       order: { createdAt: 'DESC' },
     })
@@ -209,7 +209,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   async getUserPhotos(@Request() req: any) {
     const photos = await this.photoRepo.find({
-      where: { userId: req.user.userId },
+      where: { userId: req.user.id },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
     })
     return Result.success({
@@ -226,7 +226,7 @@ export class UserController {
     @Body() body: { url: string },
     @Request() req: any,
   ) {
-    const userId = req.user.userId
+    const userId = req.user.id
 
     // ===== 修改点 A：照片上传限流（Redis 计数器，每天 50 张） =====
     if (this.redisService) {
@@ -296,7 +296,7 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ) {
-    const userId = req.user.userId
+    const userId = req.user.id
     await this.photoRepo.update({ userId, isMain: 1 }, { isMain: 0 })
     await this.photoRepo.update({ id, userId }, { isMain: 1 })
 
@@ -316,7 +316,7 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ) {
-    const userId = req.user.userId
+    const userId = req.user.id
     const photo = await this.photoRepo.findOne({ where: { id, userId } })
     if (!photo) return Result.serverError('照片不存在')
     await this.photoRepo.remove(photo)
@@ -332,7 +332,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
-    return this.userService.getFollowing(req.user.userId, page, limit)
+    return this.userService.getFollowing(req.user.id, page, limit)
   }
 
   @Get('followers')
@@ -342,7 +342,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
-    return this.userService.getFollowers(req.user.userId, page, limit)
+    return this.userService.getFollowers(req.user.id, page, limit)
   }
 
   // ===== 谁看过我（访客列表） =====
@@ -354,7 +354,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
-    return this.userService.getMyVisitorsWithCount(req.user.userId, page, limit)
+    return this.userService.getMyVisitorsWithCount(req.user.id, page, limit)
   }
 
   // ===== 我看过谁（浏览记录） =====
@@ -366,7 +366,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
-    return this.userService.getMyViews(req.user.userId, page, limit)
+    return this.userService.getMyViews(req.user.id, page, limit)
   }
 
   // ===== 注销账户 =====
@@ -374,21 +374,21 @@ export class UserController {
   @Put('deactivate')
   @UseGuards(JwtAuthGuard)
   async deactivateAccount(@Request() req: any) {
-    await this.userService.deactivateAccount(req.user.userId)
+    await this.userService.deactivateAccount(req.user.id)
     return Result.success(null, '账户已注销')
   }
 
   @Post('cancel')
   @UseGuards(JwtAuthGuard)
   async cancelAccount(@Request() req: any) {
-    await this.userService.cancelAccount(req.user.userId)
+    await this.userService.cancelAccount(req.user.id)
     return Result.success(null, '账户已注销')
   }
 
   @Get('matches')
   @UseGuards(JwtAuthGuard)
   async getMatches(@Request() req: any) {
-    const userId = req.user.userId
+    const userId = req.user.id
     const records = await this.matchRecordRepo.find({
       where: { userId },
       relations: ['matchedUser'],
@@ -409,14 +409,14 @@ export class UserController {
   @Get('stats')
   @UseGuards(JwtAuthGuard)
   async getMyStats(@Request() req: any) {
-    return this.userService.getUserStats(req.user.userId)
+    return this.userService.getUserStats(req.user.id)
   }
 
   /** 获取我的黑名单列表 */
   @Get('my-blocks')
   @UseGuards(JwtAuthGuard)
   async getMyBlocks(@Request() req: any) {
-    const userId = req.user.userId
+    const userId = req.user.id
     const blocks = await this.blockRepo
       .createQueryBuilder('b')
       .leftJoinAndSelect('b.blockedUser', 'u')
@@ -449,7 +449,7 @@ export class UserController {
     @Query('type') type: string = 'liked',
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       if (!['liked', 'likedBy', 'mutual'].includes(type)) {
         return Result.serverError('type 参数必须为 liked / likedBy / mutual')
       }
@@ -543,7 +543,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       await this.userService.followUser(userId, targetUserId)
       return Result.success(null, '关注成功')
     } catch (error: any) {
@@ -560,7 +560,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       await this.userService.unfollowUser(userId, targetUserId)
       return Result.success(null, '取消关注成功')
     } catch (error: any) {
@@ -577,7 +577,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       if (userId === targetUserId) return Result.serverError('不能喜欢自己')
 
       await this.followRepo.manager.transaction(async (manager) => {
@@ -610,7 +610,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       await this.followRepo.delete({ userId, targetUserId })
       return Result.success(null)
     } catch (error: any) {
@@ -626,7 +626,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const blockerId = req.user.userId
+      const blockerId = req.user.id
       if (blockerId === blockedUserId) return Result.serverError('不能拉黑自己')
       const exists = await this.blockRepo.findOne({ where: { blockerId, blockedUserId } })
       if (exists) return Result.success(null, '已拉黑')
@@ -646,7 +646,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const blockerId = req.user.userId
+      const blockerId = req.user.id
       await this.blockRepo.delete({ blockerId, blockedUserId })
       return Result.success(null, '已移出黑名单')
     } catch (error: any) {
@@ -661,7 +661,7 @@ export class UserController {
     @Request() req: any,
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       const result = await this.userService.getFollowStatus(userId, targetUserId)
       return Result.success(result)
     } catch (error: any) {
@@ -696,7 +696,7 @@ export class UserController {
     @Request() req: any,
   ) {
     const report = this.reportRepo.create({
-      reporterId: req.user.userId,
+      reporterId: req.user.id,
       targetId: body.targetId,
       type: body.type as ReportType,
       reason: body.reason as ReportReason,
@@ -714,7 +714,7 @@ export class UserController {
     @Body() body: { agreementType: string; version: string; action: string },
     @Request() req: any,
   ) {
-    const userId = req.user.userId
+    const userId = req.user.id
     const ip = req.headers['x-forwarded-for'] || req.ip || ''
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
     const userAgent = (req.headers['user-agent'] || '') as string

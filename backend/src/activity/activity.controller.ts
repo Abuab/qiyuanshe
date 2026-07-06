@@ -51,7 +51,7 @@ export class ActivityController {
     @Body() data: { realName?: string; phone?: string; remark?: string },
   ) {
     try {
-      const userId = req.user.userId
+      const userId = req.user.id
       const result = await this.activityService.signup(id, userId, data)
       return Result.success(result, '报名成功')
     } catch (error: any) {

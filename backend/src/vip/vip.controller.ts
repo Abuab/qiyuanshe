@@ -41,7 +41,7 @@ export class VipController {
     }
     try {
       const result = await this.vipService.createOrder(
-        req.user.userId, packageId, payType,
+        req.user.id, packageId, payType,
       )
       return Result.success(result, '订单创建成功')
     } catch (error: any) {
@@ -76,7 +76,7 @@ export class VipController {
   @Get('top-card/status')
   @UseGuards(JwtAuthGuard)
   async getTopCardStatus(@Request() req: any) {
-    return Result.success(await this.vipService.getTopCardStatus(req.user.userId))
+    return Result.success(await this.vipService.getTopCardStatus(req.user.id))
   }
 
   /** 使用置顶卡 */
@@ -87,7 +87,7 @@ export class VipController {
       return Result.success(null, '功能维护中，请稍后再试')
     }
     try {
-      const result = await this.vipService.useTopCard(req.user.userId)
+      const result = await this.vipService.useTopCard(req.user.id)
       return Result.success(result, '置顶成功')
     } catch (error: any) {
       return Result.serverError(error?.message || '置顶失败')
@@ -120,7 +120,7 @@ export class VipController {
   @Get('red-line/status')
   @UseGuards(JwtAuthGuard)
   async getRedLineStatus(@Request() req: any) {
-    return Result.success(await this.vipService.getRedLineStatus(req.user.userId))
+    return Result.success(await this.vipService.getRedLineStatus(req.user.id))
   }
 
   /** 使用红线索解锁目标用户联系方式 */
@@ -134,7 +134,7 @@ export class VipController {
       return Result.success(null, '功能维护中，请稍后再试')
     }
     try {
-      const result = await this.vipService.useRedLine(req.user.userId, targetUserId)
+      const result = await this.vipService.useRedLine(req.user.id, targetUserId)
       return Result.success(result, result.alreadyUnlocked ? '您已解锁过该用户' : '解锁成功')
     } catch (error: any) {
       return Result.serverError(error?.message || '解锁失败')

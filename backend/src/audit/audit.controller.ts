@@ -48,7 +48,7 @@ export class AuditController {
   @Post(':type/:id/approve')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async approve(@Param('type') type: string, @Param('id', ParseIntPipe) id: number, @Body() dto: ApproveAuditDto, @Request() req: any) {
-    dto.adminId = req.user.userId
+    dto.adminId = req.user.id
     const result = await this.auditService.approve(type, id, dto)
 
     return {
@@ -60,7 +60,7 @@ export class AuditController {
   @Post(':type/:id/reject')
   @UseGuards(JwtAuthGuard, AdminGuard)
   async reject(@Param('type') type: string, @Param('id', ParseIntPipe) id: number, @Body() dto: RejectAuditDto, @Request() req: any) {
-    dto.adminId = req.user.userId
+    dto.adminId = req.user.id
     const result = await this.auditService.reject(type, id, dto)
 
     return {

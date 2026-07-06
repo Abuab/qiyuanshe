@@ -26,7 +26,7 @@ export class PosterController {
     @Body() dto: GeneratePosterDto,
     @Request() req: any,
   ) {
-    const userId = dto.userId || req.user.userId
+    const userId = dto.userId || req.user.id
     const templateId = dto.templateId || 1
 
     const posterUrl = this.posterService.generatePosterUrl(userId, templateId)
@@ -54,7 +54,7 @@ export class PosterController {
   @Get('stats')
   @UseGuards(JwtAuthGuard)
   async getPromotionStats(@Request() req: any) {
-    const userId = req.user.userId
+    const userId = req.user.id
     return this.posterService.getPromotionStats(userId)
   }
 

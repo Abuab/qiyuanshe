@@ -71,7 +71,7 @@ export class QuestionController {
     try {
       const answer = await this.questionService.createAnswer(
         id,
-        req.user.userId,
+        req.user.id,
         dto.content,
         dto.photos || [],
       )
@@ -103,7 +103,7 @@ export class QuestionController {
     try {
       const result = await this.questionService.likeAnswer(
         answerId,
-        req.user.userId,
+        req.user.id,
       )
 
       return {
@@ -134,7 +134,7 @@ export class AnswerController {
     try {
       const result = await this.questionService.likeAnswer(
         id,
-        req.user.userId,
+        req.user.id,
       )
 
       return {
