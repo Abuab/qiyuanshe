@@ -47,7 +47,7 @@
             mode="aspectFill"
           />
           <view class="like-info">
-            <text class="like-nickname">{{ item.nickname }}</text>
+            <text class="like-nickname">{{ item.displayName || item.nickname }}</text>
             <text class="like-meta" v-if="item.age || item.location">
               {{ [item.age ? item.age + '岁' : '', item.location || ''].filter(Boolean).join(' · ') }}
             </text>
@@ -87,6 +87,7 @@ const systemStore = useSystemStore()
 interface LikeUser {
   id: number
   nickname: string
+  displayName?: string
   avatar: string
   location?: string
   age?: number

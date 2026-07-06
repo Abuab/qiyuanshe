@@ -13,6 +13,7 @@ import { SystemService } from '../system/system.service'
 import { RecommendService, RecommendFilters } from './recommend.service'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
+import { getDisplayName } from '../common/user-utils'
 import { AiVoiceService } from '../ai/ai-voice.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 
@@ -26,7 +27,9 @@ export interface PaginatedResult<T> {
 
 export interface UserListItem {
   id: number
+  userId: string
   nickname: string
+  displayName: string
   avatar: string
   age: number
   height: number
@@ -105,6 +108,27 @@ export class UserService {
    */
   async onProfileUpdated(userId: number): Promise<void> {
     await this.recommendService.invalidateUserCache(userId)
+  }
+
+  /**
+   * 生成 6 位唯一数字 userId（范围 100000~999999）
+   */
+  async generateUserId(): Promise<string> {
+    const MAX_RETRIES = 10
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const num = Math.floor(Math.random() * 900000) + 100000
+      const userId = String(num)
+      const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
+      if (!exists) return userId
+    }
+    // 6位池接近耗尽，扩展到7位
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const num = Math.floor(Math.random() * 9000000) + 1000000
+      const userId = String(num)
+      const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
+      if (!exists) return userId
+    }
+    throw new Error('无法生成唯一 userId，ID池已耗尽')
   }
 
   async filterUsers(
@@ -217,7 +241,9 @@ export class UserService {
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
+      userId: user.userId || '',
       nickname: user.nickname,
+      displayName: getDisplayName(user.nickname, user.userId),
       avatar: user.avatar || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
@@ -292,6 +318,7 @@ export class UserService {
       isFollowed: boolean
       isSelf: boolean
       introText: string
+      displayName: string
     }
   }> {
     const user = await this.userRepository.findOne({
@@ -352,7 +379,9 @@ export class UserService {
     return {
       user: {
         id: user.id,
+        userId: user.userId || '',
         nickname: user.nickname,
+        displayName: getDisplayName(user.nickname, user.userId),
         avatar: user.avatar,
         gender: user.gender,
         birthYear: user.birthYear,
@@ -492,7 +521,9 @@ export class UserService {
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
+      userId: user.userId || '',
       nickname: user.nickname,
+      displayName: getDisplayName(user.nickname, user.userId),
       avatar: user.avatar || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
@@ -568,7 +599,9 @@ export class UserService {
 
     const list: UserListItem[] = users.map((user) => ({
       id: user.id,
+      userId: user.userId || '',
       nickname: user.nickname,
+      displayName: getDisplayName(user.nickname, user.userId),
       avatar: user.avatar || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
@@ -853,7 +886,9 @@ export class UserService {
       visitorUser: v.visitorUser
         ? {
             id: v.visitorUser.id,
+            userId: v.visitorUser.userId || '',
             nickname: v.visitorUser.nickname,
+            displayName: getDisplayName(v.visitorUser.nickname, v.visitorUser.userId),
             avatar: v.visitorUser.avatar || '',
           }
         : null,
@@ -928,7 +963,9 @@ export class UserService {
       const u = usersMap.get(Number(r.targetUserId))
       return {
         id: Number(r.targetUserId),
+        userId: u?.userId || '',
         nickname: u?.nickname || '',
+        displayName: getDisplayName(u?.nickname, u?.userId),
         avatar: u?.avatar || '',
         age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
         occupation: u?.occupation || '',
@@ -1000,7 +1037,9 @@ export class UserService {
       const u = usersMap.get(Number(r.visitorUserId))
       return {
         id: Number(r.visitorUserId),
+        userId: u?.userId || '',
         nickname: u?.nickname || '',
+        displayName: getDisplayName(u?.nickname, u?.userId),
         avatar: u?.avatar || '',
         age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
         occupation: u?.occupation || '',
@@ -1184,7 +1223,7 @@ export class UserService {
   private async mapLikesToUsers(
     follows: Follow[],
     userField: 'userId' | 'targetUserId',
-  ): Promise<{ id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date; isMutual?: boolean }[]> {
+  ): Promise<{ id: number; userId: string; nickname: string; displayName: string; avatar: string; age: number; gender: number; location: string; createdAt: Date; isMutual?: boolean }[]> {
     if (follows.length === 0) return []
 
     const userIds = follows.map((f) => f[userField])
@@ -1207,7 +1246,9 @@ export class UserService {
         if (!user) return null
         return {
           id: user.id,
+          userId: user.userId || '',
           nickname: user.nickname,
+          displayName: getDisplayName(user.nickname, user.userId),
           avatar: user.avatar || '',
           age: this.calculateAge(user.birthYear),
           gender: user.gender,
@@ -1215,7 +1256,7 @@ export class UserService {
           createdAt: createdAtMap.get(uid) || new Date(),
         }
       })
-      .filter(Boolean) as { id: number; nickname: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
+      .filter(Boolean) as { id: number; userId: string; nickname: string; displayName: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
   }
 
   /** 记录用户协议同意/不同意 */

@@ -49,7 +49,7 @@
 
         <!-- 卡片下半部分：信息区 -->
         <view class="card-bottom">
-          <text class="nickname">{{ item.nickname }}</text>
+          <text class="nickname">{{ item.displayName || item.nickname }}</text>
 
           <view class="tags-row">
             <text
@@ -84,6 +84,7 @@ import { getFullImageUrl } from '@/utils/common'
 interface UserInfo {
   id: number
   nickname: string
+  displayName?: string
   avatar?: string
   age?: number
   height?: number

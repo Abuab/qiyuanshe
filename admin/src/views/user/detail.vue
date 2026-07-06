@@ -18,11 +18,15 @@
             </template>
           </el-image>
           <div class="header-info">
-            <h2 class="user-name">{{ user.nickname }}</h2>
+            <h2 class="user-name">{{ user.displayName || user.nickname }}</h2>
             <div class="user-tags">
               <el-tag v-if="user.gender === 1" type="primary">男</el-tag>
               <el-tag v-else-if="user.gender === 2" type="danger">女</el-tag>
               <span class="tag-label">ID: {{ user.id }}</span>
+              <span v-if="user.userId" class="user-id-badge" @click="copyUserId">
+                用户ID: {{ user.userId }}
+                <el-icon class="copy-icon"><CopyDocument /></el-icon>
+              </span>
               <span class="tag-label">{{ user.phone || '未绑定手机' }}</span>
               <el-tag v-if="user.isVip && (user.vipLevel || 0) > 0" type="warning" effect="dark">
                 会员
@@ -1003,7 +1007,7 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, User, Picture } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Picture, CopyDocument } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import { adminSystem } from '../../api/system'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
@@ -1012,6 +1016,8 @@ import { useAdminStore } from '../../store/admin'
 
 interface UserDetail {
   id: number
+  userId?: string
+  displayName?: string
   nickname: string
   avatar?: string
   gender: number
@@ -1078,6 +1084,18 @@ const canMonitorChat = computed(() => {
 
 function goToUserDetail(userId: number) {
   router.push(`/user/detail/${userId}`)
+}
+
+/** 复制用户ID到剪贴板 */
+async function copyUserId() {
+  const uid = user.value?.userId
+  if (!uid) return
+  try {
+    await navigator.clipboard.writeText(uid)
+    ElMessage.success('用户ID已复制')
+  } catch {
+    ElMessage.error('复制失败')
+  }
 }
 
 /** 兼容历史斜杠格式数据，展示时统一为逗号分隔 */
@@ -2451,6 +2469,13 @@ function getOpLogTypeColor(action: string) {
     .user-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; .tag-label { color: #999; font-size: 13px; } }
   }
   .header-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+}
+.user-id-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 10px; border-radius: 12px; background: #f0f2f5;
+  color: #606266; font-size: 13px; cursor: pointer; transition: background 0.2s;
+  &:hover { background: #e4e7ed; }
+  .copy-icon { font-size: 13px; }
 }
 .tab-card {
   .text-content { padding: 16px; min-height: 200px; white-space: pre-wrap; line-height: 1.8; color: #333; }

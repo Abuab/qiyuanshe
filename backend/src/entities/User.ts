@@ -28,6 +28,11 @@ export class User {
   @Column({ type: 'varchar', length: 128, nullable: true })
   openid: string
 
+  /** 公开用户ID（6位数字，唯一，对外展示标识） */
+  @Index({ unique: true })
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  userId: string
+
   @Column({ type: 'varchar', length: 50, default: '' })
   nickname: string
 

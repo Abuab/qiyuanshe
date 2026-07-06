@@ -248,6 +248,11 @@
       >
         <el-table-column v-if="!isReadonly" type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" sortable="custom" />
+        <el-table-column prop="userId" label="用户ID" width="110">
+          <template #default="{ row }">
+            <span>{{ row.userId || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="avatar" label="头像" width="80">
           <template #default="{ row }">
             <el-popover placement="right" :width="200" trigger="hover">
@@ -268,14 +273,14 @@
                     </div>
                   </template>
                 </el-image>
-                <p>{{ row.nickname }}</p>
+                <p>{{ row.displayName || row.nickname }}</p>
               </div>
             </el-popover>
           </template>
         </el-table-column>
         <el-table-column prop="nickname" label="昵称" min-width="180" sortable="custom">
           <template #default="{ row }">
-            <span class="nickname">{{ row.nickname }}</span>
+            <span class="nickname">{{ row.displayName || row.nickname }}</span>
             <!-- 用户生命周期标签：新注册(绿)/活跃(蓝)/沉默(橙)/流失(灰) -->
             <el-tag
               v-if="getLifecycleBadge(row)"

@@ -3,6 +3,8 @@ import type { ApiResponse } from './request'
 
 export interface User {
   id: number
+  userId?: string
+  displayName?: string
   nickname: string
   avatar?: string
   gender: number

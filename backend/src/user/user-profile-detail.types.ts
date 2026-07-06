@@ -13,8 +13,10 @@ export interface TopSection {
   avatar: string
   /** 昵称 */
   nickname: string
-  /** 用户 ID（用于展示 @ID123456） */
-  userId: number
+  /** 对外展示名 */
+  displayName: string
+  /** 用户ID（6位数字，用于展示 ID:123456） */
+  userId: string
   /** 是否自己 */
   isSelf: boolean
   /** 当前用户是否已关注 TA */

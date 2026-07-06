@@ -278,7 +278,7 @@ onMounted(() => {
   const options = currentPage.options || {}
 
   toUserId.value = parseInt(options.userId) || 0
-  nickname.value = decodeURIComponent(options.nickname || '聊天')
+  nickname.value = decodeURIComponent(options.displayName || options.nickname || '聊天')
   avatar.value = decodeURIComponent(options.avatar || '')
   myAvatar.value = userStore.userInfo?.avatar || ''
 

@@ -37,7 +37,7 @@
             <image class="avatar" :src="resolveAvatar(item.avatar)" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
-                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text class="name">{{ item.displayName || item.nickname || '用户' }}</text>
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>
@@ -61,7 +61,7 @@
             <image class="avatar" :src="resolveAvatar(item.avatar)" mode="aspectFill" />
             <view class="info">
               <view class="name-row">
-                <text class="name">{{ item.nickname || '用户' }}</text>
+                <text class="name">{{ item.displayName || item.nickname || '用户' }}</text>
                 <text v-if="item.isRealName" class="realname-tag">已实名</text>
               </view>
               <text class="meta-line">{{ formatMeta(item) }}</text>

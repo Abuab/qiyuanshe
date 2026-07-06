@@ -65,7 +65,7 @@
           />
           <view class="message-content">
             <view class="message-header">
-              <text class="message-title">{{ item.nickname }}</text>
+              <text class="message-title">{{ item.displayName || item.nickname }}</text>
               <text class="message-time">{{ formatTime(item.createdAt) }}</text>
             </view>
             <text class="message-preview">{{ isImagePreview(item) ? '[图片]' : item.lastMessage }}</text>
@@ -114,8 +114,9 @@ interface SystemAggregate {
 interface UserMessage {
   id: number
   type: 'user'
-  userId: number
+  userId: string      // 6位公开ID
   nickname: string
+  displayName?: string
   avatar: string
   lastMessage: string
   messageType?: string
@@ -259,19 +260,19 @@ const goToChat = (item: UserMessage) => {
     return
   }
   uni.navigateTo({
-    url: `/pages/chat/index?userId=${item.userId}&nickname=${encodeURIComponent(item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
+    url: `/pages/chat/index?userId=${item.id}&nickname=${encodeURIComponent(item.displayName || item.nickname)}&displayName=${encodeURIComponent(item.displayName || item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
   })
 }
 
 const confirmDelete = (item: UserMessage) => {
   uni.showModal({
     title: '删除会话',
-    content: `确定要删除与 ${item.nickname} 的聊天记录吗？`,
+    content: `确定要删除与 ${item.displayName || item.nickname} 的聊天记录吗？`,
     confirmText: '删除',
     confirmColor: '#FF6B9D',
     success: async (res) => {
       if (res.confirm) {
-        await deleteConversation(item.userId)
+        await deleteConversation(item.id)
       }
     },
   })
@@ -285,7 +286,7 @@ const deleteConversation = async (targetUserId: number) => {
     })
     uni.showToast({ title: '已删除', icon: 'success' })
     // 从列表中移除
-    messageList.value = messageList.value.filter(m => m.type !== 'user' || (m as UserMessage).userId !== targetUserId)
+    messageList.value = messageList.value.filter(m => m.type !== 'user' || (m as UserMessage).id !== targetUserId)
   } catch {
     uni.showToast({ title: '删除失败', icon: 'none' })
   }

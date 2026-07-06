@@ -34,6 +34,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { Result } from '../common/result'
+import { getDisplayName } from '../common/user-utils'
 import { normalizeImageUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
@@ -396,7 +397,9 @@ export class UserController {
     const list = records.map(r => ({
       id: r.matchedUserId,
       matchedUserId: r.matchedUserId,
+      userId: r.matchedUser?.userId || '',
       nickname: r.matchedUser?.nickname || '',
+      displayName: getDisplayName(r.matchedUser?.nickname, r.matchedUser?.userId),
       avatar: r.matchedUser?.avatar || '',
       createdAt: r.createdAt,
     }))
@@ -420,7 +423,7 @@ export class UserController {
       .where('b.blockerId = :userId', { userId })
       .select([
         'b.id', 'b.createdAt',
-        'u.id', 'u.nickname', 'u.avatar', 'u.isRealName',
+        'u.id', 'u.userId', 'u.nickname', 'u.avatar', 'u.isRealName',
       ])
       .orderBy('b.createdAt', 'DESC')
       .getMany()
@@ -428,7 +431,9 @@ export class UserController {
     const list = blocks.map(b => ({
       id: b.id,
       blockedUserId: b.blockedUser?.id,
+      userId: b.blockedUser?.userId || '',
       nickname: b.blockedUser?.nickname || '用户',
+      displayName: getDisplayName(b.blockedUser?.nickname, b.blockedUser?.userId),
       avatar: b.blockedUser?.avatar || '',
       isRealName: b.blockedUser?.isRealName || 0,
       createdAt: b.createdAt,

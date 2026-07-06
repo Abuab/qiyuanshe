@@ -10,6 +10,7 @@ import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { normalizeImageUrl } from '../common/image-url'
+import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
 import * as bcrypt from 'bcrypt'
@@ -80,11 +81,12 @@ export class AdminUserService {
 
     if (filter.keyword) {
       queryBuilder.andWhere(
-        '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone)',
+        '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone OR user.userId = :userIdKw)',
         {
           keyword: `%${filter.keyword}%`,
           id: parseInt(filter.keyword) || 0,
           phone: `%${filter.keyword}%`,
+          userIdKw: /^\d{6,7}$/.test(filter.keyword.trim()) ? filter.keyword.trim() : '',
         },
       )
     }
@@ -324,7 +326,9 @@ export class AdminUserService {
       // 直接用显式字段构建纯对象，绕过 TypeORM entity 的序列化陷阱
       return {
         id: user.id,
+        userId: user.userId || '',
         nickname: user.nickname,
+        displayName: getDisplayName(user.nickname, user.userId),
         avatar: user.avatar,
         phone: user.phone,
         openid: user.openid,
@@ -465,6 +469,8 @@ export class AdminUserService {
     const { password, ...safeUser } = user
     return {
       ...safeUser,
+      userId: user.userId || '',
+      displayName: getDisplayName(user.nickname, user.userId),
       avatar: normalizeImageUrl(safeUser.avatar),
       // simple-json 列兜底解析，避免 findOne 未正确反序列化
       tags: parseSimpleJson(safeUser.tags),

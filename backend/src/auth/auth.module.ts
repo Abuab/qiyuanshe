@@ -10,6 +10,7 @@ import { UserAgreement } from '../entities/UserAgreement'
 import { Feedback } from '../entities/Feedback'
 import { jwtConfig } from '../config/jwt'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
+import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-lo
       signOptions: { expiresIn: jwtConfig.expiresIn },
     }),
     AgreementLogStorageModule,
+    UserModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

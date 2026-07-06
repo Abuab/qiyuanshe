@@ -4,6 +4,7 @@ import { Repository, In } from 'typeorm'
 import { User, UserPhoto, Follow } from '../entities'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { RedisService } from '../common/redis.service'
+import { getDisplayName } from '../common/user-utils'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -15,7 +16,9 @@ export interface PaginatedResult<T> {
 
 export interface RecommendListItem {
   id: number
+  userId: string
   nickname: string
+  displayName: string
   avatar: string
   age: number
   height: number
@@ -70,13 +73,13 @@ const CACHE_TTL = {
 }
 
 // 缓存版本号：修改推荐逻辑后递增以强制刷新所有旧缓存
-const CACHE_VERSION = 2
+const CACHE_VERSION = 3
 
 @Injectable()
 export class RecommendService {
   // 需要关联查询的字段子集（UserListItem 所需）
   private static readonly userSelect = [
-    'id', 'nickname', 'avatar', 'gender', 'birthYear',
+    'id', 'userId', 'nickname', 'avatar', 'gender', 'birthYear',
     'height', 'education', 'occupation', 'incomeRange', 'housingStatus',
     'isRealName', 'isVip', 'vipLevel', 'lastLoginAt', 'lastActiveAt',
     'profileScore', 'manualBoostScore', 'pinnedExpireAt',
@@ -265,7 +268,9 @@ export class RecommendService {
 
     const list: RecommendListItem[] = finalList.map(user => ({
       id: user.id,
+      userId: user.userId || '',
       nickname: user.nickname,
+      displayName: getDisplayName(user.nickname, user.userId),
       avatar: user.avatar || '',
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : 0,
       height: user.height || 0,

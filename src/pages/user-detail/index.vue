@@ -11,7 +11,7 @@
           <view class="frost-back" @tap="handleBack">
             <text class="back-arrow">{{ '<' }}</text>
           </view>
-          <text class="frost-nickname">{{ profileData.top.nickname || '用户主页' }}</text>
+          <text class="frost-nickname">{{ profileData.top.displayName || profileData.top.nickname || '用户主页' }}</text>
           <view class="frost-placeholder" />
         </view>
       </view>
@@ -85,8 +85,12 @@
           <view class="info-header">
             <view class="info-left">
               <view class="info-name-id">
-                <text class="info-nickname">{{ profileData.top.nickname }}</text>
-                <text class="info-id"><text class="id-badge">ID</text>{{ profileData.top.userId }}</text>
+                <text class="info-nickname">{{ profileData.top.displayName || profileData.top.nickname }}</text>
+              </view>
+              <view class="user-id-row" @click="copyUserId">
+                <text class="id-badge">ID</text>
+                <text class="id-number">{{ profileData.top.userId || '' }}</text>
+                <text class="id-copy-icon">📋</text>
               </view>
               <!-- 基本资料行：年龄/身高/体重/学历（紧贴昵称下方） -->
               <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
@@ -613,8 +617,9 @@ export default {
   onShareAppMessage() {
     const pages = getCurrentPages()
     const page = pages[pages.length - 1] as any
+    const displayName = page?.profileData?.top?.displayName || page?.profileData?.top?.nickname || ''
     return {
-      title: `${page?.profileData?.top?.nickname || ''}的个人主页`,
+      title: `${displayName}的个人主页`,
       path: `/pages/user-detail/index?id=${page?.userId || 0}`,
       imageUrl: page?.profileData?.top?.avatar || '',
     }
@@ -1249,6 +1254,17 @@ const retryFunQuiz = () => {
   funQuizBirthday.value.taBirthDay = taYear2 ? `${taYear2}-01-01` : ''
 }
 
+const copyUserId = () => {
+  const userId = profileData.value?.top?.userId
+  if (!userId) return
+  uni.setClipboardData({
+    data: `ID:${userId}`,
+    success: () => {
+      uni.showToast({ title: '已复制', icon: 'none', duration: 1500 })
+    },
+  })
+}
+
 const profileGenLoading = ref(false)
 const refreshProfileGen = async () => {
   profileGenLoading.value = true
@@ -1288,7 +1304,7 @@ const navigateToContactApply = () => {
   const basic = p?.basicInfo || {}
   const params = [
     `userId=${userId.value}`,
-    `nickname=${encodeURIComponent(top.nickname || '')}`,
+    `nickname=${encodeURIComponent(top.displayName || top.nickname || '')}`,
     `avatar=${encodeURIComponent(top.avatar || '')}`,
     `isRealName=${isRealNameNotVerified.value ? '0' : '1'}`,
     `age=${basic.age || ''}`,
@@ -1491,24 +1507,35 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
+  display: flex; flex-direction: column; flex: 1; min-width: 0;
 }
 
 .info-nickname {
   font-size: 36rpx; font-weight: bold; color: $text; line-height: 1;
 }
 
-.id-badge {
-  display: inline-block;
-  font-style: italic;
-  font-size: 26rpx;
-  font-weight: 500; color: #fff; background-color: #aaa;
-  padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
-  vertical-align: baseline; margin-right: 4rpx;
+.user-id-row {
+  display: flex; align-items: center; gap: 8rpx; margin-top: 10rpx;
 }
 
-.info-id {
-  font-size: 28rpx; color: $text-hint; padding-top: 0rpx; font-weight: 400;
+.id-badge {
+  display: inline-block;
+  background: #f0f0f0;
+  border-radius: 6rpx;
+  padding: 2rpx 10rpx;
+  font-size: 22rpx;
+  color: #999;
+}
+
+.id-number {
+  font-size: 26rpx;
+  color: #333;
+  letter-spacing: 2rpx;
+}
+
+.id-copy-icon {
+  font-size: 24rpx;
+  margin-left: 4rpx;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====

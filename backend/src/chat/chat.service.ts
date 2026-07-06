@@ -13,6 +13,7 @@ import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 import { resolveAvatarUrl } from '../common/image-url'
+import { getDisplayName } from '../common/user-utils'
 import { ALL_ADMIN_ROLES } from '../shared/enums'
 
 /** Redis Key 前缀：记录每对会话的最后一条消息 ID */
@@ -563,9 +564,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         'CASE WHEN msg.fromUserId = :uid5 THEN toUser.avatar ELSE fromUser.avatar END',
         'avatar',
       )
+      .addSelect(
+        'CASE WHEN msg.fromUserId = :uid7 THEN toUser.userId ELSE fromUser.userId END',
+        'targetUserIdStr',
+      )
       .setParameter('uid3', userId)
       .setParameter('uid4', userId)
       .setParameter('uid5', userId)
+      .setParameter('uid7', userId)
       .orderBy('msg.createdAt', 'DESC')
       .offset(skip)
       .limit(limit)
@@ -585,8 +591,9 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     const result = conversations.map((conv: any) => ({
       id: conv.userId,
       type: 'user',
-      userId: conv.userId,
+      userId: conv.targetUserIdStr || '',
       nickname: conv.nickname,
+      displayName: getDisplayName(conv.nickname, conv.targetUserIdStr),
       avatar: resolveAvatarUrl(conv.avatar),
       lastMessage: conv.lastMessage,
       createdAt: conv.createdAt,

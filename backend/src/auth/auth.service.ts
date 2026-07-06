@@ -10,6 +10,7 @@ import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
+import { UserService } from '../user/user.service'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 import { resolveAvatarUrl } from '../common/image-url'
@@ -45,6 +46,7 @@ export class AuthService {
     private readonly agreementRepo: Repository<UserAgreement>,
     private readonly jwtService: JwtService,
     private readonly agreementLogStorage: AgreementLogStorageService,
+    private readonly userService: UserService,
   ) {}
 
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
@@ -70,10 +72,12 @@ export class AuthService {
       // 生成 7 位随机数字
       const randomSuffix = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
       const randomNickname = `昵称${randomSuffix}`
+      const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
         unionId: session.unionid || '',
         nickname: randomNickname,
+        userId: userId,
         status: 2,
       })
       user = await this.userRepository.save(user)
@@ -352,8 +356,8 @@ export class AuthService {
 
   private sanitizeUser(user: User, includePhone = false): Partial<User> {
     const sanitized: any = {
-      userId: user.id,
       id: user.id,
+      userId: user.userId || '',
       nickname: user.nickname,
       avatar: resolveAvatarUrl(user.avatar),
       avatarReviewStatus: user.avatarReviewStatus,
