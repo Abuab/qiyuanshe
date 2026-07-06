@@ -11,6 +11,7 @@ import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
+import { getDisplayName } from '../common/user-utils'
 import {
   TopSection,
   BasicInfoSection,
@@ -168,7 +169,7 @@ export class UserProfileDetailService {
       identityAuth: this.buildIdentityAuth(auths, user),
       aboutMe: this.buildAboutMe(user, tagSelections, aiProfile),
       hopeTa: this.buildHopeTa(user),
-      interaction: { giftCount: 0, canShare: true, shareTitle: `来看看${user.nickname || 'TA'}的个人主页` },
+      interaction: { giftCount: 0, canShare: true, shareTitle: `来看看${getDisplayName(user.nickname, user.userId)}的个人主页` },
       bottomBar: this.buildBottomBar(isSelf, false),
       showAiMatchEntry: !isSelf && aiMatchEnabled,
       showAiFunQuizEntry: !isSelf && aiFunQuizEnabled,

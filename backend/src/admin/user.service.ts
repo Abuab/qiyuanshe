@@ -80,14 +80,19 @@ export class AdminUserService {
     queryBuilder.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
 
     if (filter.keyword) {
+      const isNumericId = /^\d{6,7}$/.test(filter.keyword.trim())
+      const userIdCondition = isNumericId ? ' OR user.userId = :userIdKw' : ''
+      const params: Record<string, any> = {
+        keyword: `%${filter.keyword}%`,
+        id: parseInt(filter.keyword) || 0,
+        phone: `%${filter.keyword}%`,
+      }
+      if (isNumericId) {
+        params.userIdKw = filter.keyword.trim()
+      }
       queryBuilder.andWhere(
-        '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone OR user.userId = :userIdKw)',
-        {
-          keyword: `%${filter.keyword}%`,
-          id: parseInt(filter.keyword) || 0,
-          phone: `%${filter.keyword}%`,
-          userIdKw: /^\d{6,7}$/.test(filter.keyword.trim()) ? filter.keyword.trim() : '',
-        },
+        `(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone${userIdCondition})`,
+        params,
       )
     }
 
