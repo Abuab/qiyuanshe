@@ -37,15 +37,19 @@ export class PublicGuideController {
     return Result.success(await this.resolveService.resolve(slotCode, ctx))
   }
 
-  /** 上报文案曝光（去重：同一用户同一天同一文案位只计一次） */
+  /**
+   * 上报文案曝光（去重：同一用户同一天同一文案位只计一次）。
+   * 全展示模式一次视图可通过 itemIds 数组上报多条，各计一次曝光。
+   */
   @Post('copy/exposure')
   @UseGuards(OptionalJwtAuthGuard)
   async exposure(@Body() body: any, @Request() req: any) {
-    const itemId = parseInt(body?.itemId, 10)
     const slotId = await this.resolveSlotId(body?.slotCode)
-    if (!Number.isFinite(itemId) || !slotId) return Result.success(false)
+    if (!slotId) return Result.success(false)
+    const itemIds = this.parseItemIds(body)
+    if (itemIds.length === 0) return Result.success(false)
     const userKey = this.buildUserKey(req.user?.id, body?.visitorId)
-    await this.statsService.reportExposure(slotId, itemId, userKey)
+    await this.statsService.reportExposure(slotId, itemIds, userKey)
     return Result.success(true)
   }
 
@@ -74,6 +78,16 @@ export class PublicGuideController {
     if (typeof slotCode !== 'string' || !slotCode) return null
     const slot = await this.slotService.getByCode(slotCode)
     return slot ? slot.id : null
+  }
+
+  /** 解析曝光上报的文案 id 列表：支持 itemIds 数组，兼容单个 itemId */
+  private parseItemIds(body: any): number[] {
+    const raw = Array.isArray(body?.itemIds)
+      ? body.itemIds
+      : body?.itemId !== undefined
+        ? [body.itemId]
+        : []
+    return raw.map((v: any) => parseInt(v, 10)).filter((n: number) => Number.isFinite(n))
   }
 
   private buildUserKey(userId?: number, visitorId?: string): string | null {

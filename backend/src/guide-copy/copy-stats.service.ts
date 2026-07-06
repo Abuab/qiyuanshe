@@ -27,21 +27,28 @@ export class CopyStatsService {
   ) {}
 
   /**
-   * 上报曝光（带去重）：同一 userKey 同一文案位当天只计一次。
+   * 上报曝光（带去重）：以「文案位 + userKey + 自然日」为去重键，
+   * 同一用户当天重复进入同一文案位只计一次（防刷）；
+   * 单次视图内展示的多条文案（全展示模式）各计一次曝光。
    * userKey 为空（匿名且无 visitorId）时不去重，尽力计数。
    */
-  async reportExposure(slotId: number, itemId: number, userKey: string | null): Promise<void> {
+  async reportExposure(slotId: number, itemIds: number[], userKey: string | null): Promise<void> {
+    const ids = Array.from(new Set((itemIds || []).filter((n) => Number.isFinite(n))))
+    if (ids.length === 0) return
     const statDate = beijingDateStr()
     if (userKey) {
       try {
-        await this.exposureRepo.insert({ slotId, itemId, userKey, statDate })
+        // 去重键为 (slotId, userKey, statDate)，itemId 存代表文案供 A/B 分组
+        await this.exposureRepo.insert({ slotId, itemId: ids[0], userKey, statDate })
       } catch (e: any) {
-        if (this.isDuplicate(e)) return // 今日已计过，跳过
+        if (this.isDuplicate(e)) return // 今日该文案位已计过，跳过整次视图
         this.logger.warn(`曝光去重写入失败: ${e?.message}`)
         return
       }
     }
-    await this.incrStat(slotId, itemId, statDate, 1, 0, 0)
+    for (const itemId of ids) {
+      await this.incrStat(slotId, itemId, statDate, 1, 0, 0)
+    }
   }
 
   /** 上报点击 */
