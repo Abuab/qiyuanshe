@@ -5,6 +5,7 @@ import { secureStorage } from '@/utils/crypto'
 
 interface UserInfo {
   id: number
+  userId?: string  // 6位数字公开ID
   nickname: string
   avatar: string
   avatarReviewStatus?: number

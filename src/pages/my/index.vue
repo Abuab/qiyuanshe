@@ -338,11 +338,9 @@ const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
 const appName = computed(() => systemStore.appName || '缘来是你')
 
-// 格式化为7位数显示ID
+// 6位数字用户ID（用于展示 ID:123456）
 const formattedUserId = computed(() => {
-  const id = userStore.userInfo?.id
-  if (!id) return '*******'
-  return String(id).padStart(7, '0')
+  return userStore.userInfo?.userId || '******'
 })
 
 // 后台可配置的页面图标（通过 systemStore.icons.page 下发）
@@ -390,9 +388,10 @@ const loadStats = async () => {
 }
 
 const copyUserId = () => {
-  if (!userStore.userInfo?.id) return
+  const uid = userStore.userInfo?.userId
+  if (!uid) return
   uni.setClipboardData({
-    data: String(userStore.userInfo.id),
+    data: uid,
     success: () => uni.showToast({ title: '已复制', icon: 'success' }),
   })
 }
