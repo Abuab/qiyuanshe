@@ -4,7 +4,7 @@
   "description": "栖缘社后端API服务",
   "main": "dist/main.js",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && tsc -p tsconfig.migrations.json",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
