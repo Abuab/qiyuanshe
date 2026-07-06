@@ -27,7 +27,7 @@ export class AddMissingIndexes1751558400000 implements MigrationInterface {
     // ========== 外键/查询性能索引 ==========
     { table: 'feedbacks', name: 'IDX_feedbacks_userId', ddl: 'ALTER TABLE `feedbacks` ADD INDEX `IDX_feedbacks_userId` (`userId`)' },
     { table: 'success_cases', name: 'IDX_success_cases_senderUserId', ddl: 'ALTER TABLE `success_cases` ADD INDEX `IDX_success_cases_senderUserId` (`senderUserId`)' },
-    { table: 'profile_visits', name: 'IDX_profile_visits_visitorUserId', ddl: 'ALTER TABLE `profile_visits` ADD INDEX `IDX_profile_visits_visitorUserId` (`visitorUserId`)' },
+    { table: 'profile_visits', name: 'IDX_profile_visits_visitorUserId', ddl: 'ALTER TABLE `profile_visits` ADD INDEX `IDX_profile_visits_visitorUserId` (`visitor_user_id`)' },
     { table: 'activity_signups', name: 'IDX_activity_signups_activityId', ddl: 'ALTER TABLE `activity_signups` ADD INDEX `IDX_activity_signups_activityId` (`activityId`)' },
     { table: 'activity_signups', name: 'IDX_activity_signups_userId', ddl: 'ALTER TABLE `activity_signups` ADD INDEX `IDX_activity_signups_userId` (`userId`)' },
     { table: 'vip_orders', name: 'IDX_vip_orders_payType', ddl: 'ALTER TABLE `vip_orders` ADD INDEX `IDX_vip_orders_payType` (`payType`)' },
