@@ -138,6 +138,15 @@
         <el-menu-item index="/personality/dimensions">维度管理</el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu v-if="canManageGuide" index="/guide">
+        <template #title>
+          <el-icon><MagicStick /></el-icon>
+          <span>引导文案</span>
+        </template>
+        <el-menu-item index="/guide/floating-button">首页浮动按钮</el-menu-item>
+        <el-menu-item index="/guide/copy">文案配置</el-menu-item>
+      </el-sub-menu>
+
       <el-sub-menu v-if="isSuperAdmin" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
@@ -208,6 +217,7 @@ import {
   Ticket,
   ChatLineSquare,
   Compass,
+  MagicStick,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -243,6 +253,7 @@ const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.r
 const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 // 人格测试配置：仅超级管理员与红娘可访问
 const canManagePersonality = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker')
+const canManageGuide = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
 
 // 待审核计数轮询
 let pendingCountTimer: ReturnType<typeof setInterval> | null = null

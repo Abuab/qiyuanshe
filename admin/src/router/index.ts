@@ -285,6 +285,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/personality/dimensions.vue'),
         meta: { title: '维度管理', requiresAuth: true },
       },
+      {
+        path: '/guide/floating-button',
+        name: 'GuideFloatingButton',
+        component: () => import('../views/guide/floating-button.vue'),
+        meta: { title: '首页浮动按钮', requiresAuth: true },
+      },
+      {
+        path: '/guide/copy',
+        name: 'GuideCopySlots',
+        component: () => import('../views/guide/copy-slots.vue'),
+        meta: { title: '文案配置', requiresAuth: true },
+      },
+      {
+        path: '/guide/copy/:slotId',
+        name: 'GuideCopyDetail',
+        component: () => import('../views/guide/copy-detail.vue'),
+        meta: { title: '文案详情', requiresAuth: true },
+      },
     ],
   },
 ]
