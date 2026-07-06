@@ -656,6 +656,28 @@ export class AdminUserService {
     await this.userRepository.remove(user)
   }
 
+  /**
+   * 生成 6 位唯一数字 userId（范围 100000~999999）
+   * 复用 UserService 的生成逻辑，通过 userRepository 直接查重
+   */
+  private async generateUserId(): Promise<string> {
+    const MAX_RETRIES = 10
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const num = Math.floor(Math.random() * 900000) + 100000
+      const userId = String(num)
+      const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
+      if (!exists) return userId
+    }
+    // 6位池接近耗尽，扩展到7位
+    for (let i = 0; i < MAX_RETRIES; i++) {
+      const num = Math.floor(Math.random() * 9000000) + 1000000
+      const userId = String(num)
+      const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
+      if (!exists) return userId
+    }
+    throw new Error('无法生成唯一 userId，ID池已耗尽')
+  }
+
   async createUser(data: {
     nickname: string
     phone: string
@@ -710,7 +732,10 @@ export class AdminUserService {
         ? String(data.hopeTaTags).split(',').map((s: string) => s.trim()).filter(Boolean)
         : null
 
+    const generatedUserId = await this.generateUserId()
+
     const user = this.userRepository.create({
+      userId: generatedUserId,
       nickname: data.nickname,
       phone: data.phone,
       password: hashedPassword,
