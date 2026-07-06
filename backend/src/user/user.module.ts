@@ -20,6 +20,7 @@ import { DynamicModule } from '../dynamic/dynamic.module'
 import { AdminModule } from '../admin/admin.module'
 import { AiModule } from '../ai/ai.module'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
+import { PersonalityTestModule } from '../personality-test/personality-test.module'
 import { RedisService } from '../common/redis.service'
 
 @Module({
@@ -30,6 +31,7 @@ import { RedisService } from '../common/redis.service'
       QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment, UserAgreement,
     ]),
     SystemModule, DynamicModule, AdminModule, AiModule, AgreementLogStorageModule,
+    PersonalityTestModule,
   ],
   controllers: [UserController, UserNoticeController, UserNotificationController],
   providers: [UserService, UserProfileDetailService, RecommendService, RedisService],

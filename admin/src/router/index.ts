@@ -267,6 +267,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/single-promise/index.vue'),
         meta: { title: '单身承诺审核', requiresAuth: true },
       },
+      {
+        path: '/personality/questions',
+        name: 'PersonalityQuestions',
+        component: () => import('../views/personality/questions.vue'),
+        meta: { title: '题目管理', requiresAuth: true },
+      },
+      {
+        path: '/personality/types',
+        name: 'PersonalityTypes',
+        component: () => import('../views/personality/types.vue'),
+        meta: { title: '人格类型定义', requiresAuth: true },
+      },
+      {
+        path: '/personality/dimensions',
+        name: 'PersonalityDimensions',
+        component: () => import('../views/personality/dimensions.vue'),
+        meta: { title: '维度管理', requiresAuth: true },
+      },
     ],
   },
 ]

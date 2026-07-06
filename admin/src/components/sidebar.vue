@@ -128,6 +128,16 @@
         <el-menu-item index="/activity/list">活动列表</el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu v-if="canManagePersonality" index="/personality">
+        <template #title>
+          <el-icon><Compass /></el-icon>
+          <span>人格测试</span>
+        </template>
+        <el-menu-item index="/personality/questions">题目管理</el-menu-item>
+        <el-menu-item index="/personality/types">人格类型定义</el-menu-item>
+        <el-menu-item index="/personality/dimensions">维度管理</el-menu-item>
+      </el-sub-menu>
+
       <el-sub-menu v-if="isSuperAdmin" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
@@ -197,6 +207,7 @@ import {
   Promotion,
   Ticket,
   ChatLineSquare,
+  Compass,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -230,6 +241,8 @@ const canManageAudit = computed(() => isSuperAdmin.value || userInfo.value?.role
 const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
 const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
 const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
+// 人格测试配置：仅超级管理员与红娘可访问
+const canManagePersonality = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker')
 
 // 待审核计数轮询
 let pendingCountTimer: ReturnType<typeof setInterval> | null = null

@@ -5,6 +5,7 @@ import { User, UserPhoto, Follow } from '../entities'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { RedisService } from '../common/redis.service'
 import { getDisplayName } from '../common/user-utils'
+import { PersonalityMatchService } from '../personality-test/personality-match.service'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -97,6 +98,7 @@ export class RecommendService {
     @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
     private readonly redis: RedisService,
+    private readonly personalityMatch: PersonalityMatchService,
   ) {}
 
   // ========================================================================
@@ -247,12 +249,18 @@ export class RecommendService {
 
     // 全局去重：确保无重复用户（置顶+非置顶重叠 / more补齐重叠）
     const finalSeen = new Set<number>()
-    const finalList = resultList.filter(u => {
+    let finalList = resultList.filter(u => {
       const id = Number(u.id)
       if (finalSeen.has(id)) return false
       finalSeen.add(id)
       return true
     })
+
+    // 6.5 人格匹配加分：作为加分项对当前页做轻量微调（置顶用户保持不动，非唯一排序依据）
+    // newest（最新）标签要求严格按注册时间排序，不施加人格微调，避免破坏其排序契约
+    if (!isNewest) {
+      finalList = await this.applyPersonalityRerank(finalList, currentUserId, pinnedUsers)
+    }
 
     // 7. 丰富列表信息（照片、是否已关注、红娘评语）
     const userIds = finalList.map(u => u.id)
@@ -310,6 +318,46 @@ export class RecommendService {
     // 直接删除该用户的推荐分缓存
     await this.redis.del(`recommend:score:${userId}`)
     // 列表缓存靠 CACHE_TTL.recommendList (10分钟) 自然过期，不再主动清除
+  }
+
+  /**
+   * 人格匹配加分微调：在已排好序的当前页列表上，按人格匹配度对非置顶用户做轻量重排。
+   * - 置顶用户保持在最前不动
+   * - 人格加分仅作为「加分项」，最多上浮约 K 个名次，不会颠覆主排序
+   * - 未启用 / 当前用户无测试结果 / 出现异常时，原样返回，保证不影响既有推荐
+   */
+  private async applyPersonalityRerank(
+    list: User[],
+    currentUserId: number | undefined,
+    pinnedUsers: User[],
+  ): Promise<User[]> {
+    if (!currentUserId || list.length <= 1) return list
+    try {
+      // getBonusMap 内部已判断是否启用；未启用/无结果时返回空 Map
+      const ids = list.map(u => Number(u.id))
+      const bonusMap = await this.personalityMatch.getBonusMap(currentUserId, ids)
+      if (bonusMap.size === 0) return list
+
+      // 保持前导置顶用户不动
+      const pinnedIdSet = new Set(pinnedUsers.map(u => Number(u.id)))
+      let fixed = 0
+      while (fixed < list.length && pinnedIdSet.has(Number(list[fixed].id))) fixed++
+
+      const head = list.slice(0, fixed)
+      const tail = list.slice(fixed)
+
+      // 稳定排序：综合名次 = 原始名次 - K × 人格加分（bonus∈[0,1]）
+      const K = 3
+      const decorated = tail.map((u, idx) => ({
+        u,
+        rank: idx - K * (bonusMap.get(Number(u.id)) || 0),
+      }))
+      decorated.sort((a, b) => a.rank - b.rank)
+
+      return [...head, ...decorated.map(d => d.u)]
+    } catch {
+      return list
+    }
   }
 
   // ========================================================================

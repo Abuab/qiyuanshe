@@ -1,0 +1,6 @@
+export * from './PersonalityDimension'
+export * from './PersonalityQuestion'
+export * from './PersonalityOption'
+export * from './PersonalityType'
+export * from './PersonalityAnswerRecord'
+export * from './PersonalityResult'

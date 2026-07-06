@@ -70,6 +70,7 @@ import { AiModule } from './ai/ai.module'
 import { QuickQuestionModule } from './quick-question/quick-question.module'
 import { AgreementLogStorageModule } from './agreement-log-storage/agreement-log-storage.module'
 import { SinglePromiseModule } from './single-promise/single-promise.module'
+import { PersonalityTestModule } from './personality-test/personality-test.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
@@ -160,6 +161,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     QuickQuestionModule,
     AgreementLogStorageModule,
     SinglePromiseModule,
+    PersonalityTestModule,
     CosModule,
   ],
   controllers: [HealthController],
