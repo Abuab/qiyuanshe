@@ -87,7 +87,7 @@ export class UserController {
     @Request() req?: any,
   ) {
     try {
-      const currentUserId = req?.user?.userId
+      const currentUserId = req?.user?.id
 
       const rn = isRealName !== undefined && isRealName !== null ? Number(isRealName) : NaN
       const effectiveIsRealName = !Number.isNaN(rn) ? rn : undefined
@@ -104,7 +104,7 @@ export class UserController {
   @Post('filter')
   @UseGuards(ThrottlerGuard, JwtAuthGuard)
   async filterUsers(@Body() dto: FilterUsersDto, @Request() req: any) {
-    const currentUserId = req?.user?.userId
+    const currentUserId = req?.user?.id
     return this.userService.filterUsers(dto, currentUserId)
   }
 
@@ -468,7 +468,7 @@ export class UserController {
     @Request() req?: any,
   ) {
     try {
-      const currentUserId = req?.user?.userId
+      const currentUserId = req?.user?.id
       return this.userService.getUserDetail(id, currentUserId)
     } catch (error: any) {
       console.error('getUserDetail error:', error?.message || error)
@@ -484,7 +484,7 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @Request() req?: any,
   ) {
-    const currentUserId = req?.user?.userId
+    const currentUserId = req?.user?.id
     const data = await this.profileDetailService.getUserProfileDetail(id, currentUserId)
     return Result.success(data)
   }

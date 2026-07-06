@@ -27,7 +27,7 @@ export class QuestionController {
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
   async getQuestions(@Query() query: GetQuestionsDto, @Req() req: any) {
-    const userId = req.user?.userId || null
+    const userId = req.user?.id || null
     const result = await this.questionService.getQuestions(
       query.page,
       query.limit,

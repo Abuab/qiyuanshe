@@ -40,7 +40,7 @@ export class PosterController {
 
   @Post('track')
   async trackShare(@Body() dto: TrackShareDto, @Request() req: any) {
-    const userId = dto.userId || req?.user?.userId
+    const userId = dto.userId || req?.user?.id
 
     await this.posterService.trackShare({
       userId,
