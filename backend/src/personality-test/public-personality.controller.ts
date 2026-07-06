@@ -87,6 +87,34 @@ export class PublicPersonalityController {
   }
 
   /**
+   * 暂存答题进度（断点续答，游客/用户均存 Redis）
+   * POST /personality/progress  Body: { guestToken?, sessionId?, answers }
+   */
+  @Post('progress')
+  @UseGuards(OptionalJwtAuthGuard)
+  async saveProgress(@Body() body: any, @Request() req: any) {
+    await this.userService.saveProgress(
+      { userId: req.user?.id, guestToken: body?.guestToken },
+      { sessionId: body?.sessionId, answers: body?.answers || [] },
+    )
+    return Result.success(true)
+  }
+
+  /**
+   * 读取暂存的答题进度
+   * GET /personality/progress?guestToken=xxx
+   */
+  @Get('progress')
+  @UseGuards(OptionalJwtAuthGuard)
+  async getProgress(@Query('guestToken') guestToken: string, @Request() req: any) {
+    const data = await this.userService.getProgress({
+      userId: req.user?.id,
+      guestToken,
+    })
+    return Result.success(data)
+  }
+
+  /**
    * 重新测试（清空/校验后返回新题目）
    * POST /personality/retest  Body: { guestToken? }
    */

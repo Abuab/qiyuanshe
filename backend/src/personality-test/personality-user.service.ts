@@ -216,13 +216,62 @@ export class PersonalityUserService {
       await this.guestService.incrDailyCount(subject.guestToken!)
     }
 
-    // 会话用后即焚
+    // 会话用后即焚，并清空暂存的答题进度
     if (input.sessionId) {
       await this.redis.del(this.sessionKey(input.sessionId))
     }
+    await this.clearProgress(subject)
 
     // 游客仅展示简化版结果，完整解析需登录后查看
     return subject.userId ? view : this.toGuestSimplified(view)
+  }
+
+  // ==================== 答题进度暂存（断点续答） ====================
+
+  /**
+   * 暂存答题进度（游客/登录用户均支持，均存 Redis，不落 MySQL）。
+   */
+  async saveProgress(
+    subject: { userId?: number; guestToken?: string },
+    payload: { sessionId?: string; answers?: SubmitAnswerInput[] },
+  ): Promise<void> {
+    const cfg = await this.configService.getConfig()
+    let ttl = 24 * 3600
+    if (!subject.userId) {
+      if (!subject.guestToken || !(await this.guestService.isValidToken(subject.guestToken))) {
+        throw new BadRequestException('游客身份无效或已过期，请重新进入')
+      }
+      ttl = cfg.guestTokenTtlHours * 3600
+    }
+    const data = {
+      sessionId: payload.sessionId ?? null,
+      answers: Array.isArray(payload.answers) ? payload.answers : [],
+      updatedAt: Date.now(),
+    }
+    await this.redis.set(this.progressKey(subject), JSON.stringify(data), ttl)
+  }
+
+  /** 读取暂存的答题进度 */
+  async getProgress(subject: { userId?: number; guestToken?: string }): Promise<any | null> {
+    if (!subject.userId && !subject.guestToken) return null
+    const raw = await this.redis.get(this.progressKey(subject))
+    if (!raw) return null
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  }
+
+  private async clearProgress(subject: { userId?: number; guestToken?: string }): Promise<void> {
+    if (!subject.userId && !subject.guestToken) return
+    await this.redis.del(this.progressKey(subject))
+  }
+
+  private progressKey(subject: { userId?: number; guestToken?: string }): string {
+    return subject.userId
+      ? `ptest:progress:user:${subject.userId}`
+      : `ptest:progress:guest:${subject.guestToken}`
   }
 
   // ==================== 我的结果 ====================
