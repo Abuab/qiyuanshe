@@ -98,8 +98,15 @@ export class PersonalityUserService {
 
     // 过滤出恰好两个选项的题目
     const answerable = validQuestions.filter((q) => (optionMap.get(q.id)?.length || 0) === 2)
+    // 题库未配置时，返回空题目而非抛错（前端展示空态即可，避免控制台 400）
     if (answerable.length === 0) {
-      throw new BadRequestException('题库暂未配置，请稍后再试')
+      return {
+        sessionId: '',
+        minDurationSeconds: cfg.minDurationSeconds,
+        total: 0,
+        remainingAttempts: await this.remainingAttempts(subject, cfg),
+        questions: [],
+      }
     }
 
     const selected = this.selectQuestions(answerable, cfg.questionCount)

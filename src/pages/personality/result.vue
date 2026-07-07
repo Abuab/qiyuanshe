@@ -1,11 +1,13 @@
 <template>
   <view class="presult-page">
-    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-left" @tap="goBack">
-        <uni-icons type="arrowleft" size="40rpx" color="#333333"></uni-icons>
+    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-level1">
+        <view class="nav-left" @tap="goBack">
+          <text class="back-icon">←</text>
+        </view>
+        <text class="nav-title">性格测试结果</text>
+        <view class="nav-right" />
       </view>
-      <text class="nav-title">性格测试结果</text>
-      <view class="nav-right" />
     </view>
 
     <view v-if="loading" class="loading-box">
@@ -439,12 +441,16 @@ function goBack() {
 
 <style lang="scss" scoped>
 .presult-page { min-height: 100vh; background: #fff5f7; }
-.nav-bar {
+.nav-wrap { background: #ffffff; }
+.nav-level1 {
   height: 88rpx; display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24rpx; background: #ffffff;
+  padding: 0 24rpx;
 }
-.nav-left, .nav-right { width: 80rpx; height: 88rpx; display: flex; align-items: center; }
-.nav-title { font-size: 32rpx; color: #333; font-weight: 500; }
+.nav-left, .nav-right { width: 80rpx; height: 88rpx; display: flex; align-items: center; flex-shrink: 0; }
+.nav-left { justify-content: flex-start; }
+.nav-right { justify-content: flex-end; }
+.back-icon { font-size: 40rpx; color: #333; font-weight: bold; line-height: 1; }
+.nav-title { flex: 1; text-align: center; font-size: 32rpx; color: #333; font-weight: 600; }
 
 .loading-box, .empty-box { height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32rpx; }
 .loading-text, .empty-text { color: #999; font-size: 28rpx; }
