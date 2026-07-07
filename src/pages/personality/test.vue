@@ -263,10 +263,17 @@ function onTouchEnd(e: any) {
 
 async function submit() {
   if (submitting.value) return
-  // 客户端最短时长提示（服务端最终裁定）
+  // 最短作答时长（反作弊）：未达标时不弹提示、不卡在最后一题，
+  // 直接进入分析态，等剩余时间到后自动提交（服务端最终裁定）
   const elapsed = (Date.now() - startedAt.value) / 1000
   if (minDurationSeconds.value && elapsed < minDurationSeconds.value) {
-    uni.showToast({ title: '请认真作答后再提交', icon: 'none' })
+    submitting.value = true
+    analyzing.value = true
+    const remainMs = Math.ceil((minDurationSeconds.value - elapsed) * 1000)
+    setTimeout(() => {
+      submitting.value = false
+      submit()
+    }, remainMs)
     return
   }
   submitting.value = true
