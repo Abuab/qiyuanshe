@@ -395,8 +395,16 @@ async function savePoster() {
         saving = false
         const msg = err?.errMsg || ''
         if (msg.includes('cancel')) return
-        if (msg.includes('auth') || msg.includes('deny')) guideToSetting()
-        else uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+        // 权限被拒 / 隐私未授权 → 引导去设置
+        if (/auth|deny|privacy|authorize|permission/i.test(msg)) {
+          guideToSetting()
+          return
+        }
+        // 其余错误：暴露真实原因，便于定位（如隐私协议未声明、机型不支持等）
+        // eslint-disable-next-line no-console
+        console.error('[poster] saveImageToPhotosAlbum fail:', msg)
+        const brief = msg.replace('saveImageToPhotosAlbum:fail', '').trim() || '未知错误'
+        uni.showToast({ title: '保存失败：' + brief, icon: 'none', duration: 3000 })
       },
     })
   }
