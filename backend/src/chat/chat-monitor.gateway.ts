@@ -8,7 +8,7 @@ import {
   MessageBody,
   WsException,
 } from '@nestjs/websockets'
-import { UseGuards, Inject, forwardRef } from '@nestjs/common'
+import { UseGuards, Inject, forwardRef, OnModuleDestroy } from '@nestjs/common'
 import { Server, WebSocket } from 'ws'
 import { JwtService } from '@nestjs/jwt'
 import { ChatMonitorService } from './chat-monitor.service'
@@ -44,7 +44,7 @@ interface AuthenticatedWs extends WebSocket {
 @WebSocketGateway({
   path: '/ws/chat',
 })
-export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
   private server: Server
 
@@ -69,11 +69,22 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     this.heartbeatInterval = setInterval(() => {
       this.server?.clients.forEach((ws) => {
         const client = ws as AuthenticatedWs
-        if (client.isAlive === false) return client.terminate()
+        if (client.isAlive === false) {
+          // 僵尸连接：主动从 Map 中清理，避免 close 事件未回调导致的内存堆积
+          this.cleanup(client)
+          return client.terminate()
+        }
         client.isAlive = false
         client.ping()
       })
     }, 30000)
+  }
+
+  onModuleDestroy() {
+    if (this.heartbeatInterval) clearInterval(this.heartbeatInterval)
+    this.userSockets.clear()
+    this.adminSockets.clear()
+    this.monitorSubscriptions.clear()
   }
 
   handleConnection(client: AuthenticatedWs) {
@@ -207,8 +218,12 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     for (const ws of userSockets) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(payload)
+      } else {
+        // 顺带清理已关闭/关闭中的僵尸 socket，防止 Set 单调增长
+        userSockets.delete(ws)
       }
     }
+    if (userSockets.size === 0) this.userSockets.delete(userId)
   }
 
   /** 推送会话更新事件给指定用户（新会话、未读数变更等） */
@@ -218,7 +233,9 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     const payload = JSON.stringify({ event: 'conversation_update', data })
     for (const ws of userSockets) {
       if (ws.readyState === WebSocket.OPEN) ws.send(payload)
+      else userSockets.delete(ws)
     }
+    if (userSockets.size === 0) this.userSockets.delete(userId)
   }
 
   // ==================== 工具方法 ====================
