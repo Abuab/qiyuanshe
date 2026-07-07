@@ -86,11 +86,7 @@
             <view class="info-left">
               <view class="info-name-id">
                 <text class="info-nickname">{{ profileData.top.displayName || profileData.top.nickname }}</text>
-              </view>
-              <view class="user-id-row" @click="copyUserId">
-                <text class="id-badge">ID</text>
-                <text class="id-number">{{ profileData.top.userId || '' }}</text>
-                <text class="id-copy-icon">📋</text>
+                <text class="info-id"><text class="id-badge">ID</text>{{ profileData.top.userId }}</text>
               </view>
               <!-- 基本资料行：年龄/身高/体重/学历（紧贴昵称下方） -->
               <view class="basic-line" v-if="profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight || profileData.basicInfo.education">
@@ -948,6 +944,16 @@ onMounted(async () => {
   if (opts.id) {
     userId.value = parseInt(opts.id)
     fetchProfileDetail()
+  } else if (opts.scene) {
+    // 扫描海报小程序码进入：scene 形如 "id=123"（微信会 URL 编码）
+    const scene = decodeURIComponent(opts.scene)
+    const m = scene.match(/id=(\d+)/)
+    if (m) {
+      userId.value = parseInt(m[1])
+      fetchProfileDetail()
+    } else {
+      loading.value = false
+    }
   } else {
     loading.value = false
   }
@@ -1502,17 +1508,6 @@ const retryFunQuiz = () => {
   funQuizBirthday.value.taBirthDay = taYear2 ? `${taYear2}-01-01` : ''
 }
 
-const copyUserId = () => {
-  const userId = profileData.value?.top?.userId
-  if (!userId) return
-  uni.setClipboardData({
-    data: `ID:${userId}`,
-    success: () => {
-      uni.showToast({ title: '已复制', icon: 'none', duration: 1500 })
-    },
-  })
-}
-
 const profileGenLoading = ref(false)
 const refreshProfileGen = async () => {
   profileGenLoading.value = true
@@ -1755,35 +1750,24 @@ $text-hint: #999999;
 }
 
 .info-name-id {
-  display: flex; flex-direction: column; flex: 1; min-width: 0;
+  display: flex; align-items: flex-start; gap: 10rpx; flex: 1; min-width: 0;
 }
 
 .info-nickname {
   font-size: 36rpx; font-weight: bold; color: $text; line-height: 1;
 }
 
-.user-id-row {
-  display: flex; align-items: center; gap: 8rpx; margin-top: 10rpx;
-}
-
 .id-badge {
   display: inline-block;
-  background: #f0f0f0;
-  border-radius: 6rpx;
-  padding: 2rpx 10rpx;
-  font-size: 22rpx;
-  color: #999;
-}
-
-.id-number {
+  font-style: italic;
   font-size: 26rpx;
-  color: #333;
-  letter-spacing: 2rpx;
+  font-weight: 500; color: #fff; background-color: #aaa;
+  padding: 0 7rpx; border-radius: 20rpx; line-height: 1.2;
+  vertical-align: baseline; margin-right: 4rpx;
 }
 
-.id-copy-icon {
-  font-size: 24rpx;
-  margin-left: 4rpx;
+.info-id {
+  font-size: 28rpx; color: $text-hint; padding-top: 0rpx; font-weight: 400;
 }
 
 // ===== 心动按钮（对标首页 user-card） =====

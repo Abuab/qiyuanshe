@@ -49,11 +49,12 @@ export class WechatQrService {
   /**
    * 生成小程序码 PNG buffer；失败返回 null（调用方回退普通二维码）
    * @param scene 场景参数（≤32 字符，字符集受限），如 i=123 用于追踪邀请人
+   * @param pageOverride 指定小程序码打开的页面，不传则用系统配置 share.qrPage
    */
-  async getMiniProgramCode(scene: string): Promise<Buffer | null> {
+  async getMiniProgramCode(scene: string, pageOverride?: string): Promise<Buffer | null> {
     const token = await this.getAccessToken()
     if (!token) return null
-    const page = (await this.systemService.getConfig('share.qrPage')) || 'pages/personality/result'
+    const page = pageOverride || (await this.systemService.getConfig('share.qrPage')) || 'pages/personality/result'
     const envVersion = (await this.systemService.getConfig('share.qrEnvVersion')) || 'release'
     try {
       const url = `https://api.weixin.qq.com/wxa/getwxacodeunlimit?access_token=${token}`

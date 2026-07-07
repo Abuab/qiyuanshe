@@ -113,7 +113,9 @@ async function generate() {
             canvasId: 'pposter-canvas',
             quality: 0.92,
             success: (res: any) => {
-              // 直接使用临时文件路径（与可用参照页一致，无需持久化）
+              // 此处仅用于预览展示。canvasToTempFilePath 返回的 http://tmp/... 是临时文件，
+              // 微信随时会回收；本页在 onReady 自动生成，用户浏览后再点保存，间隔较长，临时
+              // 文件常被清理导致 "no such file"。因此真正保存时会重新导出一张全新临时文件（见 savePoster）。
               imagePath.value = res.tempFilePath
               generating.value = false
               resolve()
@@ -366,20 +368,36 @@ function downloadImage(url: string, timeoutMs = 4000): Promise<string> {
 // ==================== 保存 ====================
 
 let saving = false
-/**
- * 保存海报到相册
- * @param freshPath 生成后自动保存时传入的持久化路径；手动点击时不传，使用 imagePath
- */
-async function savePoster(freshPath?: string) {
+
+/** 从离屏画布重新导出一张全新的临时文件，避免旧临时文件已被微信回收 */
+function exportCanvasFresh(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.canvasToTempFilePath({
+      canvasId: 'pposter-canvas',
+      quality: 0.92,
+      success: (res: any) => resolve(res.tempFilePath),
+      fail: (e: any) => reject(e),
+    })
+  })
+}
+
+/** 保存海报到相册 */
+async function savePoster() {
   if (saving) return
-  // freshPath 只接受字符串，防止模板 @tap 把事件对象传进来
-  const path = typeof freshPath === 'string' && freshPath ? freshPath : imagePath.value
-  if (!path) return
+  if (!imagePath.value) return
   saving = true
 
-  const doSave = () => {
+  const doSave = async () => {
+    // 保存前重新导出一张全新临时文件，确保写相册时文件必定存在（生成时的旧临时文件可能已被微信回收）
+    let filePath = imagePath.value
+    try {
+      filePath = await exportCanvasFresh()
+      imagePath.value = filePath
+    } catch {
+      // 重新导出失败则退回预览时的路径
+    }
     uni.saveImageToPhotosAlbum({
-      filePath: path,
+      filePath,
       success: () => {
         saving = false
         uni.showToast({ title: '已保存，快去朋友圈分享吧', icon: 'none' })

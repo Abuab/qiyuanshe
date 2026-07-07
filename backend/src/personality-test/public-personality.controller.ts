@@ -225,4 +225,43 @@ export class PublicPersonalityController {
     res.setHeader('Cache-Control', 'public, max-age=3600')
     res.end(buffer)
   }
+
+  /**
+   * 生成用户主页分享二维码（PNG）供「介绍给好友」海报绘制
+   * GET /personality/user-share-qr?userId=xxx
+   *
+   * 优先生成微信小程序码（扫码直达该用户详情页，scene 携带用户 id），
+   * 失败时回退为普通链接二维码，保证海报始终有码。
+   */
+  @Get('user-share-qr')
+  @UseGuards(OptionalJwtAuthGuard)
+  async userShareQr(
+    @Query('userId') userId: string,
+    @Response() res: ExpressResponse,
+  ) {
+    const uid = userId ? parseInt(userId, 10) : 0
+    let buffer: Buffer | null = null
+    // 1) 优先：微信小程序码，扫码直达 pages/user-detail/index，scene 携带用户 id
+    if (uid) {
+      try {
+        buffer = await this.wechatQrService.getMiniProgramCode(`id=${uid}`, 'pages/user-detail/index')
+      } catch {
+        buffer = null
+      }
+    }
+    // 2) 回退：普通链接二维码
+    if (!buffer) {
+      const base = process.env.APP_SHARE_BASE_URL || 'https://qiyuanshe.example.com'
+      const url = `${base}/#/pages/user-detail/index?id=${uid}`
+      try {
+        buffer = await QRCode.toBuffer(url, { width: 280, margin: 1 })
+      } catch {
+        res.status(500).end()
+        return
+      }
+    }
+    res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+    res.end(buffer)
+  }
 }

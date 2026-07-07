@@ -356,14 +356,14 @@ const tabs = computed(() => {
 })
 const currentTab = ref('all')
 
-/** 判断是否应该模糊：查看者只有头像、没有其他照片 */
-const shouldBlur = (item: DynamicItem, imgIndex: number): boolean => {
+/** 判断是否应该模糊：查看者只有头像/单张照片时，其他用户的「多图」相册全部模糊，单图则正常显示 */
+const shouldBlur = (item: DynamicItem, _imgIndex: number): boolean => {
   // 自己的动态不模糊
   if (item.userId === myUserId.value) return false
-  // 只有第二张及之后的才模糊
-  if (imgIndex === 0) return false
-  // 如果查看者有上传照片（>1），不模糊
+  // 查看者已上传多张照片（>1）→ 全部解锁，不模糊
   if (myPhotoCount.value > 1) return false
+  // 查看者仅一张照片（锁定态）：其他用户只有一张图片时正常显示，多图则整组全部模糊
+  if ((item.images?.length || 0) <= 1) return false
   return true
 }
 
