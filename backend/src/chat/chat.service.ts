@@ -456,7 +456,6 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
-      console.log('[Chat] getMessages loadMore beforeId=', beforeId, 'returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     } else {
       // 首次加载：查最新的 limit 条，DESC + limit，然后 reverse 为正序（旧→新）
       ;[list, total] = await this.messageRepository.findAndCount({
@@ -466,7 +465,6 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
-      console.log('[Chat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
     // 将关联用户头像解析为完整 URL（兼容数据库中遗留的相对路径）
@@ -523,7 +521,6 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       ...msg,
       isMine: msg.fromUserId === userId,
     }))
-    console.log('[Chat] pollMessages afterId=', afterId, 'returned=', result.length, 'ids=', result.map(m => m.id))
     return result
   }
 
