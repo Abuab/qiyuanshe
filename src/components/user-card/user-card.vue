@@ -75,13 +75,9 @@
       </view>
     </view>
 
-    <!-- 心动按钮 -->
+    <!-- 心动按钮：用 Unicode 心形替代 uni-icons 图标字体，避免真机字体不渲染 -->
     <view class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
-      <uni-icons
-        :type="isLiked ? 'heart-filled' : 'heart'"
-        size="40rpx"
-        color="#FF6B6B"
-      ></uni-icons>
+      <text class="heart-ico">{{ isLiked ? '♥' : '♡' }}</text>
     </view>
   </view>
 </template>
@@ -474,6 +470,12 @@ const onLike = async () => {
 
 .heart-btn.liked {
   animation: heartBounce 300ms ease;
+}
+
+.heart-ico {
+  font-size: 44rpx;
+  line-height: 1;
+  color: #FF6B6B;
 }
 
 @keyframes heartBounce {

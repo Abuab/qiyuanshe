@@ -214,9 +214,9 @@ async function drawPoster(result: any, ctx: any) {
     sy += 26
   }
 
-  // 简化雷达图（2个维度真实值，其余置0）
+  // 完整雷达图（与测试结果页一致：绘制全部维度真实值）
   const dims: any[] = Array.isArray(result.dimensions) ? result.dimensions : []
-  drawMiniRadar(ctx, cx, sy + 110, 90, dims, 2)
+  drawMiniRadar(ctx, cx, sy + 82, 72, dims, dims.length)
 
   // 分享文案
   const copy = shareText.value || defaultCopy(result)

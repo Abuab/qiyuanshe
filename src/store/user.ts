@@ -106,7 +106,7 @@ export const useUserStore = defineStore('user', () => {
 
     // 字段类型映射：哪些字段是 string / number / string[]
     const stringFields = [
-      'nickname', 'avatar', 'updatedAt', 'education', 'occupation', 'incomeRange',
+      'userId', 'nickname', 'avatar', 'updatedAt', 'education', 'occupation', 'incomeRange',
       'maritalStatus', 'residence', 'city', 'hometown', 'housingStatus', 'carStatus',
       'onlyChild', 'whenMarry', 'zodiac', 'constellation', 'partnerAgeRange',
       'partnerHeightMin', 'partnerEducation', 'partnerIncome', 'housingRequirement',
