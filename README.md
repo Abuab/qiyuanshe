@@ -1660,7 +1660,7 @@ systemctl restart docker
 | 容器 | mem_limit | 实测占用 | 说明 |
 |------|-----------|----------|------|
 | mysql | 512m | ~200-250m（调优后） | 调优前逼近 512m（83%），有 OOM 风险 |
-| api (NestJS) | 1280m | 100m 起，随运行增长 | 堆上限 `--max-old-space-size=768` |
+| api (NestJS) | 1536m | 100m 起，随运行增长 | 堆上限 `--max-old-space-size=1024` |
 | redis | 256m | ~15m | `maxmemory 256mb` 保护 |
 | admin (nginx) | 128m | ~12m | 静态资源 |
 | nginx | 64m | ~5m | 反向代理 |
@@ -1724,7 +1724,7 @@ command: >
 
 ### 4. NestJS API 堆上限
 
-`docker-compose.yml` 中 API 容器设置 `NODE_OPTIONS=--max-old-space-size=768`（容器 mem_limit 1280m，为非堆内存/缓冲区预留约 512MB）。原 512MB 对本应用（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器）过小，会在运行一段时间后堆逼近上限触发颠簸式 GC 最终 OOM。
+`docker-compose.yml` 中 API 容器设置 `NODE_OPTIONS=--max-old-space-size=1024`（容器 mem_limit 1536m，为非堆内存/缓冲区预留约 512MB）。本应用体量较大（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器 + 连接池），512MB/768MB 均会在负载下堆逼近上限触发颠簸式 GC 最终 OOM，故提升至 1024MB。
 
 ### 5. 数据库索引
 
