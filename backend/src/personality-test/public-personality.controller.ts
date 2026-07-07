@@ -169,7 +169,8 @@ export class PublicPersonalityController {
   async matchMap(@Query('userIds') userIds: string, @Request() req: any) {
     const currentUserId = req.user?.id || 0
     if (!currentUserId) {
-      return Result.success({ tested: false, map: {} })
+      // 未识别到登录用户（如首屏 token 尚未就绪）时，返回 tested:true 避免误闪「测一测更精准」引导语
+      return Result.success({ tested: true, map: {} })
     }
     const ids = (userIds || '')
       .split(',')
