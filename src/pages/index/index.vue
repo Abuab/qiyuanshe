@@ -155,6 +155,9 @@
         :users="userList"
         :loading-more="loadingMore"
         :no-more="noMoreData"
+        :match-map="matchMap"
+        :show-match-badge="userStore.isLoggedIn"
+        :viewer-tested="viewerTested"
         :empty-text="isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户'"
         :show-clear-filter="isEmptyFromFilter"
         @user-click="goToUserDetail"
@@ -166,10 +169,15 @@
 
     <tab-bar />
 
-    <!-- Hi红娘悬浮按钮 -->
-    <view class="float-matchmaker" @tap="handleMatchmakerFloat">
-      <text v-if="matchmakerShowHi && matchmakerHiText" class="float-hi">{{ matchmakerHiText }}</text>
-      <text class="float-label">{{ matchmakerButtonText }}</text>
+    <!-- 悬浮按钮：问媒 / 测一测（由后台「首页浮动按钮配置」切换，即时生效） -->
+    <view class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
+      <template v-if="isFloatTestMode">
+        <text class="float-label float-label-test">{{ floatText }}</text>
+      </template>
+      <template v-else>
+        <text v-if="matchmakerShowHi && matchmakerHiText" class="float-hi">{{ matchmakerHiText }}</text>
+        <text class="float-label">{{ matchmakerButtonText }}</text>
+      </template>
     </view>
 
     <!-- 一键回到顶部按钮 -->
@@ -245,6 +253,7 @@ import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-l
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
+import { goPersonalityEntry, resolveAndExposeCopy, reportCopyClick, flushReportQueue } from '@/utils/personality'
 
 interface HotQuestion {
   id: number
@@ -268,6 +277,9 @@ const hotQuestions = ref<HotQuestion[]>([])
 
 const currentFilter = ref('active')
 const userList = ref<UserCardData[]>([])
+// 人格匹配度标识：{ userId: percent }；viewerTested 表示当前用户是否已完成测试
+const matchMap = ref<Record<number, number>>({})
+const viewerTested = ref<boolean | undefined>(undefined)
 const isRefreshing = ref(false)
 const loadingMore = ref(false)
 const noMoreData = ref(false)
@@ -300,6 +312,52 @@ const appName = computed(() => systemStore.appName)
 const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
 const matchmakerShowHi = computed(() => systemStore.matchmakerShowHi !== false)
 const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')
+
+// ===== 首页浮动按钮配置（问媒 / 测一测切换） =====
+const floatConfig = ref<any>(null)
+const floatCtaItemId = ref<number | undefined>(undefined)
+const isFloatTestMode = computed(() => floatConfig.value?.mode === 'test')
+const floatText = computed(() => floatConfig.value?.test?.text || '测一测')
+const floatButtonStyle = computed(() =>
+  isFloatTestMode.value && floatConfig.value?.test?.bgColor
+    ? `background:${floatConfig.value.test.bgColor};`
+    : '',
+)
+
+const loadFloatConfig = async () => {
+  try {
+    const cfg: any = await get('/guide/floating-button')
+    floatConfig.value = cfg || null
+    // 测一测模式：上报浮动按钮文案位曝光
+    if (floatConfig.value?.mode === 'test') {
+      const copy = await resolveAndExposeCopy('home_float_button')
+      floatCtaItemId.value = copy?.itemId
+    }
+  } catch { /* 保底：维持问媒模式，不影响红娘弹窗 */ }
+}
+
+const handleFloatButton = () => {
+  if (isFloatTestMode.value) {
+    reportCopyClick('home_float_button', floatCtaItemId.value)
+    goPersonalityEntry(userStore.isLoggedIn)
+  } else {
+    handleMatchmakerFloat()
+  }
+}
+
+/** 加载推荐用户的人格匹配度标识（非侵入，失败静默） */
+const loadMatchMap = async (userIds: number[]) => {
+  if (!userStore.isLoggedIn || userIds.length === 0) return
+  try {
+    const res: any = await get('/personality/match-map', { userIds: userIds.join(',') })
+    viewerTested.value = !!res?.tested
+    if (res?.map && typeof res.map === 'object') {
+      matchMap.value = { ...matchMap.value, ...res.map }
+    }
+  } catch {
+    // 静默失败：不影响推荐列表展示与排序
+  }
+}
 
 const loadUserList = async (reset = false, filterParams?: FilterData) => {
   if (reset) {
@@ -352,6 +410,9 @@ const loadUserList = async (reset = false, filterParams?: FilterData) => {
         const newUsers = filteredList.filter((u: UserCardData) => !existingIds.has(u.id))
         userList.value = [...userList.value, ...newUsers]
       }
+
+      // 异步加载人格匹配度标识（失败静默，不影响列表展示与排序）
+      loadMatchMap(userList.value.map(u => u.id))
 
       if (result.list.length < pageSize) {
         noMoreData.value = true
@@ -615,7 +676,10 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
-  // 暂不重复弹窗，后续可恢复
+  // 浮动按钮配置：每次显示都拉取，保证后台切换模式后即时生效
+  loadFloatConfig()
+  // 弱网恢复后补报离线埋点队列
+  flushReportQueue()
 })
 
 const onShareAppMessage = () => {
@@ -974,6 +1038,11 @@ const onShareTimeline = () => {
     font-weight: 600;
     color: #F098B4;
     line-height: 1.1;
+  }
+
+  .float-label-test {
+    color: #ffffff;
+    font-weight: 700;
   }
 }
 

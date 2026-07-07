@@ -19,6 +19,9 @@ export enum AiCallType {
   MATCHMAKER = 'matchmaker',   // 红娘咨询
   FUN_QUIZ = 'fun_quiz',       // 趣味测试
   PROFILE_GEN = 'profile_gen', // 画像生成
+  PERSONALITY = 'personality', // 性格深度解读
+  MATCH_ADVICE = 'match_advice', // 红娘匹配建议
+  SHARE_COPY = 'share_copy',   // 分享文案生成
 }
 
 /**

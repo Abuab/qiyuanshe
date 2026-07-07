@@ -46,6 +46,11 @@
         <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
       </view>
 
+      <!-- 人格匹配度标识（仅视觉标签，不影响推荐排序） -->
+      <view v-if="matchBadgeText" class="match-badge" :class="{ untested: viewerUntested }">
+        <text class="match-badge-text">{{ matchBadgeText }}</text>
+      </view>
+
       <view v-if="displayIntro" class="intro-row">
         <text class="intro-text">{{ displayIntro }}</text>
       </view>
@@ -113,6 +118,10 @@ export interface UserCardData {
 interface Props {
   user: UserCardData
   showPhotos?: boolean
+  /** 当前浏览者与该用户的人格匹配度（0~100），已测试用户可见 */
+  matchPercent?: number
+  /** 当前浏览者尚未测试人格，展示引导文案 */
+  viewerUntested?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -151,6 +160,15 @@ const avatarUrl = computed(() => {
 })
 
 const displayIntro = computed(() => '')
+
+/** 人格匹配度标识文案：已测且有分显示百分比，未测显示引导文案 */
+const matchBadgeText = computed(() => {
+  if (props.viewerUntested) return '测一测更精准'
+  if (typeof props.matchPercent === 'number' && props.matchPercent > 0) {
+    return `性格匹配度 ${props.matchPercent}%`
+  }
+  return ''
+})
 
 const onAvatarError = () => {
   avatarError.value = true
@@ -382,6 +400,28 @@ const onLike = async () => {
   font-size: 22rpx;
   color: #FF9500;
   white-space: nowrap;
+}
+
+/* --- 人格匹配度标识 --- */
+.match-badge {
+  align-self: flex-start;
+  margin-bottom: 2rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(90deg, #FFE8CC 0%, #FFD9C0 100%);
+}
+
+.match-badge.untested {
+  background: #FFF0F5;
+}
+
+.match-badge-text {
+  font-size: 20rpx;
+  color: #E8792B;
+}
+
+.match-badge.untested .match-badge-text {
+  color: #FF6B9D;
 }
 
 /* --- 相册小图 --- */

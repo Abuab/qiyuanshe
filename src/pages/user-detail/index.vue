@@ -102,6 +102,11 @@
                 <text v-if="(profileData.basicInfo.age || profileData.basicInfo.height || profileData.basicInfo.weight) && profileData.basicInfo.education" class="dot">|</text>
                 <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
               </view>
+              <!-- 人格类型标签（该用户已测试时展示，点击查看简化雷达图） -->
+              <view v-if="targetPersonality" class="personality-tag" @tap="openPersonalityPopup">
+                <text class="pt-icon">🧭</text>
+                <text class="pt-text">{{ targetPersonality.nickname || targetPersonality.typeName }}</text>
+              </view>
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
@@ -238,6 +243,30 @@
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI趣味测试</text>
               <text class="ai-entry-desc">看星座生肖契合密码</text>
+            </view>
+            <text class="ai-entry-arrow">→</text>
+          </view>
+        </view>
+
+        <!-- ========== AI红娘说（双方均已测试人格才展示） ========== -->
+        <view v-if="matchAdviceEligible && !profileData.top.isSelf" class="ai-entry-card" @tap="openMatchAdvice">
+          <view class="ai-entry-content">
+            <text class="ai-entry-emoji">✦</text>
+            <view class="ai-entry-info">
+              <text class="ai-entry-title">AI红娘说</text>
+              <text class="ai-entry-desc">看看你们的性格契合分析</text>
+            </view>
+            <text class="ai-entry-arrow">→</text>
+          </view>
+        </view>
+
+        <!-- ========== 浏览者未测试引导（文案由后台配置） ========== -->
+        <view v-if="showViewerTestGuide && !profileData.top.isSelf" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
+          <view class="ai-entry-content">
+            <text class="ai-entry-emoji">🧭</text>
+            <view class="ai-entry-info">
+              <text class="ai-entry-title">{{ viewerGuideText }}</text>
+              <text class="ai-entry-desc">测完更懂你们的契合度</text>
             </view>
             <text class="ai-entry-arrow">→</text>
           </view>
@@ -504,6 +533,73 @@
         @update:show="showAiMatchPopup = $event"
       />
 
+      <!-- ========== AI红娘说弹窗 ========== -->
+      <view v-if="showMatchAdvicePopup" class="funquiz-overlay" @tap="showMatchAdvicePopup = false">
+        <view class="funquiz-panel" @tap.stop>
+          <view class="funquiz-header">
+            <text class="funquiz-title">AI红娘说</text>
+            <view class="funquiz-close" @tap="showMatchAdvicePopup = false"><text>✕</text></view>
+          </view>
+          <scroll-view class="funquiz-body funquiz-result-body" scroll-y :enhanced="true" :show-scrollbar="false">
+            <view class="funquiz-body-inner">
+              <view v-if="matchAdviceLoading" class="ma-loading">
+                <text class="ma-loading-text">AI 红娘正在分析你们的性格契合…</text>
+              </view>
+              <block v-else-if="matchAdvice">
+                <view class="fq-section">
+                  <text class="fq-section-title">性格互补点</text>
+                  <text class="fq-section-text">{{ matchAdvice.complement }}</text>
+                </view>
+                <view class="fq-section">
+                  <text class="fq-section-title">潜在摩擦点</text>
+                  <text class="fq-section-text">{{ matchAdvice.friction }}</text>
+                </view>
+                <view class="fq-section">
+                  <text class="fq-section-title">破冰话题推荐</text>
+                  <text v-for="(t, i) in matchAdvice.icebreakers" :key="'ib' + i" class="ma-list-item">{{ Number(i) + 1 }}. {{ t }}</text>
+                </view>
+                <view class="fq-section">
+                  <text class="fq-section-title">约会场景建议</text>
+                  <text v-for="(d, i) in matchAdvice.dateScenes" :key="'ds' + i" class="ma-list-item">· {{ d }}</text>
+                </view>
+                <text class="ma-disclaimer">{{ matchAdvice.disclaimer || '内容由 AI 生成，仅供参考' }}</text>
+              </block>
+              <view v-else class="ma-loading">
+                <text class="ma-loading-text">暂无法生成分析，请稍后重试</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+
+      <!-- ========== 人格类型弹窗（简化雷达图 + 适配建议） ========== -->
+      <view v-if="showPersonalityPopup" class="funquiz-overlay" @tap="showPersonalityPopup = false">
+        <view class="funquiz-panel" @tap.stop>
+          <view class="funquiz-header">
+            <text class="funquiz-title">TA 的性格画像</text>
+            <view class="funquiz-close" @tap="showPersonalityPopup = false"><text>✕</text></view>
+          </view>
+          <scroll-view class="funquiz-body funquiz-result-body" scroll-y :enhanced="true" :show-scrollbar="false">
+            <view class="funquiz-body-inner" v-if="targetPersonality">
+              <view class="pp-head">
+                <text class="pp-name">{{ targetPersonality.typeName || targetPersonality.typeCode }}</text>
+                <text v-if="targetPersonality.nickname" class="pp-nick">「{{ targetPersonality.nickname }}」</text>
+              </view>
+              <view class="pp-radar-wrap">
+                <canvas canvas-id="ppRadar" id="ppRadar" class="pp-radar" />
+              </view>
+              <view v-if="targetPersonality.tags && targetPersonality.tags.length" class="pp-tags">
+                <text v-for="(t, i) in targetPersonality.tags" :key="'pt' + i" class="pp-tag">{{ t }}</text>
+              </view>
+              <view class="pp-advice">
+                <text class="pp-advice-title">适配建议</text>
+                <text class="pp-advice-text">{{ personalityAdviceText }}</text>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
+
       <!-- ========== AI趣味测试弹窗 ========== -->
       <view v-if="showFunQuizPopup" class="funquiz-overlay" @tap="showFunQuizPopup = false">
         <view class="funquiz-panel" @tap.stop>
@@ -628,9 +724,10 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, getCurrentInstance } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
+import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
 import { getFullImageUrl } from '@/utils/common'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
@@ -886,6 +983,10 @@ const fetchProfileDetail = async () => {
     if (isLoggedIn.value) {
       checkBlockStatus()
     }
+    // 检查 AI红娘说 入口是否可展示（双方均已测试人格）
+    checkMatchAdviceEligibility()
+    // 加载人格标签 + 浏览者未测引导
+    loadPersonalityInfo()
   } catch {
     uni.showToast({ title: '获取用户信息失败', icon: 'none' })
   } finally {
@@ -1195,6 +1296,153 @@ const openAiMatch = () => {
     return
   }
   showAiMatchPopup.value = true
+}
+
+// ===== AI红娘说（双方均已测试人格才展示） =====
+const matchAdviceEligible = ref(false)
+const showMatchAdvicePopup = ref(false)
+const matchAdviceLoading = ref(false)
+const matchAdvice = ref<any>(null)
+
+// 检查是否可展示入口：功能开启 + 双方均已测试（后端判定，未满足则隐藏）
+const checkMatchAdviceEligibility = async () => {
+  matchAdviceEligible.value = false
+  if (!isLoggedIn.value || !userId.value || profileData.value?.top?.isSelf) return
+  try {
+    const res: any = await request({
+      url: `/ai/personality/match-advice/eligibility?targetUserId=${userId.value}`,
+      method: 'GET',
+    })
+    matchAdviceEligible.value = !!res?.eligible
+  } catch { /* 静默：不展示入口 */ }
+}
+
+const openMatchAdvice = async () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
+  showMatchAdvicePopup.value = true
+  if (matchAdvice.value || matchAdviceLoading.value) return
+  matchAdviceLoading.value = true
+  try {
+    const res: any = await request({
+      url: `/ai/personality/match-advice?targetUserId=${userId.value}`,
+      method: 'GET',
+    })
+    matchAdvice.value = res || null
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '生成失败，请稍后重试', icon: 'none' })
+  } finally {
+    matchAdviceLoading.value = false
+  }
+}
+
+// ===== 人格类型标签 + 弹窗 + 浏览者未测引导 =====
+const instance = getCurrentInstance()
+const targetPersonality = ref<any>(null)      // 被浏览用户的简化人格视图
+const showPersonalityPopup = ref(false)
+const viewerTested = ref(false)                // 浏览者本人是否已测
+const viewerGuideText = ref('测测你的性格，看看你们合不合拍')
+const viewerGuideItemId = ref<number | undefined>(undefined)
+// 浏览者本人未测试即展示引导（不依赖对方是否已测，符合需求6）
+const showViewerTestGuide = computed(() => !viewerTested.value)
+const personalityAdviceText = computed(() => {
+  const name = targetPersonality.value?.nickname || targetPersonality.value?.typeName || 'TA'
+  return `${name}的性格与你的互补度较高，建议尝试从共同话题切入，慢慢了解彼此。`
+})
+
+// 加载对方人格 + 浏览者自身测试状态（在资料加载后调用）
+const loadPersonalityInfo = async () => {
+  if (!userId.value || profileData.value?.top?.isSelf) return
+  // 对方人格（简化视图，未测返回 null）
+  try {
+    const res: any = await request({
+      url: `/personality/result/user/${userId.value}`,
+      method: 'GET',
+    })
+    targetPersonality.value = res && res.typeCode ? res : null
+  } catch { targetPersonality.value = null }
+  // 浏览者自身是否已测
+  if (isLoggedIn.value) {
+    try {
+      const mine: any = await request({ url: '/personality/my-result', method: 'GET' })
+      viewerTested.value = !!(mine && mine.typeCode)
+    } catch { viewerTested.value = false }
+  } else {
+    viewerTested.value = false
+  }
+  // 浏览者未测时曝光引导文案位（后台可配置文案）
+  if (showViewerTestGuide.value) {
+    const copy = await resolveAndExposeCopy('user_detail_test_guide')
+    if (copy?.mainText) viewerGuideText.value = copy.mainText
+    viewerGuideItemId.value = copy?.itemId
+  }
+}
+
+const openPersonalityPopup = () => {
+  if (!targetPersonality.value) return
+  showPersonalityPopup.value = true
+  nextTick(() => setTimeout(drawTargetRadar, 60))
+}
+
+const goViewerTest = () => {
+  reportCopyClick('user_detail_test_guide', viewerGuideItemId.value)
+  if (!isLoggedIn.value) { goToLogin(); return }
+  uni.navigateTo({ url: '/pages/personality/test' })
+}
+
+// 绘制对方简化雷达图（radar: { 维度code: 0-100 }）
+const drawTargetRadar = () => {
+  const radar = targetPersonality.value?.radar || {}
+  const keys = Object.keys(radar)
+  if (keys.length === 0) return
+  const ctx = uni.createCanvasContext('ppRadar', instance?.proxy)
+  const size = 220
+  const cx = size / 2
+  const cy = size / 2
+  const radius = size / 2 - 36
+  const n = keys.length
+  const angleStep = (Math.PI * 2) / n
+  const start = -Math.PI / 2
+
+  ctx.clearRect(0, 0, size, size)
+  ctx.setStrokeStyle('#ffd6e4')
+  ctx.setLineWidth(1)
+  for (let layer = 1; layer <= 3; layer++) {
+    const r = (radius * layer) / 3
+    ctx.beginPath()
+    for (let i = 0; i < n; i++) {
+      const ang = start + angleStep * i
+      const x = cx + r * Math.cos(ang)
+      const y = cy + r * Math.sin(ang)
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.closePath()
+    ctx.stroke()
+  }
+  for (let i = 0; i < n; i++) {
+    const ang = start + angleStep * i
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.lineTo(cx + radius * Math.cos(ang), cy + radius * Math.sin(ang))
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  for (let i = 0; i < n; i++) {
+    const ang = start + angleStep * i
+    const v = Math.max(0, Math.min(100, Number(radar[keys[i]]) || 0)) / 100
+    const r = radius * v
+    const x = cx + r * Math.cos(ang)
+    const y = cy + r * Math.sin(ang)
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.closePath()
+  ctx.setFillStyle('rgba(255,107,157,0.35)')
+  ctx.fill()
+  ctx.setStrokeStyle('#ff6b9d')
+  ctx.setLineWidth(2)
+  ctx.stroke()
+  ctx.draw()
 }
 
 const showFunQuizPopup = ref(false)
@@ -2202,6 +2450,34 @@ $text-hint: #999999;
 .fq-section-title { font-size: 28rpx; font-weight: bold; color: #333; margin-bottom: 10rpx; display: block; }
 
 .fq-section-text { font-size: 26rpx; color: #666; line-height: 1.7; }
+
+// ===== AI红娘说 弹窗 =====
+.ma-loading { padding: 60rpx 0; display: flex; justify-content: center; }
+.ma-loading-text { font-size: 26rpx; color: #999; }
+.ma-list-item { display: block; font-size: 26rpx; color: #666; line-height: 1.7; margin-bottom: 8rpx; }
+.ma-disclaimer { display: block; margin-top: 20rpx; font-size: 22rpx; color: #bbb; }
+
+// ===== 人格类型标签 + 弹窗 =====
+.personality-tag {
+  display: inline-flex; align-items: center; margin-top: 12rpx;
+  padding: 6rpx 18rpx; border-radius: 24rpx; background: #fff0f3;
+  align-self: flex-start;
+}
+.pt-icon { font-size: 24rpx; margin-right: 6rpx; }
+.pt-text { font-size: 24rpx; color: #ff6b9d; font-weight: 600; }
+
+.pp-head { display: flex; flex-direction: column; align-items: center; margin-bottom: 20rpx; }
+.pp-name { font-size: 36rpx; font-weight: bold; color: #333; }
+.pp-nick { margin-top: 6rpx; font-size: 26rpx; color: #ff6b9d; }
+.pp-radar-wrap { display: flex; justify-content: center; }
+.pp-radar { width: 220px; height: 220px; }
+.pp-tags { display: flex; flex-wrap: wrap; gap: 12rpx; justify-content: center; margin-top: 20rpx; }
+.pp-tag { padding: 8rpx 20rpx; border-radius: 22rpx; background: #f7f7f9; color: #666; font-size: 24rpx; }
+.pp-advice { margin-top: 28rpx; padding: 24rpx; border-radius: 16rpx; background: #fff8fa; }
+.pp-advice-title { display: block; font-size: 26rpx; font-weight: 600; color: #ff6b9d; margin-bottom: 8rpx; }
+.pp-advice-text { font-size: 26rpx; color: #666; line-height: 1.7; }
+
+.viewer-guide-card { background: linear-gradient(135deg, #fff0f3, #ffe4ee); }
 
 .fq-node { padding: 16rpx 20rpx; background: #FFF5F7; border-radius: 12rpx; margin-bottom: 12rpx; }
 

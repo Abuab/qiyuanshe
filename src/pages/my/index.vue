@@ -130,6 +130,13 @@
             </view>
             <text class="service-label">AI助手</text>
           </view>
+          <view class="service-item" @tap="goMyPersonality">
+            <view class="service-icon-box" style="background-color: #FCE4EC;">
+              <text class="service-icon-emoji">🧭</text>
+              <view v-if="personalityTested" class="service-dot" />
+            </view>
+            <text class="service-label">{{ myPersonalityLabel }}</text>
+          </view>
         </view>
         <!-- AI助手展开面板 -->
         <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
@@ -149,6 +156,12 @@
             <text class="ai-sub-star">✦</text>
             <text class="ai-sub-label">AI 个人印象</text>
             <text class="ai-sub-desc">{{ aiProfileText ? '已生成' : '生成魅力印象' }}</text>
+            <text class="arrow">></text>
+          </view>
+          <view v-if="showAiPersonalityEntry" class="ai-sub-item" @tap="goToAiPersonality">
+            <text class="ai-sub-star">✦</text>
+            <text class="ai-sub-label">{{ aiPersonalityCopy.label }}</text>
+            <text class="ai-sub-desc">{{ personalityTested ? aiPersonalityCopy.descTested : aiPersonalityCopy.descUntested }}</text>
             <text class="arrow">></text>
           </view>
         </view>
@@ -238,6 +251,7 @@ import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { getFullImageUrl } from '@/utils/common'
 import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
+import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -254,6 +268,28 @@ const refreshingVisible = ref(false)  // 下拉刷新状态
 const aiProfileText = ref('')        // AI 个人印象文本
 const profileGenLoading = ref(false) // AI 印象生成中
 const aiAssistantExpanded = ref(false) // AI助手面板展开状态
+
+// ===== AI 性格解读入口（第4项）=====
+const personalityTested = ref(false) // 当前用户是否已完成人格测试
+const aiPersonalityCopy = reactive({
+  label: 'AI 性格解读',
+  descTested: '查看专属性格分析',
+  descUntested: '先测一测你的人格',
+})
+// 入口显示：AI 总开关开启 + personality 子功能开启（后台可控）
+const showAiPersonalityEntry = computed(() => {
+  if (!systemStore.aiMasterEnabled) return false
+  return systemStore.isAiFeatureEnabled('personality')
+})
+
+// ===== 金刚区「我的性格 / 测一测」图标（入口1）=====
+const myEntryItemId = ref<number | undefined>(undefined)
+const myEntryLabelOverride = ref('')
+// 已测→「我的性格」，未测→「测一测」；后台文案位可覆盖
+const myPersonalityLabel = computed(() => {
+  if (myEntryLabelOverride.value) return myEntryLabelOverride.value
+  return personalityTested.value ? '我的性格' : '测一测'
+})
 
 // AI助手入口是否显示：优先看 ai_assistant 开关，若后端未配置则看任意子功能是否开启
 const showAiAssistantEntry = computed(() => {
@@ -306,6 +342,7 @@ onShow(() => {
   refreshProfile()
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
   loadAiProfileText()
+  loadPersonalityEntry()
 })
 
 const onRefresherRefresh = async () => {
@@ -446,6 +483,55 @@ const goToAiMatchmaker = () => {
 }
 const goToAiQuiz = () => {
   safeNavigateTo('/pages/ai-quiz/ai-quiz')
+}
+
+// AI 性格解读：未测试→测试页；已测试→结果页（含 AI 深度解读卡片）
+const goToAiPersonality = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
+  if (personalityTested.value) {
+    safeNavigateTo('/pages/personality/result')
+  } else {
+    safeNavigateTo('/pages/personality/test')
+  }
+}
+
+// 金刚区「我的性格 / 测一测」图标点击
+const goMyPersonality = () => {
+  reportCopyClick('my_personality_entry', myEntryItemId.value)
+  if (!isLoggedIn.value) { goToLogin(); return }
+  if (personalityTested.value) {
+    safeNavigateTo('/pages/personality/result')
+  } else {
+    safeNavigateTo('/pages/personality/test')
+  }
+}
+
+// 加载人格测试状态 + 后台可配置的入口文案 + 文案位曝光
+const loadPersonalityEntry = async () => {
+  if (!isLoggedIn.value) return
+  // 测试状态（金刚区图标与 AI 折叠项共用）
+  try {
+    const res: any = await get('/personality/my-result')
+    personalityTested.value = !!(res && res.typeCode)
+  } catch { /* 静默：默认视为未测试 */ }
+  // 金刚区图标文案位曝光 + 文案覆盖
+  try {
+    const copy = await resolveAndExposeCopy('my_personality_entry')
+    if (copy?.mainText) myEntryLabelOverride.value = copy.mainText
+    myEntryItemId.value = copy?.itemId
+  } catch { /* 静默 */ }
+  // AI 助手折叠项文案（仅当 AI 开关开启时覆盖）
+  if (showAiPersonalityEntry.value) {
+    try {
+      const copy: any = await get('/guide/copy/resolve', { slotCode: 'my_ai_personality' })
+      const item = copy?.items?.[0]
+      if (item?.mainText) aiPersonalityCopy.label = item.mainText
+      if (item?.subText) {
+        aiPersonalityCopy.descTested = item.subText
+        aiPersonalityCopy.descUntested = item.subText
+      }
+    } catch { /* 静默：使用默认文案 */ }
+  }
 }
 
 // AI 个人印象：点击入口
@@ -918,11 +1004,28 @@ const toolGrid7 = [
   align-items: center;
   justify-content: center;
   margin-bottom: 12rpx;
+  position: relative;
 }
 
 .service-icon-img {
   width: 52rpx;
   height: 52rpx;
+}
+
+.service-icon-emoji {
+  font-size: 48rpx;
+  line-height: 1;
+}
+
+.service-dot {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #ff4d6d;
+  border: 2rpx solid #ffffff;
 }
 
 .service-label {

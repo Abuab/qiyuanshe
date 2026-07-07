@@ -15,6 +15,8 @@ import { User } from '../entities/User'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { ChatMessage } from '../entities/ChatMessage'
+import { PersonalityResult } from '../personality-test/entities/PersonalityResult'
+import { PersonalityType } from '../personality-test/entities/PersonalityType'
 import { AiQuotaService } from './ai-quota.service'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
@@ -25,6 +27,8 @@ import { AiChatSkillService } from './ai-chat-skill.service'
 import { AiMatchmakerService } from './ai-matchmaker.service'
 import { AiFunQuizService } from './ai-fun-quiz.service'
 import { AiProfileGenService } from './ai-profile-gen.service'
+import { AiPersonalityService } from './ai-personality.service'
+import { AiPromptTemplateService } from './ai-prompt-template.service'
 import { AiVoiceService } from './ai-voice.service'
 import { AiProviderConfigService } from './ai-provider-config.service'
 import { AiProviderSelector } from './ai-provider-selector.service'
@@ -42,6 +46,8 @@ import { AiChatSkillController } from './ai-chat-skill.controller'
 import { AiMatchmakerController } from './ai-matchmaker.controller'
 import { AiFunQuizController } from './ai-fun-quiz.controller'
 import { AiProfileGenController } from './ai-profile-gen.controller'
+import { AiPersonalityController } from './ai-personality.controller'
+import { AdminAiPromptController } from './admin-ai-prompt.controller'
 import { RedisService } from '../common/redis.service'
 import { SystemService } from '../system/system.service'
 import { QuickQuestionModule } from '../quick-question/quick-question.module'
@@ -54,6 +60,7 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
       ContentSafetyAudit,
       AiProviderConfig, AiProviderCallLog, AiProviderBalance,
       User, UserTagSelection, QuestionAnswer, ChatMessage,
+      PersonalityResult, PersonalityType,
     ]),
     QuickQuestionModule,
   ],
@@ -62,12 +69,14 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
     AdminAiProviderController, PublicAiController,
     AiMatchController, AiChatSkillController, AiMatchmakerController,
     AiFunQuizController, AiProfileGenController,
+    AiPersonalityController, AdminAiPromptController,
   ],
   providers: [
     AiConfigService, AiApiService, AiSafetyService, AiRateLimitService,
     AiQuotaService,
     AiMatchService, AiChatSkillService, AiMatchmakerService,
     AiFunQuizService, AiProfileGenService, AiVoiceService,
+    AiPersonalityService, AiPromptTemplateService,
     AiProviderConfigService, AiProviderSelector, AiProviderBalanceService,
     AiProviderStatsService, AiProviderScheduler, AiProviderSeeder,
     RedisService, SystemService,

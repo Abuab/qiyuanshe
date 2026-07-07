@@ -73,3 +73,23 @@ export const adminAi = {
     return request.put('/admin/ai/safety-audits/batch', data)
   },
 }
+
+export interface PromptTemplateItem {
+  key: string
+  label: string
+  variables: string[]
+  value: string
+  defaultValue: string
+}
+
+export const aiPromptTemplateApi = {
+  /** 获取全部 Prompt 模板（性格解读 / 匹配建议 / 分享文案） */
+  getAll(): Promise<ApiResponse<PromptTemplateItem[]>> {
+    return request.get('/admin/ai/prompt-templates')
+  },
+
+  /** 保存 Prompt 模板 */
+  save(templates: Array<{ key: string; value: string }>): Promise<ApiResponse> {
+    return request.put('/admin/ai/prompt-templates', { templates })
+  },
+}

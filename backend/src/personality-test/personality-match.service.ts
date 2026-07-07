@@ -57,6 +57,37 @@ export class PersonalityMatchService {
     return map
   }
 
+  /**
+   * 计算当前用户与候选用户列表之间的人格匹配「百分比」（0~100 整数），用于推荐卡片展示。
+   * 仅作视觉标签，不参与排序。当前用户未测试时返回空 Map（前端展示「测一测更精准」）。
+   */
+  async getMatchPercentMap(
+    currentUserId: number,
+    candidateUserIds: number[],
+  ): Promise<Map<number, number>> {
+    const empty = new Map<number, number>()
+    if (!currentUserId || candidateUserIds.length === 0) return empty
+
+    const current = await this.resultRepo.findOne({
+      where: { userId: currentUserId, isDeleted: 0 },
+    })
+    const currentRadar = this.extractRadar(current)
+    if (!currentRadar) return empty
+
+    const candidates = await this.resultRepo.find({
+      where: { userId: In(candidateUserIds), isDeleted: 0 },
+    })
+
+    const map = new Map<number, number>()
+    for (const cand of candidates) {
+      const radar = this.extractRadar(cand)
+      if (!radar) continue
+      const score = this.similarScore(currentRadar, radar)
+      map.set(Number(cand.userId), Math.round(this.clamp01(score) * 100))
+    }
+    return map
+  }
+
   // ==================== 内部计算 ====================
 
   private extractRadar(result: PersonalityResult | null | undefined): Record<string, number> | null {

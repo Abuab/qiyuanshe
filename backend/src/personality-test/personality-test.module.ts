@@ -7,6 +7,9 @@ import { PersonalityOption } from './entities/PersonalityOption'
 import { PersonalityType } from './entities/PersonalityType'
 import { PersonalityAnswerRecord } from './entities/PersonalityAnswerRecord'
 import { PersonalityResult } from './entities/PersonalityResult'
+import { CopyStat } from '../guide-copy/entities/CopyStat'
+import { CopySlot } from '../guide-copy/entities/CopySlot'
+import { User } from '../entities/User'
 import { PersonalityDimensionService } from './personality-dimension.service'
 import { PersonalityQuestionService } from './personality-question.service'
 import { PersonalityTypeService } from './personality-type.service'
@@ -14,10 +17,12 @@ import { PersonalityConfigService } from './personality-config.service'
 import { PersonalityGuestService } from './personality-guest.service'
 import { PersonalityUserService } from './personality-user.service'
 import { PersonalityMatchService } from './personality-match.service'
+import { PersonalityStatsService } from './personality-stats.service'
 import { PersonalityTestSeeder } from './personality-test.seeder'
 import { AdminPersonalityDimensionController } from './admin-personality-dimension.controller'
 import { AdminPersonalityQuestionController } from './admin-personality-question.controller'
 import { AdminPersonalityTypeController } from './admin-personality-type.controller'
+import { AdminPersonalityStatsController } from './admin-personality-stats.controller'
 import { PublicPersonalityController } from './public-personality.controller'
 
 /**
@@ -37,12 +42,16 @@ import { PublicPersonalityController } from './public-personality.controller'
       PersonalityType,
       PersonalityAnswerRecord,
       PersonalityResult,
+      CopyStat,
+      CopySlot,
+      User,
     ]),
   ],
   controllers: [
     AdminPersonalityDimensionController,
     AdminPersonalityQuestionController,
     AdminPersonalityTypeController,
+    AdminPersonalityStatsController,
     PublicPersonalityController,
   ],
   providers: [
@@ -53,6 +62,7 @@ import { PublicPersonalityController } from './public-personality.controller'
     PersonalityGuestService,
     PersonalityUserService,
     PersonalityMatchService,
+    PersonalityStatsService,
     PersonalityTestSeeder,
   ],
   exports: [

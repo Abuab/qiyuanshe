@@ -13,6 +13,8 @@ export interface PersonalityResultView {
   dimensions: DimensionResult[]
   /** 适配推荐类型编码列表 */
   matchTypes: string[]
+  /** 适配推荐类型明细（含中文名/花名，供结果页卡片展示；游客版为空） */
+  matchTypeDetails?: Array<{ code: string; name: string | null; nickname: string | null }>
   /** 完成测试时间（ISO 字符串） */
   testedAt: string
   /** 是否游客结果 */

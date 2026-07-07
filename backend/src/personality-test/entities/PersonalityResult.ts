@@ -48,6 +48,14 @@ export class PersonalityResult {
   @Column({ type: 'datetime', nullable: true })
   testedAt: Date | null
 
+  /** AI 性格深度解读缓存（JSON 字符串）；重测后由 aiInterpretationAt 与 testedAt 比较自动失效重生成 */
+  @Column({ type: 'text', nullable: true })
+  aiInterpretation: string | null
+
+  /** AI 解读生成时间 */
+  @Column({ type: 'datetime', nullable: true })
+  aiInterpretationAt: Date | null
+
   /** 软删除：0=正常, 1=已删除 */
   @Column({ type: 'tinyint', default: 0 })
   isDeleted: number

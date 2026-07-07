@@ -23,6 +23,8 @@ const FEATURE_LABELS: Record<AiFeatureKey, string> = {
   [AiFeatureKey.FUN_QUIZ]: 'AI趣味缘分测试',
   [AiFeatureKey.PROFILE_GEN]: 'AI个人印象生成',
   [AiFeatureKey.AI_ASSISTANT]: 'AI助手入口（小程序金刚区）',
+  [AiFeatureKey.PERSONALITY]: 'AI性格深度解读',
+  [AiFeatureKey.MATCH_ADVICE]: 'AI红娘匹配建议',
 }
 
 const FEATURE_KEY_NAMES: Record<AiFeatureKey, string> = {
@@ -32,6 +34,8 @@ const FEATURE_KEY_NAMES: Record<AiFeatureKey, string> = {
   [AiFeatureKey.FUN_QUIZ]: 'fun_quiz',
   [AiFeatureKey.PROFILE_GEN]: 'profile_gen',
   [AiFeatureKey.AI_ASSISTANT]: 'ai_assistant',
+  [AiFeatureKey.PERSONALITY]: 'personality',
+  [AiFeatureKey.MATCH_ADVICE]: 'match_advice',
 }
 
 @Injectable()

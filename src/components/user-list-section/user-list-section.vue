@@ -4,6 +4,8 @@
       v-for="user in users"
       :key="user.id"
       :user="user"
+      :match-percent="matchMap ? matchMap[user.id] : undefined"
+      :viewer-untested="showMatchBadge && viewerTested === false"
       @click="$emit('user-click', user)"
     />
 
@@ -34,6 +36,12 @@ interface Props {
   noMore?: boolean
   emptyText?: string
   showClearFilter?: boolean
+  /** 人格匹配度映射 { userId: percent }，已测用户展示百分比 */
+  matchMap?: Record<number, number>
+  /** 是否展示人格匹配度标识 */
+  showMatchBadge?: boolean
+  /** 当前浏览者是否已完成人格测试 */
+  viewerTested?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
@@ -41,6 +49,7 @@ withDefaults(defineProps<Props>(), {
   noMore: false,
   emptyText: '暂无匹配用户',
   showClearFilter: false,
+  showMatchBadge: false,
 })
 
 defineEmits<{

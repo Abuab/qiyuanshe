@@ -408,6 +408,30 @@
     {
       "path": "pages/visitors/visitors",
       "style": { "navigationBarTitleText": "访客记录" }
+    },
+    {
+      "path": "pages/personality/test",
+      "style": {
+        "navigationBarTitleText": "人格测试",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/personality/result",
+      "style": {
+        "navigationBarTitleText": "性格测试结果",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/personality/poster",
+      "style": {
+        "navigationBarTitleText": "分享我的性格",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
     }
   ],
   "globalStyle": {

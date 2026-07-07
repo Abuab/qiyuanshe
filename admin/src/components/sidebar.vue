@@ -136,6 +136,7 @@
         <el-menu-item index="/personality/questions">题目管理</el-menu-item>
         <el-menu-item index="/personality/types">人格类型定义</el-menu-item>
         <el-menu-item index="/personality/dimensions">维度管理</el-menu-item>
+        <el-menu-item index="/personality/stats">测试数据统计</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canManageGuide" index="/guide">
@@ -162,6 +163,7 @@
         <el-menu-item index="/ai/provider">AI Provider管理</el-menu-item>
         <el-menu-item index="/ai/call-logs">AI调用日志</el-menu-item>
         <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
+        <el-menu-item index="/ai/prompt-templates">AI Prompt配置</el-menu-item>
         <el-menu-item index="/system/quota">用量限额</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>

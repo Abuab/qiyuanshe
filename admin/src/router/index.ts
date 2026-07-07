@@ -166,6 +166,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '快捷问题管理', requiresAuth: true },
       },
       {
+        path: '/ai/prompt-templates',
+        name: 'AiPromptTemplates',
+        component: () => import('../views/ai/prompt-templates.vue'),
+        meta: { title: 'AI Prompt配置', requiresAuth: true },
+      },
+      {
         path: '/system/quota',
         name: 'SystemQuota',
         component: () => import('../views/system/quota.vue'),
@@ -284,6 +290,12 @@ const routes: RouteRecordRaw[] = [
         name: 'PersonalityDimensions',
         component: () => import('../views/personality/dimensions.vue'),
         meta: { title: '维度管理', requiresAuth: true },
+      },
+      {
+        path: '/personality/stats',
+        name: 'PersonalityStats',
+        component: () => import('../views/personality/stats.vue'),
+        meta: { title: '测试数据统计', requiresAuth: true },
       },
       {
         path: '/guide/floating-button',

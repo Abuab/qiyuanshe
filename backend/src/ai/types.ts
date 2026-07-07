@@ -16,6 +16,10 @@ export enum AiFeatureKey {
   PROFILE_GEN = 'profile_gen',
   /** AI助手入口（小程序端金刚区折叠面板） */
   AI_ASSISTANT = 'ai_assistant',
+  /** AI 性格深度解读（基于人格测试结果） */
+  PERSONALITY = 'personality',
+  /** AI 红娘匹配建议（基于双方人格结果） */
+  MATCH_ADVICE = 'match_advice',
 }
 
 /** 开关配置的 DB key 前缀 */
@@ -32,6 +36,8 @@ export const AI_FEATURE_KEYS: Record<AiFeatureKey, string> = {
   [AiFeatureKey.FUN_QUIZ]: `${AI_FEATURE_PREFIX}.fun_quiz.enabled`,
   [AiFeatureKey.PROFILE_GEN]: `${AI_FEATURE_PREFIX}.profile_gen.enabled`,
   [AiFeatureKey.AI_ASSISTANT]: `${AI_FEATURE_PREFIX}.ai_assistant.enabled`,
+  [AiFeatureKey.PERSONALITY]: `${AI_FEATURE_PREFIX}.personality.enabled`,
+  [AiFeatureKey.MATCH_ADVICE]: `${AI_FEATURE_PREFIX}.match_advice.enabled`,
 }
 
 /** 所有 DB key 列表 */

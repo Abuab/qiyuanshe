@@ -1,0 +1,402 @@
+<template>
+  <view class="pposter-page">
+    <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="nav-left" @tap="goBack"><text class="back-icon">←</text></view>
+      <text class="nav-title">分享我的性格</text>
+      <view class="nav-right" />
+    </view>
+
+    <view class="page-body" :style="{ paddingTop: navTotalHeight + 'px' }">
+      <view v-if="generating" class="state-box">
+        <view class="spinner" />
+        <text class="state-text">海报生成中…</text>
+      </view>
+
+      <block v-else-if="imagePath">
+        <image class="poster-preview" :src="imagePath" mode="widthFix" />
+        <view class="disclaimer">本测试仅供娱乐和交友参考，结果不代表专业心理测评</view>
+        <view class="actions">
+          <view class="btn-save" @tap="savePoster">保存到相册</view>
+        </view>
+      </block>
+
+      <view v-else class="state-box">
+        <text class="state-text">{{ errorText || '海报生成失败' }}</text>
+        <view class="btn-retry" @tap="generate">重新生成</view>
+      </view>
+    </view>
+
+    <!-- 离屏画布 -->
+    <canvas
+      canvas-id="pposter-canvas"
+      id="pposter-canvas"
+      class="offscreen-canvas"
+      :style="{ width: canvasW + 'px', height: canvasH + 'px' }"
+    />
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { get, getServerBaseUrl } from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
+import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
+import { sanitizeShareText } from '@/utils/personality'
+
+const userStore = useUserStore()
+const systemStore = useSystemStore()
+
+const canvasId = 'pposter-canvas'
+const canvasW = 600
+const canvasH = 940
+
+const statusBarHeight = ref(20)
+const generating = ref(false)
+const imagePath = ref('')
+const errorText = ref('')
+const shareText = ref('')
+
+const navTotalHeight = computed(() => {
+  const info = uni.getWindowInfo() as any
+  const screenWidth = info.screenWidth || 375
+  return statusBarHeight.value + 44 * (screenWidth / 375)
+})
+
+onLoad((opts: any) => {
+  const info = uni.getWindowInfo() as any
+  statusBarHeight.value = info.statusBarHeight || 20
+  shareText.value = sanitizeShareText(opts?.shareText ? decodeURIComponent(opts.shareText) : '')
+  generate()
+})
+
+async function generate() {
+  generating.value = true
+  errorText.value = ''
+  imagePath.value = ''
+  try {
+    if (!userStore.isLoggedIn) {
+      errorText.value = '请先登录后再生成海报'
+      generating.value = false
+      return
+    }
+    const result: any = await get('/personality/my-result')
+    if (!result || !result.typeCode) {
+      errorText.value = '暂无测试结果，请先完成测试'
+      generating.value = false
+      return
+    }
+    await drawPoster(result)
+  } catch (e: any) {
+    errorText.value = e?.message || '海报生成失败'
+    generating.value = false
+  }
+}
+
+async function drawPoster(result: any) {
+  const ctx: any = uni.createCanvasContext(canvasId)
+  const uid = userStore.userInfo?.id || 0
+
+  // 预下载头像 + 二维码（并行，控制生成耗时）
+  const avatarUrl = getFullImageUrl(userStore.userInfo?.avatar || '')
+  const qrUrl = `${getServerBaseUrl()}/personality/share-qr?userId=${uid}`
+  const [avatarPath, qrPath] = await Promise.all([
+    downloadImage(avatarUrl).catch(() => ''),
+    downloadImage(qrUrl).catch(() => ''),
+  ])
+
+  // 背景暖色渐变
+  const grad = ctx.createLinearGradient(0, 0, 0, canvasH)
+  grad.addColorStop(0, '#ff9dc0')
+  grad.addColorStop(1, '#ff6b9d')
+  ctx.setFillStyle(grad)
+  ctx.fillRect(0, 0, canvasW, canvasH)
+
+  // 品牌名
+  ctx.setFillStyle('#ffffff')
+  ctx.setFontSize(26)
+  ctx.setTextAlign('center')
+  ctx.fillText(systemStore.appName || '栖缘社', canvasW / 2, 60)
+  ctx.setFontSize(16)
+  ctx.fillText('性格交友 · 遇见更契合的TA', canvasW / 2, 90)
+
+  // 白色圆角卡片
+  const cardX = 40
+  const cardY = 130
+  const cardW = canvasW - 80
+  const cardH = 600
+  roundRect(ctx, cardX, cardY, cardW, cardH, 24)
+  ctx.setFillStyle('#ffffff')
+  ctx.fill()
+
+  // 圆形头像
+  const cx = canvasW / 2
+  const avatarR = 60
+  const avatarCy = cardY + 20 + avatarR
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, avatarCy, avatarR, 0, 2 * Math.PI)
+  ctx.setFillStyle('#ffe0ea')
+  ctx.fill()
+  ctx.clip()
+  if (avatarPath) {
+    ctx.drawImage(avatarPath, cx - avatarR, avatarCy - avatarR, avatarR * 2, avatarR * 2)
+  }
+  ctx.restore()
+
+  // 昵称
+  ctx.setFillStyle('#333333')
+  ctx.setFontSize(20)
+  ctx.setTextAlign('center')
+  ctx.fillText(userStore.userInfo?.nickname || '我', cx, avatarCy + avatarR + 30)
+
+  // 人格类型大字 + 花名
+  ctx.setFillStyle('#ff6b9d')
+  ctx.setFontSize(40)
+  ctx.fillText(result.typeName || result.typeCode || '神秘探索者', cx, avatarCy + avatarR + 90)
+  if (result.nickname) {
+    ctx.setFillStyle('#ff8fab')
+    ctx.setFontSize(22)
+    ctx.fillText(`「${result.nickname}」`, cx, avatarCy + avatarR + 128)
+  }
+
+  // 一句话描述（自动换行，最多2行）
+  ctx.setFillStyle('#666666')
+  ctx.setFontSize(16)
+  const summary = result.summary || '独一无二的性格画像'
+  const sumLines = wrapText(ctx, summary, cardW - 80, 2)
+  let sy = avatarCy + avatarR + 165
+  for (const line of sumLines) {
+    ctx.fillText(line, cx, sy)
+    sy += 26
+  }
+
+  // 简化雷达图（2个维度真实值，其余置0）
+  const dims: any[] = Array.isArray(result.dimensions) ? result.dimensions : []
+  drawMiniRadar(ctx, cx, sy + 110, 90, dims, 2)
+
+  // 分享文案
+  const copy = shareText.value || defaultCopy(result)
+  ctx.setFillStyle('#ff6b9d')
+  ctx.setFontSize(16)
+  const copyLines = wrapText(ctx, copy, cardW - 80, 3)
+  let cy2 = cardY + cardH - 30 - (copyLines.length - 1) * 24
+  for (const line of copyLines) {
+    ctx.fillText(line, cx, cy2)
+    cy2 += 24
+  }
+
+  // 底部二维码
+  const qrSize = 120
+  const qrX = cx - qrSize / 2
+  const qrY = cardY + cardH + 30
+  ctx.setFillStyle('#ffffff')
+  roundRect(ctx, qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12)
+  ctx.fill()
+  if (qrPath) {
+    ctx.drawImage(qrPath, qrX, qrY, qrSize, qrSize)
+  }
+  ctx.setFillStyle('#ffffff')
+  ctx.setFontSize(15)
+  ctx.setTextAlign('center')
+  ctx.fillText('长按识别 · 测测你的性格', cx, qrY + qrSize + 32)
+
+  // 免责声明
+  ctx.setFillStyle('rgba(255,255,255,0.75)')
+  ctx.setFontSize(12)
+  ctx.fillText('本测试仅供娱乐和交友参考，不代表专业心理测评', cx, canvasH - 20)
+
+  // 输出
+  await new Promise<void>((resolve) => {
+    ctx.draw(false, () => {
+      setTimeout(() => {
+        uni.canvasToTempFilePath({
+          canvasId,
+          quality: 0.92,
+          success: (res) => {
+            imagePath.value = res.tempFilePath
+            generating.value = false
+            // 生成完成后自动尝试保存到相册
+            savePoster()
+            resolve()
+          },
+          fail: () => {
+            errorText.value = '海报导出失败'
+            generating.value = false
+            resolve()
+          },
+        })
+      }, 120)
+    })
+  })
+}
+
+// ==================== 绘制辅助 ====================
+
+function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, 0)
+  ctx.arc(x + w - r, y + h - r, r, 0, Math.PI / 2)
+  ctx.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI)
+  ctx.arc(x + r, y + r, r, Math.PI, (Math.PI * 3) / 2)
+  ctx.closePath()
+}
+
+function drawMiniRadar(ctx: any, cx: number, cy: number, radius: number, dims: any[], unlocked: number) {
+  const n = Math.max(dims.length, 3)
+  const step = (Math.PI * 2) / n
+  const start = -Math.PI / 2
+  ctx.setStrokeStyle('#ffd6e4')
+  ctx.setLineWidth(1)
+  for (let layer = 1; layer <= 2; layer++) {
+    const r = (radius * layer) / 2
+    ctx.beginPath()
+    for (let i = 0; i < n; i++) {
+      const a = start + step * i
+      const x = cx + r * Math.cos(a)
+      const y = cy + r * Math.sin(a)
+      if (i === 0) ctx.moveTo(x, y)
+      else ctx.lineTo(x, y)
+    }
+    ctx.closePath()
+    ctx.stroke()
+  }
+  ctx.beginPath()
+  for (let i = 0; i < n; i++) {
+    const a = start + step * i
+    const locked = i >= unlocked
+    const v = locked || !dims[i] ? 0 : Math.max(0, Math.min(100, dims[i].radar || 0)) / 100
+    const r = radius * v
+    const x = cx + r * Math.cos(a)
+    const y = cy + r * Math.sin(a)
+    if (i === 0) ctx.moveTo(x, y)
+    else ctx.lineTo(x, y)
+  }
+  ctx.closePath()
+  ctx.setFillStyle('rgba(255,107,157,0.35)')
+  ctx.fill()
+  ctx.setStrokeStyle('#ff6b9d')
+  ctx.setLineWidth(2)
+  ctx.stroke()
+  // 已解锁维度名
+  ctx.setFillStyle('#999999')
+  ctx.setFontSize(12)
+  ctx.setTextAlign('center')
+  for (let i = 0; i < Math.min(unlocked, dims.length); i++) {
+    const a = start + step * i
+    const x = cx + (radius + 14) * Math.cos(a)
+    const y = cy + (radius + 14) * Math.sin(a)
+    ctx.fillText(dims[i]?.name || '', x, y + 4)
+  }
+}
+
+function wrapText(ctx: any, text: string, maxWidth: number, maxLines: number): string[] {
+  const chars = (text || '').split('')
+  const lines: string[] = []
+  let cur = ''
+  for (const ch of chars) {
+    const test = cur + ch
+    if (ctx.measureText(test).width > maxWidth && cur) {
+      lines.push(cur)
+      cur = ch
+      if (lines.length >= maxLines) break
+    } else {
+      cur = test
+    }
+  }
+  if (lines.length < maxLines && cur) lines.push(cur)
+  if (lines.length >= maxLines && cur && lines[lines.length - 1] !== cur) {
+    lines[lines.length - 1] = lines[lines.length - 1].slice(0, -1) + '…'
+  }
+  return lines
+}
+
+function defaultCopy(result: any): string {
+  return `我是「${result.nickname || result.typeName || '神秘探索者'}」，快来测测我们的性格契合度~`
+}
+
+// ==================== 图片下载 & 保存 ====================
+
+function downloadImage(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!url) return reject(new Error('no url'))
+    uni.downloadFile({
+      url,
+      success: (res) => (res.statusCode === 200 ? resolve(res.tempFilePath) : reject(new Error('dl fail'))),
+      fail: reject,
+    })
+  })
+}
+
+let saving = false
+async function savePoster() {
+  if (!imagePath.value || saving) return
+  saving = true
+  uni.saveImageToPhotosAlbum({
+    filePath: imagePath.value,
+    success: () => {
+      saving = false
+      uni.showToast({ title: '已保存，快去朋友圈分享吧', icon: 'none' })
+    },
+    fail: (err: any) => {
+      saving = false
+      const msg = err?.errMsg || ''
+      if (msg.includes('auth deny') || msg.includes('authorize')) {
+        // 未授权：友好引导去设置页开启，不强制阻断
+        uni.showModal({
+          title: '需要相册权限',
+          content: '保存海报需要您授权相册权限，是否前往设置开启？',
+          confirmText: '去设置',
+          success: (r) => {
+            if (r.confirm) uni.openSetting({})
+          },
+        })
+      } else if (!msg.includes('cancel')) {
+        uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+      }
+    },
+  })
+}
+
+function goBack() {
+  const pages = getCurrentPages()
+  if (pages.length > 1) uni.navigateBack()
+  else uni.switchTab({ url: '/pages/index/index' })
+}
+</script>
+
+<style lang="scss" scoped>
+.pposter-page { min-height: 100vh; background: #fff5f7; }
+.nav-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 88rpx; padding: 0 24rpx; background: #fff;
+}
+.nav-left, .nav-right { width: 80rpx; }
+.back-icon { font-size: 40rpx; color: #333; }
+.nav-title { font-size: 32rpx; font-weight: 500; color: #333; }
+
+.page-body { padding: 32rpx; }
+.state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 28rpx; }
+.state-text { color: #999; font-size: 28rpx; }
+.spinner {
+  width: 72rpx; height: 72rpx; border-radius: 50%;
+  border: 6rpx solid #ffd6e4; border-top-color: #ff6b9d; animation: spin 800ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.poster-preview { width: 100%; border-radius: 20rpx; box-shadow: 0 8rpx 32rpx rgba(255,107,157,0.25); }
+.disclaimer { text-align: center; font-size: 22rpx; color: #bbb; margin: 20rpx 0; }
+.actions { display: flex; justify-content: center; padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); }
+.btn-save {
+  width: 80%; height: 92rpx; border-radius: 46rpx; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #ff9dc0, #ff6b9d); color: #fff; font-size: 32rpx; font-weight: 600;
+}
+.btn-retry {
+  padding: 20rpx 60rpx; border-radius: 44rpx; background: #ff6b9d; color: #fff; font-size: 30rpx;
+}
+
+.offscreen-canvas { position: fixed; left: -9999px; top: 0; }
+</style>

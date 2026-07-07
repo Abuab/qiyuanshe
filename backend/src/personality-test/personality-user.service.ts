@@ -48,6 +48,7 @@ interface QuizSession {
 export class PersonalityUserService {
   private static readonly SESSION_PREFIX = 'ptest:session'
   private static readonly SESSION_TTL = 3600
+  static readonly STAT_PREFIX = 'ptest:stat'
 
   constructor(
     @InjectRepository(PersonalityDimension)
@@ -125,6 +126,9 @@ export class PersonalityUserService {
 
     const remainingAttempts = await this.remainingAttempts(subject, cfg)
 
+    // 开始答题计数（含游客+注册，含重测），用于完成率统计
+    this.bumpStat('started')
+
     return {
       sessionId,
       minDurationSeconds: cfg.minDurationSeconds,
@@ -194,6 +198,9 @@ export class PersonalityUserService {
     })
 
     const testedAt = new Date()
+    const durationSeconds = input.startedAt
+      ? Math.max(0, Math.round((Date.now() - input.startedAt) / 1000))
+      : null
     const view: PersonalityResultView = {
       typeCode: scoring.typeCode,
       typeName: type?.name ?? null,
@@ -209,12 +216,16 @@ export class PersonalityUserService {
 
     if (subject.userId) {
       // 登录用户：重测次数限制 + 覆盖写入 MySQL
-      await this.persistUserResult(subject.userId, scoringAnswers, scoring, type, testedAt, cfg)
+      await this.persistUserResult(subject.userId, scoringAnswers, scoring, type, testedAt, cfg, durationSeconds)
     } else {
       // 游客：完整结果暂存 Redis（供登录后迁移），每日次数递增
       await this.guestService.saveResult(subject.guestToken!, view)
       await this.guestService.incrDailyCount(subject.guestToken!)
+      this.bumpStat('guest_total')
+      this.bumpGuestDaily()
     }
+    // 完成计数（含游客+注册），用于完成率统计
+    this.bumpStat('completed')
 
     // 会话用后即焚，并清空暂存的答题进度
     if (input.sessionId) {
@@ -396,6 +407,13 @@ export class PersonalityUserService {
     }
   }
 
+  /** 判断用户是否已完成人格测试（有有效结果） */
+  async hasResult(userId: number): Promise<boolean> {
+    if (!userId) return false
+    const count = await this.resultRepo.count({ where: { userId, isDeleted: 0 } })
+    return count > 0
+  }
+
   // ==================== 内部：持久化 ====================
 
   private async persistUserResult(
@@ -405,6 +423,7 @@ export class PersonalityUserService {
     type: PersonalityType | null,
     testedAt: Date,
     cfg: { retestDailyLimit: number },
+    durationSeconds: number | null,
   ): Promise<void> {
     // 按 userId 查任意已存在行（userId 唯一），避免软删除残留行导致唯一键冲突
     const existing = await this.resultRepo.findOne({ where: { userId } })
@@ -432,6 +451,7 @@ export class PersonalityUserService {
         radar: scoring.radar,
         dimensions: scoring.dimensions,
         typeCode: scoring.typeCode,
+        durationSeconds,
       }
       result.testedAt = testedAt
       result.isDeleted = 0
@@ -478,7 +498,21 @@ export class PersonalityUserService {
     await this.resultRepo.save(result)
   }
 
-  // ==================== 内部：会话与计数 ====================
+  // ==================== 内部：埋点计数（完成率/游客数） ====================
+
+  /** 累加统计计数器（失败不阻塞主流程） */
+  private bumpStat(name: 'started' | 'completed' | 'guest_total'): void {
+    this.redis.incr(`${PersonalityUserService.STAT_PREFIX}:${name}`).catch(() => {})
+  }
+
+  /** 累加游客当日新增计数（东八区自然日，保留 2 天） */
+  private bumpGuestDaily(): void {
+    const key = `${PersonalityUserService.STAT_PREFIX}:guest_daily:${shanghaiDayKey()}`
+    this.redis
+      .incr(key)
+      .then(() => this.redis.expire(key, 2 * 86400))
+      .catch(() => {})
+  }
 
   private async createSession(questionIds: number[], subject: string): Promise<string> {
     const sessionId = `s${Date.now().toString(36)}${randomBytes(12).toString('hex')}`
@@ -608,7 +642,7 @@ export class PersonalityUserService {
    * 引导登录后迁移查看完整解析。
    */
   private toGuestSimplified(view: PersonalityResultView): PersonalityResultView {
-    return { ...view, description: null, matchTypes: [] }
+    return { ...view, description: null, matchTypes: [], matchTypeDetails: [] }
   }
 
   private async resultEntityToView(result: PersonalityResult, isGuest: boolean): Promise<PersonalityResultView> {
@@ -616,6 +650,8 @@ export class PersonalityUserService {
       ? await this.typeRepo.findOne({ where: { id: result.typeId } })
       : await this.typeRepo.findOne({ where: { code: result.typeCode || '', isDeleted: 0 } })
     const scores: any = result.dimensionScores || {}
+    const matchTypes = type?.matchTypes ?? []
+    const matchTypeDetails = await this.loadMatchTypeDetails(matchTypes)
     return {
       typeCode: result.typeCode || scores.typeCode || '',
       typeName: type?.name ?? null,
@@ -624,10 +660,24 @@ export class PersonalityUserService {
       description: type?.description ?? null,
       radar: scores.radar || {},
       dimensions: Array.isArray(scores.dimensions) ? scores.dimensions : [],
-      matchTypes: type?.matchTypes ?? [],
+      matchTypes,
+      matchTypeDetails,
       testedAt: (result.testedAt || result.updatedAt || new Date()).toISOString?.() || new Date().toISOString(),
       isGuest,
     }
+  }
+
+  /** 按类型编码批量查询名称/花名，保持入参顺序 */
+  private async loadMatchTypeDetails(
+    codes: string[],
+  ): Promise<Array<{ code: string; name: string | null; nickname: string | null }>> {
+    if (!Array.isArray(codes) || codes.length === 0) return []
+    const types = await this.typeRepo.find({ where: { code: In(codes), isDeleted: 0 } })
+    const byCode = new Map(types.map((t) => [t.code, t]))
+    return codes.map((code) => {
+      const t = byCode.get(code)
+      return { code, name: t?.name ?? null, nickname: t?.nickname ?? null }
+    })
   }
 
   // ==================== 内部：剩余次数 ====================
