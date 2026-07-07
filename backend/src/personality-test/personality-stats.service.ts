@@ -78,18 +78,15 @@ export class PersonalityStatsService {
     const startedTotal = await this.readNum(this.statKey('started'))
     const completedTotal = await this.readNum(this.statKey('completed'))
 
-    // 平均答题时长：注册用户已落库结果的 durationSeconds 均值
-    const rows = await this.resultRepo.find({ where: { isDeleted: 0 }, select: ['dimensionScores'] })
-    let sum = 0
-    let cnt = 0
-    for (const r of rows) {
-      const d = (r.dimensionScores as any)?.durationSeconds
-      if (typeof d === 'number' && d > 0) {
-        sum += d
-        cnt++
-      }
-    }
-    const avgDurationSeconds = cnt > 0 ? Math.round(sum / cnt) : 0
+    // 平均答题时长：用 SQL AVG 聚合 durationSeconds 列，避免读取整表 JSON 到内存
+    const avgRow = await this.resultRepo
+      .createQueryBuilder('r')
+      .select('AVG(r.durationSeconds)', 'avg')
+      .where('r.isDeleted = 0')
+      .andWhere('r.durationSeconds IS NOT NULL')
+      .andWhere('r.durationSeconds > 0')
+      .getRawOne<{ avg: string | null }>()
+    const avgDurationSeconds = avgRow?.avg ? Math.round(Number(avgRow.avg)) : 0
     const completionRate = startedTotal > 0 ? Math.round((completedTotal / startedTotal) * 1000) / 1000 : 0
 
     return {
@@ -169,19 +166,34 @@ export class PersonalityStatsService {
   // ==================== 四维度分布柱状图 ====================
 
   async dimensionDistribution() {
-    const rows = await this.resultRepo.find({ where: { isDeleted: 0 }, select: ['dimensionScores'] })
     // dimCode -> (label -> count)
     const map = new Map<string, { name: string; labels: Map<string, number> }>()
-    for (const r of rows) {
-      const dims = (r.dimensionScores as any)?.dimensions
-      if (!Array.isArray(dims)) continue
-      for (const d of dims) {
-        if (!d?.code) continue
-        if (!map.has(d.code)) map.set(d.code, { name: d.name || d.code, labels: new Map() })
-        const entry = map.get(d.code)!
-        const label = d.chosenLabel || d.chosenKey || '未知'
-        entry.labels.set(label, (entry.labels.get(label) || 0) + 1)
+    // 分批扫描，避免整表结果一次性驻留内存（维度分布依赖逐行 JSON，无法纯 SQL 聚合）
+    const batchSize = 500
+    let skip = 0
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const rows = await this.resultRepo.find({
+        where: { isDeleted: 0 },
+        select: ['id', 'dimensionScores'],
+        order: { id: 'ASC' },
+        skip,
+        take: batchSize,
+      })
+      if (rows.length === 0) break
+      for (const r of rows) {
+        const dims = (r.dimensionScores as any)?.dimensions
+        if (!Array.isArray(dims)) continue
+        for (const d of dims) {
+          if (!d?.code) continue
+          if (!map.has(d.code)) map.set(d.code, { name: d.name || d.code, labels: new Map() })
+          const entry = map.get(d.code)!
+          const label = d.chosenLabel || d.chosenKey || '未知'
+          entry.labels.set(label, (entry.labels.get(label) || 0) + 1)
+        }
       }
+      if (rows.length < batchSize) break
+      skip += batchSize
     }
     const items = Array.from(map.entries()).map(([code, v]) => {
       const total = Array.from(v.labels.values()).reduce((a, b) => a + b, 0)

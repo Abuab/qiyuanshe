@@ -453,6 +453,7 @@ export class PersonalityUserService {
         typeCode: scoring.typeCode,
         durationSeconds,
       }
+      result.durationSeconds = durationSeconds
       result.testedAt = testedAt
       result.isDeleted = 0
       const savedResult = await manager.save(PersonalityResult, result)

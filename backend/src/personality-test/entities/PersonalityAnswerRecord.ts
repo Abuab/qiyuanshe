@@ -19,6 +19,7 @@ import { PersonalityOption } from './PersonalityOption'
  */
 @Entity('personality_answer_records')
 @Index(['userId', 'isDeleted'])
+@Index(['isDeleted', 'questionId', 'optionId'])
 export class PersonalityAnswerRecord {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number

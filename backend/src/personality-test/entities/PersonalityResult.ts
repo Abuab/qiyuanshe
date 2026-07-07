@@ -18,6 +18,7 @@ import { PersonalityType } from './PersonalityType'
  * 仅通过 userId 外键关联 users 表，不修改 users 表结构。
  */
 @Entity('personality_results')
+@Index(['typeCode', 'isDeleted'])
 export class PersonalityResult {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number
@@ -44,7 +45,12 @@ export class PersonalityResult {
   @Column({ type: 'simple-json', nullable: true })
   dimensionScores: Record<string, any> | null
 
+  /** 答题耗时（秒），冗余为独立数值列以支持 SQL 聚合统计，避免读取整表 JSON */
+  @Column({ type: 'int', nullable: true })
+  durationSeconds: number | null
+
   /** 完成测试的时间 */
+  @Index()
   @Column({ type: 'datetime', nullable: true })
   testedAt: Date | null
 
