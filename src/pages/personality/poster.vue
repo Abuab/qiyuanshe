@@ -18,7 +18,7 @@
         <image class="poster-preview" :src="imagePath" mode="widthFix" />
         <view class="disclaimer">本测试仅供娱乐和交友参考，结果不代表专业心理测评</view>
         <view class="actions">
-          <view class="btn-save" @tap="savePoster">保存到相册</view>
+          <view class="btn-save" @tap="savePoster()">保存到相册</view>
         </view>
       </block>
 
@@ -402,7 +402,8 @@ async function savePoster(freshPath?: string) {
   saving = true
 
   // 手动保存：重新从 canvas 导出，拿到当前有效的临时文件
-  let path = freshPath || ''
+  // 注意 freshPath 只接受字符串，防止模板 @tap 把事件对象传进来
+  let path = typeof freshPath === 'string' ? freshPath : ''
   if (!path) {
     try {
       path = await exportCanvas()
