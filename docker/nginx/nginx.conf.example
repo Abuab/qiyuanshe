@@ -66,6 +66,13 @@ http {
             allow all;
         }
 
+        # 微信小程序业务域名校验文件（将下方内容替换为微信提供的校验码，逐字节一致、无换行）
+        location = /V37v8qfP9n.txt {
+            default_type text/plain;
+            add_header Cache-Control "no-cache" always;
+            return 200 "8b8202fc0267d399ba8cd6b52473dd79";
+        }
+
         # 其余请求重定向到 HTTPS
         location / {
             return 301 https://$host$request_uri;
@@ -102,6 +109,13 @@ http {
             root /var/www/certbot;
             default_type text/plain;
             allow all;
+        }
+
+        # 微信小程序业务域名校验文件（将下方内容替换为微信提供的校验码，逐字节一致、无换行）
+        location = /V37v8qfP9n.txt {
+            default_type text/plain;
+            add_header Cache-Control "no-cache" always;
+            return 200 "8b8202fc0267d399ba8cd6b52473dd79";
         }
 
         # ============ API 代理（CDN 不应缓存 API 响应）============
