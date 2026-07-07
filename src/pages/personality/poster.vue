@@ -528,5 +528,5 @@ function goBack() {
   padding: 20rpx 60rpx; border-radius: 44rpx; background: #ff6b9d; color: #fff; font-size: 30rpx;
 }
 
-.offscreen-canvas { position: fixed; left: -9999px; top: 0; }
+.offscreen-canvas { position: fixed; left: -9999px; }
 </style>
