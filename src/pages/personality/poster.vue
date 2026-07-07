@@ -243,8 +243,8 @@ async function drawPoster(result: any) {
         success: (res) => {
           imagePath.value = res.tempFilePath
           generating.value = false
-          // 生成完成后自动尝试保存到相册
-          savePoster()
+          // 生成完成后自动尝试保存到相册（使用刚导出的新鲜路径）
+          savePoster(res.tempFilePath)
           finish()
         },
         fail: () => {
@@ -379,28 +379,82 @@ function downloadImage(url: string, timeoutMs = 4000): Promise<string> {
   })
 }
 
+// 从已绘制的离屏 canvas 导出一份新鲜的临时文件
+function exportCanvas(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    uni.canvasToTempFilePath({
+      canvasId,
+      quality: 0.92,
+      success: (res: any) => resolve(res.tempFilePath),
+      fail: reject,
+    })
+  })
+}
+
 let saving = false
-async function savePoster() {
-  if (!imagePath.value || saving) return
+/**
+ * 保存海报到相册
+ * @param freshPath 生成后自动保存时传入的新鲜临时路径；手动点击时不传，会重新导出，
+ *   避免旧临时文件被系统清理导致 saveImageToPhotosAlbum 报 "no such file or directory"
+ */
+async function savePoster(freshPath?: string) {
+  if (saving) return
   saving = true
 
+  // 手动保存：重新从 canvas 导出，拿到当前有效的临时文件
+  let path = freshPath || ''
+  if (!path) {
+    try {
+      path = await exportCanvas()
+      imagePath.value = path
+    } catch {
+      saving = false
+      uni.showToast({ title: '图片已失效，请点重新生成', icon: 'none' })
+      return
+    }
+  }
+  if (!path) {
+    saving = false
+    return
+  }
+
+  let retriedNoFile = false
   const doSave = () => {
     uni.saveImageToPhotosAlbum({
-      filePath: imagePath.value,
+      filePath: path,
       success: () => {
         saving = false
         uni.showToast({ title: '已保存，快去朋友圈分享吧', icon: 'none' })
       },
       fail: (err: any) => {
-        saving = false
         const msg = err?.errMsg || ''
-        if (msg.includes('cancel')) return
+        if (msg.includes('cancel')) {
+          saving = false
+          return
+        }
         // 权限被拒 / 隐私未授权 → 引导去设置
         if (/auth|deny|privacy|authorize|permission/i.test(msg)) {
+          saving = false
           guideToSetting()
           return
         }
+        // 临时文件失效 → 重新导出后重试一次
+        if (!retriedNoFile && /no such file|not exist|cannot find|无效|不存在/i.test(msg)) {
+          retriedNoFile = true
+          exportCanvas()
+            .then((p) => {
+              path = p
+              imagePath.value = p
+              doSave()
+            })
+            .catch(() => {
+              saving = false
+              uni.showToast({ title: '图片已失效，请点重新生成', icon: 'none' })
+            })
+          return
+        }
         // 其余错误：暴露真实原因，便于定位（如隐私协议未声明、机型不支持等）
+        saving = false
         // eslint-disable-next-line no-console
         console.error('[poster] saveImageToPhotosAlbum fail:', msg)
         const brief = msg.replace('saveImageToPhotosAlbum:fail', '').trim() || '未知错误'
@@ -419,7 +473,10 @@ async function savePoster() {
         if (!r.confirm) return
         uni.openSetting({
           success: (s) => {
-            if (s.authSetting['scope.writePhotosAlbum']) doSave()
+            if (s.authSetting['scope.writePhotosAlbum']) {
+              saving = true
+              doSave()
+            }
           },
         })
       },
