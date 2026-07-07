@@ -1651,6 +1651,98 @@ ufw enable
 systemctl restart docker
 ```
 
+## 服务器性能与内存调优
+
+> 适用于 2C / 3.6~4GB 内存的小规格云服务器（Docker Compose 全栈部署）。以下为经过实测的调优基线。
+
+### 内存预算（容器 mem_limit）
+
+| 容器 | mem_limit | 实测占用 | 说明 |
+|------|-----------|----------|------|
+| mysql | 512m | ~200-250m（调优后） | 调优前逼近 512m（83%），有 OOM 风险 |
+| api (NestJS) | 1280m | 100m 起，随运行增长 | 堆上限 `--max-old-space-size=768` |
+| redis | 256m | ~15m | `maxmemory 256mb` 保护 |
+| admin (nginx) | 128m | ~12m | 静态资源 |
+| nginx | 64m | ~5m | 反向代理 |
+
+Linux 的 `free` 命令中 `free` 偏低是正常现象（空闲内存被 `buff/cache` 占用，可随时回收），应关注 **`available`** 列而非 `free`。
+
+### 1. 配置 Swap（强烈建议）
+
+云服务器默认 **Swap=0**，内存突增时会直接触发 OOM Killer 杀掉容器（通常是 MySQL 或 API）。添加 2GB Swap 作为缓冲：
+
+```bash
+# 创建 2GB swapfile
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+
+# 开机自动挂载
+echo "/swapfile none swap sw 0 0" >> /etc/fstab
+
+# 降低 swappiness（仅在内存紧张时才使用 swap，默认 60 偏高）
+sysctl -w vm.swappiness=10
+echo "vm.swappiness=10" >> /etc/sysctl.conf
+
+# 验证
+free -h
+```
+
+### 2. MySQL 内存调优（`docker/mysql/my.cnf`）
+
+MySQL 8.0 默认内存占用偏高，本项目全部为 InnoDB 表，已在 `my.cnf` 中做如下收敛（修改后需 `docker compose up -d` 重建 mysql 容器生效）：
+
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| `performance_schema` | `OFF` | 关闭实时性能采样，节省约 100-150MB（小型应用无需） |
+| `key_buffer_size` | `8M` | MyISAM 键缓冲，InnoDB 项目基本用不到，最小化 |
+| `innodb_buffer_pool_size` | `192M` | InnoDB 数据/索引缓存，按数据量设置 |
+| `table_open_cache` | `512` | 按实际表数量收敛（默认 4000 过大） |
+| `table_definition_cache` | `512` | 同上 |
+| `max_connections` | `150` | 按实际并发收敛（需同时改 `docker-compose.yml` 命令行，命令行会覆盖 my.cnf） |
+
+> 调优效果：MySQL 容器内存从 ~427MB 降到 ~200-250MB，彻底摆脱贴近 512m 上限被 OOM 的风险。
+
+### 3. Redis 配置（`docker-compose.yml` command）
+
+Redis 作为缓存 + 计数器使用，已配置好上限与淘汰策略，无需额外调整：
+
+```yaml
+command: >
+  redis-server
+  --requirepass ${REDIS_PASSWORD}
+  --appendonly yes          # AOF 持久化（计数器/会话重启不丢）
+  --appendfsync everysec    # 每秒刷盘，性能与安全平衡
+  --maxmemory 256mb         # 内存上限，防止无限增长
+  --maxmemory-policy allkeys-lru  # 超限时按 LRU 淘汰
+  --tcp-keepalive 60
+```
+
+- 若 Redis 仅作纯缓存（可容忍重启丢数据），可将 `--appendonly no` 改为 RDB 快照或关闭持久化，进一步降低磁盘 I/O。
+- 当前 Redis 实测仅占用 ~15MB，远低于 256m 上限，无需扩容。
+
+### 4. NestJS API 堆上限
+
+`docker-compose.yml` 中 API 容器设置 `NODE_OPTIONS=--max-old-space-size=768`（容器 mem_limit 1280m，为非堆内存/缓冲区预留约 512MB）。原 512MB 对本应用（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器）过小，会在运行一段时间后堆逼近上限触发颠簸式 GC 最终 OOM。
+
+### 5. 数据库索引
+
+TypeORM 实体已内置索引定义，容器启动时通过 migration + `DatabaseIndexService` 自动创建。人格测试数据看板相关的高频查询索引见 `backend/migrations/1753000000004`、`1753000000006`（类型分布、题目统计、类型下钻分页、今日新增、平均时长等均已覆盖）。
+
+### 排查命令
+
+```bash
+# 各容器内存/CPU 实时占用
+docker stats --no-stream --format "{{.Name}} | {{.MemUsage}} | {{.MemPerc}}"
+
+# 系统内存（关注 available 列）与 swap
+free -h
+
+# MySQL 关键内存参数
+docker exec lingtong_mysql sh -c 'mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "SELECT @@innodb_buffer_pool_size/1024/1024 AS pool_mb, @@max_connections, @@performance_schema;"'
+```
+
 ## 常用命令汇总
 
 ```bash

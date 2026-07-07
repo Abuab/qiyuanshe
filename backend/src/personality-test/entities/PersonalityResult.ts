@@ -19,6 +19,10 @@ import { PersonalityType } from './PersonalityType'
  */
 @Entity('personality_results')
 @Index(['typeCode', 'isDeleted'])
+// 数据看板高频查询索引：类型下钻分页(排序)、今日新增、平均答题时长聚合
+@Index(['typeCode', 'isDeleted', 'testedAt'])
+@Index(['isDeleted', 'testedAt'])
+@Index(['isDeleted', 'durationSeconds'])
 export class PersonalityResult {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number

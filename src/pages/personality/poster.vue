@@ -1,9 +1,11 @@
 <template>
   <view class="pposter-page">
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-left" @tap="goBack"><text class="back-icon">←</text></view>
-      <text class="nav-title">分享我的性格</text>
-      <view class="nav-right" />
+      <view class="nav-inner">
+        <view class="nav-left" @tap="goBack"><text class="back-icon">←</text></view>
+        <text class="nav-title">分享我的性格</text>
+        <view class="nav-right" />
+      </view>
     </view>
 
     <view class="page-body" :style="{ paddingTop: navTotalHeight + 'px' }">
@@ -71,10 +73,19 @@ onLoad((opts: any) => {
   generate()
 })
 
+let watchdog: ReturnType<typeof setTimeout> | null = null
 async function generate() {
   generating.value = true
   errorText.value = ''
   imagePath.value = ''
+  // 兜底看门狗：任何环节卡住超过 12s 都结束转圈并提示重试，避免无限 loading
+  if (watchdog) clearTimeout(watchdog)
+  watchdog = setTimeout(() => {
+    if (generating.value) {
+      generating.value = false
+      if (!imagePath.value) errorText.value = '生成超时，请点击重新生成'
+    }
+  }, 12000)
   try {
     if (!userStore.isLoggedIn) {
       errorText.value = '请先登录后再生成海报'
@@ -91,6 +102,8 @@ async function generate() {
   } catch (e: any) {
     errorText.value = e?.message || '海报生成失败'
     generating.value = false
+  } finally {
+    if (watchdog) { clearTimeout(watchdog); watchdog = null }
   }
 }
 
@@ -207,28 +220,28 @@ async function drawPoster(result: any) {
   ctx.setFontSize(12)
   ctx.fillText('本测试仅供娱乐和交友参考，不代表专业心理测评', cx, canvasH - 20)
 
-  // 输出
+  // 输出：真机上 ctx.draw(reserve, callback) 的回调常不触发导致卡死，
+  // 改为无回调 draw + 延时导出（与项目现有海报页一致，稳定可靠）
+  ctx.draw()
   await new Promise<void>((resolve) => {
-    ctx.draw(false, () => {
-      setTimeout(() => {
-        uni.canvasToTempFilePath({
-          canvasId,
-          quality: 0.92,
-          success: (res) => {
-            imagePath.value = res.tempFilePath
-            generating.value = false
-            // 生成完成后自动尝试保存到相册
-            savePoster()
-            resolve()
-          },
-          fail: () => {
-            errorText.value = '海报导出失败'
-            generating.value = false
-            resolve()
-          },
-        })
-      }, 120)
-    })
+    setTimeout(() => {
+      uni.canvasToTempFilePath({
+        canvasId,
+        quality: 0.92,
+        success: (res) => {
+          imagePath.value = res.tempFilePath
+          generating.value = false
+          // 生成完成后自动尝试保存到相册
+          savePoster()
+          resolve()
+        },
+        fail: () => {
+          errorText.value = '海报导出失败'
+          generating.value = false
+          resolve()
+        },
+      })
+    }, 500)
   })
 }
 
@@ -371,12 +384,17 @@ function goBack() {
 .pposter-page { min-height: 100vh; background: #fff5f7; }
 .nav-bar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 88rpx; padding: 0 24rpx; background: #fff;
+  background: #fff;
 }
-.nav-left, .nav-right { width: 80rpx; }
-.back-icon { font-size: 40rpx; color: #333; }
-.nav-title { font-size: 32rpx; font-weight: 500; color: #333; }
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 88rpx; padding: 0 24rpx;
+}
+.nav-left, .nav-right { width: 80rpx; height: 88rpx; display: flex; align-items: center; flex-shrink: 0; }
+.nav-left { justify-content: flex-start; }
+.nav-right { justify-content: flex-end; }
+.back-icon { font-size: 40rpx; color: #333; font-weight: bold; line-height: 1; }
+.nav-title { flex: 1; text-align: center; font-size: 32rpx; font-weight: 600; color: #333; }
 
 .page-body { padding: 32rpx; }
 .state-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; gap: 28rpx; }

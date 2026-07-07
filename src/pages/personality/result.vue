@@ -10,16 +10,21 @@
       </view>
     </view>
 
-    <view v-if="loading" class="loading-box">
+    <view v-if="loading" class="loading-box" :style="{ paddingTop: navTotalHeight + 'px' }">
       <text class="loading-text">加载中…</text>
     </view>
 
-    <view v-else-if="!result" class="empty-box">
+    <view v-else-if="!result" class="empty-box" :style="{ paddingTop: navTotalHeight + 'px' }">
       <text class="empty-text">还没有测试结果</text>
       <view class="btn-go-test" @tap="goTest">立即测试</view>
     </view>
 
-    <scroll-view v-else class="page-scroll" scroll-y>
+    <scroll-view
+      v-else
+      class="page-scroll"
+      scroll-y
+      :style="{ height: 'calc(100vh - ' + navTotalHeight + 'px)', marginTop: navTotalHeight + 'px' }"
+    >
       <!-- 类型头部 -->
       <view class="type-header">
         <text class="type-code">{{ result.typeCode }}</text>
@@ -214,6 +219,13 @@ const statusBarHeight = ref(20)
 const loading = ref(true)
 const result = ref<ResultView | null>(null)
 const canvasReady = ref(false)
+
+// 固定顶栏总高度（px）：状态栏 + 88rpx 标题行
+const navTotalHeight = computed(() => {
+  const info = uni.getWindowInfo() as any
+  const screenWidth = info.screenWidth || 375
+  return statusBarHeight.value + 88 * (screenWidth / 750)
+})
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
 // 游客视图：未登录，或后端标记为游客结果
@@ -441,7 +453,10 @@ function goBack() {
 
 <style lang="scss" scoped>
 .presult-page { min-height: 100vh; background: #fff5f7; }
-.nav-wrap { background: #ffffff; }
+.nav-wrap {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: #ffffff;
+}
 .nav-level1 {
   height: 88rpx; display: flex; align-items: center; justify-content: space-between;
   padding: 0 24rpx;
@@ -456,7 +471,7 @@ function goBack() {
 .loading-text, .empty-text { color: #999; font-size: 28rpx; }
 .btn-go-test { padding: 20rpx 60rpx; border-radius: 44rpx; background: #ff6b9d; color: #fff; font-size: 30rpx; }
 
-.page-scroll { height: calc(100vh - 88rpx); }
+.page-scroll { box-sizing: border-box; }
 
 .type-header {
   margin: 24rpx 32rpx; padding: 48rpx 32rpx; border-radius: 24rpx;
