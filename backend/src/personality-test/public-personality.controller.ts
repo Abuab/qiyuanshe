@@ -17,6 +17,7 @@ import { Result } from '../common/result'
 import { PersonalityUserService } from './personality-user.service'
 import { PersonalityGuestService } from './personality-guest.service'
 import { PersonalityMatchService } from './personality-match.service'
+import { WechatQrService } from './wechat-qr.service'
 
 /**
  * 小程序端：人格测试接口
@@ -30,6 +31,7 @@ export class PublicPersonalityController {
     private readonly userService: PersonalityUserService,
     private readonly guestService: PersonalityGuestService,
     private readonly matchService: PersonalityMatchService,
+    private readonly wechatQrService: WechatQrService,
   ) {}
 
   /**
@@ -184,9 +186,10 @@ export class PublicPersonalityController {
   }
 
   /**
-   * 生成分享二维码（PNG，编码带 userId 追踪参数的分享链接，供海报绘制）
+   * 生成分享二维码（PNG）供海报绘制
    * GET /personality/share-qr?userId=xxx
-   * 说明：项目未接入微信小程序码 API，此处生成通用二维码承载追踪参数。
+   *
+   * 优先生成微信小程序码（扫码直达小程序），失败时回退为普通链接二维码，保证海报始终有码。
    */
   @Get('share-qr')
   @UseGuards(OptionalJwtAuthGuard)
@@ -196,19 +199,30 @@ export class PublicPersonalityController {
     @Response() res: ExpressResponse,
   ) {
     const uid = req.user?.id || (userId ? parseInt(userId, 10) : 0) || 0
-    const base = process.env.APP_SHARE_BASE_URL || 'https://qiyuanshe.example.com'
-    const url = `${base}/#/pages/personality/result?inviter=${uid}&from=poster`
+    let buffer: Buffer | null = null
+    // 1) 优先：微信小程序码（scene 携带邀请人 id，用于追踪）
     try {
-      const buffer = await QRCode.toBuffer(url, {
-        width: 240,
-        margin: 1,
-        color: { dark: '#FF6B9D', light: '#FFFFFF' },
-      })
-      res.setHeader('Content-Type', 'image/png')
-      res.setHeader('Cache-Control', 'public, max-age=86400')
-      res.end(buffer)
+      buffer = await this.wechatQrService.getMiniProgramCode(`i=${uid}`)
     } catch {
-      res.status(500).end()
+      buffer = null
     }
+    // 2) 回退：普通链接二维码
+    if (!buffer) {
+      const base = process.env.APP_SHARE_BASE_URL || 'https://qiyuanshe.example.com'
+      const url = `${base}/#/pages/personality/result?inviter=${uid}&from=poster`
+      try {
+        buffer = await QRCode.toBuffer(url, {
+          width: 280,
+          margin: 1,
+          color: { dark: '#FF6B9D', light: '#FFFFFF' },
+        })
+      } catch {
+        res.status(500).end()
+        return
+      }
+    }
+    res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Cache-Control', 'public, max-age=3600')
+    res.end(buffer)
   }
 }

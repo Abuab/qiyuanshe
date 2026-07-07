@@ -18,6 +18,7 @@ import { PersonalityGuestService } from './personality-guest.service'
 import { PersonalityUserService } from './personality-user.service'
 import { PersonalityMatchService } from './personality-match.service'
 import { PersonalityStatsService } from './personality-stats.service'
+import { WechatQrService } from './wechat-qr.service'
 import { PersonalityTestSeeder } from './personality-test.seeder'
 import { AdminPersonalityDimensionController } from './admin-personality-dimension.controller'
 import { AdminPersonalityQuestionController } from './admin-personality-question.controller'
@@ -63,6 +64,7 @@ import { PublicPersonalityController } from './public-personality.controller'
     PersonalityUserService,
     PersonalityMatchService,
     PersonalityStatsService,
+    WechatQrService,
     PersonalityTestSeeder,
   ],
   exports: [
