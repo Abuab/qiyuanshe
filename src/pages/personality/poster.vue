@@ -40,8 +40,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { get, getServerBaseUrl } from '@/utils/request'
+import { onLoad, onReady } from '@dcloudio/uni-app'
+import { get, getBaseUrl } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -70,6 +70,11 @@ onLoad((opts: any) => {
   const info = uni.getWindowInfo() as any
   statusBarHeight.value = info.statusBarHeight || 20
   shareText.value = sanitizeShareText(opts?.shareText ? decodeURIComponent(opts.shareText) : '')
+})
+
+onReady(() => {
+  // 必须等页面渲染完成、离屏 canvas 节点就绪后再生成；
+  // 若在 onLoad 阶段调用，canvas 尚未挂载会导致 canvasToTempFilePath 不回调而卡死
   generate()
 })
 
@@ -111,9 +116,10 @@ async function drawPoster(result: any) {
   const ctx: any = uni.createCanvasContext(canvasId)
   const uid = userStore.userInfo?.id || 0
 
-  // 预下载头像 + 二维码（并行，控制生成耗时）
+  // 预下载头像 + 二维码（并行，均带超时兜底，任一失败/超时都不阻塞海报生成）
   const avatarUrl = getFullImageUrl(userStore.userInfo?.avatar || '')
-  const qrUrl = `${getServerBaseUrl()}/personality/share-qr?userId=${uid}`
+  // 注意：二维码是 API 接口，必须带 /api 前缀（getBaseUrl 已含 /api），否则会命中 nginx SPA 回退返回 HTML
+  const qrUrl = `${getBaseUrl()}/personality/share-qr?userId=${uid}`
   const [avatarPath, qrPath] = await Promise.all([
     downloadImage(avatarUrl).catch(() => ''),
     downloadImage(qrUrl).catch(() => ''),
@@ -224,6 +230,12 @@ async function drawPoster(result: any) {
   // 改为无回调 draw + 延时导出（与项目现有海报页一致，稳定可靠）
   ctx.draw()
   await new Promise<void>((resolve) => {
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
     setTimeout(() => {
       uni.canvasToTempFilePath({
         canvasId,
@@ -233,14 +245,21 @@ async function drawPoster(result: any) {
           generating.value = false
           // 生成完成后自动尝试保存到相册
           savePoster()
-          resolve()
+          finish()
         },
         fail: () => {
-          errorText.value = '海报导出失败'
+          errorText.value = '海报导出失败，请重试'
           generating.value = false
-          resolve()
+          finish()
         },
       })
+      // 导出兜底：canvasToTempFilePath 若 6s 未回调，直接报错，避免吊到全局看门狗
+      setTimeout(() => {
+        if (settled || imagePath.value) return
+        errorText.value = '海报导出超时，请重试'
+        generating.value = false
+        finish()
+      }, 6000)
     }, 500)
   })
 }
@@ -332,13 +351,30 @@ function defaultCopy(result: any): string {
 
 // ==================== 图片下载 & 保存 ====================
 
-function downloadImage(url: string): Promise<string> {
+function downloadImage(url: string, timeoutMs = 4000): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!url) return reject(new Error('no url'))
+    let done = false
+    // uni.downloadFile 本身无超时保护，这里加超时兜底，避免图片挂起拖死整个海报生成
+    const timer = setTimeout(() => {
+      if (done) return
+      done = true
+      reject(new Error('download timeout'))
+    }, timeoutMs)
     uni.downloadFile({
       url,
-      success: (res) => (res.statusCode === 200 ? resolve(res.tempFilePath) : reject(new Error('dl fail'))),
-      fail: reject,
+      success: (res) => {
+        if (done) return
+        done = true
+        clearTimeout(timer)
+        res.statusCode === 200 ? resolve(res.tempFilePath) : reject(new Error('dl fail'))
+      },
+      fail: (e) => {
+        if (done) return
+        done = true
+        clearTimeout(timer)
+        reject(e)
+      },
     })
   })
 }
