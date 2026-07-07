@@ -241,11 +241,14 @@ async function drawPoster(result: any) {
         canvasId,
         quality: 0.92,
         success: (res) => {
-          imagePath.value = res.tempFilePath
-          generating.value = false
-          // 生成完成后自动尝试保存到相册（使用刚导出的新鲜路径）
-          savePoster(res.tempFilePath)
           finish()
+          // 立即持久化，避免微信清理临时文件导致后续保存失败
+          persistTempFile(res.tempFilePath).then((saved) => {
+            imagePath.value = saved
+            generating.value = false
+            // 生成完成后自动尝试保存到相册（使用持久化路径）
+            savePoster(saved)
+          })
         },
         fail: () => {
           errorText.value = '海报导出失败，请重试'
@@ -379,47 +382,35 @@ function downloadImage(url: string, timeoutMs = 4000): Promise<string> {
   })
 }
 
-// 从已绘制的离屏 canvas 导出一份新鲜的临时文件
-function exportCanvas(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    uni.canvasToTempFilePath({
-      canvasId,
-      quality: 0.92,
-      success: (res: any) => resolve(res.tempFilePath),
-      fail: reject,
-    })
+// 将 canvas 临时文件持久化到本地存储，避免微信清理临时文件后
+// saveImageToPhotosAlbum 报 "no such file or directory"
+function persistTempFile(tempFilePath: string): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      const fs = uni.getFileSystemManager()
+      fs.saveFile({
+        tempFilePath,
+        success: (r: any) => resolve(r.savedFilePath || tempFilePath),
+        fail: () => resolve(tempFilePath),
+      })
+    } catch {
+      resolve(tempFilePath)
+    }
   })
 }
 
 let saving = false
 /**
  * 保存海报到相册
- * @param freshPath 生成后自动保存时传入的新鲜临时路径；手动点击时不传，会重新导出，
- *   避免旧临时文件被系统清理导致 saveImageToPhotosAlbum 报 "no such file or directory"
+ * @param freshPath 生成后自动保存时传入的持久化路径；手动点击时不传，使用 imagePath
  */
 async function savePoster(freshPath?: string) {
   if (saving) return
+  // freshPath 只接受字符串，防止模板 @tap 把事件对象传进来
+  const path = typeof freshPath === 'string' && freshPath ? freshPath : imagePath.value
+  if (!path) return
   saving = true
 
-  // 手动保存：重新从 canvas 导出，拿到当前有效的临时文件
-  // 注意 freshPath 只接受字符串，防止模板 @tap 把事件对象传进来
-  let path = typeof freshPath === 'string' ? freshPath : ''
-  if (!path) {
-    try {
-      path = await exportCanvas()
-      imagePath.value = path
-    } catch {
-      saving = false
-      uni.showToast({ title: '图片已失效，请点重新生成', icon: 'none' })
-      return
-    }
-  }
-  if (!path) {
-    saving = false
-    return
-  }
-
-  let retriedNoFile = false
   const doSave = () => {
     uni.saveImageToPhotosAlbum({
       filePath: path,
@@ -437,21 +428,6 @@ async function savePoster(freshPath?: string) {
         if (/auth|deny|privacy|authorize|permission/i.test(msg)) {
           saving = false
           guideToSetting()
-          return
-        }
-        // 临时文件失效 → 重新导出后重试一次
-        if (!retriedNoFile && /no such file|not exist|cannot find|无效|不存在/i.test(msg)) {
-          retriedNoFile = true
-          exportCanvas()
-            .then((p) => {
-              path = p
-              imagePath.value = p
-              doSave()
-            })
-            .catch(() => {
-              saving = false
-              uni.showToast({ title: '图片已失效，请点重新生成', icon: 'none' })
-            })
           return
         }
         // 其余错误：暴露真实原因，便于定位（如隐私协议未声明、机型不支持等）
