@@ -52,7 +52,7 @@ const systemStore = useSystemStore()
 
 const canvasId = 'pposter-canvas'
 const canvasW = 600
-const canvasH = 940
+const canvasH = 1000
 
 const statusBarHeight = ref(20)
 const generating = ref(false)
@@ -219,12 +219,12 @@ async function drawPoster(result: any) {
   ctx.setFillStyle('#ffffff')
   ctx.setFontSize(15)
   ctx.setTextAlign('center')
-  ctx.fillText('长按识别 · 测测你的性格', cx, qrY + qrSize + 32)
+  ctx.fillText('长按识别 · 测测你的性格', cx, qrY + qrSize + 36)
 
-  // 免责声明
+  // 免责声明（与上方二维码文案拉开间距，避免重叠）
   ctx.setFillStyle('rgba(255,255,255,0.75)')
   ctx.setFontSize(12)
-  ctx.fillText('本测试仅供娱乐和交友参考，不代表专业心理测评', cx, canvasH - 20)
+  ctx.fillText('本测试仅供娱乐和交友参考，不代表专业心理测评', cx, canvasH - 34)
 
   // 输出：真机上 ctx.draw(reserve, callback) 的回调常不触发导致卡死，
   // 改为无回调 draw + 延时导出（与项目现有海报页一致，稳定可靠）
@@ -383,29 +383,63 @@ let saving = false
 async function savePoster() {
   if (!imagePath.value || saving) return
   saving = true
-  uni.saveImageToPhotosAlbum({
-    filePath: imagePath.value,
-    success: () => {
-      saving = false
-      uni.showToast({ title: '已保存，快去朋友圈分享吧', icon: 'none' })
-    },
-    fail: (err: any) => {
-      saving = false
-      const msg = err?.errMsg || ''
-      if (msg.includes('auth deny') || msg.includes('authorize')) {
-        // 未授权：友好引导去设置页开启，不强制阻断
-        uni.showModal({
-          title: '需要相册权限',
-          content: '保存海报需要您授权相册权限，是否前往设置开启？',
-          confirmText: '去设置',
-          success: (r) => {
-            if (r.confirm) uni.openSetting({})
+
+  const doSave = () => {
+    uni.saveImageToPhotosAlbum({
+      filePath: imagePath.value,
+      success: () => {
+        saving = false
+        uni.showToast({ title: '已保存，快去朋友圈分享吧', icon: 'none' })
+      },
+      fail: (err: any) => {
+        saving = false
+        const msg = err?.errMsg || ''
+        if (msg.includes('cancel')) return
+        if (msg.includes('auth') || msg.includes('deny')) guideToSetting()
+        else uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+      },
+    })
+  }
+
+  const guideToSetting = () => {
+    // 未授权：友好引导去设置页开启，不强制阻断
+    uni.showModal({
+      title: '需要相册权限',
+      content: '保存海报需要授权「保存到相册」，是否前往设置开启？',
+      confirmText: '去设置',
+      success: (r) => {
+        if (!r.confirm) return
+        uni.openSetting({
+          success: (s) => {
+            if (s.authSetting['scope.writePhotosAlbum']) doSave()
           },
         })
-      } else if (!msg.includes('cancel')) {
-        uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+      },
+    })
+  }
+
+  // 先查询授权状态，避免非用户手势自动保存时直接失败
+  uni.getSetting({
+    success: (res) => {
+      const auth = res.authSetting['scope.writePhotosAlbum']
+      if (auth === true) {
+        doSave()
+      } else if (auth === false) {
+        saving = false
+        guideToSetting()
+      } else {
+        // 从未询问过 → 主动申请授权（会弹出系统授权弹窗）
+        uni.authorize({
+          scope: 'scope.writePhotosAlbum',
+          success: () => doSave(),
+          fail: () => {
+            saving = false
+            guideToSetting()
+          },
+        })
       }
     },
+    fail: () => doSave(),
   })
 }
 

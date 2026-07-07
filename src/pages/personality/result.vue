@@ -315,7 +315,8 @@ function drawRadar() {
   const size = 240
   const cx = size / 2
   const cy = size / 2
-  const radius = size / 2 - 40
+  // 半径收窄，给四周（尤其左右）维度名预留足够横向空间，避免标签被画布边缘裁切
+  const radius = size / 2 - 58
   const n = dims.length
   const angleStep = (Math.PI * 2) / n
   const start = -Math.PI / 2
@@ -370,8 +371,8 @@ function drawRadar() {
   ctx.setFontSize(11)
   for (let i = 0; i < n; i++) {
     const ang = start + angleStep * i
-    const x = cx + (radius + 16) * Math.cos(ang)
-    const y = cy + (radius + 16) * Math.sin(ang)
+    const x = cx + (radius + 12) * Math.cos(ang)
+    const y = cy + (radius + 12) * Math.sin(ang)
     ctx.setTextAlign(Math.abs(Math.cos(ang)) < 0.3 ? 'center' : x < cx ? 'right' : 'left')
     ctx.fillText(dims[i].name || '', x, y + 4)
   }
