@@ -133,10 +133,10 @@ services:
       NODE_ENV: production
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
       CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
-      # 堆上限 1024MB（容器 mem_limit 1536m，为非堆内存/缓冲区预留约 512MB）
-      # 本应用体量较大（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器 + 连接池），
-      # 768MB 仍会在负载下堆逼近上限触发 OOM，故提升至 1024MB。
-      NODE_OPTIONS: --max-old-space-size=1024
+      # 堆上限 1024MB（容器 mem_limit 1536m）
+      # --heapsnapshot-near-heap-limit: 堆空间接近上限时自动 dump 快照到工作目录（/app）
+      # 最多保留 2 份。容器 OOM 重启后快照文件仍在文件系统内，可通过 docker cp 取出分析。
+      NODE_OPTIONS: --max-old-space-size=1024 --heapsnapshot-near-heap-limit=2
     volumes:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
       - ./data/uploads:/app/uploads
