@@ -118,6 +118,9 @@
       <!-- 底部留白 -->
       <view class="bottom-spacer" />
     </scroll-view>
+
+    <!-- 到店认证弹窗 -->
+    <store-cert-popup :show="storeCertPopupShow" @close="storeCertPopupShow = false" />
   </view>
 </template>
 
@@ -125,9 +128,11 @@
 import { ref, onMounted } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get } from '@/utils/request'
+import StoreCertPopup from './store-cert-popup.vue'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const storeCertPopupShow = ref(false)
 
 // 单身承诺状态
 const singlePromiseAction = ref('去签署')
@@ -184,6 +189,10 @@ function handleItemTap(type: string) {
   }
   if (type === 'car') {
     uni.navigateTo({ url: '/pages/car-auth/index' })
+    return
+  }
+  if (type === 'store') {
+    storeCertPopupShow.value = true
     return
   }
   uni.showToast({ title: '功能开发中', icon: 'none' })

@@ -49,6 +49,12 @@ interface SystemConfig {
   vipEnabled: boolean
   defaultAvatar: string
   leaveMessageEnabled: boolean
+  storeCert: {
+    name: string
+    address: string
+    latitude: number
+    longitude: number
+  }
 }
 
 const DEFAULT_ICONS: IconConfig = {
@@ -86,6 +92,7 @@ export const useSystemStore = defineStore('system', () => {
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
+  const storeCert = ref<{ name: string; address: string; latitude: number; longitude: number }>({ name: '', address: '', latitude: 0, longitude: 0 })
   /** AI功能开关配置 */
   const aiMasterEnabled = ref<boolean>(true)
   const aiFeatures = ref<Record<string, boolean>>({})
@@ -118,6 +125,7 @@ export const useSystemStore = defineStore('system', () => {
         vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
         defaultAvatar.value = res.defaultAvatar || defaultAvatar.value
         leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
+        storeCert.value = res.storeCert || { name: '', address: '', latitude: 0, longitude: 0 }
         icons.value = res.icons || DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
@@ -166,6 +174,7 @@ export const useSystemStore = defineStore('system', () => {
           vipEnabled.value = config.vipEnabled !== undefined ? config.vipEnabled : vipEnabled.value
           defaultAvatar.value = config.defaultAvatar || defaultAvatar.value
           leaveMessageEnabled.value = config.leaveMessageEnabled !== undefined ? config.leaveMessageEnabled : leaveMessageEnabled.value
+          storeCert.value = config.storeCert || { name: '', address: '', latitude: 0, longitude: 0 }
           icons.value = config.icons || icons.value
         }
       } catch (e) {
@@ -238,6 +247,7 @@ export const useSystemStore = defineStore('system', () => {
       vipEnabled: vipEnabled.value,
       defaultAvatar: defaultAvatar.value,
       leaveMessageEnabled: leaveMessageEnabled.value,
+      storeCert: storeCert.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
   }
@@ -265,6 +275,7 @@ export const useSystemStore = defineStore('system', () => {
     vipEnabled,
     defaultAvatar,
     leaveMessageEnabled,
+    storeCert,
     icons,
     dicts,
     loadSystemConfig,

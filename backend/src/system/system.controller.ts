@@ -61,6 +61,13 @@ export class PublicSystemController {
       defaultAvatar: configs.basic?.defaultAvatar || '',
       // 留言功能开关（我的喜欢-互相喜欢 去留言按钮）
       leaveMessageEnabled: configs.basic?.leaveMessageEnabled !== false,
+      // 到店认证门店配置
+      storeCert: {
+        name: configs.storeCert?.name || '',
+        address: configs.storeCert?.address || '',
+        latitude: parseFloat(configs.storeCert?.latitude) || 0,
+        longitude: parseFloat(configs.storeCert?.longitude) || 0,
+      },
     }
 
     return Result.success(result)

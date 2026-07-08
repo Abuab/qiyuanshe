@@ -100,6 +100,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '系统配置', requiresAuth: true },
       },
       {
+        path: '/system/store-cert',
+        name: 'StoreCertConfig',
+        component: () => import('../views/system/store-cert.vue'),
+        meta: { title: '到店认证门店配置', requiresAuth: true },
+      },
+      {
         path: '/system/notification-channel',
         name: 'NotificationChannel',
         component: () => import('../views/system/notification-channel.vue'),
