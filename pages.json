@@ -280,6 +280,13 @@
       }
     },
     {
+      "path": "pages/car-auth/index",
+      "style": {
+        "navigationBarTitleText": "车认证",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/help/index",
       "style": {
         "navigationBarTitleText": "帮助与反馈",

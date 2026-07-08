@@ -64,6 +64,7 @@
         <el-menu-item index="/single-promise">单身承诺审核</el-menu-item>
         <el-menu-item index="/education-auth">学历认证审核</el-menu-item>
         <el-menu-item index="/property-auth">房产认证审核</el-menu-item>
+        <el-menu-item index="/car-auth">车产认证审核</el-menu-item>
       </el-sub-menu>
 
       <el-menu-item v-if="canManageAudit" index="/chat/monitor">

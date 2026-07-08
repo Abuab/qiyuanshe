@@ -286,6 +286,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '房产认证审核', requiresAuth: true },
       },
       {
+        path: '/car-auth',
+        name: 'CarAuthList',
+        component: () => import('../views/car-auth/index.vue'),
+        meta: { title: '车产认证审核', requiresAuth: true },
+      },
+      {
         path: '/personality/questions',
         name: 'PersonalityQuestions',
         component: () => import('../views/personality/questions.vue'),

@@ -15,6 +15,7 @@ export * from './matchmaker-dynamic'
 export * from './single-promise'
 export * from './education-auth'
 export * from './property-auth'
+export * from './car-auth'
 
 export interface ApiResponse<T = any> {
   success: boolean

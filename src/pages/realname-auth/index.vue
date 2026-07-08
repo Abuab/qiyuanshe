@@ -182,6 +182,10 @@ function handleItemTap(type: string) {
     uni.navigateTo({ url: '/pages/property-auth/index' })
     return
   }
+  if (type === 'car') {
+    uni.navigateTo({ url: '/pages/car-auth/index' })
+    return
+  }
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }</script>
 
