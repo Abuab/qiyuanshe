@@ -1004,7 +1004,7 @@ onShow(() => {
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 4px 4px 4px 12px;
   gap: 88px;
   background: #2d2d2d;
   border-radius: 999px;
@@ -1019,17 +1019,18 @@ onShow(() => {
 }
 
 .price-label {
-  font-size: 14px;
+  font-size: 20px;
   color: #fff;
+  font-weight: 700;
 }
 
 .price-total {
-  font-size: 14px;
+  font-size: 20px;
   color: #fff;
 }
 
 .price-symbol-small {
-  font-size: 16px;
+  font-size: 22px;
   color: #fff;
   font-weight: 700;
 }

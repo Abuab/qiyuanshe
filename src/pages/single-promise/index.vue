@@ -43,7 +43,7 @@
             placeholder-style="color:#ccc;font-size:28rpx;"
           />
           <text v-else class="signer-name">{{ realName }}</text>
-          <text class="signer-text">在此承诺：</text>
+          <text class="signer-text"> 在此承诺：</text>
         </view>
 
         <!-- 承诺正文 -->
