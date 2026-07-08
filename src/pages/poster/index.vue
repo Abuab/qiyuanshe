@@ -398,10 +398,26 @@ const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: Pos
       const labelW = ctx.measureText(item.label).width
       ctx.fillText(item.label, xBase + labelWidth - labelW, y)
 
-      // 值：深色、左对齐
+      // 值：深色、左对齐；按可用宽度自适应缩放，避免右侧越界截断
+      const valueX = xBase + labelWidth + 12
+      const maxValueWidth = canvasWidth - PADDING - valueX
       ctx.setFillStyle('#333333')
-      ctx.setFontSize(24)
-      ctx.fillText(item.value, xBase + labelWidth + 12, y)
+      let valueFont = 24
+      ctx.setFontSize(valueFont)
+      let valueText = item.value
+      // 先尝试缩小字号（24 → 18）让内容单行放下
+      while (ctx.measureText(valueText).width > maxValueWidth && valueFont > 18) {
+        valueFont -= 2
+        ctx.setFontSize(valueFont)
+      }
+      // 缩到最小仍超宽 → 逐字截断并追加省略号
+      if (ctx.measureText(valueText).width > maxValueWidth) {
+        while (valueText.length > 1 && ctx.measureText(valueText + '…').width > maxValueWidth) {
+          valueText = valueText.slice(0, -1)
+        }
+        valueText += '…'
+      }
+      ctx.fillText(valueText, valueX, y)
     })
   }
 

@@ -100,8 +100,8 @@
         </view>
       </view>
 
-      <!-- ========== 资料置顶卡（VIP 置顶卡） ========== -->
-      <view v-if="isLoggedIn" class="topcard-card" @tap="handleUseTopCard">
+      <!-- ========== 资料置顶卡（VIP 置顶卡，仅 VIP 功能开启时展示） ========== -->
+      <view v-if="isLoggedIn && systemStore.vipEnabled" class="topcard-card" @tap="handleUseTopCard">
         <view class="topcard-left">
           <text class="topcard-title">资料置顶</text>
           <text class="topcard-desc">{{ topCardDesc }}</text>
@@ -426,7 +426,7 @@ const topCardBtnDisabled = computed(() =>
 )
 
 const loadTopCardStatus = async () => {
-  if (!isLoggedIn.value) return
+  if (!isLoggedIn.value || !systemStore.vipEnabled) return
   try {
     const res: any = await get('/vip/top-card/status')
     if (res) {

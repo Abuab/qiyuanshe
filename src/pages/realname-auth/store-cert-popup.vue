@@ -102,6 +102,8 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
+import { get } from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const props = defineProps<{ show: boolean }>()
@@ -120,6 +122,7 @@ const storeLng = computed(() => systemStore.storeCert?.longitude || 0)
 // 红娘弹窗
 const matchmakerPopupShow = ref(false)
 const selectedMatchmaker = ref<any>(null)
+const matchmakerList = ref<any[]>([])
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -161,14 +164,30 @@ function openNavigation() {
   }
 }
 
-function handleBook() {
-  // 打开红娘联系方式弹窗（复用现有组件）
-  const matchmakers = systemStore.matchmakers || []
-  if (matchmakers.length === 0) {
+async function fetchMatchmakerList() {
+  try {
+    const res: any = await get('/matchmakers')
+    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+    matchmakerList.value = rawList.map((item: any) => ({
+      ...item,
+      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+      avatar: getFullImageUrl(item.avatar),
+    }))
+  } catch {
+    matchmakerList.value = []
+  }
+}
+
+async function handleBook() {
+  // 复用现有红娘联系方式弹窗，红娘数据来源于 /matchmakers 接口
+  if (matchmakerList.value.length === 0) {
+    await fetchMatchmakerList()
+  }
+  if (matchmakerList.value.length === 0) {
     uni.showToast({ title: '暂无红娘信息', icon: 'none' })
     return
   }
-  selectedMatchmaker.value = matchmakers[0]
+  selectedMatchmaker.value = matchmakerList.value[0]
   matchmakerPopupShow.value = true
 }
 </script>
