@@ -35,7 +35,9 @@
           <input
             v-if="isNamePlaceholder"
             class="signer-name-input"
-            v-model="realName"
+            :value="realName === '用户' ? '' : realName"
+            @input="onNameInput"
+            @focus="onNameFocus"
             type="text"
             placeholder="请输入真实姓名"
             placeholder-style="color:#ccc;font-size:28rpx;"
@@ -161,6 +163,17 @@ const realName = ref('用户')
 
 // 当姓名为占位符'用户'时，显示输入框让用户手动填写
 const isNamePlaceholder = computed(() => realName.value === '用户')
+
+// 姓名输入框聚焦时清除默认值
+const onNameFocus = () => {
+  if (realName.value === '用户') {
+    realName.value = ''
+  }
+}
+// 姓名输入框手动输入
+const onNameInput = (e: any) => {
+  realName.value = e.detail?.value ?? e.target?.value ?? ''
+}
 const isSigned = ref(false)
 const isResigning = ref(false)
 const existingSignatureUrl = ref('')
