@@ -36,6 +36,7 @@ export interface User {
   partnerMaritalStatus?: string
   acceptChildren?: string
   isRealName: number
+  eidCertStatus?: number
   realNameAuth?: number
   educationAuth?: number
   isVip: number
@@ -71,6 +72,7 @@ export interface UserFilter {
   keyword?: string
   gender?: number
   status?: number
+  eidCertStatus?: number
   isVip?: number
   vipLevel?: number
   startDate?: string

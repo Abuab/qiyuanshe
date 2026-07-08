@@ -28,6 +28,7 @@ interface UserFilter {
   keyword?: string
   gender?: number
   status?: number
+  eidCertStatus?: number
   isVip?: number
   vipLevel?: number
   startDate?: string

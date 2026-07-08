@@ -8,11 +8,23 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
 import MatchModal from '@/components/MatchModal/MatchModal.vue'
+// @ts-ignore 腾讯云 E证通 SDK 无类型声明
+import { initEid } from '@/mp_ecard_sdk/main'
+
+// eID 数字身份小程序 appId（用于识别从 E证通返回的场景）
+const EID_APPID = 'wx0e2cb0b052a91c92'
 
 onLaunch(() => {
   logger.info('App Launch')
   const userStore = useUserStore()
   userStore.checkVip()
+
+  // 初始化腾讯云 E证通 SDK（startEid 调用前必须先初始化）
+  try {
+    initEid()
+  } catch (e) {
+    logger.error('initEid failed:', e as any)
+  }
 
   // 加载系统配置（应用名称等）
   const systemStore = useSystemStore()
@@ -31,8 +43,14 @@ onLaunch(() => {
   })
 })
 
-onShow(() => {
+onShow((options: any) => {
   logger.info('App Show')
+
+  // 从 eID 数字身份小程序返回（scene 1038）时，交由 SDK 处理，跳过应用自身逻辑，避免冲突
+  const referrerAppId = options?.referrerInfo?.appId
+  if (options?.scene === 1038 && referrerAppId === EID_APPID) {
+    return
+  }
 
   // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
   const systemStore = useSystemStore()

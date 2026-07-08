@@ -31,8 +31,19 @@
           <text class="title-sub">完善认证，点亮图标，真实可信</text>
         </view>
 
+        <!-- 已认证状态面板 -->
+        <view v-if="isCertified" class="cert-done">
+          <view class="cert-done-icon"></view>
+          <text class="cert-done-title">已完成实名认证</text>
+          <view v-if="maskedName || maskedIdCard" class="cert-done-info">
+            <text v-if="maskedName" class="cert-done-line">姓名：{{ maskedName }}</text>
+            <text v-if="maskedIdCard" class="cert-done-line">身份证号：{{ maskedIdCard }}</text>
+          </view>
+          <text class="cert-done-tip">为保护隐私，系统仅保存认证状态，不存储您的身份信息</text>
+        </view>
+
         <!-- 输入表单区 -->
-        <view class="form-area">
+        <view v-if="!isCertified" class="form-area">
           <!-- 真实姓名 -->
           <view class="form-item">
             <text class="form-label">真实姓名</text>
@@ -64,14 +75,14 @@
         </view>
 
         <!-- 开始认证按钮 -->
-        <view class="submit-btn-area">
+        <view v-if="!isCertified" class="submit-btn-area">
           <view class="submit-btn" @tap="handleSubmit">
-            <text>开始认证（免费）</text>
+            <text>{{ submitBtnText }}</text>
           </view>
         </view>
 
         <!-- 协议勾选区 + 未勾选提示 -->
-        <view class="agreement-wrap">
+        <view v-if="!isCertified" class="agreement-wrap">
           <view v-if="showAgreeTip" class="agree-tip">
             <text class="agree-tip-text">请阅读并勾选协议</text>
             <view class="agree-tip-arrow"></view>
@@ -117,20 +128,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
-import { get } from '@/utils/request'
+import { get, post } from '@/utils/request'
+import { useUserStore } from '@/store/user'
+// @ts-ignore 腾讯云 E证通 SDK 无类型声明
+import { startEid } from '@/mp_ecard_sdk/main'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+
+const userStore = useUserStore()
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
 const navTopPx = ref(64)
 
+// ========== 认证状态：0未认证 1认证中 2已认证 3认证失败 ==========
+const certStatus = ref(0)
+const submitting = ref(false)
+const pendingVerify = ref(false)
+const querying = ref(false)
+const isCertified = computed(() => certStatus.value === 2)
+
+// 脱敏展示（仅当本次会话用户填写过时可展示，后端不存储身份信息）
+const maskedName = computed(() => {
+  const n = (realName.value || '').trim()
+  if (!n) return ''
+  return n.charAt(0) + '*'.repeat(Math.max(n.length - 1, 1))
+})
+const maskedIdCard = computed(() => {
+  const id = (idCard.value || '').trim()
+  if (id.length < 8) return ''
+  return id.slice(0, 3) + '*'.repeat(id.length - 7) + id.slice(-4)
+})
+const submitBtnText = computed(() => (certStatus.value === 1 ? '认证中，点击继续' : '开始认证（免费）'))
+
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  const info: any = userStore.userInfo || {}
+  certStatus.value = info.eidCertStatus || (info.isRealName ? 2 : 0)
+})
+
+// 从 eID 数字身份小程序返回时兜底查询结果（防止 verifyDoneCallback 未触发）
+onShow(() => {
+  if (pendingVerify.value) {
+    pendingVerify.value = false
+    setTimeout(() => refreshCertResult(), 600)
+  }
 })
 
 const handleBack = () => {
@@ -166,13 +213,76 @@ const validateIdCard = (id: string): boolean => {
   return checkMap[sum % 11] === id[17].toUpperCase()
 }
 
-// ========== OCR 识别（占位） ==========
+// ========== OCR 识别身份证（仅前端临时填充，不保存到后端） ==========
 const handleOCR = () => {
-  showToast('OCR 识别功能开发中')
+  if (isCertified.value) return
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: (res: any) => {
+      const filePath = res.tempFilePaths && res.tempFilePaths[0]
+      if (!filePath) return
+      uni.showLoading({ title: '识别中...', mask: true })
+      const fs = uni.getFileSystemManager()
+      fs.readFile({
+        filePath,
+        encoding: 'base64',
+        success: async (r: any) => {
+          try {
+            const resp: any = await post('/eid-auth/ocr', { imageBase64: r.data })
+            const d = resp?.data || resp
+            if (d && d.name) realName.value = d.name
+            if (d && d.idCard) idCard.value = d.idCard
+            if (d && (d.name || d.idCard)) {
+              showToast('识别成功')
+            } else {
+              showToast('未识别到身份证信息，请手动填写')
+            }
+          } catch (e: any) {
+            showToast(e?.message || '识别失败，请手动填写')
+          } finally {
+            uni.hideLoading()
+          }
+        },
+        fail: () => {
+          uni.hideLoading()
+          showToast('读取图片失败，请手动填写')
+        },
+      })
+    },
+  })
 }
 
-// ========== 提交 ==========
-const handleSubmit = () => {
+// ========== 查询 E证通认证结果 ==========
+async function refreshCertResult() {
+  if (querying.value) return
+  querying.value = true
+  try {
+    const res: any = await get('/eid-auth/result')
+    const d = res?.data || res
+    const status = d && typeof d.status === 'number' ? d.status : 0
+    certStatus.value = status
+    if (status === 2) {
+      showToast('实名认证成功')
+      const info: any = userStore.userInfo
+      if (info) {
+        info.isRealName = 1
+        info.eidCertStatus = 2
+      }
+    } else if (status === 3) {
+      showToast('认证失败，请重新认证')
+    }
+  } catch (_) {
+    // 网络异常，静默；用户可再次触发查询
+  } finally {
+    querying.value = false
+  }
+}
+
+// ========== 提交：创建订单 → 调起 E证通 SDK ==========
+async function handleSubmit() {
+  if (isCertified.value) return
   if (!agree.value) {
     // 未勾选协议 → 勾选框上方弹出黑色气泡提示，2 秒后自动消失
     showAgreeTip.value = true
@@ -192,7 +302,32 @@ const handleSubmit = () => {
     showToast('身份证号格式不正确')
     return
   }
-  uni.navigateTo({ url: '/pages/tencent-eid-auth/index' })
+  if (submitting.value) return
+  submitting.value = true
+  uni.showLoading({ title: '发起认证...', mask: true })
+  try {
+    const res: any = await post('/eid-auth/create-order')
+    const d = res?.data || res
+    const token = d && d.eidToken
+    uni.hideLoading()
+    if (!token) {
+      showToast('发起认证失败，请稍后重试')
+      return
+    }
+    pendingVerify.value = true
+    // 调起腾讯云 E证通 SDK，SDK 内部跳转 eID 数字身份小程序完成人脸核身
+    startEid({
+      data: { token },
+      verifyDoneCallback: () => {
+        refreshCertResult()
+      },
+    })
+  } catch (e: any) {
+    uni.hideLoading()
+    showToast(e?.message || '网络异常，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // ========== 协议链接 ==========
@@ -311,6 +446,25 @@ const onSelectMatchmaker = (maker: any) => {
 }
 .title-main { font-size: 40rpx; font-weight: bold; color: #222222; }
 .title-sub { font-size: 24rpx; color: #B0B0B0; }
+
+// ========== 已认证面板 ==========
+.cert-done {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 48rpx 20rpx 32rpx;
+}
+.cert-done-icon {
+  width: 96rpx; height: 96rpx; margin-bottom: 20rpx;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='10'%20fill='%23FF5B84'/%3E%3Cpath%20d='M7.5%2012.4%20L10.7%2015.6%20L16.5%209.2'%20fill='none'%20stroke='%23ffffff'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+.cert-done-title { font-size: 34rpx; font-weight: bold; color: #222222; margin-bottom: 20rpx; }
+.cert-done-info {
+  width: 100%; background: #F7F8FA; border-radius: 20rpx;
+  padding: 24rpx 26rpx; display: flex; flex-direction: column; gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+.cert-done-line { font-size: 28rpx; color: #333333; }
+.cert-done-tip { font-size: 22rpx; color: #B0B0B0; text-align: center; line-height: 1.5; }
 
 // ========== 表单输入区 ==========
 .form-area { padding: 24rpx 0 0; display: flex; flex-direction: column; gap: 20rpx; }

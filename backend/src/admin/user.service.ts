@@ -21,6 +21,7 @@ interface UserFilter {
   keyword?: string
   gender?: number
   status?: number
+  eidCertStatus?: number
   isVip?: number
   vipLevel?: number
   startDate?: string
@@ -102,6 +103,10 @@ export class AdminUserService {
 
     if (filter.status !== undefined) {
       queryBuilder.andWhere('user.status = :status', { status: filter.status })
+    }
+
+    if (filter.eidCertStatus !== undefined) {
+      queryBuilder.andWhere('user.eidCertStatus = :eidCertStatus', { eidCertStatus: filter.eidCertStatus })
     }
 
     if (filter.isVip !== undefined) {
@@ -362,6 +367,7 @@ export class AdminUserService {
         acceptChildren: user.acceptChildren,
         mateRequirement: user.mateRequirement,
         isRealName: user.isRealName,
+        eidCertStatus: user.eidCertStatus || 0,
         isVip: user.isVip,
         vipLevel: user.vipLevel,
         vipExpireTime: user.vipExpireTime,

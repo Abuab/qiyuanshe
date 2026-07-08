@@ -68,6 +68,15 @@
                 <el-option label="待审核" :value="2" />
               </el-select>
             </el-form-item>
+            <el-form-item label="实名认证">
+              <el-select v-model="filterForm.eidCertStatus" placeholder="全部" clearable style="width: 120px">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="未认证" :value="0" />
+                <el-option label="认证中" :value="1" />
+                <el-option label="已认证" :value="2" />
+                <el-option label="认证失败" :value="3" />
+              </el-select>
+            </el-form-item>
             <el-form-item label="注册时间">
               <el-date-picker
                 v-model="dateRange"
@@ -416,6 +425,14 @@
             <el-tag v-if="row.status === 1" type="success" size="small">正常</el-tag>
             <el-tag v-else-if="row.status === 2" type="warning" size="small">待审核</el-tag>
             <el-tag v-else type="danger" size="small">禁用</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="eidCertStatus" label="实名认证" width="100">
+          <template #default="{ row }">
+            <el-tag v-if="row.eidCertStatus === 2" type="success" size="small">已认证</el-tag>
+            <el-tag v-else-if="row.eidCertStatus === 1" type="warning" size="small">认证中</el-tag>
+            <el-tag v-else-if="row.eidCertStatus === 3" type="danger" size="small">认证失败</el-tag>
+            <el-tag v-else type="info" size="small">未认证</el-tag>
           </template>
         </el-table-column>
         <el-table-column v-if="isColumnVisible('profileAudit')" label="资料审核" width="110">
@@ -1238,6 +1255,7 @@ const filterForm = reactive<UserFilter>({
   gender: undefined,
   vipLevel: undefined,
   status: undefined,
+  eidCertStatus: undefined,
   minAge: undefined,
   maxAge: undefined,
   minHeight: undefined,
@@ -2078,6 +2096,7 @@ function handleReset() {
     gender: undefined,
     vipLevel: undefined,
     status: undefined,
+    eidCertStatus: undefined,
     minAge: undefined,
     maxAge: undefined,
     minHeight: undefined,

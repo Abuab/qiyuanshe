@@ -137,6 +137,18 @@ export class User {
   @Column({ type: 'tinyint', default: 0 })
   isRealName: number
 
+  // E证通实名认证状态：0未认证 1认证中 2已认证 3认证失败（不存储任何身份信息）
+  @Column({ name: 'eid_cert_status', type: 'tinyint', default: 0 })
+  eidCertStatus: number
+
+  // E证通认证完成时间
+  @Column({ name: 'eid_cert_time', type: 'datetime', nullable: true })
+  eidCertTime: Date
+
+  // E证通业务流水号（EidToken，用于查询核身结果）
+  @Column({ name: 'eid_biz_seq_no', type: 'varchar', length: 64, nullable: true })
+  eidBizSeqNo: string
+
   @Column({ type: 'tinyint', default: 0 })
   isVip: number
 

@@ -390,6 +390,8 @@ export class AuthService {
       acceptChildren: user.acceptChildren,
       mateRequirement: user.mateRequirement,
       isRealName: user.isRealName,
+      eidCertStatus: user.eidCertStatus || 0,
+      eidCertTime: user.eidCertTime || null,
       isVip: user.isVip,
       vipLevel: user.vipLevel,
       vipExpireTime: user.vipExpireTime,

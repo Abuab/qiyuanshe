@@ -1,0 +1,1 @@
+function isValidateToken(e){return/^[a-zA-Z0-9-]{36}$/.test(e)}export default{isValidateToken:isValidateToken};
