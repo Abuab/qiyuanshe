@@ -8,22 +8,21 @@ import {
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Like } from 'typeorm'
+import { InjectDataSource } from '@nestjs/typeorm'
+import { DataSource } from 'typeorm'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
-import { User } from '../entities/User'
 
 @Controller('admin/store-cert')
 @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminStoreCertController {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   /** 所有用户列表（左侧可选用户） */
@@ -33,41 +32,60 @@ export class AdminStoreCertController {
     @Query('limit') limit = 20,
     @Query('keyword') keyword = '',
   ) {
-    const [list, total] = await this.userRepo.findAndCount({
-      where: [
-        { nickname: Like(`%${keyword}%`), isDeleted: 0, status: 2 },
-        { phone: Like(`%${keyword}%`), isDeleted: 0, status: 2 },
-      ],
-      select: ['id', 'nickname', 'avatar', 'phone'],
-      order: { id: 'DESC' },
-      skip: (+page - 1) * +limit,
-      take: +limit,
+    const offset = (+page - 1) * +limit
+    const keywordLike = `%${keyword}%`
+
+    const [rows, countResult] = await Promise.all([
+      this.dataSource.query(
+        `SELECT id, nickname, avatar, phone FROM users
+         WHERE is_deleted = 0 AND status = 2
+         AND (nickname LIKE ? OR phone LIKE ?)
+         ORDER BY id DESC
+         LIMIT ? OFFSET ?`,
+        [keywordLike, keywordLike, +limit, offset],
+      ),
+      this.dataSource.query(
+        `SELECT COUNT(*) as total FROM users
+         WHERE is_deleted = 0 AND status = 2
+         AND (nickname LIKE ? OR phone LIKE ?)`,
+        [keywordLike, keywordLike],
+      ),
+    ])
+
+    return Result.success({
+      list: rows,
+      total: Number(countResult[0]?.total || 0),
     })
-    return Result.success({ list, total })
   }
 
   /** 已认证用户列表（右侧已选用户） */
   @Get('members')
   async getMembers() {
-    const list = await this.userRepo.find({
-      where: { storeCertified: 1, isDeleted: 0 },
-      select: ['id', 'nickname', 'avatar', 'phone'],
-      order: { id: 'DESC' },
-    })
-    return Result.success(list)
+    const rows = await this.dataSource.query(
+      `SELECT id, nickname, avatar, phone FROM users
+       WHERE store_certified = 1 AND is_deleted = 0
+       ORDER BY id DESC`,
+    )
+    return Result.success(rows)
   }
 
   /** 添加用户到店认证 */
   @Post('members/:userId')
   async addMember(@Param('userId', ParseIntPipe) userId: number) {
-    await this.userRepo.update(userId, { storeCertified: 1 })
+    await this.dataSource.query(
+      `UPDATE users SET store_certified = 1 WHERE id = ?`,
+      [userId],
+    )
     return Result.success(null, '添加成功')
   }
 
   /** 移除用户到店认证 */
   @Delete('members/:userId')
   async removeMember(@Param('userId', ParseIntPipe) userId: number) {
-    await this.userRepo.update(userId, { storeCertified: 0 })
+    await this.dataSource.query(
+      `UPDATE users SET store_certified = 0 WHERE id = ?`,
+      [userId],
+    )
     return Result.success(null, '移除成功')
   }
 }

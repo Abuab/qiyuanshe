@@ -220,12 +220,12 @@ async function fetchSinglePromiseStatus() {
   }
 }
 
-// 到店认证状态：从 /auth/profile 中获取 storeCertified 字段
+// 到店认证状态：从 /auth/store-cert-status 获取（原生 SQL，避免 TypeORM 列映射问题）
 async function fetchStoreCertStatus() {
   try {
-    const res: any = await get('/auth/profile')
+    const res: any = await get('/auth/store-cert-status')
     const p = res?.data || res
-    if (Number(p?.storeCertified) === 1) {
+    if (Number(p?.certified) === 1) {
       storeCertAction.value = '已认证'
       storeCertActionClass.value = 'done'
     }

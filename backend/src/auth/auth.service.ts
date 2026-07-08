@@ -409,7 +409,6 @@ export class AuthService {
       isRealName: user.isRealName,
       eidCertStatus: user.eidCertStatus || 0,
       eidCertTime: user.eidCertTime || null,
-      storeCertified: user.storeCertified || 0,
       isVip: user.isVip,
       vipLevel: user.vipLevel,
       vipExpireTime: user.vipExpireTime,
@@ -437,5 +436,14 @@ export class AuthService {
     }
 
     return sanitized
+  }
+
+  /** 查询到店认证状态（使用原生 SQL） */
+  async getStoreCertStatus(userId: number): Promise<boolean> {
+    const rows = await this.userRepository.query(
+      `SELECT store_certified FROM users WHERE id = ?`,
+      [userId],
+    )
+    return Number(rows?.[0]?.store_certified) === 1
   }
 }

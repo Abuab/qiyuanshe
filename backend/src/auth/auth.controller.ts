@@ -69,6 +69,14 @@ export class AuthController {
     return Result.success(user)
   }
 
+  /** 查询到店认证状态（使用原生 SQL 避免 TypeORM 实体列映射问题） */
+  @Get('store-cert-status')
+  @UseGuards(JwtAuthGuard)
+  async getStoreCertStatus(@Request() req) {
+    const certified = await this.authService.getStoreCertStatus(req.user.id)
+    return Result.success({ certified })
+  }
+
   @Put('profile')
   @UseGuards(JwtAuthGuard)
   async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {

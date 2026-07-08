@@ -137,9 +137,6 @@ export class User {
   @Column({ type: 'tinyint', default: 0 })
   isRealName: number
 
-  @Column({ name: 'store_certified', type: 'tinyint', default: 0 })
-  storeCertified: number
-
   // E证通实名认证状态：0未认证 1认证中 2已认证 3认证失败（不存储任何身份信息）
   @Column({ name: 'eid_cert_status', type: 'tinyint', default: 0 })
   eidCertStatus: number
