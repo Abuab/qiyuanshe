@@ -154,10 +154,10 @@ const handleSkipAuth = () => {
 }
 
 const openAgreement = () => {
-  uni.navigateTo({ url: '/pages/agreement/index?type=USER_AGREEMENT' })
+  uni.navigateTo({ url: '/pages/agreement/index?type=user' })
 }
 const openPrivacy = () => {
-  uni.navigateTo({ url: '/pages/agreement/index?type=PRIVACY_POLICY' })
+  uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
 }
 
 const handlePhoneLogin = () => {

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from '../entities/User'
+import { UserAuth } from '../entities/UserAuth'
 import * as crypto from 'crypto'
 import {
   callFaceIdApi,
@@ -25,6 +26,8 @@ export class EidAuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(UserAuth)
+    private readonly userAuthRepo: Repository<UserAuth>,
   ) {}
 
   /**
@@ -60,6 +63,7 @@ export class EidAuthService {
    */
   async queryResult(
     userId: number,
+    identityInfo?: { realName?: string; idCard?: string },
   ): Promise<{ status: number; certTime: Date | null }> {
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) {
@@ -91,6 +95,26 @@ export class EidAuthService {
           eidCertTime: now,
           isRealName: 1,
         })
+        // 创建/更新 UserAuth 实名认证记录（使用前端表单中填写的姓名/身份证号）
+        if (identityInfo?.realName && identityInfo?.idCard) {
+          const existing = await this.userAuthRepo.findOne({
+            where: { userId, authType: 'realname' },
+          })
+          if (existing) {
+            existing.authData = { realName: identityInfo.realName, idCard: identityInfo.idCard }
+            existing.status = 1
+            await this.userAuthRepo.save(existing)
+          } else {
+            await this.userAuthRepo.save(
+              this.userAuthRepo.create({
+                userId,
+                authType: 'realname',
+                status: 1,
+                authData: { realName: identityInfo.realName, idCard: identityInfo.idCard },
+              }),
+            )
+          }
+        }
         this.logger.log(`用户 ${userId} E证通认证成功`)
         return { status: EID_STATUS.DONE, certTime: now }
       }

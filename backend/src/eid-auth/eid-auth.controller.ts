@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Body,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common'
@@ -30,10 +31,14 @@ export class EidAuthController {
   /** 查询当前用户认证结果（仅返回状态，不返回身份信息） */
   @Get('result')
   @UseGuards(JwtAuthGuard)
-  async result(@Request() req: any) {
+  async result(
+    @Request() req: any,
+    @Query('realName') realName?: string,
+    @Query('idCard') idCard?: string,
+  ) {
     const userId = req.user.id || req.user.sub
     try {
-      const data = await this.service.queryResult(userId)
+      const data = await this.service.queryResult(userId, { realName, idCard })
       return Result.success(data)
     } catch (e: any) {
       return Result.error(e?.message || '查询认证结果失败')

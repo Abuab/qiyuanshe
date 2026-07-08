@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
+import { UserAuth } from '../entities/UserAuth'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig } from '../config/jwt'
@@ -44,6 +45,8 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserAgreement)
     private readonly agreementRepo: Repository<UserAgreement>,
+    @InjectRepository(UserAuth)
+    private readonly userAuthRepo: Repository<UserAuth>,
     private readonly jwtService: JwtService,
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly userService: UserService,
@@ -265,7 +268,21 @@ export class AuthService {
       }
     }
 
-    return this.sanitizeUser(user, true)
+    const profile = this.sanitizeUser(user, true)
+
+    // 从 UserAuth 中获取实名认证姓名
+    try {
+      const authRecord = await this.userAuthRepo.findOne({
+        where: { userId, authType: 'realname', status: 1 },
+        order: { createdAt: 'DESC' },
+      })
+      const authData = authRecord?.authData || {}
+      ;(profile as any).realName = authData.realName || authData.name || ''
+    } catch (_) {
+      ;(profile as any).realName = ''
+    }
+
+    return profile
   }
 
   async updateProfile(userId: number, dto: UpdateProfileDto): Promise<Partial<User>> {

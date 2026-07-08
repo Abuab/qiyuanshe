@@ -261,7 +261,10 @@ async function refreshCertResult() {
   querying.value = true
   const prev = certStatus.value
   try {
-    const res: any = await get('/eid-auth/result')
+    const res: any = await get('/eid-auth/result', {
+      realName: realName.value.trim(),
+      idCard: idCard.value.trim(),
+    } as Record<string, unknown>)
     const d = res?.data || res
     const status = d && typeof d.status === 'number' ? d.status : 0
     certStatus.value = status
@@ -337,9 +340,9 @@ async function handleSubmit() {
 // ========== 协议链接 ==========
 const openAgreement = (type: string) => {
   if (type === 'user') {
-    uni.navigateTo({ url: '/pages/user-agreement/index' })
+    uni.navigateTo({ url: '/pages/agreement/index?type=user' })
   } else {
-    uni.navigateTo({ url: '/pages/privacy-policy/index' })
+    uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
   }
 }
 
