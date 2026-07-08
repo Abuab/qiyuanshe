@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SinglePromise } from '../entities/SinglePromise'
 import { UserAuth } from '../entities/UserAuth'
+import { User } from '../entities/User'
+
+// E证通认证状态常量
+const EID_STATUS_DONE = 2
 
 @Injectable()
 export class SinglePromiseService {
@@ -11,6 +15,8 @@ export class SinglePromiseService {
     private readonly spRepo: Repository<SinglePromise>,
     @InjectRepository(UserAuth)
     private readonly userAuthRepo: Repository<UserAuth>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   /** 获取用户当前单身承诺状态 */
@@ -34,17 +40,28 @@ export class SinglePromiseService {
   }
 
   /** 提交/更新单身承诺 */
-  async submit(userId: number, signatureUrl: string) {
+  async submit(userId: number, signatureUrl: string, inputRealName?: string) {
     // 从实名认证记录中获取真实姓名
     const authRecord = await this.userAuthRepo.findOne({
       where: { userId, authType: 'realname', status: 1 },
       order: { createdAt: 'DESC' },
     })
-    if (!authRecord) {
-      throw new ForbiddenException('请先完成实名认证')
+
+    // 检查是否已完成实名认证（UserAuth记录 或 E证通状态）
+    let realName = ''
+    if (authRecord) {
+      const authData = authRecord.authData || {}
+      realName = authData.realName || authData.name || ''
+    } else {
+      // 兼容历史数据：检查 E证通认证状态
+      const user = await this.userRepo.findOne({ where: { id: userId } })
+      if (!user || user.eidCertStatus !== EID_STATUS_DONE) {
+        throw new ForbiddenException('请先完成实名认证')
+      }
+      // 使用前端传来的姓名作为兜底
+      realName = inputRealName?.trim() || ''
     }
-    const authData = authRecord.authData || {}
-    const realName = authData.realName || authData.name
+
     if (!realName) {
       throw new ForbiddenException('无法获取实名认证信息，请联系客服')
     }

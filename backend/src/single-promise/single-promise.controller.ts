@@ -68,13 +68,14 @@ export class SinglePromiseController {
   async submit(
     @Request() req: any,
     @UploadedFile() file: any,
+    @Body('realName') realName?: string,
   ) {
     const userId = req.user.id || req.user.sub
     if (!file) {
       return Result.error('请上传签名图片')
     }
     const signatureUrl = `/uploads/${file.filename}`
-    const data = await this.spService.submit(userId, signatureUrl)
+    const data = await this.spService.submit(userId, signatureUrl, realName)
     return Result.success(data)
   }
 

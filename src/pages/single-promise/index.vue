@@ -330,6 +330,7 @@ async function confirmSubmit() {
         url: uploadUrl,
         filePath: tempPath,
         name: 'file',
+        formData: { realName: realName.value },
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (uploadRes) => {
           console.log('[提交] 上传响应:', uploadRes.statusCode, uploadRes.data)
