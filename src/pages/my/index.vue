@@ -106,7 +106,7 @@
           <text class="topcard-title">资料置顶</text>
           <text class="topcard-desc">{{ topCardDesc }}</text>
         </view>
-        <view class="topcard-btn" :class="{ 'topcard-btn-disabled': topCardStatus.isPinned }">
+        <view class="topcard-btn" :class="{ 'topcard-btn-disabled': topCardBtnDisabled }">
           <text>{{ topCardBtnText }}</text>
         </view>
       </view>
@@ -416,8 +416,14 @@ const topCardDesc = computed(() => {
 const topCardBtnText = computed(() => {
   if (topCardStatus.value.isPinned) return '置顶中'
   if (!isVipValid.value) return '去开通'
+  if (topCardStatus.value.todayRemaining <= 0) return '已用完'
   return '立即置顶'
 })
+
+// 置顶中或当日已用完 → 按钮置灰
+const topCardBtnDisabled = computed(() =>
+  topCardStatus.value.isPinned || (isVipValid.value && topCardStatus.value.todayRemaining <= 0),
+)
 
 const loadTopCardStatus = async () => {
   if (!isLoggedIn.value) return
@@ -442,6 +448,11 @@ const handleUseTopCard = async () => {
   // 已在置顶中 → 提示有效期，不重复消耗
   if (topCardStatus.value.isPinned) {
     uni.showToast({ title: `置顶中，有效期至 ${formatPinnedUntil(topCardStatus.value.pinnedUntil)}`, icon: 'none' })
+    return
+  }
+  // 今日次数已用完 → 直接提示，避免无谓的失败请求
+  if (topCardStatus.value.todayRemaining <= 0) {
+    uni.showToast({ title: '今日置顶次数已用完，明天再来吧', icon: 'none' })
     return
   }
   if (topCardUsing.value) return
