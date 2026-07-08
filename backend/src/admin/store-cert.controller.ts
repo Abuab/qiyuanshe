@@ -38,7 +38,7 @@ export class AdminStoreCertController {
     const [rows, countResult] = await Promise.all([
       this.dataSource.query(
         `SELECT id, nickname, avatar, phone FROM users
-         WHERE is_deleted = 0 AND status = 2
+         WHERE isDeleted = 0 AND status = 2
          AND (nickname LIKE ? OR phone LIKE ?)
          ORDER BY id DESC
          LIMIT ? OFFSET ?`,
@@ -46,7 +46,7 @@ export class AdminStoreCertController {
       ),
       this.dataSource.query(
         `SELECT COUNT(*) as total FROM users
-         WHERE is_deleted = 0 AND status = 2
+         WHERE isDeleted = 0 AND status = 2
          AND (nickname LIKE ? OR phone LIKE ?)`,
         [keywordLike, keywordLike],
       ),
@@ -63,7 +63,7 @@ export class AdminStoreCertController {
   async getMembers() {
     const rows = await this.dataSource.query(
       `SELECT id, nickname, avatar, phone FROM users
-       WHERE store_certified = 1 AND is_deleted = 0
+       WHERE store_certified = 1 AND isDeleted = 0
        ORDER BY id DESC`,
     )
     return Result.success(rows)
