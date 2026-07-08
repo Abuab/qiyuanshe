@@ -145,7 +145,7 @@ const submitCancel = async () => {
 
     try {
       // 调用注销 API
-      await post('/user/cancel')
+      await post('/users/cancel')
 
       // 显示成功 Toast
       showToast.value = true

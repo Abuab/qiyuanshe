@@ -113,7 +113,7 @@ function goBack() {
 
 async function fetchData() {
   try {
-    const res: any = await request({ url: '/users/daily-recommend', method: 'GET' })
+    const res: any = await request({ url: '/users/recommend', method: 'GET' })
     list.value = (res?.list || []).map((item: UserInfo) => ({
       ...item,
       avatar: getFullImageUrl(item.avatar),

@@ -88,12 +88,14 @@
       <view class="safe-bottom" />
     </view>
 
-    <!-- 红娘联系方式弹窗（复用现有组件） -->
-    <matchmaker-popup
-      v-model:show="matchmakerPopupShow"
-      :matchmaker="selectedMatchmaker || {}"
-      @close="matchmakerPopupShow = false"
-    />
+    <!-- 红娘联系方式弹窗（复用现有组件；包一层阻止冒泡，避免点击红娘弹窗误触遮罩关闭到店弹窗） -->
+    <view @tap.stop>
+      <matchmaker-popup
+        v-model:show="matchmakerPopupShow"
+        :matchmaker="selectedMatchmaker || {}"
+        @close="matchmakerPopupShow = false"
+      />
+    </view>
   </view>
 </template>
 
@@ -143,11 +145,9 @@ function handleMaskClose() {
 function openNavigation() {
   const lat = storeLat.value
   const lng = storeLng.value
-  const name = encodeURIComponent(storeName.value)
-  const addr = encodeURIComponent(storeAddress.value)
 
   if (lat && lng) {
-    // 有经纬度时直接用坐标导航
+    // 有经纬度时按坐标唤起地图导航
     uni.openLocation({
       latitude: lat,
       longitude: lng,
@@ -155,17 +155,9 @@ function openNavigation() {
       address: storeAddress.value,
       scale: 16,
     })
-  } else if (storeAddress.value) {
-    // 无经纬度时用地址文本搜索
-    uni.openLocation({
-      latitude: 35.0265,
-      longitude: 110.9983,
-      name: storeName.value || '门店地址',
-      address: storeAddress.value,
-      scale: 16,
-    })
   } else {
-    uni.showToast({ title: '暂无门店地址信息', icon: 'none' })
+    // uni.openLocation 依赖经纬度，未配置坐标时无法定位
+    uni.showToast({ title: '暂未配置门店导航坐标', icon: 'none' })
   }
 }
 
