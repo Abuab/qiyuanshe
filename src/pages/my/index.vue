@@ -100,17 +100,6 @@
         </view>
       </view>
 
-      <!-- ========== 资料置顶卡（VIP 置顶卡，仅 VIP 功能开启时展示） ========== -->
-      <view v-if="isLoggedIn && systemStore.vipEnabled" class="topcard-card" @tap="handleUseTopCard">
-        <view class="topcard-left">
-          <text class="topcard-title">资料置顶</text>
-          <text class="topcard-desc">{{ topCardDesc }}</text>
-        </view>
-        <view class="topcard-btn" :class="{ 'topcard-btn-disabled': topCardBtnDisabled }">
-          <text>{{ topCardBtnText }}</text>
-        </view>
-      </view>
-
       <!-- ========== 信息认证（含认证状态） ========== -->
       <view class="auth-card" @tap="goToRealnameAuth">
         <view class="auth-card-header">
@@ -257,7 +246,7 @@ import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-l
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { getFullImageUrl } from '@/utils/common'
-import request, { getBaseUrl, get, post } from '@/utils/request'
+import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
 import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
 
@@ -351,7 +340,6 @@ onShow(() => {
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
   loadAiProfileText()
   loadPersonalityEntry()
-  loadTopCardStatus()
 })
 
 const onRefresherRefresh = async () => {
@@ -383,93 +371,6 @@ const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
 const appName = computed(() => systemStore.appName || '缘来是你')
-
-// ===== 资料置顶卡（VIP 置顶卡） =====
-const topCardStatus = ref<{
-  todayRemaining: number
-  todayTotal: number
-  todayUsed: number
-  isPinned: boolean
-  pinnedUntil: string | null
-}>({ todayRemaining: 0, todayTotal: 0, todayUsed: 0, isPinned: false, pinnedUntil: null })
-const topCardUsing = ref(false)
-
-const formatPinnedUntil = (v: string | null): string => {
-  if (!v) return ''
-  const d = new Date(v)
-  if (isNaN(d.getTime())) return ''
-  const pad = (n: number) => (n < 10 ? '0' + n : '' + n)
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-const topCardDesc = computed(() => {
-  if (topCardStatus.value.isPinned) {
-    return `置顶中，有效期至 ${formatPinnedUntil(topCardStatus.value.pinnedUntil)}`
-  }
-  if (!isVipValid.value) return '开通会员后可置顶资料，获得更多曝光'
-  if (topCardStatus.value.todayRemaining > 0) {
-    return `今日剩余 ${topCardStatus.value.todayRemaining} 次，置顶后优先展示给更多异性`
-  }
-  return '今日置顶次数已用完，明天再来吧'
-})
-
-const topCardBtnText = computed(() => {
-  if (topCardStatus.value.isPinned) return '置顶中'
-  if (!isVipValid.value) return '去开通'
-  if (topCardStatus.value.todayRemaining <= 0) return '已用完'
-  return '立即置顶'
-})
-
-// 置顶中或当日已用完 → 按钮置灰
-const topCardBtnDisabled = computed(() =>
-  topCardStatus.value.isPinned || (isVipValid.value && topCardStatus.value.todayRemaining <= 0),
-)
-
-const loadTopCardStatus = async () => {
-  if (!isLoggedIn.value || !systemStore.vipEnabled) return
-  try {
-    const res: any = await get('/vip/top-card/status')
-    if (res) {
-      topCardStatus.value = {
-        todayRemaining: res.todayRemaining ?? 0,
-        todayTotal: res.todayTotal ?? 0,
-        todayUsed: res.todayUsed ?? 0,
-        isPinned: !!res.isPinned,
-        pinnedUntil: res.pinnedUntil || null,
-      }
-    }
-  } catch { /* 静默失败，不打断页面 */ }
-}
-
-const handleUseTopCard = async () => {
-  if (!isLoggedIn.value) { goToLogin(); return }
-  // 未开通会员 → 引导去开通
-  if (!isVipValid.value) { goToVip(); return }
-  // 已在置顶中 → 提示有效期，不重复消耗
-  if (topCardStatus.value.isPinned) {
-    uni.showToast({ title: `置顶中，有效期至 ${formatPinnedUntil(topCardStatus.value.pinnedUntil)}`, icon: 'none' })
-    return
-  }
-  // 今日次数已用完 → 直接提示，避免无谓的失败请求
-  if (topCardStatus.value.todayRemaining <= 0) {
-    uni.showToast({ title: '今日置顶次数已用完，明天再来吧', icon: 'none' })
-    return
-  }
-  if (topCardUsing.value) return
-  topCardUsing.value = true
-  try {
-    const res: any = await post('/vip/top-card/use')
-    if (res && res.pinnedUntil) {
-      uni.showToast({ title: '置顶成功', icon: 'success' })
-    } else {
-      // data 为 null → 功能维护中
-      uni.showToast({ title: '功能维护中，请稍后再试', icon: 'none' })
-    }
-  } catch { /* request 层已弹出后端错误信息（如今日已用完/会员过期） */ } finally {
-    await loadTopCardStatus()
-    topCardUsing.value = false
-  }
-}
 
 // 6位数字用户ID（用于展示 ID:123456）
 const formattedUserId = computed(() => {
@@ -780,7 +681,7 @@ const toolGrid7 = [
 
 <style lang="scss" scoped>
 .my-page {
-  min-height: 100vh;
+  height: 100vh;
   background-color: #FFF8FA;
   display: flex;
   flex-direction: column;
@@ -1042,59 +943,6 @@ const toolGrid7 = [
     color: #333;
     font-weight: bold;
   }
-}
-
-// ========== 资料置顶卡（VIP 置顶卡） ==========
-.topcard-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 24rpx 24rpx;
-  padding: 24rpx;
-  background: linear-gradient(135deg, #FFF0F3 0%, #FFE3EC 100%);
-  border-radius: 16rpx;
-}
-
-.topcard-left {
-  flex: 1;
-  min-width: 0;
-  padding-right: 16rpx;
-}
-
-.topcard-title {
-  display: block;
-  font-size: 30rpx;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 6rpx;
-}
-
-.topcard-desc {
-  font-size: 22rpx;
-  color: #B0748A;
-  line-height: 1.4;
-}
-
-.topcard-btn {
-  flex-shrink: 0;
-  min-width: 128rpx;
-  height: 56rpx;
-  padding: 0 24rpx;
-  border-radius: 28rpx;
-  background: linear-gradient(90deg, #FFA0B9 0%, #FF5B84 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text {
-    font-size: 24rpx;
-    color: #fff;
-    font-weight: bold;
-  }
-}
-
-.topcard-btn-disabled {
-  background: #E5C3CE;
 }
 
 // ========== 信息认证（含认证状态） ==========

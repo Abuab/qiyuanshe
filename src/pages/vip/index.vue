@@ -48,6 +48,17 @@
         </view>
       </view>
 
+      <!-- 资料置顶（VIP 置顶卡） -->
+      <view v-if="systemStore.vipEnabled" class="topcard-card" @tap="handleUseTopCard">
+        <view class="topcard-left">
+          <text class="topcard-title">资料置顶</text>
+          <text class="topcard-desc">{{ topCardDesc }}</text>
+        </view>
+        <view class="topcard-btn" :class="{ 'topcard-btn-disabled': topCardBtnDisabled }">
+          <text>{{ topCardBtnText }}</text>
+        </view>
+      </view>
+
       <!-- 套餐选择 -->
       <view class="packages-section">
         <text class="section-title">选择套餐</text>
@@ -493,6 +504,93 @@ const fetchPackagesAndProfile = async () => {
 }
 
 // ===== 生命周期 =====
+// ===== 资料置顶卡（VIP 置顶卡） =====
+const topCardStatus = ref<{
+  todayRemaining: number
+  todayTotal: number
+  todayUsed: number
+  isPinned: boolean
+  pinnedUntil: string | null
+}>({ todayRemaining: 0, todayTotal: 0, todayUsed: 0, isPinned: false, pinnedUntil: null })
+const topCardUsing = ref(false)
+
+const formatPinnedUntil = (v: string | null): string => {
+  if (!v) return ''
+  const d = new Date(v)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n: number) => (n < 10 ? '0' + n : '' + n)
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const topCardDesc = computed(() => {
+  if (topCardStatus.value.isPinned) {
+    return `置顶中，有效期至 ${formatPinnedUntil(topCardStatus.value.pinnedUntil)}`
+  }
+  if (!userStore.isVipValid) return '开通会员后可置顶资料，获得更多曝光'
+  if (topCardStatus.value.todayRemaining > 0) {
+    return `今日剩余 ${topCardStatus.value.todayRemaining} 次，置顶后优先展示给更多异性`
+  }
+  return '今日置顶次数已用完，明天再来吧'
+})
+
+const topCardBtnText = computed(() => {
+  if (topCardStatus.value.isPinned) return '置顶中'
+  if (!userStore.isVipValid) return '未开通'
+  if (topCardStatus.value.todayRemaining <= 0) return '已用完'
+  return '立即置顶'
+})
+
+// 未开通 / 置顶中 / 当日已用完 → 按钮置灰
+const topCardBtnDisabled = computed(() =>
+  topCardStatus.value.isPinned || !userStore.isVipValid || topCardStatus.value.todayRemaining <= 0,
+)
+
+const loadTopCardStatus = async () => {
+  if (!userStore.isLoggedIn || !systemStore.vipEnabled) return
+  try {
+    const res: any = await get('/vip/top-card/status')
+    if (res) {
+      topCardStatus.value = {
+        todayRemaining: res.todayRemaining ?? 0,
+        todayTotal: res.todayTotal ?? 0,
+        todayUsed: res.todayUsed ?? 0,
+        isPinned: !!res.isPinned,
+        pinnedUntil: res.pinnedUntil || null,
+      }
+    }
+  } catch { /* 静默失败，不打断页面 */ }
+}
+
+const handleUseTopCard = async () => {
+  if (!userStore.isLoggedIn) { uni.showToast({ title: '请先登录', icon: 'none' }); return }
+  // 未开通会员 → 引导在下方选择套餐
+  if (!userStore.isVipValid) { uni.showToast({ title: '请在下方选择套餐开通会员后使用', icon: 'none' }); return }
+  // 已在置顶中 → 提示有效期，不重复消耗
+  if (topCardStatus.value.isPinned) {
+    uni.showToast({ title: `置顶中，有效期至 ${formatPinnedUntil(topCardStatus.value.pinnedUntil)}`, icon: 'none' })
+    return
+  }
+  // 今日次数已用完 → 直接提示，避免无谓的失败请求
+  if (topCardStatus.value.todayRemaining <= 0) {
+    uni.showToast({ title: '今日置顶次数已用完，明天再来吧', icon: 'none' })
+    return
+  }
+  if (topCardUsing.value) return
+  topCardUsing.value = true
+  try {
+    const res: any = await post('/vip/top-card/use')
+    if (res && res.pinnedUntil) {
+      uni.showToast({ title: '置顶成功', icon: 'success' })
+    } else {
+      // data 为 null → 功能维护中
+      uni.showToast({ title: '功能维护中，请稍后再试', icon: 'none' })
+    }
+  } catch { /* request 层已弹出后端错误信息（如今日已用完/会员过期） */ } finally {
+    await loadTopCardStatus()
+    topCardUsing.value = false
+  }
+}
+
 onMounted(() => {
   const systemInfo = uni.getWindowInfo()
   statusBarHeight.value = systemInfo.statusBarHeight || 20
@@ -501,10 +599,12 @@ onMounted(() => {
   fetchCustomConfig()
   fetchAboutConfig()
   fetchSafetyTips()
+  loadTopCardStatus()
 })
 
 onShow(() => {
   fetchPackagesAndProfile()
+  loadTopCardStatus()
 })
 </script>
 
@@ -648,6 +748,59 @@ onShow(() => {
 // ===== 套餐选择 =====
 .packages-section {
   padding: 0 20px 20px;
+}
+
+// ===== 资料置顶卡（VIP 置顶卡） =====
+.topcard-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 20px 16px;
+  padding: 24rpx;
+  background: linear-gradient(135deg, #FFF0F3 0%, #FFE3EC 100%);
+  border-radius: 16rpx;
+}
+
+.topcard-left {
+  flex: 1;
+  min-width: 0;
+  padding-right: 16rpx;
+}
+
+.topcard-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 6rpx;
+}
+
+.topcard-desc {
+  font-size: 22rpx;
+  color: #B0748A;
+  line-height: 1.4;
+}
+
+.topcard-btn {
+  flex-shrink: 0;
+  min-width: 128rpx;
+  height: 56rpx;
+  padding: 0 24rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(90deg, #FFA0B9 0%, #FF5B84 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 24rpx;
+    color: #fff;
+    font-weight: bold;
+  }
+}
+
+.topcard-btn-disabled {
+  background: #E5C3CE;
 }
 
 .section-title {
