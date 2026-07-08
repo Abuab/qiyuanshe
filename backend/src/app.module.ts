@@ -71,6 +71,7 @@ import { QuickQuestionModule } from './quick-question/quick-question.module'
 import { AgreementLogStorageModule } from './agreement-log-storage/agreement-log-storage.module'
 import { SinglePromiseModule } from './single-promise/single-promise.module'
 import { EducationAuthModule } from './education-auth/education-auth.module'
+import { PropertyAuthModule } from './property-auth/property-auth.module'
 import { PersonalityTestModule } from './personality-test/personality-test.module'
 import { GuideCopyModule } from './guide-copy/guide-copy.module'
 import { HealthController } from './health.controller'
@@ -164,6 +165,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     AgreementLogStorageModule,
     SinglePromiseModule,
     EducationAuthModule,
+    PropertyAuthModule,
     PersonalityTestModule,
     GuideCopyModule,
     CosModule,

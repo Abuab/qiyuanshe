@@ -280,6 +280,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '学历认证审核', requiresAuth: true },
       },
       {
+        path: '/property-auth',
+        name: 'PropertyAuthList',
+        component: () => import('../views/property-auth/index.vue'),
+        meta: { title: '房产认证审核', requiresAuth: true },
+      },
+      {
         path: '/personality/questions',
         name: 'PersonalityQuestions',
         component: () => import('../views/personality/questions.vue'),

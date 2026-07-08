@@ -178,6 +178,10 @@ function handleItemTap(type: string) {
     uni.navigateTo({ url: '/pages/education-auth/index' })
     return
   }
+  if (type === 'house' || type === 'property') {
+    uni.navigateTo({ url: '/pages/property-auth/index' })
+    return
+  }
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }</script>
 

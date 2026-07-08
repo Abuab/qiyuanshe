@@ -273,6 +273,13 @@
       }
     },
     {
+      "path": "pages/property-auth/index",
+      "style": {
+        "navigationBarTitleText": "房产认证",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/help/index",
       "style": {
         "navigationBarTitleText": "帮助与反馈",
