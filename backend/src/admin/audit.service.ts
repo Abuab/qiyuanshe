@@ -8,6 +8,7 @@ import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { normalizeImageUrl } from '../common/image-url'
 import { CirclePost } from '../entities/CirclePost'
 import { UserAuth } from '../entities/UserAuth'
+import { SinglePromise } from '../entities/SinglePromise'
 
 interface AuditFilter {
   page?: number
@@ -33,6 +34,8 @@ export class AdminAuditService {
     private readonly circlePostRepository: Repository<CirclePost>,
     @InjectRepository(UserAuth)
     private readonly userAuthRepository: Repository<UserAuth>,
+    @InjectRepository(SinglePromise)
+    private readonly singlePromiseRepository: Repository<SinglePromise>,
   ) {}
 
   async list(filter: AuditFilter) {
@@ -108,16 +111,22 @@ export class AdminAuditService {
   }
 
   async getPendingCount() {
-    const [profileCount, circlePostCount, educationCount] = await Promise.all([
+    const [profileCount, circlePostCount, educationCount, propertyCount, carCount, singlePromiseCount] = await Promise.all([
       this.auditLogRepository.count({ where: { action: 'PENDING' } }),
       this.circlePostRepository.count({ where: { status: 0 } }),
       this.userAuthRepository.count({ where: { authType: 'education', status: 0 } }),
+      this.userAuthRepository.count({ where: { authType: 'property', status: 0 } }),
+      this.userAuthRepository.count({ where: { authType: 'car', status: 0 } }),
+      this.singlePromiseRepository.count({ where: { status: 0 } }),
     ])
-    // 学历认证归入「审核管理」，与资料审核一起计入侧边栏 profile 徽标
-    const profileTotal = profileCount + educationCount
+    // 「审核管理」徽标 = 资料审核 + 学历/房产/车产认证 + 单身承诺，任一子菜单有待审核都计入
+    const profileTotal = profileCount + educationCount + propertyCount + carCount + singlePromiseCount
     return {
       profile: profileTotal,
       education: educationCount,
+      property: propertyCount,
+      car: carCount,
+      singlePromise: singlePromiseCount,
       circlePost: circlePostCount,
       total: profileTotal + circlePostCount,
     }

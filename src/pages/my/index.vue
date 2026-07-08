@@ -1335,7 +1335,6 @@ const toolGrid7 = [
   align-items: center;
   justify-content: center;
   padding: 32rpx 0 8rpx;
-  margin-top: auto;
 }
 
 .footer-heart-uni {

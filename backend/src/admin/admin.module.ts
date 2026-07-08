@@ -55,6 +55,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
 import { UserAuth } from '../entities/UserAuth'
+import { SinglePromise } from '../entities/SinglePromise'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminFeedbackController } from './feedback.controller'
@@ -107,6 +108,7 @@ import { AiModule } from '../ai/ai.module'
       ChatOperationLog,
       CirclePost,
       UserAuth,
+      SinglePromise,
       ProfileVisit,
       NotifyLog,
       AiFeatureSwitchLog,
