@@ -423,15 +423,17 @@ function handleBack() {
 </script>
 
 <style lang="scss" scoped>
-$pink: #FF6B8A;
-$pink-light: #FF8FA3;
+$pink: #FF6B9D;
+$pink-light: #FF85A2;
+$pink-bg-start: #FFB8C9;
+$pink-bg-end: #FF8FA3;
 
-.page { min-height: 100vh; background: #FFF5F7; }
+.page { min-height: 100vh; background: #F5F5F5; }
 
 // ===== 导航栏 =====
 .nav-wrap {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: #fff; border-bottom: 1rpx solid #E5E5E5;
+  background: linear-gradient(135deg, $pink-bg-start, $pink-bg-end);
 }
 .nav-bar {
   height: 88rpx; display: flex; align-items: center; justify-content: center; position: relative;
@@ -446,21 +448,21 @@ $pink-light: #FF8FA3;
 
 // ===== 粉色渐变区域 =====
 .hero-section {
-  background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F8 100%);
-  padding: 48rpx 40rpx 60rpx;
+  background: linear-gradient(180deg, $pink-bg-start, $pink-bg-end);
+  padding: 40rpx 40rpx 60rpx;
 }
 .hero-title {
-  font-size: 44rpx; font-weight: 700; color: #333;
+  font-size: 44rpx; font-weight: 700; color: #fff;
 }
 .hero-tags {
   display: flex; gap: 16rpx; margin-top: 24rpx;
 }
 .hero-tag {
-  background: rgba(255, 107, 138, 0.12); border-radius: 40rpx;
-  padding: 8rpx 24rpx; font-size: 24rpx; color: $pink;
+  background: rgba(255,255,255,0.3); border-radius: 40rpx;
+  padding: 8rpx 24rpx; font-size: 24rpx; color: #fff;
 }
 .hero-desc {
-  display: block; margin-top: 24rpx; font-size: 28rpx; color: #999; line-height: 1.6;
+  display: block; margin-top: 24rpx; font-size: 28rpx; color: #fff; line-height: 1.6;
 }
 
 // ===== 承诺书卡片 =====

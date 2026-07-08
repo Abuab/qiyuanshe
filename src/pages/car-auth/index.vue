@@ -216,7 +216,7 @@ function handleSubmit() {
 <style lang="scss" scoped>
 .car-page {
   min-height: 100vh;
-  background: #FFF5F7;
+  background: #F5F5F7;
 }
 
 /* ===== 导航栏 ===== */
@@ -264,17 +264,17 @@ function handleSubmit() {
   box-sizing: border-box;
 }
 
-/* ===== 粉色渐变宣传区（与实名认证页一致） ===== */
+/* ===== 粉色渐变宣传区（与学历/房产认证一致） ===== */
 .hero {
-  padding: 48rpx 40rpx 96rpx;
-  background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F8 100%);
+  padding: 40rpx 44rpx 96rpx;
+  background: linear-gradient(180deg, #FF5E86 0%, #FF89A6 45%, #FFD3DE 100%);
   display: flex;
   flex-direction: column;
 }
 .hero-title {
   font-size: 46rpx;
   font-weight: bold;
-  color: #333;
+  color: #fff;
   margin-bottom: 28rpx;
 }
 .hero-tags {
@@ -283,18 +283,18 @@ function handleSubmit() {
   margin-bottom: 24rpx;
 }
 .hero-tag {
-  background: rgba(255, 107, 138, 0.12);
+  background: rgba(255, 255, 255, 0.28);
   border-radius: 999rpx;
   padding: 10rpx 26rpx;
   margin-right: 20rpx;
 }
 .hero-tag-text {
   font-size: 26rpx;
-  color: #FF6B8A;
+  color: #fff;
 }
 .hero-desc {
   font-size: 24rpx;
-  color: #999;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* ===== 白色表单卡片（浮出覆盖） ===== */
@@ -348,7 +348,7 @@ function handleSubmit() {
 }
 .upload-plus {
   font-size: 68rpx;
-  color: #FF6B8A;
+  color: #FF5B84;
   font-weight: 300;
   line-height: 1;
 }
@@ -460,11 +460,11 @@ function handleSubmit() {
 .submit-btn {
   height: 96rpx;
   border-radius: 48rpx;
-  background: linear-gradient(90deg, #FF6B8A 0%, #FF8FA3 100%);
+  background: linear-gradient(90deg, #FFA0B9 0%, #FF5B84 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(255, 107, 138, 0.28);
+  box-shadow: 0 8rpx 20rpx rgba(255, 91, 132, 0.28);
 }
 .submit-btn.disabled {
   opacity: 0.6;
