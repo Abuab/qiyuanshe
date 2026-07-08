@@ -64,25 +64,6 @@
               />
             </el-form-item>
 
-            <el-form-item label="红娘按钮文字">
-              <div style="display:flex;align-items:center;gap:8px">
-                <el-switch v-model="basicConfig.matchmakerShowHi" active-text="显示Hi" inactive-text="隐藏Hi" style="--el-switch-on-color:#FF6B9D" />
-                <el-input
-                  v-model="basicConfig.matchmakerHiText"
-                  placeholder="Hi"
-                  style="width:80px"
-                  :disabled="!basicConfig.matchmakerShowHi"
-                />
-                <span style="color:#909399">·</span>
-                <el-input
-                  v-model="basicConfig.matchmakerButtonText"
-                  placeholder="红娘"
-                  style="width:120px"
-                />
-              </div>
-              <div class="form-tip">小程序首页右下角悬浮按钮的文字，可控制是否显示 Hi 前缀</div>
-            </el-form-item>
-
             <el-form-item label="首页快捷入口">
               <div v-for="(name, idx) in basicConfig.quickEntryNames" :key="idx" style="margin-bottom:8px">
                 <el-input
@@ -599,9 +580,6 @@ const basicConfig = reactive({
   serviceWechat: '',
   logo: '',
   aboutUs: '',
-  matchmakerHiText: 'Hi',
-  matchmakerShowHi: true,
-  matchmakerButtonText: '红娘',
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
   followEmptyText: '您还木有关注任何人~',
   followerEmptyText: '还木有人关注您~',

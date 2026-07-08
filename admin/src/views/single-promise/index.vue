@@ -36,18 +36,9 @@
         <el-table-column prop="realName" label="真实姓名" width="120" />
         <el-table-column label="签名图片" width="180">
           <template #default="{ row }">
-            <el-image
-              v-if="row.signatureUrl"
-              :src="row.signatureUrl"
-              fit="contain"
-              style="width: 160px; height: 80px; background: #f5f5f5; border-radius: 4px; cursor: pointer"
-              :preview-src-list="[row.signatureUrl]"
-              :preview-teleported="true"
-            >
-              <template #error>
-                <div style="width:160px;height:80px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:4px;color:#ccc;font-size:12px">暂无签名</div>
-              </template>
-            </el-image>
+            <div v-if="row.signatureUrl" style="width:160px;height:80px;background:#f5f5f5;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+              <img :src="row.signatureUrl" style="width:100%;height:100%;object-fit:contain" />
+            </div>
             <span v-else style="color: #ccc; font-size: 12px">未上传</span>
           </template>
         </el-table-column>

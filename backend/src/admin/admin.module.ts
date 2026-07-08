@@ -59,6 +59,7 @@ import { SinglePromise } from '../entities/SinglePromise'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminFeedbackController } from './feedback.controller'
+import { AdminStoreCertController } from './store-cert.controller'
 import { AdminChatController } from './chat.controller'
 import { AdminChatService } from './chat.service'
 import { AdminAccountService } from './admin-account.service'
@@ -144,6 +145,7 @@ import { AiModule } from '../ai/ai.module'
     VipPackageController,
     AdminVipConfigController,
     AdminFeedbackController,
+    AdminStoreCertController,
   ],
   providers: [
     AdminUserService,

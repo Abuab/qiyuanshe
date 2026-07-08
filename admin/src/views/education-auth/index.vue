@@ -45,18 +45,9 @@
         </el-table-column>
         <el-table-column label="证书图片" width="180">
           <template #default="{ row }">
-            <el-image
-              v-if="row.authData?.image"
-              :src="row.authData.image"
-              fit="contain"
-              style="width: 160px; height: 100px; background: #f5f5f5; border-radius: 4px; cursor: pointer"
-              :preview-src-list="[row.authData.image]"
-              :preview-teleported="true"
-            >
-              <template #error>
-                <div style="width:160px;height:100px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:4px;color:#ccc;font-size:12px">加载失败</div>
-              </template>
-            </el-image>
+            <div v-if="row.authData?.image" style="width:160px;height:100px;background:#f5f5f5;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+              <img :src="row.authData.image" style="width:100%;height:100%;object-fit:contain" />
+            </div>
             <span v-else style="color: #ccc; font-size: 12px">未上传</span>
           </template>
         </el-table-column>

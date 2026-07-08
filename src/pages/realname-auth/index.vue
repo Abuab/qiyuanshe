@@ -109,10 +109,11 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去认证</text>
+            <text class="card-action" :class="storeCertActionClass">{{ storeCertAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
+
       </view>
 
       <!-- 底部留白 -->
@@ -148,6 +149,10 @@ const propertyActionClass = ref('')
 const carAction = ref('去认证')
 const carActionClass = ref('')
 
+// 到店认证状态
+const storeCertAction = ref('去认证')
+const storeCertActionClass = ref('')
+
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
@@ -158,6 +163,7 @@ onMounted(async () => {
     fetchAuthStatus('/education-auth/status', educationAction, educationActionClass),
     fetchAuthStatus('/property-auth/status', propertyAction, propertyActionClass),
     fetchAuthStatus('/car-auth/status', carAction, carActionClass),
+    fetchStoreCertStatus(),
   ])
 })
 
@@ -211,6 +217,20 @@ async function fetchSinglePromiseStatus() {
     }
   } catch (_) {
     // 接口失败时保持默认"去签署"
+  }
+}
+
+// 到店认证状态：从 /auth/profile 中获取 storeCertified 字段
+async function fetchStoreCertStatus() {
+  try {
+    const res: any = await get('/auth/profile')
+    const p = res?.data || res
+    if (Number(p?.storeCertified) === 1) {
+      storeCertAction.value = '已认证'
+      storeCertActionClass.value = 'done'
+    }
+  } catch (_) {
+    // 失败时保持默认"去认证"
   }
 }
 

@@ -409,6 +409,7 @@ export class AuthService {
       isRealName: user.isRealName,
       eidCertStatus: user.eidCertStatus || 0,
       eidCertTime: user.eidCertTime || null,
+      storeCertified: user.storeCertified || 0,
       isVip: user.isVip,
       vipLevel: user.vipLevel,
       vipExpireTime: user.vipExpireTime,

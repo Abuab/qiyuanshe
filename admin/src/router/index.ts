@@ -106,6 +106,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '到店认证门店配置', requiresAuth: true },
       },
       {
+        path: '/store-cert-mgmt',
+        name: 'StoreCertMgmt',
+        component: () => import('../views/store-cert/index.vue'),
+        meta: { title: '到店认证管理', requiresAuth: true },
+      },
+      {
         path: '/system/notification-channel',
         name: 'NotificationChannel',
         component: () => import('../views/system/notification-channel.vue'),
@@ -260,12 +266,6 @@ const routes: RouteRecordRaw[] = [
         name: 'VipPackages',
         component: () => import('../views/vip/packages.vue'),
         meta: { title: '套餐管理', requiresAuth: true },
-      },
-      {
-        path: '/vip/page-config',
-        name: 'VipPageConfig',
-        component: () => import('../views/vip/page-config.vue'),
-        meta: { title: '页面配置', requiresAuth: true },
       },
       {
         path: '/feedback',

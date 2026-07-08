@@ -120,7 +120,6 @@
           <span>会员管理</span>
         </template>
         <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
-        <el-menu-item index="/vip/page-config">页面配置</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canManageActivity" index="/activity">
@@ -157,6 +156,7 @@
           <span>系统配置</span>
         </template>
         <el-menu-item index="/system/config">基础配置</el-menu-item>
+        <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
         <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
         <el-menu-item index="/notice/list">公告管理</el-menu-item>
         <el-menu-item index="/agreement">协议管理</el-menu-item>
