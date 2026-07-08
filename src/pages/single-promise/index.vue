@@ -32,7 +32,15 @@
 
         <!-- 用户姓名区域 -->
         <view class="promise-signer">
-          <text class="signer-name">{{ realName }}</text>
+          <input
+            v-if="isNamePlaceholder"
+            class="signer-name-input"
+            v-model="realName"
+            type="text"
+            placeholder="请输入真实姓名"
+            placeholder-style="color:#ccc;font-size:28rpx;"
+          />
+          <text v-else class="signer-name">{{ realName }}</text>
           <text class="signer-text">在此承诺：</text>
         </view>
 
@@ -139,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken } from '@/utils/auth'
@@ -150,6 +158,9 @@ const navBarHeightPx = ref(44)
 
 // ========== 状态 ==========
 const realName = ref('用户')
+
+// 当姓名为占位符'用户'时，显示输入框让用户手动填写
+const isNamePlaceholder = computed(() => realName.value === '用户')
 const isSigned = ref(false)
 const isResigning = ref(false)
 const existingSignatureUrl = ref('')
@@ -458,6 +469,11 @@ $pink-bg-end: #FF8FA3;
 }
 .signer-name {
   font-size: 32rpx; font-weight: 600; color: $pink;
+}
+.signer-name-input {
+  font-size: 32rpx; font-weight: 600; color: $pink;
+  border-bottom: 2rpx solid $pink; padding-bottom: 4rpx; min-width: 120rpx;
+  height: 44rpx; line-height: 44rpx;
 }
 .signer-text {
   font-size: 32rpx; color: #333; font-weight: 400;
