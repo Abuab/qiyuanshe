@@ -415,18 +415,6 @@
       "style": { "navigationBarTitleText": "", "navigationStyle": "custom" }
     },
     {
-      "path": "pages/questionnaire/questionnaire-list",
-      "style": { "navigationBarTitleText": "三观匹配" }
-    },
-    {
-      "path": "pages/questionnaire/questionnaire-detail",
-      "style": { "navigationBarTitleText": "问卷答题" }
-    },
-    {
-      "path": "pages/questionnaire/questionnaire-result",
-      "style": { "navigationBarTitleText": "匹配结果" }
-    },
-    {
       "path": "pages/visitors/visitors",
       "style": { "navigationBarTitleText": "访客记录" }
     },
