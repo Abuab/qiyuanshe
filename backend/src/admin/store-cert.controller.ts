@@ -25,7 +25,7 @@ export class AdminStoreCertController {
     private readonly dataSource: DataSource,
   ) {}
 
-  /** 所有用户列表（左侧可选用户） */
+  /** 所有用户列表（左侧可选用户）—— 与圈子管理 getAllUsers 一致 */
   @Get('users')
   async getUsers(
     @Query('page') page = 1,
@@ -33,40 +33,69 @@ export class AdminStoreCertController {
     @Query('keyword') keyword = '',
   ) {
     const offset = (+page - 1) * +limit
-    const keywordLike = `%${keyword}%`
+    const kw = keyword.trim()
+    let whereClause = 'WHERE u.isDeleted = 0 AND u.status = 1'
+    const params: any[] = []
+
+    if (kw.length > 0) {
+      whereClause += ' AND (u.nickname LIKE ? OR CAST(u.id AS CHAR) LIKE ?)'
+      params.push(`%${kw}%`, `%${kw}%`)
+    }
 
     const [rows, countResult] = await Promise.all([
       this.dataSource.query(
-        `SELECT id, nickname, avatar, phone FROM users
-         WHERE isDeleted = 0 AND status = 2
-         AND (nickname LIKE ? OR phone LIKE ?)
-         ORDER BY id DESC
+        `SELECT u.id, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
+         FROM users u
+         ${whereClause}
+         ORDER BY u.id DESC
          LIMIT ? OFFSET ?`,
-        [keywordLike, keywordLike, +limit, offset],
+        [...params, +limit, offset],
       ),
       this.dataSource.query(
-        `SELECT COUNT(*) as total FROM users
-         WHERE isDeleted = 0 AND status = 2
-         AND (nickname LIKE ? OR phone LIKE ?)`,
-        [keywordLike, keywordLike],
+        `SELECT COUNT(*) as total FROM users u ${whereClause}`,
+        [...params],
       ),
     ])
 
+    const currentYear = new Date().getFullYear()
+    const list = rows.map((row: any) => ({
+      id: row.id,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      gender: row.gender,
+      age: row.birthYear ? currentYear - row.birthYear : null,
+      phone: row.phone,
+    }))
+
     return Result.success({
-      list: rows,
+      list,
       total: Number(countResult[0]?.total || 0),
+      page: +page,
+      limit: +limit,
     })
   }
 
   /** 已认证用户列表（右侧已选用户） */
   @Get('members')
   async getMembers() {
+    const currentYear = new Date().getFullYear()
     const rows = await this.dataSource.query(
-      `SELECT id, nickname, avatar, phone FROM users
-       WHERE store_certified = 1 AND isDeleted = 0
-       ORDER BY id DESC`,
+      `SELECT u.id, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
+       FROM users u
+       WHERE u.store_certified = 1 AND u.isDeleted = 0
+       ORDER BY u.id DESC`,
     )
-    return Result.success(rows)
+
+    const list = rows.map((row: any) => ({
+      id: row.id,
+      nickname: row.nickname,
+      avatar: row.avatar,
+      gender: row.gender,
+      age: row.birthYear ? currentYear - row.birthYear : null,
+      phone: row.phone,
+    }))
+
+    return Result.success(list)
   }
 
   /** 添加用户到店认证 */
