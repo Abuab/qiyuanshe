@@ -54,6 +54,7 @@ import { RedLineUsage } from '../entities/RedLineUsage'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
+import { UserAuth } from '../entities/UserAuth'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminFeedbackController } from './feedback.controller'
@@ -105,6 +106,7 @@ import { AiModule } from '../ai/ai.module'
       ChatMonitorSession,
       ChatOperationLog,
       CirclePost,
+      UserAuth,
       ProfileVisit,
       NotifyLog,
       AiFeatureSwitchLog,

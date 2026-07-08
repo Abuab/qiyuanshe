@@ -425,6 +425,37 @@ export class CosService {
   }
 
   /**
+   * 检查 COS 中是否存在指定对象（headObject）。
+   * 用于代理取图前的存在性判断：避免对不存在的 key 调用 getObject 后
+   * destroy 流而触发底层原生崩溃（Assertion failed: (env) != nullptr）。
+   * @param key - COS 对象 Key
+   * @returns 存在返回 true，不存在/出错返回 false（由调用方降级本地）
+   */
+  async cosObjectExists(key: string): Promise<boolean> {
+    if (!this.isCosEnabled()) {
+      return false
+    }
+    const config = this.getConfig()
+    if (!config.Bucket || !config.Region) {
+      return false
+    }
+    try {
+      await new Promise<void>((resolve, reject) => {
+        this.cosClient!.headObject(
+          { Bucket: config.Bucket, Region: config.Region, Key: key },
+          (err: any) => {
+            if (err) reject(err)
+            else resolve()
+          },
+        )
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /**
    * 从 COS 中删除文件。
    * @param key - COS 对象 Key
    */

@@ -94,7 +94,9 @@ export class CosController {
     }
 
     // 5. 尝试从 COS 代理获取（流式传输，避免 OOM）
-    if (this.cosService.isCosEnabled()) {
+    //    先用 headObject 确认对象存在，避免对不存在的 key 调用 getObject 后
+    //    destroy 流而触发底层原生崩溃，同时保证缺失时能降级到本地。
+    if (this.cosService.isCosEnabled() && (await this.cosService.cosObjectExists(key))) {
       const result = this.cosService.getImageFromCos(key)
       if (result) {
         this.logger.log(`COS proxy streaming for key="${key}"`)

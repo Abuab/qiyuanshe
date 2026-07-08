@@ -7,6 +7,7 @@ import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { normalizeImageUrl } from '../common/image-url'
 import { CirclePost } from '../entities/CirclePost'
+import { UserAuth } from '../entities/UserAuth'
 
 interface AuditFilter {
   page?: number
@@ -30,6 +31,8 @@ export class AdminAuditService {
     private readonly answerRepository: Repository<QuestionAnswer>,
     @InjectRepository(CirclePost)
     private readonly circlePostRepository: Repository<CirclePost>,
+    @InjectRepository(UserAuth)
+    private readonly userAuthRepository: Repository<UserAuth>,
   ) {}
 
   async list(filter: AuditFilter) {
@@ -105,14 +108,18 @@ export class AdminAuditService {
   }
 
   async getPendingCount() {
-    const [profileCount, circlePostCount] = await Promise.all([
+    const [profileCount, circlePostCount, educationCount] = await Promise.all([
       this.auditLogRepository.count({ where: { action: 'PENDING' } }),
       this.circlePostRepository.count({ where: { status: 0 } }),
+      this.userAuthRepository.count({ where: { authType: 'education', status: 0 } }),
     ])
+    // 学历认证归入「审核管理」，与资料审核一起计入侧边栏 profile 徽标
+    const profileTotal = profileCount + educationCount
     return {
-      profile: profileCount,
+      profile: profileTotal,
+      education: educationCount,
       circlePost: circlePostCount,
-      total: profileCount + circlePostCount,
+      total: profileTotal + circlePostCount,
     }
   }
 
