@@ -39,7 +39,7 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去认证</text>
+            <text class="card-action" :class="realnameActionClass">{{ realnameAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
@@ -67,7 +67,7 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去认证</text>
+            <text class="card-action" :class="educationActionClass">{{ educationAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
@@ -81,7 +81,7 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去认证</text>
+            <text class="card-action" :class="propertyActionClass">{{ propertyAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
@@ -95,7 +95,7 @@
             </view>
           </view>
           <view class="card-right">
-            <text class="card-action">去认证</text>
+            <text class="card-action" :class="carActionClass">{{ carAction }}</text>
             <text class="card-arrow">></text>
           </view>
         </view>
@@ -138,12 +138,56 @@ const storeCertPopupShow = ref(false)
 const singlePromiseAction = ref('去签署')
 const singlePromiseActionClass = ref('')
 
+// 实名 / 学历 / 房产 / 车产 认证状态
+const realnameAction = ref('去认证')
+const realnameActionClass = ref('')
+const educationAction = ref('去认证')
+const educationActionClass = ref('')
+const propertyAction = ref('去认证')
+const propertyActionClass = ref('')
+const carAction = ref('去认证')
+const carActionClass = ref('')
+
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
-  await fetchSinglePromiseStatus()
+  await Promise.all([
+    fetchSinglePromiseStatus(),
+    fetchRealnameStatus(),
+    fetchAuthStatus('/education-auth/status', educationAction, educationActionClass),
+    fetchAuthStatus('/property-auth/status', propertyAction, propertyActionClass),
+    fetchAuthStatus('/car-auth/status', carAction, carActionClass),
+  ])
 })
+
+// 学历/房产/车产：返回 { exists, status }（0待审核 / 1已通过 / 2已拒绝）
+async function fetchAuthStatus(url: string, actionRef: any, classRef: any) {
+  try {
+    const res: any = await get(url)
+    const d = res?.data || res
+    if (d?.exists) {
+      if (d.status === 1) { actionRef.value = '已认证'; classRef.value = 'done' }
+      else if (d.status === 0) { actionRef.value = '待审核'; classRef.value = 'pending' }
+    }
+  } catch (_) {
+    // 失败时保持默认"去认证"
+  }
+}
+
+// 实名认证状态来源于用户资料的 isRealName 标记
+async function fetchRealnameStatus() {
+  try {
+    const res: any = await get('/auth/profile')
+    const p = res?.data || res
+    if (p && (p.isRealName === 1 || p.isRealName === true)) {
+      realnameAction.value = '已认证'
+      realnameActionClass.value = 'done'
+    }
+  } catch (_) {
+    // 失败时保持默认"去认证"
+  }
+}
 
 async function fetchSinglePromiseStatus() {
   try {
