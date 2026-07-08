@@ -210,7 +210,7 @@ function handleSubmit() {
 <style lang="scss" scoped>
 .prop-page {
   min-height: 100vh;
-  background: #F5F5F7;
+  background: #FFF5F7;
 }
 
 /* ===== 导航栏 ===== */
@@ -258,17 +258,17 @@ function handleSubmit() {
   box-sizing: border-box;
 }
 
-/* ===== 粉色渐变宣传区（与学历认证一致） ===== */
+/* ===== 粉色渐变宣传区（与实名认证页一致） ===== */
 .hero {
-  padding: 40rpx 44rpx 96rpx;
-  background: linear-gradient(180deg, #FF5E86 0%, #FF89A6 45%, #FFD3DE 100%);
+  padding: 48rpx 40rpx 96rpx;
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F8 100%);
   display: flex;
   flex-direction: column;
 }
 .hero-title {
   font-size: 46rpx;
   font-weight: bold;
-  color: #fff;
+  color: #333;
   margin-bottom: 28rpx;
 }
 .hero-tags {
@@ -277,18 +277,18 @@ function handleSubmit() {
   margin-bottom: 24rpx;
 }
 .hero-tag {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 107, 138, 0.12);
   border-radius: 999rpx;
   padding: 10rpx 26rpx;
   margin-right: 20rpx;
 }
 .hero-tag-text {
   font-size: 26rpx;
-  color: #fff;
+  color: #FF6B8A;
 }
 .hero-desc {
   font-size: 24rpx;
-  color: rgba(255, 255, 255, 0.85);
+  color: #999;
 }
 
 /* ===== 白色表单卡片（浮出覆盖） ===== */
@@ -342,7 +342,7 @@ function handleSubmit() {
 }
 .upload-plus {
   font-size: 68rpx;
-  color: #FF5B84;
+  color: #FF6B8A;
   font-weight: 300;
   line-height: 1;
 }
@@ -440,11 +440,11 @@ function handleSubmit() {
 .submit-btn {
   height: 96rpx;
   border-radius: 48rpx;
-  background: linear-gradient(90deg, #FFA0B9 0%, #FF5B84 100%);
+  background: linear-gradient(90deg, #FF6B8A 0%, #FF8FA3 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 20rpx rgba(255, 91, 132, 0.28);
+  box-shadow: 0 8rpx 20rpx rgba(255, 107, 138, 0.28);
 }
 .submit-btn.disabled {
   opacity: 0.6;
