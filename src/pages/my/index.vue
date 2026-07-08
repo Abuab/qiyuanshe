@@ -203,10 +203,7 @@
 
       <!-- ========== 底部陪伴信息（仅登录后显示） ========== -->
       <view v-if="isLoggedIn" class="footer-info">
-        <view class="footer-heart-circle">
-          <image v-if="pageIcons.footerHeart" class="footer-heart-img" :src="pageIcons.footerHeart" mode="aspectFit" />
-          <uni-icons v-else type="heart-filled" size="20rpx" color="#fff"></uni-icons>
-        </view>
+        <text class="footer-heart-uni">♥</text>
         <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
       </view>
       <view class="bottom-safe-area"></view>
@@ -387,11 +384,12 @@ const daysSinceCreation = ref(0)
 let _daysTimer: ReturnType<typeof setInterval> | null = null
 
 const calcDays = () => {
-  if (!userStore.userInfo?.createTime) {
+  const rawCreated = (userStore.userInfo as any)?.createdAt || userStore.userInfo?.createTime
+  if (!rawCreated) {
     daysSinceCreation.value = 0
     return
   }
-  const created = new Date(userStore.userInfo.createTime).getTime()
+  const created = new Date(rawCreated).getTime()
   const now = Date.now()
   daysSinceCreation.value = Math.max(0, Math.floor((now - created) / 86400000))
 }
@@ -891,6 +889,8 @@ const toolGrid7 = [
 .content-scroll {
   flex: 1;
   background-color: #FFF8FA;
+  display: flex;
+  flex-direction: column;
 }
 
 // ========== 会员卡片 ==========
@@ -1184,11 +1184,14 @@ const toolGrid7 = [
   align-items: center;
   justify-content: center;
   padding: 32rpx 0 8rpx;
+  margin-top: auto;
 }
 
-.footer-heart-img {
-  width: 28rpx;
-  height: 28rpx;
+.footer-heart-uni {
+  font-size: 26rpx;
+  color: #FF6B81;
+  margin-right: 8rpx;
+  line-height: 1;
 }
 
 .footer-text {

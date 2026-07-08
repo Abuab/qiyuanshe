@@ -298,16 +298,26 @@ function drawMiniRadar(ctx: any, cx: number, cy: number, radius: number, dims: a
   ctx.setStrokeStyle('#ff6b9d')
   ctx.setLineWidth(2)
   ctx.stroke()
-  // 已解锁维度名
+  // 已解锁维度名（按方位对齐，避免与阴影多边形重叠遮挡文字）
   ctx.setFillStyle('#999999')
   ctx.setFontSize(12)
-  ctx.setTextAlign('center')
   for (let i = 0; i < Math.min(unlocked, dims.length); i++) {
     const a = start + step * i
-    const x = cx + (radius + 14) * Math.cos(a)
-    const y = cy + (radius + 14) * Math.sin(a)
-    ctx.fillText(dims[i]?.name || '', x, y + 4)
+    const cosA = Math.cos(a)
+    const sinA = Math.sin(a)
+    const lx = cx + (radius + 10) * cosA
+    const ly = cy + (radius + 10) * sinA
+    // 水平：右侧文字向右排（左对齐），左侧向左排（右对齐），上下居中
+    if (cosA > 0.3) ctx.setTextAlign('left')
+    else if (cosA < -0.3) ctx.setTextAlign('right')
+    else ctx.setTextAlign('center')
+    // 垂直：底部下移让整行落在图形下方，顶部略上移
+    let ty = ly + 4
+    if (sinA > 0.3) ty = ly + 12
+    else if (sinA < -0.3) ty = ly
+    ctx.fillText(dims[i]?.name || '', lx, ty)
   }
+  ctx.setTextAlign('center')
 }
 
 function wrapText(ctx: any, text: string, maxWidth: number, maxLines: number): string[] {

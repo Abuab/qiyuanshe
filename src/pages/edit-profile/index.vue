@@ -348,9 +348,13 @@
         <view v-else-if="voiceStatus === 'done'" class="voice-done">
           <view class="voice-done-card">
             <view class="voice-play-row">
-              <!-- 播放按钮（圆形粉色） -->
+              <!-- 播放按钮（圆形粉色）：用 CSS 画形状，避免 emoji 在真机/模拟器呈现不一致 -->
               <view class="voice-play-btn" @tap="togglePlayVoice">
-                <text class="voice-play-icon">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
+                <view v-if="isVoicePlaying" class="ico-pause">
+                  <view class="ico-pause-bar"></view>
+                  <view class="ico-pause-bar"></view>
+                </view>
+                <view v-else class="ico-play"></view>
               </view>
               <!-- 波形图 -->
               <view class="wave-static">
@@ -2699,7 +2703,9 @@ onShow(async () => {
 .voice-done-card { background-color: #ffffff; border-radius: 12rpx; padding: 20rpx; margin: 0 30rpx; }
 .voice-play-row { display: flex; align-items: center; }
 .voice-play-btn { width: 60rpx; height: 60rpx; border-radius: 50%; background: #ff6b81; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: 20rpx; }
-.voice-play-icon { font-size: 28rpx; color: #ffffff; font-weight: bold; line-height: 1; }
+.ico-pause { display: flex; align-items: center; justify-content: center; }
+.ico-pause-bar { width: 6rpx; height: 24rpx; background: #ffffff; border-radius: 2rpx; margin: 0 3rpx; }
+.ico-play { width: 0; height: 0; border-style: solid; border-width: 12rpx 0 12rpx 20rpx; border-color: transparent transparent transparent #ffffff; margin-left: 4rpx; }
 .wave-static { display: flex; align-items: flex-end; gap: 8rpx; flex: 1; }
 .wave-static-bar { width: 6rpx; background: #ff6b6b; border-radius: 3rpx; }
 .voice-duration { font-size: 24rpx; color: #999999; margin-left: 16rpx; flex-shrink: 0; }

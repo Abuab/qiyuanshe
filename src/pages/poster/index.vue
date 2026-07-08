@@ -406,7 +406,8 @@ const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: Pos
   }
 
   const leftX = PADDING
-  const rightX = leftX + colWidth + colGap
+  // 右列整体左移，给「籍贯」等较长的值留出更多右侧空间，避免被截断
+  const rightX = leftX + colWidth + colGap - 70
 
   drawInfoRow(leftItems, leftX)
   drawInfoRow(rightItems, rightX)

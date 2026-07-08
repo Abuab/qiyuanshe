@@ -106,7 +106,8 @@
             </view>
             <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
-                <uni-icons :type="profileData.top.isFollowed ? 'heart-filled' : 'heart'" size="40rpx" color="#FF6B6B"></uni-icons>
+                <!-- 用 Unicode 心形替代 uni-icons 图标字体，避免真机字体不渲染 -->
+                <text class="follow-ico">{{ profileData.top.isFollowed ? '♥' : '♡' }}</text>
               </view>
               <text class="follow-text">{{ profileData.top.isFollowed ? '已关注' : '关注' }}</text>
             </view>
@@ -307,8 +308,8 @@
           </template>
         </view>
 
-        <!-- ========== 6. Ta的问答 ========== -->
-        <view class="section-card qa-card">
+        <!-- ========== 6. Ta的问答（无问答时不展示整卡片） ========== -->
+        <view v-if="profileData.answers && profileData.answers.length" class="section-card qa-card">
           <text class="section-title">Ta的问答</text>
 
           <!-- 未登录态：提示登录卡片 -->
@@ -1789,6 +1790,10 @@ $text-hint: #999999;
 
 .follow-text {
   font-size: 18rpx; color: #999; line-height: 1;
+}
+
+.follow-ico {
+  font-size: 40rpx; line-height: 1; color: #FF6B6B;
 }
 
 .follow-btn.liked {

@@ -67,6 +67,9 @@
                 mode="aspectFill"
               />
               <text v-else class="upload-plus">＋</text>
+              <view v-if="previewImage && reviewBadgeText" class="upload-review-overlay">
+                <text class="upload-review-text">{{ reviewBadgeText }}</text>
+              </view>
             </view>
 
             <!-- 示例图 -->
@@ -119,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken } from '@/utils/auth'
@@ -134,12 +137,21 @@ const degree = ref('')
 const localImagePath = ref('')
 const remoteImageUrl = ref('')
 const submitting = ref(false)
+// 认证状态：null-未提交草稿, 0-审核中, 1-已通过, 2-未通过
+const authStatus = ref<number | null>(null)
 
 const showPicker = ref(false)
 const degreeOptions = ['初中及以下', '高中', '中专', '大专', '本科', '硕士', '博士']
 
 // 预览优先展示新选取的本地图片，否则展示远端已上传图片
 const previewImage = ref('')
+
+// 图片上的审核状态角标（草稿态不显示）
+const reviewBadgeText = computed(() => {
+  if (authStatus.value === 0) return '审核中'
+  if (authStatus.value === 2) return '审核未通过'
+  return ''
+})
 
 function refreshPreview() {
   if (localImagePath.value) {
@@ -166,12 +178,9 @@ async function loadStatus() {
       school.value = data.school || ''
       degree.value = data.degree || ''
       remoteImageUrl.value = data.image || ''
+      authStatus.value = typeof data.status === 'number' ? data.status : null
       refreshPreview()
-      if (data.status === 1) {
-        uni.showToast({ title: '学历已认证', icon: 'none' })
-      } else if (data.status === 0) {
-        uni.showToast({ title: '认证审核中', icon: 'none' })
-      } else if (data.status === 2 && data.rejectReason) {
+      if (data.status === 2 && data.rejectReason) {
         uni.showToast({ title: `审核未通过：${data.rejectReason}`, icon: 'none' })
       }
     }
@@ -206,6 +215,7 @@ function chooseImage() {
       const path = res.tempFilePaths?.[0]
       if (path) {
         localImagePath.value = path
+        authStatus.value = null // 重新选取视为草稿，隐藏审核角标
         refreshPreview()
       }
     },
@@ -261,8 +271,9 @@ function handleSubmit() {
       }
       if (data?.code === 200 || data?.success) {
         uni.showToast({ title: '提交成功，等待审核', icon: 'success' })
-        localImagePath.value = ''
-        remoteImageUrl.value = ''
+        // 保留已选图片继续展示，并立即置为审核中，随后拉取最新状态
+        authStatus.value = 0
+        refreshPreview()
         setTimeout(() => loadStatus(), 1500)
       } else {
         uni.showToast({ title: data?.msg || data?.message || '提交失败', icon: 'none' })
@@ -446,6 +457,7 @@ function handleSubmit() {
   justify-content: center;
   overflow: hidden;
   margin-right: 28rpx;
+  position: relative;
 }
 .upload-plus {
   font-size: 68rpx;
@@ -456,6 +468,21 @@ function handleSubmit() {
 .upload-preview {
   width: 100%;
   height: 100%;
+}
+.upload-review-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44rpx;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.upload-review-text {
+  font-size: 22rpx;
+  color: #fff;
 }
 
 /* 示例证书（CSS 绘制，避免依赖远端图导致真机域名白名单问题） */
