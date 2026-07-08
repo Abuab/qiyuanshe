@@ -153,7 +153,9 @@ export class EidAuthService {
   async recognizeIdCard(
     imageBase64: string,
   ): Promise<{ name: string; idCard: string }> {
-    if (!isEidConfigured()) {
+    // OCR 仅依赖腾讯云密钥，不需要 E证通商户号，故此处只校验密钥
+    const cfg = getEidConfig()
+    if (!cfg.secretId || !cfg.secretKey) {
       throw new Error('OCR 尚未配置，请联系管理员')
     }
     // 去掉可能的 data:image/xxx;base64, 前缀

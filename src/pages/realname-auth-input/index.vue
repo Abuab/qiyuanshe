@@ -258,11 +258,14 @@ const handleOCR = () => {
 async function refreshCertResult() {
   if (querying.value) return
   querying.value = true
+  const prev = certStatus.value
   try {
     const res: any = await get('/eid-auth/result')
     const d = res?.data || res
     const status = d && typeof d.status === 'number' ? d.status : 0
     certStatus.value = status
+    // 状态未变化则不重复提示（verifyDoneCallback 与页面 onShow 可能都触发查询）
+    if (status === prev) return
     if (status === 2) {
       showToast('实名认证成功')
       const info: any = userStore.userInfo
