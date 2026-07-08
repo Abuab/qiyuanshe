@@ -174,6 +174,10 @@ function handleItemTap(type: string) {
     uni.navigateTo({ url: '/pages/single-promise/index' })
     return
   }
+  if (type === 'education') {
+    uni.navigateTo({ url: '/pages/education-auth/index' })
+    return
+  }
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }</script>
 

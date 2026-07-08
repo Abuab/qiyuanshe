@@ -274,6 +274,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '单身承诺审核', requiresAuth: true },
       },
       {
+        path: '/education-auth',
+        name: 'EducationAuthList',
+        component: () => import('../views/education-auth/index.vue'),
+        meta: { title: '学历认证审核', requiresAuth: true },
+      },
+      {
         path: '/personality/questions',
         name: 'PersonalityQuestions',
         component: () => import('../views/personality/questions.vue'),

@@ -266,6 +266,13 @@
       }
     },
     {
+      "path": "pages/education-auth/index",
+      "style": {
+        "navigationBarTitleText": "学历认证",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/help/index",
       "style": {
         "navigationBarTitleText": "帮助与反馈",

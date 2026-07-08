@@ -13,6 +13,7 @@ export * from './report'
 export * from './admin-user'
 export * from './matchmaker-dynamic'
 export * from './single-promise'
+export * from './education-auth'
 
 export interface ApiResponse<T = any> {
   success: boolean
