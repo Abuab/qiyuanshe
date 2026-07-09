@@ -45,7 +45,7 @@ export class AdminAiSafetyAuditController {
     if (userId) {
       // 筛选框输入的是对外展示的公开 userId，先转换为内部主键 id
       const u = await this.userRepo.findOne({ where: { userId: String(userId) }, select: ['id'] })
-      qb.andWhere('callLog.userId = :uid', { uid: u ? u.id : parseInt(userId) || -1 })
+      qb.andWhere('callLog.userId = :uid', { uid: u ? u.id : -1 })
     }
     if (startDate) qb.andWhere('audit.createdAt >= :startDate', { startDate })
     if (endDate) qb.andWhere('audit.createdAt <= :endDate', { endDate: endDate + ' 23:59:59' })
