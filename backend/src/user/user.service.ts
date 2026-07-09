@@ -145,15 +145,18 @@ export class UserService {
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .andWhere('user.id != :adminId', { adminId: 1 })
 
+    // 性别筛选：显式 dto.gender 优先；未显式指定时才按当前用户性别自动互推（男→女，女→男）
+    let genderApplied = false
     if (dto.gender !== undefined && dto.gender !== null) {
       const genderNum = Number(dto.gender)
       if (Number.isFinite(genderNum) && genderNum >= 0 && genderNum <= 2) {
         queryBuilder.andWhere('user.gender = :gender', { gender: genderNum })
+        genderApplied = true
       }
     }
 
-    // 按性别互推：男→女，女→男（筛选接口同样自动匹配性别）
-    if (currentUserId) {
+    // 按性别互推：男→女，女→男（仅当未显式传 gender 时生效，避免叠加矛盾条件）
+    if (!genderApplied && currentUserId) {
       const currentUser = await this.userRepository.findOne({ where: { id: currentUserId }, select: ['gender'] })
       if (currentUser) {
         if (currentUser.gender === 1) {
@@ -323,13 +326,13 @@ export class UserService {
   }> {
     const user = await this.userRepository.findOne({
       where: { id, status: 1, isDeleted: 0 },
-      relations: ['photos'],
     })
 
     if (!user) {
       throw new NotFoundException('用户不存在')
     }
 
+    // 照片单独按 sortOrder 排序查询（findOne 的 relations 无法保证顺序）
     const photos = await this.userPhotoRepository.find({
       where: { userId: id },
       order: { sortOrder: 'ASC' },

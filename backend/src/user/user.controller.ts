@@ -135,6 +135,14 @@ export class UserController {
       content: JSON.stringify(body || {}),
     })
     await this.auditLogRepo.save(auditLog)
+    // 发送即时审核通知（与头像/照片审核流程一致），触发管理端审核
+    this.notifyService.sendAuditNotify({
+      type: 'profile',
+      content: `用户 ${req.user.nickname || userId} 提交了资料审核`,
+      userId,
+      userNickname: req.user.nickname || '',
+      source: 'profile_review',
+    }).catch(() => {})
     return Result.success(null, '已提交审核')
   }
 
