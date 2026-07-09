@@ -103,11 +103,19 @@ export class CosController {
         res.setHeader('Content-Type', result.contentType)
         res.setHeader('Cache-Control', 'public, max-age=86400')
         result.stream.on('error', (err: Error) => {
+          if (err?.message === 'client disconnected') return
           this.logger.error(`COS stream error for key="${key}": ${err.message}`)
           if (!res.headersSent) {
             res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: '图片加载失败' })
           } else {
             res.end()
+          }
+        })
+        // 客户端提前断开时以 error 销毁上游流，触发 COS SDK sender.abort() 中止下载，
+        // 避免数据持续灌入无人消费的 PassThrough 缓冲区导致内存泄漏（OOM）。
+        res.once('close', () => {
+          if (!res.writableFinished && !result.stream.destroyed) {
+            result.stream.destroy(new Error('client disconnected'))
           }
         })
         result.stream.pipe(res)
@@ -122,11 +130,18 @@ export class CosController {
       res.setHeader('Content-Type', localResult.contentType)
       res.setHeader('Cache-Control', 'public, max-age=86400')
       localResult.stream.on('error', (err: Error) => {
+        if (err?.message === 'client disconnected') return
         this.logger.error(`Local stream error for key="${key}": ${err.message}`)
         if (!res.headersSent) {
           res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: '图片加载失败' })
         } else {
           res.end()
+        }
+      })
+      // 客户端提前断开时销毁文件读取流，释放文件句柄与缓冲，避免内存/句柄泄漏。
+      res.once('close', () => {
+        if (!res.writableFinished && !localResult.stream.destroyed) {
+          localResult.stream.destroy()
         }
       })
       localResult.stream.pipe(res)

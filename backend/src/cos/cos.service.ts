@@ -538,6 +538,8 @@ export class CosService {
 
     // 预绑定 error 处理，防止未监听的 error 事件导致进程崩溃
     passThrough.on('error', (err: Error) => {
+      // 客户端提前断开时会主动以此 error 销毁流以中止上游下载，属预期行为，不记为错误
+      if (err?.message === 'client disconnected') return
       this.logger.error(`[COS 代理] Stream error for key="${key}": ${err?.message || err}`)
     })
 
