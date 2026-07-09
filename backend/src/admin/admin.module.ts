@@ -67,8 +67,6 @@ import { AdminAccountService } from './admin-account.service'
 import { RoleGuard } from './role.guard'
 import { UserProfileService } from './user-profile.service'
 import { UserProfileController } from './user-profile.controller'
-import { AdminMatchmakerDynamicController } from './matchmaker-dynamic.controller'
-import { AdminMatchmakerDynamicService } from './matchmaker-dynamic.service'
 import { VipPackageController } from './vip-package.controller'
 import { VipPackageService } from './vip-package.service'
 import { VipService } from '../vip/vip.service'
@@ -142,7 +140,6 @@ import { AiModule } from '../ai/ai.module'
     AdminReportController,
     AdminChatController,
     UserProfileController,
-    AdminMatchmakerDynamicController,
     VipPackageController,
     AdminVipConfigController,
     AdminFeedbackController,
@@ -165,7 +162,6 @@ import { AiModule } from '../ai/ai.module'
     RoleGuard,
     AdminChatService,
     UserProfileService,
-    AdminMatchmakerDynamicService,
     NotifyChannelService,
     VipPackageService,
     VipService,

@@ -40,7 +40,7 @@
           </view>
           <view class="card-right">
             <text class="card-action" :class="realnameActionClass">{{ realnameAction }}</text>
-            <text class="card-arrow">></text>
+            <text v-if="realnameActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
@@ -54,7 +54,7 @@
           </view>
           <view class="card-right">
             <text class="card-action" :class="singlePromiseActionClass">{{ singlePromiseAction }}</text>
-            <text class="card-arrow">></text>
+            <text v-if="singlePromiseActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
@@ -68,7 +68,7 @@
           </view>
           <view class="card-right">
             <text class="card-action" :class="educationActionClass">{{ educationAction }}</text>
-            <text class="card-arrow">></text>
+            <text v-if="educationActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
@@ -82,7 +82,7 @@
           </view>
           <view class="card-right">
             <text class="card-action" :class="propertyActionClass">{{ propertyAction }}</text>
-            <text class="card-arrow">></text>
+            <text v-if="propertyActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
@@ -96,7 +96,7 @@
           </view>
           <view class="card-right">
             <text class="card-action" :class="carActionClass">{{ carAction }}</text>
-            <text class="card-arrow">></text>
+            <text v-if="carActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
@@ -239,6 +239,23 @@ function handleBack() {
 }
 
 function handleItemTap(type: string) {
+  // 已认证项不可再次打开
+  if (type === 'realname' && realnameActionClass.value === 'done') {
+    uni.showToast({ title: '已完成实名认证', icon: 'none' }); return
+  }
+  if (type === 'single' && singlePromiseActionClass.value === 'done') {
+    uni.showToast({ title: '已完成单身承诺', icon: 'none' }); return
+  }
+  if (type === 'education' && educationActionClass.value === 'done') {
+    uni.showToast({ title: '已完成学历认证', icon: 'none' }); return
+  }
+  if ((type === 'house' || type === 'property') && propertyActionClass.value === 'done') {
+    uni.showToast({ title: '已完成房产认证', icon: 'none' }); return
+  }
+  if (type === 'car' && carActionClass.value === 'done') {
+    uni.showToast({ title: '已完成车产认证', icon: 'none' }); return
+  }
+
   if (type === 'realname') {
     uni.navigateTo({ url: '/pages/realname-auth-input/index' })
     return

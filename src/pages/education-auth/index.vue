@@ -456,7 +456,7 @@ function handleSubmit() {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-right: 48rpx;
+  margin-right: 200rpx;
   position: relative;
 }
 .upload-plus {

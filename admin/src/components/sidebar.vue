@@ -82,11 +82,6 @@
         <template #title>问题反馈</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin || userInfo?.role === 'matchmaker'" index="/matchmaker-dynamics">
-        <el-icon><Promotion /></el-icon>
-        <template #title>红娘发布动态</template>
-      </el-menu-item>
-
       <el-menu-item v-if="isSuperAdmin" index="/circles">
         <el-icon><Connection /></el-icon>
         <template #title>圈子管理</template>
@@ -210,7 +205,6 @@ import {
   Connection,
   Star,
   ChatDotRound,
-  Promotion,
   Ticket,
   ChatLineSquare,
   Compass,
