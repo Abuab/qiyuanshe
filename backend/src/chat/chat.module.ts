@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
+import { jwtConfig } from '../config/jwt'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ChatMessage, User, AuditLog } from '../entities'
 import { ChatMonitorSession } from '../entities/ChatMonitorSession'
@@ -19,7 +20,7 @@ import { ChatMonitorService } from './chat-monitor.service'
       AuditLog,
     ]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
+      secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
   ],

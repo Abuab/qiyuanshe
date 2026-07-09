@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
+import { jwtConfig } from '../config/jwt'
 import { Dynamic } from '../entities/Dynamic'
 import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
@@ -16,7 +17,7 @@ import { SystemModule } from '../system/system.module'
   imports: [
     TypeOrmModule.forFeature([Dynamic, DynamicLike, User, UserPhoto, Follow, MatchRecord, Matchmaker]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
+      secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
     SystemModule,

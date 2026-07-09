@@ -11,6 +11,7 @@ import {
 import { UseGuards, Inject, forwardRef, OnModuleDestroy } from '@nestjs/common'
 import { Server, WebSocket } from 'ws'
 import { JwtService } from '@nestjs/jwt'
+import { jwtConfig, adminJwtConfig } from '../config/jwt'
 import { ChatMonitorService } from './chat-monitor.service'
 
 /** WebSocket 认证信息 */
@@ -113,14 +114,14 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
       if (payload?.type === 'admin') {
         // 管理后台 JWT
         const decoded = this.jwtService.verify(token, {
-          secret: process.env.ADMIN_JWT_SECRET || 'qiyuanshe-admin-jwt-secret-2024',
+          secret: adminJwtConfig.secret,
         })
         auth = { type: 'admin', userId: decoded.sub, nickname: decoded.nickname }
         this.adminSockets.set(decoded.sub, client)
       } else {
         // 用户端 JWT
         const decoded = this.jwtService.verify(token, {
-          secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
+          secret: jwtConfig.secret,
         })
         auth = { type: 'user', userId: decoded.sub }
 

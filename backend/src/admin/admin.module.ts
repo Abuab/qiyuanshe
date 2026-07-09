@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
+import { jwtConfig } from '../config/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { AdminUserController } from './user.controller'
 import { AdminUserService } from './user.service'
@@ -116,7 +117,7 @@ import { AiModule } from '../ai/ai.module'
       Feedback,
     ]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'qiyuanshe-jwt-secret-key-2024',
+      secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
     PassportModule,
