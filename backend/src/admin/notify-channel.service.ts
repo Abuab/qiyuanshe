@@ -204,7 +204,38 @@ export class NotifyChannelService {
     }
   }
 
+  /** 验证并阻止 SSRF 攻击（仅允许 HTTPS 公网地址） */
+  private validateWebhookUrl(url: string): URL {
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      throw new Error('Webhook 地址格式无效')
+    }
+    if (parsed.protocol !== 'https:') {
+      throw new Error('Webhook 地址仅支持 HTTPS 协议')
+    }
+    // 阻止访问内网、云元数据等地址
+    const blocked = [
+      'localhost', '127.0.0.1', '0.0.0.0', '::1',
+      'metadata.google.internal', '169.254.169.254',
+    ]
+    if (blocked.includes(parsed.hostname)) {
+      throw new Error('不允许连接到内网地址')
+    }
+    // 阻止私有 IPv4 网段
+    if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|0\.|127\.)/.test(parsed.hostname)) {
+      throw new Error('不允许连接到内网地址')
+    }
+    // 阻止以 .local / .internal 结尾的主机名
+    if (/\.(local|internal)$/.test(parsed.hostname)) {
+      throw new Error('不允许连接到内网地址')
+    }
+    return parsed
+  }
+
   private async sendWebhook(url: string, body: any) {
+    this.validateWebhookUrl(url)
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -44,9 +44,8 @@ async function bootstrap() {
   app.use((_req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.setHeader('X-Frame-Options', 'DENY')
-    // X-XSS-Protection 在现代浏览器中已废弃，设为 0 明确禁用
-    res.setHeader('X-XSS-Protection', '0')
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+    res.setHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'")
     next()
   })
 

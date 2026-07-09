@@ -47,7 +47,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         code = typeof responseObj.code === 'number' ? responseObj.code : status
       }
     } else if (exception instanceof Error) {
-      message = exception.message
+      // 非生产环境返回具体错误便于调试，生产环境仅返回通用错误防止信息泄露
+      const isProd = process.env.NODE_ENV === 'production'
+      message = isProd ? '服务器内部错误' : exception.message
       this.logger.error(`Unhandled exception: ${exception.message}`, exception.stack)
     }
 
