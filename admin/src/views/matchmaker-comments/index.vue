@@ -11,14 +11,20 @@
 
       <el-table :data="list" border stripe v-loading="loading" style="width: 100%" row-key="id">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column label="红娘" width="120">
+        <el-table-column label="红娘" width="140">
           <template #default="{ row }">
-            {{ row.matchmaker?.name || '-' }}
+            <div class="cell-with-avatar">
+              <el-avatar v-if="row.matchmaker?.avatar" :src="row.matchmaker.avatar" :size="28" />
+              <span>{{ row.matchmaker?.name || '-' }}</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="会员" width="160">
           <template #default="{ row }">
-            {{ getUserName(row.userId) }}
+            <div class="cell-with-avatar">
+              <el-avatar v-if="row.user?.avatar" :src="row.user.avatar" :size="28" />
+              <span>{{ row.user?.nickname || '用户' + row.userId }}</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="content" label="评语内容" min-width="200" show-overflow-tooltip />
@@ -106,9 +112,6 @@ const pagination = reactive({ page: 1, limit: 20, total: 0 })
 const matchmakerOptions = ref<MatchmakerOption[]>([])
 const userOptions = ref<UserOption[]>([])
 
-// 缓存已加载的用户名称
-const userNameMap = new Map<number, string>()
-
 onMounted(() => {
   fetchList()
   loadMatchmakers()
@@ -120,12 +123,6 @@ async function fetchList() {
     const res = await adminSystem.getMatchmakerComments(pagination.page, pagination.limit)
     list.value = (res.data as any)?.list || []
     pagination.total = (res.data as any)?.total || 0
-    // 缓存列表中出现的用户名称
-    for (const item of list.value) {
-      if (!userNameMap.has(item.userId)) {
-        userNameMap.set(item.userId, '未知用户')
-      }
-    }
   } catch (e) { console.error(e) }
   loading.value = false
 }
@@ -145,15 +142,8 @@ async function loadUsers() {
     if (res.success && res.data) {
       const users = (res.data as any).list || []
       userOptions.value = users.map((u: any) => ({ id: u.id, nickname: u.nickname }))
-      for (const u of userOptions.value) {
-        userNameMap.set(u.id, u.nickname)
-      }
     }
   } catch (e) { console.error(e) }
-}
-
-function getUserName(userId: number): string {
-  return userNameMap.get(userId) || '未知用户'
 }
 
 function openCreateDialog() {
@@ -203,4 +193,9 @@ async function handleDelete(id: number) {
 .content-card { margin-bottom: 20px; }
 .toolbar { margin-bottom: 16px; }
 .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
+.cell-with-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 </style>

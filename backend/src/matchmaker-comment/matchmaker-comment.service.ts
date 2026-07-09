@@ -64,7 +64,7 @@ export class MatchmakerCommentService {
   // 管理后台：获取所有评语
   async getAll(page = 1, limit = 20) {
     const [list, total] = await this.commentRepo.findAndCount({
-      relations: ['matchmaker'],
+      relations: ['matchmaker', 'user'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,

@@ -8,6 +8,7 @@ import {
   Index,
 } from 'typeorm'
 import { Matchmaker } from './Matchmaker'
+import { User } from './User'
 
 @Entity('matchmaker_comments')
 export class MatchmakerComment {
@@ -37,4 +38,8 @@ export class MatchmakerComment {
   @ManyToOne(() => Matchmaker)
   @JoinColumn({ name: 'matchmakerId' })
   matchmaker: Matchmaker
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
+  user: User
 }
