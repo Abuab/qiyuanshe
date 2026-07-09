@@ -189,6 +189,18 @@
           </view>
         </view>
 
+        <!-- ========== 红娘评语 ========== -->
+        <view v-if="matchmakerReviewText" class="mk-review-card">
+          <view class="mk-review-header">
+            <text class="mk-review-title">红娘评语</text>
+            <text class="mk-review-dash">——</text>
+          </view>
+          <view class="mk-review-body">
+            <text class="mk-review-text">{{ matchmakerReviewText }}</text>
+            <text class="mk-review-quote">"</text>
+          </view>
+        </view>
+
         <!-- ========== 4. 关于我区 ========== -->
         <view class="section-card">
           <view class="section-title-row">
@@ -266,26 +278,6 @@
               <text class="ai-entry-desc">测完更懂你们的契合度</text>
             </view>
             <text class="ai-entry-arrow">→</text>
-          </view>
-        </view>
-
-        <!-- ========== 红娘评语 ========== -->
-        <view v-if="profileData.matchmakerReviews && profileData.matchmakerReviews.length" class="section-card">
-          <view class="section-title-row">
-            <text class="section-emoji">💬</text>
-            <text class="section-title">红娘评语</text>
-          </view>
-          <view v-for="(review, idx) in profileData.matchmakerReviews" :key="idx" class="review-item">
-            <view class="review-header">
-              <image v-if="review.matchmakerAvatar" :src="review.matchmakerAvatar" class="review-avatar" mode="aspectFill" />
-              <view v-else class="review-avatar-placeholder" />
-              <text class="review-name">{{ review.matchmakerName || '红娘' }}</text>
-              <view class="review-stars">
-                <text v-for="s in 5" :key="s" class="star" :class="{ filled: s <= review.rating }">★</text>
-              </view>
-            </view>
-            <text class="review-content">{{ review.content }}</text>
-            <text class="review-time">{{ review.createdAt?.slice(0, 10) }}</text>
           </view>
         </view>
 
@@ -1374,6 +1366,13 @@ const showViewerTestGuide = computed(() => !viewerTested.value)
 const personalityAdviceText = computed(() => {
   const name = targetPersonality.value?.nickname || targetPersonality.value?.typeName || 'TA'
   return `${name}的性格与你的互补度较高，建议尝试从共同话题切入，慢慢了解彼此。`
+})
+
+// 红娘评语：合并所有评语内容作为纯文本展示
+const matchmakerReviewText = computed(() => {
+  const reviews = profileData.value?.matchmakerReviews
+  if (!reviews?.length) return ''
+  return reviews.map((r: any) => r.content).filter(Boolean).join('\n')
 })
 
 // 加载对方人格 + 浏览者自身测试状态（在资料加载后调用）
@@ -2498,37 +2497,48 @@ $text-hint: #999999;
 
 .fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
 
-// ===== 红娘评语 =====
-.section-emoji { font-size: 32rpx; margin-right: 8rpx; }
-.review-item {
-  padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f0f0;
-  &:last-child { border-bottom: none; padding-bottom: 0; }
+// ===== 红娘评语（新设计：粉色圆角卡片，纯文字） =====
+.mk-review-card {
+  margin: 24rpx 24rpx;
+  background: #FFF0F3;
+  border-radius: 24rpx;
+  padding: 30rpx 32rpx;
+  position: relative;
+  overflow: hidden;
 }
-.review-header {
-  display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx;
+.mk-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
 }
-.review-avatar {
-  width: 44rpx; height: 44rpx; border-radius: 50%; background: #f0f0f0;
+.mk-review-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #FF4D6F;
 }
-.review-avatar-placeholder {
-  width: 44rpx; height: 44rpx; border-radius: 50%; background: #e8e8e8;
+.mk-review-dash {
+  font-size: 26rpx;
+  color: #FFB3C1;
+  letter-spacing: 2rpx;
 }
-.review-name {
-  font-size: 26rpx; font-weight: 600; color: #333;
+.mk-review-body {
+  position: relative;
 }
-.review-stars {
-  display: flex; gap: 2rpx;
+.mk-review-text {
+  font-size: 28rpx;
+  color: #333;
+  line-height: 1.7;
+  white-space: pre-line;
 }
-.star {
-  font-size: 24rpx; color: #ddd;
-  &.filled { color: #FF9500; }
-}
-.review-content {
-  font-size: 26rpx; color: #555; line-height: 1.6; display: block;
-}
-.review-time {
-  font-size: 22rpx; color: #bbb; margin-top: 8rpx; display: block;
+.mk-review-quote {
+  position: absolute;
+  right: -4rpx;
+  bottom: -16rpx;
+  font-size: 72rpx;
+  color: #FFD4DC;
+  line-height: 1;
+  font-family: Georgia, serif;
 }
 </style>
 

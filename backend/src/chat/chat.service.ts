@@ -14,6 +14,7 @@ import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 import { resolveAvatarUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
+import { beijingISO } from '../common/utils/date-utils'
 import { ALL_ADMIN_ROLES } from '../shared/enums'
 
 /** Redis Key 前缀：记录每对会话的最后一条消息 ID */
@@ -373,7 +374,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         isMine: false,
         isProxy: saved.isProxy,
         proxyName: saved.proxyName || null,
-        createdAt: saved.createdAt?.toISOString(),
+        createdAt: saved.createdAt ? beijingISO(saved.createdAt) : null,
       })
     }
 
@@ -389,7 +390,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         isRead: saved.isRead,
         isProxy: saved.isProxy,
         proxyName: saved.proxyName || null,
-        createdAt: saved.createdAt?.toISOString(),
+        createdAt: saved.createdAt ? beijingISO(saved.createdAt) : null,
       })
     }
 
@@ -403,7 +404,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
 
     // 非VIP用户发送成功后更新缓存计数，避免并发绕过限制
     if (!isVip) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = beijingISO().split('T')[0]
       // 修复 P5：同步更新 Redis 计数
       if (this.redisService) {
         const redisKey = `chat:daily_msg_count:${userId}:${today}`
@@ -760,7 +761,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       this.auditService.notifyWebhook('chat_message', {
         userId,
         content: content.substring(0, 200),
-        time: new Date().toISOString(),
+        time: beijingISO(),
       }).catch(() => {})
     }
 
@@ -804,7 +805,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async getTodayMessageCount(userId: number): Promise<number> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = beijingISO().split('T')[0]
     const redisKey = `chat:daily_msg_count:${userId}:${today}`
 
     // 修复 P5：优先从 Redis 读取每日消息计数，多实例共享
@@ -856,7 +857,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
    * 定时清理 messageCountCache 中非今天的过期条目，防止内存泄露
    */
   private cleanupMessageCountCache(): void {
-    const today = new Date().toISOString().split('T')[0]
+    const today = beijingISO().split('T')[0]
     let removed = 0
     for (const [key, entry] of this.messageCountCache) {
       if (entry.date !== today) {

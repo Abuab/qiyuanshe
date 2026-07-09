@@ -14,6 +14,7 @@ import { LoadBalanceStrategy } from '../entities/AiProviderConfig'
 import { ProviderConfigInput, SwitchProviderInput } from './ai-provider.types'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
+import { beijingISO } from '../common/utils/date-utils'
 
 /**
  * 管理后台：AI Provider 多源管理接口
@@ -206,7 +207,7 @@ export class AdminAiProviderController {
       requestSummary: log.requestSummary || '-',
       responseSummary: log.responseSummary || '-',
       errorMessage: log.errorMessage || '-',
-      createdAt: log.createdAt?.toISOString?.() || '',
+      createdAt: log.createdAt ? beijingISO(log.createdAt) : '',
     }))
 
     return Result.success({ items: mapped, total })

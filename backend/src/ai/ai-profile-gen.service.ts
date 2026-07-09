@@ -8,6 +8,7 @@ import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
@@ -203,7 +204,7 @@ export class AiProfileGenService {
       answerCount: saved.answerCount,
       version: saved.version,
       remainingQuota: Math.max(0, quotaInfo.remaining),
-      createdAt: saved.createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: saved.createdAt ? beijingISO(saved.createdAt) : beijingISO(),
     }
   }
 
@@ -226,7 +227,7 @@ export class AiProfileGenService {
       answerCount: profile.answerCount,
       version: profile.version,
       remainingQuota: quota.remaining,
-      createdAt: profile.createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: profile.createdAt ? beijingISO(profile.createdAt) : beijingISO(),
     }
   }
 

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { RedisService } from '../common/redis.service'
 import {
@@ -61,12 +62,12 @@ export class AiConfigService {
     allConfigs.forEach((c) => {
       map.set(c.configKey, {
         value: c.configValue || '1',
-        updatedAt: c.updatedAt?.toISOString?.() || new Date().toISOString(),
+        updatedAt: c.updatedAt ? beijingISO(c.updatedAt) : beijingISO(),
       })
     })
 
     const getBool = (key: string) => map.get(key)?.value !== '0'
-    const getTime = (key: string) => map.get(key)?.updatedAt || new Date().toISOString()
+    const getTime = (key: string) => map.get(key)?.updatedAt ? beijingISO(new Date(map.get(key)!.updatedAt)) : beijingISO()
 
     const masterEnabled = getBool(AI_MASTER_KEY)
 
@@ -175,7 +176,7 @@ export class AiConfigService {
         operatorId: log.operatorId,
         operatorName: log.operator?.nickname || '未知',
         ipAddress: log.ipAddress,
-        createdAt: log.createdAt?.toISOString?.() || new Date().toISOString(),
+        createdAt: log.createdAt ? beijingISO(log.createdAt) : beijingISO(),
       })),
       total,
       page,

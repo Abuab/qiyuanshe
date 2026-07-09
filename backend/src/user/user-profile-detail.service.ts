@@ -13,6 +13,7 @@ import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import { getDisplayName } from '../common/user-utils'
+import { beijingISO } from '../common/utils/date-utils'
 import {
   TopSection,
   BasicInfoSection,
@@ -199,7 +200,7 @@ export class UserProfileDetailService {
         matchmakerAvatar: c.matchmaker?.avatar || '',
         content: c.content,
         rating: c.rating,
-        createdAt: c.createdAt?.toISOString() || '',
+        createdAt: c.createdAt ? beijingISO(c.createdAt) : '',
       })),
     }
   }

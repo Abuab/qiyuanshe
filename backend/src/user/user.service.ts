@@ -16,6 +16,7 @@ import { calcProfileScore } from '../common/profile-score'
 import { getDisplayName } from '../common/user-utils'
 import { AiVoiceService } from '../ai/ai-voice.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
+import { beijingISO } from '../common/utils/date-utils'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -1168,7 +1169,7 @@ export class UserService {
       content: JSON.stringify({
         nickname: user.nickname,
         phone: user.phone,
-        canceledAt: new Date().toISOString(),
+        canceledAt: beijingISO(),
       }),
     })
 

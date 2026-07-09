@@ -8,6 +8,7 @@ import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entit
 import { User } from '../entities/User'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
+import { beijingISO } from '../common/utils/date-utils'
 
 /**
  * 管理后台 - AI 内容安全审核接口
@@ -82,7 +83,7 @@ export class AdminAiSafetyAuditController {
         sensitiveWords: hitWords,
         safetyLevel,
         auditResult: reverseAuditResult(item.result),
-        createdAt: item.createdAt?.toISOString() || '',
+        createdAt: item.createdAt ? beijingISO(item.createdAt) : '',
       }
     })
 

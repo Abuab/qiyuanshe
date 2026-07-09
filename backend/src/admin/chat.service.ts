@@ -4,6 +4,7 @@ import { Repository, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
 import { resolveAvatarUrl } from '../common/image-url'
+import { beijingISO } from '../common/utils/date-utils'
 
 @Injectable()
 export class AdminChatService {
@@ -96,7 +97,7 @@ export class AdminChatService {
       toAvatar: resolveAvatarUrl(r.toAvatar),
       lastMessage: r.lastMessage,
       messageType: r.messageType,
-      lastTime: r.lastTime ? new Date(r.lastTime).toISOString() : null,
+      lastTime: r.lastTime ? beijingISO(new Date(r.lastTime)) : null,
     }))
 
     return { list, page, limit, total }
@@ -227,7 +228,7 @@ export class AdminChatService {
         avatar: resolveAvatarUrl(isFrom ? r.toUser_avatar || r.to_avatar : r.fromUser_avatar || r.from_avatar),
         lastMessage: r.m_content,
         messageType: r.m_type,
-        lastTime: r.m_createdAt ? new Date(r.m_createdAt).toISOString() : null,
+        lastTime: r.m_createdAt ? beijingISO(new Date(r.m_createdAt)) : null,
       }
     })
 

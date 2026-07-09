@@ -8,6 +8,9 @@ import { AppModule } from './app.module'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 
+// 设置 Node.js 进程时区为北京时间（影响 Logger 时间戳、toLocaleString、Date.toString 等）
+process.env.TZ = 'Asia/Shanghai'
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['log', 'error', 'warn'],

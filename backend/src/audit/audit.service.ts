@@ -8,6 +8,7 @@ import { User } from '../entities/User'
 import { NotifyLog } from '../entities/NotifyLog'
 import { TencentCloudModerationProvider } from './providers/tencent-cloud-moderation.provider'
 import { SystemService } from '../system/system.service'
+import { beijingISO } from '../common/utils/date-utils'
 import {
   AuditPhotoDto,
   AuditTextDto,
@@ -234,7 +235,7 @@ export class AuditService {
             userId,
             photoUrl,
             content: photoUrl,
-            time: new Date().toISOString(),
+            time: beijingISO(),
           }).catch(() => {})
         }
       }
@@ -287,7 +288,7 @@ export class AuditService {
             userId,
             userNickname: '',
             content: text,
-            time: new Date().toISOString(),
+            time: beijingISO(),
           }).catch(() => {})
         }
       }

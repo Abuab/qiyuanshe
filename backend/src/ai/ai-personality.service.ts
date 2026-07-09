@@ -8,6 +8,7 @@ import { AiSafetyService } from './ai-safety.service'
 import { AiPromptTemplateService } from './ai-prompt-template.service'
 import { AiFeatureKey } from './types'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { beijingISO } from '../common/utils/date-utils'
 import { User } from '../entities/User'
 import { PersonalityResult } from '../personality-test/entities/PersonalityResult'
 import { PersonalityType } from '../personality-test/entities/PersonalityType'
@@ -76,7 +77,7 @@ export class AiPersonalityService {
             dateScenes: cached.dateScenes || '',
             fallback: false,
             disclaimer: AI_DISCLAIMER,
-            generatedAt: new Date(ctx.result.aiInterpretationAt).toISOString(),
+            generatedAt: beijingISO(new Date(ctx.result.aiInterpretationAt)),
           }
         } catch {
           /* 缓存损坏，继续重新生成 */
@@ -151,7 +152,7 @@ export class AiPersonalityService {
       ...sections,
       fallback,
       disclaimer: AI_DISCLAIMER,
-      generatedAt: generatedAt.toISOString(),
+      generatedAt: beijingISO(generatedAt),
     }
   }
 

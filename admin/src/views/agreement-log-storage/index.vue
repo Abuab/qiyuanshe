@@ -203,6 +203,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { agreementLogStorage, type StorageConfig } from '@/api/agreement-log-storage'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { todayLocalStr } from '@/utils/date'
 
 /** 手机号脱敏：保留前3后4，中间4位显示为**** */
 function maskPhone(phone: string): string {
@@ -386,7 +387,7 @@ const handleExportLogs = async () => {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `agreement-logs-${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `agreement-logs-${todayLocalStr()}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')

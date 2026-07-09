@@ -7,6 +7,7 @@ import { AiProviderBalance, BalanceAlertStatus } from '../entities/AiProviderBal
 import { AiProviderConfig } from '../entities/AiProviderConfig'
 import { AiProviderSelector } from './ai-provider-selector.service'
 import { decryptApiKey } from './ai-crypto.util'
+import { beijingISO } from '../common/utils/date-utils'
 import {
   BalanceAlertRecord,
   PROVIDER_ALERT_PREFIX,
@@ -126,8 +127,8 @@ export class AiProviderBalanceService {
       alertThreshold: record.alertThreshold,
       alertStatus: record.alertStatus,
       alertCount: record.alertCount,
-      lastQueryAt: record.lastQueryAt?.toISOString?.(),
-      lastAlertAt: record.lastAlertAt?.toISOString?.(),
+      lastQueryAt: record.lastQueryAt ? beijingISO(record.lastQueryAt) : undefined,
+      lastAlertAt: record.lastAlertAt ? beijingISO(record.lastAlertAt) : undefined,
     }
   }
 

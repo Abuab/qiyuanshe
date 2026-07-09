@@ -4,6 +4,7 @@ import { Repository, Raw } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
 import { User } from '../entities/User'
+import { beijingISO } from '../common/utils/date-utils'
 
 interface OrderFilter {
   page?: number
@@ -187,13 +188,13 @@ export class AdminPaymentService {
     // 每日营收明细
     const dailyStatsMap: Record<string, { orderCount: number; revenue: number; refund: number }> = {}
     paidOrders.forEach(o => {
-      const date = new Date(o.createdAt).toISOString().split('T')[0]
+      const date = beijingISO(o.createdAt).split('T')[0]
       if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
       dailyStatsMap[date].orderCount++
       dailyStatsMap[date].revenue += (Number(o.amount) || 0) / 100 // 分转元
     })
     refundedOrders.forEach(o => {
-      const date = new Date(o.createdAt).toISOString().split('T')[0]
+      const date = beijingISO(o.createdAt).split('T')[0]
       if (!dailyStatsMap[date]) dailyStatsMap[date] = { orderCount: 0, revenue: 0, refund: 0 }
       dailyStatsMap[date].refund += (Number(o.amount) || 0) / 100 // 分转元
     })

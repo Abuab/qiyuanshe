@@ -1,3 +1,4 @@
+import { beijingISO } from '../common/utils/date-utils'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
@@ -266,6 +267,8 @@ export class AgreementLogStorageService {
           publicUserId: u?.userId || '',
           nickname: u?.nickname || '',
           phone: u?.phone || '',
+          // 统一输出北京时间
+          createdAt: item.createdAt ? beijingISO(item.createdAt) : '',
         }
       })
     }

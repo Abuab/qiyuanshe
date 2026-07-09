@@ -10,6 +10,7 @@ import { SystemService } from '../system/system.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { beijingISO } from '../common/utils/date-utils'
 import { User } from '../entities/User'
 import {
   MATCHMAKER_SYSTEM_PROMPT,
@@ -718,7 +719,7 @@ export class AiMatchmakerService {
       messages: messages.map((m, i) => ({
         role: m.role as 'user' | 'ai',
         content: m.content,
-        createdAt: new Date().toISOString(),
+        createdAt: beijingISO(),
       })),
       remainingRounds,
     }

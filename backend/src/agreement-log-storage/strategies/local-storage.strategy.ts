@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between, FindOptionsWhere } from 'typeorm'
 import { UserAgreementLog } from '../../entities/UserAgreementLog'
+import { beijingISO } from '../../common/utils/date-utils'
 import {
   IAgreementLogStorageStrategy,
   AgreementLogData,
@@ -86,7 +87,7 @@ export class LocalStorageStrategy implements IAgreementLogStorageStrategy {
         [
           r.id, r.userId, r.agreementType, r.version, r.action,
           r.ipAddress || '', `"${(r.userAgent || '').replace(/"/g, '""')}"`,
-          r.storageSource, r.createdAt?.toISOString() || '',
+          r.storageSource, r.createdAt ? beijingISO(r.createdAt) : '',
         ].join(','),
       )
       .join('\n')

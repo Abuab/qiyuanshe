@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common'
 import { Result } from './common/result'
 import { DataSource } from 'typeorm'
 import { RedisService } from './common/redis.service'
+import { beijingISO } from './common/utils/date-utils'
 
 @Controller('health')
 export class HealthController {
@@ -36,7 +37,7 @@ export class HealthController {
         mysql: mysqlOk,
         redis: redisOk,
       },
-      timestamp: new Date().toISOString(),
+      timestamp: beijingISO(),
     })
   }
 }

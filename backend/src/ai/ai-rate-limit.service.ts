@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { RedisService } from '../common/redis.service'
+import { beijingISO } from '../common/utils/date-utils'
 import {
   AiRateLimitCode,
   RateLimitConfig,
@@ -181,7 +182,7 @@ export class AiRateLimitService {
     safetyViolationCount: number,
   ): Promise<void> {
     // IP 触发
-    const today = new Date().toISOString().slice(0, 10)
+    const today = beijingISO().slice(0, 10)
     const ipHourKey = `ai:rate:ip:hop:${ip}:all:${today}`
     const ipHourCount = parseInt(await this.redis.get(ipHourKey) || '0', 10)
     if (ipHourCount > BLACKLIST_TRIGGERS.ipHourly) {
@@ -254,7 +255,7 @@ export class AiRateLimitService {
     const now = new Date()
     const minuteKey = RATE_LIMIT_KEYS.IP_MINUTE
       .replace('%s', ip)
-      .replace('%s', now.toISOString().slice(0, 16)) // YYYY-MM-DD HH:mm
+      .replace('%s', beijingISO(now).slice(0, 16)) // YYYY-MM-DD HH:mm
 
     const count = await this.redis.incr(minuteKey)
     if (count === 1) await this.redis.expire(minuteKey, 60)
@@ -262,7 +263,7 @@ export class AiRateLimitService {
     // 同时更新小时计数器（用于黑名单触发）
     const hourKey = RATE_LIMIT_KEYS.IP_HOUR
       .replace('%s', ip)
-      .replace('%s', now.toISOString().slice(0, 13)) // YYYY-MM-DD HH
+      .replace('%s', beijingISO(now).slice(0, 13)) // YYYY-MM-DD HH
     await this.redis.incr(hourKey)
     const hourTtl = await this.redis.getClient().ttl(hourKey)
     if (hourTtl < 0) await this.redis.expire(hourKey, 3600)
@@ -291,7 +292,7 @@ export class AiRateLimitService {
       return { allowed: true, code: null, message: '' }
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    const today = beijingISO().slice(0, 10)
     const key = RATE_LIMIT_KEYS.DEVICE_DAY.replace('%s', fingerprint).replace('%s', today)
 
     const count = await this.redis.incr(key)
@@ -334,7 +335,7 @@ export class AiRateLimitService {
       return { allowed: true, code: null, message: '', details: { ipCount: 0, ipLimit: 0, deviceCount: 0, deviceLimit: 0, userCount: 0, userLimit: 0 } }
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    const today = beijingISO().slice(0, 10)
     const key = RATE_LIMIT_KEYS.USER_DAY
       .replace('%d', String(userId))
       .replace('%s', callType)
@@ -392,7 +393,7 @@ export class AiRateLimitService {
 
   /** 全局日报预算 */
   private async checkDailyBudget(): Promise<RateLimitResult> {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = beijingISO().slice(0, 10)
     const key = RATE_LIMIT_KEYS.DAILY_BUDGET.replace('%s', today)
 
     const count = await this.redis.incr(key)

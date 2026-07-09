@@ -7,6 +7,7 @@ import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog } from '../entities/AiCallLog'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiCallType } from '../entities/AiCallLog'
 import { AiMatchReport } from '../entities/AiMatchReport'
 import { User } from '../entities/User'
@@ -546,7 +547,7 @@ export class AiMatchService {
       advice,
       overlapTagCount: report.overlapTagCount,
       remainingQuota,
-      createdAt: report.createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: report.createdAt ? beijingISO(report.createdAt) : beijingISO(),
     }
   }
 

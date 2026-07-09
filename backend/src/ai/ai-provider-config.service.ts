@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Not } from 'typeorm'
 import { RedisService } from '../common/redis.service'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiProviderConfig, LoadBalanceStrategy } from '../entities/AiProviderConfig'
 import { encryptApiKey, decryptApiKey, maskApiKey } from './ai-crypto.util'
 import {
@@ -196,7 +197,7 @@ export class AiProviderConfigService {
     const cached = await this.redis.get(PROVIDER_STRATEGY_KEY)
     return {
       strategy: (cached as LoadBalanceStrategy) || this.currentStrategy,
-      updatedAt: new Date().toISOString(),
+      updatedAt: beijingISO(),
     }
   }
 
@@ -222,8 +223,8 @@ export class AiProviderConfigService {
       weight: cfg.weight,
       priority: cfg.priority,
       balanceQueryUrl: cfg.balanceQueryUrl || undefined,
-      createdAt: cfg.createdAt?.toISOString?.() || '',
-      updatedAt: cfg.updatedAt?.toISOString?.() || '',
+      createdAt: cfg.createdAt ? beijingISO(cfg.createdAt) : '',
+      updatedAt: cfg.updatedAt ? beijingISO(cfg.updatedAt) : '',
     }
   }
 }

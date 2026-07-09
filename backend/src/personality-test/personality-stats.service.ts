@@ -13,6 +13,7 @@ import { CopySlot } from '../guide-copy/entities/CopySlot'
 import { User } from '../entities/User'
 import { PersonalityUserService } from './personality-user.service'
 import { shanghaiDayKey } from './personality-time.util'
+import { beijingISO } from '../common/utils/date-utils'
 
 /**
  * 人格测试 - 管理后台数据看板统计服务
@@ -157,7 +158,7 @@ export class PersonalityStatsService {
         nickname: u?.nickname || `用户${r.userId}`,
         avatar: u?.avatar || '',
         gender: u?.gender ?? 0,
-        testedAt: r.testedAt ? r.testedAt.toISOString() : null,
+        testedAt: r.testedAt ? beijingISO(r.testedAt) : null,
       }
     })
     return { total, page, pageSize, list }

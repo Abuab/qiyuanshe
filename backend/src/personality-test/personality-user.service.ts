@@ -19,6 +19,7 @@ import {
 } from './personality-scoring'
 import { PersonalityResultView, PersonalitySimpleView } from './personality.types'
 import { shanghaiDayKey, secondsUntilShanghaiMidnight } from './personality-time.util'
+import { beijingISO } from '../common/utils/date-utils'
 
 interface SubmitAnswerInput {
   questionId: number
@@ -217,7 +218,7 @@ export class PersonalityUserService {
       radar: scoring.radar,
       dimensions: scoring.dimensions,
       matchTypes: type?.matchTypes ?? [],
-      testedAt: testedAt.toISOString(),
+      testedAt: beijingISO(testedAt),
       isGuest: !subject.userId,
     }
 
@@ -670,7 +671,7 @@ export class PersonalityUserService {
       dimensions: Array.isArray(scores.dimensions) ? scores.dimensions : [],
       matchTypes,
       matchTypeDetails,
-      testedAt: (result.testedAt || result.updatedAt || new Date()).toISOString?.() || new Date().toISOString(),
+      testedAt: beijingISO(result.testedAt || result.updatedAt || new Date()),
       isGuest,
     }
   }

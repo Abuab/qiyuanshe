@@ -20,6 +20,7 @@ import { AdminChatService } from './chat.service'
 import { ChatMonitorService } from '../chat/chat-monitor.service'
 import { ChatMonitorGateway } from '../chat/chat-monitor.gateway'
 import { Result } from '../common/result'
+import { beijingISO } from '../common/utils/date-utils'
 import { AdminRole } from '../shared/enums'
 
 @Controller('admin/chat')
@@ -172,7 +173,7 @@ export class AdminChatController {
       isMine: false,
       isProxy: 1,
       proxyName: operatorName,
-      createdAt: message.createdAt?.toISOString(),
+      createdAt: message.createdAt ? beijingISO(message.createdAt) : undefined,
     }
 
     // 推送消息给监控该用户的管理员

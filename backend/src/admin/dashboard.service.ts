@@ -6,6 +6,7 @@ import { VipOrder } from '../entities/VipOrder'
 import { Matchmaker } from '../entities/Matchmaker'
 import { AuditLog } from '../entities/AuditLog'
 import { HotQuestion } from '../entities/HotQuestion'
+import { beijingISO } from '../common/utils/date-utils'
 
 @Injectable()
 export class AdminDashboardService {
@@ -110,12 +111,12 @@ export class AdminDashboardService {
       let dateKey: string
       if (dateFormat === 'hour') {
         const d = new Date(user.createdAt)
-        dateKey = d.toISOString().slice(0, 13) + ':00'
+        dateKey = beijingISO(d).slice(0, 13) + ':00'
       } else if (dateFormat === 'month') {
         const d = new Date(user.createdAt)
         dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       } else {
-        dateKey = user.createdAt.toISOString().split('T')[0]
+        dateKey = beijingISO(user.createdAt).split('T')[0]
       }
       if (!result[dateKey]) {
         result[dateKey] = { total: 0, male: 0, female: 0 }
@@ -132,7 +133,7 @@ export class AdminDashboardService {
     if (dateFormat === 'hour') {
       const endHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours())
       while (cursor <= endHour) {
-        const key = cursor.toISOString().slice(0, 13) + ':00'
+        const key = beijingISO(cursor).slice(0, 13) + ':00'
         filled.push({ date: key, ...(result[key] || { total: 0, male: 0, female: 0 }) })
         cursor.setHours(cursor.getHours() + 1)
       }
@@ -146,7 +147,7 @@ export class AdminDashboardService {
     } else {
       const endDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
       while (cursor <= endDay) {
-        const key = cursor.toISOString().split('T')[0]
+        const key = beijingISO(cursor).split('T')[0]
         filled.push({ date: key, ...(result[key] || { total: 0, male: 0, female: 0 }) })
         cursor.setDate(cursor.getDate() + 1)
       }
@@ -231,7 +232,7 @@ export class AdminDashboardService {
     let cumulative = 0
 
     orders.forEach(order => {
-      const dateKey = order.createdAt.toISOString().split('T')[0]
+      const dateKey = beijingISO(order.createdAt).split('T')[0]
       if (!result[dateKey]) {
         result[dateKey] = 0
       }

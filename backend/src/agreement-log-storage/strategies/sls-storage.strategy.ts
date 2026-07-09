@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
+import axios from 'axios'
+import { beijingISO } from '../../common/utils/date-utils'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { UserAgreementLog } from '../../entities/UserAgreementLog'
@@ -165,7 +167,7 @@ export class SlsStorageStrategy implements IAgreementLogStorageStrategy {
           ipAddress: map.ipAddress || '',
           userAgent: map.userAgent || '',
           storageSource: 'sls',
-          createdAt: logObj.time ? new Date(logObj.time * 1000).toISOString() : '',
+          createdAt: logObj.time ? beijingISO(new Date(logObj.time * 1000)) : '',
         }
       })
       return { items: logs, total: count }

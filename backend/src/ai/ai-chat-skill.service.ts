@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
@@ -209,7 +210,7 @@ export class AiChatSkillService {
       messages: reversed.map((m) => ({
         role: m.fromUserId === userId ? 'me' : 'ta',
         content: this.desensitize(m.content),
-        time: m.createdAt?.toISOString?.() || '',
+        time: m.createdAt ? beijingISO(m.createdAt) : '',
       })),
     }
   }
@@ -260,7 +261,7 @@ export class AiChatSkillService {
    * 检查用户是否已被当日禁用
    */
   private async isUserDayBanned(userId: number): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = beijingISO().split('T')[0]
     const key = `ai:safety:daily:${userId}:${today}`
     const countStr = await this.redis.get(key)
     const count = parseInt(countStr || '0', 10)

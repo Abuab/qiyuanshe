@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { RedisService } from '../common/redis.service'
+import { beijingISO } from '../common/utils/date-utils'
 import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entities/ContentSafetyAudit'
 
 /**
@@ -469,7 +470,7 @@ export class AiSafetyService implements OnModuleInit {
   }
 
   async incrementDailyViolation(userId: number, maxDailyViolations = 3): Promise<boolean> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = beijingISO().split('T')[0]
     const key = `${DAILY_VIOLATION_KEY}${userId}:${today}`
 
     const count = await this.redis.incr(key)

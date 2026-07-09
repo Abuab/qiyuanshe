@@ -7,6 +7,7 @@ import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { beijingISO } from '../common/utils/date-utils'
 import { AiFunQuizReport } from '../entities/AiFunQuizReport'
 import { User } from '../entities/User'
 import { buildFunQuizPrompt } from './ai-fun-quiz.prompt'
@@ -353,7 +354,7 @@ export class AiFunQuizService {
       timeNodes,
       keywords,
       remainingQuota,
-      createdAt: report.createdAt?.toISOString?.() || new Date().toISOString(),
+      createdAt: report.createdAt ? beijingISO(report.createdAt) : beijingISO(),
     }
   }
 

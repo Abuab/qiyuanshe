@@ -15,6 +15,7 @@ import { Roles } from '../admin/roles.decorator'
 import { AgreementLogStorageService } from './agreement-log-storage.service'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
+import { beijingDateStr } from '../common/utils/date-utils'
 
 /**
  * 管理后台：协议日志存储配置 & 日志查询
@@ -103,7 +104,7 @@ export class AdminAgreementLogStorageController {
     res?.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res?.setHeader(
       'Content-Disposition',
-      `attachment; filename="agreement-logs-${new Date().toISOString().slice(0, 10)}.csv"`,
+      `attachment; filename="agreement-logs-${beijingDateStr()}.csv"`,
     )
     res?.send(buffer)
   }
