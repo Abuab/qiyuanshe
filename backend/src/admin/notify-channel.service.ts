@@ -240,6 +240,8 @@ export class NotifyChannelService {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      // 禁止跟随重定向：防止公网地址 302 跳转到内网/云元数据绕过 SSRF 校验
+      redirect: 'manual',
     })
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${await response.text()}`)
