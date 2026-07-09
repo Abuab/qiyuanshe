@@ -15,7 +15,6 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname } from 'path'
 import { PropertyAuthService } from './property-auth.service'
-import { CosService } from '../cos/cos.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { Result } from '../common/result'
 
@@ -32,7 +31,6 @@ const uploadStorage = diskStorage({
 export class PropertyAuthController {
   constructor(
     private readonly service: PropertyAuthService,
-    private readonly cosService: CosService,
   ) {}
 
   /** 小程序：获取房产认证状态 */
@@ -64,11 +62,6 @@ export class PropertyAuthController {
     }
 
     const image = `/uploads/${file.filename}`
-    // 双写：异步上传到 COS
-    if (this.cosService.isCosEnabled()) {
-      const cosKey = `uploads/${file.filename}`
-      this.cosService.uploadToCos(file.path, cosKey).catch(() => {})
-    }
     const data = await this.service.submit(userId, { image })
     return Result.success(data)
   }

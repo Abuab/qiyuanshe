@@ -81,16 +81,3 @@ export const MAX_CIRCLE_POST_LENGTH = 500
 // ================================================================
 
 export const ID_CARD_LENGTH = 18
-
-// ================================================================
-// COS
-// ================================================================
-
-/** COS 签名 URL 默认过期时间（秒） */
-export const COS_SIGN_DEFAULT_EXPIRES_SEC = 1800
-
-/** COS 健康检查间隔（毫秒） */
-export const COS_HEALTH_CHECK_INTERVAL_MS = 5 * ONE_MINUTE_MS
-
-/** COS 通知冷却时间（毫秒），防止频繁切换时通知轰炸 */
-export const COS_NOTIFY_COOLDOWN_MS = 10 * ONE_MINUTE_MS

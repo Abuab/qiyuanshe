@@ -2517,8 +2517,8 @@ $text-hint: #999999;
 }
 .mk-review-title {
   font-size: 32rpx;
-  font-weight: 700;
-  color: #FFA6BC; // 淡粉色标题
+  font-weight: 500;
+  color: #FF7A99; // 淡粉色标题（加深）
 }
 .mk-review-dash {
   font-size: 28rpx;

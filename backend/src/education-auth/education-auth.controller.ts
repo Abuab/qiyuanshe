@@ -23,7 +23,6 @@ import { Roles } from '../admin/roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 import { EducationAuthService } from './education-auth.service'
-import { CosService } from '../cos/cos.service'
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
 if (!existsSync(uploadsDir)) {
@@ -36,7 +35,6 @@ if (!existsSync(uploadsDir)) {
 export class EducationAuthController {
   constructor(
     private readonly service: EducationAuthService,
-    private readonly cosService: CosService,
   ) {}
 
   /** 获取当前用户学历认证状态 */
@@ -89,11 +87,6 @@ export class EducationAuthController {
       return Result.error('请上传证书图片')
     }
     const image = `/uploads/${file.filename}`
-    // 双写：异步上传到 COS（与常规上传一致，不阻塞响应，失败不影响本地文件）
-    if (this.cosService.isCosEnabled()) {
-      const cosKey = `uploads/${file.filename}`
-      this.cosService.uploadToCos(file.path, cosKey).catch(() => {})
-    }
     const data = await this.service.submit(userId, { school, degree, image })
     return Result.success(data)
   }

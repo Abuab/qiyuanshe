@@ -11,7 +11,6 @@ import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { Result } from '../common/result'
-import { CosService } from '../cos/cos.service'
 
 interface UploadedFile {
   fieldname: string
@@ -53,7 +52,6 @@ ensureDirectoryExists(certDir)
 @Controller('admin/upload')
 @UseGuards(AdminJwtAuthGuard)
 export class UploadController {
-  constructor(private readonly cosService: CosService) {}
 
   @Post()
   @UseInterceptors(
@@ -90,14 +88,6 @@ export class UploadController {
       || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
     const url = `/uploads/${file.filename}`
 
-    // 双写：异步上传到 COS（不阻塞响应，失败不影响本地文件）
-    if (this.cosService.isCosEnabled()) {
-      const cosKey = `uploads/${file.filename}`
-      this.cosService.uploadToCos(file.path, cosKey).catch((err) => {
-        console.error('Admin COS async upload failed:', err?.message || err)
-      })
-    }
-
     return Result.success({ url })
   }
 
@@ -129,14 +119,6 @@ export class UploadController {
       return Result.error('请选择要上传的文件')
     }
     const path = `/uploads/cert/${file.filename}`
-
-    // 双写：异步上传到 COS
-    if (this.cosService.isCosEnabled()) {
-      const cosKey = `uploads/cert/${file.filename}`
-      this.cosService.uploadToCos(file.path, cosKey).catch((err) => {
-        console.error('Admin cert COS async upload failed:', err?.message || err)
-      })
-    }
 
     return Result.success({ path })
   }

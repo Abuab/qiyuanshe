@@ -12,7 +12,6 @@ import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
 import { Result } from '../common/result'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { CosService } from '../cos/cos.service'
 
 interface UploadedFile {
   fieldname: string
@@ -49,7 +48,6 @@ if (!existsSync(uploadsDir)) {
  */
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly cosService: CosService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -91,14 +89,6 @@ export class UploadController {
     // 记录上传者信息，用于后续追溯
     const uploaderId = req.user?.sub || req.user?.id || null
     console.log('Upload success:', file.originalname, '->', url, 'uploaderId:', uploaderId)
-
-    // 双写：异步上传到 COS（不阻塞响应，失败不影响本地文件）
-    if (this.cosService.isCosEnabled()) {
-      const cosKey = `uploads/${file.filename}`
-      this.cosService.uploadToCos(file.path, cosKey).catch((err) => {
-        console.error('COS async upload failed:', err?.message || err)
-      })
-    }
 
     return Result.success({ url, uploaderId })
     } catch (error: any) {
