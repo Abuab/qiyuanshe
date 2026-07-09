@@ -178,7 +178,7 @@ export class AdminAiProviderController {
       const dbStatus = status === 'failed' ? 'error' : status
       qb.andWhere('log.status = :status', { status: dbStatus })
     }
-    if (userId) qb.andWhere('log.userId = :userId', { userId: parseInt(userId, 10) })
+    if (userId) qb.andWhere('user.userId = :pubUserId', { pubUserId: String(userId) })
 
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : new Date('2000-01-01')
@@ -197,7 +197,7 @@ export class AdminAiProviderController {
       providerName: log.provider?.displayName || '-',
       modelName: log.provider?.modelName || '-',
       callType: log.callType,
-      userId: log.userId,
+      userId: log.user?.userId || '',
       userNickname: log.user?.nickname || '-',
       inputTokens: log.inputTokens,
       outputTokens: log.outputTokens,

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
+import { User } from '../entities/User'
 import { resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
@@ -9,7 +10,21 @@ export class AdminChatService {
   constructor(
     @InjectRepository(ChatMessage)
     private readonly messageRepository: Repository<ChatMessage>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
+
+  /** 通过对外公开的 6 位 userId 解析出内部主键 id、昵称（监控页搜索用） */
+  async resolveUserByPublicId(publicId: string) {
+    const trimmed = (publicId || '').trim()
+    if (!trimmed) return null
+    const user = await this.userRepository.findOne({
+      where: { userId: trimmed },
+      select: ['id', 'userId', 'nickname'],
+    })
+    if (!user) return null
+    return { id: user.id, userId: user.userId, nickname: user.nickname }
+  }
 
   /** 查询所有用户的会话列表（含搜索） */
   async getAllConversations(query: {

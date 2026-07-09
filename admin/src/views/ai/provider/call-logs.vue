@@ -131,7 +131,7 @@ interface LogItem {
   providerName: string
   modelName: string
   callType: string
-  userId: number
+  userId: string
   userNickname: string
   inputTokens: number | null
   outputTokens: number | null
@@ -150,7 +150,7 @@ const exportLoading = ref(false)
 const filterForm = reactive({
   callType: undefined as string | undefined,
   status: undefined as string | undefined,
-  userId: undefined as number | undefined,
+  userId: undefined as string | undefined,
   dateRange: undefined as [string, string] | undefined,
 })
 

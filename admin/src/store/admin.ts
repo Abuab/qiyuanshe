@@ -21,8 +21,6 @@ export const useAdminStore = defineStore('admin', () => {
   const isCollapsed = ref(false)
   // 审核管理（资料/照片等）待审核数
   const pendingAuditCount = ref(0)
-  // 帖子审核（圈子帖子）待审核数
-  const pendingPostCount = ref(0)
 
   const isLoggedIn = computed(() => !!token.value)
 
@@ -148,9 +146,8 @@ export const useAdminStore = defineStore('admin', () => {
     try {
       const res = await adminAudit.pendingCount()
       const data = res.data as any
-      // profile 归审核管理，circlePost 归帖子审核
+      // profile 归审核管理
       pendingAuditCount.value = data?.profile ?? 0
-      pendingPostCount.value = (data?.circlePost ?? 0)
     } catch { /* ignore */ }
   }
 
@@ -160,7 +157,6 @@ export const useAdminStore = defineStore('admin', () => {
     permissions,
     isCollapsed,
     pendingAuditCount,
-    pendingPostCount,
     isLoggedIn,
     initApp,
     login,

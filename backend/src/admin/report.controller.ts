@@ -3,7 +3,7 @@ import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { Report } from '../entities/Report'
 import { User } from '../entities/User'
 import { Result } from '../common/result'
@@ -18,6 +18,32 @@ export class AdminReportController {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
+  /** 为举报记录附加举报人/被举报人的公开 userId 和昵称 */
+  private async attachUsers(items: Report[]): Promise<any[]> {
+    const ids = [
+      ...new Set(
+        items.flatMap((i) => [i.reporterId, i.targetId]).filter(Boolean),
+      ),
+    ] as number[]
+    if (ids.length === 0) return items
+    const users = await this.userRepo.find({
+      where: { id: In(ids) },
+      select: ['id', 'userId', 'nickname'],
+    })
+    const map = new Map(users.map((u) => [u.id, u]))
+    return items.map((i) => {
+      const reporter = map.get(i.reporterId)
+      const target = map.get(i.targetId)
+      return {
+        ...i,
+        reporterPublicId: reporter?.userId || '',
+        reporterNickname: reporter?.nickname || '',
+        targetPublicId: target?.userId || '',
+        targetNickname: target?.nickname || '',
+      }
+    })
+  }
+
   @Get()
   async list(@Query() q: any) {
     const page = parseInt(q.page) || 1
@@ -29,12 +55,16 @@ export class AdminReportController {
     if (q.reason) qb.andWhere('report.reason = :reason', { reason: q.reason })
     qb.orderBy('report.createdAt', 'DESC').skip(skip).take(limit)
     const [list, total] = await qb.getManyAndCount()
-    return Result.success({ list, total, page, limit })
+    const enriched = await this.attachUsers(list)
+    return Result.success({ list: enriched, total, page, limit })
   }
 
   @Get(':id')
   async detail(@Param('id', ParseIntPipe) id: number) {
-    return Result.success(await this.repo.findOne({ where: { id } }))
+    const report = await this.repo.findOne({ where: { id } })
+    if (!report) return Result.success(null)
+    const [enriched] = await this.attachUsers([report])
+    return Result.success(enriched)
   }
 
   @Put(':id')

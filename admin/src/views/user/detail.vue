@@ -2071,7 +2071,7 @@ function handleSendNotify() {
 
 function handleViewChat() {
   if (!user.value) return
-  router.push(`/chat/monitor?userId=${user.value.id}&nickname=${encodeURIComponent(user.value.nickname)}`)
+  router.push(`/chat/monitor?userId=${user.value.id}&publicUserId=${user.value.userId}&nickname=${encodeURIComponent(user.value.nickname)}`)
 }
 
 async function handleNotifySubmit() {

@@ -25,7 +25,12 @@
       <!-- 表格 -->
       <el-table :data="tableData" v-loading="loading" row-key="id">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="userId" label="用户ID" width="100" />
+        <el-table-column prop="publicUserId" label="用户ID" width="100">
+          <template #default="{ row }">{{ row.publicUserId || '-' }}</template>
+        </el-table-column>
+        <el-table-column prop="nickname" label="昵称" width="120">
+          <template #default="{ row }">{{ row.nickname || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="content" label="反馈内容" min-width="240">
           <template #default="{ row }">
             <span class="text-ellipsis">{{ truncateText(row.content, 30) }}</span>
@@ -81,7 +86,8 @@
       <template v-if="currentDetail">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="反馈ID">{{ currentDetail.id }}</el-descriptions-item>
-          <el-descriptions-item label="用户ID">{{ currentDetail.userId }}</el-descriptions-item>
+          <el-descriptions-item label="用户ID">{{ currentDetail.publicUserId || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="昵称">{{ currentDetail.nickname || '-' }}</el-descriptions-item>
           <el-descriptions-item label="提交时间">{{ formatDate(currentDetail.createdAt) }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="currentDetail.status === 0 ? 'warning' : 'success'" size="small">

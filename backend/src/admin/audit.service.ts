@@ -93,6 +93,7 @@ export class AdminAuditService {
       typeLabel: typeLabels[audit.targetType] || audit.targetType,
       submitter: audit.submitter ? {
         id: audit.submitter.id,
+        userId: audit.submitter.userId,
         nickname: audit.submitter.nickname,
         avatar: normalizeImageUrl(audit.submitter.avatar),
       } : null,

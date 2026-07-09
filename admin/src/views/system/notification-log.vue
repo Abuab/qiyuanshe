@@ -118,7 +118,7 @@
               <span v-else class="user-avatar-placeholder">
                 <el-icon :size="14"><User /></el-icon>
               </span>
-              <span class="user-nickname">{{ row.userNickname || ('用户' + row.userId) }}</span>
+              <span class="user-nickname">{{ row.userNickname || '未知用户' }}</span>
             </div>
             <span v-else class="text-muted">-</span>
           </template>
@@ -209,7 +209,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="通道">{{ channelName(detailDrawer.data.channel) }}</el-descriptions-item>
           <el-descriptions-item label="来源">{{ sourceName(detailDrawer.data.source || detailDrawer.data.notifyType) }}</el-descriptions-item>
-          <el-descriptions-item label="用户">{{ detailDrawer.data.userNickname || ('用户' + detailDrawer.data.userId) || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="用户">{{ detailDrawer.data.userNickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="消息内容">
             <div class="detail-content">{{ detailDrawer.data.content || '-' }}</div>
           </el-descriptions-item>

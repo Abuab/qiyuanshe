@@ -5,6 +5,10 @@ export interface ReportItem {
   id: number
   reporterId: number
   targetId: number
+  reporterPublicId?: string
+  reporterNickname?: string
+  targetPublicId?: string
+  targetNickname?: string
   type: 'user' | 'content' | 'photo'
   reason: 'harassment' | 'fraud' | 'fake_info' | 'abuse' | 'other'
   description?: string

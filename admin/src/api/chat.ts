@@ -44,6 +44,11 @@ export interface MessageListResponse {
 }
 
 export const adminChat = {
+  /** 通过公开 userId 解析用户 */
+  resolveUser(publicId: string): Promise<ApiResponse<{ id: number; userId: string; nickname: string }>> {
+    return request.get('/admin/chat/resolve-user', { params: { publicId } })
+  },
+
   /** 所有用户会话列表 */
   getAllConversations(params: {
     page?: number

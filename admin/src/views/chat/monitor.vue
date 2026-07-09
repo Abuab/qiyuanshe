@@ -9,7 +9,7 @@
         <h2 class="page-title">
           聊天监控
           <el-tag v-if="targetUser" type="warning" size="small" style="margin-left:8px">
-            {{ targetUser.nickname }} (ID:{{ targetUser.id }})
+            {{ targetUser.nickname }} (ID:{{ targetUser.publicUserId || '-' }})
           </el-tag>
         </h2>
       </div>
@@ -191,7 +191,7 @@ const adminStore = useAdminStore()
 // ===== 目标用户 =====
 const targetUserId = ref(0)
 const targetUserIdInput = ref('')
-const targetUser = ref<{ id: number; nickname: string } | null>(null)
+const targetUser = ref<{ id: number; publicUserId?: string; nickname: string } | null>(null)
 const lockMessage = ref('')
 const monitoring = ref(false)
 const monitorLoading = ref(false)
@@ -359,10 +359,15 @@ const resolveImage = (url: string) => {
 onMounted(() => {
   const uid = route.query.userId
   const nickname = route.query.nickname
+  const publicUserId = route.query.publicUserId
   if (uid) {
     targetUserId.value = Number(uid)
-    targetUserIdInput.value = String(uid)
-    targetUser.value = { id: Number(uid), nickname: decodeURIComponent(String(nickname || '用户')) }
+    targetUserIdInput.value = publicUserId ? String(publicUserId) : String(uid)
+    targetUser.value = {
+      id: Number(uid),
+      publicUserId: publicUserId ? String(publicUserId) : '',
+      nickname: decodeURIComponent(String(nickname || '用户')),
+    }
     loadConversations()
   }
 
@@ -386,21 +391,29 @@ onUnmounted(() => {
   }
 })
 
-// ===== 搜索切换用户 =====
+// ===== 搜索切换用户（输入的是对外公开的 userId）=====
 async function switchTarget() {
   const val = targetUserIdInput.value.trim()
   if (!val) return
-  const id = Number(val)
-  if (!Number.isInteger(id) || id <= 0) {
-    ElMessage.warning('请输入有效用户ID')
-    return
-  }
   if (monitoring.value) {
     ElMessage.warning('请先结束当前监控')
     return
   }
-  targetUserId.value = id
-  targetUser.value = { id, nickname: `用户${id}` }
+  // 将公开 userId 解析为内部主键 id
+  let resolved: { id: number; userId: string; nickname: string }
+  try {
+    const res: any = await adminChat.resolveUser(val)
+    if (!res?.data?.id) {
+      ElMessage.warning('未找到该用户')
+      return
+    }
+    resolved = res.data
+  } catch {
+    ElMessage.warning('未找到该用户')
+    return
+  }
+  targetUserId.value = resolved.id
+  targetUser.value = { id: resolved.id, publicUserId: resolved.userId, nickname: resolved.nickname || `用户${resolved.userId}` }
   lockMessage.value = ''
   activePeer.value = null
   messages.value = []

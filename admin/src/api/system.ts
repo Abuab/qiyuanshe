@@ -111,17 +111,6 @@ export const adminSystem = {
     return request.put(`/admin/circles/${id}/members`, { members })
   },
 
-  // 帖子审核
-  getCirclePosts(page = 1, limit = 20): Promise<ApiResponse> {
-    return request.get('/admin/circles/posts', { params: { page, limit } })
-  },
-  auditCirclePost(id: number, status: number): Promise<ApiResponse> {
-    return request.put(`/admin/circles/posts/${id}/audit`, { status })
-  },
-  deleteCirclePost(id: number): Promise<ApiResponse> {
-    return request.delete(`/admin/circles/posts/${id}`)
-  },
-
   // 成功案例
   getSuccessCases(params?: { page?: number; limit?: number; keyword?: string; dateFrom?: string; dateTo?: string }): Promise<ApiResponse> {
     return request.get('/admin/success-cases', { params: { page: params?.page ?? 1, limit: params?.limit ?? 20, ...params } })

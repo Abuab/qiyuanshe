@@ -92,14 +92,6 @@
         <template #title>圈子管理</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/circle-posts">
-        <el-icon><Document /></el-icon>
-        <template #title>
-          <span>帖子审核</span>
-          <el-badge v-if="adminStore.pendingPostCount > 0" :value="adminStore.pendingPostCount" class="menu-badge" />
-        </template>
-      </el-menu-item>
-
       <el-menu-item v-if="isSuperAdmin" index="/success-cases">
         <el-icon><Star /></el-icon>
         <template #title>成功案例</template>
@@ -216,7 +208,6 @@ import {
   Warning,
   Avatar as AvatarIcon,
   Connection,
-  Document,
   Star,
   ChatDotRound,
   Promotion,

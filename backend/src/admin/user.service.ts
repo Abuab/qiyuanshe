@@ -636,6 +636,7 @@ export class AdminUserService {
     return {
       list: list.map(u => ({
         id: u.id,
+        userId: u.userId,
         nickname: u.nickname,
         avatar: u.avatar,
         phone: u.phone,

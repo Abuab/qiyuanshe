@@ -36,6 +36,9 @@
         empty-text="暂无已注销用户"
       >
         <el-table-column prop="id" label="ID" width="70" align="center" />
+        <el-table-column prop="userId" label="用户ID" width="100" align="center">
+          <template #default="{ row }">{{ row.userId || '-' }}</template>
+        </el-table-column>
         <el-table-column label="头像" width="70" align="center">
           <template #default="{ row }">
             <el-avatar :size="40" :src="row.avatar" />

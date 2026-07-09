@@ -244,12 +244,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '圈子管理', requiresAuth: true },
       },
       {
-        path: '/circle-posts',
-        name: 'CirclePostList',
-        component: () => import('../views/circles/posts.vue'),
-        meta: { title: '帖子审核', requiresAuth: true },
-      },
-      {
         path: '/success-cases',
         name: 'SuccessCaseList',
         component: () => import('../views/success-cases/index.vue'),

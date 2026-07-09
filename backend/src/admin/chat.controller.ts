@@ -83,6 +83,14 @@ export class AdminChatController {
     return Result.success(result)
   }
 
+  /** 通过公开 userId 解析用户（监控页搜索用） */
+  @Get('resolve-user')
+  async resolveUser(@Query('publicId') publicId: string) {
+    const user = await this.chatService.resolveUserByPublicId(publicId)
+    if (!user) return Result.error('未找到该用户', 404)
+    return Result.success(user)
+  }
+
   /** 某用户的所有会话 */
   @Get('user/:userId/conversations')
   async getUserConversations(

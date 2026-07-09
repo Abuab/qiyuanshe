@@ -4,6 +4,8 @@ import type { ApiResponse } from './request'
 export interface FeedbackItem {
   id: number
   userId: number
+  publicUserId?: string
+  nickname?: string
   content: string
   images: string[]
   status: number

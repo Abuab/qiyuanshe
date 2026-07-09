@@ -123,7 +123,7 @@ async function fetchList() {
     // 缓存列表中出现的用户名称
     for (const item of list.value) {
       if (!userNameMap.has(item.userId)) {
-        userNameMap.set(item.userId, `用户${item.userId}`)
+        userNameMap.set(item.userId, '未知用户')
       }
     }
   } catch (e) { console.error(e) }
@@ -153,7 +153,7 @@ async function loadUsers() {
 }
 
 function getUserName(userId: number): string {
-  return userNameMap.get(userId) || `用户${userId}`
+  return userNameMap.get(userId) || '未知用户'
 }
 
 function openCreateDialog() {

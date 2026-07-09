@@ -277,7 +277,7 @@
               <h4>用户资料</h4>
               <el-descriptions :column="1" border size="small">
                 <el-descriptions-item label="昵称">{{ contextDrawer.data.submitter.nickname }}</el-descriptions-item>
-                <el-descriptions-item label="用户ID">{{ contextDrawer.data.submitter.id || contextDrawer.data.submitterId }}</el-descriptions-item>
+                <el-descriptions-item label="用户ID">{{ contextDrawer.data.submitter.userId || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="提交次数">-</el-descriptions-item>
               </el-descriptions>
             </div>

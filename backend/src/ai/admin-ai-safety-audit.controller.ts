@@ -1,10 +1,11 @@
 import { Controller, Get, Put, Param, Body, Query, UseGuards } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entities/ContentSafetyAudit'
+import { User } from '../entities/User'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 
@@ -18,6 +19,8 @@ export class AdminAiSafetyAuditController {
   constructor(
     @InjectRepository(ContentSafetyAudit)
     private readonly auditRepo: Repository<ContentSafetyAudit>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   /** 获取安全审核列表（支持分页和筛选） */
@@ -39,7 +42,11 @@ export class AdminAiSafetyAuditController {
     if (callType) qb.andWhere('callLog.callType = :callType', { callType })
     if (auditResult) qb.andWhere('audit.result = :auditResult', { auditResult: decodeAuditResult(auditResult) })
     if (level) qb.andWhere('audit.detail LIKE :levelPattern', { levelPattern: `%${level}级%` })
-    if (userId) qb.andWhere('callLog.userId = :userId', { userId: parseInt(userId) })
+    if (userId) {
+      // 筛选框输入的是对外展示的公开 userId，先转换为内部主键 id
+      const u = await this.userRepo.findOne({ where: { userId: String(userId) }, select: ['id'] })
+      qb.andWhere('callLog.userId = :uid', { uid: u ? u.id : parseInt(userId) || -1 })
+    }
     if (startDate) qb.andWhere('audit.createdAt >= :startDate', { startDate })
     if (endDate) qb.andWhere('audit.createdAt <= :endDate', { endDate: endDate + ' 23:59:59' })
 
@@ -48,8 +55,17 @@ export class AdminAiSafetyAuditController {
       .take(limit)
       .getManyAndCount()
 
+    // 批量查询用户公开 userId 和昵称
+    const internalIds = [...new Set(items.map((it) => (it as any).aiCallLog?.userId).filter(Boolean))] as number[]
+    const userMap = new Map<number, User>()
+    if (internalIds.length > 0) {
+      const users = await this.userRepo.find({ where: { id: In(internalIds) }, select: ['id', 'userId', 'nickname'] })
+      users.forEach((u) => userMap.set(u.id, u))
+    }
+
     const mapped = items.map((item) => {
       const log: any = (item as any).aiCallLog || {}
+      const u = userMap.get(log.userId)
       let hitWords: string[] = []
       try { hitWords = item.hitWords ? JSON.parse(item.hitWords) : [] } catch { /* ignore */ }
       let safetyLevel = 0
@@ -59,8 +75,8 @@ export class AdminAiSafetyAuditController {
       }
       return {
         id: item.id,
-        userId: log.userId || 0,
-        userNickname: '',
+        userId: u?.userId || '',
+        userNickname: u?.nickname || '',
         callType: log.callType || '',
         content: item.originalContent || '',
         sensitiveWords: hitWords,

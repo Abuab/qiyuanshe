@@ -44,8 +44,18 @@
       <!-- 表格 -->
       <el-table :data="tableData" v-loading="loading" row-key="id">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="reporterId" label="举报人ID" width="100" />
-        <el-table-column prop="targetId" label="被举报人ID" width="110" />
+        <el-table-column label="举报人" width="130">
+          <template #default="{ row }">
+            <div>{{ row.reporterNickname || '-' }}</div>
+            <div style="color:#999;font-size:12px">ID:{{ row.reporterPublicId || '-' }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="被举报人" width="130">
+          <template #default="{ row }">
+            <div>{{ row.targetNickname || '-' }}</div>
+            <div style="color:#999;font-size:12px">ID:{{ row.targetPublicId || '-' }}</div>
+          </template>
+        </el-table-column>
         <el-table-column prop="type" label="类型" width="90">
           <template #default="{ row }">
             <el-tag :type="getTypeTagType(row.type)" size="small">
@@ -105,8 +115,8 @@
     <el-dialog v-model="viewDialogVisible" title="举报详情" width="500px">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="举报ID">{{ currentRow?.id }}</el-descriptions-item>
-        <el-descriptions-item label="举报人ID">{{ currentRow?.reporterId }}</el-descriptions-item>
-        <el-descriptions-item label="被举报对象ID">{{ currentRow?.targetId }}</el-descriptions-item>
+        <el-descriptions-item label="举报人">{{ currentRow?.reporterNickname || '-' }}（ID:{{ currentRow?.reporterPublicId || '-' }}）</el-descriptions-item>
+        <el-descriptions-item label="被举报对象">{{ currentRow?.targetNickname || '-' }}（ID:{{ currentRow?.targetPublicId || '-' }}）</el-descriptions-item>
         <el-descriptions-item label="类型">
           <el-tag :type="getTypeTagType(currentRow?.type)" size="small">
             {{ getTypeName(currentRow?.type) }}

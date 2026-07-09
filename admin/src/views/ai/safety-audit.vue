@@ -265,7 +265,7 @@ import request from '@/api/request'
 
 interface AuditItem {
   id: number
-  userId: number
+  userId: string
   userNickname: string
   callType: string
   content: string
