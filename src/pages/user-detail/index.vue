@@ -197,7 +197,7 @@
           </view>
           <view class="mk-review-body">
             <text class="mk-review-text">{{ matchmakerReviewText }}</text>
-            <text class="mk-review-quote">"</text>
+            <text class="mk-review-quote">”</text>
           </view>
         </view>
 
@@ -2497,48 +2497,52 @@ $text-hint: #999999;
 
 .fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
 
-// ===== 红娘评语（新设计：粉色圆角卡片，纯文字） =====
+// ===== 红娘评语（渐变粉色卡片，纯文字） =====
 .mk-review-card {
-  margin: 24rpx 24rpx;
-  background: #FFF0F3;
-  border-radius: 24rpx;
-  padding: 30rpx 32rpx;
+  margin: 24rpx 30rpx; // 卡片与外部模块间距
+  // 渐变粉色背景：从上到下柔和渐变（非纯色）
+  background: linear-gradient(180deg, #FFF5F7 0%, #FFEBF0 100%);
+  border-radius: 32rpx; // 加大圆角，强化卡片感
+  padding: 40rpx 36rpx; // 充足内边距，增加呼吸感
   position: relative;
   overflow: hidden;
+  // 柔和阴影，突出层级
+  box-shadow: 0 4rpx 24rpx rgba(255, 77, 111, 0.08);
 }
 .mk-review-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20rpx;
+  margin-bottom: 24rpx; // 标题与正文间距
 }
 .mk-review-title {
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 700;
-  color: #FF4D6F;
+  color: #FF4D6F; // 玫红色标题
 }
 .mk-review-dash {
-  font-size: 26rpx;
-  color: #FFB3C1;
+  font-size: 28rpx;
+  color: #FF4D6F; // 同标题色
+  opacity: 0.4; // 半透明装饰线
   letter-spacing: 2rpx;
 }
 .mk-review-body {
   position: relative;
 }
 .mk-review-text {
-  font-size: 28rpx;
-  color: #333;
-  line-height: 1.7;
-  white-space: pre-line;
+  font-size: 30rpx;
+  color: #1A1A1A;
+  line-height: 1.8; // 宽松行高，多行不拥挤
+  white-space: pre-line; // 保留换行，每条信息独立成行
 }
 .mk-review-quote {
   position: absolute;
-  right: -4rpx;
-  bottom: -16rpx;
-  font-size: 72rpx;
-  color: #FFD4DC;
+  right: 4rpx;
+  bottom: -8rpx;
+  font-size: 80rpx; // 大字号中文引号
+  color: #FF4D6F;
+  opacity: 0.3; // 半透明
   line-height: 1;
-  font-family: Georgia, serif;
 }
 </style>
 
