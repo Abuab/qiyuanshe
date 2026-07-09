@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Param,
   Query,
@@ -82,6 +83,16 @@ export class AdminMatchmakerCommentController {
   ) {
     const comment = await this.commentService.create(body)
     return Result.success(comment)
+  }
+
+  @Put(':id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.MATCHMAKER)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { content?: string; rating?: number },
+  ) {
+    const comment = await this.commentService.update(id, body)
+    return Result.success(comment, '更新成功')
   }
 
   @Delete(':id')

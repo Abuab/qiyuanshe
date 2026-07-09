@@ -61,6 +61,12 @@ export class MatchmakerCommentService {
       .execute()
   }
 
+  // 更新评语
+  async update(id: number, data: { content?: string; rating?: number }) {
+    await this.commentRepo.update(id, data)
+    return this.commentRepo.findOne({ where: { id }, relations: ['matchmaker', 'user'] })
+  }
+
   // 管理后台：获取所有评语
   async getAll(page = 1, limit = 20) {
     const [list, total] = await this.commentRepo.findAndCount({

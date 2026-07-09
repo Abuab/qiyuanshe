@@ -31,9 +31,10 @@
         <el-table-column label="时间" width="160">
           <template #default="{ row }">{{ row.createdAt?.slice(0, 16) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="80" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <el-button type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
+            <el-button type="primary" size="small" link @click="openEditDialog(row)">编辑</el-button>
+            <el-button type="danger" size="small" link @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -49,13 +50,15 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="showDialog" title="新增评语" width="500px">
+    <!-- 新增/编辑弹窗 -->
+    <el-dialog v-model="showDialog" :title="isEdit ? '编辑评语' : '新增评语'" width="520px">
       <el-form :model="form" label-width="80px">
-        <el-form-item label="红娘" required>
+        <el-form-item label="选择红娘" required>
           <el-select
             v-model="form.matchmakerId"
             placeholder="请选择红娘"
             filterable
+            :disabled="isEdit"
             style="width:100%"
           >
             <el-option
@@ -66,28 +69,45 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="会员" required>
+        <el-form-item label="选择会员" required>
           <el-select
             v-model="form.userId"
-            placeholder="请选择会员"
+            placeholder="输入ID或昵称搜索用户"
             filterable
+            :filter-method="filterUsers"
+            :loading="userSearchLoading"
+            :disabled="isEdit"
             style="width:100%"
+            @visible-change="onUserSelectVisibleChange"
           >
             <el-option
-              v-for="u in userOptions"
+              v-for="u in filteredUserOptions"
               :key="u.id"
               :label="`${u.nickname} (ID:${u.id})`"
               :value="u.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="评语" required>
-          <el-input v-model="form.content" type="textarea" :rows="4" placeholder="评语内容" maxlength="500" show-word-limit />
+        <el-form-item label="评语内容" required>
+          <el-input
+            v-model="form.content"
+            type="textarea"
+            :rows="5"
+            placeholder="请输入评语内容"
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate" :disabled="!form.matchmakerId || !form.userId || !form.content.trim()">确认</el-button>
+        <el-button
+          type="primary"
+          @click="handleSubmit"
+          :disabled="!form.matchmakerId || !form.userId || !form.content.trim()"
+        >
+          {{ isEdit ? '保存修改' : '确认' }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -106,11 +126,19 @@ interface MatchmakerOption { id: number; name: string }
 const loading = ref(false)
 const list = ref<any[]>([])
 const showDialog = ref(false)
-const form = reactive({ matchmakerId: null as number | null, userId: null as number | null, content: '' })
+const isEdit = ref(false)
+const editingId = ref(0)
+const userSearchLoading = ref(false)
+const form = reactive({
+  matchmakerId: null as number | null,
+  userId: null as number | null,
+  content: '',
+})
 const pagination = reactive({ page: 1, limit: 20, total: 0 })
 
 const matchmakerOptions = ref<MatchmakerOption[]>([])
 const userOptions = ref<UserOption[]>([])
+const filteredUserOptions = ref<UserOption[]>([])
 
 onMounted(() => {
   fetchList()
@@ -136,43 +164,110 @@ async function loadMatchmakers() {
   } catch (e) { console.error(e) }
 }
 
-async function loadUsers() {
+async function loadInitialUsers() {
+  userSearchLoading.value = true
   try {
-    const res = await adminUsers.list({ limit: 2000, page: 1 } as any)
+    const res = await adminUsers.list({ limit: 50, page: 1 } as any)
     if (res.success && res.data) {
       const users = (res.data as any).list || []
       userOptions.value = users.map((u: any) => ({ id: u.id, nickname: u.nickname }))
+      filteredUserOptions.value = [...userOptions.value]
     }
   } catch (e) { console.error(e) }
+  userSearchLoading.value = false
+}
+
+function onUserSelectVisibleChange(visible: boolean) {
+  if (visible && userOptions.value.length === 0) {
+    loadInitialUsers()
+  } else if (visible) {
+    filteredUserOptions.value = [...userOptions.value]
+  }
+}
+
+function filterUsers(keyword: string) {
+  if (!keyword) {
+    filteredUserOptions.value = [...userOptions.value]
+    return
+  }
+  userSearchLoading.value = true
+  const kw = keyword.toLowerCase()
+  // 本地先过滤
+  filteredUserOptions.value = userOptions.value.filter(
+    (u) => u.nickname.toLowerCase().includes(kw) || String(u.id) === kw,
+  )
+  // 同时远程搜索
+  adminUsers.list({ keyword, limit: 50, page: 1 } as any).then((res) => {
+    if (res.success && res.data) {
+      const remoteUsers = (res.data as any).list || []
+      const remoteMapped = remoteUsers.map((u: any) => ({ id: u.id, nickname: u.nickname }))
+      const merged = [...remoteMapped]
+      for (const u of userOptions.value) {
+        if (!merged.find((m) => m.id === u.id)) merged.push(u)
+      }
+      filteredUserOptions.value = merged.filter(
+        (u) => u.nickname.toLowerCase().includes(kw) || String(u.id) === kw,
+      )
+      for (const u of remoteMapped) {
+        if (!userOptions.value.find((existing) => existing.id === u.id)) {
+          userOptions.value.push(u)
+        }
+      }
+    }
+  }).finally(() => {
+    userSearchLoading.value = false
+  })
 }
 
 function openCreateDialog() {
+  isEdit.value = false
+  editingId.value = 0
   form.matchmakerId = null
   form.userId = null
   form.content = ''
-  if (userOptions.value.length === 0) {
-    loadUsers()
-  }
+  userOptions.value = []
+  filteredUserOptions.value = []
+  showDialog.value = true
+  loadInitialUsers()
+}
+
+function openEditDialog(row: any) {
+  isEdit.value = true
+  editingId.value = row.id
+  form.matchmakerId = row.matchmakerId
+  form.userId = row.userId
+  form.content = row.content || ''
+  userOptions.value = [{ id: row.userId, nickname: row.user?.nickname || '用户' + row.userId }]
+  filteredUserOptions.value = [...userOptions.value]
   showDialog.value = true
 }
 
-async function handleCreate() {
+async function handleSubmit() {
   if (!form.matchmakerId || !form.userId || !form.content.trim()) {
     ElMessage.warning('请填写完整信息')
     return
   }
   try {
-    const res = await adminSystem.createMatchmakerComment({
-      matchmakerId: form.matchmakerId,
-      userId: form.userId,
-      content: form.content.trim(),
-    })
-    if (res.success) {
-      ElMessage.success('创建成功')
-      showDialog.value = false
-      fetchList()
+    if (isEdit.value) {
+      await adminSystem.updateMatchmakerComment(editingId.value, {
+        content: form.content.trim(),
+      })
+      ElMessage.success('修改成功')
+    } else {
+      const res = await adminSystem.createMatchmakerComment({
+        matchmakerId: form.matchmakerId,
+        userId: form.userId,
+        content: form.content.trim(),
+      })
+      if (res.success) {
+        ElMessage.success('创建成功')
+      }
     }
-  } catch (e) { ElMessage.error('创建失败') }
+    showDialog.value = false
+    fetchList()
+  } catch (e) {
+    ElMessage.error(isEdit.value ? '修改失败' : '创建失败')
+  }
 }
 
 async function handleDelete(id: number) {

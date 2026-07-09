@@ -73,6 +73,9 @@ export const adminSystem = {
   createMatchmakerComment(data: any): Promise<ApiResponse> {
     return request.post('/admin/matchmaker-comments', data)
   },
+  updateMatchmakerComment(id: number, data: any): Promise<ApiResponse> {
+    return request.put(`/admin/matchmaker-comments/${id}`, data)
+  },
   deleteMatchmakerComment(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/matchmaker-comments/${id}`)
   },
