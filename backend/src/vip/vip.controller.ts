@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common'
 import { VipService } from './vip.service'
 import { JwtAuthGuard } from '../auth/guards'
@@ -51,7 +52,7 @@ export class VipController {
 
   /**
    * 模拟支付成功回调
-   * 真实环境由微信支付回调调用
+   * 真实环境由微信支付回调调用，此接口仅测试环境可用
    */
   @Put('orders/:orderNo/pay')
   @UseGuards(JwtAuthGuard)
@@ -59,6 +60,10 @@ export class VipController {
     @Param('orderNo') orderNo: string,
     @Body('transactionId') transactionId?: string,
   ) {
+    const mockPayEnabled = process.env.NODE_ENV !== 'production' || process.env.MOCK_PAY_ENABLED === 'true'
+    if (!mockPayEnabled) {
+      throw new BadRequestException('生产环境下模拟支付已禁用，请通过微信支付完成付款')
+    }
     if (!(await this.systemService.isVipEnabled())) {
       return Result.success(null, '功能维护中，请稍后再试')
     }
