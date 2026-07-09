@@ -29,7 +29,7 @@
         </el-table-column>
         <el-table-column prop="content" label="评语内容" min-width="200" show-overflow-tooltip />
         <el-table-column label="时间" width="160">
-          <template #default="{ row }">{{ row.createdAt?.slice(0, 16) }}</template>
+          <template #default="{ row }">{{ row.createdAt?.slice(0, 16).replace('T', ' ') }}</template>
         </el-table-column>
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">

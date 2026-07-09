@@ -197,7 +197,6 @@
           </view>
           <view class="mk-review-body">
             <text class="mk-review-text">{{ matchmakerReviewText }}</text>
-            <text class="mk-review-quote">”</text>
           </view>
         </view>
 
@@ -1372,7 +1371,8 @@ const personalityAdviceText = computed(() => {
 const matchmakerReviewText = computed(() => {
   const reviews = profileData.value?.matchmakerReviews
   if (!reviews?.length) return ''
-  return reviews.map((r: any) => r.content).filter(Boolean).join('\n')
+  // 存在多条时只展示最新一条（后端按 createdAt DESC 排序，取首条）
+  return reviews[0]?.content || ''
 })
 
 // 加载对方人格 + 浏览者自身测试状态（在资料加载后调用）
@@ -2518,12 +2518,12 @@ $text-hint: #999999;
 .mk-review-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #FF4D6F; // 玫红色标题
+  color: #FFA6BC; // 淡粉色标题
 }
 .mk-review-dash {
   font-size: 28rpx;
-  color: #FF4D6F; // 同标题色
-  opacity: 0.4; // 半透明装饰线
+  color: #FFA6BC; // 同标题色
+  opacity: 0.5; // 半透明装饰线
   letter-spacing: 2rpx;
 }
 .mk-review-body {
@@ -2534,15 +2534,6 @@ $text-hint: #999999;
   color: #1A1A1A;
   line-height: 1.8; // 宽松行高，多行不拥挤
   white-space: pre-line; // 保留换行，每条信息独立成行
-}
-.mk-review-quote {
-  position: absolute;
-  right: 4rpx;
-  bottom: -8rpx;
-  font-size: 80rpx; // 大字号中文引号
-  color: #FF4D6F;
-  opacity: 0.3; // 半透明
-  line-height: 1;
 }
 </style>
 

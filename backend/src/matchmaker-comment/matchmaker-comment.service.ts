@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { MatchRecord } from '../entities/MatchRecord'
+import { beijingISO } from '../common/utils/date-utils'
 
 @Injectable()
 export class MatchmakerCommentService {
@@ -69,12 +70,17 @@ export class MatchmakerCommentService {
 
   // 管理后台：获取所有评语
   async getAll(page = 1, limit = 20) {
-    const [list, total] = await this.commentRepo.findAndCount({
+    const [rows, total] = await this.commentRepo.findAndCount({
       relations: ['matchmaker', 'user'],
       order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     })
+    // createdAt 序列化默认走 toISOString() 输出 UTC，此处转为北京时间字符串
+    const list = rows.map((r) => ({
+      ...r,
+      createdAt: r.createdAt ? beijingISO(r.createdAt) : r.createdAt,
+    }))
     return { list, total, page, limit }
   }
 }
