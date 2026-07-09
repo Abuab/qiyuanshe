@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express'
 
 /**
  * HTTP 请求日志中间件
- * 记录每个请求的：方法 URL 状态码 响应耗时 IP User-Agent
+ * 记录每个请求的：方法 URL 状态码 响应耗时 IP
  */
 @Injectable()
 export class RequestLoggerMiddleware implements NestMiddleware {
@@ -17,7 +17,6 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     res.on('finish', () => {
       const duration = Date.now() - start
       const statusCode = res.statusCode
-      const userAgent = (req.headers['user-agent'] || '-').slice(0, 100)
 
       const message = `${method} ${originalUrl} ${statusCode} ${duration}ms - ${ip}`
 

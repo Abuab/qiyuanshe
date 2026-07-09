@@ -65,7 +65,8 @@ async function bootstrap() {
   )
 
   // HTTP 请求日志（方法 路径 状态码 耗时）
-  app.use(new RequestLoggerMiddleware().use)
+  const reqLogger = new RequestLoggerMiddleware()
+  app.use((req, res, next) => reqLogger.use(req, res, next))
 
   app.useGlobalFilters(new AllExceptionsFilter())
   app.useGlobalInterceptors(new TransformInterceptor())
