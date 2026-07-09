@@ -24,8 +24,8 @@ RUN npm prune --omit=dev
 # 生产阶段镜像
 FROM node:20-alpine AS production
 
-# 安装 dumb-init、curl（用于健康检查）、su-exec（用于启动脚本切换用户）和字体包（svg-captcha 需要）
-RUN apk add --no-cache dumb-init curl su-exec fontconfig ttf-dejavu
+# 安装 dumb-init、curl（用于健康检查）、su-exec（用于启动脚本切换用户）、字体包（svg-captcha 需要）和 tzdata（时区数据，使 TZ=Asia/Shanghai 生效）
+RUN apk add --no-cache dumb-init curl su-exec fontconfig ttf-dejavu tzdata
 
 # 设置工作目录
 WORKDIR /app

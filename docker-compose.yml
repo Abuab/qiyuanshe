@@ -131,6 +131,8 @@ services:
       # 服务端口
       PORT: 3000
       NODE_ENV: production
+      # 容器时区（北京时间）：影响 NestJS Logger 时间戳、Date.toString、toLocaleString 等
+      TZ: Asia/Shanghai
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
       CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
       # 堆上限 1024MB（容器 mem_limit 1536m）
