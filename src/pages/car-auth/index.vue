@@ -343,7 +343,7 @@ function handleSubmit() {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  margin-right: 28rpx;
+  margin-right: 48rpx;
   position: relative;
 }
 .upload-plus {
@@ -377,7 +377,6 @@ function handleSubmit() {
   position: relative;
   width: 200rpx;
   height: 200rpx;
-  margin-top: 16rpx;
 }
 .sample-badge {
   position: absolute;
