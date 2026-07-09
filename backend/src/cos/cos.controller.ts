@@ -1,8 +1,6 @@
-import { Controller, Get, Query, Res, UseGuards, Req, HttpStatus } from '@nestjs/common'
-import { Response, Request } from 'express'
+import { Controller, Get, Query, Res, HttpStatus } from '@nestjs/common'
+import { Response } from 'express'
 import { CosService } from './cos.service'
-import { OptionalJwtAuthGuard } from '../auth/guards/jwt-auth.guard'
-import { JwtService } from '@nestjs/jwt'
 import { Logger } from '@nestjs/common'
 
 /**
@@ -17,57 +15,19 @@ const SAFE_KEY_REGEX = /^uploads\/[a-zA-Z0-9_\-.]+(?:\/[a-zA-Z0-9_\-.]+)*$/
 export class CosController {
   private readonly logger = new Logger(CosController.name)
 
-  constructor(
-    private readonly cosService: CosService,
-    private readonly jwtService: JwtService,
-  ) {}
+  constructor(private readonly cosService: CosService) {}
 
   /**
-   * 图片读取接口：代理返回图片数据（适配小程序不支持 302 重定向到外部域名）。
+   * 图片读取接口：从本地磁盘流式返回图片数据。
    *
-   * GET /api/cos/image?key=uploads/avatar/123.jpg&token=<jwt>
-   * - 认证方式（两种之一即可）：
-   *   a. Authorization: Bearer <token> 请求头（web 端 fetch 自动携带）
-   *   b. ?token=<jwt> 查询参数（uni-app <image> 组件无法发送自定义头时使用）
+   * GET /api/cos/image?key=uploads/avatar/123.jpg
+   * - 无需认证（公开读取，适配小程序 <image> 组件无法携带自定义头及游客模式）
    * - key 格式严格校验（防路径穿越）
-   * - COS 可用 → 从 COS 获取并以流返回
-   * - COS 不可用 → 从本地磁盘读取返回
+   * - 仅从本地磁盘读取（已移除 COS SDK 图片代理以避免内存泄漏导致 OOM）
    */
   @Get()
-  @UseGuards(OptionalJwtAuthGuard)
-  async getImage(
-    @Query('key') key: string,
-    @Query('token') token: string,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-    // 1. 认证校验：优先从 JWT guard (Authorization header)，回退到 ?token= 查询参数
-    const userFromGuard = (req as any).user
-    let userId: number | null = null
-
-    if (userFromGuard && userFromGuard.sub) {
-      userId = userFromGuard.sub
-    } else if (token && typeof token === 'string') {
-      try {
-        const payload = this.jwtService.verify(token)
-        // 接受 access token（15min）和 refresh token（7d），
-        // 因为图片 URL 嵌入在页面中无法随 access token 自动刷新
-        if (payload && payload.sub && (payload.type === 'access' || payload.type === 'refresh')) {
-          userId = payload.sub
-        }
-      } catch {
-        // token 无效，继续返回 401
-      }
-    }
-
-    if (!userId) {
-      return res.status(HttpStatus.UNAUTHORIZED).json({
-        code: 401,
-        message: '请先登录',
-      })
-    }
-
-    // 2. 校验 key 存在且格式安全
+  async getImage(@Query('key') key: string, @Res() res: Response) {
+    // 1. 校验 key 存在且格式安全
     if (!key || typeof key !== 'string') {
       return res.status(HttpStatus.BAD_REQUEST).json({
         code: 400,
@@ -75,7 +35,7 @@ export class CosController {
       })
     }
 
-    // 3. 严格正则校验：防路径穿越，只允许 uploads/ 前缀
+    // 2. 严格正则校验：防路径穿越，只允许 uploads/ 前缀
     if (!SAFE_KEY_REGEX.test(key)) {
       this.logger.warn(`Rejected unsafe key: "${key}"`)
       return res.status(HttpStatus.FORBIDDEN).json({
@@ -84,7 +44,7 @@ export class CosController {
       })
     }
 
-    // 4. 二次校验：显式拒绝 .. 和绝对路径（兜底）
+    // 3. 二次校验：显式拒绝 .. 和绝对路径（兜底）
     if (key.includes('..') || key.startsWith('/') || key.startsWith('\\')) {
       this.logger.warn(`Rejected path traversal attempt: "${key}"`)
       return res.status(HttpStatus.FORBIDDEN).json({
@@ -93,40 +53,9 @@ export class CosController {
       })
     }
 
-    // 5. 尝试从 COS 代理获取（流式传输，避免 OOM）
-    //    先用 headObject 确认对象存在，避免对不存在的 key 调用 getObject 后
-    //    destroy 流而触发底层原生崩溃，同时保证缺失时能降级到本地。
-    if (this.cosService.isCosEnabled() && (await this.cosService.cosObjectExists(key))) {
-      const result = this.cosService.getImageFromCos(key)
-      if (result) {
-        this.logger.log(`COS proxy streaming for key="${key}"`)
-        res.setHeader('Content-Type', result.contentType)
-        res.setHeader('Cache-Control', 'public, max-age=86400')
-        result.stream.on('error', (err: Error) => {
-          if (err?.message === 'client disconnected') return
-          this.logger.error(`COS stream error for key="${key}": ${err.message}`)
-          if (!res.headersSent) {
-            res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ code: 500, message: '图片加载失败' })
-          } else {
-            res.end()
-          }
-        })
-        // 客户端提前断开时以 error 销毁上游流，触发 COS SDK sender.abort() 中止下载，
-        // 避免数据持续灌入无人消费的 PassThrough 缓冲区导致内存泄漏（OOM）。
-        res.once('close', () => {
-          if (!res.writableFinished && !result.stream.destroyed) {
-            result.stream.destroy(new Error('client disconnected'))
-          }
-        })
-        result.stream.pipe(res)
-        return
-      }
-    }
-
-    // 6. 降级：从本地磁盘流式读取
+    // 4. 从本地磁盘流式读取（不经过 COS SDK，避免 passThrough 内存泄漏）
     const localResult = this.cosService.getImageFromLocal(key)
     if (localResult) {
-      this.logger.log(`Local file streaming for key="${key}"`)
       res.setHeader('Content-Type', localResult.contentType)
       res.setHeader('Cache-Control', 'public, max-age=86400')
       localResult.stream.on('error', (err: Error) => {
@@ -138,7 +67,7 @@ export class CosController {
           res.end()
         }
       })
-      // 客户端提前断开时销毁文件读取流，释放文件句柄与缓冲，避免内存/句柄泄漏。
+      // 客户端提前断开时销毁文件读取流，释放文件句柄与缓冲
       res.once('close', () => {
         if (!res.writableFinished && !localResult.stream.destroyed) {
           localResult.stream.destroy()
@@ -148,7 +77,7 @@ export class CosController {
       return
     }
 
-    // 7. 彻底失败
+    // 5. 本地文件也不存在
     return res.status(HttpStatus.NOT_FOUND).json({
       code: 404,
       message: '图片不存在',
