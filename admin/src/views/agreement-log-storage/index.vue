@@ -230,6 +230,8 @@ onMounted(async () => {
   } catch {
     // ignore
   }
+  // 默认加载同意记录，避免初始为空
+  handleQueryLogs()
 })
 
 const onStorageTypeChange = (val: string) => {

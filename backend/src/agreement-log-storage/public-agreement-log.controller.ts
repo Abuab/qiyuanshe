@@ -29,13 +29,14 @@ export class PublicAgreementLogController {
       agreementType: string
       version?: string
       action: string
+      deviceInfo?: string
     },
     @Req() req: Request,
   ) {
     const userId = (req as any).user?.id || 0
     const ipAddress =
       ((req.headers['x-forwarded-for'] as string) || req.ip || '').split(',')[0]?.trim() || ''
-    const userAgent = (req.headers['user-agent'] as string) || ''
+    const userAgent = body.deviceInfo || (req.headers['user-agent'] as string) || ''
 
     await this.storageService.saveLog({
       userId,

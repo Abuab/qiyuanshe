@@ -1,7 +1,12 @@
-import { IsString, IsNotEmpty } from 'class-validator'
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator'
 
 export class WechatLoginDto {
   @IsString()
   @IsNotEmpty()
   code: string
+
+  /** 客户端设备信息（小程序请求不携带浏览器 UA，用于同意记录） */
+  @IsString()
+  @IsOptional()
+  deviceInfo?: string
 }

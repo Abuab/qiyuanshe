@@ -181,6 +181,22 @@ const handlePhonePopupClose = () => {
   showPhonePopup.value = false
 }
 
+/** 采集设备信息，作为 UserAgent 记录（小程序请求不携带浏览器 UA） */
+const getDeviceInfo = (): string => {
+  try {
+    const s = uni.getSystemInfoSync()
+    const parts = [
+      [s.brand, s.model].filter(Boolean).join(' '),
+      s.system,
+      s.version ? `WeChat/${s.version}` : '',
+      s.SDKVersion ? `SDK/${s.SDKVersion}` : '',
+    ].filter(Boolean)
+    return parts.join('; ')
+  } catch {
+    return ''
+  }
+}
+
 /** 微信授权 → 后端登录 */
 const performWechatLogin = async () => {
   try {
@@ -190,7 +206,7 @@ const performWechatLogin = async () => {
     })
     if (!loginRes.code) throw new Error('微信登录失败')
 
-    const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code })
+    const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code, deviceInfo: getDeviceInfo() })
     if (result?.user && result?.tokens) {
       const profileComplete = result.user.isProfileComplete !== false
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
@@ -222,6 +238,7 @@ const onGetPhoneNumber = async (e: any) => {
       code: loginRes.code,
       encryptedData: e.detail.encryptedData,
       iv: e.detail.iv,
+      deviceInfo: getDeviceInfo(),
     })
     if (result?.user && result?.tokens) {
       const profileComplete = result.user.isProfileComplete !== false
