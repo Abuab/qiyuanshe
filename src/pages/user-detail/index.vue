@@ -269,6 +269,26 @@
           </view>
         </view>
 
+        <!-- ========== 红娘评语 ========== -->
+        <view v-if="profileData.matchmakerReviews && profileData.matchmakerReviews.length" class="section-card">
+          <view class="section-title-row">
+            <text class="section-emoji">💬</text>
+            <text class="section-title">红娘评语</text>
+          </view>
+          <view v-for="(review, idx) in profileData.matchmakerReviews" :key="idx" class="review-item">
+            <view class="review-header">
+              <image v-if="review.matchmakerAvatar" :src="review.matchmakerAvatar" class="review-avatar" mode="aspectFill" />
+              <view v-else class="review-avatar-placeholder" />
+              <text class="review-name">{{ review.matchmakerName || '红娘' }}</text>
+              <view class="review-stars">
+                <text v-for="s in 5" :key="s" class="star" :class="{ filled: s <= review.rating }">★</text>
+              </view>
+            </view>
+            <text class="review-content">{{ review.content }}</text>
+            <text class="review-time">{{ review.createdAt?.slice(0, 10) }}</text>
+          </view>
+        </view>
+
         <!-- ========== 5. Ta希望你区 ========== -->
         <view class="section-card">
           <view class="section-title-row">
@@ -2477,5 +2497,38 @@ $text-hint: #999999;
 .fq-node-desc { font-size: 24rpx; color: #999; }
 
 .fq-disclaimer { font-size: 22rpx; color: #CCC; text-align: center; padding: 20rpx 0; }
+
+// ===== 红娘评语 =====
+.section-emoji { font-size: 32rpx; margin-right: 8rpx; }
+.review-item {
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+  &:last-child { border-bottom: none; padding-bottom: 0; }
+}
+.review-header {
+  display: flex; align-items: center; gap: 12rpx; margin-bottom: 12rpx;
+}
+.review-avatar {
+  width: 44rpx; height: 44rpx; border-radius: 50%; background: #f0f0f0;
+}
+.review-avatar-placeholder {
+  width: 44rpx; height: 44rpx; border-radius: 50%; background: #e8e8e8;
+}
+.review-name {
+  font-size: 26rpx; font-weight: 600; color: #333;
+}
+.review-stars {
+  display: flex; gap: 2rpx;
+}
+.star {
+  font-size: 24rpx; color: #ddd;
+  &.filled { color: #FF9500; }
+}
+.review-content {
+  font-size: 26rpx; color: #555; line-height: 1.6; display: block;
+}
+.review-time {
+  font-size: 22rpx; color: #bbb; margin-top: 8rpx; display: block;
+}
 </style>
 

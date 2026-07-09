@@ -9,6 +9,7 @@ import { UserTagSelection } from '../entities/UserTagSelection'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import { getDisplayName } from '../common/user-utils'
@@ -27,6 +28,7 @@ import {
   PhotoGuidanceConfig,
   UserProfileDetailResponse,
   UserAnswerItem,
+  MatchmakerReviewItem,
 } from './user-profile-detail.types'
 
 /**
@@ -53,6 +55,8 @@ export class UserProfileDetailService {
     private readonly matchReportRepo: Repository<AiMatchReport>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepo: Repository<QuestionAnswer>,
+    @InjectRepository(MatchmakerComment)
+    private readonly matchmakerCommentRepo: Repository<MatchmakerComment>,
     private readonly aiConfigService: AiConfigService,
   ) {}
 
@@ -83,6 +87,7 @@ export class UserProfileDetailService {
       aiProfile,
       hasMatchReport,
       answers,
+      matchmakerComments,
     ] = await Promise.all([
       this.photoRepo.find({
         where: { userId },
@@ -112,6 +117,11 @@ export class UserProfileDetailService {
         where: { userId, status: 1 },
         relations: ['question'],
         order: { createdAt: 'ASC' },
+      }),
+      this.matchmakerCommentRepo.find({
+        where: { userId, status: 1 },
+        relations: ['matchmaker'],
+        order: { createdAt: 'DESC' },
       }),
     ])
 
@@ -184,6 +194,13 @@ export class UserProfileDetailService {
       })),
       personalityTags: user.personalityTags,
       hopeTaTags: user.hopeTaTags,
+      matchmakerReviews: matchmakerComments.map((c): MatchmakerReviewItem => ({
+        matchmakerName: c.matchmaker?.name || '',
+        matchmakerAvatar: c.matchmaker?.avatar || '',
+        content: c.content,
+        rating: c.rating,
+        createdAt: c.createdAt?.toISOString() || '',
+      })),
     }
   }
 

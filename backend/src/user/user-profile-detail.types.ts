@@ -192,6 +192,8 @@ export interface UserProfileDetailResponse {
   personalityTags?: any
   /** 希望TA标签原始数据 */
   hopeTaTags?: any
+  /** 红娘评语列表 */
+  matchmakerReviews?: MatchmakerReviewItem[]
 }
 
 /** 用户问答项 */
@@ -202,6 +204,19 @@ export interface UserAnswerItem {
   answer: string
 }
 
+/** 红娘评语项 */
+export interface MatchmakerReviewItem {
+  /** 红娘姓名 */
+  matchmakerName: string
+  /** 红娘头像 */
+  matchmakerAvatar: string
+  /** 评语内容 */
+  content: string
+  /** 评分 */
+  rating: number
+  /** 创建时间 */
+  createdAt: string
+}
 /** 照片区引导配置 */
 export interface PhotoGuidanceConfig {
   /** 未登录提示文字 */
