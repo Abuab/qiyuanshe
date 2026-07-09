@@ -192,6 +192,29 @@ export class AuthService {
         phone: phoneData.purePhoneNumber,
         status: 2,
       })
+      // 必须先 save 获取 id，后续协议记录依赖 user.id
+      user = await this.userRepository.save(user)
+
+      // 新用户自动记录协议同意
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
+          userId: user.id,
+          agreementType: 'USER_AGREEMENT',
+          version: '1.0',
+          action: 'agree',
+          ipAddress: ipAddress || null,
+        }),
+      )
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
     } else {
       // 已有用户，绑定手机号（如果之前未绑定）
       if (!user.phone) {
@@ -203,35 +226,32 @@ export class AuthService {
       throw new UnauthorizedException('账号已被禁用')
     }
 
-    // 5. 自动记录协议同意（新用户 + 老用户补录）
-    if (!user.protocolAgreedAt || !user.phone) {
-      if (!user.protocolAgreedAt) {
-        await this.agreementRepo.save(
-          this.agreementRepo.create({
-            userId: user.id,
-            agreementType: 'USER_AGREEMENT',
-            version: '1.0',
-            action: 'agree',
-            ipAddress: ipAddress || null,
-          }),
-        )
-        // 同步写入 AgreementLogStorage
-        this.agreementLogStorage.saveLog({
+    // 5. 老用户协议同意补录（与 wechatLogin 保持一致）
+    if (!user.protocolAgreedAt) {
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
           userId: user.id,
           agreementType: 'USER_AGREEMENT',
           version: '1.0',
           action: 'agree',
-          ipAddress: ipAddress || '',
-          userAgent: userAgent || '',
-        }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
-        user.protocolAgreedAt = new Date()
-        user.protocolVersion = '1.0'
-      }
+          ipAddress: ipAddress || null,
+        }),
+      )
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
     }
 
     user.lastLoginAt = new Date()
     user.lastActiveAt = new Date()
-    user = await this.userRepository.save(user)
+    await this.userRepository.save(user)
 
     const tokens = this.generateToken(user)
     const userInfo = this.sanitizeUser(user)
