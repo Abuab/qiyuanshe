@@ -42,7 +42,7 @@
             <el-avatar :src="item.avatar" :size="36" />
             <div class="item-info">
               <span class="item-name">{{ item.nickname }}</span>
-              <span class="item-meta">ID:{{ item.id }} · {{ genderLabel(item.gender) }} · {{ item.age }}岁</span>
+              <span class="item-meta">ID:{{ item.publicUserId || item.id }} · {{ genderLabel(item.gender) }} · {{ item.age }}岁</span>
             </div>
           </div>
           <div v-if="leftList.length === 0 && !loadingLeft" class="empty-tip">暂无用户</div>
@@ -101,7 +101,7 @@
             <el-avatar :src="item.avatar" :size="36" />
             <div class="item-info">
               <span class="item-name">{{ item.nickname }}</span>
-              <span class="item-meta">ID:{{ item.id }} · {{ genderLabel(item.gender) }} · {{ item.age }}岁</span>
+              <span class="item-meta">ID:{{ item.publicUserId || item.id }} · {{ genderLabel(item.gender) }} · {{ item.age }}岁</span>
             </div>
           </div>
           <div v-if="rightList.length === 0" class="empty-tip">请从左侧选择用户</div>

@@ -154,7 +154,11 @@
       <el-table :data="logs" border stripe v-loading="logLoading" style="margin-top: 10px">
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="nickname" label="用户昵称" width="120" />
-        <el-table-column prop="userId" label="用户ID" width="80" />
+        <el-table-column prop="publicUserId" label="用户ID" width="100">
+          <template #default="{ row }">
+            {{ row.publicUserId || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="phone" label="手机号" width="130">
           <template #default="{ row }">
             {{ maskPhone(row.phone) }}

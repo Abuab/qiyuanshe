@@ -239,6 +239,15 @@ export class AgreementLogStorageService {
   async queryLogs(
     filters: AgreementLogQuery,
   ): Promise<{ items: any[]; total: number }> {
+    // 筛选框输入的可能是对外展示的 6 位公开 userId，先转换为内部主键 id
+    if (filters.userId) {
+      const u = await this.userRepo.findOne({
+        where: { userId: String(filters.userId) },
+        select: ['id'],
+      })
+      if (u) filters = { ...filters, userId: u.id }
+    }
+
     const result = await this.getActiveStrategy().query(filters)
 
     // 批量查询用户昵称和手机号
@@ -246,13 +255,15 @@ export class AgreementLogStorageService {
     if (userIds.length > 0) {
       const users = await this.userRepo.find({
         where: { id: In(userIds) },
-        select: ['id', 'nickname', 'phone'],
+        select: ['id', 'userId', 'nickname', 'phone'],
       })
       const userMap = new Map(users.map(u => [u.id, u]))
       result.items = result.items.map((item: any) => {
         const u = userMap.get(item.userId)
         return {
           ...item,
+          // 对外展示的 6 位公开 ID（与小程序端一致）
+          publicUserId: u?.userId || '',
           nickname: u?.nickname || '',
           phone: u?.phone || '',
         }
@@ -264,6 +275,14 @@ export class AgreementLogStorageService {
 
   /** 导出 CSV */
   async exportLogs(filters: AgreementLogExport): Promise<Buffer> {
+    // 与查询一致：将公开 userId 转换为内部主键 id
+    if (filters.userId) {
+      const u = await this.userRepo.findOne({
+        where: { userId: String(filters.userId) },
+        select: ['id'],
+      })
+      if (u) filters = { ...filters, userId: u.id }
+    }
     return this.getActiveStrategy().export(filters)
   }
 

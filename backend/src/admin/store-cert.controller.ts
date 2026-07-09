@@ -38,13 +38,13 @@ export class AdminStoreCertController {
     const params: any[] = []
 
     if (kw.length > 0) {
-      whereClause += ' AND (u.nickname LIKE ? OR CAST(u.id AS CHAR) LIKE ?)'
+      whereClause += ' AND (u.nickname LIKE ? OR u.userId LIKE ?)'
       params.push(`%${kw}%`, `%${kw}%`)
     }
 
     const [rows, countResult] = await Promise.all([
       this.dataSource.query(
-        `SELECT u.id, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
+        `SELECT u.id, u.userId, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
          FROM users u
          ${whereClause}
          ORDER BY u.id DESC
@@ -60,6 +60,7 @@ export class AdminStoreCertController {
     const currentYear = new Date().getFullYear()
     const list = rows.map((row: any) => ({
       id: row.id,
+      publicUserId: row.userId || '',
       nickname: row.nickname,
       avatar: row.avatar,
       gender: row.gender,
@@ -80,7 +81,7 @@ export class AdminStoreCertController {
   async getMembers() {
     const currentYear = new Date().getFullYear()
     const rows = await this.dataSource.query(
-      `SELECT u.id, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
+      `SELECT u.id, u.userId, u.nickname, u.avatar, u.gender, u.birthYear, u.phone
        FROM users u
        WHERE u.store_certified = 1 AND u.isDeleted = 0
        ORDER BY u.id DESC`,
@@ -88,6 +89,7 @@ export class AdminStoreCertController {
 
     const list = rows.map((row: any) => ({
       id: row.id,
+      publicUserId: row.userId || '',
       nickname: row.nickname,
       avatar: row.avatar,
       gender: row.gender,
