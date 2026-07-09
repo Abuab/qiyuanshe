@@ -147,63 +147,93 @@ export class AuthService {
     return { user: userInfo, tokens }
   }
 
-  async phoneLogin(sessionKey: string, encryptedData: string, iv: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
-    const phoneData = this.decryptPhone(sessionKey, encryptedData, iv)
+  async phoneLogin(code: string, encryptedData: string, iv: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+    // 1. code2Session 换取 openid + sessionKey
+    const session = await this.code2Session(code)
+    if (!session.openid) {
+      throw new UnauthorizedException('微信登录失败，无效的code')
+    }
 
+    // 2. 解密手机号
+    const phoneData = this.decryptPhone(session.session_key, encryptedData, iv)
     if (!phoneData || !phoneData.purePhoneNumber) {
       throw new UnauthorizedException('手机号解密失败')
     }
 
-    // 先查该手机号是否存在（包括已删除的），如果已删除则禁止登录
-    const existingUser = await this.userRepository.findOne({
-      where: { phone: phoneData.purePhoneNumber },
+    // 3. 检查该手机号是否已被其他账号绑定（排除已删除账号）
+    const phoneUser = await this.userRepository.findOne({
+      where: { phone: phoneData.purePhoneNumber, isDeleted: 0 },
     })
-    if (existingUser && existingUser.isDeleted === 1) {
-      throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
+    if (phoneUser && phoneUser.openid !== session.openid) {
+      throw new UnauthorizedException('该手机号已绑定其他账号')
     }
 
+    // 4. 按 openid 查找或创建用户
     let user = await this.userRepository.findOne({
-      where: { phone: phoneData.purePhoneNumber, isDeleted: 0 },
+      where: { openid: session.openid, isDeleted: 0 },
     })
 
     if (!user) {
-      throw new UnauthorizedException('该手机号未注册，请先通过微信登录注册')
+      // 检查是否已删除
+      const deletedUser = await this.userRepository.findOne({
+        where: { openid: session.openid, isDeleted: 1 },
+      })
+      if (deletedUser) {
+        throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
+      }
+      // 新用户注册
+      const randomSuffix = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
+      const userId = await this.userService.generateUserId()
+      user = this.userRepository.create({
+        openid: session.openid,
+        unionId: session.unionid || '',
+        nickname: `昵称${randomSuffix}`,
+        userId,
+        phone: phoneData.purePhoneNumber,
+        status: 2,
+      })
+    } else {
+      // 已有用户，绑定手机号（如果之前未绑定）
+      if (!user.phone) {
+        user.phone = phoneData.purePhoneNumber
+      }
     }
 
     if (user.status === 0) {
       throw new UnauthorizedException('账号已被禁用')
     }
 
-    // 如果用户尚未记录协议同意，自动补录（在禁用校验之后，避免为禁用用户创建协议记录）
-    if (!user.protocolAgreedAt) {
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
+    // 5. 自动记录协议同意（新用户 + 老用户补录）
+    if (!user.protocolAgreedAt || !user.phone) {
+      if (!user.protocolAgreedAt) {
+        await this.agreementRepo.save(
+          this.agreementRepo.create({
+            userId: user.id,
+            agreementType: 'USER_AGREEMENT',
+            version: '1.0',
+            action: 'agree',
+            ipAddress: ipAddress || null,
+          }),
+        )
+        // 同步写入 AgreementLogStorage
+        this.agreementLogStorage.saveLog({
           userId: user.id,
           agreementType: 'USER_AGREEMENT',
           version: '1.0',
           action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
-      // 同步写入 AgreementLogStorage
-      this.agreementLogStorage.saveLog({
-        userId: user.id,
-        agreementType: 'USER_AGREEMENT',
-        version: '1.0',
-        action: 'agree',
-        ipAddress: ipAddress || '',
-        userAgent: userAgent || '',
-      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
-      user.protocolAgreedAt = new Date()
-      user.protocolVersion = '1.0'
+          ipAddress: ipAddress || '',
+          userAgent: userAgent || '',
+        }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+        user.protocolAgreedAt = new Date()
+        user.protocolVersion = '1.0'
+      }
     }
 
     user.lastLoginAt = new Date()
     user.lastActiveAt = new Date()
-    await this.userRepository.save(user)
+    user = await this.userRepository.save(user)
 
     const tokens = this.generateToken(user)
-
     const userInfo = this.sanitizeUser(user)
 
     return { user: userInfo, tokens }

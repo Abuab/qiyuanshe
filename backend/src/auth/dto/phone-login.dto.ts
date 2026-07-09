@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, IsOptional } from 'class-validator'
 export class PhoneLoginDto {
   @IsString()
   @IsNotEmpty()
-  sessionKey: string
+  code: string
 
   @IsString()
   @IsNotEmpty()

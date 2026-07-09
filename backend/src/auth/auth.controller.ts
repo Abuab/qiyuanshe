@@ -46,7 +46,7 @@ export class AuthController {
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
     const userAgent = (dto.deviceInfo || req.headers['user-agent'] || '') as string
     const result = await this.authService.phoneLogin(
-      dto.sessionKey,
+      dto.code,
       dto.encryptedData,
       dto.iv,
       ipAddress,
