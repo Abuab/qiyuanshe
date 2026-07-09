@@ -371,6 +371,7 @@ function handleSubmit() {
   position: relative;
   width: 200rpx;
   height: 200rpx;
+  margin-top: 16rpx;
 }
 .sample-badge {
   position: absolute;
