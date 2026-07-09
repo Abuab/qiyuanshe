@@ -7,6 +7,7 @@ import * as fs from 'fs'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
+import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware'
 
 // 设置 Node.js 进程时区为北京时间（影响 Logger 时间戳、toLocaleString、Date.toString 等）
 process.env.TZ = 'Asia/Shanghai'
@@ -62,6 +63,9 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   )
+
+  // HTTP 请求日志（方法 路径 状态码 耗时）
+  app.use(new RequestLoggerMiddleware().use)
 
   app.useGlobalFilters(new AllExceptionsFilter())
   app.useGlobalInterceptors(new TransformInterceptor())

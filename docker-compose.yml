@@ -61,6 +61,8 @@ services:
       --maxmemory 256mb
       --maxmemory-policy allkeys-lru
       --tcp-keepalive 60
+    environment:
+      TZ: Asia/Shanghai
     volumes:
       - redis_data:/data
     networks:
@@ -177,6 +179,8 @@ services:
     ports:
       # 仅监听本机回环地址，安全访问通过 Nginx HTTPS 代理（443端口 / 路径）
       - "127.0.0.1:3001:80"
+    environment:
+      TZ: Asia/Shanghai
     networks:
       - lingtong_network
     depends_on:
@@ -217,6 +221,8 @@ services:
     depends_on:
       - api
       - admin
+    environment:
+      TZ: Asia/Shanghai
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s
