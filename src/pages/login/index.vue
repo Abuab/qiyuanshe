@@ -144,7 +144,7 @@ const handleAgree = () => {
 
 const handleDisagree = () => {
   showProtocol.value = false
-  uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
+  uni.switchTab({ url: '/pages/index/index' })
 }
 
 const handleSkipAuth = () => {
