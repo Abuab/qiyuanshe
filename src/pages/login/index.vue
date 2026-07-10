@@ -150,7 +150,7 @@ const handleDisagree = () => {
 const handleSkipAuth = () => {
   showProtocol.value = false
   showPhonePopup.value = false
-  uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/my/index' }) })
+  uni.switchTab({ url: '/pages/index/index' })
 }
 
 const openAgreement = () => {

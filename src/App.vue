@@ -7,6 +7,7 @@ import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloud
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
+import { get } from '@/utils/request'
 import MatchModal from '@/components/MatchModal/MatchModal.vue'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
 import { initEid } from '@/mp_ecard_sdk/main'
@@ -57,6 +58,22 @@ onShow((options: any) => {
   systemStore.loadSystemConfig().then(() => {
     logger.setTag(systemStore.appName)
   })
+
+  // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
+  const userStore = useUserStore()
+  if (userStore.isLoggedIn) {
+    get('/auth/profile').then((res: any) => {
+      if (res?.data) {
+        const p = res.data
+        userStore.updateUserInfo({
+          isVip: p.isVip,
+          vipExpireTime: p.vipExpireTime,
+          vipLevel: p.vipLevel,
+          vipPackageName: p.vipPackageName,
+        })
+      }
+    }).catch(() => { /* 静默失败 */ })
+  }
 
   // 每次切回应用时重试开启分享菜单
   uni.showShareMenu({

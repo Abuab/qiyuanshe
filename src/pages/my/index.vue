@@ -496,7 +496,7 @@ const goToAiPersonality = () => {
 // 金刚区「我的性格 / 测一测」图标点击
 const goMyPersonality = () => {
   reportCopyClick('my_personality_entry', myEntryItemId.value)
-  if (!isLoggedIn.value) { goToLogin(); return }
+  // 测一测允许游客参与
   if (personalityTested.value) {
     safeNavigateTo('/pages/personality/result')
   } else {

@@ -94,8 +94,13 @@ export const useUserStore = defineStore('user', () => {
   const updateUserInfo = (newUserInfo: Partial<UserInfo>) => {
     if (userInfo.value) {
       userInfo.value = { ...userInfo.value, ...newUserInfo }
-      isVip.value = (newUserInfo.isVip as boolean | undefined) || isVip.value
-      vipExpireTime.value = (newUserInfo.vipExpireTime as string | undefined) || vipExpireTime.value
+      // 使用 in 运算符而非 ||，避免 false/'' 被当作 falsy 跳过（如取消 VIP 时 isVip=false）
+      if ('isVip' in newUserInfo) {
+        isVip.value = !!newUserInfo.isVip
+      }
+      if ('vipExpireTime' in newUserInfo) {
+        vipExpireTime.value = newUserInfo.vipExpireTime ?? ''
+      }
     }
     secureStorage.setUserInfo(userInfo.value)
   }

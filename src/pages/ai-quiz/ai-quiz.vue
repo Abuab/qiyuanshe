@@ -83,14 +83,16 @@ function scrollToBottom() {
 // 已通过 scroll-into-view 绑定
 
 onMounted(() => {
-  if (!requireLogin()) return
-
+  // statusBarHeight 必须在登录检查之前获取，否则灵动岛机型顶部会被遮挡
   // #ifdef MP-WEIXIN
   try {
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
   } catch {}
   // #endif
+
+  if (!requireLogin()) return
+
   nextQuestion()
 })
 

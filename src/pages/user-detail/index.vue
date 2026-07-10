@@ -1358,7 +1358,7 @@ const instance = getCurrentInstance()
 const targetPersonality = ref<any>(null)      // 被浏览用户的简化人格视图
 const showPersonalityPopup = ref(false)
 const viewerTested = ref(false)                // 浏览者本人是否已测
-const viewerGuideText = ref('测测你的性格，看看你们合不合拍')
+const viewerGuideText = ref('测一测')
 const viewerGuideItemId = ref<number | undefined>(undefined)
 // 浏览者本人未测试即展示引导（不依赖对方是否已测，符合需求6）
 const showViewerTestGuide = computed(() => !viewerTested.value)
