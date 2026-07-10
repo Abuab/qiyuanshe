@@ -105,28 +105,28 @@ export const useSystemStore = defineStore('system', () => {
       const res = await get<SystemConfig>('/system/config')
       console.log('[SYSTEM] config res:', JSON.stringify(res))
       if (res) {
-        splashText.value = res.splashText || splashText.value
-        appName.value = res.appName !== undefined ? res.appName : appName.value
-        shareTitle.value = res.shareTitle !== undefined ? res.shareTitle : shareTitle.value
-        shareDesc.value = res.shareDesc || shareDesc.value
-        matchmakers.value = res.matchmakers || []
-        matchmakerHiText.value = res.matchmakerHiText || matchmakerHiText.value
+        splashText.value = res.splashText ?? splashText.value
+        appName.value = res.appName ?? appName.value
+        shareTitle.value = res.shareTitle ?? shareTitle.value
+        shareDesc.value = res.shareDesc ?? shareDesc.value
+        matchmakers.value = res.matchmakers ?? matchmakers.value
+        matchmakerHiText.value = res.matchmakerHiText ?? matchmakerHiText.value
         matchmakerShowHi.value = res.matchmakerShowHi !== undefined ? res.matchmakerShowHi : matchmakerShowHi.value
-        matchmakerButtonText.value = res.matchmakerButtonText || matchmakerButtonText.value
-        quickEntryNames.value = res.quickEntryNames || quickEntryNames.value
-        followEmptyText.value = res.followEmptyText || followEmptyText.value
-        followerEmptyText.value = res.followerEmptyText || followerEmptyText.value
-        redLineTerm.value = res.redLineTerm || redLineTerm.value
-        vipCardTexts.value = res.vipCardTexts || vipCardTexts.value
-        matchmakerSafetyLabel.value = res.matchmakerSafetyLabel || matchmakerSafetyLabel.value
-        matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
+        matchmakerButtonText.value = res.matchmakerButtonText ?? matchmakerButtonText.value
+        quickEntryNames.value = res.quickEntryNames ?? quickEntryNames.value
+        followEmptyText.value = res.followEmptyText ?? followEmptyText.value
+        followerEmptyText.value = res.followerEmptyText ?? followerEmptyText.value
+        redLineTerm.value = res.redLineTerm ?? redLineTerm.value
+        vipCardTexts.value = res.vipCardTexts ?? vipCardTexts.value
+        matchmakerSafetyLabel.value = res.matchmakerSafetyLabel ?? matchmakerSafetyLabel.value
+        matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
         showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
         chatEnabled.value = res.chatEnabled !== undefined ? res.chatEnabled : chatEnabled.value
         vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
-        defaultAvatar.value = res.defaultAvatar || defaultAvatar.value
+        defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
         leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
-        storeCert.value = res.storeCert || { name: '', address: '', latitude: 0, longitude: 0 }
-        icons.value = res.icons || DEFAULT_ICONS
+        storeCert.value = res.storeCert ?? storeCert.value
+        icons.value = res.icons ?? DEFAULT_ICONS
         console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
         saveToStorage()
         initialLoadDone = true
@@ -154,28 +154,28 @@ export const useSystemStore = defineStore('system', () => {
       try {
         const config = JSON.parse(storedConfig)
         if (!initialLoadDone) {
-          splashText.value = config.splashText || splashText.value
-          appName.value = config.appName || appName.value
-          shareTitle.value = config.shareTitle || shareTitle.value
-          shareDesc.value = config.shareDesc || shareDesc.value
-          matchmakers.value = config.matchmakers || matchmakers.value
-          matchmakerHiText.value = config.matchmakerHiText || matchmakerHiText.value
+          splashText.value = config.splashText ?? splashText.value
+          appName.value = config.appName ?? appName.value
+          shareTitle.value = config.shareTitle ?? shareTitle.value
+          shareDesc.value = config.shareDesc ?? shareDesc.value
+          matchmakers.value = config.matchmakers ?? matchmakers.value
+          matchmakerHiText.value = config.matchmakerHiText ?? matchmakerHiText.value
           matchmakerShowHi.value = config.matchmakerShowHi !== undefined ? config.matchmakerShowHi : matchmakerShowHi.value
-          matchmakerButtonText.value = config.matchmakerButtonText || matchmakerButtonText.value
-          quickEntryNames.value = config.quickEntryNames || quickEntryNames.value
-          followEmptyText.value = config.followEmptyText || followEmptyText.value
-          followerEmptyText.value = config.followerEmptyText || followerEmptyText.value
-          redLineTerm.value = config.redLineTerm || redLineTerm.value
-          vipCardTexts.value = config.vipCardTexts || vipCardTexts.value
-          matchmakerSafetyLabel.value = config.matchmakerSafetyLabel || matchmakerSafetyLabel.value
-          matchmakerSafetyBoundaryLabel.value = config.matchmakerSafetyBoundaryLabel || matchmakerSafetyBoundaryLabel.value
+          matchmakerButtonText.value = config.matchmakerButtonText ?? matchmakerButtonText.value
+          quickEntryNames.value = config.quickEntryNames ?? quickEntryNames.value
+          followEmptyText.value = config.followEmptyText ?? followEmptyText.value
+          followerEmptyText.value = config.followerEmptyText ?? followerEmptyText.value
+          redLineTerm.value = config.redLineTerm ?? redLineTerm.value
+          vipCardTexts.value = config.vipCardTexts ?? vipCardTexts.value
+          matchmakerSafetyLabel.value = config.matchmakerSafetyLabel ?? matchmakerSafetyLabel.value
+          matchmakerSafetyBoundaryLabel.value = config.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
           showOfficialAccountPrompt.value = config.showOfficialAccountPrompt !== undefined ? config.showOfficialAccountPrompt : showOfficialAccountPrompt.value
           chatEnabled.value = config.chatEnabled !== undefined ? config.chatEnabled : chatEnabled.value
           vipEnabled.value = config.vipEnabled !== undefined ? config.vipEnabled : vipEnabled.value
-          defaultAvatar.value = config.defaultAvatar || defaultAvatar.value
+          defaultAvatar.value = config.defaultAvatar ?? defaultAvatar.value
           leaveMessageEnabled.value = config.leaveMessageEnabled !== undefined ? config.leaveMessageEnabled : leaveMessageEnabled.value
-          storeCert.value = config.storeCert || { name: '', address: '', latitude: 0, longitude: 0 }
-          icons.value = config.icons || icons.value
+          storeCert.value = config.storeCert ?? storeCert.value
+          icons.value = config.icons ?? icons.value
         }
       } catch (e) {
         console.error('[SystemStore] Failed to parse system config:', e)

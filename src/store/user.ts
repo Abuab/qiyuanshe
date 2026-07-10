@@ -67,8 +67,8 @@ export const useUserStore = defineStore('user', () => {
   const login = (newToken: string, newUserInfo: UserInfo, profileComplete?: boolean) => {
     token.value = newToken
     userInfo.value = newUserInfo
-    isVip.value = newUserInfo.isVip || false
-    vipExpireTime.value = newUserInfo.vipExpireTime || ''
+    isVip.value = !!newUserInfo.isVip
+    vipExpireTime.value = newUserInfo.vipExpireTime ?? ''
     isProfileComplete.value = profileComplete ?? true
 
     secureStorage.setToken(newToken)
@@ -125,6 +125,8 @@ export const useUserStore = defineStore('user', () => {
 
     const arrayFields = ['personalityTags', 'hopeTaTags'] as const
 
+    const booleanFields = ['isRealName', 'isVip'] as const
+
     const updates: Partial<UserInfo> = {}
     let key: string
 
@@ -146,6 +148,11 @@ export const useUserStore = defineStore('user', () => {
     // 统一处理数组字段
     for (key of arrayFields) {
       if (Array.isArray(data[key])) (updates as any)[key] = data[key]
+    }
+
+    // 统一处理 boolean 字段（必须处理，否则 isRealName 等会被静默丢弃）
+    for (key of booleanFields) {
+      if (typeof data[key] === 'boolean') (updates as any)[key] = data[key]
     }
 
     Object.assign(userInfo.value, updates)
@@ -177,8 +184,8 @@ export const useUserStore = defineStore('user', () => {
     if (storedToken && storedUserInfo) {
       token.value = storedToken
       userInfo.value = storedUserInfo
-      isVip.value = storedUserInfo.isVip || false
-      vipExpireTime.value = storedUserInfo.vipExpireTime || ''
+      isVip.value = !!storedUserInfo.isVip
+      vipExpireTime.value = storedUserInfo.vipExpireTime ?? ''
       try {
         isProfileComplete.value = uni.getStorageSync('_qys_pc') !== '0'
       } catch (_) {
