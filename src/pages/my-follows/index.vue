@@ -90,6 +90,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 import { icons as iconConfig } from '@/config/icons'
+import { requireLogin } from '@/utils/auth'
 
 const systemStore = useSystemStore()
 const { appName, followEmptyText, followerEmptyText, icons } = storeToRefs(systemStore)
@@ -110,6 +111,8 @@ const followerNoMore = ref(false)
 const followEmptyIcon = computed(() => icons.value?.page?.followEmptyIcon || '')
 
 onLoad((options) => {
+  if (!requireLogin()) return
+
   const tab = (options as any)?.tab
   if (tab === 'followers') {
     activeTab.value = 'followers'

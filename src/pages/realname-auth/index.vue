@@ -127,6 +127,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { requireLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get } from '@/utils/request'
 import StoreCertPopup from './store-cert-popup.vue'
@@ -154,6 +155,8 @@ const storeCertAction = ref('去认证')
 const storeCertActionClass = ref('')
 
 onMounted(async () => {
+  if (!requireLogin()) return
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

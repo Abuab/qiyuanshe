@@ -153,6 +153,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { requireLogin } from '@/utils/auth'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -197,6 +198,8 @@ const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 
 onMounted(async () => {
+  if (!requireLogin()) return
+
   try {
     // #ifdef MP-WEIXIN
     // uni.getWindowInfo() 不返回 statusBarHeight，直接用系统 API

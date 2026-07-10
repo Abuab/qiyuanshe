@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
+import { requireLogin } from '@/utils/auth'
 
 const store = useUserStore()
 const isLoggedIn = computed(() => store.isLoggedIn)
@@ -40,6 +41,8 @@ const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 
 onMounted(() => {
+  if (!requireLogin()) return
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

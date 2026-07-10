@@ -83,7 +83,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
-import { getToken } from '@/utils/auth'
+import { getToken, requireLogin } from '@/utils/auth'
 import { getFullImageUrl } from '@/utils/common'
 
 const statusBarHeight = ref(20)
@@ -113,6 +113,8 @@ function refreshPreview() {
 }
 
 onMounted(() => {
+  if (!requireLogin()) return
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

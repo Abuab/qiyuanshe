@@ -137,6 +137,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { requireLogin } from '@/utils/auth'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 
@@ -180,6 +181,8 @@ const addUnlockedTarget = (userId: number, contact: string) => {
 const unlockedContact = ref('')
 
 onLoad((options: any) => {
+  if (!requireLogin()) return
+
   targetUserId.value = parseInt(options.userId) || 0
   targetNickname.value = decodeURIComponent(options.nickname || '')
   targetAvatar.value = getFullImageUrl(decodeURIComponent(options.avatar || '')) || icons.common.defaultAvatar

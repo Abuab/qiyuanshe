@@ -30,6 +30,7 @@ import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { safeNavigateBack } from '@/utils/navigate'
+import { requireLogin } from '@/utils/auth'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -39,6 +40,8 @@ const content = ref('')
 const images = ref<string[]>([])
 
 onMounted(() => {
+  if (!requireLogin()) return
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

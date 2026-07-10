@@ -59,6 +59,7 @@
 import { ref, nextTick, onMounted } from 'vue'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import { requireLogin } from '@/utils/auth'
 
 interface ChatMessage {
   type: 'ai' | 'user'
@@ -82,6 +83,8 @@ function scrollToBottom() {
 // 已通过 scroll-into-view 绑定
 
 onMounted(() => {
+  if (!requireLogin()) return
+
   // #ifdef MP-WEIXIN
   try {
     const sysInfo = uni.getSystemInfoSync()

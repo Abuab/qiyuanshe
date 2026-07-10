@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { requireLogin } from '@/utils/auth'
 
 const loaded = ref(false)
 const score = ref(0)
@@ -56,6 +57,8 @@ const tags = ref<string[]>([])
 const targetUserId = ref(0)
 
 onMounted(() => {
+  if (!requireLogin()) return
+
   const pages = getCurrentPages()
   const opts = (pages[pages.length - 1] as any)?.options || {}
   if (opts.targetUserId) {

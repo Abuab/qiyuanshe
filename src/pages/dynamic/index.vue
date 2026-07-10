@@ -251,6 +251,7 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
+import { requireLogin } from '@/utils/auth'
 import { useImageFallback } from '@/composables/useImageFallback'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -548,6 +549,8 @@ const goToUploadPhoto = () => {
 }
 
 const handleHi = (item: DynamicItem) => {
+  if (!requireLogin()) return
+
   if (item.userId === myUserId.value) {
     uni.showToast({ title: '这是你自己的动态', icon: 'none' })
     return
@@ -558,6 +561,8 @@ const handleHi = (item: DynamicItem) => {
 }
 
 const handleMatchmaker = async (item: DynamicItem) => {
+  if (!requireLogin()) return
+
   if (item.userId === myUserId.value) {
     uni.showToast({ title: '这是你自己的动态', icon: 'none' })
     return

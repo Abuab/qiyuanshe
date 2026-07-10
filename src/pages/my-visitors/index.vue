@@ -89,6 +89,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
+import { requireLogin } from '@/utils/auth'
 
 const systemStore = useSystemStore()
 const { appName } = storeToRefs(systemStore)
@@ -107,6 +108,8 @@ const viewNoMore = ref(false)
 const visitorNoMore = ref(false)
 
 onLoad((options: any) => {
+  if (!requireLogin()) return
+
   if (options?.tab === 'visitors') {
     activeTab.value = 'visitors'
   }

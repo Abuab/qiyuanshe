@@ -621,6 +621,7 @@ import request, { put, get } from '@/utils/request'
 import { secureStorage } from '@/utils/crypto'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
+import { requireLogin } from '@/utils/auth'
 import { setCropImageData } from '@/utils/crop-bridge'
 
 const systemStore = useSystemStore()
@@ -914,6 +915,8 @@ const confirmPersonalityPicker = () => {
 
 // ===== 初始化 =====
 onMounted(async () => {
+  if (!requireLogin()) return
+
   // 监听裁剪完成事件（备用通道）
   uni.$on('IMAGE_CROPPED', (data: any) => {
     if (data?.path) handleCroppedAvatar(data.path)

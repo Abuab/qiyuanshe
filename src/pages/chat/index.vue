@@ -202,6 +202,7 @@ import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
 import { useImageFallback } from '@/composables/useImageFallback'
 import { icons } from '@/config/icons'
+import { requireLogin } from '@/utils/auth'
 import aiChatSkillPanel from '@/components/ai-chat-skill-panel/ai-chat-skill-panel.vue'
 const { handleImageError } = useImageFallback()
 
@@ -267,6 +268,8 @@ const placeholder = computed(() => {
 
 // ===== 生命周期 =====
 onMounted(() => {
+  if (!requireLogin()) return
+
   try {
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
