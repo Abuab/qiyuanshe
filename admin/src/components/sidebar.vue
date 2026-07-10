@@ -59,12 +59,29 @@
           <span>审核管理</span>
           <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
         </template>
-        <el-menu-item index="/audit/list">审核列表</el-menu-item>
-        <el-menu-item index="/audit/queue">人工审核队列</el-menu-item>
-        <el-menu-item index="/single-promise">单身承诺审核</el-menu-item>
-        <el-menu-item index="/education-auth">学历认证审核</el-menu-item>
-        <el-menu-item index="/property-auth">房产认证审核</el-menu-item>
-        <el-menu-item index="/car-auth">车产认证审核</el-menu-item>
+        <el-menu-item index="/audit/list">
+          审核列表
+          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="sub-badge" />
+        </el-menu-item>
+        <el-menu-item index="/audit/queue">
+          人工审核队列
+        </el-menu-item>
+        <el-menu-item index="/single-promise">
+          单身承诺审核
+          <el-badge v-if="adminStore.pendingSinglePromiseCount > 0" :value="adminStore.pendingSinglePromiseCount" class="sub-badge" />
+        </el-menu-item>
+        <el-menu-item index="/education-auth">
+          学历认证审核
+          <el-badge v-if="adminStore.pendingEducationCount > 0" :value="adminStore.pendingEducationCount" class="sub-badge" />
+        </el-menu-item>
+        <el-menu-item index="/property-auth">
+          房产认证审核
+          <el-badge v-if="adminStore.pendingPropertyCount > 0" :value="adminStore.pendingPropertyCount" class="sub-badge" />
+        </el-menu-item>
+        <el-menu-item index="/car-auth">
+          车产认证审核
+          <el-badge v-if="adminStore.pendingCarCount > 0" :value="adminStore.pendingCarCount" class="sub-badge" />
+        </el-menu-item>
       </el-sub-menu>
 
       <el-menu-item v-if="canManageAudit" index="/chat/monitor">
@@ -365,6 +382,15 @@ function handleLogout() {
 
   :deep(.el-badge__content) {
     background-color: #F56C6C;
+  }
+}
+
+.sub-badge {
+  margin-left: auto;
+  margin-right: 4px;
+
+  :deep(.el-badge__content) {
+    background-color: #E6A23C;
   }
 }
 </style>

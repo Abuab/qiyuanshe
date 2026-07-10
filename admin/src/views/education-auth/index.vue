@@ -222,6 +222,7 @@ function handleApprove(row: EducationAuthItem) {
       await adminEducationAuth.audit(row.id, { status: 1 })
       ElMessage.success('审核通过')
       fetchList()
+      adminStore.fetchPendingAuditCount()
     } catch (e: any) {
       if (e !== 'cancel') {
         ElMessage.error(e?.message || '操作失败')
@@ -247,6 +248,7 @@ async function confirmReject() {
     ElMessage.success('已拒绝')
     rejectDialogVisible.value = false
     fetchList()
+    adminStore.fetchPendingAuditCount()
   } catch (e: any) {
     ElMessage.error(e?.message || '操作失败')
   } finally {

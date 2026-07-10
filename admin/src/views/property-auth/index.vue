@@ -171,6 +171,7 @@ async function approve(row: any) {
     await auditPropertyAuth({ id: row.id, status: 1 })
     ElMessage.success('已通过')
     fetchList()
+    adminStore.fetchPendingAuditCount()
   } catch (e: any) {
     ElMessage.error(e?.message || '操作失败')
   }
@@ -194,6 +195,7 @@ async function confirmReject() {
     ElMessage.success('已拒绝')
     rejectVisible.value = false
     fetchList()
+    adminStore.fetchPendingAuditCount()
   } catch (e: any) {
     ElMessage.error(e?.message || '操作失败')
   } finally {

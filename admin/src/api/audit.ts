@@ -44,7 +44,15 @@ export const adminAudit = {
     return request.get('/admin/audit/list', { params })
   },
 
-  pendingCount(): Promise<ApiResponse<{ profile: number; circlePost: number; dynamic: number; total: number }>> {
+  pendingCount(): Promise<ApiResponse<{
+    profile: number
+    education: number
+    property: number
+    car: number
+    singlePromise: number
+    circlePost: number
+    total: number
+  }>> {
     return request.get('/admin/audit/pending-count')
   },
 
