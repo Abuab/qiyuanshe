@@ -116,6 +116,8 @@ onLoad((options: any) => {
 })
 
 onMounted(async () => {
+  if (!requireLogin()) return
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
