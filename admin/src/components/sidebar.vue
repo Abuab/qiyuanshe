@@ -57,30 +57,30 @@
         <template #title>
           <el-icon><CircleCheck /></el-icon>
           <span>审核管理</span>
-          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="menu-badge" />
+          <span v-if="adminStore.pendingAuditCount > 0" class="count-badge title-badge">{{ adminStore.pendingAuditCount }}</span>
         </template>
         <el-menu-item index="/audit/list">
-          审核列表
-          <el-badge v-if="adminStore.pendingAuditCount > 0" :value="adminStore.pendingAuditCount" class="sub-badge" />
+          <span class="menu-label">审核列表</span>
+          <span v-if="adminStore.pendingAuditCount > 0" class="count-badge">{{ adminStore.pendingAuditCount }}</span>
         </el-menu-item>
         <el-menu-item index="/audit/queue">
-          人工审核队列
+          <span class="menu-label">人工审核队列</span>
         </el-menu-item>
         <el-menu-item index="/single-promise">
-          单身承诺审核
-          <el-badge v-if="adminStore.pendingSinglePromiseCount > 0" :value="adminStore.pendingSinglePromiseCount" class="sub-badge" />
+          <span class="menu-label">单身承诺审核</span>
+          <span v-if="adminStore.pendingSinglePromiseCount > 0" class="count-badge">{{ adminStore.pendingSinglePromiseCount }}</span>
         </el-menu-item>
         <el-menu-item index="/education-auth">
-          学历认证审核
-          <el-badge v-if="adminStore.pendingEducationCount > 0" :value="adminStore.pendingEducationCount" class="sub-badge" />
+          <span class="menu-label">学历认证审核</span>
+          <span v-if="adminStore.pendingEducationCount > 0" class="count-badge">{{ adminStore.pendingEducationCount }}</span>
         </el-menu-item>
         <el-menu-item index="/property-auth">
-          房产认证审核
-          <el-badge v-if="adminStore.pendingPropertyCount > 0" :value="adminStore.pendingPropertyCount" class="sub-badge" />
+          <span class="menu-label">房产认证审核</span>
+          <span v-if="adminStore.pendingPropertyCount > 0" class="count-badge">{{ adminStore.pendingPropertyCount }}</span>
         </el-menu-item>
         <el-menu-item index="/car-auth">
-          车产认证审核
-          <el-badge v-if="adminStore.pendingCarCount > 0" :value="adminStore.pendingCarCount" class="sub-badge" />
+          <span class="menu-label">车产认证审核</span>
+          <span v-if="adminStore.pendingCarCount > 0" class="count-badge">{{ adminStore.pendingCarCount }}</span>
         </el-menu-item>
       </el-sub-menu>
 
@@ -375,22 +375,33 @@ function handleLogout() {
   }
 }
 
-.menu-badge {
-  margin-left: 8px;
-  display: inline-flex;
-  align-items: center;
-
-  :deep(.el-badge__content) {
-    background-color: #F56C6C;
+// 子菜单项内文字占满，计数标靠右并垂直居中
+.sidebar-menu :deep(.el-menu-item) {
+  .menu-label {
+    flex: 1;
   }
 }
 
-.sub-badge {
+.count-badge {
+  flex-shrink: 0;
   margin-left: auto;
-  margin-right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background-color: #E6A23C;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
+}
 
-  :deep(.el-badge__content) {
-    background-color: #E6A23C;
-  }
+// 审核管理父级标题上的计数标：紧跟文字、红色
+.title-badge {
+  margin-left: 8px;
+  background-color: #F56C6C;
 }
 </style>
