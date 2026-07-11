@@ -121,12 +121,15 @@ export class AiFunQuizService {
       const redisKey = `ai:fun_quiz:answer:${userId}:${dateKey}`
       const count = await this.redis.incr(redisKey)
       if (count === 1) {
-        // 首次创建 key，在次日北京时间 00:00:00 过期
-        const now = new Date()
-        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-        tomorrow.setDate(tomorrow.getDate() + 1) // 北京时间 00:00 对应的 UTC 时间 ≈ UTC 16:00
-        const ttl = Math.ceil((tomorrow.getTime() - Date.now()) / 1000)
-        await this.redis.expire(redisKey, ttl > 0 ? ttl : 86400)
+        // 首次创建 key，设置为"距下一个北京零点的秒数"过期，与 dateKey 换天边界对齐，
+        // 避免 UTC 零点(=北京08:00)提前过期导致当天额度被重置
+        const beijingNow = new Date(Date.now() + 8 * 3600 * 1000)
+        const secsIntoBeijingDay =
+          beijingNow.getUTCHours() * 3600 +
+          beijingNow.getUTCMinutes() * 60 +
+          beijingNow.getUTCSeconds()
+        const ttl = 24 * 3600 - secsIntoBeijingDay + 60 // +60s 缓冲，确保跨过北京零点后旧 key 才过期
+        await this.redis.expire(redisKey, ttl)
       }
       remaining = Math.max(0, dailyLimit - count)
       if (count > dailyLimit) {
