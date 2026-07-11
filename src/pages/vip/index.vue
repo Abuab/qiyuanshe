@@ -161,15 +161,59 @@
         <image :src="aboutConfig.bannerUrl" mode="widthFix" class="banner-img" />
       </view>
 
-      <!-- 平台特点 -->
-      <view class="about-section" v-if="aboutConfig.title">
-        <text class="section-title">{{ aboutConfig.title }}</text>
-        <view class="feature-list">
-          <view class="feature-card" v-for="(item, idx) in aboutConfig.features" :key="idx">
-            <view class="feature-text">
-              <text class="feature-name">{{ item.name }}</text>
-              <text class="feature-desc">{{ item.desc }}</text>
+      <!-- 平台特点（纯 CSS 绘制，无图片/emoji） -->
+      <view class="pf-section" v-if="aboutConfig.title">
+        <!-- 顶部波浪 + 星星 -->
+        <view class="pf-waves">
+          <view class="pf-wave pf-wave1"></view>
+          <view class="pf-wave pf-wave2"></view>
+          <view class="pf-wave pf-wave3"></view>
+          <view class="pf-star pf-star1 pf-blink"></view>
+          <view class="pf-star pf-star2"></view>
+          <view class="pf-star pf-star3 pf-blink"></view>
+          <view class="pf-star pf-star4"></view>
+          <view class="pf-star pf-star5 pf-blink"></view>
+          <view class="pf-star pf-star6"></view>
+        </view>
+        <!-- 中间爱心装饰 -->
+        <view class="pf-hero">
+          <view class="pf-heart"></view>
+          <view class="pf-dots"><view class="pf-dot"></view><view class="pf-dot"></view></view>
+        </view>
+        <!-- 标题 -->
+        <view class="pf-title">{{ aboutConfig.title }}</view>
+        <view class="pf-line"></view>
+        <!-- 卖点卡片 -->
+        <view class="pf-list">
+          <view class="pf-card" v-for="(item, idx) in aboutConfig.features" :key="idx">
+            <view class="pf-icon">
+              <view class="ic-house" v-if="idx % 4 === 0">
+                <view class="h-sign"></view>
+                <view class="h-roof"></view>
+                <view class="h-body"><view class="h-door"></view></view>
+              </view>
+              <view class="ic-trophy" v-else-if="idx % 4 === 1">
+                <view class="t-handle t-left"></view>
+                <view class="t-handle t-right"></view>
+                <view class="t-cup"></view>
+                <view class="t-base"></view>
+              </view>
+              <view class="ic-chart" v-else-if="idx % 4 === 2">
+                <view class="c-line c-line1"></view>
+                <view class="c-line c-line2"></view>
+                <view class="c-node c-node1"></view>
+                <view class="c-node c-node2"></view>
+                <view class="c-bar c-bar1"></view>
+                <view class="c-bar c-bar2"></view>
+                <view class="c-bar c-bar3"></view>
+              </view>
+              <view class="ic-couple" v-else>
+                <view class="mini-heart"></view>
+                <view class="person p-left"><view class="p-head"></view><view class="p-body"></view></view>
+                <view class="person p-right"><view class="p-head"></view><view class="p-body"></view></view>
+              </view>
             </view>
+            <text class="pf-text">{{ item.name }}</text>
           </view>
         </view>
       </view>
@@ -1195,5 +1239,130 @@ onShow(() => {
   color: #999;
   line-height: 1.5;
 }
+
+/* ===== 平台特点（纯 CSS 绘制） ===== */
+.pf-section {
+  position: relative;
+  margin: 24rpx 32rpx;
+  padding: 40rpx 32rpx 32rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, #D4B8F0, #B8A0E0);
+  overflow: hidden;
+}
+.pf-waves { position: absolute; top: 0; left: 0; right: 0; height: 220rpx; pointer-events: none; }
+.pf-wave { position: absolute; border-radius: 50%; }
+.pf-wave1 { width: 380rpx; height: 190rpx; background: rgba(150, 110, 200, 0.18); top: -70rpx; left: -50rpx; transform: rotate(-15deg); }
+.pf-wave2 { width: 340rpx; height: 170rpx; background: rgba(205, 150, 225, 0.18); top: -55rpx; right: -40rpx; transform: rotate(30deg); }
+.pf-wave3 { width: 300rpx; height: 150rpx; background: rgba(175, 135, 215, 0.15); top: -30rpx; left: 130rpx; }
+.pf-star {
+  position: absolute;
+  background: #FFD700;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.pf-star1 { width: 18rpx; height: 18rpx; top: 24rpx; left: 56rpx; }
+.pf-star2 { width: 12rpx; height: 12rpx; top: 60rpx; left: 180rpx; }
+.pf-star3 { width: 16rpx; height: 16rpx; top: 30rpx; right: 90rpx; }
+.pf-star4 { width: 14rpx; height: 14rpx; top: 70rpx; right: 40rpx; }
+.pf-star5 { width: 20rpx; height: 20rpx; top: 100rpx; left: 40rpx; }
+.pf-star6 { width: 12rpx; height: 12rpx; top: 110rpx; right: 120rpx; }
+.pf-blink { animation: pf-blink 1.8s ease-in-out infinite; }
+@keyframes pf-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.pf-hero { position: relative; height: 300rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.pf-heart { position: relative; width: 120rpx; height: 108rpx; }
+.pf-heart::before,
+.pf-heart::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 60rpx;
+  width: 60rpx;
+  height: 96rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 60rpx 60rpx 0 0;
+  transform: rotate(-45deg);
+  transform-origin: 0 100%;
+}
+.pf-heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+.pf-dots { display: flex; gap: 24rpx; margin-top: 28rpx; }
+.pf-dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: rgba(255, 255, 255, 0.25); }
+
+.pf-title { position: relative; text-align: center; color: #fff; font-weight: bold; font-size: 40rpx; }
+.pf-line { width: 80rpx; height: 6rpx; border-radius: 3rpx; background: #FFD700; margin: 12rpx auto 0; }
+
+.pf-list { position: relative; margin-top: 32rpx; }
+.pf-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+.pf-card + .pf-card { margin-top: 24rpx; }
+.pf-text { font-size: 32rpx; font-weight: bold; color: #333; }
+.pf-icon {
+  position: relative;
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFB6C1, #FFD4A0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+}
+
+/* 图标一：小房子 */
+.ic-house { position: relative; width: 40rpx; height: 52rpx; }
+.h-sign { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20rpx; height: 4rpx; background: #FFB6C1; border-radius: 2rpx; }
+.h-roof { position: absolute; top: 8rpx; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20rpx solid transparent; border-right: 20rpx solid transparent; border-bottom: 16rpx solid #fff; }
+.h-body { position: absolute; top: 24rpx; left: 50%; transform: translateX(-50%); width: 32rpx; height: 24rpx; background: #fff; border-radius: 0 0 4rpx 4rpx; }
+.h-door { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 8rpx; height: 12rpx; background: #FF9A56; border-radius: 2rpx 2rpx 0 0; }
+
+/* 图标二：奖杯 */
+.ic-trophy { position: relative; width: 40rpx; height: 44rpx; }
+.t-cup { position: absolute; top: 4rpx; left: 50%; transform: translateX(-50%); width: 22rpx; height: 0; border-bottom: 26rpx solid #fff; border-left: 6rpx solid transparent; border-right: 6rpx solid transparent; }
+.t-base { position: absolute; bottom: 2rpx; left: 50%; transform: translateX(-50%); width: 20rpx; height: 6rpx; background: #fff; border-radius: 2rpx; }
+.t-handle { position: absolute; top: 6rpx; width: 12rpx; height: 18rpx; border: 3rpx solid #fff; border-radius: 50%; }
+.t-left { left: 2rpx; border-right: none; }
+.t-right { right: 2rpx; border-left: none; }
+
+/* 图标三：上升图表 */
+.ic-chart { position: relative; width: 42rpx; height: 32rpx; }
+.c-bar { position: absolute; bottom: 0; width: 6rpx; background: #fff; border-radius: 3rpx; }
+.c-bar1 { left: 4rpx; height: 12rpx; }
+.c-bar2 { left: 18rpx; height: 20rpx; }
+.c-bar3 { left: 32rpx; height: 16rpx; }
+.c-line { position: absolute; height: 2rpx; background: #fff; transform-origin: left center; }
+.c-line1 { left: 7rpx; bottom: 12rpx; width: 16rpx; transform: rotate(-27deg); }
+.c-line2 { left: 21rpx; bottom: 20rpx; width: 15rpx; transform: rotate(15deg); }
+.c-node { position: absolute; width: 5rpx; height: 5rpx; background: #fff; transform: rotate(45deg); }
+.c-node1 { left: 19rpx; bottom: 18rpx; }
+.c-node2 { left: 33rpx; bottom: 14rpx; }
+
+/* 图标四：双人+爱心 */
+.ic-couple { position: relative; width: 52rpx; height: 40rpx; }
+.person { position: absolute; bottom: 4rpx; }
+.p-left { left: 4rpx; }
+.p-right { right: 4rpx; }
+.p-head { width: 14rpx; height: 14rpx; border-radius: 50%; background: #fff; margin: 0 auto; }
+.p-body { width: 0; height: 0; margin-top: 2rpx; border-left: 5rpx solid transparent; border-right: 5rpx solid transparent; border-bottom: 16rpx solid #fff; }
+.mini-heart { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14rpx; height: 12rpx; }
+.mini-heart::before,
+.mini-heart::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 7rpx;
+  width: 7rpx;
+  height: 11rpx;
+  background: #FF6B9D;
+  border-radius: 7rpx 7rpx 0 0;
+  transform: rotate(-45deg);
+  transform-origin: 0 100%;
+}
+.mini-heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
 
 </style>
