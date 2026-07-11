@@ -29,25 +29,6 @@
       scroll-y
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '300rpx' }"
     >
-      <!-- 头部特权 -->
-      <view class="header-section">
-        <text class="header-title">开通会员，享受专属特权</text>
-        <view class="benefits-row">
-          <view class="benefit-item">
-            <text class="benefit-label">无限畅聊</text>
-          </view>
-          <view class="benefit-item">
-            <text class="benefit-label">优先推荐</text>
-          </view>
-          <view class="benefit-item">
-            <text class="benefit-label">查看访客</text>
-          </view>
-          <view class="benefit-item">
-            <text class="benefit-label">专属标识</text>
-          </view>
-        </view>
-      </view>
-
       <!-- 资料置顶（VIP 置顶卡） -->
       <view v-if="systemStore.vipEnabled" class="topcard-card" @tap="handleUseTopCard">
         <view class="topcard-left">
@@ -61,7 +42,7 @@
 
       <!-- 套餐选择 -->
       <view class="packages-section">
-        <text class="section-title">选择套餐</text>
+        <text class="section-title">会员套餐</text>
         <view class="packages-list">
           <view
             v-for="pkg in packages"
@@ -89,21 +70,14 @@
         </view>
       </view>
 
-      <!-- 支付方式 -->
-      <view class="payment-section">
-        <text class="section-title">支付方式</text>
-        <view class="payment-method selected">
-          <view class="wechat-icon">微</view>
-          <text class="method-name">微信支付</text>
-          <text class="check-mark">✓</text>
-        </view>
-      </view>
-
       <!-- 安全征婚提示 -->
       <view class="safety-tips">
         <text class="tips-title">安全征婚提示</text>
         <view class="tips-list">
-          <text v-for="(tip, idx) in safetyTips" :key="idx" class="tip-item">{{ idx + 1 }}. {{ tip }}</text>
+          <text class="tips-intro">在以下情况下请不要轻易透露你的联系方式（如：电话、手机号码、邮箱、即时通信、通信地址等）</text>
+          <text class="tip-item">1. 在未充分了解对方前，请不要轻易透露你的联系方式。</text>
+          <text class="tip-item">2. 当对方无相片或资料填写不完整时，请不要轻易透露你的联系方式。</text>
+          <text class="tip-item">3. 相亲过程中，如遇对方提及借款、投资或索要礼物等行为，请务必提高警惕，谨防受骗，并及时举报。</text>
         </view>
       </view>
 
@@ -130,8 +104,8 @@
             <!-- 图标1: 晕眩表情 -->
             <view v-if="idx === 0" class="cd-circ cd-circ-red">
               <view class="cd-dizzy">
-                <view class="dz-eye dz-left"><view class="dz-pupil"></view></view>
-                <view class="dz-eye dz-right"><view class="dz-pupil"></view></view>
+                <view class="dz-dot dz-left-dot"></view>
+                <view class="dz-dot dz-right-dot"></view>
                 <view class="dz-mouth"></view>
               </view>
             </view>
@@ -219,13 +193,8 @@
               </view>
             </view>
             <view v-else class="cd-svc-icon cd-svc-grad-blue">
-              <view class="si-bubble">
-                <view class="bu-box">
-                  <view class="bu-dot"></view>
-                  <view class="bu-dot"></view>
-                  <view class="bu-dot"></view>
-                </view>
-                <view class="bu-tail"></view>
+              <view class="si-bubble-simple">
+                <view class="bs-box"></view>
               </view>
             </view>
             <view class="cd-svc-text">
@@ -414,7 +383,7 @@ const currentVipDays = computed(() => {
   return pkg ? pkg.durationDays : 0
 })
 const vipActionLabel = computed(() => {
-  if (!userStore.isVipValid) return '合计'
+  if (!userStore.isVipValid) return ''
   if (!selectedPackage.value) return '续期/升级'
   if (selectedPackage.value.durationDays <= currentVipDays.value) return '续期'
   return '升级套餐'
@@ -592,26 +561,7 @@ async function fetchAboutConfig() {
   }
 }
 
-// ===== 安全征婚提示 =====
-const safetyTips = ref<string[]>([
-  '请认准平台官方客服，谨防冒充人员',
-  '首次见面请选择公共场合，确保安全',
-  '交往过程中请勿轻易转账、借贷',
-  '如遇可疑行为请及时向平台举报',
-  '平台将对违规用户进行封禁处理',
-])
-
-async function fetchSafetyTips() {
-  try {
-    const { get: getWithoutToast } = await import('@/utils/request')
-    const res: any = await getWithoutToast('/vip/safety-tips')
-    if (res?.tips?.length) {
-      safetyTips.value = res.tips
-    }
-  } catch {
-    // 保持默认值
-  }
-}
+// ===== 安全征婚提示（固定文案） =====
 
 function handleBack() {
   safeNavigateBack()
@@ -732,7 +682,6 @@ onMounted(() => {
   fetchPackagesAndProfile()
   fetchCustomConfig()
   fetchAboutConfig()
-  fetchSafetyTips()
   loadTopCardStatus()
 })
 
@@ -1108,8 +1057,8 @@ onShow(() => {
 .tips-title {
   display: block;
   font-size: 16px;
-  font-weight: 800;
-  color: #333;
+  font-weight: 600;
+  color: #888;
   margin-bottom: 10px;
 }
 
@@ -1121,9 +1070,17 @@ onShow(() => {
 
 .tip-item {
   font-size: 14px;
-  color: #555;
+  color: #333;
   font-weight: 500;
   line-height: 1.6;
+}
+
+.tips-intro {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  line-height: 1.6;
+  margin-bottom: 4px;
 }
 
 .bottom-spacer {
@@ -1281,15 +1238,11 @@ onShow(() => {
 .cd-circ-pink { background: linear-gradient(135deg, #FF6B9D, #FF8FAB); }
 .cd-circ-purple { background: linear-gradient(135deg, #A55EEA, #C084FC); }
 
-// 图标1：晕眩表情
+// 图标1：晕眩表情（两眼改为纯点）
 .cd-dizzy { position: relative; width: 60rpx; height: 50rpx; }
-.dz-eye {
-  position: absolute; top: 10rpx; width: 20rpx; height: 20rpx;
-  border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center;
-}
-.dz-left { left: 6rpx; }
-.dz-right { right: 6rpx; }
-.dz-pupil { width: 8rpx; height: 8rpx; border-radius: 50%; background: #FF4444; margin-top: -4rpx; margin-left: -4rpx; }
+.dz-dot { position: absolute; top: 14rpx; width: 6rpx; height: 6rpx; border-radius: 50%; background: #fff; }
+.dz-left-dot { left: 16rpx; }
+.dz-right-dot { right: 16rpx; }
 .dz-mouth { position: absolute; bottom: 4rpx; left: 50%; transform: translateX(-50%); width: 28rpx; height: 14rpx; border-bottom: 3rpx solid #fff; border-radius: 0 0 50% 50%; }
 
 // 图标2：指南针
@@ -1400,11 +1353,9 @@ onShow(() => {
 .pp-body { position: absolute; top: 16rpx; left: 1rpx; width: 0; height: 0; border-left: 10rpx solid transparent; border-right: 10rpx solid transparent; border-bottom: 16rpx solid #fff; }
 .pp-pin { position: absolute; bottom: 4rpx; right: 6rpx; width: 18rpx; height: 22rpx; border-radius: 50% 50% 50% 0; background: #FFD700; transform: rotate(-45deg); }
 
-// 服务图标8：对话框
-.si-bubble { position: relative; width: 48rpx; height: 38rpx; }
-.bu-box { display: flex; align-items: center; justify-content: center; gap: 6rpx; width: 36rpx; height: 26rpx; background: #fff; border-radius: 8rpx; }
-.bu-dot { width: 5rpx; height: 5rpx; border-radius: 50%; background: #A29BFE; }
-.bu-tail { position: absolute; bottom: 0; left: 0; width: 0; height: 0; border-left: 6rpx solid transparent; border-right: 0rpx solid transparent; border-top: 8rpx solid #fff; }
+// 服务图标8：纯圆角气泡（居中）
+.si-bubble-simple { display: flex; align-items: center; justify-content: center; }
+.bs-box { width: 36rpx; height: 24rpx; background: #fff; border-radius: 8rpx; }
 
 // ===== 关于我们 =====
 .feature-list {

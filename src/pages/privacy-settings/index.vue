@@ -85,10 +85,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
-import { put } from '@/utils/request'
+import { useUserStore } from '@/store/user'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const systemStore = useSystemStore()
+const userStore = useUserStore()
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
 const showDialog = ref(false)
@@ -129,17 +130,20 @@ const closeDeactivateDialog = () => {
   showDialog.value = false
 }
 
-const confirmDeactivate = async () => {
+const confirmDeactivate = () => {
+  // 撤回同意协议：仅清除本地"已同意协议"标记并退回游客态，不删除/注销账号
+  showDialog.value = false
   try {
-    await put('/users/deactivate')
-    uni.showToast({ title: '已注销', icon: 'success' })
-    showDialog.value = false
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/index/index' })
-    }, 1500)
-  } catch {
-    uni.showToast({ title: '操作失败', icon: 'none' })
-  }
+    uni.removeStorageSync('protocolAgreed')
+    uni.removeStorageSync('hasAgreedProtocol')
+    uni.removeStorageSync('privacy_agreed')
+    uni.removeStorageSync('privacy_agreed_at')
+  } catch (_) { /* ignore */ }
+  uni.showToast({ title: '已撤回同意', icon: 'success' })
+  setTimeout(() => {
+    // logout 会清除登录态并 reLaunch 到游客首页；账号仍保留，可重新登录
+    userStore.logout()
+  }, 1200)
 }
 
 const handleDeactivate = () => {
