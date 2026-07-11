@@ -43,12 +43,29 @@ export const secureStorage = {
     uni.removeStorageSync('_qys_rt')
   },
 
-  // ===== 协议同意 =====
+  // ===== 协议同意（统一入口） =====
   setProtocolAgreed() {
     uni.setStorageSync('protocolAgreed', true)
   },
   isProtocolAgreed(): boolean {
     return !!uni.getStorageSync('protocolAgreed')
+  },
+  setPrivacyAgreed() {
+    uni.setStorageSync('privacy_agreed', '1')
+    uni.setStorageSync('privacy_agreed_at', new Date().toISOString())
+  },
+  isPrivacyAgreed(): boolean {
+    return !!uni.getStorageSync('privacy_agreed')
+  },
+  /** 撤回所有协议同意标记（撤回同意协议时调用） */
+  revokeAllAgreements() {
+    try {
+      uni.removeStorageSync('protocolAgreed')
+      uni.removeStorageSync('hasAgreedProtocol')
+      uni.removeStorageSync('privacy_agreed')
+      uni.removeStorageSync('privacy_agreed_at')
+      uni.removeStorageSync('agreement_content')
+    } catch (_) { /* ignore */ }
   },
 
   // ===== 清空全部 =====

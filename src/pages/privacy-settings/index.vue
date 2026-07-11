@@ -86,6 +86,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { secureStorage } from '@/utils/crypto'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const systemStore = useSystemStore()
@@ -133,15 +134,9 @@ const closeDeactivateDialog = () => {
 const confirmDeactivate = () => {
   // 撤回同意协议：仅清除本地"已同意协议"标记并退回游客态，不删除/注销账号
   showDialog.value = false
-  try {
-    uni.removeStorageSync('protocolAgreed')
-    uni.removeStorageSync('hasAgreedProtocol')
-    uni.removeStorageSync('privacy_agreed')
-    uni.removeStorageSync('privacy_agreed_at')
-  } catch (_) { /* ignore */ }
+  secureStorage.revokeAllAgreements()
   uni.showToast({ title: '已撤回同意', icon: 'success' })
   setTimeout(() => {
-    // logout 会清除登录态并 reLaunch 到游客首页；账号仍保留，可重新登录
     userStore.logout()
   }, 1200)
 }

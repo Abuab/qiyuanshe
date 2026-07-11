@@ -72,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { secureStorage } from '@/utils/crypto'
 
 const visible = ref(false)
 
@@ -93,14 +94,12 @@ function onDisagree() {
 }
 
 function onAgree() {
-  uni.setStorageSync('privacy_agreed', '1')
-  uni.setStorageSync('privacy_agreed_at', new Date().toISOString())
+  secureStorage.setPrivacyAgreed()
   visible.value = false
 }
 
 function checkFirstLaunch() {
-  const agreed = uni.getStorageSync('privacy_agreed')
-  if (!agreed) {
+  if (!secureStorage.isPrivacyAgreed()) {
     visible.value = true
   }
 }

@@ -30,6 +30,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
+import { secureStorage } from '@/utils/crypto'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -58,8 +59,7 @@ onUnmounted(() => {
 
 const handleProtocolAgree = () => {
   showProtocol.value = false
-  // 记录用户已同意协议
-  uni.setStorageSync('protocolAgreed', true)
+  secureStorage.setProtocolAgreed()
   startMainNavigation()
 }
 

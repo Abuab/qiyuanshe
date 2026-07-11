@@ -94,6 +94,15 @@ export class AiFunQuizService {
   async respondToAnswer(answer: string): Promise<{ reply: string }> {
     await this.checkFeatureEnabled()
 
+    // 敏感词输入检测：用户回答可能包含敏感内容
+    if (!answer?.trim()) {
+      return { reply: '可以多说说你的想法吗？一句话也行～' }
+    }
+    const inputCheck = this.safetyService.checkText(answer)
+    if (!inputCheck.passed) {
+      return { reply: '感谢你的分享～换个轻松的话题聊聊吧！' }
+    }
+
     const prompt = `你是一个经验丰富、风趣幽默的情感教练，正在和一个单身用户进行轻松的交友话题聊天。
 
 【你的身份】你不是冷冰冰的AI，而是一个懂恋爱心理、擅长破冰的情感顾问，语气温暖亲切但不油腻。
@@ -123,7 +132,13 @@ export class AiFunQuizService {
 
     try {
       const aiResponse = await this.aiApiService.callAndLog({ prompt, responseJson: false }, 0, 'fun_quiz_answer')
-      return { reply: aiResponse?.trim() || '很有趣的想法呢～每个人对感情的期待都不一样，重要的是找到那个懂你的人。' }
+      const reply = aiResponse?.trim() || '很有趣的想法呢～每个人对感情的期待都不一样，重要的是找到那个懂你的人。'
+      // 输出敏感词检测
+      const outputCheck = this.safetyService.checkText(reply)
+      if (!outputCheck.passed) {
+        return { reply: '感谢你的分享～换个轻松的话题聊聊吧！' }
+      }
+      return { reply }
     } catch (e: any) {
       this.logger.warn(`回答响应失败: ${e?.message}`)
       return { reply: '收到你的想法了～要不要换个话题聊聊？' }
