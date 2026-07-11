@@ -104,7 +104,7 @@
       <view class="auth-card" @tap="goToRealnameAuth">
         <view class="auth-card-header">
           <text class="auth-label">信息认证</text>
-          <text class="auth-desc">{{ userInfo?.isRealName ? '已认证' : '去签署单身承诺，真心诚信寻觅爱情！' }}</text>
+          <text class="auth-desc">去完成实名认证,获取真诚与信任!</text>
           <text class="arrow">></text>
         </view>
       </view>

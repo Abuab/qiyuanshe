@@ -83,19 +83,28 @@ export class RegionService implements OnModuleInit {
     const mem = this.regionsByParent.get(parentId)
     if (mem && mem.length > 0) return mem
 
-    // 内存未命中时查询数据库（第四级街道数据）
+    // 内存未命中时查询数据库（第四级街道数据，或内存未加载时的省/市/区）
     try {
       const dbRegions = await this.addressRegionRepo.find({
         where: { parentId },
         order: { id: 'ASC' },
       })
       if (dbRegions.length > 0) {
+        // 批量查询这些节点各自是否存在下级，正确标记 hasChildren
+        const childParentIds = await this.addressRegionRepo
+          .createQueryBuilder('r')
+          .select('DISTINCT r.parentId', 'parentId')
+          .where('r.parentId IN (:...ids)', { ids: dbRegions.map((r) => r.id) })
+          .getRawMany()
+        const hasChildSet = new Set<number>(
+          childParentIds.map((row: { parentId: number }) => Number(row.parentId)),
+        )
         return dbRegions.map((r) => ({
           id: r.id,
           name: r.name,
           level: r.level,
           code: r.code,
-          hasChildren: false,
+          hasChildren: hasChildSet.has(r.id),
         }))
       }
     } catch {

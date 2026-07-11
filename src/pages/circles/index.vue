@@ -53,7 +53,45 @@
         :loading-more="loadingMore"
         :no-more="noMore"
         @user-click="goToUserDetail"
-      />
+      >
+        <template #empty>
+          <view class="cp-empty">
+            <view class="cp-illust">
+              <!-- 散布四角星 -->
+              <view class="cp-star cp-star-1"></view>
+              <view class="cp-star cp-star-2"></view>
+              <view class="cp-star cp-star-3"></view>
+              <view class="cp-star cp-star-4"></view>
+              <!-- 圆点装饰 -->
+              <view class="cp-dot cp-dot-1"></view>
+              <view class="cp-dot cp-dot-2"></view>
+              <view class="cp-dot cp-dot-3"></view>
+              <!-- 底部椭圆阴影 -->
+              <view class="cp-shadow"></view>
+              <!-- 土星环（置于星球后方） -->
+              <view class="cp-ring"></view>
+              <!-- 粉色星球 -->
+              <view class="cp-planet">
+                <view class="cp-crater cp-crater-1"></view>
+                <view class="cp-crater cp-crater-2"></view>
+                <!-- 顶部小皇冠 -->
+                <view class="cp-crown">
+                  <view class="cp-crown-tri"></view>
+                  <view class="cp-crown-dots">
+                    <view class="cp-crown-dot"></view>
+                    <view class="cp-crown-dot"></view>
+                    <view class="cp-crown-dot"></view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="cp-text">
+              <text class="cp-text-gray">暂时找不到匹配的对象，</text>
+              <text class="cp-text-pink" @tap="goHome">返回首页~</text>
+            </view>
+          </view>
+        </template>
+      </user-list-section>
 
       <view class="bottom-safe"></view>
     </scroll-view>
@@ -185,6 +223,12 @@ function handleBack() {
 function goToUserDetail(user: UserCardData) {
   uni.navigateTo({ url: `/pages/user-detail/index?id=${user.id}` })
 }
+function goHome() {
+  uni.switchTab({
+    url: '/pages/index/index',
+    fail: () => uni.navigateTo({ url: '/pages/index/index' }),
+  })
+}
 function onBannerError() {
   currentBanner.value = ''
 }
@@ -292,5 +336,195 @@ function onBannerError() {
 // ===== 底部安全区 =====
 .bottom-safe {
   height: 80rpx;
+}
+
+// ===== 纯 CSS 空状态：暂时找不到匹配的对象 =====
+.cp-empty {
+  width: 100%;
+  min-height: 600rpx;
+  background: #FFF8FA;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.cp-illust {
+  position: relative;
+  width: 300rpx;
+  height: 300rpx;
+}
+
+// 底部椭圆阴影
+.cp-shadow {
+  position: absolute;
+  top: 78%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: rgba(255, 182, 193, 0.3);
+  filter: blur(2rpx);
+}
+
+// 土星环
+.cp-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  width: 180rpx;
+  height: 50rpx;
+  border: 3rpx solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 2;
+}
+
+// 粉色星球
+.cp-planet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FFD1DC 0%, #FFB6C1 50%, #FF8FAB 100%);
+  border: 3rpx solid #fff;
+  z-index: 3;
+}
+
+// 陨石坑
+.cp-crater {
+  position: absolute;
+  border-radius: 50%;
+}
+.cp-crater-1 {
+  top: 30%;
+  left: 30%;
+  width: 16rpx;
+  height: 16rpx;
+  background: rgba(255, 255, 255, 0.6);
+}
+.cp-crater-2 {
+  bottom: 25%;
+  right: 25%;
+  width: 10rpx;
+  height: 10rpx;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+// 顶部小皇冠
+.cp-crown {
+  position: absolute;
+  top: -20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cp-crown-tri {
+  width: 0;
+  height: 0;
+  border-left: 4rpx solid transparent;
+  border-right: 4rpx solid transparent;
+  border-bottom: 6rpx solid #fff;
+  margin-bottom: 2rpx;
+}
+.cp-crown-dots {
+  display: flex;
+  gap: 4rpx;
+}
+.cp-crown-dot {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #fff;
+}
+
+// 四角星
+.cp-star {
+  position: absolute;
+  clip-path: polygon(50% 0%, 55% 40%, 95% 50%, 55% 60%, 50% 100%, 45% 60%, 5% 50%, 45% 40%);
+  z-index: 4;
+}
+.cp-star-1 {
+  top: 20%;
+  left: 15%;
+  width: 20rpx;
+  height: 20rpx;
+  background: #FF8FAB;
+  transform: rotate(15deg);
+}
+.cp-star-2 {
+  top: 25%;
+  right: 10%;
+  width: 24rpx;
+  height: 24rpx;
+  background: #FF8FAB;
+  transform: rotate(-10deg);
+}
+.cp-star-3 {
+  bottom: 35%;
+  left: 20%;
+  width: 12rpx;
+  height: 12rpx;
+  background: #FFB6C1;
+  transform: rotate(20deg);
+}
+.cp-star-4 {
+  top: 60%;
+  right: 22%;
+  width: 10rpx;
+  height: 10rpx;
+  background: #FFD1DC;
+  transform: rotate(-15deg);
+}
+
+// 圆点装饰
+.cp-dot {
+  position: absolute;
+  border-radius: 50%;
+  z-index: 4;
+}
+.cp-dot-1 {
+  top: 45%;
+  left: 10%;
+  width: 16rpx;
+  height: 16rpx;
+  background: #FFD1DC;
+}
+.cp-dot-2 {
+  top: 55%;
+  right: 15%;
+  width: 20rpx;
+  height: 20rpx;
+  background: transparent;
+  border: 2rpx solid #FFD1DC;
+}
+.cp-dot-3 {
+  top: 15%;
+  right: 30%;
+  width: 8rpx;
+  height: 8rpx;
+  background: #FFB6C1;
+}
+
+// 文字区
+.cp-text {
+  margin-top: 40rpx;
+  text-align: center;
+  letter-spacing: 1rpx;
+}
+.cp-text-gray {
+  font-size: 28rpx;
+  color: #999;
+}
+.cp-text-pink {
+  font-size: 28rpx;
+  color: #FF6B9D;
 }
 </style>

@@ -193,6 +193,14 @@ const selectItem = async (item: RegionItem) => {
       cityList.value = await fetchRegions(item.id)
       scrollTop.value = 0
       currentLevel.value = 1
+    } else {
+      // 兜底：后端 hasChildren 可能不准，直接尝试拉子级，拉到就下钻
+      const children = await fetchRegions(item.id)
+      if (children.length > 0) {
+        cityList.value = children
+        scrollTop.value = 0
+        currentLevel.value = 1
+      }
     }
   } else if (currentLevel.value === 1) {
     selectedCity.value = item
@@ -205,6 +213,13 @@ const selectItem = async (item: RegionItem) => {
       districtList.value = await fetchRegions(item.id)
       scrollTop.value = 0
       currentLevel.value = 2
+    } else {
+      const children = await fetchRegions(item.id)
+      if (children.length > 0) {
+        districtList.value = children
+        scrollTop.value = 0
+        currentLevel.value = 2
+      }
     }
   } else if (currentLevel.value === 2) {
     selectedDistrict.value = item
@@ -215,6 +230,13 @@ const selectItem = async (item: RegionItem) => {
       streetList.value = await fetchRegions(item.id)
       scrollTop.value = 0
       currentLevel.value = 3
+    } else {
+      const children = await fetchRegions(item.id)
+      if (children.length > 0) {
+        streetList.value = children
+        scrollTop.value = 0
+        currentLevel.value = 3
+      }
     }
   } else if (currentLevel.value === 3) {
     selectedStreet.value = item

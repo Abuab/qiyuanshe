@@ -3,19 +3,42 @@
     <filter-panel
       ref="panelRef"
       :no-overlay="true"
+      :hidden="cityPickerVisible"
       @confirm="handleConfirm"
       @reset="handleReset"
+      @pick-location="onPickLocation"
+    />
+
+    <!-- 城市选择器（页面根级） -->
+    <city-picker
+      :visible="cityPickerVisible"
+      @confirm="onCityPickerConfirm"
+      @close="cityPickerVisible = false"
     />
   </view>
 </template>
 
 <script setup lang="ts">
 import FilterPanel from '@/components/filter-panel/filter-panel.vue'
+import CityPicker from '@/components/city-picker/city-picker.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import { ref, onMounted } from 'vue'
 
 const filterStore = useFilterStore()
 const panelRef = ref<InstanceType<typeof FilterPanel>>()
+
+const cityPickerVisible = ref(false)
+const cityTarget = ref<'residence' | 'hometown'>('residence')
+
+const onPickLocation = (target: 'residence' | 'hometown') => {
+  cityTarget.value = target
+  cityPickerVisible.value = true
+}
+
+const onCityPickerConfirm = (value: string) => {
+  panelRef.value?.applyLocation(cityTarget.value, value)
+  cityPickerVisible.value = false
+}
 
 onMounted(() => {
   // 确保面板显示（prop 同步在 uni-app 中可能不可靠，改用 open() 方法）

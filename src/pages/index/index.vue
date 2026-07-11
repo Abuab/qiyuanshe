@@ -232,7 +232,14 @@
     />
 
     <!-- 筛选面板 -->
-    <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" :initial-data="activeFilterData || undefined" @confirm="onFilterConfirm" @reset="onFilterReset" />
+    <filter-panel v-if="showFilter" ref="filterPanelRef" v-model:show="showFilter" :initial-data="activeFilterData || undefined" :sort-tab="currentFilter" :top-offset="statusBarHeight + 44" :hidden="cityPickerVisible" @confirm="onFilterConfirm" @reset="onFilterReset" @sort-change="switchFilter" @pick-location="onPickLocation" />
+
+    <!-- 城市选择器（页面根级，z-index 高于筛选面板，叠加在其上方且可点选） -->
+    <city-picker
+      :visible="cityPickerVisible"
+      @confirm="onCityPickerConfirm"
+      @close="cityPickerVisible = false"
+    />
 
   </view>
 </template>
@@ -248,6 +255,7 @@ import TabBar from '@/components/tab-bar/tab-bar.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import { useUserStore } from '@/store/user'
 import FilterPanel from '@/components/filter-panel/filter-panel.vue'
+import CityPicker from '@/components/city-picker/city-picker.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import { icons } from '@/config/icons'
@@ -564,6 +572,21 @@ const onFilterConfirm = (data: FilterData) => {
 
 const onFilterReset = () => {
   handleClearFilter()
+}
+
+// ===== 城市选择器（页面根级，供筛选面板回填现居地/户籍地）=====
+const filterPanelRef = ref<InstanceType<typeof FilterPanel>>()
+const cityPickerVisible = ref(false)
+const cityTarget = ref<'residence' | 'hometown'>('residence')
+
+const onPickLocation = (target: 'residence' | 'hometown') => {
+  cityTarget.value = target
+  cityPickerVisible.value = true
+}
+
+const onCityPickerConfirm = (value: string) => {
+  filterPanelRef.value?.applyLocation(cityTarget.value, value)
+  cityPickerVisible.value = false
 }
 
 // 从后端获取公告列表

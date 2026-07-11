@@ -18,10 +18,12 @@
     </view>
 
     <view v-if="users.length === 0 && !loadingMore" class="empty-list">
-      <text class="empty-text">{{ emptyText }}</text>
-      <view v-if="showClearFilter" class="clear-filter-btn" @tap="$emit('clear-filter')">
-        <text>清除筛选</text>
-      </view>
+      <slot name="empty">
+        <text class="empty-text">{{ emptyText }}</text>
+        <view v-if="showClearFilter" class="clear-filter-btn" @tap="$emit('clear-filter')">
+          <text>清除筛选</text>
+        </view>
+      </slot>
     </view>
   </view>
 </template>

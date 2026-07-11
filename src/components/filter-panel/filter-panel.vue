@@ -1,88 +1,123 @@
 <template>
-  <view v-show="visible" class="filter-panel" :class="{ asPage: noOverlay }">
-    <view v-if="!noOverlay" class="overlay" @tap="handleClose"></view>
-    <view class="panel-content" :class="{ open: visible, fullPage: noOverlay }">
-      <view class="drag-indicator"></view>
+  <view v-show="visible && !hidden" class="filter-panel" :class="{ asPage: noOverlay }">
+    <view v-if="!noOverlay" class="overlay" :class="{ show: panelOpen }" :style="offsetStyle" @tap="handleClose"></view>
+    <view class="panel-wrap" :class="{ fullPage: noOverlay }" :style="offsetStyle">
+    <view class="panel-content" :class="{ open: panelOpen, fullPage: noOverlay }">
+      <!-- 顶部 Tab + 关闭 -->
+      <view class="panel-header">
+        <view class="header-tabs">
+          <view
+            v-for="tab in headerTabs"
+            :key="tab.value"
+            class="header-tab"
+            :class="{ active: activeTab === tab.value }"
+            @tap="selectTab(tab.value)"
+          >
+            <text class="header-tab-text">{{ tab.label }}</text>
+            <view v-if="activeTab === tab.value" class="header-tab-line"></view>
+          </view>
+        </view>
+        <view class="header-close" @tap="handleClose">
+          <text class="close-text">关闭</text>
+          <view class="close-x">
+            <view class="close-line"></view>
+            <view class="close-line"></view>
+          </view>
+        </view>
+      </view>
 
-      <scroll-view class="panel-scroll" scroll-y>
-        <view class="search-section">
+      <scroll-view class="panel-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
+        <!-- 搜索框 -->
+        <view class="filter-section">
           <view class="search-box">
-            <text class="search-icon">🔍</text>
+            <view class="search-mag">
+              <view class="mag-circle"></view>
+              <view class="mag-handle"></view>
+            </view>
             <input
               class="search-input"
               v-model="filterData.keyword"
-              placeholder="请输入昵称或ID搜索"
-              placeholder-class="search-placeholder"
+              placeholder="请输入相亲ID"
+              placeholder-class="search-ph"
             />
           </view>
         </view>
 
+        <!-- 年龄(岁) -->
         <view class="filter-section">
-          <view class="section-title">
-            <text class="title-label">年龄范围</text>
-            <text class="range-value">{{ filterData.ageMin || 18 }} - {{ filterData.ageMax || 80 }}岁</text>
+          <text class="sec-title">年龄(岁)</text>
+          <view class="range-wrap">
+            <view class="range-track range-track-age">
+              <view
+                class="range-fill"
+                :style="{ left: agePct.min + '%', width: (agePct.max - agePct.min) + '%' }"
+              ></view>
+              <view
+                class="range-thumb"
+                :style="{ left: agePct.min + '%' }"
+                @touchstart="onThumbStart('age', 'min')"
+                @touchmove.stop.prevent="onThumbMove('age', 'min', $event)"
+              >
+                <view class="thumb-label">{{ filterData.ageMin || 18 }}</view>
+              </view>
+              <view
+                class="range-thumb"
+                :style="{ left: agePct.max + '%' }"
+                @touchstart="onThumbStart('age', 'max')"
+                @touchmove.stop.prevent="onThumbMove('age', 'max', $event)"
+              >
+                <view class="thumb-label">{{ filterData.ageMax || 80 }}</view>
+              </view>
+            </view>
           </view>
-          <view class="slider-container">
-            <slider
-              class="slider"
-              :min="18"
-              :max="80"
-              :value="filterData.ageMin || 18"
-              :block-size="20"
-              active-color="#FF6B9D"
-              background-color="#EEEEEE"
-              @change="onAgeMinChange"
-            />
-            <slider
-              class="slider"
-              :min="18"
-              :max="80"
-              :value="filterData.ageMax || 80"
-              :block-size="20"
-              active-color="#FF6B9D"
-              background-color="#EEEEEE"
-              @change="onAgeMaxChange"
-            />
+          <view class="range-scale">
+            <text class="scale-text">18岁</text>
+            <text class="scale-text">80岁</text>
           </view>
         </view>
 
+        <!-- 身高(cm) -->
         <view class="filter-section">
-          <view class="section-title">
-            <text class="title-label">身高范围</text>
-            <text class="range-value">{{ filterData.heightMin || 140 }} - {{ filterData.heightMax || 200 }}cm</text>
+          <text class="sec-title">身高(cm)</text>
+          <view class="range-wrap">
+            <view class="range-track range-track-height">
+              <view
+                class="range-fill"
+                :style="{ left: heightPct.min + '%', width: (heightPct.max - heightPct.min) + '%' }"
+              ></view>
+              <view
+                class="range-thumb"
+                :style="{ left: heightPct.min + '%' }"
+                @touchstart="onThumbStart('height', 'min')"
+                @touchmove.stop.prevent="onThumbMove('height', 'min', $event)"
+              >
+                <view class="thumb-label">{{ filterData.heightMin || 140 }}</view>
+              </view>
+              <view
+                class="range-thumb"
+                :style="{ left: heightPct.max + '%' }"
+                @touchstart="onThumbStart('height', 'max')"
+                @touchmove.stop.prevent="onThumbMove('height', 'max', $event)"
+              >
+                <view class="thumb-label">{{ filterData.heightMax || 200 }}</view>
+              </view>
+            </view>
           </view>
-          <view class="slider-container">
-            <slider
-              class="slider"
-              :min="140"
-              :max="200"
-              :value="filterData.heightMin || 140"
-              :block-size="20"
-              active-color="#FF6B9D"
-              background-color="#EEEEEE"
-              @change="onHeightMinChange"
-            />
-            <slider
-              class="slider"
-              :min="140"
-              :max="200"
-              :value="filterData.heightMax || 200"
-              :block-size="20"
-              active-color="#FF6B9D"
-              background-color="#EEEEEE"
-              @change="onHeightMaxChange"
-            />
+          <view class="range-scale">
+            <text class="scale-text">140cm</text>
+            <text class="scale-text">200cm</text>
           </view>
         </view>
 
+        <!-- 学历 -->
         <view class="filter-section">
-          <view class="section-title">学历要求</view>
-          <view class="tag-group">
+          <text class="sec-title">学历</text>
+          <view class="tag-grid">
             <view
               v-for="edu in educationOptions"
-              :key="edu.value"
-              class="filter-tag"
-              :class="{ active: filterData.education === edu.value }"
+              :key="edu.label"
+              class="tag-item"
+              :class="{ active: edu.value === '' ? !filterData.education : filterData.education === edu.value }"
               @tap="selectEducation(edu.value)"
             >
               {{ edu.label }}
@@ -90,14 +125,15 @@
           </view>
         </view>
 
+        <!-- 月薪 -->
         <view class="filter-section">
-          <view class="section-title">月薪范围</view>
-          <view class="tag-group">
+          <text class="sec-title">月薪</text>
+          <view class="tag-grid">
             <view
               v-for="income in incomeOptions"
-              :key="income.value"
-              class="filter-tag"
-              :class="{ active: filterData.incomeRange === income.value }"
+              :key="income.label"
+              class="tag-item"
+              :class="{ active: income.value === '' ? !filterData.incomeRange : filterData.incomeRange === income.value }"
               @tap="selectIncome(income.value)"
             >
               {{ income.label }}
@@ -105,118 +141,78 @@
           </view>
         </view>
 
+        <!-- 婚况 -->
         <view class="filter-section">
-          <view class="section-title">婚姻状况</view>
-          <view class="button-group">
+          <text class="sec-title">婚况</text>
+          <view class="tag-grid">
             <view
-              class="filter-btn"
-              :class="{ active: filterData.maritalStatus === undefined }"
-              @tap="selectMaritalStatus(undefined)"
+              v-for="m in maritalOptions"
+              :key="m.label"
+              class="tag-item"
+              :class="{ active: filterData.maritalStatus === m.value }"
+              @tap="selectMaritalStatus(m.value)"
             >
-              不限
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.maritalStatus === '未婚' }"
-              @tap="selectMaritalStatus('未婚')"
-            >
-              未婚
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.maritalStatus === '离异' }"
-              @tap="selectMaritalStatus('离异')"
-            >
-              离异
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.maritalStatus === '丧偶' }"
-              @tap="selectMaritalStatus('丧偶')"
-            >
-              丧偶
+              {{ m.label }}
             </view>
           </view>
         </view>
 
+        <!-- 实名认证 -->
         <view class="filter-section">
-          <view class="section-title">实名认证</view>
-          <view class="button-group">
+          <text class="sec-title">实名认证</text>
+          <view class="tag-grid">
             <view
-              class="filter-btn"
-              :class="{ active: filterData.isRealName === undefined }"
-              @tap="selectRealName(undefined)"
+              v-for="r in realnameOptions"
+              :key="r.label"
+              class="tag-item"
+              :class="{ active: filterData.isRealName === r.value }"
+              @tap="selectRealName(r.value)"
             >
-              不限
-            </view>
-            <view
-              class="filter-btn"
-              :class="{ active: filterData.isRealName === 1 }"
-              @tap="selectRealName(1)"
-            >
-              已实名
+              {{ r.label }}
             </view>
           </view>
         </view>
 
-        <view class="filter-section">
-          <view class="section-title">现居地</view>
-          <view class="location-row">
-            <view class="location-picker" @tap="showResidencePicker">
-              <text class="location-text">{{ (filterData.residence || '').replace(/\//g, ',') || '请选择' }}</text>
-              <text class="picker-arrow">></text>
-            </view>
-            <view
-              v-if="filterData.residence"
-              class="clear-location"
-              @tap="clearResidence"
-            >
-              <text>不限</text>
-            </view>
+        <!-- 现居地 -->
+        <view class="filter-section location-section" @tap="showResidencePicker">
+          <text class="location-title">现居地</text>
+          <view class="location-value">
+            <text class="location-text">{{ filterData.residence || '请选择' }}</text>
+            <text class="location-arrow">&gt;</text>
           </view>
         </view>
 
-        <view class="filter-section">
-          <view class="section-title">户籍地</view>
-          <view class="location-row">
-            <view class="location-picker" @tap="showHometownPicker">
-              <text class="location-text">{{ (filterData.hometown || '').replace(/\//g, ',') || '请选择' }}</text>
-              <text class="picker-arrow">></text>
-            </view>
-            <view
-              v-if="filterData.hometown"
-              class="clear-location"
-              @tap="clearHometown"
-            >
-              <text>不限</text>
-            </view>
+        <!-- 户籍地 -->
+        <view class="filter-section location-section" @tap="showHometownPicker">
+          <text class="location-title">户籍地</text>
+          <view class="location-value">
+            <text class="location-text">{{ filterData.hometown || '请选择' }}</text>
+            <text class="location-arrow">&gt;</text>
           </view>
         </view>
 
         <view class="bottom-safe-area"></view>
       </scroll-view>
 
+      <!-- 底部固定操作栏 -->
       <view class="action-bar">
         <view class="reset-btn" @tap="handleReset">
-          <image v-if="filterResetIcon" class="reset-icon-img" :src="filterResetIcon" mode="aspectFit" />
-          <text v-else class="reset-icon">🔄</text>
-          <text>重置</text>
+          <view class="refresh-icon"></view>
+          <text class="reset-text">重置</text>
         </view>
         <view class="confirm-btn" @tap="handleConfirm">
-          <text>确定{{ selectedCount > 0 ? `(${selectedCount})` : '' }}</text>
+          <text>确定</text>
         </view>
       </view>
+    </view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useSystemStore } from '@/store/system'
+import { ref, computed, watch, nextTick, getCurrentInstance } from 'vue'
 
-const systemStore = useSystemStore()
-const pageIcons = computed(() => systemStore.icons?.page || {})
-const filterResetIcon = computed(() => pageIcons.value.filterResetIcon || '')
+const inst = getCurrentInstance()
 
 interface FilterData {
   keyword?: string
@@ -235,24 +231,56 @@ interface FilterData {
 interface Props {
   show: boolean
   initialData?: FilterData
+  /** 当前首页排序标签（活跃/精选/实名/最新） */
+  sortTab?: string
+  /** 面板距顶部的偏移（px），用于与顶部 Tab 栏无缝衔接下拉 */
+  topOffset?: number
   /** 作为独立页面使用时隐藏遮罩层 */
   noOverlay?: boolean
+  /** 城市选择器打开时临时隐藏本面板，避免叠加遮挡导致无法点选 */
+  hidden?: boolean
 }
 
 interface Emits {
   (e: 'update:show', value: boolean): void
   (e: 'confirm', data: FilterData): void
   (e: 'reset'): void
+  (e: 'sort-change', value: string): void
+  (e: 'pick-location', target: 'residence' | 'hometown'): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   show: false,
   initialData: () => ({}),
+  sortTab: 'active',
+  topOffset: 0,
 })
 
 const emit = defineEmits<Emits>()
 
 const visible = ref(false)
+// 下拉展开状态（控制滑入/滑出动画）
+const panelOpen = ref(false)
+
+const offsetStyle = computed(() =>
+  props.noOverlay ? {} : { top: (props.topOffset || 0) + 'px' }
+)
+
+// 顶部排序 Tab（点击联动首页排序）
+const headerTabs = [
+  { label: '活跃', value: 'active' },
+  { label: '精选', value: 'featured' },
+  { label: '实名', value: 'verified' },
+  { label: '最新', value: 'newest' },
+]
+const activeTab = ref(props.sortTab || 'active')
+
+const selectTab = (value: string) => {
+  if (activeTab.value === value) return
+  activeTab.value = value
+  emit('sort-change', value)
+}
+
 const filterData = ref<FilterData>({
   keyword: '',
   ageMin: 18,
@@ -273,26 +301,96 @@ const educationOptions = [
   { label: '大专及以上', value: '大专' },
   { label: '本科及以上', value: '本科' },
   { label: '硕士及以上', value: '硕士' },
-  { label: '博士', value: '博士' },
 ]
 
 const incomeOptions = [
   { label: '不限', value: '' },
   { label: '3千以下', value: '3千以下' },
-  { label: '3-5千', value: '3-5千' },
-  { label: '5-8千', value: '5-8千' },
-  { label: '8千-1.2万', value: '8千-1.2万' },
-  { label: '1.2-2万', value: '1.2-2万' },
-  { label: '2-5万', value: '2-5万' },
+  { label: '3千~5千', value: '3-5千' },
+  { label: '5千~8千', value: '5-8千' },
+  { label: '8千~1.2万', value: '8千-1.2万' },
+  { label: '1.2万~2万', value: '1.2-2万' },
+  { label: '2万~5万', value: '2-5万' },
   { label: '5万以上', value: '5万以上' },
 ]
 
+const maritalOptions: { label: string; value: string | undefined }[] = [
+  { label: '不限', value: undefined },
+  { label: '未婚', value: '未婚' },
+  { label: '离异', value: '离异' },
+]
+
+const realnameOptions: { label: string; value: number | undefined }[] = [
+  { label: '不限', value: undefined },
+  { label: '已实名', value: 1 },
+]
+
+// ===== 双滑块（年龄 / 身高）=====
+const AGE = { min: 18, max: 80 }
+const HEIGHT = { min: 140, max: 200 }
+
+const agePct = computed(() => ({
+  min: ((filterData.value.ageMin || AGE.min) - AGE.min) / (AGE.max - AGE.min) * 100,
+  max: ((filterData.value.ageMax || AGE.max) - AGE.min) / (AGE.max - AGE.min) * 100,
+}))
+const heightPct = computed(() => ({
+  min: ((filterData.value.heightMin || HEIGHT.min) - HEIGHT.min) / (HEIGHT.max - HEIGHT.min) * 100,
+  max: ((filterData.value.heightMax || HEIGHT.max) - HEIGHT.min) / (HEIGHT.max - HEIGHT.min) * 100,
+}))
+
+const trackRects = ref<Record<string, { left: number; width: number }>>({
+  age: { left: 0, width: 0 },
+  height: { left: 0, width: 0 },
+})
+
+const measureTrack = (type: 'age' | 'height') => {
+  uni.createSelectorQuery()
+    .in(inst?.proxy as any)
+    .select('.range-track-' + type)
+    .boundingClientRect((rect: any) => {
+      if (rect && !Array.isArray(rect)) {
+        trackRects.value[type] = { left: rect.left || 0, width: rect.width || 0 }
+      }
+    })
+    .exec()
+}
+
+const onThumbStart = (type: 'age' | 'height', _which: 'min' | 'max') => {
+  measureTrack(type)
+}
+
+const onThumbMove = (type: 'age' | 'height', which: 'min' | 'max', e: any) => {
+  const rect = trackRects.value[type]
+  if (!rect.width) return
+  const touch = e.touches && e.touches[0]
+  if (!touch) return
+  const clientX = touch.clientX ?? touch.pageX
+  let pct = (clientX - rect.left) / rect.width
+  pct = Math.max(0, Math.min(1, pct))
+  const range = type === 'age' ? AGE : HEIGHT
+  let val = Math.round(range.min + pct * (range.max - range.min))
+
+  if (type === 'age') {
+    if (which === 'min') {
+      filterData.value.ageMin = Math.max(range.min, Math.min(val, (filterData.value.ageMax || range.max) - 1))
+    } else {
+      filterData.value.ageMax = Math.min(range.max, Math.max(val, (filterData.value.ageMin || range.min) + 1))
+    }
+  } else {
+    if (which === 'min') {
+      filterData.value.heightMin = Math.max(range.min, Math.min(val, (filterData.value.heightMax || range.max) - 1))
+    } else {
+      filterData.value.heightMax = Math.min(range.max, Math.max(val, (filterData.value.heightMin || range.min) + 1))
+    }
+  }
+}
+
 const selectedCount = computed(() => {
   let count = 0
-  if (filterData.value.ageMin && filterData.value.ageMin > 18) count++
-  if (filterData.value.ageMax && filterData.value.ageMax < 80) count++
-  if (filterData.value.heightMin && filterData.value.heightMin > 140) count++
-  if (filterData.value.heightMax && filterData.value.heightMax < 200) count++
+  if (filterData.value.ageMin && filterData.value.ageMin > AGE.min) count++
+  if (filterData.value.ageMax && filterData.value.ageMax < AGE.max) count++
+  if (filterData.value.heightMin && filterData.value.heightMin > HEIGHT.min) count++
+  if (filterData.value.heightMax && filterData.value.heightMax < HEIGHT.max) count++
   if (filterData.value.education) count++
   if (filterData.value.incomeRange) count++
   if (filterData.value.maritalStatus) count++
@@ -305,53 +403,61 @@ const selectedCount = computed(() => {
 watch(
   () => props.show,
   (newVal) => {
-    visible.value = newVal
-    if (newVal && props.initialData) {
-      filterData.value = { ...filterData.value, ...props.initialData }
+    if (newVal) {
+      visible.value = true
+      activeTab.value = props.sortTab || 'active'
+      if (props.initialData) {
+        filterData.value = { ...filterData.value, ...props.initialData }
+      }
+      if (props.noOverlay) {
+        panelOpen.value = true
+      } else {
+        nextTick(() => {
+          panelOpen.value = true
+        })
+      }
+    } else {
+      panelOpen.value = false
+      if (props.noOverlay) visible.value = false
     }
   },
   { immediate: true }
 )
 
+watch(
+  () => props.sortTab,
+  (val) => {
+    activeTab.value = val || 'active'
+  }
+)
+
 const handleClose = () => {
-  visible.value = false
-  emit('update:show', false)
-}
-
-const onAgeMinChange = (e: any) => {
-  const value = e.detail.value
-  if (value < (filterData.value.ageMax || 80)) {
-    filterData.value.ageMin = value
+  panelOpen.value = false
+  if (props.noOverlay) {
+    visible.value = false
+    emit('update:show', false)
+    return
   }
-}
-
-const onAgeMaxChange = (e: any) => {
-  const value = e.detail.value
-  if (value > (filterData.value.ageMin || 18)) {
-    filterData.value.ageMax = value
-  }
-}
-
-const onHeightMinChange = (e: any) => {
-  const value = e.detail.value
-  if (value < (filterData.value.heightMax || 200)) {
-    filterData.value.heightMin = value
-  }
-}
-
-const onHeightMaxChange = (e: any) => {
-  const value = e.detail.value
-  if (value > (filterData.value.heightMin || 140)) {
-    filterData.value.heightMax = value
-  }
+  setTimeout(() => {
+    visible.value = false
+    emit('update:show', false)
+  }, 250)
 }
 
 const selectEducation = (value: string) => {
-  filterData.value.education = filterData.value.education === value ? undefined : value
+  if (value === '') {
+    filterData.value.education = undefined
+  } else {
+    filterData.value.education = filterData.value.education === value ? undefined : value
+  }
 }
 
 const selectIncome = (value: string) => {
-  filterData.value.incomeRange = filterData.value.incomeRange === value ? undefined : value
+  if (value === '') {
+    filterData.value.incomeRange = undefined
+  } else {
+    filterData.value.incomeRange = filterData.value.incomeRange === value ? undefined : value
+  }
 }
 
 const selectMaritalStatus = (value: string | undefined) => {
@@ -362,72 +468,31 @@ const selectRealName = (value: number | undefined) => {
   filterData.value.isRealName = value
 }
 
-const cityOptions = [
-  '北京', '上海', '广州', '深圳', '杭州', '南京', '成都', '重庆', '武汉',
-  '西安', '郑州', '济南', '青岛', '苏州', '天津', '长沙', '东莞', '沈阳',
-  '宁波', '昆明', '大连', '厦门', '合肥', '佛山', '福州', '哈尔滨', '长春',
-  '南昌', '贵阳', '南宁', '石家庄', '太原', '无锡', '烟台', '温州', '珠海',
-]
-
+// ===== 城市选择（由父页面在页面根级弹出，层级高于本面板）=====
 const showResidencePicker = () => {
-  pickAddr('residence')
+  emit('pick-location', 'residence')
 }
 
 const showHometownPicker = () => {
-  pickAddr('hometown')
+  emit('pick-location', 'hometown')
 }
 
-const pickAddr = (field: 'residence' | 'hometown') => {
-  // #ifdef MP-WEIXIN
-  uni.chooseAddress({
-    success: (res: any) => {
-      const addr = `${res.provinceName}${res.cityName}${res.countyName}${res.detailInfo}`
-      if (field === 'residence') {
-        filterData.value.residence = addr
-      } else {
-        filterData.value.hometown = addr
-      }
-    },
-    fail: () => pickFallback(field),
-  })
-  // #endif
-  // #ifndef MP-WEIXIN
-  pickFallback(field)
-  // #endif
-}
-
-const pickFallback = (field: 'residence' | 'hometown') => {
-  uni.showModal({
-    title: field === 'residence' ? '输入现居地' : '输入户籍地',
-    editable: true,
-    placeholderText: '精确到街道，例：北京市海淀区中关村街道',
-    success: (res) => {
-      if (res.confirm && res.content) {
-        if (field === 'residence') {
-          filterData.value.residence = res.content
-        } else {
-          filterData.value.hometown = res.content
-        }
-      }
-    },
-  })
-}
-
-const clearResidence = () => {
-  filterData.value.residence = undefined
-}
-
-const clearHometown = () => {
-  filterData.value.hometown = undefined
+// 由父页面的城市选择器回填现居地/户籍地
+const applyLocation = (target: 'residence' | 'hometown', value: string) => {
+  if (target === 'hometown') {
+    filterData.value.hometown = value
+  } else {
+    filterData.value.residence = value
+  }
 }
 
 const handleReset = () => {
   filterData.value = {
     keyword: '',
-    ageMin: 18,
-    ageMax: 80,
-    heightMin: 140,
-    heightMax: 200,
+    ageMin: AGE.min,
+    ageMax: AGE.max,
+    heightMin: HEIGHT.min,
+    heightMax: HEIGHT.max,
     education: undefined,
     incomeRange: undefined,
     maritalStatus: undefined,
@@ -443,9 +508,17 @@ const handleConfirm = () => {
   if (data.education === '') data.education = undefined
   if (data.incomeRange === '') data.incomeRange = undefined
 
-  visible.value = false
-  emit('update:show', false)
-  emit('confirm', data)
+  panelOpen.value = false
+  const done = () => {
+    visible.value = false
+    emit('update:show', false)
+    emit('confirm', data)
+  }
+  if (props.noOverlay) {
+    done()
+  } else {
+    setTimeout(done, 250)
+  }
 }
 
 const open = (initialData?: FilterData) => {
@@ -454,6 +527,13 @@ const open = (initialData?: FilterData) => {
   }
   visible.value = true
   emit('update:show', true)
+  if (props.noOverlay) {
+    panelOpen.value = true
+  } else {
+    nextTick(() => {
+      panelOpen.value = true
+    })
+  }
 }
 
 const close = () => {
@@ -463,6 +543,8 @@ const close = () => {
 defineExpose({
   open,
   close,
+  applyLocation,
+  selectedCount,
 })
 </script>
 
@@ -474,48 +556,64 @@ defineExpose({
   right: 0;
   bottom: 0;
   z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
 
   // 作为独立页面使用时：无遮罩，页面级布局
   &.asPage {
     position: relative;
     z-index: 1;
-    justify-content: flex-start;
     min-height: 100vh;
     background-color: #f5f5f5;
   }
 }
 
 .overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+
+  &.show {
+    opacity: 1;
+  }
+}
+
+// 下拉容器：裁剪面板向下滑入的动画
+.panel-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  overflow: hidden;
+
+  &.fullPage {
+    position: static;
+    overflow: visible;
+  }
 }
 
 .panel-content {
   position: relative;
-  height: 85vh;
-  max-height: 85vh;
-  background-color: #fff;
-  border-radius: 24rpx 24rpx 0 0;
+  max-height: 75vh;
+  background-color: #ffffff;
+  // 顶部直角与 Tab 栏贴合，底部圆角
+  border-radius: 0 0 24rpx 24rpx;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform: translateY(100%);
-  transition: transform 0.3s ease-out;
+  transform: translateY(-100%);
+  transition: transform 0.25s ease-out;
 
   &.open {
     transform: translateY(0);
+    transition: transform 0.3s ease-out;
   }
 
-  // 作为独立页面：去掉底部弹出样式
+  // 作为独立页面：去掉下拉动画
   &.fullPage {
-    height: auto;
     max-height: none;
     border-radius: 0;
     transform: none;
@@ -523,211 +621,318 @@ defineExpose({
   }
 }
 
-.drag-indicator {
-  width: 80rpx;
-  height: 8rpx;
-  background-color: #ddd;
-  border-radius: 4rpx;
-  margin: 20rpx auto;
+// ===== 顶部 Tab + 关闭 =====
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 32rpx;
 }
 
+.header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 40rpx;
+}
+
+.header-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-tab-text {
+  font-size: 32rpx;
+  color: #999;
+}
+
+.header-tab.active .header-tab-text {
+  color: #333;
+  font-weight: bold;
+}
+
+.header-tab-line {
+  width: 100%;
+  height: 4rpx;
+  margin-top: 6rpx;
+  background-color: #FF6B9D;
+  border-radius: 2rpx;
+}
+
+.header-close {
+  display: flex;
+  align-items: center;
+}
+
+.close-text {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.close-x {
+  position: relative;
+  width: 16rpx;
+  height: 16rpx;
+  margin-left: 8rpx;
+}
+
+.close-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2rpx;
+  background-color: #999;
+
+  &:first-child {
+    transform: translateY(-50%) rotate(45deg);
+  }
+  &:last-child {
+    transform: translateY(-50%) rotate(-45deg);
+  }
+}
+
+// ===== 滚动区 =====
 .panel-scroll {
   flex: 1;
   height: 0;
-  padding: 0 40rpx 40rpx 32rpx;
+  padding: 0 32rpx;
   box-sizing: border-box;
 }
 
-.search-section {
-  padding: 20rpx 0;
+.filter-section {
+  padding: 32rpx 0;
+  border-bottom: 1rpx solid #F0F0F0;
 }
 
+.sec-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+// ===== 搜索框 =====
 .search-box {
   display: flex;
   align-items: center;
   height: 80rpx;
-  background-color: #f5f5f5;
-  border-radius: 40rpx;
-  padding: 0 32rpx;
+  background-color: #F5F5F5;
+  border-radius: 16rpx;
+  padding: 0 24rpx;
 }
 
-.search-icon {
-  font-size: 32rpx;
+.search-mag {
+  position: relative;
+  width: 20rpx;
+  height: 20rpx;
   margin-right: 16rpx;
+  flex-shrink: 0;
+}
+
+.mag-circle {
+  width: 14rpx;
+  height: 14rpx;
+  border: 2rpx solid #999;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.mag-handle {
+  position: absolute;
+  right: 0;
+  bottom: 1rpx;
+  width: 7rpx;
+  height: 2rpx;
+  background-color: #999;
+  transform: rotate(45deg);
+  transform-origin: right center;
 }
 
 .search-input {
   flex: 1;
   font-size: 28rpx;
-  color: var(--text);
+  color: #333;
 }
 
-.search-placeholder {
+.search-ph {
+  color: #999;
+  font-size: 28rpx;
+}
+
+// ===== 双滑块 =====
+.range-wrap {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 20rpx;
+}
+
+.range-track {
+  position: relative;
+  width: 100%;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background-color: #FFE3EC;
+}
+
+.range-fill {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6rpx;
+  border-radius: 3rpx;
+  background-color: #FF6B9D;
+}
+
+.range-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background-color: #FF6B9D;
+  border: 4rpx solid #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(255, 107, 157, 0.3);
+  box-sizing: border-box;
+}
+
+.thumb-label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8rpx);
+  transform: translateX(-50%);
+  padding: 4rpx 12rpx;
+  background-color: #FF6B9D;
+  color: #ffffff;
+  font-size: 22rpx;
+  line-height: 1;
+  border-radius: 8rpx;
+  white-space: nowrap;
+}
+
+.range-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8rpx;
+}
+
+.scale-text {
+  font-size: 24rpx;
   color: #999;
 }
 
-.filter-section {
-  padding: 24rpx 0;
-  border-bottom: 1px solid #f0f0f0;
-  padding-right: 8rpx;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  font-size: 28rpx;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 12rpx;
-  padding-right: 8rpx;
-
-  .title-label {
-    flex: 1;
-    min-width: 0;
-  }
-}
-
-.range-value {
-  font-size: 24rpx;
-  color: #FF6B9D;
-  font-weight: normal;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding-right: 16rpx;
-}
-
-.button-group {
-  display: flex;
-  gap: 20rpx;
-  flex-wrap: wrap;
-}
-
-.filter-btn {
-  min-width: 140rpx;
-  height: 64rpx;
-  line-height: 64rpx;
-  text-align: center;
-  font-size: 26rpx;
-  color: var(--text-secondary);
-  background-color: #f5f5f5;
-  border-radius: 32rpx;
-  padding: 0 24rpx;
-
-  &.active {
-    color: #fff;
-    background-color: #FF6B9D;
-  }
-}
-
-.slider-container {
-  padding: 0 20rpx;
-}
-
-.slider {
-  margin: 20rpx 0;
-}
-
-.tag-group {
+// ===== 标签网格 =====
+.tag-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 20rpx;
-}
-
-.filter-tag {
-  min-width: 160rpx;
-  height: 64rpx;
-  line-height: 64rpx;
-  text-align: center;
-  font-size: 26rpx;
-  color: var(--text-secondary);
-  background-color: #f5f5f5;
-  border-radius: 8rpx;
-  padding: 0 20rpx;
-
-  &.active {
-    color: #FF6B9D;
-    background-color: #FFF0F3;
-  }
-}
-
-.location-picker {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 80rpx;
-  padding: 0 24rpx;
-  background-color: #f5f5f5;
-  border-radius: 12rpx;
-}
-
-.location-row {
-  display: flex;
-  align-items: center;
   gap: 16rpx;
 }
 
-.clear-location {
+.tag-item {
+  width: calc((100% - 32rpx) / 3);
+  height: 72rpx;
+  line-height: 72rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #333;
+  background-color: #F5F5F5;
+  border-radius: 40rpx;
+  box-sizing: border-box;
+
+  &.active {
+    color: #FF6B9D;
+    background-color: #FFE3EC;
+  }
+}
+
+// ===== 现居地 / 户籍地 =====
+.location-section {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 80rpx;
-  padding: 0 24rpx;
-  border: 2rpx solid #ddd;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: #999;
-  white-space: nowrap;
-  flex-shrink: 0;
+  justify-content: space-between;
+  height: 96rpx;
+  padding: 0;
+}
+
+.location-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.location-value {
+  display: flex;
+  align-items: center;
+  max-width: 60%;
 }
 
 .location-text {
   font-size: 28rpx;
-  color: var(--text);
+  color: #FF6B9D;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.picker-arrow {
+.location-arrow {
   font-size: 28rpx;
-  color: #999;
+  color: #FF6B9D;
+  margin-left: 8rpx;
 }
 
 .bottom-safe-area {
   height: 20rpx;
 }
 
+// ===== 底部固定操作栏 =====
 .action-bar {
-  position: sticky;
-  bottom: 0;
-  left: 0;
-  right: 0;
   display: flex;
-  gap: 24rpx;
-  padding: 24rpx 32rpx;
-  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
-  background-color: #fff;
-  border-top: 1px solid #f0f0f0;
+  align-items: center;
+  height: 120rpx;
+  padding: 0 32rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  background-color: #ffffff;
+  border-top: 1rpx solid #F0F0F0;
 }
 
 .reset-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  width: 200rpx;
-  height: 88rpx;
-  background-color: #f5f5f5;
-  border-radius: 44rpx;
-  font-size: 28rpx;
-  color: var(--text-secondary);
+  width: 120rpx;
+  height: 80rpx;
 }
 
-.reset-icon {
-  font-size: 28rpx;
+.refresh-icon {
+  position: relative;
+  width: 20rpx;
+  height: 20rpx;
+  margin-right: 8rpx;
+  border: 2rpx solid #999;
+  border-radius: 50%;
+  border-right-color: transparent;
+  box-sizing: border-box;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2rpx;
+    right: -2rpx;
+    width: 0;
+    height: 0;
+    border: 4rpx solid transparent;
+    border-bottom-color: #999;
+    transform: rotate(45deg);
+  }
 }
 
-.reset-icon-img {
-  width: 32rpx;
-  height: 32rpx;
+.reset-text {
+  font-size: 28rpx;
+  color: #999;
 }
 
 .confirm-btn {
@@ -736,10 +941,11 @@ defineExpose({
   align-items: center;
   justify-content: center;
   height: 88rpx;
+  margin-left: 24rpx;
   background-color: #FF6B9D;
   border-radius: 44rpx;
   font-size: 32rpx;
   font-weight: bold;
-  color: #fff;
+  color: #ffffff;
 }
 </style>
