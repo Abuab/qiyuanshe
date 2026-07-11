@@ -27,6 +27,19 @@ export class ActivityService {
     private readonly dataSource: DataSource,
   ) {}
 
+  /** 进行中(1)但已过截止时间的活动，读取时自动视为「已结束」(2) */
+  private applyEndedStatus<T extends { status?: number; endTime?: Date }>(activity: T): T {
+    if (
+      activity &&
+      activity.status === 1 &&
+      activity.endTime &&
+      new Date(activity.endTime).getTime() < Date.now()
+    ) {
+      return { ...activity, status: 2 }
+    }
+    return activity
+  }
+
   // 小程序端 - 获取活动列表
   async getActivityList(type: string, page = 1, limit = 10) {
     const queryBuilder = this.activityRepository.createQueryBuilder('activity')
@@ -45,7 +58,7 @@ export class ActivityService {
     const [activities, total] = await queryBuilder.getManyAndCount()
 
     return {
-      list: activities,
+      list: activities.map((a) => this.applyEndedStatus(a)),
       page,
       limit,
       total,
@@ -69,10 +82,10 @@ export class ActivityService {
       .limit(10)
       .getRawMany()
 
-    return {
+    return this.applyEndedStatus({
       ...activity,
       signupAvatars: signups.map(s => s.avatar).filter(Boolean),
-    }
+    })
   }
 
   // 小程序端 - 报名
@@ -89,6 +102,10 @@ export class ActivityService {
 
       if (!activity) {
         throw new NotFoundException('活动不存在')
+      }
+
+      if (activity.endTime && new Date(activity.endTime).getTime() < Date.now()) {
+        throw new BadRequestException('活动已结束')
       }
 
       if (activity.status !== 1) {

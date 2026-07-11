@@ -47,8 +47,8 @@
               :src="activity.coverImage"
               mode="aspectFill"
             />
-            <view v-if="activity.status !== 1" class="status-tag">
-              {{ getStatusText(activity.status) }}
+            <view v-if="effectiveStatus(activity) !== 1" class="status-tag">
+              {{ getStatusText(effectiveStatus(activity)) }}
             </view>
           </view>
 
@@ -57,7 +57,7 @@
 
           <!-- 时间 -->
           <text class="activity-time">
-            {{ formatDate(activity.startTime) }} - {{ formatDate(activity.endTime) }}
+            活动时间: {{ formatDate(activity.startTime) }}-{{ formatDate(activity.endTime) }}
           </text>
         </view>
 
@@ -123,10 +123,18 @@ function getStatusText(status: number) {
   return map[status] || ''
 }
 
+/** 有效状态：进行中(1) 但已过截止时间时，自动视为「已结束」(2) */
+function effectiveStatus(activity: Activity) {
+  if (activity.status === 1 && activity.endTime && new Date(activity.endTime).getTime() < Date.now()) {
+    return 2
+  }
+  return activity.status
+}
+
 function formatDate(dateStr: string) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  return `${date.getMonth() + 1}月${date.getDate()}日`
+  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`
 }
 
 async function fetchActivities(reset = false) {

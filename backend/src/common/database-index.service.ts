@@ -79,6 +79,98 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
         name: 'idx_oplog_created',
         sql: `CREATE INDEX idx_oplog_created ON chat_operation_logs (createdAt DESC)`,
       },
+
+      // ========== chat_messages：会话未读数聚合 ==========
+      // getConversations() 未读数: WHERE toUserId=? AND isRead=0 GROUP BY fromUserId
+      {
+        name: 'idx_chat_unread_group',
+        sql: `CREATE INDEX idx_chat_unread_group ON chat_messages (toUserId, isRead, fromUserId)`,
+      },
+
+      // ========== user_notifications：通知列表 + 未读红点 ==========
+      // list(): WHERE userId=? ORDER BY createdAt DESC
+      {
+        name: 'idx_notif_user_created',
+        sql: `CREATE INDEX idx_notif_user_created ON user_notifications (userId, createdAt DESC)`,
+      },
+      // unreadCount(): WHERE userId=? AND isRead=0
+      {
+        name: 'idx_notif_user_read',
+        sql: `CREATE INDEX idx_notif_user_read ON user_notifications (userId, isRead)`,
+      },
+
+      // ========== follows：关注/粉丝列表（真实列名为 snake_case） ==========
+      // getFollowing(): WHERE user_id=? ORDER BY created_at DESC
+      {
+        name: 'idx_follows_user_created',
+        sql: `CREATE INDEX idx_follows_user_created ON follows (user_id, created_at DESC)`,
+      },
+      // getFollowers(): WHERE target_user_id=? ORDER BY created_at DESC
+      {
+        name: 'idx_follows_target_created',
+        sql: `CREATE INDEX idx_follows_target_created ON follows (target_user_id, created_at DESC)`,
+      },
+
+      // ========== profile_visits：我看过谁（真实列名为 snake_case） ==========
+      // getMyViews(): WHERE visitor_user_id=? GROUP BY user_id ORDER BY MAX(created_at) DESC
+      {
+        name: 'idx_visits_visitor_created',
+        sql: `CREATE INDEX idx_visits_visitor_created ON profile_visits (visitor_user_id, created_at DESC)`,
+      },
+
+      // ========== question_answers：问题详情回答列表 / 我的回答 ==========
+      // getQuestionDetail(): WHERE questionId=? AND status=1 ORDER BY createdAt DESC
+      {
+        name: 'idx_qa_question_status_time',
+        sql: `CREATE INDEX idx_qa_question_status_time ON question_answers (questionId, status, createdAt DESC)`,
+      },
+      // getUserAnswers(): WHERE userId=? ORDER BY createdAt DESC
+      {
+        name: 'idx_qa_user_created',
+        sql: `CREATE INDEX idx_qa_user_created ON question_answers (userId, createdAt DESC)`,
+      },
+
+      // ========== dynamics：问答动态时间线 ==========
+      // getAnswerDynamics(): WHERE type='answer' ORDER BY createdAt DESC
+      {
+        name: 'idx_dynamic_type_time',
+        sql: `CREATE INDEX idx_dynamic_type_time ON dynamics (type, createdAt DESC)`,
+      },
+
+      // ========== circle_posts：圈子帖子列表 ==========
+      // getPosts(): WHERE circleId=? AND status=1 ORDER BY createdAt DESC
+      {
+        name: 'idx_circle_posts_list',
+        sql: `CREATE INDEX idx_circle_posts_list ON circle_posts (circleId, status, createdAt DESC)`,
+      },
+
+      // ========== circle_members：圈子成员排序 ==========
+      // getCircleUsers(): WHERE circleId=? ORDER BY sortOrder ASC
+      {
+        name: 'idx_circle_members_sort',
+        sql: `CREATE INDEX idx_circle_members_sort ON circle_members (circleId, sortOrder)`,
+      },
+
+      // ========== matchmaker_comments：红娘评价批量查询 ==========
+      // WHERE userId IN (...) AND status=1 ORDER BY createdAt DESC
+      {
+        name: 'idx_mm_comments_user',
+        sql: `CREATE INDEX idx_mm_comments_user ON matchmaker_comments (userId, status, createdAt DESC)`,
+      },
+
+      // ========== user_photos：用户相册批量查询（极高频） ==========
+      // WHERE userId IN (...) ORDER BY sortOrder ASC
+      {
+        name: 'idx_user_photos_user_sort',
+        sql: `CREATE INDEX idx_user_photos_user_sort ON user_photos (userId, sortOrder)`,
+      },
+
+      // ========== activities：活动列表 ==========
+      // getActivityList(): WHERE isActive=1 ORDER BY sortOrder ASC, createdAt DESC
+      {
+        name: 'idx_activities_list',
+        sql: `CREATE INDEX idx_activities_list ON activities (isActive, sortOrder, createdAt DESC)`,
+      },
     ]
 
     let created = 0

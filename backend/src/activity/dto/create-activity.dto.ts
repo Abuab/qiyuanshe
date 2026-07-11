@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsInt, Min, MaxLength } from 'class-validator'
+import { IsString, IsOptional, IsEnum, IsDateString, IsInt, Min, MaxLength, IsArray } from 'class-validator'
 
 export enum ActivityType {
   LATEST = 'latest',
@@ -29,6 +29,14 @@ export class CreateActivityDto {
   @IsOptional()
   @IsString()
   content?: string
+
+  @IsOptional()
+  @IsArray()
+  detailBlocks?: any[]
+
+  @IsOptional()
+  @IsArray()
+  sceneBlocks?: any[]
 
   @IsEnum(ActivityType, { message: '活动类型必须是 latest、online 或 cp' })
   activityType: ActivityType

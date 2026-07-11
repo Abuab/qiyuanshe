@@ -10,116 +10,158 @@
     </view>
 
     <scroll-view class="content-scroll" scroll-y enable-flex v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
-      <!-- 顶部海报大图 -->
-      <view class="cover-wrapper">
-        <image class="cover-image" :src="activity.coverImage" mode="aspectFill" />
-        <view v-if="activity.status !== 1" class="status-tag">
-          {{ getStatusText(activity.status) }}
+      <!-- 顶部 Banner 大图（全宽+底部圆角） -->
+      <view class="banner-wrapper">
+        <image class="banner-image" :src="activity.coverImage" mode="aspectFill" />
+        <view v-if="effectiveStatus !== 1" class="status-tag">
+          {{ getStatusText(effectiveStatus) }}
         </view>
       </view>
 
-      <!-- 标题区 -->
+      <!-- 活动标题 -->
       <view class="title-section">
-        <text class="activity-title">✨ {{ activity.title }} ✨</text>
+        <text class="activity-title">{{ activity.title }}</text>
+        <text v-if="activity.subtitle" class="activity-subtitle">{{ activity.subtitle }}</text>
       </view>
 
-      <!-- 信息卡片区 -->
-      <view class="info-card">
-        <!-- 活动时间 -->
-        <view class="info-section">
-          <view class="section-header">
-            <view class="section-line"></view>
-            <text class="section-title">活动时间</text>
+      <!-- 信息行 -->
+      <view class="info-rows">
+        <view class="info-row" v-if="activity.signUpEndTime">
+          <view class="info-icon-circle">
+            <text class="info-icon-text">⏰</text>
           </view>
-          <text class="section-content">{{ formatDateTime(activity.startTime) }} - {{ formatDateTime(activity.endTime) }}</text>
+          <view class="info-text-wrap">
+            <text class="info-label">报名截止</text>
+            <text class="info-value">{{ formatDateOnly(activity.signUpEndTime) }}</text>
+          </view>
         </view>
-
-        <!-- 活动地点 -->
-        <view class="info-section">
-          <view class="section-header">
-            <view class="section-line"></view>
-            <text class="section-title">活动地点</text>
+        <view class="info-row-sep" v-if="activity.signUpEndTime"></view>
+        <view class="info-row">
+          <view class="info-icon-circle">
+            <text class="info-icon-text">📅</text>
           </view>
-          <text class="section-content">{{ activity.location || '待定' }}</text>
+          <view class="info-text-wrap">
+            <text class="info-label">活动时间</text>
+            <text class="info-value">{{ formatDateOnly(activity.startTime) }} - {{ formatDateOnly(activity.endTime) }}</text>
+          </view>
         </view>
-
-        <!-- 报名需求 -->
-        <view class="info-section">
-          <view class="section-header">
-            <view class="section-line"></view>
-            <text class="section-title">报名需求</text>
+        <view class="info-row-sep"></view>
+        <view class="info-row">
+          <view class="info-icon-circle">
+            <text class="info-icon-text">📍</text>
           </view>
-          <text class="section-content">{{ activity.subtitle || '20周岁以上单身青年均可参加' }}</text>
-        </view>
-
-        <!-- 报名方式 -->
-        <view class="info-section">
-          <view class="section-header">
-            <view class="section-line"></view>
-            <text class="section-title">报名方式</text>
+          <view class="info-text-wrap">
+            <text class="info-label">活动地址</text>
+            <text class="info-value">{{ activity.location || '待定' }}</text>
           </view>
-          <text class="section-content">扫描下方二维码，添加红娘老师微信</text>
-          <text class="section-content phone-text">联系电话：{{ selectedMatchmaker.phone || '15703592518' }}</text>
-          <view class="qrcode-wrapper">
-            <image class="qrcode-image" :src="selectedMatchmaker.qrCode || '/static/matchmaker.png'" mode="aspectFit" />
-          </view>
-          <text class="qrcode-tip">（长按识别二维码添加红娘老师微信即可）</text>
         </view>
       </view>
 
-      <!-- 报名嘉宾区 -->
-      <view v-if="signupAvatars.length > 0" class="signup-section">
-        <view class="signup-header">
-          <text class="signup-title">报名嘉宾</text>
-          <text class="signup-count">{{ activity.currentParticipants }}人已报名</text>
+      <!-- 报名嘉宾 -->
+      <view v-if="signupAvatars.length > 0" class="guests-section">
+        <view class="guests-header">
+          <text class="guests-title">报名嘉宾</text>
+          <view class="guests-count">
+            <text class="fire-icon">🔥</text>
+            <text class="guests-count-text">{{ activity.currentParticipants }}人已报名</text>
+          </view>
         </view>
-        <scroll-view class="avatar-scroll" scroll-x>
-          <view class="avatar-list">
-            <image
-              v-for="(avatar, index) in signupAvatars"
-              :key="index"
-              class="signup-avatar"
-              :class="{ first: index === 0 }"
-              :src="avatar"
-              mode="aspectFill"
+        <view class="guests-avatars">
+          <image
+            v-for="(avatar, index) in displayAvatars"
+            :key="index"
+            class="guest-avatar"
+            :src="avatar"
+            mode="aspectFill"
+          />
+          <view v-if="avatarOverflow > 0" class="guest-avatar guest-avatar-overflow">
+            <text class="overflow-text">+{{ avatarOverflow }}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- Tab 切换栏 -->
+      <view class="tab-bar">
+        <view
+          class="tab-item"
+          :class="{ active: activeTab === 'detail' }"
+          @tap="switchTab('detail')"
+        >
+          <text class="tab-text">活动详情</text>
+          <view v-if="activeTab === 'detail'" class="tab-indicator"></view>
+        </view>
+        <view
+          class="tab-item"
+          :class="{ active: activeTab === 'scene' }"
+          @tap="switchTab('scene')"
+        >
+          <text class="tab-text">活动现场</text>
+          <view v-if="activeTab === 'scene'" class="tab-indicator"></view>
+        </view>
+      </view>
+
+      <!-- Tab 内容区 -->
+      <view class="tab-content" :class="{ 'fade-in': tabAnimating }">
+        <!-- 活动详情 -->
+        <view v-show="activeTab === 'detail'" class="content-blocks">
+          <template v-if="activity.detailBlocks && activity.detailBlocks.length > 0">
+            <BlockRenderer
+              v-for="block in activity.detailBlocks"
+              :key="block.id"
+              :block="block"
             />
+          </template>
+          <view v-else-if="activity.content" class="rich-content-wrapper">
+            <rich-text :nodes="richContent" class="rich-content"></rich-text>
           </view>
-        </scroll-view>
-      </view>
+          <view v-else class="empty-hint">
+            <text>暂无内容</text>
+          </view>
+        </view>
 
-      <!-- 活动详情区 -->
-      <view v-if="activity.content" class="detail-section">
-        <rich-text :nodes="activity.content" class="rich-content"></rich-text>
+        <!-- 活动现场 -->
+        <view v-show="activeTab === 'scene'" class="content-blocks">
+          <template v-if="activity.sceneBlocks && activity.sceneBlocks.length > 0">
+            <BlockRenderer
+              v-for="block in activity.sceneBlocks"
+              :key="block.id"
+              :block="block"
+            />
+          </template>
+          <view v-else class="empty-hint">
+            <text>暂无内容</text>
+          </view>
+        </view>
       </view>
 
       <view class="bottom-safe-area"></view>
     </scroll-view>
 
     <!-- 底部固定操作栏 -->
-    <view v-if="activity" class="bottom-bar">
+    <view v-if="activity" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <view class="bottom-left">
-        <view class="action-btn" @tap="handleShare">
+        <button class="action-btn share-btn" open-type="share">
           <text class="action-icon action-icon-share">↗</text>
           <text class="action-text">分享</text>
-        </view>
+        </button>
         <view class="action-btn" @tap="showMatchmakerPopup">
-          <text class="action-icon action-icon-chat">✎</text>
+          <image class="action-icon-img" :src="icons.tabbar.message.default" mode="aspectFit" />
           <text class="action-text">咨询</text>
         </view>
       </view>
       <view class="bottom-right">
         <view
-          v-if="activity.status === 1"
+          v-if="effectiveStatus === 1"
           class="signup-btn"
           :class="{ disabled: isFull }"
           @tap="handleSignup"
         >
           {{ isFull ? '名额已满' : '立即报名' }}
         </view>
-        <view v-else-if="activity.status === 2" class="signup-btn ended">
+        <view v-else-if="effectiveStatus === 2" class="signup-btn ended">
           活动已结束，查看更多
         </view>
-        <view v-else-if="activity.status === 3" class="signup-btn ended">
+        <view v-else-if="effectiveStatus === 3" class="signup-btn ended">
           活动已取消
         </view>
         <view v-else class="signup-btn ended">
@@ -202,10 +244,11 @@
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import BlockRenderer from '@/components/activity-blocks/BlockRenderer.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
-import { getFullImageUrl } from '@/utils/common'
+import { getFullImageUrl, getImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 
@@ -215,6 +258,8 @@ interface Activity {
   subtitle?: string
   coverImage: string
   content?: string
+  detailBlocks?: any[]
+  sceneBlocks?: any[]
   activityType: string
   startTime: string
   endTime: string
@@ -233,6 +278,9 @@ const showSignupPopup = ref(false)
 const matchmakerVisible = ref(false)
 const matchmakerListVisible = ref(false)
 const statusBarHeight = ref(0)
+const safeAreaBottom = ref(0)
+const activeTab = ref<'detail' | 'scene'>('detail')
+const tabAnimating = ref(false)
 const matchmakerList = ref<any[]>([])
 const selectedMatchmaker = ref({
   id: 1,
@@ -253,6 +301,46 @@ const signupForm = ref({
 const isFull = computed(() => {
   if (!activity.value) return false
   return activity.value.maxParticipants > 0 && activity.value.currentParticipants >= activity.value.maxParticipants
+})
+
+/** 有效状态：进行中(1) 但已过截止时间时，自动视为「已结束」(2) */
+const effectiveStatus = computed(() => {
+  const a = activity.value
+  if (!a) return 0
+  if (a.status === 1 && a.endTime && new Date(a.endTime).getTime() < Date.now()) {
+    return 2
+  }
+  return a.status
+})
+
+/** 富文本内容处理：
+ * 1. 把相对图片路径(如 /uploads/xxx.jpg)改写为经后端图片网关访问的完整 URL；
+ * 2. 去掉图片固定宽高、注入自适应样式，避免图片在小程序端超出屏幕。 */
+const richContent = computed(() => {
+  const html = activity.value?.content || ''
+  if (!html) return ''
+  return html.replace(/<img[^>]*>/gi, (tag) => {
+    // 1. 改写 src
+    let newTag = tag.replace(
+      /(src=)(["'])(.*?)\2/i,
+      (_m, p, q, url) => `${p}${q}${getImageUrl(url)}${q}`,
+    )
+    // 2. 移除固定宽高属性
+    newTag = newTag.replace(/\s(width|height)=(["']?)[^"'\s>]*\2/gi, '')
+    // 3. 注入自适应样式（去掉内联宽高后追加 max-width:100%）
+    if (/style=/i.test(newTag)) {
+      newTag = newTag.replace(/style=(["'])(.*?)\1/i, (_m, q, css) => {
+        const cleaned = css.replace(/(max-)?(width|height)\s*:[^;]+;?/gi, '')
+        return `style=${q}${cleaned};max-width:100%;height:auto;display:block${q}`
+      })
+    } else {
+      newTag = newTag.replace(
+        /<img/i,
+        '<img style="max-width:100%;height:auto;display:block"',
+      )
+    }
+    return newTag
+  })
 })
 
 function getStatusText(status: number) {
@@ -278,6 +366,28 @@ function getHourText(hour: number) {
   return `晚上${hour - 12}点`
 }
 
+function formatDateOnly(dateStr: string) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`
+}
+
+function switchTab(tab: 'detail' | 'scene') {
+  if (activeTab.value === tab) return
+  tabAnimating.value = true
+  activeTab.value = tab
+  setTimeout(() => { tabAnimating.value = false }, 200)
+}
+
+/** 最多展示 10 个头像，超出显示 +N */
+const MAX_AVATAR = 10
+const displayAvatars = computed(() => {
+  return signupAvatars.value.slice(0, MAX_AVATAR)
+})
+const avatarOverflow = computed(() => {
+  return Math.max(0, signupAvatars.value.length - MAX_AVATAR)
+})
+
 async function fetchActivityDetail(id: number) {
   try {
     const result: any = await request({
@@ -291,11 +401,6 @@ async function fetchActivityDetail(id: number) {
     console.error('获取活动详情失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
-}
-
-function handleShare() {
-  // 提示用户使用右上角原生分享（showShareMenu 已在 onMounted 激活）
-  uni.showToast({ title: '请点击右上角「···」分享', icon: 'none', duration: 2000 })
 }
 
 function showMatchmakerPopup() {
@@ -323,7 +428,7 @@ const onSelectMatchmaker = (matchmaker: any) => {
 
 const fetchMatchmakerList = async () => {
   try {
-    const res = await request({
+    const res: any = await request({
       url: '/matchmakers',
       method: 'GET',
     })
@@ -418,6 +523,7 @@ onMounted(() => {
   // 获取状态栏高度
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
+  safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
 
   // 激活右上角原生分享按钮
   uni.showShareMenu({
@@ -451,8 +557,7 @@ const onShareAppMessage = () => {
 <style lang="scss" scoped>
 .activity-detail-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
-  padding-bottom: calc(110rpx + env(safe-area-inset-bottom));
+  background-color: #FEF9F9;
 }
 
 /* 顶部导航栏 */
@@ -493,16 +598,18 @@ const onShareAppMessage = () => {
 }
 
 /* 内容滚动区 */
-.content-scroll {
-}
+.content-scroll { }
 
-/* 封面图 */
-.cover-wrapper {
+/* ===== Banner 大图（全宽 + 底部圆角） ===== */
+.banner-wrapper {
   position: relative;
   width: 100%;
   height: 400rpx;
+  border-bottom-left-radius: 32rpx;
+  border-bottom-right-radius: 32rpx;
+  overflow: hidden;
 
-  .cover-image {
+  .banner-image {
     width: 100%;
     height: 100%;
   }
@@ -519,156 +626,229 @@ const onShareAppMessage = () => {
   }
 }
 
-/* 标题区 */
+/* ===== 活动标题 ===== */
 .title-section {
-  background-color: #fff;
-  padding: 32rpx;
-  text-align: center;
+  background: #fff;
+  padding: 32rpx 32rpx 16rpx;
 
   .activity-title {
+    display: block;
     font-size: 36rpx;
     font-weight: bold;
-    color: #ff6b9d;
+    color: #222;
+  }
+
+  .activity-subtitle {
+    display: block;
+    font-size: 26rpx;
+    color: #999;
+    margin-top: 8rpx;
   }
 }
 
-/* 信息卡片 */
-.info-card {
-  background-color: #fff;
-  margin: 24rpx;
-  border-radius: 16rpx;
-  padding: 32rpx;
+/* ===== 信息行（三行：报名截止 / 活动时间 / 活动地址） ===== */
+.info-rows {
+  background: #fff;
+  padding: 0 32rpx 16rpx;
 
-  .info-section {
-    margin-bottom: 32rpx;
+  .info-row {
+    display: flex;
+    align-items: center;
+    padding: 24rpx 0;
+  }
 
-    &:last-child {
-      margin-bottom: 0;
+  .info-icon-circle {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 50%;
+    background: rgba(255, 107, 157, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    .info-icon-text {
+      font-size: 28rpx;
+    }
+  }
+
+  .info-text-wrap {
+    margin-left: 20rpx;
+    flex: 1;
+
+    .info-label {
+      display: block;
+      font-size: 24rpx;
+      color: #999;
     }
 
-    .section-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 16rpx;
-
-      .section-line {
-        width: 8rpx;
-        height: 28rpx;
-        background-color: #ff6b9d;
-        border-radius: 4rpx;
-        margin-right: 16rpx;
-      }
-
-      .section-title {
-        font-size: 32rpx;
-        font-weight: bold;
-        color: #ff6b9d;
-      }
-    }
-
-    .section-content {
+    .info-value {
       display: block;
       font-size: 28rpx;
       color: #333;
-      line-height: 1.6;
-      padding-left: 24rpx;
+      margin-top: 4rpx;
     }
+  }
 
-    .phone-text {
-      margin-top: 8rpx;
-      color: #666;
-    }
-
-    .qrcode-wrapper {
-      display: flex;
-      justify-content: center;
-      margin-top: 24rpx;
-
-      .qrcode-image {
-        width: 400rpx;
-        height: 400rpx;
-        border: 4rpx solid #fff;
-        box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
-      }
-    }
-
-    .qrcode-tip {
-      display: block;
-      text-align: center;
-      font-size: 24rpx;
-      color: #999;
-      margin-top: 16rpx;
-    }
+  .info-row-sep {
+    height: 1rpx;
+    background: #F0F0F0;
+    margin-left: 76rpx;
   }
 }
 
-/* 报名嘉宾区 */
-.signup-section {
-  background-color: #fff;
-  margin: 24rpx;
-  border-radius: 16rpx;
-  padding: 32rpx;
+/* ===== 报名嘉宾 ===== */
+.guests-section {
+  background: #fff;
+  padding: 16rpx 32rpx 32rpx;
 
-  .signup-header {
+  .guests-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24rpx;
+    margin-bottom: 20rpx;
 
-    .signup-title {
+    .guests-title {
       font-size: 32rpx;
       font-weight: bold;
       color: #333;
     }
 
-    .signup-count {
-      font-size: 28rpx;
-      color: #ff6b9d;
-    }
-  }
-
-  .avatar-scroll {
-    white-space: nowrap;
-
-    .avatar-list {
+    .guests-count {
       display: flex;
       align-items: center;
 
-      .signup-avatar {
-        width: 96rpx;
-        height: 96rpx;
-        border-radius: 50%;
-        border: 4rpx solid #fff;
-        margin-left: -32rpx;
+      .fire-icon {
+        font-size: 28rpx;
+        margin-right: 6rpx;
+      }
 
-        &.first {
-          margin-left: 0;
+      .guests-count-text {
+        font-size: 26rpx;
+        color: #FF6B9D;
+      }
+    }
+  }
+
+  .guests-avatars {
+    display: flex;
+    align-items: center;
+
+    .guest-avatar {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: 50%;
+      border: 4rpx solid #fff;
+      margin-left: -22rpx;
+      box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08);
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+      &.guest-avatar-overflow {
+        background: rgba(255, 107, 157, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .overflow-text {
+          font-size: 22rpx;
+          color: #FF6B9D;
+          font-weight: bold;
         }
       }
     }
   }
 }
 
-/* 活动详情区 */
-.detail-section {
-  background-color: #fff;
-  margin: 24rpx;
-  border-radius: 16rpx;
-  padding: 24rpx;
+/* ===== Tab 切换栏 ===== */
+.tab-bar {
+  background: #fff;
+  display: flex;
+  border-bottom: 1rpx solid #F0F0F0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 
-  .rich-content {
-    font-size: 28rpx;
-    line-height: 1.6;
-    color: #333;
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24rpx 0 0;
+    position: relative;
 
-    image, img {
-      max-width: 100%;
-      height: auto;
+    .tab-text {
+      font-size: 30rpx;
+      color: #999;
+    }
+
+    &.active .tab-text {
+      color: #222;
+      font-weight: bold;
+    }
+
+    .tab-indicator {
+      width: 48rpx;
+      height: 6rpx;
+      background: #FF6B9D;
+      border-radius: 3rpx;
+      margin-top: 12rpx;
     }
   }
 }
 
-/* 底部操作栏 */
+/* ===== Tab 内容区 ===== */
+.tab-content {
+  background: #FEF9F9;
+  padding: 24rpx 32rpx;
+  min-height: 300rpx;
+
+  &.fade-in {
+    animation: tabFadeIn 200ms ease;
+  }
+
+  @keyframes tabFadeIn {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+  }
+
+  .content-blocks {
+    /* block renderer handles child spacing */
+  }
+
+  .rich-content-wrapper {
+    .rich-content {
+      font-size: 28rpx;
+      line-height: 1.8;
+      color: #555;
+
+      image, img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+      }
+    }
+  }
+
+  .empty-hint {
+    text-align: center;
+    padding: 80rpx 0;
+
+    text {
+      font-size: 28rpx;
+      color: #ccc;
+    }
+  }
+}
+
+/* 底部安全区 */
+.bottom-safe-area {
+  height: env(safe-area-inset-bottom);
+}
+
+/* ===== 底部固定操作栏 ===== */
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -681,7 +861,6 @@ const onShareAppMessage = () => {
   align-items: center;
   justify-content: space-between;
   padding: 0 24rpx;
-  padding-bottom: env(safe-area-inset-bottom);
   z-index: 100;
   box-sizing: content-box;
 
@@ -705,17 +884,31 @@ const onShareAppMessage = () => {
         line-height: 1.2;
       }
 
-      .action-icon-share {
-        color: #666;
+      .action-icon-img {
+        width: 44rpx;
+        height: 44rpx;
       }
 
-      .action-icon-chat {
+      .action-icon-share {
         color: #666;
       }
 
       .action-text {
         font-size: 22rpx;
         color: #999;
+      }
+    }
+
+    /* 分享按钮：复用 open-type="share" 直接拉起微信转发，需重置原生 button 样式 */
+    .share-btn {
+      height: auto;
+      line-height: 1.2;
+      background: transparent;
+      border: none;
+      margin: 0;
+
+      &::after {
+        border: none;
       }
     }
   }
@@ -743,9 +936,12 @@ const onShareAppMessage = () => {
       }
 
       &.ended {
+        width: 440rpx;
         background: #ccc;
-        color: #999;
+        color: #fff;
         font-size: 26rpx;
+        font-weight: normal;
+        white-space: nowrap;
       }
     }
   }

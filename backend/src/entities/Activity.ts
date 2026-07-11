@@ -23,6 +23,14 @@ export class Activity {
   @Column({ type: 'text', nullable: true })
   content: string
 
+  /** 活动详情 Tab 自定义积木区块 JSON（保留 content 兼容旧数据） */
+  @Column({ type: 'json', nullable: true })
+  detailBlocks: any[] | null
+
+  /** 活动现场 Tab 自定义积木区块 JSON */
+  @Column({ type: 'json', nullable: true })
+  sceneBlocks: any[] | null
+
   @Column({ type: 'varchar', length: 20, default: 'latest', name: 'activityType' })
   activityType: string
 
