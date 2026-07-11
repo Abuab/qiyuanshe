@@ -110,7 +110,7 @@
       <view class="bottom-spacer"></view>
     </scroll-view>
 
-    <!-- 定制会员 Tab -->
+    <!-- 定制会员 Tab（纯 CSS 图标，无图片/emoji） -->
     <scroll-view
       v-if="activeTab === 'custom'"
       class="tab-content"
@@ -122,25 +122,115 @@
         <image :src="customConfig.bannerUrl" mode="widthFix" class="banner-img" />
       </view>
 
-      <!-- 适合人群 -->
-      <view class="custom-section">
-        <text class="section-title">{{ customConfig.suitableTitle || '哪些人适合1对1定制服务' }}</text>
-        <view class="suitable-grid">
-          <view class="suitable-item" v-for="(item, idx) in customConfig.suitableList" :key="idx">
-            <text class="suitable-name">{{ item.name }}</text>
-            <text class="suitable-desc">{{ item.desc }}</text>
+      <!-- 模块一：哪些人适合1对1定制服务 -->
+      <view class="cd-card">
+        <text class="cd-card-title">{{ customConfig.suitableTitle || '哪些人适合1对1定制服务' }}</text>
+        <view class="cd-grid">
+          <view class="cd-item" v-for="(item, idx) in customConfig.suitableList" :key="idx">
+            <!-- 图标1: 晕眩表情 -->
+            <view v-if="idx === 0" class="cd-circ cd-circ-red">
+              <view class="cd-dizzy">
+                <view class="dz-eye dz-left"><view class="dz-pupil"></view></view>
+                <view class="dz-eye dz-right"><view class="dz-pupil"></view></view>
+                <view class="dz-mouth"></view>
+              </view>
+            </view>
+            <!-- 图标2: 指南针 -->
+            <view v-else-if="idx === 1" class="cd-circ cd-circ-orange">
+              <view class="cd-compass">
+                <view class="cp-diamond"></view>
+                <view class="cp-center"></view>
+                <view class="cp-tick cp-t1"></view>
+                <view class="cp-tick cp-t2"></view>
+                <view class="cp-tick cp-t3"></view>
+                <view class="cp-tick cp-t4"></view>
+              </view>
+            </view>
+            <!-- 图标3: 人形铃铛 -->
+            <view v-else-if="idx === 2" class="cd-circ cd-circ-pink">
+              <view class="cd-bell">
+                <view class="bl-head"></view>
+                <view class="bl-body"></view>
+                <view class="bl-bottom"></view>
+              </view>
+            </view>
+            <!-- 图标4: 盾牌对勾 -->
+            <view v-else class="cd-circ cd-circ-purple">
+              <view class="cd-shield">
+                <view class="sh-body"><view class="sh-check"></view></view>
+              </view>
+            </view>
+            <text class="cd-name">{{ item.name }}</text>
+            <text class="cd-desc">{{ item.desc }}</text>
           </view>
         </view>
       </view>
 
-      <!-- 专属服务 -->
-      <view class="custom-section">
-        <text class="section-title">{{ customConfig.serviceTitle || '专属服务 助你脱单' }}</text>
-        <view class="service-list">
-          <view class="service-item" v-for="(item, idx) in customConfig.serviceList" :key="idx">
-            <view class="service-text">
-              <text class="service-name">{{ item.name }}</text>
-              <text class="service-desc">{{ item.desc }}</text>
+      <!-- 模块二：专属服务 祝你脱单 -->
+      <view class="cd-card">
+        <text class="cd-card-title">{{ customConfig.serviceTitle || '专属服务 助你脱单' }}</text>
+        <view class="cd-svc-list">
+          <view class="cd-svc" v-for="(item, idx) in customConfig.serviceList" :key="'svc'+idx">
+            <!-- 服务图标 -->
+            <view v-if="idx === 0" class="cd-svc-icon cd-svc-grad-pink">
+              <view class="si-target"><view class="tg-ring1"></view><view class="tg-ring2"></view><view class="tg-core"></view></view>
+            </view>
+            <view v-else-if="idx === 1" class="cd-svc-icon cd-svc-grad-purple">
+              <view class="si-smile">
+                <view class="sm-eye sm-l"></view>
+                <view class="sm-eye sm-r"></view>
+                <view class="sm-mouth"></view>
+              </view>
+            </view>
+            <view v-else-if="idx === 2" class="cd-svc-icon cd-svc-grad-blue">
+              <view class="si-lock">
+                <view class="lk-shackle"></view>
+                <view class="lk-body"></view>
+              </view>
+            </view>
+            <view v-else-if="idx === 3" class="cd-svc-icon cd-svc-grad-green">
+              <view class="si-shield-bolt">
+                <view class="sb-shield"><view class="sb-bolt"></view></view>
+              </view>
+            </view>
+            <view v-else-if="idx === 4" class="cd-svc-icon cd-svc-grad-purple2">
+              <view class="si-heart-check">
+                <view class="hc-heart"></view>
+                <view class="hc-check"></view>
+              </view>
+            </view>
+            <view v-else-if="idx === 5" class="cd-svc-icon cd-svc-grad-red">
+              <view class="si-redhead">
+                <view class="rh-hair"></view>
+                <view class="rh-bangs">
+                  <view class="rh-bang"></view>
+                  <view class="rh-bang"></view>
+                  <view class="rh-bang"></view>
+                </view>
+                <view class="rh-face"></view>
+                <view class="rh-body"></view>
+              </view>
+            </view>
+            <view v-else-if="idx === 6" class="cd-svc-icon cd-svc-grad-green">
+              <view class="si-person-pin">
+                <view class="pp-head"></view>
+                <view class="pp-body"></view>
+                <view class="pp-pin"></view>
+              </view>
+            </view>
+            <view v-else class="cd-svc-icon cd-svc-grad-blue">
+              <view class="si-bubble">
+                <view class="bu-box">
+                  <view class="bu-dot"></view>
+                  <view class="bu-dot"></view>
+                  <view class="bu-dot"></view>
+                </view>
+                <view class="bu-tail"></view>
+              </view>
+            </view>
+            <view class="cd-svc-text">
+              <text class="cd-svc-name">{{ item.name }}</text>
+              <text class="cd-svc-desc">{{ item.desc }}</text>
             </view>
           </view>
         </view>
@@ -1124,7 +1214,7 @@ onShow(() => {
   }
 }
 
-// ===== 定制会员 =====
+// ===== 定制会员（纯 CSS 图标） =====
 .custom-banner,
 .about-banner {
   width: 100%;
@@ -1135,76 +1225,186 @@ onShow(() => {
   display: block;
 }
 
-.custom-section,
-.about-section {
-  padding: 20px;
+// 卡片容器
+.cd-card {
+  margin: 0 32rpx 24rpx;
+  padding: 32rpx;
   background: #fff;
-  margin-bottom: 12px;
+  border-radius: 24rpx;
+  box-shadow: 0 4rpx 24rpx rgba(0, 0, 0, 0.06);
+}
+.cd-card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 24rpx;
 }
 
-// 适合人群网格
-.suitable-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+// 模块一：四列网格
+.cd-grid {
+  display: flex;
 }
-
-.suitable-item {
+.cd-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 10px;
-  background: #fff;
-  border: 1px solid #f0f0f0;
-  border-radius: 12px;
 }
-
-.suitable-name {
-  font-size: 14px;
-  font-weight: 700;
+.cd-name {
+  font-size: 24rpx;
   color: #333;
-  margin-bottom: 4px;
+  font-weight: bold;
+  margin-top: 16rpx;
+  text-align: center;
 }
-
-.suitable-desc {
-  font-size: 11px;
+.cd-desc {
+  font-size: 22rpx;
   color: #999;
+  margin-top: 4rpx;
+  text-align: center;
+  line-height: 1.4;
 }
 
-// 服务列表
-.service-list {
+// 模块一图标圆圈
+.cd-circ {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.cd-circ-red { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
+.cd-circ-orange { background: linear-gradient(135deg, #FF9F43, #FFB876); }
+.cd-circ-pink { background: linear-gradient(135deg, #FF6B9D, #FF8FAB); }
+.cd-circ-purple { background: linear-gradient(135deg, #A55EEA, #C084FC); }
+
+// 图标1：晕眩表情
+.cd-dizzy { position: relative; width: 60rpx; height: 50rpx; }
+.dz-eye {
+  position: absolute; top: 10rpx; width: 20rpx; height: 20rpx;
+  border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center;
+}
+.dz-left { left: 6rpx; }
+.dz-right { right: 6rpx; }
+.dz-pupil { width: 8rpx; height: 8rpx; border-radius: 50%; background: #FF4444; margin-top: -4rpx; margin-left: -4rpx; }
+.dz-mouth { position: absolute; bottom: 4rpx; left: 50%; transform: translateX(-50%); width: 28rpx; height: 14rpx; border-bottom: 3rpx solid #fff; border-radius: 0 0 50% 50%; }
+
+// 图标2：指南针
+.cd-compass { position: relative; width: 60rpx; height: 60rpx; }
+.cp-diamond { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); width: 24rpx; height: 24rpx; border: 2rpx solid #fff; }
+.cp-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6rpx; height: 6rpx; border-radius: 50%; background: #fff; }
+.cp-tick { position: absolute; width: 0; height: 0; border-left: 4rpx solid transparent; border-right: 4rpx solid transparent; border-bottom: 6rpx solid #fff; }
+.cp-t1 { top: 6rpx; left: 50%; transform: translateX(-50%); }
+.cp-t2 { bottom: 6rpx; left: 50%; transform: translateX(-50%) rotate(180deg); }
+.cp-t3 { left: 6rpx; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+.cp-t4 { right: 6rpx; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+// 图标3：人形铃铛
+.cd-bell { position: relative; width: 40rpx; height: 56rpx; display: flex; flex-direction: column; align-items: center; }
+.bl-head { width: 18rpx; height: 18rpx; border-radius: 50%; background: #fff; }
+.bl-body { width: 0; height: 0; border-left: 12rpx solid transparent; border-right: 12rpx solid transparent; border-bottom: 20rpx solid #fff; margin-top: -2rpx; }
+.bl-bottom { width: 20rpx; height: 8rpx; border-radius: 0 0 50% 50%; background: #fff; margin-top: -2rpx; }
+
+// 图标4：盾牌对勾
+.cd-shield { position: relative; width: 44rpx; height: 50rpx; display: flex; align-items: center; justify-content: center; }
+.sh-body { width: 32rpx; height: 36rpx; border-radius: 50% 50% 50% 50% / 15% 15% 85% 85%; background: #fff; display: flex; align-items: center; justify-content: center; }
+.sh-check { width: 14rpx; height: 8rpx; border-right: 3rpx solid #A55EEA; border-bottom: 3rpx solid #A55EEA; transform: rotate(45deg); margin-top: -4rpx; }
+
+// 模块二：服务列表
+.cd-svc-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 32rpx;
 }
-
-.service-item {
+.cd-svc {
   display: flex;
-  align-items: flex-start;
-  padding: 16px;
+  align-items: center;
+}
+.cd-svc-icon {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 24rpx;
+  position: relative;
+}
+.cd-svc-grad-pink { background: linear-gradient(135deg, #FFB6C1, #FFD4A0); }
+.cd-svc-grad-purple { background: linear-gradient(135deg, #B19CD9, #D4B8F0); }
+.cd-svc-grad-purple2 { background: linear-gradient(135deg, #B19CD9, #D4B8F0); }
+.cd-svc-grad-blue { background: linear-gradient(135deg, #74B9FF, #A29BFE); }
+.cd-svc-grad-green { background: linear-gradient(135deg, #55E6C1, #58B19F); }
+.cd-svc-grad-red { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
+.cd-svc-text { flex: 1; }
+.cd-svc-name { font-size: 32rpx; font-weight: bold; color: #4A4A8A; display: block; margin-bottom: 6rpx; }
+.cd-svc-desc { font-size: 26rpx; color: #999; line-height: 1.5; }
+
+// 服务图标1：靶心
+.si-target { position: relative; width: 44rpx; height: 44rpx; }
+.tg-ring1 { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40rpx; height: 40rpx; border-radius: 50%; border: 4rpx solid #FF6B6B; }
+.tg-ring2 { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28rpx; height: 28rpx; border-radius: 50%; border: 4rpx solid #FFD700; }
+.tg-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12rpx; height: 12rpx; border-radius: 50%; background: #FF6B6B; }
+
+// 服务图标2：笑脸
+.si-smile { position: relative; width: 44rpx; height: 36rpx; }
+.sm-eye { position: absolute; top: 4rpx; width: 8rpx; height: 10rpx; border-radius: 50%; background: #fff; }
+.sm-l { left: 10rpx; }
+.sm-r { right: 10rpx; }
+.sm-mouth { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24rpx; height: 12rpx; border-bottom: 3rpx solid #fff; border-radius: 0 0 50% 50%; }
+
+// 服务图标3：锁
+.si-lock { position: relative; width: 30rpx; height: 36rpx; display: flex; flex-direction: column; align-items: center; }
+.lk-shackle { width: 24rpx; height: 14rpx; border: 3rpx solid #fff; border-bottom: none; border-radius: 50% 50% 0 0; }
+.lk-body { width: 22rpx; height: 18rpx; background: #fff; border-radius: 4rpx; margin-top: -2rpx; }
+
+// 服务图标4：绿盾闪电
+.si-shield-bolt { position: relative; width: 44rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; }
+.sb-shield { width: 36rpx; height: 40rpx; border-radius: 50% 50% 50% 50% / 15% 15% 70% 70%; background: #fff; display: flex; align-items: center; justify-content: center; }
+.sb-bolt { width: 8rpx; height: 20rpx; background: #FFD700; clip-path: polygon(40% 0%, 100% 50%, 60% 50%, 60% 100%, 0% 50%, 40% 50%); }
+
+// 服务图标5：紫心对勾
+.si-heart-check { position: relative; width: 40rpx; height: 38rpx; display: flex; align-items: center; justify-content: center; }
+.hc-heart { position: relative; width: 30rpx; height: 26rpx; }
+.hc-heart::before,
+.hc-heart::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 15rpx;
+  width: 15rpx;
+  height: 22rpx;
   background: #fff;
-  border: 1px solid #f5f5f5;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border-radius: 15rpx 15rpx 0 0;
+  transform: rotate(-45deg);
+  transform-origin: 0 100%;
 }
+.hc-heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+.hc-check { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); width: 10rpx; height: 6rpx; border-right: 2rpx solid #B19CD9; border-bottom: 2rpx solid #B19CD9; margin-top: -2rpx; }
 
-.service-text {
-  flex: 1;
-}
+// 服务图标6：红发人物
+.si-redhead { position: relative; width: 46rpx; height: 60rpx; display: flex; flex-direction: column; align-items: center; }
+.rh-hair { width: 40rpx; height: 20rpx; background: #FF4757; border-radius: 50% 50% 0 0; position: relative; z-index: 2; }
+.rh-bangs { display: flex; gap: 2rpx; margin-top: -6rpx; position: relative; z-index: 3; }
+.rh-bang { width: 6rpx; height: 8rpx; background: #FF4757; }
+.rh-face { width: 18rpx; height: 18rpx; border-radius: 50%; background: #fff; position: relative; z-index: 1; margin-top: -4rpx; }
+.rh-body { width: 0; height: 0; border-left: 10rpx solid transparent; border-right: 10rpx solid transparent; border-bottom: 16rpx solid #fff; margin-top: 2rpx; }
 
-.service-name {
-  display: block;
-  font-size: 15px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 4px;
-}
+// 服务图标7：人形+定位
+.si-person-pin { position: relative; width: 52rpx; height: 48rpx; }
+.pp-head { position: absolute; top: 2rpx; left: 4rpx; width: 14rpx; height: 14rpx; border-radius: 50%; background: #fff; }
+.pp-body { position: absolute; top: 16rpx; left: 1rpx; width: 0; height: 0; border-left: 10rpx solid transparent; border-right: 10rpx solid transparent; border-bottom: 16rpx solid #fff; }
+.pp-pin { position: absolute; bottom: 4rpx; right: 6rpx; width: 18rpx; height: 22rpx; border-radius: 50% 50% 50% 0; background: #FFD700; transform: rotate(-45deg); }
 
-.service-desc {
-  font-size: 12px;
-  color: #999;
-  line-height: 1.5;
-}
+// 服务图标8：对话框
+.si-bubble { position: relative; width: 48rpx; height: 38rpx; }
+.bu-box { display: flex; align-items: center; justify-content: center; gap: 6rpx; width: 36rpx; height: 26rpx; background: #fff; border-radius: 8rpx; }
+.bu-dot { width: 5rpx; height: 5rpx; border-radius: 50%; background: #A29BFE; }
+.bu-tail { position: absolute; bottom: 0; left: 0; width: 0; height: 0; border-left: 6rpx solid transparent; border-right: 0rpx solid transparent; border-top: 8rpx solid #fff; }
 
 // ===== 关于我们 =====
 .feature-list {
