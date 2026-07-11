@@ -1,4 +1,4 @@
-import { beijingISO } from '../common/utils/date-utils'
+import { beijingDateTime } from '../common/utils/date-utils'
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
@@ -253,25 +253,28 @@ export class AgreementLogStorageService {
 
     // 批量查询用户昵称和手机号
     const userIds = [...new Set(result.items.map((item: any) => item.userId).filter(Boolean))] as number[]
+    const userMap = new Map<number, any>()
     if (userIds.length > 0) {
       const users = await this.userRepo.find({
         where: { id: In(userIds) },
         select: ['id', 'userId', 'nickname', 'phone'],
       })
-      const userMap = new Map(users.map(u => [u.id, u]))
-      result.items = result.items.map((item: any) => {
-        const u = userMap.get(item.userId)
-        return {
-          ...item,
-          // 对外展示的 6 位公开 ID（与小程序端一致）
-          publicUserId: u?.userId || '',
-          nickname: u?.nickname || '',
-          phone: u?.phone || '',
-          // 统一输出北京时间
-          createdAt: item.createdAt ? beijingISO(item.createdAt) : '',
-        }
-      })
+      users.forEach(u => userMap.set(u.id, u))
     }
+
+    // 统一处理：附带用户信息 + 时间统一输出北京时间（YYYY-MM-DD HH:mm:ss），对所有记录生效
+    result.items = result.items.map((item: any) => {
+      const u = userMap.get(item.userId)
+      return {
+        ...item,
+        // 对外展示的 6 位公开 ID（与小程序端一致）
+        publicUserId: u?.userId || '',
+        nickname: u?.nickname || '',
+        phone: u?.phone || '',
+        // 统一输出北京时间
+        createdAt: item.createdAt ? beijingDateTime(item.createdAt) : '',
+      }
+    })
 
     return result
   }

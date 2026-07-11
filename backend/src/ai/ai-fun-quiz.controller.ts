@@ -26,8 +26,11 @@ export class AiFunQuizController {
    * POST /ai/fun-quiz/answer
    */
   @Post('answer')
-  async answerQuestion(@Body() body: FunQuizAnswerRequest) {
-    const data = await this.funQuizService.respondToAnswer(body.answer)
+  @UseGuards(JwtAuthGuard)
+  async answerQuestion(@Req() req: any, @Body() body: FunQuizAnswerRequest) {
+    const userId = req.user?.id || 0
+    const isVip = !!(req.user?.isVip === 1 && req.user?.vipExpireTime && new Date(req.user.vipExpireTime) > new Date())
+    const data = await this.funQuizService.respondToAnswer(userId, isVip, body.answer)
     return Result.success(data)
   }
 

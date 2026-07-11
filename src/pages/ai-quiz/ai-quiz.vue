@@ -139,11 +139,17 @@ function sendMessage() {
         type: 'ai',
         content: res?.reply || res,
       })
-    } catch {
-      messages.value.push({
-        type: 'ai',
-        content: '收到你的想法了～要不要换个话题聊聊？',
-      })
+    } catch (err: any) {
+      // 每日对话条数用完等业务错误：展示后端返回的具体提示
+      const bizMsg = err?.data?.message || err?.message
+      if (bizMsg && (err?.data?.code === 'QUOTA_EXCEEDED' || err?.statusCode === 400 || err?.data?.code)) {
+        messages.value.push({ type: 'ai', content: bizMsg })
+      } else {
+        messages.value.push({
+          type: 'ai',
+          content: '收到你的想法了～要不要换个话题聊聊？',
+        })
+      }
     }
     scrollToBottom()
   }, 800)

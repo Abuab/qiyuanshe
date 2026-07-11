@@ -76,6 +76,17 @@
           <span class="unit">次/天</span>
         </el-form-item>
 
+        <!-- AI 情感问答（聊天对话） -->
+        <el-divider content-position="left">AI 情感问答（聊天对话）</el-divider>
+        <el-form-item label="非会员每日条数">
+          <el-input-number v-model="form.emotionQa.freePerDay" :min="0" :max="999" />
+          <span class="unit">条/天</span>
+        </el-form-item>
+        <el-form-item label="会员每日条数">
+          <el-input-number v-model="form.emotionQa.vipPerDay" :min="0" :max="999" />
+          <span class="unit">条/天</span>
+        </el-form-item>
+
       </el-form>
     </el-card>
 
@@ -102,6 +113,7 @@ const form = reactive({
   emotion:     { freePerDay: 3,   vipPerDay: 10 },
   match:       { freePerDay: 2,   vipPerDay: 10 },
   quiz:        { freePerDay: 2,   vipPerDay: 10 },
+  emotionQa:   { freePerDay: 5,   vipPerDay: 30 },
 })
 
 onMounted(async () => {

@@ -31,6 +31,11 @@ export interface QuotaConfig {
     freePerDay: number
     vipPerDay: number
   }
+  /** AI 情感问答（聊天）每日对话条数 */
+  emotionQa: {
+    freePerDay: number
+    vipPerDay: number
+  }
 }
 
 /** 默认限额（写死在代码中，数据库无配置时使用） */
@@ -41,6 +46,7 @@ const DEFAULT_QUOTA: QuotaConfig = {
   emotion:     { freePerDay: 3,   vipPerDay: 10 },
   match:       { freePerDay: 2,   vipPerDay: 10 },
   quiz:        { freePerDay: 2,   vipPerDay: 10 },
+  emotionQa:   { freePerDay: 5,   vipPerDay: 30 },
 }
 
 /** system_configs 中的 configKey 前缀 */
@@ -104,6 +110,10 @@ export class AiQuotaService {
           freePerDay: getNum('quiz.freePerDay', DEFAULT_QUOTA.quiz.freePerDay),
           vipPerDay:  getNum('quiz.vipPerDay',  DEFAULT_QUOTA.quiz.vipPerDay),
         },
+        emotionQa: {
+          freePerDay: getNum('emotionQa.freePerDay', DEFAULT_QUOTA.emotionQa.freePerDay),
+          vipPerDay:  getNum('emotionQa.vipPerDay',  DEFAULT_QUOTA.emotionQa.vipPerDay),
+        },
       }
     } catch (e: any) {
       this.logger.warn(`读取配额配置失败，使用默认值: ${e?.message}`)
@@ -128,6 +138,8 @@ export class AiQuotaService {
       { key: 'match.vipPerDay',  value: config.match.vipPerDay },
       { key: 'quiz.freePerDay', value: config.quiz.freePerDay },
       { key: 'quiz.vipPerDay',  value: config.quiz.vipPerDay },
+      { key: 'emotionQa.freePerDay', value: config.emotionQa.freePerDay },
+      { key: 'emotionQa.vipPerDay',  value: config.emotionQa.vipPerDay },
     ]
 
     for (const { key, value } of entries) {

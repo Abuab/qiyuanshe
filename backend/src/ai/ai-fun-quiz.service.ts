@@ -6,8 +6,9 @@ import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { AiQuotaService } from './ai-quota.service'
+import { RedisService } from '../common/redis.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
-import { beijingISO } from '../common/utils/date-utils'
+import { beijingISO, beijingDateStr } from '../common/utils/date-utils'
 import { AiFunQuizReport } from '../entities/AiFunQuizReport'
 import { User } from '../entities/User'
 import { buildFunQuizPrompt } from './ai-fun-quiz.prompt'
@@ -43,6 +44,7 @@ export class AiFunQuizService {
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
     private readonly quotaService: AiQuotaService,
+    private readonly redis: RedisService,
   ) {}
 
   /**
@@ -90,17 +92,51 @@ export class AiFunQuizService {
 
   /**
    * AI 趣味情感问答 —— 响应用户的回答
+   * 每日条数限制（会员30/免费5，按北京时间跨天重置）
    */
-  async respondToAnswer(answer: string): Promise<{ reply: string }> {
+  async respondToAnswer(
+    userId: number,
+    isVip: boolean,
+    answer: string,
+  ): Promise<{ reply: string; remaining: number }> {
     await this.checkFeatureEnabled()
 
-    // 敏感词输入检测：用户回答可能包含敏感内容
+    // 敏感词输入检测
     if (!answer?.trim()) {
-      return { reply: '可以多说说你的想法吗？一句话也行～' }
+      return { reply: '可以多说说你的想法吗？一句话也行～', remaining: 0 }
     }
     const inputCheck = this.safetyService.checkText(answer)
     if (!inputCheck.passed) {
-      return { reply: '感谢你的分享～换个轻松的话题聊聊吧！' }
+      return { reply: '感谢你的分享～换个轻松的话题聊聊吧！', remaining: 0 }
+    }
+
+    // 已登录用户：每日条数限制（按北京时间跨天重置）
+    let remaining = 0
+    if (userId > 0) {
+      const quota = await this.quotaService.getConfig()
+      const dailyLimit = isVip && quota.emotionQa.vipPerDay > 0
+        ? quota.emotionQa.vipPerDay
+        : quota.emotionQa.freePerDay
+      const dateKey = beijingDateStr()
+      const redisKey = `ai:fun_quiz:answer:${userId}:${dateKey}`
+      const count = await this.redis.incr(redisKey)
+      if (count === 1) {
+        // 首次创建 key，在次日北京时间 00:00:00 过期
+        const now = new Date()
+        const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+        tomorrow.setDate(tomorrow.getDate() + 1) // 北京时间 00:00 对应的 UTC 时间 ≈ UTC 16:00
+        const ttl = Math.ceil((tomorrow.getTime() - Date.now()) / 1000)
+        await this.redis.expire(redisKey, ttl > 0 ? ttl : 86400)
+      }
+      remaining = Math.max(0, dailyLimit - count)
+      if (count > dailyLimit) {
+        throw new BadRequestException({
+          code: 'QUOTA_EXCEEDED',
+          message: isVip
+            ? `今日对话次数已用完（${dailyLimit}条/天），明天再来聊吧～`
+            : `今日免费对话次数已用完（${dailyLimit}条/天），开通会员享${quota.emotionQa.vipPerDay}条/天`,
+        })
+      }
     }
 
     const prompt = `你是一个经验丰富、风趣幽默的情感教练，正在和一个单身用户进行轻松的交友话题聊天。
@@ -136,12 +172,12 @@ export class AiFunQuizService {
       // 输出敏感词检测
       const outputCheck = this.safetyService.checkText(reply)
       if (!outputCheck.passed) {
-        return { reply: '感谢你的分享～换个轻松的话题聊聊吧！' }
+        return { reply: '感谢你的分享～换个轻松的话题聊聊吧！', remaining }
       }
-      return { reply }
+      return { reply, remaining }
     } catch (e: any) {
       this.logger.warn(`回答响应失败: ${e?.message}`)
-      return { reply: '收到你的想法了～要不要换个话题聊聊？' }
+      return { reply: '收到你的想法了～要不要换个话题聊聊？', remaining }
     }
   }
 
