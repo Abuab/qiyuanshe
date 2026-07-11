@@ -6,6 +6,7 @@ import { CirclePost } from '../entities/CirclePost'
 import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { Follow } from '../entities/Follow'
 
 @Injectable()
 export class CircleService {
@@ -20,6 +21,8 @@ export class CircleService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(MatchmakerComment)
     private readonly commentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(Follow)
+    private readonly followRepo: Repository<Follow>,
   ) {}
 
   // ========== 小程序端 ==========
@@ -35,7 +38,7 @@ export class CircleService {
     return this.circleRepo.findOne({ where: { id } })
   }
 
-  async getCircleUsers(circleId: number, page = 1, limit = 10) {
+  async getCircleUsers(circleId: number, page = 1, limit = 10, currentUserId?: number) {
     // 第一步：从 circle_members 查出该圈子的成员，按 sortOrder 排序
     const members = await this.memberRepo.find({
       where: { circleId },
@@ -63,11 +66,16 @@ export class CircleService {
     const userMap = new Map(users.map(u => [u.id, u]))
     const list = pagedUserIds.map(id => userMap.get(id)).filter(Boolean)
 
-    // 查询每个用户的头像/照片、红娘评语
+    // 查询每个用户的头像/照片、红娘评语，以及当前登录用户对这些用户的喜欢(关注)关系
     const userIds = list.map(u => u.id)
-    const [photosMap, commentsMap] = await Promise.all([
+    const [photosMap, commentsMap, followedIds] = await Promise.all([
       this.getPhotosMap(userIds),
       this.getCommentsMap(userIds),
+      currentUserId && userIds.length > 0
+        ? this.followRepo
+            .find({ where: { userId: currentUserId }, select: ['targetUserId'] })
+            .then(follows => follows.map(f => f.targetUserId))
+        : Promise.resolve<number[]>([]),
     ])
 
     const result = list.map(user => {
@@ -86,6 +94,8 @@ export class CircleService {
         photos: photosMap.get(user.id) || [],
         matchmakerComment: commentsMap.get(user.id) || '',
         hasVoice: !!(user.voiceUrl && user.voiceAuditStatus === 1),
+        isFollowed: followedIds.includes(user.id),
+        isLiked: followedIds.includes(user.id),
       }
     })
     return { list: result, total, page, limit }

@@ -5,11 +5,12 @@ import { CirclePost } from '../entities/CirclePost'
 import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { Follow } from '../entities/Follow'
 import { CircleService } from './circle.service'
 import { CircleController, AdminCircleController } from './circle.controller'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Circle, CirclePost, CircleMember, User, MatchmakerComment])],
+  imports: [TypeOrmModule.forFeature([Circle, CirclePost, CircleMember, User, MatchmakerComment, Follow])],
   controllers: [CircleController, AdminCircleController],
   providers: [CircleService],
   exports: [CircleService],

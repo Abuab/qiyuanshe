@@ -38,7 +38,6 @@
           <el-button type="primary" @click="onSearch" style="margin-left: 12px">搜索</el-button>
         </div>
         <div class="toolbar-right">
-          <el-button @click="openBannerDialog">配置页面 Banner</el-button>
           <el-button type="primary" @click="openDialog()">新增案例</el-button>
         </div>
       </div>
@@ -219,56 +218,6 @@
         <el-button type="primary" @click="handleSave" :loading="saving">保存并返回</el-button>
       </template>
     </el-dialog>
-
-    <!-- ========== Banner 配置弹窗 ========== -->
-    <el-dialog
-      v-model="showBannerDialog"
-      title="页面 Banner 配置"
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <el-form label-width="100px">
-        <el-form-item label="Banner 图片">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <el-image
-              v-if="bannerImage"
-              :src="bannerImage"
-              style="width:300px;height:160px;border-radius:8px;border:1px solid #dcdfe6"
-              fit="cover"
-            />
-            <div>
-              <el-upload
-                :show-file-list="false"
-                :http-request="handleBannerUpload"
-                :before-upload="beforeUpload"
-                accept="image/*"
-              >
-                <el-button :loading="bannerUploading">
-                  {{ bannerImage ? '替换图片' : '上传图片' }}
-                </el-button>
-              </el-upload>
-              <div style="color:#909399;font-size:12px;margin-top:6px">建议尺寸 750×400</div>
-            </div>
-          </div>
-          <el-button
-            v-if="bannerImage"
-            type="danger"
-            size="small"
-            style="margin-top:8px"
-            @click="bannerImage = ''"
-          >
-            删除
-          </el-button>
-        </el-form-item>
-        <el-form-item label="页面标题">
-          <el-input v-model="pageTitleForm" placeholder="默认：我们脱单了" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showBannerDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveBanner" :loading="bannerSaving">保存</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -303,13 +252,6 @@ const form = reactive<Record<string, any>>({
   status: 1,
   statusBool: true,
 })
-
-// Banner
-const showBannerDialog = ref(false)
-const bannerImage = ref('')
-const pageTitleForm = ref('')
-const bannerUploading = ref(false)
-const bannerSaving = ref(false)
 
 onMounted(() => { fetchList() })
 
@@ -460,48 +402,11 @@ function previewCase(row: any) {
   ElMessage.info(`案例 ID: ${row.id}，小程序端路径: /pages/success-case-detail/index?id=${row.id}`)
 }
 
-// ========== Banner 配置 ==========
-async function openBannerDialog() {
-  showBannerDialog.value = true
-  try {
-    const res = await adminSystem.getSuccessCaseBanner()
-    const data = (res.data as any) || {}
-    bannerImage.value = data.bannerImage || ''
-    pageTitleForm.value = data.pageTitle || ''
-  } catch (e) { console.error(e) }
-}
-
+// ========== 上传校验 ==========
 function beforeUpload(file: File) {
   if (!file.type.startsWith('image/')) { ElMessage.warning('请选择图片文件'); return false }
   if (file.size > 5 * 1024 * 1024) { ElMessage.warning('图片大小不能超过5MB'); return false }
   return true
-}
-
-async function handleBannerUpload(options: any) {
-  bannerUploading.value = true
-  try {
-    const fd = new FormData()
-    fd.append('file', options.file)
-    const res = await adminSystem.upload(fd)
-    if (res.success && res.data?.url) {
-      bannerImage.value = res.data.url
-      ElMessage.success('上传成功')
-    }
-  } catch (e) { ElMessage.error('上传失败') }
-  bannerUploading.value = false
-}
-
-async function saveBanner() {
-  bannerSaving.value = true
-  try {
-    await adminSystem.saveSuccessCaseBanner({
-      bannerImage: bannerImage.value,
-      pageTitle: pageTitleForm.value,
-    })
-    ElMessage.success('Banner 配置已保存')
-    showBannerDialog.value = false
-  } catch (e) { ElMessage.error('保存失败') }
-  bannerSaving.value = false
 }
 </script>
 

@@ -61,10 +61,15 @@
           </text>
         </view>
 
-        <!-- 空状态 -->
-        <view v-if="activityList.length === 0 && !loading" class="empty-state">
-          <text class="empty-icon">&#xe6a8;</text>
-          <text class="empty-text">暂无活动</text>
+        <!-- 空状态：活动筹备中占位 -->
+        <view v-if="activityList.length === 0 && !loading" class="prep-placeholder">
+          <view class="prep-blob prep-blob-1"></view>
+          <view class="prep-blob prep-blob-2"></view>
+          <view class="prep-blob prep-blob-3"></view>
+          <view class="prep-content">
+            <text class="prep-text">活动筹备中...</text>
+            <view class="prep-line"></view>
+          </view>
         </view>
 
         <!-- 加载更多 -->
@@ -354,23 +359,65 @@ onMounted(() => {
   }
 }
 
-/* 空状态 */
-.empty-state {
+/* 空状态：活动筹备中占位 */
+.prep-placeholder {
+  position: relative;
+  width: 100%;
+  height: 300rpx;
+  margin-top: 24rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F8F8F8 0%, #F0F0F0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prep-blob {
+  position: absolute;
+  width: 400rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  filter: blur(40rpx);
+}
+
+.prep-blob-1 {
+  top: -60rpx;
+  left: -80rpx;
+}
+
+.prep-blob-2 {
+  bottom: -60rpx;
+  right: -80rpx;
+}
+
+.prep-blob-3 {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.prep-content {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 120rpx 0;
+}
 
-  .empty-icon {
-    font-size: 120rpx;
-    color: #ccc;
-    margin-bottom: 24rpx;
-  }
+.prep-text {
+  font-family: 'PingFang SC';
+  font-size: 36rpx;
+  font-weight: 300;
+  color: #CCCCCC;
+}
 
-  .empty-text {
-    font-size: 28rpx;
-    color: #999;
-  }
+.prep-line {
+  width: 60rpx;
+  height: 1rpx;
+  margin-top: 16rpx;
+  background-color: #E0E0E0;
 }
 
 /* 加载更多 */

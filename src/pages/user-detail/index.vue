@@ -700,9 +700,11 @@
           <view class="share-popup-handle" />
           <view class="share-popup-options">
             <button class="share-option" open-type="share" @click="closeSharePopup">
+              <AppIcon class="share-option-icon" name="icon-wechat-logo-thin" size="56" color="#333333" />
               <text class="share-option-label">分享给好友</text>
             </button>
             <view class="share-option" @tap="generatePoster">
+              <AppIcon class="share-option-icon" name="icon-download-simple-thin" size="56" color="#333333" />
               <text class="share-option-label">生成海报</text>
             </view>
           </view>
@@ -2337,16 +2339,25 @@ $text-hint: #999999;
 }
 
 .share-popup-options {
-  display: flex; justify-content: center; gap: 120rpx; padding: 20rpx 48rpx 48rpx;
+  display: flex; justify-content: center; gap: 96rpx; padding: 20rpx 48rpx 48rpx;
 }
 
 .share-option {
-  display: flex; flex-direction: column; align-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  width: 140rpx;
   padding: 0; margin: 0; border: none; background: transparent;
   &::after { border: none; }
 }
 
-.share-option-label { font-size: 28rpx; color: #333; font-weight: 500; line-height: 1; }
+.share-option-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 56rpx; height: 56rpx; line-height: 56rpx;
+  margin-bottom: 16rpx;
+}
+.share-option-label {
+  font-size: 28rpx; color: #333; font-weight: 500; line-height: 1;
+  text-align: center; width: 100%;
+}
 
 // ===== 分隔线 + 拼接文案 =====
 .section-divider {

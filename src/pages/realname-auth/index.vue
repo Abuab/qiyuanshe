@@ -1,18 +1,25 @@
 <template>
   <view class="page">
-    <!-- 顶部导航栏 -->
+    <!-- ========== 顶部导航栏 ========== -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">←</text>
+          <view class="back-arrow" />
         </view>
         <text class="nav-title">实名认证</text>
-        <!-- 右侧留给微信原生胶囊按钮 -->
-        <view class="nav-right" />
+        <view class="nav-capsule">
+          <view class="capsule-dots">
+            <view class="capsule-dot" />
+            <view class="capsule-dot" />
+            <view class="capsule-dot" />
+          </view>
+          <view class="capsule-divider" />
+          <view class="capsule-circle" />
+        </view>
       </view>
     </view>
 
-    <!-- 页面内容区 -->
+    <!-- ========== 页面内容 ========== -->
     <scroll-view
       class="content"
       scroll-y
@@ -20,97 +27,150 @@
       :show-scrollbar="false"
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
     >
-      <!-- ========== 头部区域 ========== -->
+      <!-- 标题区（完善认证 + 盾牌图标） -->
       <view class="header">
         <view class="header-left">
           <text class="header-title">完善认证</text>
-          <text class="header-desc">获取专属认证标识，更受异性信任，牵手成功率更高</text>
+          <view class="header-underline" />
+          <text class="header-desc">获取专属认证标识，更受异性信任</text>
+          <text class="header-desc">牵手成功率更高</text>
+        </view>
+        <view class="header-right">
+          <view class="shield-wrap">
+            <view class="shield-ribbon" />
+            <view class="shield">
+              <view class="shield-check" />
+            </view>
+          </view>
         </view>
       </view>
 
-      <!-- ========== 认证列表 ========== -->
+      <!-- ========== 认证卡片列表 ========== -->
       <view class="card-list">
-        <!-- 第1项：实名认证 -->
+        <!-- 1. 实名认证 -->
         <view class="auth-card" @tap="handleItemTap('realname')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">实名认证</text>
-              <text class="card-desc">腾讯实名认证，远离骗子与婚托</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #74B9FF, #0984E3);">
+            <view class="icon-idcard">
+              <view class="id-body">
+                <view class="id-face">
+                  <view class="id-eye" />
+                  <view class="id-eye" />
+                  <view class="id-smile" />
+                </view>
+                <view class="id-lines">
+                  <view class="id-line" />
+                  <view class="id-line" />
+                </view>
+              </view>
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">实名认证</text>
+            <text class="card-desc">腾讯实名认证，远离骗子与婚托</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="realnameActionClass">{{ realnameAction }}</text>
-            <text v-if="realnameActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
-        <!-- 第2项：单身承诺 -->
+        <!-- 2. 单身承诺 -->
         <view class="auth-card" @tap="handleItemTap('single')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">单身承诺</text>
-              <text class="card-desc">单身承诺，真心诚信寻找爱情</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #FFB347, #FF8C42);">
+            <view class="icon-heart">
+              <view class="h-bump left" />
+              <view class="h-bump right" />
+              <view class="h-point" />
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">单身承诺</text>
+            <text class="card-desc">单身承诺，真心诚信寻找爱情</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="singlePromiseActionClass">{{ singlePromiseAction }}</text>
-            <text v-if="singlePromiseActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
-        <!-- 第3项：学历认证 -->
+        <!-- 3. 学历认证 -->
         <view class="auth-card" @tap="handleItemTap('education')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">学历认证</text>
-              <text class="card-desc">支持毕业证、学信网截图等认证方式</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #FFD93D, #F9A825);">
+            <view class="icon-cap">
+              <view class="cap-board" />
+              <view class="cap-body" />
+              <view class="cap-tassel" />
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">学历认证</text>
+            <text class="card-desc">支持毕业证、学信网截图等认证方式</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="educationActionClass">{{ educationAction }}</text>
-            <text v-if="educationActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
-        <!-- 第4项：房产认证 -->
+        <!-- 4. 房产认证 -->
         <view class="auth-card" @tap="handleItemTap('house')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">房产认证</text>
-              <text class="card-desc">让你的优势被更多人发现</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #55E6C1, #58B19F);">
+            <view class="icon-house">
+              <view class="house-roof" />
+              <view class="house-body">
+                <view class="house-door" />
+              </view>
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">房产认证</text>
+            <text class="card-desc">让你的优势被更多人发现</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="propertyActionClass">{{ propertyAction }}</text>
-            <text v-if="propertyActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
-        <!-- 第5项：车产认证 -->
+        <!-- 5. 车产认证 -->
         <view class="auth-card" @tap="handleItemTap('car')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">车产认证</text>
-              <text class="card-desc">让你的优势被更多人发现</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #74B9FF, #A29BFE);">
+            <view class="icon-car">
+              <view class="car-window" />
+              <view class="car-body">
+                <view class="car-wheel w-left" />
+                <view class="car-wheel w-right" />
+              </view>
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">车产认证</text>
+            <text class="card-desc">让你的优势被更多人发现</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="carActionClass">{{ carAction }}</text>
-            <text v-if="carActionClass !== 'done'" class="card-arrow">></text>
           </view>
         </view>
 
-        <!-- 第6项：到店认证 -->
+        <!-- 6. 到店认证 -->
         <view class="auth-card" @tap="handleItemTap('store')">
-          <view class="card-left">
-            <view class="card-text">
-              <text class="card-title">到店认证</text>
-              <text class="card-desc">让我们更了解你，更好地为你服务</text>
+          <view class="card-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E);">
+            <view class="icon-store">
+              <view class="store-awning">
+                <view class="awn-stripe" />
+                <view class="awn-stripe" />
+                <view class="awn-stripe" />
+                <view class="awn-stripe" />
+                <view class="awn-stripe" />
+              </view>
+              <view class="store-body">
+                <view class="store-lintel" />
+                <view class="store-door" />
+              </view>
             </view>
+          </view>
+          <view class="card-text">
+            <text class="card-title">到店认证</text>
+            <text class="card-desc">让我们更了解你，更好地为你服务</text>
           </view>
           <view class="card-right">
             <text class="card-action" :class="storeCertActionClass">{{ storeCertAction }}</text>
-            <text class="card-arrow">></text>
           </view>
         </view>
 
@@ -287,107 +347,569 @@ function handleItemTap(type: string) {
 }</script>
 
 <style lang="scss" scoped>
-// ===== 全局 =====
+// ==========================================
+//  全局
+// ==========================================
 .page {
   min-height: 100vh;
   background: #FFF5F7;
 }
 
-// ===== 导航栏 =====
+// ==========================================
+//  导航栏
+// ==========================================
 .nav-wrap {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  background: #fff;
-  border-bottom: 1px solid #E5E5E5;
-}
-.nav-bar {
-  height: 88rpx; display: flex; align-items: center;
-  justify-content: space-between; padding: 0 32rpx;
-}
-.nav-left {
-  width: 100rpx; display: flex; align-items: center;
-}
-.back-icon {
-  font-size: 40rpx; color: #333;
-}
-.nav-title {
-  font-size: 32rpx; font-weight: 600; color: #333;
-  position: absolute; left: 50%; transform: translateX(-50%);
-}
-.nav-right {
-  width: 100rpx;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, #FFE8F0 0%, #FFF5F7 100%);
 }
 
-// ===== 内容区 =====
+.nav-bar {
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx;
+  position: relative;
+}
+
+/* ---- 左侧返回箭头（纯 CSS） ---- */
+.nav-left {
+  width: 100rpx;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+}
+
+.back-arrow {
+  width: 20rpx;
+  height: 20rpx;
+  border-left: 4rpx solid #333;
+  border-bottom: 4rpx solid #333;
+  transform: rotate(45deg);
+  margin-left: 4rpx;
+}
+
+/* ---- 中间标题 ---- */
+.nav-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+/* ---- 右侧胶囊（模拟微信原生） ---- */
+.nav-capsule {
+  display: flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 16rpx;
+  background: #FFF;
+  border-radius: 32rpx;
+  border: 1rpx solid rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.capsule-dots {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.capsule-dot {
+  width: 4rpx;
+  height: 4rpx;
+  border-radius: 50%;
+  background: #333;
+}
+
+.capsule-divider {
+  width: 1rpx;
+  height: 28rpx;
+  background: #E0E0E0;
+  margin: 0 12rpx;
+}
+
+.capsule-circle {
+  width: 28rpx;
+  height: 28rpx;
+  border: 2rpx solid #333;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+// ==========================================
+//  内容区
+// ==========================================
 .content {
   height: 100vh;
   box-sizing: border-box;
 }
 
-// ===== 头部区域 =====
+// ==========================================
+//  标题区（完善认证 + 盾牌）
+// ==========================================
 .header {
-  display: flex; align-items: center;
-  padding: 48rpx 32rpx;
-  background: linear-gradient(135deg, #FFF0F5 0%, #FFF8F8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48rpx 32rpx 36rpx;
   margin: 0;
 }
+
 .header-left {
-  flex: 1; display: flex; flex-direction: column;
-}
-.header-title {
-  font-size: 56rpx; font-weight: bold; color: #333;
-  margin-bottom: 16rpx;
-}
-.header-desc {
-  font-size: 28rpx; color: #999; line-height: 1.6;
-  max-width: 440rpx;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-right: 24rpx;
 }
 
-// ===== 认证卡片列表 =====
+.header-title {
+  font-size: 52rpx;
+  font-weight: bold;
+  color: #1A1A1A;
+  line-height: 1.1;
+  letter-spacing: 2rpx;
+}
+
+.header-underline {
+  width: 80rpx;
+  height: 8rpx;
+  background: #FF6B9D;
+  border-radius: 4rpx;
+  margin-top: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+.header-desc {
+  font-size: 28rpx;
+  color: #999;
+  line-height: 1.5;
+}
+
+.header-right {
+  flex-shrink: 0;
+  margin-left: 24rpx;
+}
+
+/* ---- 盾牌（纯 CSS） ---- */
+.shield-wrap {
+  position: relative;
+  width: 140rpx;
+  height: 150rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shield {
+  position: relative;
+  z-index: 2;
+  width: 120rpx;
+  height: 140rpx;
+  background: linear-gradient(160deg, #FFC4D6 0%, #FF9EBB 50%, #FF6B9D 100%);
+  clip-path: polygon(50% 0%, 100% 12%, 100% 72%, 50% 100%, 0% 72%, 0% 12%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 对勾 */
+.shield-check {
+  width: 44rpx;
+  height: 28rpx;
+  border-right: 8rpx solid #FFF;
+  border-bottom: 8rpx solid #FFF;
+  transform: rotate(45deg);
+  margin-top: -14rpx;
+  filter: drop-shadow(0 2rpx 8rpx rgba(0, 0, 0, 0.1));
+}
+
+/* 金色丝带（弧形环绕，被盾牌遮挡中段） */
+.shield-ribbon {
+  position: absolute;
+  z-index: 1;
+  bottom: 6rpx;
+  left: 50%;
+  transform: translateX(-50%) rotate(-8deg);
+  width: 140rpx;
+  height: 18rpx;
+  background: #FFD700;
+  border-radius: 9rpx;
+}
+
+// ==========================================
+//  认证卡片列表
+// ==========================================
 .card-list {
-  padding: 24rpx 32rpx 0;
+  padding: 0 32rpx;
 }
 
 .auth-card {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #fff; border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  background: #FFF;
+  border-radius: 20rpx;
   padding: 32rpx;
-  margin-bottom: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.05);
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(255, 107, 157, 0.08);
   transition: opacity 0.15s;
+
   &:active {
     opacity: 0.9;
   }
 }
 
-.card-left {
-  display: flex; align-items: center; flex: 1; min-width: 0;
+/* ---- 左侧图标容器 ---- */
+.card-icon {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 28rpx;
 }
 
+/* ---- 中间文字区 ---- */
 .card-text {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
+
 .card-title {
-  font-size: 32rpx; font-weight: bold; color: #333;
-  margin-bottom: 8rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.3;
+  margin-bottom: 6rpx;
 }
+
 .card-desc {
-  font-size: 26rpx; color: #999; line-height: 1.5;
+  font-size: 26rpx;
+  color: #999;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* ---- 右侧状态区 ---- */
 .card-right {
-  display: flex; align-items: center; flex-shrink: 0; margin-left: 16rpx;
-}
-.card-action {
-  font-size: 28rpx; color: #FF6B8A;
-  &.done { color: #07C160; }
-  &.pending { color: #FF9F43; }
-}
-.card-arrow {
-  font-size: 28rpx; color: #CCC; margin-left: 8rpx;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 
-// ===== 底部留白 =====
+.card-action {
+  font-size: 28rpx;
+  color: #FF6B9D;
+
+  &.done {
+    color: #07C160;
+  }
+
+  &.pending {
+    color: #FF9F43;
+  }
+}
+
+// ==========================================
+//  纯 CSS 图标
+// ==========================================
+
+// ------ 1. 身份证 ------
+.icon-idcard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.id-body {
+  width: 34rpx;
+  height: 26rpx;
+  background: #FFF;
+  border-radius: 4rpx;
+  position: relative;
+  padding: 4rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.id-face {
+  width: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 2rpx 2rpx;
+  flex-shrink: 0;
+}
+
+.id-eye {
+  width: 5rpx;
+  height: 5rpx;
+  border-radius: 50%;
+  background: #B8D4F0;
+}
+
+.id-smile {
+  width: 10rpx;
+  height: 5rpx;
+  border-bottom: 2rpx solid #B8D4F0;
+  border-radius: 0 0 6rpx 6rpx;
+  box-sizing: border-box;
+}
+
+.id-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  flex: 1;
+}
+
+.id-line {
+  width: 100%;
+  height: 2rpx;
+  background: #D0D8E0;
+  border-radius: 1rpx;
+}
+
+// ------ 2. 爱心 ------
+.icon-heart {
+  position: relative;
+  width: 36rpx;
+  height: 32rpx;
+}
+
+.h-bump {
+  position: absolute;
+  top: 0;
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: #FFF;
+}
+
+.h-bump.left {
+  left: 0;
+}
+
+.h-bump.right {
+  left: 18rpx;
+}
+
+.h-point {
+  position: absolute;
+  bottom: 0;
+  left: 9rpx;
+  width: 18rpx;
+  height: 18rpx;
+  background: #FFF;
+  transform: rotate(45deg);
+}
+
+// ------ 3. 学位帽 ------
+.icon-cap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: scale(0.9);
+}
+
+.cap-board {
+  width: 36rpx;
+  height: 10rpx;
+  background: #FFF;
+  border-radius: 2rpx;
+  z-index: 2;
+}
+
+.cap-body {
+  width: 32rpx;
+  height: 18rpx;
+  background: #FFF;
+  border-radius: 0 0 50% 50%;
+  margin-top: -2rpx;
+}
+
+/* 流苏：帽顶右侧圆点 + 垂线 + 穗 */
+.cap-tassel {
+  position: absolute;
+  top: 8rpx;
+  right: 2rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #FFF;
+  z-index: 3;
+}
+
+.cap-tassel::after {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 2rpx;
+  width: 2rpx;
+  height: 10rpx;
+  background: #FFF;
+}
+
+.cap-tassel::before {
+  content: '';
+  position: absolute;
+  top: 14rpx;
+  left: 0;
+  width: 4rpx;
+  height: 4rpx;
+  border-radius: 50%;
+  background: #FFF;
+}
+
+// ------ 4. 房子 ------
+.icon-house {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.house-roof {
+  width: 0;
+  height: 0;
+  border-left: 16rpx solid transparent;
+  border-right: 16rpx solid transparent;
+  border-bottom: 14rpx solid #FFF;
+}
+
+.house-body {
+  width: 24rpx;
+  height: 18rpx;
+  background: #FFF;
+  border-radius: 3rpx;
+  margin-top: -1rpx;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.house-door {
+  width: 5rpx;
+  height: 10rpx;
+  background: #55E6C1;
+  border-radius: 2rpx 2rpx 0 0;
+}
+
+// ------ 5. 汽车 ------
+.icon-car {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.car-window {
+  width: 0;
+  height: 0;
+  border-bottom: 8rpx solid #FFF;
+  border-left: 4rpx solid transparent;
+  border-right: 4rpx solid transparent;
+}
+
+.car-body {
+  width: 36rpx;
+  height: 18rpx;
+  background: #FFF;
+  border-radius: 6rpx;
+  margin-top: -1rpx;
+  position: relative;
+  overflow: visible;
+}
+
+.car-wheel {
+  position: absolute;
+  bottom: -4rpx;
+  width: 10rpx;
+  height: 10rpx;
+  background: #FFF;
+  border-radius: 50%;
+}
+
+.car-wheel.w-left {
+  left: 4rpx;
+}
+
+.car-wheel.w-right {
+  right: 4rpx;
+}
+
+// ------ 6. 店铺 ------
+.icon-store {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.store-awning {
+  display: flex;
+  gap: 3rpx;
+  margin-bottom: -2rpx;
+  position: relative;
+  z-index: 1;
+}
+
+.awn-stripe {
+  width: 6rpx;
+  height: 4rpx;
+  background: #FFF;
+  border-radius: 2rpx;
+}
+
+.store-body {
+  width: 32rpx;
+  height: 24rpx;
+  background: #FFF;
+  border-radius: 4rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  position: relative;
+  z-index: 0;
+  padding-bottom: 2rpx;
+  box-sizing: border-box;
+}
+
+.store-lintel {
+  width: 20rpx;
+  height: 4rpx;
+  background: #FF6B6B;
+  border-radius: 2rpx;
+  margin-bottom: 2rpx;
+}
+
+.store-door {
+  width: 8rpx;
+  height: 12rpx;
+  background: #FF6B6B;
+  border-radius: 2rpx;
+}
+
+// ==========================================
+//  底部留白
+// ==========================================
 .bottom-spacer {
   height: 60rpx;
 }

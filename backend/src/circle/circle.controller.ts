@@ -12,6 +12,7 @@ import {
   Request,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { OptionalJwtAuthGuard } from '../auth/guards'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
@@ -46,12 +47,14 @@ export class CircleController {
   }
 
   @Get(':id/users')
+  @UseGuards(OptionalJwtAuthGuard)
   async getCircleUsers(
+    @Request() req: any,
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ) {
-    const result = await this.circleService.getCircleUsers(id, +page, +limit)
+    const result = await this.circleService.getCircleUsers(id, +page, +limit, req?.user?.id)
     return Result.success(result)
   }
 

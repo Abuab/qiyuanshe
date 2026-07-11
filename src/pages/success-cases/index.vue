@@ -19,15 +19,62 @@
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
     >
-      <!-- 页面 Banner -->
-      <image
-        v-if="pageBanner"
-        class="page-banner"
-        :src="pageBanner"
-        mode="aspectFill"
-      />
+      <!-- 页面顶部装饰（纯 CSS 绘制「我们脱单了」氛围区，替代原 Banner 图片） -->
+      <view class="hero">
+        <!-- 背景模糊圆点 -->
+        <view class="bg-blob bg-blob-1"></view>
+        <view class="bg-blob bg-blob-2"></view>
+        <view class="bg-blob bg-blob-3"></view>
+        <!-- 中央更大的模糊光晕（z 更低） -->
+        <view class="halo-outer"></view>
+        <!-- 中央半透明大圆 -->
+        <view class="halo-inner"></view>
 
-      <!-- 白色卡片（负margin覆盖Banner底部，所有内容在一个卡片内） -->
+        <!-- 黄色五角星 -->
+        <view class="deco star-1"><view class="star-shape"></view></view>
+        <view class="deco star-2"><view class="star-shape"></view></view>
+        <view class="deco star-3"><view class="star-shape"></view></view>
+        <view class="deco star-4"><view class="star-shape"></view></view>
+
+        <!-- 粉色小花 -->
+        <view class="deco flower-p1"><view class="flower flower-pink">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-p2"><view class="flower flower-pink">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-p3"><view class="flower flower-pink">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-p4"><view class="flower flower-pink">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-p5"><view class="flower flower-pink">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+
+        <!-- 紫色小花 -->
+        <view class="deco flower-a"><view class="flower flower-purple">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-b"><view class="flower flower-purple">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+        <view class="deco flower-c"><view class="flower flower-purple">
+          <view class="petal petal-0"></view><view class="petal petal-1"></view><view class="petal petal-2"></view><view class="petal petal-3"></view><view class="petal petal-4"></view><view class="flower-core"></view>
+        </view></view>
+
+        <!-- 中央文字 -->
+        <view class="hero-center">
+          <text class="hero-title">我们脱单了</text>
+          <view class="hero-subline">
+            <view class="hero-line"></view>
+            <text class="hero-en">We fell in love</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 白色卡片（负margin覆盖装饰区底部，所有内容在一个卡片内） -->
       <view v-if="list.length > 0" class="info-card">
         <view
           v-for="(item, index) in list"
@@ -74,9 +121,9 @@
         </view>
       </view>
 
-      <!-- Banner 无内容时的占位 -->
-      <view v-else-if="pageBanner" class="info-card-empty">
-        <view v-if="!loading" class="status-tip"><text>暂无成功案例</text></view>
+      <!-- 无内容时的占位 -->
+      <view v-else-if="!loading" class="info-card-empty">
+        <view class="status-tip"><text>暂无成功案例</text></view>
       </view>
 
       <!-- 加载更多 -->
@@ -87,11 +134,6 @@
       <!-- 没有更多 -->
       <view v-if="noMore && list.length > 0" class="status-tip">
         <text>没有更多了</text>
-      </view>
-
-      <!-- 空状态（无Banner也无内容） -->
-      <view v-if="list.length === 0 && !pageBanner && !loading" class="empty-state">
-        <text>暂无成功案例</text>
       </view>
 
       <view class="bottom-safe"></view>
@@ -115,7 +157,6 @@ const navBarHeightPx = ref(44)
 const navBarTop = computed(() => statusBarHeight.value + navBarHeightPx.value)
 
 const list = ref<any[]>([])
-const pageBanner = ref('')
 const pageNum = ref(1)
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -127,7 +168,6 @@ onMounted(async () => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   await fetchList(true)
-  fetchPageBanner()
 })
 
 async function fetchList(reset = false) {
@@ -167,15 +207,6 @@ function onRefresh() {
   fetchList(true).then(() => {
     isRefreshing.value = false
   })
-}
-
-async function fetchPageBanner() {
-  try {
-    const res = await get<any>('/success-cases/banner')
-    pageBanner.value = getFullImageUrl(res?.bannerImage) || ''
-  } catch (e) {
-    console.error('[SuccessCases] fetchPageBanner error:', e)
-  }
 }
 
 function onLoadMore() {
@@ -243,11 +274,212 @@ function onAvatarError(e: any) {
   box-sizing: border-box;
 }
 
-// ===== 页面 Banner =====
-.page-banner {
+// ===== 页面顶部装饰 hero（纯 CSS「我们脱单了」） =====
+.hero {
+  position: relative;
   width: 100%;
-  height: 25vh;
-  display: block;
+  height: 600rpx;
+  background: linear-gradient(160deg, #4A148C 0%, #6A1B9A 40%, #8E24AA 100%);
+  overflow: hidden;
+}
+
+// 背景模糊圆点
+.bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  filter: blur(40rpx);
+  z-index: 0;
+}
+.bg-blob-1 {
+  width: 200rpx;
+  height: 200rpx;
+  top: 8%;
+  left: -40rpx;
+}
+.bg-blob-2 {
+  width: 160rpx;
+  height: 160rpx;
+  bottom: 10%;
+  right: -30rpx;
+}
+.bg-blob-3 {
+  width: 120rpx;
+  height: 120rpx;
+  top: 60%;
+  left: 30%;
+}
+
+// 中央更大的模糊光晕
+.halo-outer {
+  position: absolute;
+  width: 600rpx;
+  height: 600rpx;
+  left: 50%;
+  top: 15%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: rgba(186, 104, 200, 0.2);
+  filter: blur(60rpx);
+  z-index: 1;
+}
+
+// 中央半透明大圆
+.halo-inner {
+  position: absolute;
+  width: 500rpx;
+  height: 500rpx;
+  left: 50%;
+  top: 15%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 60%, transparent 100%);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  z-index: 2;
+}
+
+// 装饰元素通用：绝对定位 + 浮动动画
+.deco {
+  position: absolute;
+  z-index: 4;
+  animation: hero-float 3.5s ease-in-out infinite alternate;
+}
+
+@keyframes hero-float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-10rpx); }
+}
+
+// ===== 黄色五角星 =====
+.star-shape {
+  width: 100%;
+  height: 100%;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.star-1 {
+  width: 40rpx;
+  height: 40rpx;
+  top: 22%;
+  right: 15%;
+  animation-delay: 0s;
+  .star-shape {
+    background: #FFD700;
+    transform: rotate(15deg);
+    filter: drop-shadow(0 0 8rpx rgba(255, 215, 0, 0.6));
+  }
+}
+.star-2 {
+  width: 24rpx;
+  height: 24rpx;
+  top: 28%;
+  left: 18%;
+  animation-delay: 0.6s;
+  .star-shape {
+    background: #FFE082;
+    transform: rotate(-10deg);
+  }
+}
+.star-3 {
+  width: 20rpx;
+  height: 20rpx;
+  bottom: 35%;
+  right: 22%;
+  animation-delay: 1.2s;
+  .star-shape {
+    background: #FFD700;
+    transform: rotate(20deg);
+  }
+}
+.star-4 {
+  width: 16rpx;
+  height: 16rpx;
+  bottom: 40%;
+  left: 12%;
+  animation-delay: 1.8s;
+  .star-shape {
+    background: #FFF59D;
+  }
+}
+
+// ===== 小花（粉/紫通用结构） =====
+.flower {
+  position: relative;
+  width: 28rpx;
+  height: 28rpx;
+}
+.petal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10rpx;
+  height: 14rpx;
+  border-radius: 50%;
+}
+.petal-0 { transform: translate(-50%, -50%) rotate(0deg) translateY(-7rpx); }
+.petal-1 { transform: translate(-50%, -50%) rotate(72deg) translateY(-7rpx); }
+.petal-2 { transform: translate(-50%, -50%) rotate(144deg) translateY(-7rpx); }
+.petal-3 { transform: translate(-50%, -50%) rotate(216deg) translateY(-7rpx); }
+.petal-4 { transform: translate(-50%, -50%) rotate(288deg) translateY(-7rpx); }
+.flower-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+.flower-pink .petal { background: #FF8FAB; }
+.flower-purple .petal { background: #CE93D8; }
+
+// 粉花位置与尺寸（用 scale 控制大小，基准 28rpx）
+.flower-p1 { top: 32%; left: 20%; animation-delay: 0.2s; .flower { transform: scale(1); } }        // 28rpx
+.flower-p2 { top: 30%; right: 25%; animation-delay: 0.8s; .flower { transform: scale(0.86); } }     // 24rpx
+.flower-p3 { top: 55%; left: 16%; animation-delay: 1.4s; .flower { transform: scale(0.71); } }      // 20rpx
+.flower-p4 { top: 52%; right: 20%; animation-delay: 2s; .flower { transform: scale(0.86); } }       // 24rpx
+.flower-p5 { top: 60%; left: 45%; animation-delay: 2.6s; .flower { transform: scale(0.57); } }      // 16rpx
+
+// 紫花位置与尺寸
+.flower-a { top: 38%; left: 14%; animation-delay: 0.5s; .flower { transform: scale(0.71); } }       // 20rpx
+.flower-b { top: 48%; right: 18%; animation-delay: 1.1s; .flower { transform: scale(0.64); } }      // 18rpx
+.flower-c { top: 58%; left: 28%; animation-delay: 1.7s; .flower { transform: scale(0.57); } }       // 16rpx
+
+// ===== 中央文字 =====
+.hero-center {
+  position: absolute;
+  top: 30%;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hero-title {
+  font-size: 72rpx;
+  font-weight: bold;
+  letter-spacing: 4rpx;
+  color: #FFE4EC;
+  text-shadow: 0 4rpx 20rpx rgba(255, 182, 193, 0.4);
+}
+.hero-subline {
+  display: flex;
+  align-items: center;
+  margin-top: 30rpx;
+}
+.hero-line {
+  width: 200rpx;
+  height: 1rpx;
+  background: rgba(255, 255, 255, 0.6);
+}
+.hero-en {
+  margin-left: 16rpx;
+  font-size: 20rpx;
+  font-style: italic;
+  letter-spacing: 2rpx;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 // ===== 白色资料卡片（负margin覆盖Banner底部，参考用户详情页） =====
