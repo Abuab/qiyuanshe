@@ -80,6 +80,11 @@ export class RegionService implements OnModuleInit {
   }
 
   async getChildren(parentId: number): Promise<RegionItem[]> {
+    // 懒加载：若内存为空（如启动时播种尚未完成），此处再尝试加载一次
+    if (this.regionsByParent.size === 0) {
+      await this.loadRegions()
+    }
+
     const mem = this.regionsByParent.get(parentId)
     if (mem && mem.length > 0) return mem
 
@@ -104,7 +109,7 @@ export class RegionService implements OnModuleInit {
           name: r.name,
           level: r.level,
           code: r.code,
-          hasChildren: hasChildSet.has(r.id),
+          hasChildren: hasChildSet.has(Number(r.id)),
         }))
       }
     } catch {
