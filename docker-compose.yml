@@ -148,6 +148,8 @@ services:
       - ./data/logs:/app/logs
       # 支付证书目录
       - ./certs:/app/certs:ro
+      # 敏感词库目录（51K 开源词库，聊天与 AI 内容审核共用；只读挂载，随 git 更新）
+      - ./config:/app/config:ro
     networks:
       - lingtong_network
     depends_on:

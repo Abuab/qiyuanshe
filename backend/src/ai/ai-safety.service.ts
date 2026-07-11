@@ -1,9 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { existsSync, readdirSync, readFileSync } from 'fs'
+import { resolve } from 'path'
 import { RedisService } from '../common/redis.service'
 import { beijingISO } from '../common/utils/date-utils'
 import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entities/ContentSafetyAudit'
+import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 
 /**
  * AI 内容安全过滤服务（三级过滤体系）
@@ -257,6 +260,10 @@ const ALL_SENSITIVE_WORDS = [
 export class AiSafetyService implements OnModuleInit {
   private readonly logger = new Logger(AiSafetyService.name)
 
+  /** 51K 开源大词库（Sensitive-lexicon）DFA 过滤器，与聊天消息共用同一份本地词库文件 */
+  private readonly bigLibFilter = new SensitiveWordFilter()
+  private bigLibLoaded = false
+
   constructor(
     @InjectRepository(ContentSafetyAudit)
     private readonly auditRepo: Repository<ContentSafetyAudit>,
@@ -269,6 +276,46 @@ export class AiSafetyService implements OnModuleInit {
       await this.loadCustomWords()
     } catch (e: any) {
       this.logger.error(`[Safety] 敏感词加载失败: ${e?.message}`)
+    }
+    // 加载 51K 开源大词库（本地 config/sensitive-words/*.txt）
+    try {
+      this.loadBigLibrary()
+    } catch (e: any) {
+      this.logger.error(`[Safety] 大词库加载失败: ${e?.message}`)
+    }
+  }
+
+  /**
+   * 加载开源大词库（Sensitive-lexicon，51K+ 词）到 DFA。
+   * 复用聊天模块随 git 发布的 config/sensitive-words/*.txt，供 AI 内容审核共用。
+   */
+  private loadBigLibrary(): void {
+    // 兼容多种部署形态的词库目录：容器内挂载(/app/config) 优先，其次开发态相对路径
+    const candidates = [
+      resolve(process.cwd(), 'config/sensitive-words'),
+      resolve(__dirname, '../../../config/sensitive-words'),
+      resolve(__dirname, '../../../../config/sensitive-words'),
+    ]
+    const wordsDir = candidates.find(dir => existsSync(dir))
+    if (!wordsDir) {
+      this.logger.warn(`[Safety] 大词库目录不存在，已尝试: ${candidates.join(' , ')}`)
+      return
+    }
+    const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
+    const wordSet = new Set<string>()
+    for (const file of txtFiles) {
+      try {
+        const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
+        raw.split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 1) // 过滤单字，避免误伤
+          .forEach(word => wordSet.add(word))
+      } catch { /* 单文件读取失败跳过 */ }
+    }
+    if (wordSet.size > 0) {
+      this.bigLibFilter.build(Array.from(wordSet))
+      this.bigLibLoaded = true
+      this.logger.log(`[Safety] 大词库加载完成，从 ${txtFiles.length} 个文件读取 ${wordSet.size} 个唯一词，DFA 已构建`)
     }
   }
 
@@ -364,6 +411,13 @@ export class AiSafetyService implements OnModuleInit {
     for (const word of Object.keys(LEVEL1_WORDS)) {
       if (cleaned.includes(word.toLowerCase()) && !level1Hits.includes(word)) {
         level1Hits.push(word)
+      }
+    }
+
+    // 51K 开源大词库 DFA 匹配 → 归入一级拦截
+    if (this.bigLibLoaded) {
+      for (const word of this.bigLibFilter.findAll(text)) {
+        if (!level1Hits.includes(word)) level1Hits.push(word)
       }
     }
 
@@ -480,6 +534,14 @@ export class AiSafetyService implements OnModuleInit {
     for (const word of ALL_SENSITIVE_WORDS) {
       if (lowerText.includes(word.toLowerCase())) {
         hitWords.push(word)
+      }
+    }
+
+    // 51K 开源大词库 DFA 匹配（覆盖内置小词库未收录的脏话/违禁词）
+    if (this.bigLibLoaded) {
+      const bigHits = this.bigLibFilter.findAll(text)
+      for (const w of bigHits) {
+        if (!hitWords.includes(w)) hitWords.push(w)
       }
     }
 

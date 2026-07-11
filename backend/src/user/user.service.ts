@@ -1297,6 +1297,11 @@ export class UserService {
         protocolAgreedAt: new Date(),
         protocolVersion: version,
       })
+    } else if (action === 'revoke') {
+      // 撤回同意：清空最近同意时间，管理后台可据此识别当前为未同意状态
+      await this.userRepository.update(userId, {
+        protocolAgreedAt: null,
+      })
     }
   }
 }

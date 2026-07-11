@@ -145,8 +145,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     // 2. 回退到本地文件（优先读取 config/sensitive-words/ 目录下的所有 .txt 文件）
     let localWords: string[] | null = null
     try {
-      const wordsDir = resolve(__dirname, '../../../config/sensitive-words')
-      if (existsSync(wordsDir)) {
+      // 兼容多种部署形态：容器内挂载(/app/config) 优先，其次开发态相对路径
+      const candidateDirs = [
+        resolve(process.cwd(), 'config/sensitive-words'),
+        resolve(__dirname, '../../../config/sensitive-words'),
+        resolve(__dirname, '../../../../config/sensitive-words'),
+      ]
+      const wordsDir = candidateDirs.find(dir => existsSync(dir))
+      if (wordsDir) {
         const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
         if (txtFiles.length > 0) {
           const localWordSet = new Set<string>()

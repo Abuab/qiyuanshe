@@ -87,6 +87,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import { secureStorage } from '@/utils/crypto'
+import { post } from '@/utils/request'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const systemStore = useSystemStore()
@@ -131,9 +132,18 @@ const closeDeactivateDialog = () => {
   showDialog.value = false
 }
 
-const confirmDeactivate = () => {
-  // 撤回同意协议：仅清除本地"已同意协议"标记并退回游客态，不删除/注销账号
+const confirmDeactivate = async () => {
+  // 撤回同意协议：先回写后端撤回记录（此时仍处于登录态），再清本地标记并退回游客态
   showDialog.value = false
+  try {
+    await post('/users/agreement', {
+      agreementType: 'USER_AGREEMENT',
+      version: '1.0',
+      action: 'revoke',
+    })
+  } catch (err: any) {
+    console.error('[agreement] 协议撤回上报失败:', err?.message || err)
+  }
   secureStorage.revokeAllAgreements()
   uni.showToast({ title: '已撤回同意', icon: 'success' })
   setTimeout(() => {

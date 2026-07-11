@@ -99,6 +99,8 @@ const showProtocol = ref(false)
 const showPhonePopup = ref(false)
 const loading = ref(false)
 const illustrationImg = ref('')
+// 协议弹窗被同意时置为 true，登录成功（已鉴权）后再补记同意，避免未登录上报 401
+const pendingAgreementReport = ref(false)
 
 onMounted(async () => {
   await loadLoginConfig()
@@ -132,7 +134,14 @@ const handleAgree = () => {
   uni.setStorageSync('hasAgreedProtocol', true)
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
-  // 上报同意记录到后端
+  // 此时尚未登录（无 token），标记待登录成功后再补记同意，避免 401
+  pendingAgreementReport.value = true
+}
+
+/** 登录成功后补记协议同意（已鉴权），刷新后端同意时间与记录 */
+const reportAgreementIfPending = () => {
+  if (!pendingAgreementReport.value) return
+  pendingAgreementReport.value = false
   post('/users/agreement', {
     agreementType: 'USER_AGREEMENT',
     version: '1.0',
@@ -211,6 +220,7 @@ const performWechatLogin = async () => {
       const profileComplete = result.user.isProfileComplete !== false
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
+      reportAgreementIfPending()
       showToast('登录成功', 'success')
       handleLoginSuccess()
     } else {
@@ -244,6 +254,7 @@ const onGetPhoneNumber = async (e: any) => {
       const profileComplete = result.user.isProfileComplete !== false
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
+      reportAgreementIfPending()
       showToast('登录成功', 'success')
       handleLoginSuccess()
     }
