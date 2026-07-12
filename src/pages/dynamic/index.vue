@@ -183,11 +183,7 @@
           <text class="answer-text">{{ item.content }}</text>
           <!-- 嵌入的问题卡片 -->
           <view v-if="item.questionTitle" class="answer-question-card" @tap="goToQuestion(item.questionId)">
-            <text class="aqc-title"># {{ item.questionTitle }}</text>
-            <view class="aqc-footer">
-              <text class="aqc-hint">查看问答</text>
-              <text class="aqc-arrow">›</text>
-            </view>
+            <text class="aqc-title"><text class="aqc-hash">#</text> {{ item.questionTitle }}</text>
           </view>
         </view>
 
@@ -1101,28 +1097,15 @@ onShow(() => {
 .aqc-title {
   display: block;
   font-size: 28rpx;
-  font-weight: 600;
-  color: #000;
+  font-weight: 400;
+  color: #888;
   line-height: 1.5;
   word-break: break-all;
 }
 
-.aqc-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 16rpx;
-}
-
-.aqc-hint {
-  font-size: 24rpx;
+.aqc-hash {
   color: #FF6B9D;
-}
-
-.aqc-arrow {
-  font-size: 28rpx;
-  color: #FF6B9D;
-  margin-left: 4rpx;
+  font-weight: bold;
 }
 
 /* 底部操作栏 */
