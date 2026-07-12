@@ -177,7 +177,7 @@
         <view class="filter-section location-section" @tap="showResidencePicker">
           <text class="location-title">现居地</text>
           <view class="location-value">
-            <text class="location-text">{{ filterData.residence || '请选择' }}</text>
+            <text class="location-text" :class="{ 'has-value': filterData.residence }">{{ filterData.residence || '请选择' }}</text>
             <text class="location-arrow">&gt;</text>
           </view>
         </view>
@@ -186,7 +186,7 @@
         <view class="filter-section location-section" @tap="showHometownPicker">
           <text class="location-title">户籍地</text>
           <view class="location-value">
-            <text class="location-text">{{ filterData.hometown || '请选择' }}</text>
+            <text class="location-text" :class="{ 'has-value': filterData.hometown }">{{ filterData.hometown || '请选择' }}</text>
             <text class="location-arrow">&gt;</text>
           </view>
         </view>
@@ -709,7 +709,7 @@ defineExpose({
 .sec-title {
   display: block;
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 400;
   color: #333;
   margin-bottom: 20rpx;
 }
@@ -860,7 +860,7 @@ defineExpose({
 
 .location-title {
   font-size: 32rpx;
-  font-weight: bold;
+  font-weight: 400;
   color: #333;
 }
 
@@ -876,6 +876,10 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  &.has-value {
+    color: #333;
+  }
 }
 
 .location-arrow {

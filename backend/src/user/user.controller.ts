@@ -513,7 +513,21 @@ export class UserController {
         fileSize: 1024 * 1024 * 2, // 2MB
       },
       fileFilter: (_req, file, cb) => {
-        const allowedMime = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-m4a', 'audio/mp4', 'audio/x-wav']
+        const allowedMime = [
+          'audio/mpeg',
+          'audio/mp3',
+          'audio/wav',
+          'audio/x-wav',
+          'audio/x-m4a',
+          'audio/m4a',
+          'audio/mp4',
+          'audio/aac',
+          'audio/x-aac',
+          'audio/aacp',
+          'audio/webm',
+          'audio/ogg',
+          'application/octet-stream',
+        ]
         if (allowedMime.includes(file.mimetype)) {
           cb(null, true)
         } else {

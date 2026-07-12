@@ -4,51 +4,33 @@
     <view class="city-mask" @tap="handleClose"></view>
     <!-- 白色面板 -->
     <view class="city-panel" :class="{ show: showPanel }">
-      <!-- 标题 + 关闭 -->
+      <!-- 标题 -->
       <view class="city-header">
         <text class="city-title">选择城市</text>
-        <text class="city-close" @tap="handleClose">✕</text>
       </view>
 
-      <!-- 面包屑导航 -->
+      <!-- 面包屑选择栏 -->
       <view class="city-breadcrumb">
-        <text
-          class="bread-item"
-          :class="{ active: currentLevel > 0 }"
-          @tap="switchLevel(0)"
-        >省</text>
-        <text v-if="breadcrumb.length >= 1" class="bread-sep">></text>
-        <text
-          v-if="breadcrumb.length >= 1"
-          class="bread-item"
-          :class="{ active: currentLevel > 1 }"
-          @tap="switchLevel(1)"
-        >{{ breadcrumb[0] }}</text>
-        <text v-if="breadcrumb.length >= 2" class="bread-sep">></text>
-        <text
-          v-if="breadcrumb.length >= 2"
-          class="bread-item"
-          :class="{ active: currentLevel > 2 }"
-          @tap="switchLevel(2)"
-        >{{ breadcrumb[1] }}</text>
-        <text v-if="breadcrumb.length >= 3" class="bread-sep">></text>
-        <text
-          v-if="breadcrumb.length >= 3"
-          class="bread-item"
-          :class="{ active: currentLevel > 2 }"
-          @tap="switchLevel(3)"
-        >{{ breadcrumb[2] }}</text>
-        <text v-if="breadcrumb.length >= 4" class="bread-sep">></text>
-        <text
-          v-if="breadcrumb.length >= 4"
-          class="bread-item"
-          :class="{ active: currentLevel === 3 }"
-          @tap="switchLevel(3)"
-        >{{ breadcrumb[3] }}</text>
+        <view class="bread-left">
+          <text
+            v-for="(name, idx) in breadcrumb"
+            :key="idx"
+            class="bread-item"
+            @tap="switchLevel(idx)"
+          >{{ name }}</text>
+          <text v-if="!leafReached" class="bread-current">请选择</text>
+        </view>
+        <text class="bread-done" @tap="handleConfirm">完成</text>
       </view>
 
       <!-- 列表区域 -->
-      <scroll-view class="city-list" scroll-y :scroll-top="scrollTop" scroll-with-animation>
+      <scroll-view
+        class="city-list"
+        scroll-y
+        :scroll-top="scrollTop"
+        scroll-with-animation
+        :show-scrollbar="false"
+      >
         <view
           v-for="item in currentList"
           :key="currentLevel + '-' + item.id"
@@ -62,13 +44,6 @@
         <view v-if="currentList.length === 0 && currentLevel === 3 && selectedDistrict" class="city-empty">该区暂无街道数据，可直接完成</view>
         <view v-else-if="currentList.length === 0" class="city-empty">暂无数据</view>
       </scroll-view>
-
-      <!-- 底部按钮 -->
-      <view class="city-footer">
-        <view class="city-confirm" @tap="handleConfirm">
-          <text>完成</text>
-        </view>
-      </view>
     </view>
   </view>
 </template>
@@ -87,6 +62,8 @@ interface RegionItem {
 const props = defineProps<{
   visible: boolean
   defaultLocation?: { province: string; city: string }
+  /** 是否强制必须选择到最后一级（true=编辑资料页；false/省略=筛选页可选到任意一级） */
+  requireLeaf?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -99,6 +76,8 @@ const currentLevel = ref(0)
 const showPanel = ref(false)
 const isLoading = ref(false)
 const scrollTop = ref(0)
+// 是否已选到最后一级（叶子节点）
+const leafReached = ref(false)
 
 // 已选择的数据
 const selectedProvince = ref<RegionItem | null>(null)
@@ -164,6 +143,7 @@ const fetchRegions = async (parentId: number) => {
 const switchLevel = (level: number) => {
   scrollTop.value = 0
   currentLevel.value = level
+  leafReached.value = false
   // 回退时清除后续层级的选中状态
   if (level < 1) {
     selectedCity.value = null
@@ -179,6 +159,12 @@ const switchLevel = (level: number) => {
   }
 }
 
+// 到达最后一级：标记叶子并自动保存关闭
+const finalizeSelection = () => {
+  leafReached.value = true
+  handleConfirm()
+}
+
 const selectItem = async (item: RegionItem) => {
   if (currentLevel.value === 0) {
     selectedProvince.value = item
@@ -188,19 +174,15 @@ const selectItem = async (item: RegionItem) => {
     cityList.value = []
     districtList.value = []
     streetList.value = []
+    leafReached.value = false
 
-    if (item.hasChildren) {
-      cityList.value = await fetchRegions(item.id)
+    const children = await fetchRegions(item.id)
+    if (children.length > 0) {
+      cityList.value = children
       scrollTop.value = 0
       currentLevel.value = 1
     } else {
-      // 兜底：后端 hasChildren 可能不准，直接尝试拉子级，拉到就下钻
-      const children = await fetchRegions(item.id)
-      if (children.length > 0) {
-        cityList.value = children
-        scrollTop.value = 0
-        currentLevel.value = 1
-      }
+      finalizeSelection()
     }
   } else if (currentLevel.value === 1) {
     selectedCity.value = item
@@ -208,42 +190,42 @@ const selectItem = async (item: RegionItem) => {
     selectedStreet.value = null
     districtList.value = []
     streetList.value = []
+    leafReached.value = false
 
-    if (item.hasChildren) {
-      districtList.value = await fetchRegions(item.id)
+    const children = await fetchRegions(item.id)
+    if (children.length > 0) {
+      districtList.value = children
       scrollTop.value = 0
       currentLevel.value = 2
     } else {
-      const children = await fetchRegions(item.id)
-      if (children.length > 0) {
-        districtList.value = children
-        scrollTop.value = 0
-        currentLevel.value = 2
-      }
+      finalizeSelection()
     }
   } else if (currentLevel.value === 2) {
     selectedDistrict.value = item
     selectedStreet.value = null
     streetList.value = []
+    leafReached.value = false
 
-    if (item.hasChildren) {
-      streetList.value = await fetchRegions(item.id)
+    const children = await fetchRegions(item.id)
+    if (children.length > 0) {
+      streetList.value = children
       scrollTop.value = 0
       currentLevel.value = 3
     } else {
-      const children = await fetchRegions(item.id)
-      if (children.length > 0) {
-        streetList.value = children
-        scrollTop.value = 0
-        currentLevel.value = 3
-      }
+      finalizeSelection()
     }
   } else if (currentLevel.value === 3) {
     selectedStreet.value = item
+    finalizeSelection()
   }
 }
 
 const handleConfirm = () => {
+  // 编辑资料页：强制必须选择到最后一级
+  if (props.requireLeaf && !leafReached.value) {
+    uni.showToast({ title: '请选择完整的区域', icon: 'none' })
+    return
+  }
   const names: string[] = []
   const ids: number[] = []
   if (selectedProvince.value) {
@@ -279,6 +261,7 @@ watch(() => props.visible, (val) => {
   if (val) {
     showPanel.value = false
     currentLevel.value = 0
+    leafReached.value = false
     selectedProvince.value = null
     selectedCity.value = null
     selectedDistrict.value = null
@@ -355,6 +338,7 @@ watch(() => props.visible, (val) => {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
   transform: translateY(100%);
   transition: transform 0.3s ease;
 
@@ -367,78 +351,93 @@ watch(() => props.visible, (val) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32rpx 32rpx 16rpx;
-  position: relative;
+  height: 88rpx;
+  background-color: #fff;
 }
 
 .city-title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.city-close {
-  position: absolute;
-  right: 32rpx;
-  top: 32rpx;
   font-size: 36rpx;
-  color: #999;
-  padding: 8rpx;
+  font-weight: 500;
+  color: #333333;
 }
 
 .city-breadcrumb {
   display: flex;
   align-items: center;
-  padding: 8rpx 32rpx 20rpx;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  height: 88rpx;
+  padding: 0 30rpx;
+  background-color: #F7F7F7;
+}
+
+.bread-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .bread-item {
-  font-size: 26rpx;
-  color: #999;
-  padding: 4rpx 8rpx;
-
-  &.active {
-    color: #FF6B9D;
-    font-weight: bold;
-  }
+  font-size: 30rpx;
+  font-weight: 400;
+  color: #333333;
+  margin-right: 16rpx;
 }
 
-.bread-sep {
-  font-size: 24rpx;
-  color: #ccc;
-  margin: 0 4rpx;
+.bread-current {
+  font-size: 30rpx;
+  font-weight: 400;
+  color: #FF4D6F;
+}
+
+.bread-done {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #4A90E2;
+  margin-left: 16rpx;
 }
 
 .city-list {
-  height: 600rpx;
-  padding: 0 32rpx;
+  height: 640rpx;
+  background-color: #fff;
 }
 
 .city-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 88rpx;
-  border-bottom: 1rpx solid #f5f5f5;
+  height: 104rpx;
+  padding: 0 30rpx;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 30rpx;
+    right: 0;
+    bottom: 0;
+    height: 1rpx;
+    background-color: #EEEEEE;
+  }
 
   &.selected {
     .city-item-name {
-      color: #FF6B9D;
-      font-weight: bold;
+      color: #FF4D6F;
     }
   }
 }
 
 .city-item-name {
-  font-size: 30rpx;
-  color: #333;
+  font-size: 32rpx;
+  font-weight: 400;
+  color: #333333;
 }
 
 .city-item-check {
   font-size: 32rpx;
-  color: #FF6B9D;
-  font-weight: bold;
+  color: #FF4D6F;
+  margin-right: 15rpx;
 }
 
 .city-empty {
@@ -446,33 +445,5 @@ watch(() => props.visible, (val) => {
   padding: 60rpx 0;
   font-size: 28rpx;
   color: #ccc;
-}
-
-.city-loading {
-  text-align: center;
-  padding: 60rpx 0;
-  font-size: 28rpx;
-  color: #999;
-}
-
-.city-footer {
-  padding: 20rpx 30rpx;
-  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-}
-
-.city-confirm {
-  width: 100%;
-  height: 88rpx;
-  background-color: #FF6B9D;
-  border-radius: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text {
-    font-size: 30rpx;
-    color: #fff;
-    font-weight: bold;
-  }
 }
 </style>

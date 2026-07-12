@@ -378,17 +378,11 @@
         </view>
       </view>
 
-      <view class="bottom-safe"></view>
-    </scroll-view>
+      <!-- 语音介绍自动保存；其他卡片选项也自动保存，无需底部保存按钮 -->
+    <view class="bottom-safe"></view>
+  </scroll-view>
 
-    <!-- 底部保存按钮 -->
-    <view class="save-bar">
-      <view class="save-btn" @tap="handleSave">
-        <text>保存</text>
-      </view>
-    </view>
-
-    <!-- 住房情况弹窗 -->
+  <!-- 住房情况弹窗 -->
     <view class="popup-mask" v-if="showHousingStatusPopup" @tap="closeHousingStatusPicker"></view>
     <view class="popup-panel" :class="{ show: showHousingStatusPopup }">
       <view class="popup-header">
@@ -526,6 +520,7 @@
     <!-- 城市选择器 -->
     <city-picker
       :visible="showCityPicker"
+      :require-leaf="true"
       @confirm="onCityConfirm"
       @close="showCityPicker = false"
     />
@@ -708,6 +703,7 @@ function onHeightChange(e: any) {
 function onWeightChange(e: any) {
   const index = Number(e.detail.value)
   form.value.weight = weightOptions[index]
+  autoSave()
 }
 
 // 择偶要求选项
@@ -911,6 +907,7 @@ const removePersonalityTag = (tag: string) => {
 const confirmPersonalityPicker = () => {
   form.value.personalityTags = [...tempPersonalityTags.value]
   showPersonalityPopup.value = false
+  autoSave()
 }
 
 // ===== 初始化 =====
@@ -1199,33 +1196,43 @@ const onMaritalChange = (e: { detail: { value: number } }) => {
 }
 const onOnlyChildChange = (e: { detail: { value: number } }) => {
   form.value.onlyChild = onlyChildOptions[e.detail.value]
+  autoSave()
 }
 const onWhenMarryChange = (e: { detail: { value: number } }) => {
   form.value.whenMarry = whenMarryOptions[e.detail.value]
+  autoSave()
 }
 const onZodiacChange = (e: { detail: { value: number } }) => {
   form.value.zodiac = zodiacOptions[e.detail.value]
+  autoSave()
 }
 const onConstellationChange = (e: { detail: { value: number } }) => {
   form.value.constellation = constellationOptions[e.detail.value]
+  autoSave()
 }
 const onPartnerAgeChange = (e: { detail: { value: number } }) => {
   form.value.partnerAgeRange = partnerAgeRangeOptions[e.detail.value]
+  autoSave()
 }
 const onPartnerHeightChange = (e: { detail: { value: number } }) => {
   form.value.partnerHeightMin = partnerHeightOptions[e.detail.value]
+  autoSave()
 }
 const onPartnerEducationChange = (e: { detail: { value: number } }) => {
   form.value.partnerEducation = partnerEducationOptions[e.detail.value]
+  autoSave()
 }
 const onPartnerIncomeChange = (e: { detail: { value: number } }) => {
   form.value.partnerIncome = partnerIncomeOptions[e.detail.value]
+  autoSave()
 }
 const onPartnerMaritalChange = (e: { detail: { value: number } }) => {
   form.value.partnerMaritalStatus = partnerMaritalOptions[e.detail.value]
+  autoSave()
 }
 const onAcceptChildrenChange = (e: { detail: { value: number } }) => {
   form.value.acceptChildren = acceptChildrenOptions[e.detail.value]
+  autoSave()
 }
 
 // ===== 住房要求弹窗 =====
@@ -1247,6 +1254,7 @@ const toggleHousing = (opt: string) => {
 const confirmHousingPicker = () => {
   form.value.housingRequirement = tempHousing.value.join(',')
   showHousingPopup.value = false
+  autoSave()
 }
 
 // ===== 住房情况弹窗 =====
@@ -1282,6 +1290,7 @@ const closeOccupationPicker = () => { showOccupationPopup.value = false }
 const selectOccupation = (opt: string) => {
   form.value.occupation = opt
   showOccupationPopup.value = false
+  autoSave()
 }
 
 // ===== 希望TA标签弹窗 =====
@@ -1301,12 +1310,15 @@ const toggleTag = (tag: string) => {
 const confirmTagPicker = () => {
   form.value.hopeTaTags = [...tempTags.value]
   showTagPopup.value = false
+  autoSave()
 }
 const removeHopeTaTag = (idx: number) => {
   form.value.hopeTaTags.splice(idx, 1)
+  autoSave()
 }
 const removePersonalityEditTag = (idx: number) => {
   form.value.personalityTags.splice(idx, 1)
+  autoSave()
 }
 
 // ===== 城市选择器 =====
@@ -1321,6 +1333,7 @@ const onCityConfirm = (value: string, _ids: number[]) => {
     form.value.residence = value
   }
   showCityPicker.value = false
+  autoSave()
 }
 
 // ===== 照片管理 =====
@@ -1441,6 +1454,8 @@ function startRecord() {
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
     voiceTempPath.value = res.tempFilePath
+    // 录音完成后自动保存上传
+    autoSaveVoice()
   })
 }
 
@@ -1482,8 +1497,9 @@ function deleteVoice() {
   voiceStatus.value = 'idle'
   voiceTempPath.value = ''
   voiceDuration.value = 0
-  voiceAuditStatus.value = 0  // 清空为合法值，避免 -1 触发后端校验
-  // hadVoiceSaved 保持 true，以便保存时清除服务端数据
+  voiceAuditStatus.value = 0
+  // 清空服务端语音数据
+  autoClearVoice()
 }
 
 function confirmDeleteVoice() {
@@ -1528,6 +1544,95 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
 }
 
 // ===== 保存 =====
+// ===== 自动保存（其他信息、我的特点、择偶要求、希望Ta 选项变更即保存）=====
+const autoSaving = ref(false)
+
+const autoSave = async () => {
+  if (autoSaving.value) return
+  autoSaving.value = true
+  try {
+    const data: Record<string, unknown> = {
+      weight: form.value.weight ? Number(form.value.weight) : undefined,
+      occupation: (form.value.occupation || '').trim(),
+      residence: (form.value.residence || '').trim(),
+      hometown: (form.value.hometown || '').trim(),
+      onlyChild: form.value.onlyChild,
+      whenMarry: form.value.whenMarry,
+      zodiac: form.value.zodiac,
+      constellation: form.value.constellation,
+      personalityTags: form.value.personalityTags.join(','),
+      partnerAgeRange: form.value.partnerAgeRange,
+      partnerHeightMin: form.value.partnerHeightMin,
+      partnerEducation: form.value.partnerEducation,
+      partnerIncome: form.value.partnerIncome,
+      housingRequirement: form.value.housingRequirement,
+      partnerMaritalStatus: form.value.partnerMaritalStatus,
+      acceptChildren: form.value.acceptChildren,
+      hopeTaTags: form.value.hopeTaTags.join(','),
+    }
+    const result = await put<Record<string, unknown>>('/users/profile', data)
+    userStore.updateProfile({ ...(result || {}), ...data })
+  } catch (err: unknown) {
+    const error = err as Error
+    if (error.message !== 'Unauthorized') {
+      uni.showToast({ title: error.message || '自动保存失败', icon: 'none' })
+    }
+  } finally {
+    autoSaving.value = false
+  }
+}
+
+// ===== 语音自动保存 =====
+const autoSaveVoice = async () => {
+  const voicePath = voiceTempPath.value || ''
+  if (!voicePath) return
+  const isTempPath =
+    !!voicePath &&
+    (/^https?:\/\/tmp\//i.test(voicePath) ||
+      /^wxfile:\/\//i.test(voicePath) ||
+      (!voicePath.startsWith('http') && !voicePath.startsWith('/')))
+  if (!isTempPath) return // 已保存过的远程 URL，无需重复上传
+
+  const voiceUploadResult = await uploadVoice()
+  if (!voiceUploadResult.voiceUrl) return
+
+  try {
+    const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
+    const data: Record<string, unknown> = {
+      voiceUrl: voiceUploadResult.voiceUrl,
+      voiceAuditStatus: 0,
+      voiceDuration: vd,
+    }
+    // voiceAuditStatus 类型保护：避免 -1 被 Number() 转为 -1
+    if ((data as any).voiceAuditStatus == null) delete (data as any).voiceAuditStatus
+    if ((data as any).voiceDuration == null) delete (data as any).voiceDuration
+
+    await put<Record<string, unknown>>('/users/profile', data)
+    uni.showToast({ title: '语音已保存', icon: 'success' })
+  } catch (err: unknown) {
+    const error = err as Error
+    if (error.message !== 'Unauthorized') {
+      uni.showToast({ title: error.message || '语音保存失败', icon: 'none' })
+    }
+  }
+}
+
+// ===== 清空语音（删除后同步到服务端）=====
+const autoClearVoice = async () => {
+  try {
+    await put<Record<string, unknown>>('/users/profile', {
+      voiceUrl: '',
+      voiceAuditStatus: 0,
+      voiceDuration: 0,
+    })
+  } catch (err: unknown) {
+    const error = err as Error
+    if (error.message !== 'Unauthorized') {
+      uni.showToast({ title: error.message || '清除失败', icon: 'none' })
+    }
+  }
+}
+
 const handleSave = async () => {
   if (saving.value) return
 
