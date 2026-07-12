@@ -45,9 +45,12 @@ export class DynamicService {
     }
 
     // 并行查询两个数据源：用户卡片 + 问答动态
+    // 跨数据源分页：各取「前 page*limit 条」最新数据后再统一合并切片，
+    // 避免单个数据源被另一数据源挤出、以及翻页时 skip 独立计算导致的漏项/重复。
+    const fetchLimit = page * limit
     const [userResult, answerResult] = await Promise.all([
-      this.getUserDynamics(page, limit, currentUserId, type),
-      this.getAnswerDynamics(page, limit, currentUserId, type),
+      this.getUserDynamics(1, fetchLimit, currentUserId, type),
+      this.getAnswerDynamics(1, fetchLimit, currentUserId, type),
     ])
 
     // 合并并按时间排序

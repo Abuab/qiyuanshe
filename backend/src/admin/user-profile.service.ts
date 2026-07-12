@@ -240,17 +240,28 @@ export class UserProfileService {
   }
 
   async createAnswer(userId: number, questionId: number, content: string) {
+    // 管理员代答：进入待审核状态，走正常审批流程（审核通过后由审核操作置为已通过）
     const answer = this.answerRepository.create({
       userId,
       questionId,
       content,
-      status: 1, // 管理员添加直接通过
+      status: 0, // 待审核
       likeCount: 0,
     })
     const saved = await this.answerRepository.save(answer)
 
-    // 更新问题的答案计数
+    // 更新问题的答案计数（与用户端提交行为保持一致：创建即计数）
     await this.questionRepository.increment({ id: questionId }, 'answerCount', 1)
+
+    // 创建审核记录，供审核中心 / 用户详情页进行审批
+    const auditLog = this.auditLogRepository.create({
+      action: 'PENDING',
+      targetType: 'answer',
+      targetId: saved.id,
+      submitterId: userId,
+      content: (content || '').substring(0, 200),
+    })
+    await this.auditLogRepository.save(auditLog)
 
     return saved
   }

@@ -612,7 +612,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
-import request, { put, get } from '@/utils/request'
+import request, { put, get, getServerBaseUrl } from '@/utils/request'
 import { secureStorage } from '@/utils/crypto'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
@@ -1465,12 +1465,23 @@ function stopRecord() {
   uni.getRecorderManager().stop()
 }
 
-function togglePlayVoice() {
-  if (isVoicePlaying.value) { stopVoicePlay(); return }
-  if (!voiceTempPath.value) {
-    uni.showToast({ title: '语音文件不存在', icon: 'none' })
-    return
-  }
+/** 判断是否为服务器远程音频 URL（排除微信本地临时路径 http://tmp/） */
+function isRemoteVoiceUrl(u: string): boolean {
+  return /^https?:\/\//i.test(u) && !/^https?:\/\/tmp\//i.test(u)
+}
+
+/** 将服务端返回的相对语音路径拼成完整可访问 URL（直连静态资源，非图片 COS 网关） */
+function toFullVoiceUrl(url: string): string {
+  if (!url) return ''
+  if (/^https?:\/\//i.test(url) || url.startsWith('wxfile://')) return url
+  const staticBase = (
+    (import.meta as any).env?.VITE_STATIC_BASE_URL || getServerBaseUrl()
+  ).replace(/\/$/, '')
+  return `${staticBase}/${url.replace(/^\//, '')}`
+}
+
+/** 用给定本地路径创建音频上下文并播放 */
+function playLocalVoice(localPath: string) {
   if (!voiceAudioCtx) {
     voiceAudioCtx = uni.createInnerAudioContext()
     voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
@@ -1480,9 +1491,40 @@ function togglePlayVoice() {
       isVoicePlaying.value = false
     })
   }
-  voiceAudioCtx.src = voiceTempPath.value
+  voiceAudioCtx.src = localPath
   voiceAudioCtx.play()
   isVoicePlaying.value = true
+}
+
+function togglePlayVoice() {
+  if (isVoicePlaying.value) { stopVoicePlay(); return }
+  const src = voiceTempPath.value
+  if (!src) {
+    uni.showToast({ title: '语音文件不存在', icon: 'none' })
+    return
+  }
+  // 远程服务器音频：iOS 真机直接播放远程 URL 常失败，先下载到本地再播放
+  if (isRemoteVoiceUrl(src)) {
+    uni.showLoading({ title: '加载中...', mask: true })
+    uni.downloadFile({
+      url: src,
+      success: (res: any) => {
+        if (res.statusCode === 200) {
+          playLocalVoice(res.tempFilePath)
+        } else {
+          uni.showToast({ title: '语音加载失败', icon: 'none' })
+        }
+      },
+      fail: (err: any) => {
+        console.error('[EditProfile] download voice error', JSON.stringify(err))
+        uni.showToast({ title: '语音加载失败', icon: 'none' })
+      },
+      complete: () => uni.hideLoading(),
+    })
+    return
+  }
+  // 本地临时路径（录制产出）：直接播放
+  playLocalVoice(src)
 }
 
 function stopVoicePlay() {
@@ -1608,6 +1650,10 @@ const autoSaveVoice = async () => {
     if ((data as any).voiceDuration == null) delete (data as any).voiceDuration
 
     await put<Record<string, unknown>>('/users/profile', data)
+    // 上传成功后，把播放源切换为服务器 URL：
+    // 录制产出的本地临时文件在 iOS 真机上常无法直接播放，改用服务器音频（下载后播放）
+    const fullUrl = toFullVoiceUrl(voiceUploadResult.voiceUrl)
+    if (fullUrl) voiceTempPath.value = fullUrl
     uni.showToast({ title: '语音已保存', icon: 'success' })
   } catch (err: unknown) {
     const error = err as Error

@@ -551,6 +551,39 @@
               </template>
             </div>
           </el-tab-pane>
+
+          <!-- Tab 8: 问答（管理员代答，进入待审核走正常审批流程） -->
+          <el-tab-pane label="问答" name="answers">
+            <div v-loading="tabLoading.answers">
+              <div style="margin-bottom:16px">
+                <el-button type="primary" @click="handleAddAnswer">添加回答</el-button>
+                <span class="text-muted" style="margin-left:12px">管理员代答后进入待审核，通过审批后展示</span>
+              </div>
+              <el-empty v-if="userAnswerList.length === 0" description="暂无问答记录" />
+              <el-table v-else :data="userAnswerList" stripe>
+                <el-table-column prop="questionTitle" label="问题" min-width="180" show-overflow-tooltip />
+                <el-table-column prop="content" label="回答内容" min-width="220" show-overflow-tooltip />
+                <el-table-column prop="likeCount" label="点赞" width="80" />
+                <el-table-column label="状态" width="100">
+                  <template #default="{ row }">
+                    <el-tag :type="getAnswerStatusType(row.status)" size="small">{{ getAnswerStatusName(row.status) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createdAt" label="回答时间" width="170">
+                  <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
+                </el-table-column>
+                <el-table-column label="操作" width="140" fixed="right">
+                  <template #default="{ row }">
+                    <template v-if="row.status === 0">
+                      <el-button type="success" link size="small" :loading="answerAuditing[row.id]" @click="handleApproveAnswer(row)">通过</el-button>
+                      <el-button type="danger" link size="small" :loading="answerAuditing[row.id]" @click="handleRejectAnswer(row)">拒绝</el-button>
+                    </template>
+                    <span v-else class="text-muted">-</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </el-card>
     </div>
@@ -1003,6 +1036,24 @@
       <template #footer>
         <el-button @click="followAddDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleAddFollowSubmit" :disabled="!followSelectedUserId">确认添加</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 添加回答弹窗（管理员代答，走审批） -->
+    <el-dialog v-model="answerDialogVisible" title="添加回答" width="560px" destroy-on-close>
+      <el-form label-width="80px">
+        <el-form-item label="选择问题" required>
+          <el-select v-model="answerForm.questionId" filterable placeholder="请选择问题" style="width:100%">
+            <el-option v-for="q in questionOptions" :key="q.id" :label="q.title" :value="q.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="回答内容" required>
+          <el-input v-model="answerForm.content" type="textarea" :rows="4" maxlength="500" show-word-limit placeholder="请输入回答内容" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="answerDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="answerSubmitting" @click="handleAnswerSubmit">提交</el-button>
       </template>
     </el-dialog>
   </div>
@@ -1582,6 +1633,7 @@ function handleTabChange(tabName: string) {
     case 'interaction': loadInteractionData(); break  // 互动记录：合并关注 + 喜欢 + 浏览
     case 'audit': loadAuditHistory(); break  // 审核记录：合并资料审核 + 照片审核
     case 'finance': loadFinanceData(); break  // 财务记录：从后端 /admin/users/:id/orders 加载
+    case 'answers': loadUserAnswers(); break  // 问答：加载用户回答列表
     case 'basic': loadReviews(); loadOpLogs(); break  // 基本资料内加载红娘评价 + 操作日志
   }
 }
@@ -2134,7 +2186,7 @@ async function handleAnswerSubmit() {
       questionId: answerForm.questionId,
       content: answerForm.content,
     })
-    ElMessage.success('回答添加成功')
+    ElMessage.success('回答已提交，待审核通过后展示')
     answerDialogVisible.value = false
     loadUserAnswers()
   } catch (e: any) { ElMessage.error(e.message || '操作失败') }
