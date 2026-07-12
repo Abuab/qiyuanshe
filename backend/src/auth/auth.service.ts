@@ -14,7 +14,7 @@ import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
-import { resolveAvatarUrl } from '../common/image-url'
+import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 interface WechatSession {
   openid: string
@@ -470,7 +470,7 @@ export class AuthService {
       protocolVersion: user.protocolVersion,
       showBasicProfile: user.showBasicProfile ?? true,
       delegateToPlatform: user.delegateToPlatform ?? false,
-      voiceUrl: user.voiceUrl || '',
+      voiceUrl: resolveStaticUrl(user.voiceUrl || ''),
       voiceAuditStatus: user.voiceAuditStatus,
       voiceDuration: user.voiceDuration,
       createdAt: user.createdAt,

@@ -5,7 +5,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { UserPhoto } from '../entities/UserPhoto'
 import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
-import { normalizeImageUrl } from '../common/image-url'
+import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
 import { CirclePost } from '../entities/CirclePost'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
@@ -91,6 +91,8 @@ export class AdminAuditService {
     return {
       ...audit,
       typeLabel: typeLabels[audit.targetType] || audit.targetType,
+      // 语音记录：content 内 voiceUrl 存的是相对路径，返回给管理后台前拼接完整域名
+      content: audit.targetType === 'voice' ? this.resolveVoiceContent(audit.content) : audit.content,
       submitter: audit.submitter ? {
         id: audit.submitter.id,
         userId: audit.submitter.userId,
@@ -99,6 +101,18 @@ export class AdminAuditService {
       } : null,
       // Parse before/after from content if it's JSON
       beforeAfter: this.parseContentDiff(audit.content),
+    }
+  }
+
+  /** 语音审核记录：将 content 中相对路径的 voiceUrl 解析为完整可访问 URL */
+  private resolveVoiceContent(content?: string): string | undefined {
+    if (!content) return content
+    try {
+      const obj = JSON.parse(content)
+      if (obj && obj.voiceUrl) obj.voiceUrl = resolveStaticUrl(obj.voiceUrl)
+      return JSON.stringify(obj)
+    } catch {
+      return content
     }
   }
 

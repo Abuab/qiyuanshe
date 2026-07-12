@@ -60,6 +60,21 @@ export function normalizeImageUrl(url: string | undefined | null): string {
   return url
 }
 
+/**
+ * 将数据库中存储的相对静态资源路径（如 /uploads/voice-xxx.mp3）解析为完整可访问 URL。
+ * - 数据库统一存相对路径，迁移域名时只需改 STATIC_BASE_URL，无需刷历史数据
+ * - 空值返回空字符串；已是 http/https 完整 URL 直接返回（兼容历史绝对路径数据）
+ * - 相对路径用 STATIC_BASE_URL（站点根域名，不含 /api）拼接；未配置时回退 API_BASE_URL
+ */
+export function resolveStaticUrl(url: string | undefined | null): string {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  if (url.startsWith('data:')) return url
+  const baseUrl = (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
+  if (!baseUrl) return url.startsWith('/') ? url : `/${url}`
+  return `${baseUrl}/${url.replace(/^\//, '')}`
+}
+
 /** 不可用的外部头像域名 */
 const EXTERNAL_AVATAR_DOMAINS = ['api.dicebear.com']
 

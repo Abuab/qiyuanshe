@@ -14,6 +14,7 @@ import { RecommendService, RecommendFilters } from './recommend.service'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 import { getDisplayName } from '../common/user-utils'
+import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
 import { AiVoiceService } from '../ai/ai-voice.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { beijingISO } from '../common/utils/date-utils'
@@ -759,7 +760,8 @@ export class UserService {
       if (this.isWechatTempPath(dto.voiceUrl)) {
         throw new Error('语音文件未上传，请先上传语音文件')
       }
-      user.voiceUrl = dto.voiceUrl
+      // 统一存相对路径（剥离自身域名），迁移域名时无需刷历史数据
+      user.voiceUrl = normalizeImageUrl(dto.voiceUrl)
     }
     if (dto.voiceAuditStatus !== undefined) user.voiceAuditStatus = dto.voiceAuditStatus
     if (dto.voiceDuration !== undefined) user.voiceDuration = dto.voiceDuration
@@ -767,6 +769,7 @@ export class UserService {
     // 语音审核：当 voiceUrl 非空且 voiceAuditStatus 为 0（待审核）时，创建待审核记录
     // 先关闭该用户所有旧的 PENDING 语音审核记录，确保一个用户只有一条有效的 PENDING
     if (dto.voiceUrl && dto.voiceAuditStatus === 0) {
+      const relativeVoiceUrl = normalizeImageUrl(dto.voiceUrl)
       await this.auditLogRepository.update(
         { targetType: 'voice', targetId: userId, action: 'PENDING' },
         { action: 'CANCELLED' },
@@ -778,7 +781,7 @@ export class UserService {
           submitterId: userId,
           action: 'PENDING',
           content: JSON.stringify({
-            voiceUrl: dto.voiceUrl,
+            voiceUrl: relativeVoiceUrl,
             duration: dto.voiceDuration,
           }),
           aiResult: 'AI转录中...',
@@ -787,7 +790,7 @@ export class UserService {
       )
 
       // AI 转录异步执行，不阻塞 updateProfile HTTP 响应
-      this.aiVoiceService.transcribeVoice(dto.voiceUrl).then((result) => {
+      this.aiVoiceService.transcribeVoice(relativeVoiceUrl).then((result) => {
         const transcript = result.text
         // aiResult 仅作为摘要展示，完整文本存储在 content.transcript 中
         const maxLen = 500
@@ -855,7 +858,7 @@ export class UserService {
     })
     if (!user || !user.voiceUrl) return null
     return {
-      voiceUrl: user.voiceUrl,
+      voiceUrl: resolveStaticUrl(user.voiceUrl),
       duration: user.voiceDuration || 0,
       auditStatus: user.voiceAuditStatus,
     }
