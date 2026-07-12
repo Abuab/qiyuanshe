@@ -92,10 +92,10 @@
           <view class="nickname-gender-row">
             <text class="nickname-large">{{ form.nickname || '--' }}</text>
             <view v-if="form.gender === 1" class="gender-icon-wrap male">
-              <text class="gender-symbol">♂</text>
+              <text class="gender-symbol">男</text>
             </view>
             <view v-else-if="form.gender === 2" class="gender-icon-wrap female">
-              <text class="gender-symbol">♀</text>
+              <text class="gender-symbol">女</text>
             </view>
           </view>
           
@@ -1926,28 +1926,24 @@ onShow(async () => {
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 
   &.male {
-    background: linear-gradient(135deg, #e6f7ff, #b3dfff);
+    background: linear-gradient(135deg, #40a9ff, #1890ff);
   }
 
   &.female {
-    background: linear-gradient(135deg, #fff0f6, #ffc8d8);
+    background: linear-gradient(135deg, #ff85c0, #eb2f96);
   }
 }
 
 .gender-symbol {
-  font-size: 26rpx;
-  font-weight: bold;
-  line-height: 1;
-  text-align: center;
   width: 100%;
-
-  .male & {
-    color: #1890ff;
-  }
-
-  .female & {
-    color: #eb2f96;
-  }
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 500;
+  line-height: 1;
+  color: #ffffff;
 }
 
 .info-brief-row {

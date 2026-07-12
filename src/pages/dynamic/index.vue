@@ -178,14 +178,16 @@
           </view>
         </view>
 
-        <!-- 回答动态卡片 -->
+        <!-- 回答动态卡片：上方回答内容 + 下方嵌入问题卡片 -->
         <view v-if="item._displayType === 'answer'" class="card-content">
           <text class="answer-text">{{ item.content }}</text>
-          <!-- 话题卡片 -->
-          <view v-if="item.questionTitle" class="topic-card" @tap="goToQuestion(item.questionId)">
-            <text class="topic-hash">#</text>
-            <text class="topic-title">{{ item.questionTitle }}</text>
-            <text class="topic-arrow">›</text>
+          <!-- 嵌入的问题卡片 -->
+          <view v-if="item.questionTitle" class="answer-question-card" @tap="goToQuestion(item.questionId)">
+            <text class="aqc-title"># {{ item.questionTitle }}</text>
+            <view class="aqc-footer">
+              <text class="aqc-hint">查看问答</text>
+              <text class="aqc-arrow">›</text>
+            </view>
           </view>
         </view>
 
@@ -242,6 +244,20 @@
       @close="showMatchmakerList = false"
       @contact="onSelectMatchmaker"
     />
+
+    <!-- 模糊照片预览层：点开模糊照片时全屏显示，仍保持模糊 -->
+    <view v-if="blurPreviewVisible" class="blur-preview-mask" @tap="blurPreviewVisible = false">
+      <text v-if="blurPreviewImages.length" class="blur-preview-counter">{{ blurPreviewIndex + 1 }}/{{ blurPreviewImages.length }}</text>
+      <swiper
+        class="blur-preview-swiper"
+        :current="blurPreviewIndex"
+        @change="onBlurPreviewChange"
+      >
+        <swiper-item v-for="(img, idx) in blurPreviewImages" :key="idx" class="blur-preview-item">
+          <image class="blur-preview-img" :src="img" mode="aspectFit" />
+        </swiper-item>
+      </swiper>
+    </view>
   </view>
 </template>
 
@@ -356,6 +372,14 @@ const tabs = computed(() => {
   return list
 })
 const currentTab = ref('all')
+
+// 模糊照片全屏预览层状态
+const blurPreviewVisible = ref(false)
+const blurPreviewImages = ref<string[]>([])
+const blurPreviewIndex = ref(0)
+const onBlurPreviewChange = (e: any) => {
+  blurPreviewIndex.value = e.detail.current
+}
 
 /** 判断是否应该模糊：查看者只有头像/单张照片时，其他用户的「多图」相册全部模糊，单图则正常显示 */
 const shouldBlur = (item: DynamicItem, _imgIndex: number): boolean => {
@@ -534,22 +558,18 @@ const goToQuestion = (questionId?: number) => {
 }
 
 const handlePhotoTap = (item: DynamicItem, idx: number) => {
-  // 模糊态：不预览高清原图，与首页一致，引导上传照片解锁
+  // 预览范围与九宫格展示保持一致（仅展示前 3 张）
+  const imgs = (item.images || []).slice(0, 3)
+  // 模糊态：全屏预览也保持模糊显示，不展示高清原图
   if (shouldBlur(item, idx)) {
-    uni.showModal({
-      title: '照片已模糊',
-      content: '上传两张以上照片即可查看 TA 的高清照片',
-      confirmText: '去上传',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) goToUploadPhoto()
-      },
-    })
+    blurPreviewImages.value = imgs
+    blurPreviewIndex.value = idx
+    blurPreviewVisible.value = true
     return
   }
   // 正常预览
   uni.previewImage({
-    urls: item.images,
+    urls: imgs,
     current: idx,
   })
 }
@@ -1022,35 +1042,87 @@ onShow(() => {
 }
 
 .photo-blur .photo-img {
-  filter: blur(3px) brightness(0.9);
-  transform: scale(1.08);
+  filter: blur(8px) brightness(0.88);
+  transform: scale(1.12);
 }
 
-/* 话题卡片 */
-.topic-card {
+/* 模糊照片全屏预览层 */
+.blur-preview-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.blur-preview-swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.blur-preview-counter {
+  position: fixed;
+  top: 120rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  padding: 8rpx 24rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 30rpx;
+  color: #fff;
+  font-size: 26rpx;
+}
+
+.blur-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.blur-preview-img {
+  width: 100%;
+  height: 70%;
+  filter: blur(24px) brightness(0.9);
+  transform: scale(1.1);
+}
+
+/* 回答卡片内嵌入的问题卡片 */
+.answer-question-card {
   background-color: #F5F5F5;
   border-radius: 12rpx;
-  padding: 20rpx 24rpx;
+  padding: 24rpx 20rpx;
 }
 
-.topic-hash {
-  font-size: 36rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-  margin-right: 12rpx;
-}
-
-.topic-title {
+.aqc-title {
+  display: block;
   font-size: 28rpx;
-  color: #333;
-  flex: 1;
+  font-weight: 600;
+  color: #000;
+  line-height: 1.5;
+  word-break: break-all;
 }
 
-.topic-arrow {
-  font-size: 32rpx;
-  color: #ccc;
+.aqc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+}
+
+.aqc-hint {
+  font-size: 24rpx;
+  color: #FF6B9D;
+}
+
+.aqc-arrow {
+  font-size: 28rpx;
+  color: #FF6B9D;
+  margin-left: 4rpx;
 }
 
 /* 底部操作栏 */

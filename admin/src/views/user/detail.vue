@@ -238,8 +238,8 @@
                     <template #error><div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:8px"><el-icon :size="32"><Picture /></el-icon></div></template>
                   </el-image>
                   <div class="photo-actions">
-                    <el-tag v-if="photo.isMain" type="success" size="small">主图</el-tag>
-                    <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为主图</el-button>
+                    <el-tag v-if="photo.isMain" type="success" size="small">当前头像</el-tag>
+                    <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为头像</el-button>
                     <el-button type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
                     <!-- 照片审核操作 -->
                     <template v-if="photo.auditStatus === 0">
@@ -296,7 +296,7 @@
               <el-collapse v-model="interactionActivePanels">
                 <el-collapse-item name="liked">
                   <template #title>
-                    我喜欢的
+                    我喜欢的（{{ likeData.liked.length }}）
                     <!-- 管理员添加喜欢按钮（solid primary，白色文字清晰可见） -->
                     <el-button size="small" type="primary" @click.stop="openLikeAddDialog('liked')" style="margin-left:12px">添加</el-button>
                   </template>
@@ -313,7 +313,7 @@
                 </el-collapse-item>
                 <el-collapse-item name="likedBy">
                   <template #title>
-                    喜欢我的
+                    喜欢我的（{{ likeData.likedBy.length }}）
                     <el-button size="small" type="primary" @click.stop="openLikeAddDialog('likedBy')" style="margin-left:12px">添加</el-button>
                   </template>
                   <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
@@ -326,7 +326,8 @@
                     <el-button type="danger" link size="small" @click.stop="handleRemoveLike(item.targetUserId, 'likedBy')" style="margin-left:8px">移除</el-button>
                   </div>
                 </el-collapse-item>
-                <el-collapse-item title="互相喜欢" name="mutual">
+                <el-collapse-item name="mutual">
+                  <template #title>互相喜欢（{{ likeData.mutual.length }}）</template>
                   <div v-if="likeData.mutual.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="item in likeData.mutual" :key="item.id" class="like-item">
                     <el-image :src="item.avatar" fit="cover" class="like-avatar-img" @click="goToUserDetail(item.targetUserId)">
@@ -339,7 +340,7 @@
                 </el-collapse-item>
                 <el-collapse-item name="following">
                   <template #title>
-                    我关注的
+                    我关注的（{{ followData.following.length }}）
                     <el-button size="small" type="primary" @click.stop="openFollowAddDialog('following')" style="margin-left:12px">添加</el-button>
                   </template>
                   <div v-if="followData.following.length === 0" class="like-empty">暂无记录</div>
@@ -354,7 +355,7 @@
                 </el-collapse-item>
                 <el-collapse-item name="followers">
                   <template #title>
-                    关注我的
+                    关注我的（{{ followData.followers.length }}）
                     <el-button size="small" type="primary" @click.stop="openFollowAddDialog('followers')" style="margin-left:12px">添加</el-button>
                   </template>
                   <div v-if="followData.followers.length === 0" class="like-empty">暂无记录</div>
@@ -2221,7 +2222,7 @@ async function handleSetMainPhoto(photoId: number) {
   try {
     const res = await adminUsers.setMainPhoto(photoId)
     if (res.success) {
-      ElMessage.success('已设为主图')
+      ElMessage.success('已设为头像')
       loadPhotos()
     }
   } catch (e) { console.error(e) }
