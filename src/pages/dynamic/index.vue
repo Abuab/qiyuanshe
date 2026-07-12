@@ -534,7 +534,19 @@ const goToQuestion = (questionId?: number) => {
 }
 
 const handlePhotoTap = (item: DynamicItem, idx: number) => {
-  // 如果该图片被模糊了，弹提示引导上传
+  // 模糊态：不预览高清原图，与首页一致，引导上传照片解锁
+  if (shouldBlur(item, idx)) {
+    uni.showModal({
+      title: '照片已模糊',
+      content: '上传两张以上照片即可查看 TA 的高清照片',
+      confirmText: '去上传',
+      cancelText: '取消',
+      success: (res) => {
+        if (res.confirm) goToUploadPhoto()
+      },
+    })
+    return
+  }
   // 正常预览
   uni.previewImage({
     urls: item.images,
@@ -1010,7 +1022,7 @@ onShow(() => {
 }
 
 .photo-blur .photo-img {
-  filter: blur(10px) brightness(0.85);
+  filter: blur(3px) brightness(0.9);
   transform: scale(1.08);
 }
 
