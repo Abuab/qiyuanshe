@@ -6,7 +6,7 @@
         <view class="nav-left" @tap="handleBack">
           <text class="back-icon">←</text>
         </view>
-        <text class="nav-title">{{ questionTitle }}</text>
+        <text class="nav-title">问答详情</text>
         <view class="nav-right" />
       </view>
     </view>
