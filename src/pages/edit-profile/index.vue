@@ -982,7 +982,7 @@ onMounted(async () => {
       !!info.voiceUrl &&
       (/^https?:\/\/tmp\//i.test(info.voiceUrl) || info.voiceUrl.startsWith('wxfile://'))
     if (info.voiceUrl && info.voiceUrl !== '' && !isInvalidVoiceUrl) {
-      voiceTempPath.value = info.voiceUrl
+      voiceTempPath.value = toFullVoiceUrl(info.voiceUrl)
       voiceDuration.value = info.voiceDuration || 0
       hadVoiceSaved.value = true
       // 审核未通过时清空语音状态，强制用户重新录制
@@ -1504,7 +1504,15 @@ function togglePlayVoice() {
 }
 
 function playDownloadedVoice(localPath: string) {
+  // iOS 上 obeyMuteSwitch=false 必须配合 useWebAudioImplement 才能生效，
+  // 但 uni.createInnerAudioContext 不支持此参数，需用微信原生 API
+  // #ifdef MP-WEIXIN
+  // @ts-ignore
+  voiceAudioCtx = wx.createInnerAudioContext({ useWebAudioImplement: true }) as any
+  // #endif
+  // #ifndef MP-WEIXIN
   voiceAudioCtx = uni.createInnerAudioContext()
+  // #endif
   voiceAudioCtx.obeyMuteSwitch = false
   voiceAudioCtx.src = localPath
   voiceAudioCtx.onCanplay(() => { voiceAudioCtx!.play() })
@@ -1623,10 +1631,12 @@ const autoSaveVoice = async () => {
       (!voicePath.startsWith('http') && !voicePath.startsWith('/')))
   if (!isTempPath) return // 已保存过的远程 URL，无需重复上传
 
-  console.log('[EditProfile] autoSaveVoice uploading, path:', voicePath)
   const voiceUploadResult = await uploadVoice()
-  console.log('[EditProfile] autoSaveVoice upload result:', JSON.stringify(voiceUploadResult))
   if (!voiceUploadResult.voiceUrl) return
+
+  // 上传成功后立刻将 voiceTempPath 切换为服务器完整 URL，
+  // 否则播放时会使用已失效的微信临时路径（wxfile://），导致 iOS 真机无法播放
+  voiceTempPath.value = toFullVoiceUrl(voiceUploadResult.voiceUrl)
 
   try {
     const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
@@ -1678,6 +1688,10 @@ const handleSave = async () => {
   let voiceUploadResult: { voiceUrl?: string; auditStatus?: number } = {}
   if (voiceEnabled.value && voicePath && isTempPath) {
     voiceUploadResult = await uploadVoice()
+    // 上传成功后立刻将 voiceTempPath 切换为服务器完整 URL，确保后续播放使用远程 URL
+    if (voiceUploadResult.voiceUrl) {
+      voiceTempPath.value = toFullVoiceUrl(voiceUploadResult.voiceUrl)
+    }
   }
 
   saving.value = true
