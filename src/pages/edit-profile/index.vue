@@ -1474,23 +1474,47 @@ function toFullVoiceUrl(url: string): string {
 
 function togglePlayVoice() {
   if (isVoicePlaying.value) { stopVoicePlay(); return }
-  if (!voiceTempPath.value) {
+  const src = voiceTempPath.value
+  if (!src) {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
+  // 远程 URL：iOS InnerAudioContext 直接播网络 URL 会挂起，必须先 downloadFile
+  if (isRemoteVoiceUrl(src)) {
+    uni.showLoading({ title: '加载中...', mask: true })
+    uni.downloadFile({
+      url: src,
+      success: (res: any) => {
+        if (res.statusCode === 200) {
+          playDownloadedVoice(res.tempFilePath)
+        } else {
+          uni.showToast({ title: '语音加载失败', icon: 'none' })
+        }
+      },
+      fail: (err: any) => {
+        console.error('[EditProfile] download voice error', JSON.stringify(err))
+        uni.showToast({ title: '语音加载失败', icon: 'none' })
+      },
+      complete: () => { try { uni.hideLoading() } catch (_) {} },
+    })
+    return
+  }
+  // 本地临时路径（录制产物）：直接创建 InnerAudioContext 播放
+  playDownloadedVoice(src)
+}
+
+function playDownloadedVoice(localPath: string) {
   voiceAudioCtx = uni.createInnerAudioContext()
   voiceAudioCtx.obeyMuteSwitch = false
-  voiceAudioCtx.onCanplay(() => {
-    voiceAudioCtx!.play()
-  })
+  voiceAudioCtx.src = localPath
+  voiceAudioCtx.onCanplay(() => { voiceAudioCtx!.play() })
   voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
   voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
   voiceAudioCtx.onError((err: any) => {
-    console.error('[EditProfile] play voice error', JSON.stringify(err), 'src=', voiceTempPath.value)
+    console.error('[EditProfile] play voice error', JSON.stringify(err), 'src=', localPath)
     uni.showToast({ title: '播放失败 errCode=' + (err?.errCode || '?'), icon: 'none', duration: 3000 })
     isVoicePlaying.value = false
   })
-  voiceAudioCtx.src = voiceTempPath.value
 }
 
 function stopVoicePlay() {
@@ -1603,10 +1627,6 @@ const autoSaveVoice = async () => {
   const voiceUploadResult = await uploadVoice()
   console.log('[EditProfile] autoSaveVoice upload result:', JSON.stringify(voiceUploadResult))
   if (!voiceUploadResult.voiceUrl) return
-
-  // 上传成功后切换到服务器完整 URL，后续播放通过 downloadFile 下载（iOS 可靠方案）
-  const fullVoiceUrl = toFullVoiceUrl(voiceUploadResult.voiceUrl)
-  if (fullVoiceUrl) voiceTempPath.value = fullVoiceUrl
 
   try {
     const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
@@ -1790,7 +1810,7 @@ onShow(async () => {
           voiceTempPath.value = ''
           voiceDuration.value = 0
         } else {
-          voiceTempPath.value = profile.voiceUrl
+          voiceTempPath.value = toFullVoiceUrl(profile.voiceUrl)
           voiceAuditStatus.value = auditStatus
           voiceStatus.value = 'done'
         }
