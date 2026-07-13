@@ -1482,15 +1482,25 @@ function toFullVoiceUrl(url: string): string {
 
 /** 用给定本地路径创建音频上下文并播放 */
 function playLocalVoice(localPath: string) {
-  if (!voiceAudioCtx) {
-    voiceAudioCtx = uni.createInnerAudioContext()
-    voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
-    voiceAudioCtx.onError((err: any) => {
-      console.error('[EditProfile] voice play error', JSON.stringify(err))
-      uni.showToast({ title: '播放失败，请重试', icon: 'none' })
-      isVoicePlaying.value = false
-    })
+  // 每次播放前先彻底清理上一个音频上下文，避免 iOS 复用已销毁 / 静音状态的实例
+  if (voiceAudioCtx) {
+    try { voiceAudioCtx.stop() } catch (_) { /* noop */ }
+    try { voiceAudioCtx.destroy() } catch (_) { /* noop */ }
+    voiceAudioCtx = null
   }
+  voiceAudioCtx = uni.createInnerAudioContext()
+  // iOS 真机：必须设为 false，否则静音开关开启时 InnerAudioContext 无声且不报错
+  voiceAudioCtx.obeyMuteSwitch = false
+  // iOS 兼容性：启用 Web Audio 实现（基础库 2.19.0+），解决部分机型录音文件格式解码失败问题
+  if (typeof (voiceAudioCtx as any).useWebAudioImplement !== 'undefined') {
+    (voiceAudioCtx as any).useWebAudioImplement = true
+  }
+  voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+  voiceAudioCtx.onError((err: any) => {
+    console.error('[EditProfile] voice play error', JSON.stringify(err))
+    uni.showToast({ title: '播放失败，请重试', icon: 'none' })
+    isVoicePlaying.value = false
+  })
   voiceAudioCtx.src = localPath
   voiceAudioCtx.play()
   isVoicePlaying.value = true
@@ -1529,9 +1539,12 @@ function togglePlayVoice() {
 
 function stopVoicePlay() {
   if (voiceAudioCtx) {
-    voiceAudioCtx.stop()
+    try { voiceAudioCtx.stop() } catch (_) { /* noop */ }
+    try { voiceAudioCtx.destroy() } catch (_) { /* noop */ }
+    voiceAudioCtx = null
   }
   isVoicePlaying.value = false
+  uni.hideLoading()
 }
 
 function deleteVoice() {
