@@ -1443,7 +1443,7 @@ function startRecord() {
     recordTime.value = '00:' + remaining.toString().padStart(2, '0')
   }, 1000)
   const recorder = uni.getRecorderManager()
-  recorder.start({ duration: 10000, format: 'mp3' })
+  recorder.start({ duration: 10000, format: 'aac' })
   recorder.onStop((res: any) => {
     if (!res.tempFilePath) {
       uni.showToast({ title: '录音保存失败', icon: 'none' })
@@ -1453,22 +1453,9 @@ function startRecord() {
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
-    voiceTempPath.value = res.tempFilePath  // 先设临时路径，播放前会 saveFile 持久化
-    // iOS 真机：InnerAudioContext 无法直接播放 recorder 的临时文件，
-    // 需先 saveFile 到用户目录（持久化后可播放），再触发自动上传
-    uni.saveFile({
-      tempFilePath: res.tempFilePath,
-      success: (saveRes: any) => {
-        voiceTempPath.value = saveRes.savedFilePath
-      },
-      fail: () => {
-        // 降级：保持 recorder 临时路径（模拟器/安卓可用）
-      },
-      complete: () => {
-        // 用原始临时文件上传（上传接口可能需要原始路径）
-        autoSaveVoice(res.tempFilePath)
-      },
-    })
+    voiceTempPath.value = res.tempFilePath
+    // 录音完成后自动保存上传
+    autoSaveVoice()
   })
 }
 
@@ -1557,7 +1544,7 @@ function stopVoicePlay() {
     voiceAudioCtx = null
   }
   isVoicePlaying.value = false
-  uni.hideLoading()
+  try { uni.hideLoading() } catch (_) { /* 无 loading 时 hide 会报错，忽略 */ }
 }
 
 function deleteVoice() {
@@ -1651,8 +1638,8 @@ const autoSave = async () => {
 }
 
 // ===== 语音自动保存 =====
-const autoSaveVoice = async (overridePath?: string) => {
-  const voicePath = overridePath || voiceTempPath.value || ''
+const autoSaveVoice = async () => {
+  const voicePath = voiceTempPath.value || ''
   if (!voicePath) return
   const isTempPath =
     !!voicePath &&
