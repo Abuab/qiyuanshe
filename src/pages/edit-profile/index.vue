@@ -350,8 +350,7 @@
             <view class="voice-play-row">
               <!-- 播放按钮（圆形粉色）：用 CSS 画形状，避免 emoji 在真机/模拟器呈现不一致 -->
               <view class="voice-play-btn" @tap="togglePlayVoice">
-                <view v-if="voiceUploading" class="ico-uploading"></view>
-                <view v-else-if="isVoicePlaying" class="ico-pause">
+                <view v-if="isVoicePlaying" class="ico-pause">
                   <view class="ico-pause-bar"></view>
                   <view class="ico-pause-bar"></view>
                 </view>
@@ -1422,7 +1421,6 @@ const voiceAuditStatus = ref<number>(-1)
 const isVoicePlaying = ref(false)
 const recordTime = ref('00:00')
 const hadVoiceSaved = ref(false)  // 标记进入页面时是否有已保存的语音
-const voiceUploading = ref(false)  // 语音上传中，此时不允许播放
 let voiceTimer: ReturnType<typeof setTimeout> | null = null
 let voiceCountdown: ReturnType<typeof setInterval> | null = null
 let voiceAudioCtx: ReturnType<typeof uni.createInnerAudioContext> | null = null
@@ -1508,12 +1506,6 @@ function playLocalVoice(localPath: string) {
 
 function togglePlayVoice() {
   if (isVoicePlaying.value) { stopVoicePlay(); return }
-  // 上传中不允许播放 — iOS 上 InnerAudioContext 无法直接访问 recorder 临时沙盒文件，
-  // 必须等上传完成后从服务器 URL 下载播放（与管理后台/开发者工具一致）
-  if (voiceUploading.value) {
-    uni.showToast({ title: '语音处理中，请稍后', icon: 'none' })
-    return
-  }
   const src = voiceTempPath.value
   if (!src) {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
@@ -1539,19 +1531,8 @@ function togglePlayVoice() {
     })
     return
   }
-  // 本地临时路径（录制产出）：saveFile 到用户目录后播放
-  const fs = uni.getFileSystemManager()
-  fs.saveFile({
-    tempFilePath: src,
-    success: (res: any) => {
-      playLocalVoice(res.savedFilePath)
-    },
-    fail: (err: any) => {
-      console.error('[EditProfile] saveFile voice error', JSON.stringify(err))
-      // saveFile 失败时回退到直接播放原始路径
-      playLocalVoice(src)
-    },
-  })
+  // 本地临时路径（录制产出）：直接播放
+  playLocalVoice(src)
 }
 
 function stopVoicePlay() {
@@ -1664,11 +1645,10 @@ const autoSaveVoice = async () => {
       (!voicePath.startsWith('http') && !voicePath.startsWith('/')))
   if (!isTempPath) return // 已保存过的远程 URL，无需重复上传
 
-  voiceUploading.value = true
-  try {
-    const voiceUploadResult = await uploadVoice()
-    if (!voiceUploadResult.voiceUrl) return
+  const voiceUploadResult = await uploadVoice()
+  if (!voiceUploadResult.voiceUrl) return
 
+  try {
     const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
     const data: Record<string, unknown> = {
       voiceUrl: voiceUploadResult.voiceUrl,
@@ -1679,17 +1659,12 @@ const autoSaveVoice = async () => {
     if ((data as any).voiceDuration == null) delete (data as any).voiceDuration
 
     await put<Record<string, unknown>>('/users/profile', data)
-    // 上传成功后切换播放源为服务器 URL，后续播放走 downloadFile 路径（iOS 可靠）
-    const fullUrl = toFullVoiceUrl(voiceUploadResult.voiceUrl)
-    if (fullUrl) voiceTempPath.value = fullUrl
     uni.showToast({ title: '语音已保存', icon: 'success' })
   } catch (err: unknown) {
     const error = err as Error
     if (error.message !== 'Unauthorized') {
       uni.showToast({ title: error.message || '语音保存失败', icon: 'none' })
     }
-  } finally {
-    voiceUploading.value = false
   }
 }
 
@@ -2886,8 +2861,6 @@ onShow(async () => {
 .ico-pause { display: flex; align-items: center; justify-content: center; }
 .ico-pause-bar { width: 6rpx; height: 24rpx; background: #ffffff; border-radius: 2rpx; margin: 0 3rpx; }
 .ico-play { width: 0; height: 0; border-style: solid; border-width: 12rpx 0 12rpx 20rpx; border-color: transparent transparent transparent #ffffff; margin-left: 4rpx; }
-.ico-uploading { width: 32rpx; height: 32rpx; border: 4rpx solid rgba(255,255,255,0.3); border-top-color: #ffffff; border-radius: 50%; animation: voice-spin 0.8s linear infinite; }
-@keyframes voice-spin { to { transform: rotate(360deg); } }
 .wave-static { display: flex; align-items: flex-end; gap: 8rpx; flex: 1; }
 .wave-static-bar { width: 6rpx; background: #ff6b6b; border-radius: 3rpx; }
 .voice-duration { font-size: 24rpx; color: #999999; margin-left: 16rpx; flex-shrink: 0; }
