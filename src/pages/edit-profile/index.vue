@@ -1795,6 +1795,9 @@ const handleBack = () => {
 
 onUnmounted(() => {
   uni.$off('IMAGE_CROPPED')
+  stopVoicePlay()
+  if (voiceTimer) { clearTimeout(voiceTimer); voiceTimer = null }
+  if (voiceCountdown) { clearInterval(voiceCountdown); voiceCountdown = null }
 })
 
 // 每次页面显示时刷新照片和用户信息（审核回来后头像可能已更新）
