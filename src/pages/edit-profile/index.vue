@@ -1462,11 +1462,13 @@ function startRecord() {
       srcPath: res.tempFilePath,
       destPath: userPath,
       success: () => {
+        console.log('[EditProfile] copyFile success, playing from:', userPath)
         voiceTempPath.value = userPath
         autoSaveVoice()
       },
       fail: (err: any) => {
         console.error('[EditProfile] copyFile voice error', JSON.stringify(err))
+        console.log('[EditProfile] copyFile failed, fallback to:', res.tempFilePath)
         // 降级：安卓/模拟器可直接使用 recorder 临时路径
         voiceTempPath.value = res.tempFilePath
         autoSaveVoice()
@@ -1502,18 +1504,28 @@ function playLocalVoice(localPath: string) {
     try { voiceAudioCtx.destroy() } catch (_) { /* noop */ }
     voiceAudioCtx = null
   }
+  console.log('[EditProfile] playLocalVoice path:', localPath)
   voiceAudioCtx = uni.createInnerAudioContext()
   // iOS 真机：必须设为 false，否则静音开关开启时 InnerAudioContext 无声且不报错
   voiceAudioCtx.obeyMuteSwitch = false
-  voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+  voiceAudioCtx.onCanplay(() => {
+    console.log('[EditProfile] onCanplay fired, calling play()')
+    voiceAudioCtx!.play()
+  })
+  voiceAudioCtx.onPlay(() => {
+    console.log('[EditProfile] onPlay fired')
+    isVoicePlaying.value = true
+  })
+  voiceAudioCtx.onEnded(() => {
+    console.log('[EditProfile] onEnded fired')
+    isVoicePlaying.value = false
+  })
   voiceAudioCtx.onError((err: any) => {
     console.error('[EditProfile] voice play error', JSON.stringify(err))
     uni.showToast({ title: '播放失败，请重试', icon: 'none' })
     isVoicePlaying.value = false
   })
   voiceAudioCtx.src = localPath
-  voiceAudioCtx.play()
-  isVoicePlaying.value = true
 }
 
 function togglePlayVoice() {
