@@ -1449,6 +1449,8 @@ function startRecord() {
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
+    // 录制完成自动上传，上传后 voiceTempPath 切换为服务器完整 URL
+    autoSaveVoice()
   })
 }
 
@@ -1478,6 +1480,7 @@ function togglePlayVoice() {
   }
   // voiceTempPath 要么是刚录制的有效临时路径，要么是已上传的服务器 URL，均可播放
   voiceAudioCtx = uni.createInnerAudioContext()
+  voiceAudioCtx.obeyMuteSwitch = false
   voiceAudioCtx.src = voiceTempPath.value
   voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
   voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
