@@ -1443,7 +1443,7 @@ function startRecord() {
     recordTime.value = '00:' + remaining.toString().padStart(2, '0')
   }, 1000)
   const recorder = uni.getRecorderManager()
-  recorder.start({ duration: 10000, format: 'aac' })
+  recorder.start({ duration: 10000, format: 'mp3' })
   recorder.onStop((res: any) => {
     if (!res.tempFilePath) {
       uni.showToast({ title: '录音保存失败', icon: 'none' })
