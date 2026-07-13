@@ -1505,10 +1505,6 @@ function playLocalVoice(localPath: string) {
   voiceAudioCtx = uni.createInnerAudioContext()
   // iOS 真机：必须设为 false，否则静音开关开启时 InnerAudioContext 无声且不报错
   voiceAudioCtx.obeyMuteSwitch = false
-  // iOS 兼容性：启用 Web Audio 实现（基础库 2.19.0+），解决部分机型录音文件格式解码失败问题
-  if (typeof (voiceAudioCtx as any).useWebAudioImplement !== 'undefined') {
-    (voiceAudioCtx as any).useWebAudioImplement = true
-  }
   voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
   voiceAudioCtx.onError((err: any) => {
     console.error('[EditProfile] voice play error', JSON.stringify(err))
