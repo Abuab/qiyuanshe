@@ -1478,18 +1478,19 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  // voiceTempPath 要么是刚录制的有效临时路径，要么是已上传的服务器 URL，均可播放
   voiceAudioCtx = uni.createInnerAudioContext()
   voiceAudioCtx.obeyMuteSwitch = false
-  voiceAudioCtx.src = voiceTempPath.value
+  voiceAudioCtx.onCanplay(() => {
+    voiceAudioCtx!.play()
+  })
   voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
   voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
   voiceAudioCtx.onError((err: any) => {
-    console.error('[EditProfile] play voice error', err, 'src=', voiceTempPath.value)
+    console.error('[EditProfile] play voice error', JSON.stringify(err), 'src=', voiceTempPath.value)
+    uni.showToast({ title: '播放失败 errCode=' + (err?.errCode || '?'), icon: 'none', duration: 3000 })
     isVoicePlaying.value = false
-    uni.showToast({ title: '语音播放失败', icon: 'none' })
   })
-  voiceAudioCtx.play()
+  voiceAudioCtx.src = voiceTempPath.value
 }
 
 function stopVoicePlay() {
