@@ -1527,12 +1527,24 @@ function togglePlayVoice() {
         console.error('[EditProfile] download voice error', JSON.stringify(err))
         uni.showToast({ title: '语音加载失败', icon: 'none' })
       },
-      complete: () => uni.hideLoading(),
+      complete: () => { try { uni.hideLoading() } catch (_) {} },
     })
     return
   }
-  // 本地临时路径（录制产出）：直接播放
-  playLocalVoice(src)
+  // 本地临时路径（录制产出）：iOS InnerAudioContext 可能无法直接访问 recorder
+  // 的临时沙盒文件，先通过 saveFile 复制到用户目录再播放
+  const fs = uni.getFileSystemManager()
+  fs.saveFile({
+    tempFilePath: src,
+    success: (res: any) => {
+      playLocalVoice(res.savedFilePath)
+    },
+    fail: (err: any) => {
+      console.error('[EditProfile] saveFile voice error', JSON.stringify(err))
+      // saveFile 失败时回退到直接播放原始路径（安卓通常可行）
+      playLocalVoice(src)
+    },
+  })
 }
 
 function stopVoicePlay() {
@@ -1592,7 +1604,7 @@ async function uploadVoice(): Promise<{ voiceUrl?: string; auditStatus?: number 
     uni.showToast({ title: errMsg, icon: 'none', duration: 2000 })
     return {}
   } catch { return {} }
-  finally { uni.hideLoading() }
+  finally { try { uni.hideLoading() } catch (_) {} }
 }
 
 // ===== 保存 =====
