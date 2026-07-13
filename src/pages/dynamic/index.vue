@@ -182,7 +182,7 @@
         <view v-if="item._displayType === 'answer'" class="card-content">
           <text class="answer-text">{{ item.content }}</text>
           <!-- 嵌入的问题卡片 -->
-          <view v-if="item.questionTitle" class="answer-question-card" @tap="goToQuestion(item.questionId)">
+          <view v-if="item.questionTitle" class="answer-question-card" @tap="goToQuestion(item.questionId, item.questionTitle)">
             <text class="aqc-title"><text class="aqc-hash">#</text> {{ item.questionTitle }}</text>
           </view>
         </view>
@@ -546,10 +546,11 @@ const goToUserDetail = (userId: number) => {
   })
 }
 
-const goToQuestion = (questionId?: number) => {
+const goToQuestion = (questionId?: number, title?: string) => {
   if (!questionId) return
+  const query = title ? `id=${questionId}&title=${encodeURIComponent(title)}` : `id=${questionId}`
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${questionId}`,
+    url: `/pages/question-detail/index?${query}`,
   })
 }
 
