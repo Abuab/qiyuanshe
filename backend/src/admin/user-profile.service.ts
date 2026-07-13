@@ -9,7 +9,9 @@ import { HotQuestion } from '../entities/HotQuestion'
 import { MatchRecord } from '../entities/MatchRecord'
 import { MatchmakerReview } from '../entities/MatchmakerReview'
 import { User } from '../entities/User'
+import { Dynamic } from '../entities/Dynamic'
 import { AuditLog } from '../entities/AuditLog'
+import { DynamicService } from '../dynamic/dynamic.service'
 
 @Injectable()
 export class UserProfileService {
@@ -30,6 +32,9 @@ export class UserProfileService {
     private readonly reviewRepository: Repository<MatchmakerReview>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(Dynamic)
+    private readonly dynamicRepository: Repository<Dynamic>,
+    private readonly dynamicService: DynamicService,
   ) {}
 
   async getReports(userId: number) {
@@ -226,6 +231,30 @@ export class UserProfileService {
       { targetType: 'answer', targetId: answerId, action: 'PENDING' },
       { action: 'APPROVE' },
     )
+
+    // 审批通过后生成动态，使其出现在小程序动态页
+    // 先检查是否已有动态记录（如曾被拒绝后重新通过），避免重复生成
+    const answer = await this.answerRepository.findOne({
+      where: { id: answerId },
+      relations: ['question'],
+    })
+    if (answer && answer.question) {
+      const existingDynamic = await this.dynamicRepository
+          .findOne({ where: { referenceId: answer.id, type: 'answer' } })
+      if (!existingDynamic) {
+        this.dynamicService.autoCreateDynamic({
+          userId: answer.userId,
+          type: 'answer',
+          content: answer.content,
+          images: answer.photos || [],
+          referenceId: answer.id,
+          questionId: answer.questionId,
+          questionTitle: answer.question.title,
+        }).catch((e) => {
+          console.error('[UserProfileService] 回答审批通过后生成动态失败:', e)
+        })
+      }
+    }
   }
 
   async rejectAnswer(answerId: number, reason: string) {

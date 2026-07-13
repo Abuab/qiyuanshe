@@ -7,8 +7,10 @@ import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
 import { CirclePost } from '../entities/CirclePost'
+import { Dynamic } from '../entities/Dynamic'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
+import { DynamicService } from '../dynamic/dynamic.service'
 
 interface AuditFilter {
   page?: number
@@ -36,6 +38,9 @@ export class AdminAuditService {
     private readonly userAuthRepository: Repository<UserAuth>,
     @InjectRepository(SinglePromise)
     private readonly singlePromiseRepository: Repository<SinglePromise>,
+    @InjectRepository(Dynamic)
+    private readonly dynamicRepository: Repository<Dynamic>,
+    private readonly dynamicService: DynamicService,
   ) {}
 
   async list(filter: AuditFilter) {
@@ -167,6 +172,28 @@ export class AdminAuditService {
       } catch { /* content 非 JSON 时跳过 */ }
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 1 })
+      // 审批通过后生成动态，使其出现在小程序动态页
+      const answer = await this.answerRepository.findOne({
+        where: { id: audit.targetId },
+        relations: ['question'],
+      })
+      if (answer && answer.question) {
+        const existingDynamic = await this.dynamicRepository
+          .findOne({ where: { referenceId: answer.id, type: 'answer' } })
+        if (!existingDynamic) {
+          this.dynamicService.autoCreateDynamic({
+            userId: answer.userId,
+            type: 'answer',
+            content: answer.content,
+            images: answer.photos || [],
+            referenceId: answer.id,
+            questionId: answer.questionId,
+            questionTitle: answer.question.title,
+          }).catch((e) => {
+            console.error('[AuditService] 回答审批通过后生成动态失败:', e)
+          })
+        }
+      }
     } else if (audit.targetType === 'user' && audit.targetId) {
       // Sync user profile changes from audit content
       await this.applyUserProfileChanges(audit)
