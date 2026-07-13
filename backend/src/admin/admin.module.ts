@@ -57,6 +57,7 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { CirclePost } from '../entities/CirclePost'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
+import { Dynamic } from '../entities/Dynamic'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { AdminReportController } from './report.controller'
 import { AdminFeedbackController } from './feedback.controller'
@@ -109,6 +110,7 @@ import { AiModule } from '../ai/ai.module'
       CirclePost,
       UserAuth,
       SinglePromise,
+      Dynamic,
       ProfileVisit,
       NotifyLog,
       AiFeatureSwitchLog,
