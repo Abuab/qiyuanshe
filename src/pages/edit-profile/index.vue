@@ -1443,20 +1443,12 @@ function startRecord() {
     recordTime.value = '00:' + remaining.toString().padStart(2, '0')
   }, 1000)
   const recorder = uni.getRecorderManager()
-  recorder.start({ duration: 10000, format: 'mp3' })
+  recorder.start({ duration: 10000, sampleRate: 16000, numberOfChannels: 1, encodeBitRate: 48000, format: 'mp3' })
   recorder.onStop((res: any) => {
-    if (!res.tempFilePath) {
-      uni.showToast({ title: '录音保存失败', icon: 'none' })
-      voiceStatus.value = 'idle'
-      return
-    }
+    voiceTempPath.value = res.tempFilePath
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
-    voiceTempPath.value = res.tempFilePath
-    console.log('[EditProfile] recorder onStop tempPath:', res.tempFilePath, 'duration:', res.duration)
-    // 录制完成即上传，上传完成后 switch 到服务器 URL
-    autoSaveVoice()
   })
 }
 
@@ -1469,7 +1461,6 @@ function isRemoteVoiceUrl(u: string): boolean {
   return /^https?:\/\//i.test(u) && !/^https?:\/\/tmp\//i.test(u)
 }
 
-/** 将服务端返回的相对语音路径拼成完整可访问 URL */
 function toFullVoiceUrl(url: string): string {
   if (!url) return ''
   if (/^https?:\/\//i.test(url) || url.startsWith('wxfile://')) return url
@@ -1479,62 +1470,27 @@ function toFullVoiceUrl(url: string): string {
   return `${staticBase}/${url.replace(/^\//, '')}`
 }
 
-/** 播放本地音频文件（模拟 user-detail 已验证的 downloadFile + InnerAudioContext 方式） */
-function playLocalVoice(localTempPath: string) {
-  uni.showToast({ title: '开始播放 ' + localTempPath.slice(-20), icon: 'none', duration: 2000 })
-  if (!voiceAudioCtx) {
-    voiceAudioCtx = uni.createInnerAudioContext()
-    voiceAudioCtx.onPlay(() => { console.log('[EditProfile] onPlay'); isVoicePlaying.value = true })
-    voiceAudioCtx.onEnded(() => { console.log('[EditProfile] onEnded'); isVoicePlaying.value = false })
-    voiceAudioCtx.onError((err: any) => {
-      console.error('[EditProfile] voice play error', JSON.stringify(err))
-      uni.showToast({ title: '播放失败 errCode=' + (err?.errCode || '?'), icon: 'none' })
-      isVoicePlaying.value = false
-    })
-  }
-  voiceAudioCtx.src = localTempPath
-  voiceAudioCtx.play()
-  isVoicePlaying.value = true
-}
-
 function togglePlayVoice() {
   if (isVoicePlaying.value) { stopVoicePlay(); return }
-  const src = voiceTempPath.value
-  console.log('[EditProfile] togglePlayVoice src:', src)
-  if (!src) {
+  if (!voiceTempPath.value) {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  // 始终通过 downloadFile 下载后播放 — 与 user-detail 一致，iOS 真机已验证可用
-  const playUrl = isRemoteVoiceUrl(src) ? src : toFullVoiceUrl(src)
-  console.log('[EditProfile] togglePlayVoice playUrl:', playUrl)
-  if (!playUrl || !/^https?:\/\//i.test(playUrl)) {
-    uni.showToast({ title: '语音处理中，请稍后...', icon: 'none', duration: 2500 })
-    return
-  }
-  uni.showLoading({ title: '加载中...', mask: true })
-  uni.downloadFile({
-    url: playUrl,
-    success: (res: any) => {
-      console.log('[EditProfile] downloadFile status:', res.statusCode)
-      if (res.statusCode === 200) {
-        playLocalVoice(res.tempFilePath)
-      } else {
-        uni.showToast({ title: '语音加载失败 status=' + res.statusCode, icon: 'none' })
-      }
-    },
-    fail: (err: any) => {
-      console.error('[EditProfile] download voice error', JSON.stringify(err))
-      uni.showToast({ title: '下载失败: ' + (err?.errMsg || '?'), icon: 'none', duration: 3000 })
-    },
-    complete: () => { try { uni.hideLoading() } catch (_) {} },
+  // voiceTempPath 要么是刚录制的有效临时路径，要么是已上传的服务器 URL，均可播放
+  voiceAudioCtx = uni.createInnerAudioContext()
+  voiceAudioCtx.src = voiceTempPath.value
+  voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
+  voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
+  voiceAudioCtx.onError((err: any) => {
+    console.error('[EditProfile] play voice error', err, 'src=', voiceTempPath.value)
+    isVoicePlaying.value = false
+    uni.showToast({ title: '语音播放失败', icon: 'none' })
   })
+  voiceAudioCtx.play()
 }
 
 function stopVoicePlay() {
-  if (voiceAudioCtx) {
-    voiceAudioCtx.stop()
-  }
+  if (voiceAudioCtx) { voiceAudioCtx.stop(); voiceAudioCtx.destroy(); voiceAudioCtx = null }
   isVoicePlaying.value = false
 }
 
