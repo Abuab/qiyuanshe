@@ -1443,7 +1443,7 @@ function startRecord() {
     recordTime.value = '00:' + remaining.toString().padStart(2, '0')
   }, 1000)
   const recorder = uni.getRecorderManager()
-  recorder.start({ duration: 10000, format: 'mp3' })
+  recorder.start({ duration: 10000, format: 'aac' })
   recorder.onStop((res: any) => {
     if (!res.tempFilePath) {
       uni.showToast({ title: '录音保存失败', icon: 'none' })
@@ -1453,27 +1453,9 @@ function startRecord() {
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
-    // iOS 真机：InnerAudioContext 无法直接播放 recorder 临时沙盒文件，
-    // 需先 copyFile 到 USER_DATA_PATH（带正确扩展名）才能播放和上传
-    const fs = uni.getFileSystemManager()
-    // @ts-ignore wx is available at runtime in WeChat mini programs
-    const userPath = `${wx.env.USER_DATA_PATH}/voice_${Date.now()}.mp3`
-    fs.copyFile({
-      srcPath: res.tempFilePath,
-      destPath: userPath,
-      success: () => {
-        console.log('[EditProfile] copyFile success, playing from:', userPath)
-        voiceTempPath.value = userPath
-        autoSaveVoice()
-      },
-      fail: (err: any) => {
-        console.error('[EditProfile] copyFile voice error', JSON.stringify(err))
-        console.log('[EditProfile] copyFile failed, fallback to:', res.tempFilePath)
-        // 降级：安卓/模拟器可直接使用 recorder 临时路径
-        voiceTempPath.value = res.tempFilePath
-        autoSaveVoice()
-      },
-    })
+    voiceTempPath.value = res.tempFilePath
+    // 录制完成即上传，上传完成后 switch 到服务器 URL
+    autoSaveVoice()
   })
 }
 
@@ -1496,36 +1478,19 @@ function toFullVoiceUrl(url: string): string {
   return `${staticBase}/${url.replace(/^\//, '')}`
 }
 
-/** 用给定本地路径创建音频上下文并播放 */
-function playLocalVoice(localPath: string) {
-  // 每次播放前先彻底清理上一个音频上下文，避免 iOS 复用已销毁 / 静音状态的实例
-  if (voiceAudioCtx) {
-    try { voiceAudioCtx.stop() } catch (_) { /* noop */ }
-    try { voiceAudioCtx.destroy() } catch (_) { /* noop */ }
-    voiceAudioCtx = null
+/** 播放本地音频文件（模拟 user-detail 已验证的 downloadFile + InnerAudioContext 方式） */
+function playLocalVoice(localTempPath: string) {
+  if (!voiceAudioCtx) {
+    voiceAudioCtx = uni.createInnerAudioContext()
+    voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+    voiceAudioCtx.onError((err: any) => {
+      console.error('[EditProfile] voice play error', JSON.stringify(err))
+      isVoicePlaying.value = false
+    })
   }
-  console.log('[EditProfile] playLocalVoice path:', localPath)
-  voiceAudioCtx = uni.createInnerAudioContext()
-  // iOS 真机：必须设为 false，否则静音开关开启时 InnerAudioContext 无声且不报错
-  voiceAudioCtx.obeyMuteSwitch = false
-  voiceAudioCtx.onCanplay(() => {
-    console.log('[EditProfile] onCanplay fired, calling play()')
-    voiceAudioCtx!.play()
-  })
-  voiceAudioCtx.onPlay(() => {
-    console.log('[EditProfile] onPlay fired')
-    isVoicePlaying.value = true
-  })
-  voiceAudioCtx.onEnded(() => {
-    console.log('[EditProfile] onEnded fired')
-    isVoicePlaying.value = false
-  })
-  voiceAudioCtx.onError((err: any) => {
-    console.error('[EditProfile] voice play error', JSON.stringify(err))
-    uni.showToast({ title: '播放失败，请重试', icon: 'none' })
-    isVoicePlaying.value = false
-  })
-  voiceAudioCtx.src = localPath
+  voiceAudioCtx.src = localTempPath
+  voiceAudioCtx.play()
+  isVoicePlaying.value = true
 }
 
 function togglePlayVoice() {
@@ -1535,35 +1500,34 @@ function togglePlayVoice() {
     uni.showToast({ title: '语音文件不存在', icon: 'none' })
     return
   }
-  // 远程服务器音频：iOS 真机直接播放远程 URL 常失败，先下载到本地再播放
-  if (isRemoteVoiceUrl(src)) {
-    uni.showLoading({ title: '加载中...', mask: true })
-    uni.downloadFile({
-      url: src,
-      success: (res: any) => {
-        if (res.statusCode === 200) {
-          playLocalVoice(res.tempFilePath)
-        } else {
-          uni.showToast({ title: '语音加载失败', icon: 'none' })
-        }
-      },
-      fail: (err: any) => {
-        console.error('[EditProfile] download voice error', JSON.stringify(err))
-        uni.showToast({ title: '语音加载失败', icon: 'none' })
-      },
-      complete: () => { try { uni.hideLoading() } catch (_) {} },
-    })
+  // 始终通过 downloadFile 下载后播放 — 与 user-detail 一致，iOS 真机已验证可用
+  const playUrl = isRemoteVoiceUrl(src) ? src : toFullVoiceUrl(src)
+  if (!playUrl || !/^https?:\/\//i.test(playUrl)) {
+    // 如果还没上传完成，暂时无法播放（上传通常秒级完成，极少数情况）
+    uni.showToast({ title: '语音处理中，请稍后', icon: 'none' })
     return
   }
-  // 本地临时路径（录制产出）：直接播放
-  playLocalVoice(src)
+  uni.showLoading({ title: '加载中...', mask: true })
+  uni.downloadFile({
+    url: playUrl,
+    success: (res: any) => {
+      if (res.statusCode === 200) {
+        playLocalVoice(res.tempFilePath)
+      } else {
+        uni.showToast({ title: '语音加载失败', icon: 'none' })
+      }
+    },
+    fail: (err: any) => {
+      console.error('[EditProfile] download voice error', JSON.stringify(err))
+      uni.showToast({ title: '语音加载失败', icon: 'none' })
+    },
+    complete: () => { try { uni.hideLoading() } catch (_) {} },
+  })
 }
 
 function stopVoicePlay() {
   if (voiceAudioCtx) {
-    try { voiceAudioCtx.stop() } catch (_) { /* noop */ }
-    try { voiceAudioCtx.destroy() } catch (_) { /* noop */ }
-    voiceAudioCtx = null
+    voiceAudioCtx.stop()
   }
   isVoicePlaying.value = false
 }
@@ -1671,6 +1635,10 @@ const autoSaveVoice = async () => {
 
   const voiceUploadResult = await uploadVoice()
   if (!voiceUploadResult.voiceUrl) return
+
+  // 上传成功后切换到服务器完整 URL，后续播放通过 downloadFile 下载（iOS 可靠方案）
+  const fullVoiceUrl = toFullVoiceUrl(voiceUploadResult.voiceUrl)
+  if (fullVoiceUrl) voiceTempPath.value = fullVoiceUrl
 
   try {
     const vd = Number.isFinite(voiceDuration.value) ? voiceDuration.value : 0
