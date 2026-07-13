@@ -1453,9 +1453,25 @@ function startRecord() {
     voiceDuration.value = Math.round(res.duration / 1000)
     voiceStatus.value = 'done'
     voiceAuditStatus.value = 0
-    voiceTempPath.value = res.tempFilePath
-    // 录音完成后自动保存上传
-    autoSaveVoice()
+    // iOS 真机：InnerAudioContext 无法直接播放 recorder 临时沙盒文件，
+    // 需先 copyFile 到 USER_DATA_PATH（带正确扩展名）才能播放和上传
+    const fs = uni.getFileSystemManager()
+    // @ts-ignore wx is available at runtime in WeChat mini programs
+    const userPath = `${wx.env.USER_DATA_PATH}/voice_${Date.now()}.mp3`
+    fs.copyFile({
+      srcPath: res.tempFilePath,
+      destPath: userPath,
+      success: () => {
+        voiceTempPath.value = userPath
+        autoSaveVoice()
+      },
+      fail: (err: any) => {
+        console.error('[EditProfile] copyFile voice error', JSON.stringify(err))
+        // 降级：安卓/模拟器可直接使用 recorder 临时路径
+        voiceTempPath.value = res.tempFilePath
+        autoSaveVoice()
+      },
+    })
   })
 }
 
