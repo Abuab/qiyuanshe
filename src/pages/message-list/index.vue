@@ -260,7 +260,7 @@ const goToChat = (item: UserMessage) => {
     return
   }
   uni.navigateTo({
-    url: `/pages/chat/index?userId=${item.id}&nickname=${encodeURIComponent(item.displayName || item.nickname)}&displayName=${encodeURIComponent(item.displayName || item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
+    url: `/pages/chat/index?userId=${item.userId}&nickname=${encodeURIComponent(item.displayName || item.nickname)}&displayName=${encodeURIComponent(item.displayName || item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
   })
 }
 

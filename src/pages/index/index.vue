@@ -451,7 +451,7 @@ const onRefresh = async () => {
 
 const onLoadMore = () => {
   if (!noMoreData.value && !loadingMore.value) {
-    loadUserList()
+    loadUserList(false, activeFilterData.value || undefined)
   }
 }
 

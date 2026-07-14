@@ -134,8 +134,9 @@ function onTokenRefreshed(newToken: string) {
   refreshSubscribers = []
 }
 
-/** 通知等待中的请求：刷新失败 */
+/** 通知等待中的请求：刷新失败，用空 token 重试让 server 返回 401 正常拒绝 */
 function onRefreshFailed() {
+  refreshSubscribers.forEach((cb) => cb(''))
   refreshSubscribers = []
 }
 
@@ -155,7 +156,13 @@ function tryRefreshToken(): Promise<string | null> {
       header: { 'Content-Type': 'application/json' },
       timeout: TIMEOUT,
       success: (res: any) => {
-        const body = (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as Record<string, unknown>
+        let body: Record<string, unknown> | undefined
+        try {
+          body = (typeof res.data === 'string' ? JSON.parse(res.data) : res.data) as Record<string, unknown>
+        } catch {
+          resolve(null)
+          return
+        }
         const newAccess = (body.data as Record<string, unknown>)?.accessToken as string | undefined
           || (body.accessToken as string | undefined)
         if (newAccess && res.statusCode >= 200 && res.statusCode < 300) {

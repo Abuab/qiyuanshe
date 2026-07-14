@@ -110,11 +110,15 @@ const closeJumpPopup = () => {
 
 const handleJump = () => {
   closeJumpPopup()
-  // 调用 navigateToMiniProgram 跳转到 eID 数字身份小程序
-  // appId 应由后端接口返回或项目配置
+  // FIXME: appId 需从后端接口获取或项目配置，当前为空值会导致跳转失败
+  const eidAppId = ''
+  if (!eidAppId) {
+    showToast('E证通服务暂未配置，请联系管理员')
+    return
+  }
   // #ifdef MP-WEIXIN
   uni.navigateToMiniProgram({
-    appId: '',
+    appId: eidAppId,
     path: 'pages/index/index',
     success: () => {
       console.log('[eid] navigateToMiniProgram success')

@@ -193,7 +193,7 @@ export const getImageUrl = (key: string | null | undefined): string => {
       // 若本身已是 COS 代理 URL（双层嵌套），提取原始 key，保证幂等
       const nested = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
       if (nested) cleanKey = decodeURIComponent(nested[1]).replace(/^\//, '')
-      const token = secureStorage.getRefreshToken() || getToken()
+      const token = getToken()
       const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
       return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
     }
@@ -206,8 +206,7 @@ export const getImageUrl = (key: string | null | undefined): string => {
   if (cosNestedMatch) {
     cleanKey = decodeURIComponent(cosNestedMatch[1]).replace(/^\//, '')
   }
-  // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
-  const token = secureStorage.getRefreshToken() || getToken()
+  const token = getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }
@@ -241,7 +240,7 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
       // 若本身已是 COS 代理 URL（双层嵌套），提取原始 key，保证幂等
       const nested = cleanKey.match(/^api\/cos\/image\?key=([^&]+)/)
       if (nested) cleanKey = decodeURIComponent(nested[1]).replace(/^\//, '')
-      const token = secureStorage.getRefreshToken() || getToken()
+      const token = getToken()
       const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
       return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
     }
@@ -257,8 +256,7 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   if (cosNestedMatch) {
     cleanKey = decodeURIComponent(cosNestedMatch[1]).replace(/^\//, '')
   }
-  // 优先使用 refresh token（7d 有效），避免 access token 15 分钟过期后图片全部 401
-  const token = secureStorage.getRefreshToken() || getToken()
+  const token = getToken()
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }

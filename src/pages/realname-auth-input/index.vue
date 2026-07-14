@@ -261,6 +261,8 @@ async function refreshCertResult() {
   querying.value = true
   const prev = certStatus.value
   try {
+    // FIXME: 身份证号等 PII 不应通过 GET query string 传输，
+    // 需要后端将 /eid-auth/result 改为 POST 接口，前端改用 post() 调用
     const res: any = await get('/eid-auth/result', {
       realName: realName.value.trim(),
       idCard: idCard.value.trim(),

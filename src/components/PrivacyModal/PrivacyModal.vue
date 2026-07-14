@@ -85,12 +85,14 @@ function close() {
 }
 
 function onDisagree() {
+  // #ifdef MP-WEIXIN
   uni.showToast({ title: '需要同意后才能使用', icon: 'none', duration: 2000 })
-  setTimeout(() => {
-    // #ifdef MP-WEIXIN
-    uni.exitMiniProgram()
-    // #endif
-  }, 2000)
+  setTimeout(() => { uni.exitMiniProgram() }, 2000)
+  // #endif
+  // #ifndef MP-WEIXIN
+  uni.showToast({ title: '需要同意隐私协议后才能使用全部功能', icon: 'none', duration: 2000 })
+  visible.value = false
+  // #endif
 }
 
 function onAgree() {
