@@ -8,7 +8,7 @@ import { UserAgreement } from '../entities/UserAgreement'
 import { UserAuth } from '../entities/UserAuth'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
-import { jwtConfig } from '../config/jwt'
+import { jwtConfig, parseExpirySeconds } from '../config/jwt'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
@@ -360,6 +360,9 @@ export class AuthService {
   }
 
   private generateToken(user: User): TokenPair {
+    const accessExpiry = jwtConfig.accessTokenExpiresIn
+    const refreshExpiry = jwtConfig.refreshTokenExpiresIn
+
     const accessToken = this.jwtService.sign(
       {
         sub: user.id,
@@ -367,7 +370,7 @@ export class AuthService {
         type: 'access',
       },
       {
-        expiresIn: '15m',
+        expiresIn: accessExpiry,
       },
     )
 
@@ -378,14 +381,14 @@ export class AuthService {
         type: 'refresh',
       },
       {
-        expiresIn: '7d',
+        expiresIn: refreshExpiry,
       },
     )
 
     return {
       accessToken,
       refreshToken,
-      expiresIn: 900,
+      expiresIn: parseExpirySeconds(accessExpiry),
     }
   }
 

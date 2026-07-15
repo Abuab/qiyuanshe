@@ -164,6 +164,8 @@ export const reLaunch = (url: string): void => {
  *
  * uni-app <image> 组件无法发送自定义 HTTP 头（Authorization），
  * 因此将 JWT token 作为 ?token= 查询参数一并携带。
+ * 注：accessToken 有效期约为 30 分钟，过期后图片 URL 将无法访问，
+ * 需配合 useImageFallback 在 onError 时重新获取签名 URL。
  *
  * @param key - 图片相对路径，如 "uploads/avatar/123.jpg" 或 "/uploads/avatar/123.jpg"
  * @returns 后端 COS 网关 URL（含 token）

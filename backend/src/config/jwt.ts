@@ -37,9 +37,27 @@ function getAdminJwtSecret(): string {
   return _adminJwtSecret
 }
 
+/** 将 expiresIn 字符串（如 '30m' / '7d' / '3600s'）转为秒数 */
+export function parseExpirySeconds(expiry: string): number {
+  const match = expiry.match(/^(\d+)(s|m|h|d)$/)
+  if (!match) return 1800 // 默认 30 分钟
+  const num = parseInt(match[1], 10)
+  switch (match[2]) {
+    case 's': return num
+    case 'm': return num * 60
+    case 'h': return num * 3600
+    case 'd': return num * 86400
+    default: return 1800
+  }
+}
+
 export const jwtConfig = {
   get secret() { return getJwtSecret() },
   expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  /** accessToken 有效期，默认 30 分钟 */
+  accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '30m',
+  /** refreshToken 有效期，默认 7 天 */
+  refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
 }
 
 export const adminJwtConfig = {
