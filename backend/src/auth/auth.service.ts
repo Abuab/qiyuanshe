@@ -78,7 +78,7 @@ export class AuthService {
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
-        unionId: session.unionid || '',
+        unionId: session.unionid || null,
         nickname: randomNickname,
         userId: userId,
         status: 2,
@@ -186,7 +186,7 @@ export class AuthService {
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
-        unionId: session.unionid || '',
+        unionId: session.unionid || null,
         nickname: `昵称${randomSuffix}`,
         userId,
         phone: phoneData.purePhoneNumber,
