@@ -146,6 +146,7 @@ const userStore = useUserStore()
 
 // ===== 查询参数 =====
 const targetUserId = ref(0)
+const targetPublicUserId = ref('')
 const targetNickname = ref('')
 const targetAvatar = ref('')
 const targetIsRealName = ref(false)
@@ -184,6 +185,7 @@ onLoad((options: any) => {
   if (!requireLogin()) return
 
   targetUserId.value = parseInt(options.userId) || 0
+  targetPublicUserId.value = decodeURIComponent(options.publicUserId || '')
   targetNickname.value = decodeURIComponent(options.nickname || '')
   targetAvatar.value = getFullImageUrl(decodeURIComponent(options.avatar || '')) || icons.common.defaultAvatar
   targetIsRealName.value = options.isRealName === '1'
@@ -230,7 +232,7 @@ const redLineRemaining = ref(0)
 
 // ===== 预设牵线文案 =====
 const presetMatchmakerText = computed(() => {
-  return `我想认识 "${targetNickname.value}"，ID：${targetUserId.value}，请帮我牵线。`
+  return `我想认识 "${targetNickname.value}"，ID：${targetPublicUserId.value || targetUserId.value}，请帮我牵线。`
 })
 
 // ===== 订阅弹窗 =====

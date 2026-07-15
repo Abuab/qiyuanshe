@@ -470,9 +470,9 @@ export class VipService {
       throw new Error('会员已过期，请先续费')
     }
 
-    // 1. 校验目标用户存在且有联系方式
+    // 1. 校验目标用户存在且有联系方式（允许 NORMAL(1) 和 INCOMPLETE(2)）
     const targetUser = await this.userRepo.findOne({
-      where: { id: targetUserId, status: 1, isDeleted: 0 },
+      where: { id: targetUserId, isDeleted: 0 },
     })
     if (!targetUser) throw new Error('用户不存在或已注销')
 

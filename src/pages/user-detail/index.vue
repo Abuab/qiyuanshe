@@ -1565,6 +1565,7 @@ const navigateToContactApply = () => {
   const basic = p?.basicInfo || {}
   const params = [
     `userId=${userId.value}`,
+    `publicUserId=${encodeURIComponent(top.userId || '')}`,
     `nickname=${encodeURIComponent(top.displayName || top.nickname || '')}`,
     `avatar=${encodeURIComponent(top.avatar || '')}`,
     `isRealName=${isRealNameNotVerified.value ? '0' : '1'}`,
