@@ -67,8 +67,13 @@ const handleMaskClick = () => {
 
 const handleGoProfile = () => {
   emit('update:show', false)
-  // 关闭登录页等所有非 tab 页面，直接打开编辑资料页
-  uni.reLaunch({ url: '/pages/edit-profile/index' })
+  // 先回到首页（清除登录页栈），再跳转编辑资料
+  uni.switchTab({
+    url: '/pages/index/index',
+    success() {
+      uni.navigateTo({ url: '/pages/edit-profile/index' })
+    },
+  })
 }
 </script>
 
