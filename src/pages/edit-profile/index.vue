@@ -92,10 +92,10 @@
           <view class="nickname-gender-row">
             <text class="nickname-large">{{ form.nickname || '--' }}</text>
             <view v-if="form.gender === 1" class="gender-icon-wrap male">
-              <text class="gender-symbol">男</text>
+              <image class="gender-icon-img" src="/static/icons/male.png" mode="aspectFit" />
             </view>
             <view v-else-if="form.gender === 2" class="gender-icon-wrap female">
-              <text class="gender-symbol">女</text>
+              <image class="gender-icon-img" src="/static/icons/female.png" mode="aspectFit" />
             </view>
           </view>
           
@@ -1974,24 +1974,17 @@ onShow(async () => {
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 
   &.male {
-    background: linear-gradient(135deg, #40a9ff, #1890ff);
+    background: linear-gradient(135deg, #bae7ff, #91d5ff);
   }
 
   &.female {
-    background: linear-gradient(135deg, #ff85c0, #eb2f96);
+    background: linear-gradient(135deg, #ffc0d5, #ffa8c7);
   }
 }
 
-.gender-symbol {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  font-weight: 500;
-  line-height: 1;
-  color: #ffffff;
+.gender-icon-img {
+  width: 24rpx;
+  height: 24rpx;
 }
 
 .info-brief-row {

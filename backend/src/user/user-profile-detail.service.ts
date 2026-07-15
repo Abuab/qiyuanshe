@@ -73,10 +73,15 @@ export class UserProfileDetailService {
     userId: number,
     currentUserId?: number,
   ): Promise<UserProfileDetailResponse> {
+    // 允许 NORMAL(1) 和 INCOMPLETE(2) 用户，排除 PENDING(0) 和 DISABLED(3)
     const user = await this.userRepo.findOne({
-      where: { id: userId, status: 1, isDeleted: 0 },
+      where: { id: userId, isDeleted: 0 },
     })
     if (!user) throw new NotFoundException('用户不存在')
+    // 待审核/已禁用的用户对他人不可见
+    if (currentUserId !== userId && (user.status === 0 || user.status === 3)) {
+      throw new NotFoundException('用户不存在')
+    }
 
     const isSelf = currentUserId === userId
 

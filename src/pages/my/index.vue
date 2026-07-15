@@ -14,7 +14,7 @@
         <!-- 未登录 -->
         <view v-if="!isLoggedIn" class="profile-row guest-row">
           <view class="guest-avatar">
-            <text class="guest-icon">👤</text>
+            <image class="guest-avatar-img" :src="icons.common.defaultAvatar" mode="aspectFill" />
           </view>
           <view class="profile-info">
             <text class="profile-nickname">注册/登录</text>
@@ -553,6 +553,9 @@ const loadAiProfileText = async () => {
   try {
     const userId = userStore.userInfo?.id
     if (!userId) return
+    // 新用户（资料未完善）跳过，避免因 status 不匹配导致 404
+    const ui = userStore.userInfo
+    if (!ui?.avatar && /^昵称/.test(ui?.nickname || '')) return
     const res: any = await get(`/users/${userId}/detail`)
     if (res?.aboutMe?.aiProfileText) {
       aiProfileText.value = res.aboutMe.aiProfileText
@@ -855,9 +858,10 @@ const toolGrid7 = [
   background: #E5E5E5;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; margin-right: 20rpx;
+  overflow: hidden;
 }
-.guest-icon {
-  font-size: 48rpx; color: #999;
+.guest-avatar-img {
+  width: 100%; height: 100%;
 }
 
 // ========== 统计行 ==========
