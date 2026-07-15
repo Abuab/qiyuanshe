@@ -332,6 +332,9 @@ export class AuthService {
       ;(profile as any).realName = ''
     }
 
+    // 新用户标识：头像为空 且 昵称为系统自动生成（以"昵称"开头）
+    ;(profile as any).isNewUser = (!user.avatar || !user.avatar.trim()) && /^昵称/.test(user.nickname || '')
+
     return profile
   }
 

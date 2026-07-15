@@ -33,7 +33,7 @@
           </view>
           <view class="profile-info">
             <view class="profile-nickname-row">
-              <text class="profile-nickname">{{ userInfo?.nickname || '用户' }}</text>
+              <text class="profile-nickname">{{ userStore.displayNickname || '用户' }}</text>
               <text
                 v-if="!userInfo?.isRealName || userInfo?.avatarReviewStatus === 0"
                 class="speed-review-btn"
@@ -132,7 +132,7 @@
           </view>
           <view class="service-item" @tap="goMyPersonality">
             <view class="service-icon-box" style="background-color: #FCE4EC;">
-              <text class="service-icon-emoji">🧭</text>
+              <image class="service-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
               <view v-if="personalityTested" class="service-dot" />
             </view>
             <text class="service-label">{{ myPersonalityLabel }}</text>

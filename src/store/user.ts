@@ -58,6 +58,19 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
 
+  /** 展示昵称：新用户（系统自动生成昵称）显示为 "-" */
+  const displayNickname = computed(() => {
+    if (!userInfo.value) return ''
+    const nick = userInfo.value.nickname || ''
+    if (/^昵称/.test(nick)) return '-'
+    return nick
+  })
+
+  /** 展示头像：无头像时返回空字符串，由 useImageFallback 兜底 */
+  const displayAvatar = computed(() => {
+    return userInfo.value?.avatar || ''
+  })
+
   /** 将日期字符串转为 Date，纯日期格式时视为当日 23:59:59 */
 function parseExpireDate(dateStr: string): Date {
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -211,6 +224,8 @@ const isVipValid = computed(() => {
     isProfileComplete,
     isLoggedIn,
     isVipValid,
+    displayNickname,
+    displayAvatar,
     login,
     logout,
     updateUserInfo,
