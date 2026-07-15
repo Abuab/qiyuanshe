@@ -133,7 +133,6 @@ const closeDeactivateDialog = () => {
 }
 
 const confirmDeactivate = async () => {
-  // 撤回同意协议：先回写后端撤回记录（此时仍处于登录态），再清本地标记并退回游客态
   showDialog.value = false
   try {
     await post('/users/agreement', {
@@ -141,14 +140,13 @@ const confirmDeactivate = async () => {
       version: '1.0',
       action: 'revoke',
     })
+    secureStorage.revokeAllAgreements()
+    uni.showToast({ title: '已撤回同意', icon: 'success' })
+    setTimeout(() => { userStore.logout() }, 1200)
   } catch (err: any) {
     console.error('[agreement] 协议撤回上报失败:', err?.message || err)
+    uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })
   }
-  secureStorage.revokeAllAgreements()
-  uni.showToast({ title: '已撤回同意', icon: 'success' })
-  setTimeout(() => {
-    userStore.logout()
-  }, 1200)
 }
 
 const handleDeactivate = () => {

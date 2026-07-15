@@ -67,11 +67,22 @@ const goTo = (url: string) => {
 const clearCache = () => {
   uni.showModal({
     title: '提示',
-    content: '确定清除缓存？',
+    content: '确定清除图片缓存？',
     success: (res) => {
       if (res.confirm) {
-        uni.clearStorage()
-        uni.showToast({ title: '已清除', icon: 'success' })
+        // 仅清除图片相关的缓存信息，避免清空登录态
+        const keysToKeep = ['token', 'refresh_token', 'user_info', 'privacy_agreed']
+        uni.getStorageInfo({
+          success: (info) => {
+            info.keys.forEach((key) => {
+              if (!keysToKeep.includes(key)) uni.removeStorageSync(key)
+            })
+            uni.showToast({ title: '已清除', icon: 'success' })
+          },
+          fail: () => {
+            uni.showToast({ title: '已清除', icon: 'success' })
+          },
+        })
       }
     },
   })

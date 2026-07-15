@@ -274,11 +274,7 @@ async function refreshCertResult() {
     if (status === prev) return
     if (status === 2) {
       showToast('实名认证成功')
-      const info: any = userStore.userInfo
-      if (info) {
-        info.isRealName = 1
-        info.eidCertStatus = 2
-      }
+      userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
     } else if (status === 3) {
       showToast('认证失败，请重新认证')
     }

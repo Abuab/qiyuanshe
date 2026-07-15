@@ -56,7 +56,6 @@
 
         <!-- 用户聊天项 -->
         <view v-else class="user-message" @tap.stop="goToChat(item)">
-          <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
           <image
             class="user-avatar"
             :src="item.avatar || icons.common.defaultAvatar"

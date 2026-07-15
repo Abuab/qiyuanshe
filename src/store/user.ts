@@ -58,10 +58,17 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
 
-  const isVipValid = computed(() => {
+  /** 将日期字符串转为 Date，纯日期格式时视为当日 23:59:59 */
+function parseExpireDate(dateStr: string): Date {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return new Date(dateStr + 'T23:59:59+08:00')
+  }
+  return new Date(dateStr)
+}
+
+const isVipValid = computed(() => {
     if (!isVip.value || !vipExpireTime.value) return false
-    const expireDate = new Date(vipExpireTime.value)
-    return expireDate > new Date()
+    return parseExpireDate(vipExpireTime.value) > new Date()
   })
 
   const login = (newToken: string, newUserInfo: UserInfo, profileComplete?: boolean) => {
@@ -120,7 +127,7 @@ export const useUserStore = defineStore('user', () => {
 
     const numberFields = [
       'gender', 'birthYear', 'height', 'weight', 'avatarReviewStatus',
-      'voiceAuditStatus', 'voiceDuration',
+      'voiceAuditStatus', 'voiceDuration', 'eidCertStatus',
     ] as const
 
     const arrayFields = ['personalityTags', 'hopeTaTags'] as const
@@ -162,7 +169,7 @@ export const useUserStore = defineStore('user', () => {
   const checkVip = () => {
     if (!vipExpireTime.value) return false
 
-    const expireDate = new Date(vipExpireTime.value)
+    const expireDate = parseExpireDate(vipExpireTime.value)
     const now = new Date()
 
     if (expireDate <= now) {

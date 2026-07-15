@@ -678,6 +678,8 @@ onShow(() => {
     app.globalData.dynamicTab = ''
     switchTab('matchmaker')
   }
+  // 刷新照片计数，防止用户上传照片后返回模糊状态未更新
+  fetchMyPhotoCount()
 })
 </script>
 

@@ -362,10 +362,9 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
       fail: (err: any) => {
         logger.error(`[request] ${method} ${url} 失败:`, err)
 
-        // ---- 重试（仅网络错误） ----
+        // ---- 重试（仅可恢复的网络错误） ----
         const isNetworkError =
           err.errMsg?.includes('timeout') ||
-          err.errMsg?.includes('fail') ||
           err.errMsg?.includes('abort')
 
         if (isNetworkError && retryCount < MAX_RETRIES) {

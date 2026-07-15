@@ -642,6 +642,7 @@ const handleSubmit = async () => {
     }, 800)
   } catch (err: any) {
     console.error('[detail-info] 提交失败:', err?.message || err)
+    showToast(err?.message || '保存失败，请稍后重试')
   }
 }
 

@@ -69,13 +69,13 @@ export function useImageFallback() {
       return
     }
 
-    // 重新获取签名 URL
-    record.count++
+    // 重新获取签名 URL，仅在 URL 确实变化时计数重试
     const newUrl = getImageUrl(key)
     if (newUrl && newUrl !== currentSrc) {
+      record.count++
       target.src = newUrl
     } else {
-      // 新 URL 无效，直接回退
+      // URL 未变化（如 token 未过期），直接回退默认头像
       const store = useSystemStore()
       target.src = store.defaultAvatar || icons.common.defaultAvatar
     }

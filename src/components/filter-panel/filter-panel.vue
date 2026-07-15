@@ -418,7 +418,12 @@ watch(
       }
     } else {
       panelOpen.value = false
-      if (props.noOverlay) visible.value = false
+      if (props.noOverlay) {
+        visible.value = false
+      } else {
+        // 带遮罩层模式也需延迟关闭 visible，与 handleClose 行为一致
+        setTimeout(() => { visible.value = false }, 300)
+      }
     }
   },
   { immediate: true }

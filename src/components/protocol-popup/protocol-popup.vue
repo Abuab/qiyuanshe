@@ -195,8 +195,12 @@ watch(
 
 const fetchAgreement = async () => {
   try {
-    const cached = uni.getStorageSync('agreement_content')
-    if (cached) {
+    // 缓存带版本号，app 发版后协议可自动刷新
+    const CACHE_KEY = 'agreement_content'
+    const CACHE_VERSION_KEY = 'agreement_content_version'
+    const cachedVersion = uni.getStorageSync(CACHE_VERSION_KEY)
+    const cached = uni.getStorageSync(CACHE_KEY)
+    if (cached && cachedVersion === 'v1') {
       agreementContent.value = cached
       return
     }
@@ -205,7 +209,8 @@ const fetchAgreement = async () => {
     if (res && res.content) {
       agreementTitle.value = res.title || '用户协议与隐私政策'
       agreementContent.value = res.content
-      uni.setStorageSync('agreement_content', res.content)
+      uni.setStorageSync(CACHE_KEY, res.content)
+      uni.setStorageSync(CACHE_VERSION_KEY, 'v1')
     } else {
       agreementContent.value = fallbackText.value
     }

@@ -147,7 +147,10 @@ const onTouchEnd = () => {
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  safeBottom.value = sysInfo.safeArea?.bottom || 0
+  // safeArea.bottom 是安全区底部在窗口中的坐标位置，需计算底部安全区高度
+  safeBottom.value = sysInfo.safeArea?.bottom != null
+    ? sysInfo.windowHeight - sysInfo.safeArea.bottom
+    : 0
   screenW.value = sysInfo.windowWidth || 375
   const screenH = sysInfo.windowHeight || 667
 

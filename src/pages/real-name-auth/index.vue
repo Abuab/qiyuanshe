@@ -201,6 +201,7 @@ const handleSubmit = async () => {
     }, 800)
   } catch (err: any) {
     console.error('[real-name-auth] 提交失败:', err?.message || err)
+    showToast(err?.message || '提交失败，请稍后重试')
   }
 }
 

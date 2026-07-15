@@ -202,7 +202,7 @@ function onRefresh() {
 }
 
 function onLoadMore() {
-  if (!noMoreData.value && !loadingMore.value) {
+  if (!noMoreData.value && !loadingMore.value && !loading.value) {
     fetchActivities()
   }
 }

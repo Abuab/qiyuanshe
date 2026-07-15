@@ -238,6 +238,7 @@ async function fetchAuthStatus(url: string, actionRef: any, classRef: any) {
     if (d?.exists) {
       if (d.status === 1) { actionRef.value = '已认证'; classRef.value = 'done' }
       else if (d.status === 0) { actionRef.value = '待审核'; classRef.value = 'pending' }
+      else if (d.status === 2) { actionRef.value = '未通过，重新认证'; classRef.value = '' }
     }
   } catch (_) {
     // 失败时保持默认"去认证"

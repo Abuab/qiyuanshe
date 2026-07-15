@@ -84,19 +84,27 @@ export function uploadImage(filePath: string, fieldName = 'file'): Promise<Uploa
 }
 
 /**
- * 批量上传多张图片（并行）
+ * 批量上传多张图片（每批最多 5 个并发，避免超过小程序网络连接限制）
  *
  * @param filePaths - 临时文件路径数组
  * @returns 上传成功的结果数组（失败会跳过并 console.error）
  */
 export async function uploadImages(filePaths: string[]): Promise<UploadResult[]> {
-  const tasks = filePaths.map((path) =>
-    uploadImage(path).catch((err) => {
-      console.error('[upload] 批量上传中单张失败:', err)
-      return null
-    }),
-  )
+  const CONCURRENCY = 5
+  const results: (UploadResult | null)[] = []
 
-  const results = await Promise.all(tasks)
+  for (let i = 0; i < filePaths.length; i += CONCURRENCY) {
+    const batch = filePaths.slice(i, i + CONCURRENCY)
+    const batchResults = await Promise.all(
+      batch.map((path) =>
+        uploadImage(path).catch((err) => {
+          console.error('[upload] 批量上传中单张失败:', err)
+          return null
+        }),
+      ),
+    )
+    results.push(...batchResults)
+  }
+
   return results.filter((r): r is UploadResult => r !== null)
 }

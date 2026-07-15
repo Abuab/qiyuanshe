@@ -734,7 +734,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, getCurrentInstance } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
@@ -877,7 +877,7 @@ const showReportSheet = ref(false)
 const reportSheetAnim = ref(false)
 const reportReasons = [
   { label: '其他', value: 'other' },
-  { label: '色情相关', value: 'other' },
+  { label: '色情相关', value: 'porn' },
   { label: '头像/资料虚假', value: 'fake_info' },
   { label: '酒托/饭托', value: 'fraud' },
   { label: '诈骗钱财', value: 'fraud' },
@@ -1618,6 +1618,14 @@ const generatePoster = () => {
     uni.navigateTo({ url: `/pages/poster/index?userId=${userId.value}` })
   }, 350)
 }
+
+onUnmounted(() => {
+  if (voiceAudioCtx) {
+    voiceAudioCtx.stop()
+    voiceAudioCtx.destroy()
+    voiceAudioCtx = null
+  }
+})
 </script>
 
 <style lang="scss" scoped>

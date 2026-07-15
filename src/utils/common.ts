@@ -2,7 +2,6 @@ import dayjs from 'dayjs'
 import { icons } from '@/config/icons'
 import { getServerBaseUrl } from './request'
 import { getToken } from './auth'
-import { secureStorage } from './crypto'
 
 export const formatDate = (date: string | Date | number, format: string = 'YYYY-MM-DD'): string => {
   if (!date) return ''

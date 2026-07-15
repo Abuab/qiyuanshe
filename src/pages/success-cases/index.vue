@@ -209,11 +209,11 @@ function onRefresh() {
   })
 }
 
-function onLoadMore() {
+async function onLoadMore() {
   if (noMore.value || loadingMore.value) return
   loadingMore.value = true
   pageNum.value++
-  fetchList()
+  await fetchList()
 }
 
 function handleBack() {
