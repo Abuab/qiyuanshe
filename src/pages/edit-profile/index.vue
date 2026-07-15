@@ -29,16 +29,7 @@
               <text>更换头像</text>
             </view>
           </view>
-          <view v-else-if="photos.length > 0" class="photo-cell photo-cell-main" @tap="previewPhoto(0)">
-            <image :src="getFullImageUrl(photos[0].photoUrl || photos[0].url)" mode="aspectFill" class="photo-cell-img" />
-            <view class="photo-watermark">{{ appName }}</view>
-            <view class="photo-main-label">头像/封面</view>
-            <view v-if="Number(photos[0].auditStatus) === 0" class="photo-audit-overlay-large">待审核</view>
-            <view class="photo-change-avatar" @tap.stop="chooseAvatarWithCrop">
-              <text>更换头像</text>
-            </view>
-          </view>
-          <!-- 占位 - 空的第一张 -->
+          <!-- 占位 - 空的第一张（仅用于头像上传，不会盗用其他照片） -->
           <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="showPhotoGuide = true">
             <text class="photo-add-plus">+</text>
             <text class="photo-add-text">添加照片</text>
@@ -46,7 +37,7 @@
 
           <!-- 第2-6张照片 -->
           <template v-for="(p, idx) in remainingPhotos" :key="p.id">
-            <view class="photo-cell" @tap="previewPhoto(idx + 1)">
+            <view class="photo-cell" @tap="previewPhoto(idx)">
               <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
               <view class="photo-watermark">{{ appName }}</view>
               <view v-if="Number(p.auditStatus) === 0" class="photo-audit-overlay">待审核</view>
@@ -803,8 +794,8 @@ const form = ref({
 // 照片管理
 const photos = ref<any[]>([])
 
-// 除第一张外的其他照片
-const remainingPhotos = computed(() => photos.value.slice(1, 6))
+// 所有照片（最多展示5张，第6张需设置头像后才可见）
+const remainingPhotos = computed(() => photos.value.slice(0, 5))
 
 // 9宫格中剩余的空格子数（总数9 - 1个大格=5个小格可放，大格算4格，每个小格算1格）
 // 实际布局: position1占4格(cell 0-3)，后续5个位置是小格
@@ -1069,6 +1060,8 @@ const onGuideAlbum = () => {
 }
 
 const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
+  // 先关闭引导弹窗，否则系统选择器打开后弹窗仍在会导致 iOS 白屏
+  showPhotoGuide.value = false
   uni.chooseImage({
     count: 1,
     sizeType: ['original'],
@@ -1504,15 +1497,21 @@ function togglePlayVoice() {
 }
 
 function playDownloadedVoice(localPath: string) {
-  // iOS 上 obeyMuteSwitch=false 必须配合 useWebAudioImplement 才能生效，
-  // 但 uni.createInnerAudioContext 不支持此参数，需用微信原生 API
+  // 先销毁旧的音频实例
+  if (voiceAudioCtx) { voiceAudioCtx.destroy(); voiceAudioCtx = null }
+
+  // iOS 静音键问题：必须同时设置全局 obeyMuteSwitch=false + useWebAudioImplement=true
+  // wx.setInnerAudioOption 设置全局默认值，确保静音键不生效
   // #ifdef MP-WEIXIN
+  // @ts-ignore
+  wx.setInnerAudioOption({ obeyMuteSwitch: false })
   // @ts-ignore
   voiceAudioCtx = wx.createInnerAudioContext({ useWebAudioImplement: true }) as any
   // #endif
   // #ifndef MP-WEIXIN
   voiceAudioCtx = uni.createInnerAudioContext()
   // #endif
+  // 实例级别也设置（双保险）
   voiceAudioCtx.obeyMuteSwitch = false
   voiceAudioCtx.src = localPath
   voiceAudioCtx.onCanplay(() => { voiceAudioCtx!.play() })
