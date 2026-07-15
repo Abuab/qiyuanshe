@@ -30,7 +30,7 @@
             </view>
           </view>
           <!-- 占位 - 空的第一张（仅用于头像上传，不会盗用其他照片） -->
-          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="showPhotoGuide = true">
+          <view v-else class="photo-cell photo-cell-main photo-cell-add" @tap="chooseAvatarWithCrop">
             <text class="photo-add-plus">+</text>
             <text class="photo-add-text">添加照片</text>
           </view>
@@ -588,14 +588,6 @@
       </view>
     </view>
   </view>
-
-  <!-- 照片上传引导弹窗 -->
-  <PhotoGuide
-    v-model:visible="showPhotoGuide"
-    @camera="onGuideCamera"
-    @album="onGuideAlbum"
-    @cancel="showPhotoGuide = false"
-  />
 </template>
 
 <script setup lang="ts">
@@ -612,7 +604,6 @@ import { setCropImageData } from '@/utils/crop-bridge'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
-import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 
@@ -620,7 +611,6 @@ const userStore = useUserStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
 const icons = computed(() => systemStore.icons)
 const saving = ref(false)
-const showPhotoGuide = ref(false)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 
@@ -1044,24 +1034,18 @@ const chooseAvatar = () => {
   })
 }
 
-/** 更换头像（带裁剪） */
+/** 更换头像（带裁剪）— 使用原生 ActionSheet 避免 iOS 上 PhotoGuide 遮罩与系统选择器冲突白屏 */
 const chooseAvatarWithCrop = () => {
-  showPhotoGuide.value = true
-}
-
-/** 引导弹窗 - 相机 */
-const onGuideCamera = () => {
-  pickAndCropAvatar('camera')
-}
-
-/** 引导弹窗 - 相册 */
-const onGuideAlbum = () => {
-  pickAndCropAvatar('album')
+  uni.showActionSheet({
+    itemList: ['从相册中选取', '拍照'],
+    success: (res) => {
+      const sourceType: 'album' | 'camera' = res.tapIndex === 0 ? 'album' : 'camera'
+      pickAndCropAvatar(sourceType)
+    },
+  })
 }
 
 const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
-  // 先关闭引导弹窗，否则系统选择器打开后弹窗仍在会导致 iOS 白屏
-  showPhotoGuide.value = false
   uni.chooseImage({
     count: 1,
     sizeType: ['original'],
