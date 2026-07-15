@@ -83,8 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { post, get } from '@/utils/request'
