@@ -19,7 +19,7 @@
           <text class="photo-section-title">个人形象展示</text>
         </view>
         <view class="photo-grid-9">
-          <!-- 第一张照片占4格 — 优先显示头像，无头像时显示第一张照片 -->
+          <!-- 第一张照片占4格 — 仅用于头像上传 -->
           <view v-if="form.avatar" class="photo-cell photo-cell-main" @tap="previewAvatar">
             <image :src="getFullImageUrl(form.avatar)" mode="aspectFill" class="photo-cell-img" />
             <view class="photo-watermark">{{ appName }}</view>
@@ -35,7 +35,7 @@
             <text class="photo-add-text">添加照片</text>
           </view>
 
-          <!-- 第2-6张照片 -->
+          <!-- 照片列表（宫格最多展示5张） -->
           <template v-for="(p, idx) in remainingPhotos" :key="p.id">
             <view class="photo-cell" @tap="previewPhoto(idx)">
               <image :src="getFullImageUrl(p.photoUrl || p.url)" mode="aspectFill" class="photo-cell-img" />
@@ -794,7 +794,7 @@ const form = ref({
 // 照片管理
 const photos = ref<any[]>([])
 
-// 所有照片（最多展示5张，第6张需设置头像后才可见）
+// 所有照片（宫格最多展示5张）
 const remainingPhotos = computed(() => photos.value.slice(0, 5))
 
 // 9宫格中剩余的空格子数（总数9 - 1个大格=5个小格可放，大格算4格，每个小格算1格）
