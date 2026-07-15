@@ -4,7 +4,7 @@
 
     <view class="main-content">
       <view class="heart-container">
-        <image class="heart-icon" src="/static/heart.png" mode="aspectFit"></image>
+        <image class="heart-icon" src="/static/icons/loveheart.png" mode="aspectFit"></image>
       </view>
 
       <text class="splash-text">{{ splashText }}</text>
@@ -15,39 +15,24 @@
         <view class="dot"></view>
       </view>
     </view>
-
-    <protocol-popup
-      :show="showProtocol"
-      @update:show="showProtocol = $event"
-      @agree="handleProtocolAgree"
-      @close="handleProtocolClose"
-    />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useSystemStore } from '@/store/system'
-import { useUserStore } from '@/store/user'
-import ProtocolPopup from '@/components/protocol-popup/protocol-popup.vue'
-import { secureStorage } from '@/utils/crypto'
 
 const systemStore = useSystemStore()
-const userStore = useUserStore()
 
 const splashText = ref('正在为您寻找心仪的对象...')
-const showProtocol = ref(false)
 let navigationTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   await systemStore.loadSystemConfig()
   splashText.value = systemStore.splashText || '正在为您寻找心仪的对象...'
 
-  if (!userStore.isLoggedIn) {
-    showProtocol.value = true
-  } else {
-    startMainNavigation()
-  }
+  // 无论是否登录，直接进入首页（首次用户可预览，无需同意协议）
+  startMainNavigation()
 })
 
 onUnmounted(() => {
@@ -57,30 +42,11 @@ onUnmounted(() => {
   }
 })
 
-const handleProtocolAgree = () => {
-  showProtocol.value = false
-  secureStorage.setProtocolAgreed()
-  startMainNavigation()
-}
-
-const handleProtocolClose = () => {
-  showProtocol.value = false
-  startMainNavigation()
-}
-
 const startMainNavigation = () => {
   navigationTimer = setTimeout(() => {
-    const isLoggedIn = userStore.isLoggedIn
-
-    if (isLoggedIn) {
-      uni.switchTab({
-        url: '/pages/index/index',
-      })
-    } else {
-      uni.reLaunch({
-        url: '/pages/login/index',
-      })
-    }
+    uni.switchTab({
+      url: '/pages/index/index',
+    })
   }, 500)
 }
 </script>
@@ -113,8 +79,8 @@ const startMainNavigation = () => {
 }
 
 .heart-container {
-  width: 160rpx;
-  height: 160rpx;
+  width: 260rpx;
+  height: 260rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,23 +88,31 @@ const startMainNavigation = () => {
 }
 
 .heart-icon {
-  width: 120rpx;
-  height: 120rpx;
+  width: 220rpx;
+  height: 220rpx;
   animation: heartbeat 2s ease-in-out infinite;
 }
 
 @keyframes heartbeat {
   0% {
-    transform: scale(0.8);
-    opacity: 0.6;
-  }
-  50% {
-    transform: scale(1.2);
+    transform: scale(0.4);
     opacity: 1;
   }
+  40% {
+    transform: scale(1.3);
+    opacity: 0.2;
+  }
+  60% {
+    transform: scale(1.05);
+    opacity: 0.45;
+  }
+  80% {
+    transform: scale(1.2);
+    opacity: 0.25;
+  }
   100% {
-    transform: scale(0.8);
-    opacity: 0.6;
+    transform: scale(0.4);
+    opacity: 1;
   }
 }
 
