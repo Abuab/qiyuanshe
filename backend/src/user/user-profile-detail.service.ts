@@ -10,6 +10,7 @@ import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
 import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { SinglePromise } from '../entities/SinglePromise'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import { getDisplayName } from '../common/user-utils'
@@ -58,6 +59,8 @@ export class UserProfileDetailService {
     private readonly answerRepo: Repository<QuestionAnswer>,
     @InjectRepository(MatchmakerComment)
     private readonly matchmakerCommentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(SinglePromise)
+    private readonly singlePromiseRepo: Repository<SinglePromise>,
     private readonly aiConfigService: AiConfigService,
   ) {}
 
@@ -89,6 +92,7 @@ export class UserProfileDetailService {
       hasMatchReport,
       answers,
       matchmakerComments,
+      singlePromise,
     ] = await Promise.all([
       this.photoRepo.find({
         where: { userId },
@@ -122,6 +126,10 @@ export class UserProfileDetailService {
       this.matchmakerCommentRepo.find({
         where: { userId, status: 1 },
         relations: ['matchmaker'],
+        order: { createdAt: 'DESC' },
+      }),
+      this.singlePromiseRepo.findOne({
+        where: { userId, status: 1 },
         order: { createdAt: 'DESC' },
       }),
     ])
@@ -177,7 +185,7 @@ export class UserProfileDetailService {
     return {
       top: this.buildTop(user, photos, isSelf, !!isFollowed, followCount, followerCount),
       basicInfo: this.buildBasicInfo(user),
-      identityAuth: this.buildIdentityAuth(auths, user),
+      identityAuth: this.buildIdentityAuth(auths, user, singlePromise),
       aboutMe: this.buildAboutMe(user, tagSelections, aiProfile),
       hopeTa: this.buildHopeTa(user),
       interaction: { giftCount: 0, canShare: true, shareTitle: `来看看${getDisplayName(user.nickname, user.userId)}的个人主页` },
@@ -247,6 +255,7 @@ export class UserProfileDetailService {
   private buildIdentityAuth(
     auths: UserAuth[],
     user: User,
+    singlePromise: SinglePromise | null,
   ): IdentityAuthSection {
     const authMap = new Map<string, UserAuth>()
     auths.forEach((a) => authMap.set(a.authType, a))
@@ -268,7 +277,7 @@ export class UserProfileDetailService {
         type: 'house',
         label: '房',
         icon: 'house',
-        verified: !!authMap.get('house')?.status && authMap.get('house')?.status === 1,
+        verified: !!authMap.get('property')?.status && authMap.get('property')?.status === 1,
       },
       {
         type: 'car',
@@ -280,13 +289,13 @@ export class UserProfileDetailService {
         type: 'single_pledge',
         label: '单身承诺',
         icon: 'promise',
-        verified: !!authMap.get('single_pledge')?.status && authMap.get('single_pledge')?.status === 1,
+        verified: singlePromise?.status === 1,
       },
       {
         type: 'marital',
         label: '婚况',
         icon: 'marital',
-        verified: !!authMap.get('marital')?.status && authMap.get('marital')?.status === 1,
+        verified: !!user.maritalStatus,
       },
     ]
 
