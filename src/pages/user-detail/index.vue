@@ -100,7 +100,7 @@
               </view>
               <!-- 人格类型标签（该用户已测试时展示，点击查看简化雷达图） -->
               <view v-if="targetPersonality" class="personality-tag" @tap="openPersonalityPopup">
-                <text class="pt-icon">🧭</text>
+                <image class="pt-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
                 <text class="pt-text">{{ targetPersonality.nickname || targetPersonality.typeName }}</text>
               </view>
             </view>
@@ -271,7 +271,7 @@
         <!-- ========== 浏览者未测试引导（文案由后台配置） ========== -->
         <view v-if="showViewerTestGuide && !profileData.top.isSelf" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
           <view class="ai-entry-content">
-            <text class="ai-entry-emoji">🧭</text>
+            <image class="ai-entry-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
             <view class="ai-entry-info">
               <text class="ai-entry-title">{{ viewerGuideText }}</text>
               <text class="ai-entry-desc">测完更懂你们的契合度</text>
@@ -351,10 +351,6 @@
                 :src="profileData.top.avatar"
                 mode="aspectFill"
               />
-            </view>
-            <!-- 回答按钮 -->
-            <view class="qa-answer-btn" @tap="goToAnswer(item)">
-              <text>回答</text>
             </view>
           </view>
           </view>
@@ -2058,6 +2054,8 @@ $text-hint: #999999;
 
 .ai-entry-emoji { font-size: 40rpx; }
 
+.ai-entry-icon-img { width: 48rpx; height: 48rpx; }
+
 .ai-entry-info { flex: 1; }
 
 .ai-entry-title { font-size: 30rpx; font-weight: bold; color: $pink; }
@@ -2490,7 +2488,7 @@ $text-hint: #999999;
   padding: 6rpx 18rpx; border-radius: 24rpx; background: #fff0f3;
   align-self: flex-start;
 }
-.pt-icon { font-size: 24rpx; margin-right: 6rpx; }
+.pt-icon-img { width: 36rpx; height: 36rpx; margin-right: 6rpx; }
 .pt-text { font-size: 24rpx; color: #ff6b9d; font-weight: 600; }
 
 .pp-head { display: flex; flex-direction: column; align-items: center; margin-bottom: 20rpx; }
