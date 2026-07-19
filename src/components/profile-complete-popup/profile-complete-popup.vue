@@ -1,8 +1,8 @@
 <template>
-  <!-- 遮罩层 -->
-  <view v-if="show" class="pcp-overlay" @tap="handleMaskClick">
-    <!-- 弹窗卡片（阻止冒泡） -->
-    <view class="pcp-card" @tap.stop>
+  <!-- 遮罩层（无法通过点击关闭） -->
+  <view v-if="show" class="pcp-overlay">
+    <!-- 弹窗卡片 -->
+    <view class="pcp-card">
       <!-- 插画区 -->
       <view class="pcp-illustration">
         <!-- 装饰元素 -->
@@ -57,16 +57,7 @@ const props = defineProps<{
   show: boolean
 }>()
 
-const emit = defineEmits<{
-  'update:show': [value: boolean]
-}>()
-
-const handleMaskClick = () => {
-  emit('update:show', false)
-}
-
 const handleGoProfile = () => {
-  emit('update:show', false)
   // 先回到首页（清除登录页栈），再跳转编辑资料
   uni.switchTab({
     url: '/pages/index/index',

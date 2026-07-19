@@ -74,6 +74,10 @@
       <text class="loading-text">登录中...</text>
     </view>
 
+    <!-- 完善资料弹窗（新用户首次登录后，无法关闭） -->
+    <profile-complete-popup
+      :show="showProfilePopup"
+    />
   </view>
 </template>
 
@@ -85,6 +89,7 @@ import { post, get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
+import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 interface LoginResult {
   user: any
   tokens: { accessToken: string; refreshToken: string; expiresIn: number }
@@ -96,6 +101,7 @@ const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
 const showProtocol = ref(false)
 const showPhonePopup = ref(false)
+const showProfilePopup = ref(false)
 const loading = ref(false)
 const illustrationImg = ref('')
 // 协议弹窗被同意时置为 true，登录成功（已鉴权）后再补记同意，避免未登录上报 401
@@ -264,6 +270,11 @@ const onGetPhoneNumber = async (e: any) => {
 }
 
 const handleLoginSuccess = () => {
+  // 新用户：弹窗引导完善资料（无法关闭，必须点击去完善资料）
+  if (userStore.userInfo && /^昵称/.test(userStore.userInfo.nickname || '') && !userStore.userInfo.avatar) {
+    showProfilePopup.value = true
+    return
+  }
   const pages = getCurrentPages()
   if (pages.length > 1) {
     uni.navigateBack()
