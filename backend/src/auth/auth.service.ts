@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, EntityManager } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
 import * as crypto from 'crypto'
 import { User } from '../entities/User'
@@ -50,6 +50,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly userService: UserService,
+    private readonly entityManager: EntityManager,
   ) {}
 
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
@@ -320,14 +321,30 @@ export class AuthService {
 
     const profile = this.sanitizeUser(user, true)
 
-    // 从 UserAuth 中获取实名认证姓名
+    // 获取实名认证姓名：优先从 UserAuth 记录中取，其次从 real_name_identities 表取
     try {
+      // 1. 先查 user_auths 表（兼容历史数据）
       const authRecord = await this.userAuthRepo.findOne({
-        where: { userId, authType: 'realname', status: 1 },
+        where: { userId, authType: 'realname' },
         order: { createdAt: 'DESC' },
       })
       const authData = authRecord?.authData || {}
-      ;(profile as any).realName = authData.realName || authData.name || ''
+      let realName = authData.realName || authData.name || ''
+
+      // 2. 如果 user_auths 中没找到，查询新的 real_name_identities 表
+      if (!realName) {
+        const identityRecord = await this.entityManager
+          .createQueryBuilder()
+          .select('rni.realName')
+          .from('real_name_identities', 'rni')
+          .where('rni.userId = :userId', { userId })
+          .orderBy('rni.createdAt', 'DESC')
+          .getRawOne()
+        if (identityRecord?.realName) {
+          realName = identityRecord.realName
+        }
+      }
+      ;(profile as any).realName = realName
     } catch (_) {
       ;(profile as any).realName = ''
     }

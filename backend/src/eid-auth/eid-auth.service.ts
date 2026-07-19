@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, EntityManager } from 'typeorm'
 import { User } from '../entities/User'
 import { UserAuth } from '../entities/UserAuth'
+import { RealNameIdentity } from '../entities/RealNameIdentity'
 import * as crypto from 'crypto'
 import {
   callFaceIdApi,
@@ -28,6 +29,7 @@ export class EidAuthService {
     private readonly userRepo: Repository<User>,
     @InjectRepository(UserAuth)
     private readonly userAuthRepo: Repository<UserAuth>,
+    private readonly entityManager: EntityManager,
   ) {}
 
   /**
@@ -113,6 +115,31 @@ export class EidAuthService {
                 authData: { realName: identityInfo.realName, idCard: identityInfo.idCard },
               }),
             )
+          }
+
+          // 同步写入 real_name_identities 表（新表，结构化存储）
+          const idCardHash = crypto.createHash('sha256').update(identityInfo.idCard).digest('hex')
+          const existingIdentity = await this.entityManager
+            .createQueryBuilder(RealNameIdentity, 'rni')
+            .where('rni.userId = :userId', { userId })
+            .getOne()
+          if (existingIdentity) {
+            await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
+              realName: identityInfo.realName,
+              idCard: identityInfo.idCard,
+              idCardHash,
+              eidBizSeqNo: user.eidBizSeqNo,
+              verifiedAt: now,
+            })
+          } else {
+            await this.entityManager.insert(RealNameIdentity, {
+              userId,
+              realName: identityInfo.realName,
+              idCard: identityInfo.idCard,
+              idCardHash,
+              eidBizSeqNo: user.eidBizSeqNo,
+              verifiedAt: now,
+            })
           }
         }
         this.logger.log(`用户 ${userId} E证通认证成功`)

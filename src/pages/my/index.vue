@@ -34,11 +34,6 @@
           <view class="profile-info">
             <view class="profile-nickname-row">
               <text class="profile-nickname">{{ userStore.displayNickname || '用户' }}</text>
-              <text
-                v-if="!userInfo?.isRealName || userInfo?.avatarReviewStatus === 0"
-                class="speed-review-btn"
-                @tap.stop="goToMatchmaker"
-              >加快审核 ></text>
             </view>
             <view class="profile-id-row">
               <text class="id-badge">ID</text>

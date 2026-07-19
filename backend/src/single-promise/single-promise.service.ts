@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, EntityManager } from 'typeorm'
 import { SinglePromise } from '../entities/SinglePromise'
 import { UserAuth } from '../entities/UserAuth'
 import { User } from '../entities/User'
+import { RealNameIdentity } from '../entities/RealNameIdentity'
 
 // E证通认证状态常量
 const EID_STATUS_DONE = 2
@@ -17,6 +18,7 @@ export class SinglePromiseService {
     private readonly userAuthRepo: Repository<UserAuth>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    private readonly entityManager: EntityManager,
   ) {}
 
   /** 获取用户当前单身承诺状态 */
@@ -60,6 +62,19 @@ export class SinglePromiseService {
       }
       // 使用前端传来的姓名作为兜底
       realName = inputRealName?.trim() || ''
+    }
+
+    // 若仍未获取到姓名，查询 real_name_identities 新表作为兜底
+    if (!realName) {
+      const identityRecord = await this.entityManager
+        .createQueryBuilder(RealNameIdentity, 'rni')
+        .select('rni.realName')
+        .where('rni.userId = :userId', { userId })
+        .orderBy('rni.createdAt', 'DESC')
+        .getOne()
+      if (identityRecord?.realName) {
+        realName = identityRecord.realName
+      }
     }
 
     if (!realName) {
