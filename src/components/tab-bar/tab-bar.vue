@@ -31,6 +31,7 @@
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { icons } from '@/config/icons'
+import { useUserStore } from '@/store/user'
 
 interface TabItem {
   label: string
@@ -49,6 +50,8 @@ const tabs: TabItem[] = [
   { label: '消息', pagePath: '/pages/message-list/index', name: 'message' },
   { label: '我的', pagePath: '/pages/my/index', name: 'my' },
 ]
+
+const userStore = useUserStore()
 
 const currentPath = ref('/pages/index/index')
 const unreadCount = ref(0)
@@ -74,6 +77,13 @@ const updateCurrentTab = () => {
 
 const switchTab = (pagePath: string) => {
   if (currentPath.value === pagePath) return
+
+  // 锁定用户（status=4）只能留在首页，不允许切换至其他 Tab
+  const HOME_PATH = '/pages/index/index'
+  if (userStore.userInfo?.status === 4 && pagePath !== HOME_PATH) {
+    uni.showToast({ title: '账号已锁定，请先确认脱单意向', icon: 'none', duration: 2000 })
+    return
+  }
 
   uni.switchTab({
     url: pagePath,

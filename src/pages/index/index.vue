@@ -255,7 +255,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { get } from '@/utils/request'
+import { get, put } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
@@ -567,9 +567,19 @@ const handleLoveIntentNoNeed = () => {
   uni.redirectTo({ url: '/pages/guest-guide/index' })
 }
 
-const handleLoveIntentSingle = () => {
+const handleLoveIntentSingle = async () => {
   showLoveIntent.value = false
-  handleMatchmakerFloat()
+  // 调用后端接口解锁账号（status 4 → 1）
+  try {
+    await put('/users/unlock')
+    // 更新本地 store 中的状态，确保 Tab Bar 等守卫不再拦截
+    if (userStore.userInfo) {
+      userStore.userInfo.status = 1
+    }
+    handleMatchmakerFloat()
+  } catch (_) {
+    showToast('解锁失败，请重试')
+  }
 }
 
 // 滚动事件：控制固定筛选栏和回到顶部按钮

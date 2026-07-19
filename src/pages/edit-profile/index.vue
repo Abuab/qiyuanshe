@@ -895,6 +895,13 @@ const confirmPersonalityPicker = () => {
 onMounted(async () => {
   if (!requireLogin()) return
 
+  // 锁定用户不允许进入编辑资料页
+  if (userStore.userInfo?.status === 4) {
+    uni.showToast({ title: '账号已锁定，请先确认脱单意向', icon: 'none', duration: 2000 })
+    uni.switchTab({ url: '/pages/index/index' })
+    return
+  }
+
   // 监听裁剪完成事件（备用通道）
   uni.$on('IMAGE_CROPPED', (data: any) => {
     if (data?.path) handleCroppedAvatar(data.path)

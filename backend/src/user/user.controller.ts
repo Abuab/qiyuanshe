@@ -746,4 +746,21 @@ export class UserController {
     )
     return Result.success(null, '已记录')
   }
+
+  /** 锁定用户确认脱单意向，解锁账号 */
+  @Put('unlock')
+  @UseGuards(JwtAuthGuard)
+  async unlockAccount(@Request() req: any) {
+    const userId = req.user.id
+    const user = await this.userRepo.findOne({ where: { id: userId, isDeleted: 0 } })
+    if (!user) {
+      throw new ForbiddenException('用户不存在')
+    }
+    if (user.status !== 4) {
+      return Result.success(null, '账号未锁定')
+    }
+    user.status = 1
+    await this.userRepo.save(user)
+    return Result.success(null, '账号已解锁')
+  }
 }

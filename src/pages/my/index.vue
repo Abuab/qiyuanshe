@@ -331,6 +331,12 @@ onMounted(() => {
 })
 
 onShow(() => {
+  // 锁定用户不允许进入"我的"页面
+  if (userStore.userInfo?.status === 4) {
+    uni.showToast({ title: '账号已锁定，请先确认脱单意向', icon: 'none', duration: 2000 })
+    uni.switchTab({ url: '/pages/index/index' })
+    return
+  }
   loadStats()
   refreshProfile()
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
