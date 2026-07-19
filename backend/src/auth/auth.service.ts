@@ -103,15 +103,7 @@ export class AuthService {
       user = await this.userRepository.save(user)
 
       // 新用户自动记录协议同意（关联登录即视为同意）
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
       // 同步写入 AgreementLogStorage，确保管理后台"同意记录查询"可查到
       this.agreementLogStorage.saveLog({
         userId: user.id,
@@ -135,15 +127,7 @@ export class AuthService {
 
     // 如果用户尚未记录协议同意，自动补录（老用户微信登录时也补录，与 phoneLogin 一致）
     if (!user.protocolAgreedAt) {
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
       // 同步写入 AgreementLogStorage
       this.agreementLogStorage.saveLog({
         userId: user.id,
@@ -217,15 +201,7 @@ export class AuthService {
       user = await this.userRepository.save(user)
 
       // 新用户自动记录协议同意
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
       this.agreementLogStorage.saveLog({
         userId: user.id,
         agreementType: 'USER_AGREEMENT',
@@ -253,15 +229,7 @@ export class AuthService {
 
     // 5. 老用户协议同意补录（与 wechatLogin 保持一致）
     if (!user.protocolAgreedAt) {
-      await this.agreementRepo.save(
-        this.agreementRepo.create({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || null,
-        }),
-      )
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
       this.agreementLogStorage.saveLog({
         userId: user.id,
         agreementType: 'USER_AGREEMENT',
@@ -466,6 +434,35 @@ export class AuthService {
     }
 
     return decryptedData as WechatPhoneData
+  }
+
+  /** 记录用户协议同意（按 userId + agreementType 去重，再次同意时只更新版本和时间） */
+  private async upsertAgreement(
+    userId: number,
+    agreementType: string,
+    version: string,
+    action: string,
+    ipAddress?: string,
+  ) {
+    const existing = await this.agreementRepo.findOne({
+      where: { userId, agreementType },
+    })
+    if (existing) {
+      existing.version = version
+      existing.action = action
+      existing.ipAddress = ipAddress || null
+      await this.agreementRepo.save(existing)
+    } else {
+      await this.agreementRepo.save(
+        this.agreementRepo.create({
+          userId,
+          agreementType,
+          version,
+          action,
+          ipAddress: ipAddress || null,
+        }),
+      )
+    }
   }
 
   private sanitizeUser(user: User, includePhone = false): Partial<User> {

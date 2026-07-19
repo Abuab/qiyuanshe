@@ -179,6 +179,8 @@ export class DynamicService {
       .createQueryBuilder('dynamic')
       .leftJoinAndSelect('dynamic.user', 'user')
       .where("dynamic.type = 'answer'")
+      .andWhere('user.status = :status', { status: 1 })
+      .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .orderBy('dynamic.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)

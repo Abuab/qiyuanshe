@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
+import { get } from '@/utils/request'
 
 interface UserInfo {
   id: number
@@ -187,6 +188,21 @@ const isVipValid = computed(() => {
     secureStorage.setUserInfo(userInfo.value)
   }
 
+  /** 从服务端刷新用户信息（用于检测状态变更如锁定/禁用等） */
+  const refreshProfile = async () => {
+    if (!isLoggedIn.value) return
+    try {
+      const res: any = await get('/auth/profile')
+      const profile = res?.data || res
+      if (profile) {
+        userInfo.value = profile
+        isVip.value = !!profile.isVip
+        vipExpireTime.value = profile.vipExpireTime ?? ''
+        secureStorage.setUserInfo(profile)
+      }
+    } catch (_) { /* 静默失败，不影响正常使用 */ }
+  }
+
   const checkVip = () => {
     if (!vipExpireTime.value) return false
 
@@ -238,6 +254,7 @@ const isVipValid = computed(() => {
     logout,
     updateUserInfo,
     updateProfile,
+    refreshProfile,
     checkVip
   }
 })

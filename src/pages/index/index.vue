@@ -720,7 +720,9 @@ onMounted(() => {
 })
 
 // 每次页面显示时也检查（如从其他页返回）
-onShow(() => {
+onShow(async () => {
+  // 刷新用户资料以获取最新状态（如管理后台锁定/解锁等）
+  await userStore.refreshProfile()
   // 账户锁定检查：status=4 时弹出脱单需求确认弹窗
   if (userStore.userInfo?.status === 4) {
     showLoveIntent.value = true

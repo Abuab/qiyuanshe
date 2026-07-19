@@ -1266,7 +1266,7 @@ export class UserService {
       .filter(Boolean) as { id: number; userId: string; nickname: string; displayName: string; avatar: string; age: number; gender: number; location: string; createdAt: Date }[]
   }
 
-  /** 记录用户协议同意/不同意 */
+  /** 记录用户协议同意/不同意（按 userId + agreementType 去重，再次同意时只更新版本和时间） */
   async recordAgreement(
     userId: number,
     agreementType: string,
@@ -1275,16 +1275,27 @@ export class UserService {
     ipAddress?: string,
     userAgent?: string,
   ) {
-    const agreement = this.agreementRepo.create({
-      userId,
-      agreementType,
-      version,
-      action,
-      ipAddress: ipAddress || null,
+    // 查找已有记录，存在则更新，不存在则创建
+    const existing = await this.agreementRepo.findOne({
+      where: { userId, agreementType },
     })
-    await this.agreementRepo.save(agreement)
+    if (existing) {
+      existing.version = version
+      existing.action = action
+      existing.ipAddress = ipAddress || null
+      await this.agreementRepo.save(existing)
+    } else {
+      const agreement = this.agreementRepo.create({
+        userId,
+        agreementType,
+        version,
+        action,
+        ipAddress: ipAddress || null,
+      })
+      await this.agreementRepo.save(agreement)
+    }
 
-    // 同步写入 AgreementLogStorage，确保管理后台"同意记录查询"可查到
+    // 同步写入 AgreementLogStorage，确保管理后台"同意记录查询"可查到（日志始终追加）
     this.agreementLogStorage.saveLog({
       userId,
       agreementType,
