@@ -442,7 +442,7 @@ export class AdminUserService {
       车辆: u.carStatus || '-',
       职业: u.occupation || '-',
       会员等级: u.vipLevel === 1 ? '黄金' : u.vipLevel === 2 ? '钻石' : u.vipLevel === 3 ? '至尊' : '普通',
-      状态: u.status === 1 ? '正常' : u.status === 0 ? '禁用' : '待审核',
+      状态: u.status === 0 ? '待审核' : u.status === 1 ? '正常' : u.status === 2 ? '未完善' : u.status === 3 ? '已禁用' : u.status === 4 ? '已锁定' : '-',
       注册时间: u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN') : '-',
     }))
   }

@@ -45,6 +45,13 @@
       }
     },
     {
+      "path": "pages/guest-guide/index",
+      "style": {
+        "navigationBarTitleText": "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/user-detail/index",
       "style": {
         "navigationStyle": "custom",

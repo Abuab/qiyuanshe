@@ -241,6 +241,14 @@
       @close="cityPickerVisible = false"
     />
 
+    <!-- 脱单需求确认弹窗（账户锁定状态） -->
+    <love-intent-popup
+      :visible="showLoveIntent"
+      :user-id="userStore.userInfo?.userId || ''"
+      @no-need="handleLoveIntentNoNeed"
+      @single="handleLoveIntentSingle"
+    />
+
   </view>
 </template>
 
@@ -258,6 +266,7 @@ import FilterPanel from '@/components/filter-panel/filter-panel.vue'
 import CityPicker from '@/components/city-picker/city-picker.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import LoveIntentPopup from '@/components/love-intent-popup/love-intent-popup.vue'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
@@ -309,6 +318,8 @@ const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
+// 脱单需求确认弹窗
+const showLoveIntent = ref(false)
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
@@ -550,6 +561,17 @@ const onSelectMatchmaker = (matchmaker: any) => {
   showMatchmaker.value = true
 }
 
+// 脱单需求确认弹窗事件
+const handleLoveIntentNoNeed = () => {
+  showLoveIntent.value = false
+  uni.redirectTo({ url: '/pages/guest-guide/index' })
+}
+
+const handleLoveIntentSingle = () => {
+  showLoveIntent.value = false
+  handleMatchmakerFloat()
+}
+
 // 滚动事件：控制固定筛选栏和回到顶部按钮
 const onScroll = (e: any) => {
   const top = e.detail.scrollTop
@@ -699,6 +721,10 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
+  // 账户锁定检查：status=4 时弹出脱单需求确认弹窗
+  if (userStore.userInfo?.status === 4) {
+    showLoveIntent.value = true
+  }
   // 浮动按钮配置：每次显示都拉取，保证后台切换模式后即时生效
   loadFloatConfig()
   // 弱网恢复后补报离线埋点队列

@@ -66,6 +66,7 @@
                 <el-option label="正常" :value="1" />
                 <el-option label="待审核" :value="0" />
                 <el-option label="未完善" :value="2" />
+                <el-option label="已锁定" :value="4" />
                 <el-option label="已禁用" :value="3" />
               </el-select>
             </el-form-item>
@@ -222,7 +223,8 @@
       <div class="batch-actions" v-if="selectedRows.length > 0">
         <span class="selected-count">已选择 {{ selectedRows.length }} 人</span>
         <el-button type="success" size="small" @click="handleBatchApprove">批量审核通过</el-button>
-        <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
+                <el-button type="warning" size="small" @click="handleBatchLock">批量锁定</el-button>
+                <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
         <el-button type="success" size="small" @click="handleExport" :loading="exportLoading">批量导出Excel</el-button>
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
         <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
@@ -427,6 +429,7 @@
             <el-tag v-if="row.status === 0" type="warning" size="small">待审核</el-tag>
             <el-tag v-else-if="row.status === 1" type="success" size="small">正常</el-tag>
             <el-tag v-else-if="row.status === 2" size="small" type="info">未完善</el-tag>
+            <el-tag v-else-if="row.status === 4" size="small" type="danger">已锁定</el-tag>
             <el-tag v-else-if="row.status === 3" type="danger" size="small">已禁用</el-tag>
             <el-tag v-else size="small" type="info">{{ row.status }}</el-tag>
           </template>
@@ -516,10 +519,25 @@
             <span>{{ '¥' + (paymentMap[row.id] || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
-        <!-- 操作列：统一按钮样式，详情(primary) + 更多(dropdown 间距 8px) + 快捷审核图标按钮(间距 4px/8px) -->
-        <el-table-column v-if="!isReadonly" label="操作" min-width="260" fixed="right">
+        <!-- 操作列：详情 + 锁定/解锁按钮 + 更多(dropdown) + 快捷审核 -->
+        <el-table-column v-if="!isReadonly" label="操作" min-width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" type="primary" @click="handleView(row)">详情</el-button>
+            <!-- 账户锁定/解锁：独立按钮，不在更多下拉里 -->
+            <el-button
+              v-if="row.status !== 4"
+              size="small"
+              type="warning"
+              style="margin-left:8px"
+              @click="handleLockUser(row)"
+            >锁定</el-button>
+            <el-button
+              v-else
+              size="small"
+              type="success"
+              style="margin-left:8px"
+              @click="handleUnlockUser(row)"
+            >解锁</el-button>
             <el-dropdown trigger="click" @command="(cmd: string) => handleDropdownCommand(cmd, row)">
               <el-button size="small" style="margin-left:8px">
                 更多 <el-icon><ArrowDown /></el-icon>
@@ -533,8 +551,11 @@
                   <el-dropdown-item :command="(row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()) ? 'unpin' : 'pin'">
                     {{ (row.pinnedExpireAt && new Date(row.pinnedExpireAt) > new Date()) ? '取消置顶' : '手动置顶' }}
                   </el-dropdown-item>
-                  <el-dropdown-item :command="row.status === 1 ? 'disable' : 'enable'">
-                    {{ row.status === 1 ? '禁用账号' : '启用账号' }}
+                  <el-dropdown-item
+                    v-if="row.status !== 4"
+                    :command="row.status === 1 ? 'disable' : (row.status === 3 ? 'enable' : 'approve')"
+                  >
+                    {{ row.status === 3 ? '启用账号' : (row.status === 1 ? '禁用账号' : '审核通过') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="notify">发送通知</el-dropdown-item>
                   <!-- 运营操作：打标签 + 查看备注 -->
@@ -2369,7 +2390,8 @@ async function handleToggleStatus(row: User) {
       `确认${action}`,
       { type: 'warning' }
     )
-    const res = await adminUsers.updateStatus(row.id, row.status === 1 ? 0 : 1)
+    // 禁用 → status=3，启用 → status=1
+    const res = await adminUsers.updateStatus(row.id, row.status === 1 ? 3 : 1)
     if (res.success) {
       ElMessage.success(`${action}成功`)
       fetchData()
@@ -2464,12 +2486,68 @@ async function handleBatchDisable() {
       { type: 'warning' }
     )
     const ids = selectedRows.value.map((r) => r.id)
-    await adminUsers.batchUpdateStatus(ids, 0)
+    // 禁用 → status=3（已禁用）
+    await adminUsers.batchUpdateStatus(ids, 3)
     ElMessage.success('批量禁用成功')
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
+    }
+  }
+}
+
+async function handleBatchLock() {
+  if (selectedRows.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要锁定选中的 ${selectedRows.value.length} 个用户吗？锁定后用户需确认脱单意向才能使用。`,
+      '批量锁定',
+      { type: 'warning' }
+    )
+    const ids = selectedRows.value.map((r) => r.id)
+    await adminUsers.batchUpdateStatus(ids, 4)
+    ElMessage.success('批量锁定成功')
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(error)
+    }
+  }
+}
+
+async function handleLockUser(row: User) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要锁定用户 ${row.nickname} 吗？锁定后用户需确认脱单意向才能使用。`,
+      '锁定账号',
+      { type: 'warning' }
+    )
+    await adminUsers.updateStatus(row.id, 4)
+    ElMessage.success('已锁定')
+    fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '操作失败')
+    }
+  }
+}
+
+async function handleUnlockUser(row: User) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要解锁用户 ${row.nickname} 吗？`,
+      '解锁账号',
+      { type: 'warning' }
+    )
+    await adminUsers.updateStatus(row.id, 1)
+    ElMessage.success('已解锁')
+    fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error(error)
+      ElMessage.error(error.message || '操作失败')
     }
   }
 }
@@ -2589,6 +2667,24 @@ async function handleDropdownCommand(cmd: string, row: User) {
       break
     case 'disable': handleToggleStatus(row); break
     case 'enable': handleToggleStatus(row); break
+    case 'approve':
+      // 审核通过：将待审核(0)/未完善(2)用户设为正常(1)
+      try {
+        await ElMessageBox.confirm(
+          `确定要审核通过用户 ${row.nickname} 吗？`,
+          '审核通过',
+          { type: 'warning' }
+        )
+        await adminUsers.updateStatus(row.id, 1)
+        ElMessage.success('审核通过')
+        fetchData()
+      } catch (error: any) {
+        if (error !== 'cancel') {
+          console.error(error)
+          ElMessage.error(error.message || '操作失败')
+        }
+      }
+      break
     case 'notify': handleSendNotify(row); break
     case 'tag': handleOpenTagDialog(row); break
     case 'viewNotes': handleViewNotes(row); break

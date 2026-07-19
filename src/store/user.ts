@@ -45,6 +45,7 @@ interface UserInfo {
   vipExpireTime?: string
   vipPackageName?: string
   isRealName?: boolean
+  status?: number
   createTime?: string
   createdAt?: string
   updatedAt?: string
@@ -142,7 +143,7 @@ const isVipValid = computed(() => {
 
     const numberFields = [
       'gender', 'birthYear', 'height', 'weight', 'avatarReviewStatus',
-      'voiceAuditStatus', 'voiceDuration', 'eidCertStatus',
+      'voiceAuditStatus', 'voiceDuration', 'eidCertStatus', 'status',
     ] as const
 
     const arrayFields = ['personalityTags', 'hopeTaTags'] as const

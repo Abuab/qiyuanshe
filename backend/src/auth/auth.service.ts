@@ -131,6 +131,7 @@ export class AuthService {
     if (user.status === 0) {
       throw new UnauthorizedException('账号审核中，请耐心等待')
     }
+    // status=4（已锁定）允许登录，由前端弹窗引导确认脱单意向
 
     // 如果用户尚未记录协议同意，自动补录（老用户微信登录时也补录，与 phoneLogin 一致）
     if (!user.protocolAgreedAt) {
@@ -248,6 +249,7 @@ export class AuthService {
     if (user.status === 0) {
       throw new UnauthorizedException('账号审核中，请耐心等待')
     }
+    // status=4（已锁定）允许登录，由前端弹窗引导确认脱单意向
 
     // 5. 老用户协议同意补录（与 wechatLogin 保持一致）
     if (!user.protocolAgreedAt) {

@@ -54,6 +54,8 @@ export class PublicSystemController {
       photoGuidanceUploadPrompt: configs.basic?.photoGuidanceUploadPrompt || '上传你的照片，探索更多可能~',
       photoGuidanceUploadBtn: configs.basic?.photoGuidanceUploadBtn || '上传照片',
       photoGuidanceMinCount: Number(configs.basic?.photoGuidanceMinCount ?? 1),
+      // 脱单需求确认 - 游客浏览引导页主视觉图
+      guestGuideImage: configs.basic?.guestGuideImage || '',
       // 功能开关
       chatEnabled: configs.basic?.chatEnabled !== false,
       vipEnabled: configs.basic?.vipEnabled !== false,
