@@ -162,7 +162,7 @@ export class AdminAuditService {
       await this.userPhotoRepository.update(audit.targetId, { auditStatus: 1 })
       // 照片审核通过后，若用户状态为 INCOMPLETE 则自动转为 NORMAL
       const photo = await this.userPhotoRepository.findOne({ where: { id: audit.targetId } })
-      if (photo) this.ensureUserNormalStatus(photo.userId)
+      if (photo) await this.ensureUserNormalStatus(photo.userId)
     } else if (audit.targetType === 'avatar' && audit.targetId) {
       // 头像审核通过：从 content 中解析 url 并更新到 user.avatar，同时清除待审核状态
       try {
@@ -174,7 +174,7 @@ export class AdminAuditService {
         await this.userRepository.update(audit.targetId, updates)
       } catch { /* content 非 JSON 时跳过 */ }
       // 头像审核通过后，若用户状态为 INCOMPLETE 则自动转为 NORMAL
-      this.ensureUserNormalStatus(audit.targetId)
+      await this.ensureUserNormalStatus(audit.targetId)
     } else if (audit.targetType === 'answer' && audit.targetId) {
       await this.answerRepository.update(audit.targetId, { status: 1 })
       // ... (rest of answer handling)
@@ -209,7 +209,7 @@ export class AdminAuditService {
     } else if (audit.targetType === 'voice' && audit.targetId) {
       await this.userRepository.update(audit.targetId, { voiceAuditStatus: 1 })
       // 语音审核通过后，若用户状态为 INCOMPLETE 则自动转为 NORMAL
-      this.ensureUserNormalStatus(audit.targetId)
+      await this.ensureUserNormalStatus(audit.targetId)
     }
   }
 

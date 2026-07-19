@@ -45,7 +45,7 @@ export class SinglePromiseService {
   async submit(userId: number, signatureUrl: string, inputRealName?: string) {
     // 从实名认证记录中获取真实姓名
     const authRecord = await this.userAuthRepo.findOne({
-      where: { userId, authType: 'realname', status: 1 },
+      where: { userId, authType: 'realname' },
       order: { createdAt: 'DESC' },
     })
 
