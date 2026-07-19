@@ -603,6 +603,35 @@ export class AdminUserService {
   }
 
   async batchUpdateStatus(ids: number[], status: number) {
+    // 审核通过（status 0→1）时，为每个用户创建审核记录
+    if (status === 1) {
+      const users = await this.userRepository.find({
+        where: ids.map((id) => ({ id })),
+        select: ['id', 'nickname', 'phone', 'status'],
+      })
+      const pendingUsers = users.filter((u) => u.status === 0)
+      if (pendingUsers.length > 0) {
+        const now = new Date()
+        const auditLogs = pendingUsers.map((u) => {
+          const log = new AuditLog()
+          log.targetType = 'user_create'
+          log.targetId = u.id
+          log.action = 'APPROVED'
+          log.content = JSON.stringify({
+            nickname: u.nickname,
+            phone: u.phone,
+            remark: '管理员批量审核通过',
+          })
+          log.createdAt = now
+          return log
+        })
+        try {
+          await this.auditLogRepository.save(auditLogs)
+        } catch (err) {
+          console.error('批量审核日志写入失败:', err?.message || err)
+        }
+      }
+    }
     await this.userRepository.update(ids, { status })
   }
 

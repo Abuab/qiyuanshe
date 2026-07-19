@@ -11,6 +11,7 @@ import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { SinglePromise } from '../entities/SinglePromise'
+import { ProfileVisit } from '../entities/ProfileVisit'
 import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import { getDisplayName } from '../common/user-utils'
@@ -61,6 +62,8 @@ export class UserProfileDetailService {
     private readonly matchmakerCommentRepo: Repository<MatchmakerComment>,
     @InjectRepository(SinglePromise)
     private readonly singlePromiseRepo: Repository<SinglePromise>,
+    @InjectRepository(ProfileVisit)
+    private readonly visitRepo: Repository<ProfileVisit>,
     private readonly aiConfigService: AiConfigService,
   ) {}
 
@@ -84,6 +87,13 @@ export class UserProfileDetailService {
     }
 
     const isSelf = currentUserId === userId
+
+    // 记录来访（非本人查看时写入 profile_visits 表）
+    if (currentUserId && !isSelf) {
+      this.visitRepo.save(
+        this.visitRepo.create({ userId, visitorUserId: currentUserId }),
+      ).catch((err) => console.error('Record visit error:', err?.message || err))
+    }
 
     // 并行加载各分区数据
     const [

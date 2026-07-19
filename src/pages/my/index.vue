@@ -96,10 +96,24 @@
       </view>
 
       <!-- ========== 信息认证（含认证状态） ========== -->
-      <view class="auth-card" @tap="goToRealnameAuth">
+      <view class="auth-card">
         <view class="auth-card-header">
           <text class="auth-label">信息认证</text>
           <text class="auth-desc">去完成实名认证,获取真诚与信任!</text>
+          <text class="arrow">></text>
+        </view>
+        <!-- 实名认证行 -->
+        <view class="auth-item" @tap="goToRealnameAuth">
+          <text class="auth-item-label">实名认证</text>
+          <text class="auth-item-status" :class="{ verified: userStore.userInfo?.isRealName }">
+            {{ userStore.userInfo?.isRealName ? '已认证' : '未认证' }}
+          </text>
+          <text class="arrow">></text>
+        </view>
+        <!-- 单身承诺行 -->
+        <view class="auth-item" @tap="handleSinglePromise">
+          <text class="auth-item-label">单身承诺</text>
+          <text class="auth-item-action">去签署</text>
           <text class="arrow">></text>
         </view>
       </view>
@@ -227,6 +241,17 @@
       :show="showFeedback"
       @close="showFeedback = false"
     />
+
+    <!-- 未实名提示弹窗 -->
+    <view v-if="showRealNamePopup" class="modal-mask" @tap="closeRealNamePopup">
+      <view class="modal-card" @tap.stop>
+        <text class="modal-title">提示</text>
+        <text class="modal-body">请先实名后再签署</text>
+        <view class="modal-btn-single" @tap="goRealNameFromPopup">
+          <text>确定</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -584,6 +609,25 @@ const goToRealnameAuth = () => {
   safeNavigateTo('/pages/realname-auth/index')
 }
 
+// 单身承诺：未实名则弹窗提示，已实名则跳转签署页
+const handleSinglePromise = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
+  if (!userStore.userInfo?.isRealName) {
+    showRealNamePopup.value = true
+  } else {
+    safeNavigateTo('/pages/single-promise/index')
+  }
+}
+
+const closeRealNamePopup = () => {
+  showRealNamePopup.value = false
+}
+
+const goRealNameFromPopup = () => {
+  showRealNamePopup.value = false
+  safeNavigateTo('/pages/realname-auth/index')
+}
+
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
@@ -635,6 +679,9 @@ const goToAntiFraud = () => safeNavigateTo('/pages/agreement/index?type=antiFrau
 
 // 问题反馈弹窗
 const showFeedback = ref(false)
+
+// 未实名提示弹窗
+const showRealNamePopup = ref(false)
 
 const goToFeedback = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
@@ -777,6 +824,7 @@ const toolGrid7 = [
   font-size: 34rpx;
   font-weight: bold;
   color: #333;
+  line-height: 1.2;
 }
 
 .speed-review-btn {
@@ -972,6 +1020,42 @@ const toolGrid7 = [
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-left: 12rpx;
+}
+
+.auth-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0 0;
+}
+
+.auth-item + .auth-item {
+  border-top: 1rpx solid #f5f5f5;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+}
+
+.auth-item-label {
+  font-size: 28rpx;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.auth-item-status {
+  flex: 1;
+  font-size: 24rpx;
+  color: #999;
+  text-align: right;
+  margin-right: 8rpx;
+
+  &.verified {
+    color: #07C160;
+  }
+}
+
+.auth-item-action {
+  font-size: 24rpx;
+  color: #FF6681;
+  margin-right: 8rpx;
 }
 
 // ========== 我的问答 + 专属红娘（合并为一张卡片，4列网格左对齐） ==========
@@ -1198,5 +1282,33 @@ const toolGrid7 = [
 
 .bottom-safe-area {
   height: 120rpx;
+}
+
+// ===== 未实名提示弹窗 =====
+.modal-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-card {
+  width: 560rpx; background: #fff; border-radius: 24rpx;
+  padding: 48rpx 40rpx 40rpx;
+  display: flex; flex-direction: column; align-items: center;
+}
+.modal-title {
+  font-size: 36rpx; font-weight: 600; color: #333;
+}
+.modal-body {
+  font-size: 30rpx; color: #666; margin: 32rpx 0 40rpx;
+  text-align: center; line-height: 1.5;
+}
+.modal-btn-single {
+  width: 100%; height: 88rpx; border-radius: 16rpx;
+  background: #07C160;
+  display: flex; align-items: center; justify-content: center;
+
+  text {
+    font-size: 30rpx; color: #fff; font-weight: 600;
+  }
 }
 </style>

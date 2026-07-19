@@ -6,6 +6,7 @@ import * as crypto from 'crypto'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
 import { UserAuth } from '../entities/UserAuth'
+import { SystemConfig } from '../entities/SystemConfig'
 import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig, parseExpirySeconds } from '../config/jwt'
@@ -47,11 +48,26 @@ export class AuthService {
     private readonly agreementRepo: Repository<UserAgreement>,
     @InjectRepository(UserAuth)
     private readonly userAuthRepo: Repository<UserAuth>,
+    @InjectRepository(SystemConfig)
+    private readonly configRepo: Repository<SystemConfig>,
     private readonly jwtService: JwtService,
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly userService: UserService,
     private readonly entityManager: EntityManager,
   ) {}
+
+  /**
+   * 获取新用户注册时的默认状态
+   * - 'review'（严格模式）：status=0，需管理员审核
+   * - 默认 'auto'（宽松模式）：status=2，用户可直接使用
+   */
+  private async getNewUserStatus(): Promise<number> {
+    try {
+      const config = await this.configRepo.findOne({ where: { configKey: 'basic.registrationMode' } })
+      if (config?.configValue === 'review') return 0
+    } catch (_) { /* fall through to default */ }
+    return 2
+  }
 
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
@@ -82,7 +98,7 @@ export class AuthService {
         unionId: session.unionid || null,
         nickname: randomNickname,
         userId: userId,
-        status: 2,
+        status: await this.getNewUserStatus(),
       })
       user = await this.userRepository.save(user)
 
@@ -109,8 +125,11 @@ export class AuthService {
       user.protocolVersion = '1.0'
     }
 
-    if (user.status === 0) {
+    if (user.status === 3) {
       throw new UnauthorizedException('账号已被禁用')
+    }
+    if (user.status === 0) {
+      throw new UnauthorizedException('账号审核中，请耐心等待')
     }
 
     // 如果用户尚未记录协议同意，自动补录（老用户微信登录时也补录，与 phoneLogin 一致）
@@ -191,7 +210,7 @@ export class AuthService {
         nickname: `昵称${randomSuffix}`,
         userId,
         phone: phoneData.purePhoneNumber,
-        status: 2,
+        status: await this.getNewUserStatus(),
       })
       // 必须先 save 获取 id，后续协议记录依赖 user.id
       user = await this.userRepository.save(user)
@@ -223,8 +242,11 @@ export class AuthService {
       }
     }
 
-    if (user.status === 0) {
+    if (user.status === 3) {
       throw new UnauthorizedException('账号已被禁用')
+    }
+    if (user.status === 0) {
+      throw new UnauthorizedException('账号审核中，请耐心等待')
     }
 
     // 5. 老用户协议同意补录（与 wechatLogin 保持一致）
@@ -274,7 +296,7 @@ export class AuthService {
         where: { id: payload.sub, isDeleted: 0 },
       })
 
-      if (!user || user.status === 0) {
+      if (!user || user.status === 0 || user.status === 3) {
         throw new UnauthorizedException('用户不存在或已被禁用')
       }
 
@@ -292,7 +314,7 @@ export class AuthService {
       where: { id: userId, isDeleted: 0 },
     })
 
-    if (!user || user.status === 0) {
+    if (!user || user.status === 0 || user.status === 3) {
       return null
     }
 

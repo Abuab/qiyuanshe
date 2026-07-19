@@ -59,11 +59,12 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value && !!userInfo.value)
 
-  /** 展示昵称：新用户（系统自动生成昵称）显示为 "-" */
+  /** 展示昵称：资料未完善时显示 "-"，完善后显示实际昵称（含系统默认昵称） */
   const displayNickname = computed(() => {
     if (!userInfo.value) return ''
     const nick = userInfo.value.nickname || ''
-    if (/^昵称/.test(nick)) return '-'
+    // 资料未完善 → 显示 "-"
+    if (!isProfileComplete.value) return '-'
     return nick
   })
 
@@ -174,6 +175,11 @@ const isVipValid = computed(() => {
     // 统一处理 boolean 字段（必须处理，否则 isRealName 等会被静默丢弃）
     for (key of booleanFields) {
       if (typeof data[key] === 'boolean') (updates as any)[key] = data[key]
+    }
+
+    // 后端 /auth/profile 返回 isNewUser 表示资料未完善，同步更新 isProfileComplete
+    if (typeof data['isNewUser'] === 'boolean') {
+      isProfileComplete.value = !data['isNewUser']
     }
 
     Object.assign(userInfo.value, updates)

@@ -9,13 +9,14 @@ import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
 import { UserAuth } from '../entities/UserAuth'
 import { Feedback } from '../entities/Feedback'
+import { SystemConfig } from '../entities/SystemConfig'
 import { jwtConfig } from '../config/jwt'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserAgreement, UserAuth, Feedback]),
+    TypeOrmModule.forFeature([User, UserAgreement, UserAuth, Feedback, SystemConfig]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: jwtConfig.secret,

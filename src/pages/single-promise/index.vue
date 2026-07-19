@@ -30,19 +30,9 @@
       <view class="promise-card">
         <text class="promise-decor">· 单身承诺书 ·</text>
 
-        <!-- 用户姓名区域 -->
+        <!-- 用户姓名区域（从实名认证自动获取，不可编辑） -->
         <view class="promise-signer">
-          <input
-            v-if="isNamePlaceholder"
-            class="signer-name-input"
-            :value="realName === '用户' ? '' : realName"
-            @input="onNameInput"
-            @focus="onNameFocus"
-            type="text"
-            placeholder="请输入真实姓名"
-            placeholder-style="color:#ccc;font-size:28rpx;"
-          />
-          <text v-else class="signer-name">{{ realName }}</text>
+          <text class="signer-name">{{ displayRealName }}</text>
           <text class="signer-text"> 在此承诺：</text>
         </view>
 
@@ -50,6 +40,11 @@
         <text class="promise-body">
           本人目前婚姻状况为单身状态，并自愿授权"栖缘社"平台向国家有关部门进行任何必须的了解和查询。如有不实，本人自愿承担由此产生的一切法律责任和后果，且与平台无关。
         </text>
+
+        <!-- 当前日期 -->
+        <view class="promise-today">
+          <text class="today-text">{{ today }}</text>
+        </view>
 
         <!-- 签名与日期 -->
         <view class="promise-signature">
@@ -161,19 +156,17 @@ const navBarHeightPx = ref(44)
 // ========== 状态 ==========
 const realName = ref('用户')
 
-// 当姓名为占位符'用户'时，显示输入框让用户手动填写
-const isNamePlaceholder = computed(() => realName.value === '用户')
+// 展示姓名：从实名认证获取的真实姓名，未获取到时显示"用户"
+const displayRealName = computed(() => {
+  return realName.value || '用户'
+})
 
-// 姓名输入框聚焦时清除默认值
-const onNameFocus = () => {
-  if (realName.value === '用户') {
-    realName.value = ''
-  }
-}
-// 姓名输入框手动输入
-const onNameInput = (e: any) => {
-  realName.value = e.detail?.value ?? e.target?.value ?? ''
-}
+// 当前日期（格式：YYYY年MM月DD日）
+const today = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`
+})
+
 const isSigned = ref(false)
 const isResigning = ref(false)
 const existingSignatureUrl = ref('')
@@ -485,13 +478,15 @@ $pink-bg-end: #FF8FA3;
 .signer-name {
   font-size: 32rpx; font-weight: 600; color: $pink;
 }
-.signer-name-input {
-  font-size: 32rpx; font-weight: 600; color: $pink;
-  border-bottom: 2rpx solid $pink; padding-bottom: 4rpx; min-width: 120rpx;
-  height: 44rpx; line-height: 44rpx;
-}
 .signer-text {
   font-size: 32rpx; color: #333; font-weight: 400;
+}
+.promise-today {
+  text-align: right;
+  margin-top: 24rpx;
+}
+.today-text {
+  font-size: 26rpx; color: #666;
 }
 .promise-body {
   display: block; font-size: 30rpx; color: #333; line-height: 1.8;

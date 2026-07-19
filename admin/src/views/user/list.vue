@@ -64,8 +64,9 @@
               <el-select v-model="filterForm.status" placeholder="全部" clearable style="width: 120px">
                 <el-option label="全部" :value="undefined" />
                 <el-option label="正常" :value="1" />
-                <el-option label="禁用" :value="0" />
-                <el-option label="待审核" :value="2" />
+                <el-option label="待审核" :value="0" />
+                <el-option label="未完善" :value="2" />
+                <el-option label="已禁用" :value="3" />
               </el-select>
             </el-form-item>
             <el-form-item label="实名认证">
@@ -217,9 +218,10 @@
         </el-form>
       </div>
 
-      <!-- 批量操作栏：选中用户后浮现，含批量禁用/导出/发送通知/打标签 -->
+      <!-- 批量操作栏：选中用户后浮现，含批量通过/禁用/导出/发送通知/打标签 -->
       <div class="batch-actions" v-if="selectedRows.length > 0">
         <span class="selected-count">已选择 {{ selectedRows.length }} 人</span>
+        <el-button type="success" size="small" @click="handleBatchApprove">批量审核通过</el-button>
         <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
         <el-button type="success" size="small" @click="handleExport" :loading="exportLoading">批量导出Excel</el-button>
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
@@ -422,9 +424,11 @@
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100" sortable="custom">
           <template #default="{ row }">
-            <el-tag v-if="row.status === 1" type="success" size="small">正常</el-tag>
-            <el-tag v-else-if="row.status === 2" type="warning" size="small">待审核</el-tag>
-            <el-tag v-else type="danger" size="small">禁用</el-tag>
+            <el-tag v-if="row.status === 0" type="warning" size="small">待审核</el-tag>
+            <el-tag v-else-if="row.status === 1" type="success" size="small">正常</el-tag>
+            <el-tag v-else-if="row.status === 2" size="small" type="info">未完善</el-tag>
+            <el-tag v-else-if="row.status === 3" type="danger" size="small">已禁用</el-tag>
+            <el-tag v-else size="small" type="info">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="eidCertStatus" label="实名认证" width="100">
@@ -2429,6 +2433,25 @@ async function handleNotifySubmit() {
   } catch (error) {
     console.error(error)
     ElMessage.error('发送通知失败')
+  }
+}
+
+async function handleBatchApprove() {
+  if (selectedRows.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(
+      `确定要审核通过选中的 ${selectedRows.value.length} 个用户吗？审核通过后用户将转为正常状态。`,
+      '批量审核通过',
+      { type: 'warning' }
+    )
+    const ids = selectedRows.value.map((r) => r.id)
+    await adminUsers.batchUpdateStatus(ids, 1)
+    ElMessage.success('批量审核通过成功')
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error(error)
+    }
   }
 }
 
