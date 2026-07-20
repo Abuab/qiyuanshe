@@ -23,13 +23,6 @@ onLaunch(() => {
   const userStore = useUserStore()
   userStore.checkVip()
 
-  // 初始化腾讯云 E证通 SDK（startEid 调用前必须先初始化）
-  try {
-    initEid()
-  } catch (e) {
-    logger.error('initEid failed:', e as any)
-  }
-
   // 加载系统配置（应用名称等）
   const systemStore = useSystemStore()
   systemStore.loadSystemConfig().then(() => {
@@ -45,6 +38,28 @@ onLaunch(() => {
       console.log('[分享]showShareMenu 开发工具跳过')
     },
   })
+
+  // 全局页面导航拦截：锁定用户（status=4）只允许留在首页，禁止进入其他页面
+  const NAV_BLACKLIST = ['/pages/index/index', '/pages/splash/index']
+  const blockNav = (url: string): boolean => {
+    if (useUserStore().userInfo?.status === 4 && !NAV_BLACKLIST.includes(url.split('?')[0])) {
+      uni.showToast({ title: '账号已锁定，请先确认脱单意向', icon: 'none', duration: 2000 })
+      return false
+    }
+    return true
+  }
+  uni.addInterceptor('navigateTo', { invoke(args: any) { return blockNav(args.url) } })
+  uni.addInterceptor('redirectTo', { invoke(args: any) { return blockNav(args.url) } })
+  uni.addInterceptor('reLaunch', { invoke(args: any) { return blockNav(args.url) } })
+
+  // 延迟初始化 E证通 SDK，避免阻塞冷启动（后续实名认证时才真正用到）
+  setTimeout(() => {
+    try {
+      initEid()
+    } catch (e) {
+      logger.error('initEid failed:', e as any)
+    }
+  }, 2000)
 })
 
 onShow((options: any) => {
@@ -56,16 +71,33 @@ onShow((options: any) => {
     return
   }
 
-  // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
-  // 冷启动首次 onShow：onLaunch 中已加载过，跳过避免重复请求造成超时
-  const systemStore = useSystemStore()
+  // 冷启动首次 onShow：onLaunch 中已加载配置，首页 refreshProfile 已处理用户信息，跳过重复加载
+  // 热启动（切回前台）时重新拉取
   if (isFirstShow) {
     isFirstShow = false
-  } else {
-    systemStore.loadSystemConfig().then(() => {
-      logger.setTag(systemStore.appName)
-    })
+    // 但用户资料仍需同步（首页 onShow 的 refreshProfile 可能未完成，且 onFirstShow 时 updateUserInfo
+    // 可保证 status 等字段及时反映后台变更，避免首页 popup 判定滞后）
+    const userStore = useUserStore()
+    if (userStore.isLoggedIn) {
+      get('/auth/profile').then((res: any) => {
+        if (res?.data) {
+          const p = res.data
+          userStore.updateUserInfo({
+            isVip: p.isVip,
+            vipExpireTime: p.vipExpireTime,
+            vipLevel: p.vipLevel,
+          })
+        }
+      }).catch(() => { /* 静默失败 */ })
+    }
+    return
   }
+
+  // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
+  const systemStore = useSystemStore()
+  systemStore.loadSystemConfig().then(() => {
+    logger.setTag(systemStore.appName)
+  })
 
   // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
   const userStore = useUserStore()

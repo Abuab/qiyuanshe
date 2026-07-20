@@ -109,7 +109,7 @@ export const useSystemStore = defineStore('system', () => {
     loadingPromise = (async () => {
       try {
         const res = await get<SystemConfig>('/system/config')
-        console.log('[SYSTEM] config res:', JSON.stringify(res))
+        console.log('[SYSTEM] config loaded, appName:', res?.appName)
         if (res) {
           splashText.value = res.splashText ?? splashText.value
           appName.value = res.appName ?? appName.value
@@ -133,7 +133,6 @@ export const useSystemStore = defineStore('system', () => {
           leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
           storeCert.value = res.storeCert ?? storeCert.value
           icons.value = res.icons ?? DEFAULT_ICONS
-          console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
           saveToStorage()
           initialLoadDone = true
         }

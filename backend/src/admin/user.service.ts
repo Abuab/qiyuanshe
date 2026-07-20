@@ -13,6 +13,7 @@ import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
+import { RedisService } from '../common/redis.service'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -67,6 +68,7 @@ export class AdminUserService {
     @InjectRepository(ProfileVisit)
     private readonly visitRepository: Repository<ProfileVisit>,
     private readonly dynamicService: DynamicService,
+    private readonly redis: RedisService,
   ) {}
 
   async list(filter: UserFilter) {
@@ -506,6 +508,8 @@ export class AdminUserService {
 
   async updateStatus(id: number, status: number) {
     await this.userRepository.update(id, { status })
+    // 清除用户推荐列表缓存，避免锁定/禁用用户仍出现在首页推荐中
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   async updateVip(id: number, level: number, days: number, packageName?: string) {
@@ -633,6 +637,8 @@ export class AdminUserService {
       }
     }
     await this.userRepository.update(ids, { status })
+    // 清除用户推荐列表缓存
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   async softDelete(id: number) {

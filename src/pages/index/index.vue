@@ -170,7 +170,7 @@
     <tab-bar />
 
     <!-- 悬浮按钮：问媒 / 测一测（由后台「首页浮动按钮配置」切换，即时生效） -->
-    <view class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
+    <view v-if="!showLoveIntent" class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
       <template v-if="isFloatTestMode">
         <text class="float-label float-label-test">{{ floatText }}</text>
       </template>
@@ -181,12 +181,12 @@
     </view>
 
     <!-- 一键回到顶部按钮 -->
-    <view v-if="showBackTop" class="float-backtop" @tap="scrollToTop">
+    <view v-if="showBackTop && !showLoveIntent" class="float-backtop" @tap="scrollToTop">
       <text class="backtop-arrow">↑</text>
     </view>
 
     <!-- 固定筛选栏：原始筛选栏滚出视野后固定到品牌栏下方 -->
-    <view v-if="showFixedFilter" class="filter-section-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
+    <view v-if="showFixedFilter && !showLoveIntent" class="filter-section-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
       <view class="filter-tabs">
         <view
           v-for="tab in filterTabs"
@@ -255,7 +255,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { get, put } from '@/utils/request'
+import { get } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
@@ -568,19 +568,10 @@ const handleLoveIntentNoNeed = () => {
   userStore.logout()
 }
 
-const handleLoveIntentSingle = async () => {
+const handleLoveIntentSingle = () => {
   showLoveIntent.value = false
-  // 调用后端接口解锁账号（status 4 → 1）
-  try {
-    await put('/users/unlock')
-    // 更新本地 store 中的状态，确保 Tab Bar 等守卫不再拦截
-    if (userStore.userInfo) {
-      userStore.userInfo.status = 1
-    }
-    handleMatchmakerFloat()
-  } catch (_) {
-    showToast('解锁失败，请重试')
-  }
+  // 仅关闭弹窗，不解锁账号；账号只能由管理员在后台解锁
+  handleMatchmakerFloat()
 }
 
 // 滚动事件：控制固定筛选栏和回到顶部按钮

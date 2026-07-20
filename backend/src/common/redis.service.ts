@@ -31,6 +31,25 @@ export class RedisService implements OnModuleDestroy {
     await this.getClient().del(key)
   }
 
+  /** 按通配符模式删除 key，如 v3:rec:* */
+  async delByPattern(pattern: string): Promise<number> {
+    const client = this.getClient()
+    let cursor = '0'
+    let totalDeleted = 0
+    do {
+      const [nextCursor, keys] = await client.scan(
+        cursor,
+        'MATCH', pattern,
+        'COUNT', 100,
+      )
+      cursor = nextCursor
+      if (keys.length > 0) {
+        totalDeleted += await client.del(...keys)
+      }
+    } while (cursor !== '0')
+    return totalDeleted
+  }
+
   async incr(key: string): Promise<number> {
     return this.getClient().incr(key)
   }
