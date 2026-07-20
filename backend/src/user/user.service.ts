@@ -1130,6 +1130,14 @@ export class UserService {
       // 清除推荐缓存
       try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
 
+      // 标记 real_name_identities 状态为已注销（保留哈希用于后续去重）
+      try {
+        await queryRunner.query(
+          'UPDATE real_name_identities SET status = 1 WHERE userId = ?',
+          [userId],
+        )
+      } catch (_) {}
+
       await queryRunner.commitTransaction()
       this.logger.log(`用户 ${userId} 注销：已清理关联数据`)
     } catch (error) {

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Query,
   UseGuards,
@@ -14,6 +15,41 @@ import { EidAuthService } from './eid-auth.service'
 @Controller('eid-auth')
 export class EidAuthController {
   constructor(private readonly service: EidAuthService) {}
+
+  /** 实名认证前检查身份证号是否已被绑定 */
+  @Post('check-duplicate')
+  @UseGuards(JwtAuthGuard)
+  async checkDuplicate(@Request() req: any, @Body() body: { idCard?: string }) {
+    const userId = req.user.id || req.user.sub
+    if (!body?.idCard) {
+      return Result.error('请提供身份证号')
+    }
+    try {
+      const data = await this.service.checkIdCardDuplicate(userId, body.idCard)
+      return Result.success(data)
+    } catch (e: any) {
+      return Result.error(e?.message || '检查失败')
+    }
+  }
+
+  /** 二次认证：已注销用户支付 1 元后复用历史身份信息完成认证 */
+  @Put('re-verify')
+  @UseGuards(JwtAuthGuard)
+  async reVerify(@Request() req: any, @Body() body: { idCard?: string }) {
+    const userId = req.user.id || req.user.sub
+    if (!body?.idCard) {
+      return Result.error('请提供身份证号')
+    }
+    try {
+      const data = await this.service.reVerifyAccount(userId, body.idCard)
+      if (data.success) {
+        return Result.success(null, data.message)
+      }
+      return Result.error(data.message)
+    } catch (e: any) {
+      return Result.error(e?.message || '二次认证失败')
+    }
+  }
 
   /** 创建认证订单：返回 E证通 EidToken 供小程序 SDK 调起 */
   @Post('create-order')

@@ -1,9 +1,11 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Optional } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { User } from '../entities/User'
 import { UserAuth } from '../entities/UserAuth'
 import { RealNameIdentity } from '../entities/RealNameIdentity'
+import { SystemService } from '../system/system.service'
+import { NotifyChannelService } from '../admin/notify-channel.service'
 import * as crypto from 'crypto'
 import {
   callFaceIdApi,
@@ -30,6 +32,10 @@ export class EidAuthService {
     @InjectRepository(UserAuth)
     private readonly userAuthRepo: Repository<UserAuth>,
     private readonly entityManager: EntityManager,
+    @Optional()
+    private readonly systemService?: SystemService,
+    @Optional()
+    private readonly notifyChannelService?: NotifyChannelService,
   ) {}
 
   /**
@@ -118,7 +124,7 @@ export class EidAuthService {
           }
 
           // 同步写入 real_name_identities 表（新表，结构化存储）
-          const idCardHash = crypto.createHash('sha256').update(identityInfo.idCard).digest('hex')
+          const idCardHash = crypto.createHash('sha256').update(identityInfo.idCard.trim()).digest('hex')
           const existingIdentity = await this.entityManager
             .createQueryBuilder(RealNameIdentity, 'rni')
             .where('rni.userId = :userId', { userId })
@@ -196,6 +202,209 @@ export class EidAuthService {
     // 以权威查询结果为准
     await this.queryResult(user.id)
     return { ok: true }
+  }
+
+  /**
+   * 检查身份证号是否已被其他账号实名认证（前端创建认证订单前调用）
+   * 返回状态：
+   * - canProceed: true  → 无冲突，可继续创建 E证通订单
+   * - canProceed: false → 需根据 reason 处理
+   *   - reason='duplicate_active'：已有激活账号绑定 → 拒绝
+   *   - reason='requires_reauth'：历史已注销账号绑定 → 需付费二次认证
+   */
+  async checkIdCardDuplicate(
+    userId: number,
+    idCard: string,
+  ): Promise<{
+    canProceed: boolean
+    reason?: string
+    message?: string
+    duplicateUserId?: number
+  }> {
+    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+
+    // 查找使用相同身份证号的所有记录（排除本人）
+    const identities = await this.entityManager
+      .createQueryBuilder(RealNameIdentity, 'rni')
+      .where('rni.idCardHash = :hash', { hash: idCardHash })
+      .andWhere('rni.userId != :userId', { userId })
+      .getMany()
+
+    if (identities.length === 0) {
+      return { canProceed: true }
+    }
+
+    // 检查关联的 user 状态
+    const relatedUserIds = identities.map(i => i.userId)
+    const relatedUsers = await this.userRepo.find({
+      where: relatedUserIds.map(id => ({ id })),
+      select: ['id', 'nickname', 'isDeleted', 'status'],
+    })
+
+    const activeUsers = relatedUsers.filter(u => u.isDeleted === 0)
+
+    // 场景 A：有激活的账号已绑定 → 拒绝
+    if (activeUsers.length > 0) {
+      const activeNickname = activeUsers[0].nickname || `UID:${activeUsers[0].id}`
+      this.logger.warn(
+        `用户 ${userId} 身份证号已绑定激活账号 ${activeUsers[0].id}（${activeNickname}），拒绝认证`,
+      )
+      return {
+        canProceed: false,
+        reason: 'duplicate_active',
+        message: `该身份证已绑定其他账号（${activeNickname}），如有疑问请联系客服`,
+        duplicateUserId: activeUsers[0].id,
+      }
+    }
+
+    // 场景 B：关联用户记录全部缺失或均已注销 → 阻止直接认证（需走二次认证）
+    // 关联用户缺失通常意味着已被硬删除或数据异常，为安全起见按二次认证处理
+    const reAuthEnabled = await this.getReAuthEnabled()
+    if (!reAuthEnabled) {
+      return {
+        canProceed: false,
+        reason: 'duplicate_active',
+        message: '该身份证已绑定其他账号，如有疑问请联系客服',
+      }
+    }
+    if (identities.length >= 1) {
+      this.sendDuplicateAlert(userId, identities, relatedUsers).catch(e =>
+        this.logger.warn('发送身份证多账号预警失败: ' + e?.message),
+      )
+    }
+    return {
+      canProceed: false,
+      reason: 'requires_reauth',
+      message: '检测到您之前已完成实名认证，重新验证需支付 1 元',
+    }
+  }
+
+  /**
+   * 二次认证：已注销用户支付 1 元后，复用历史 real_name_identities 记录完成认证。
+   * 不再调用 E证通，直接将身份信息绑定到当前用户。
+   */
+  async reVerifyAccount(
+    userId: number,
+    idCard: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+
+    // 查找历史记录
+    const historicIdentity = await this.entityManager
+      .createQueryBuilder(RealNameIdentity, 'rni')
+      .where('rni.idCardHash = :hash', { hash: idCardHash })
+      .andWhere('rni.status = 0')
+      .andWhere('rni.userId != :userId', { userId })
+      .getOne()
+
+    if (!historicIdentity) {
+      return { success: false, message: '未找到历史认证记录' }
+    }
+
+    // 检查对应的历史用户是否已注销
+    const historicUser = await this.userRepo.findOne({
+      where: { id: historicIdentity.userId, isDeleted: 1 },
+    })
+    if (!historicUser) {
+      return { success: false, message: '该身份证仍绑定在其他激活账号上' }
+    }
+
+    // 将历史身份信息写入当前用户
+    const now = new Date()
+    const existingIdentity = await this.entityManager
+      .createQueryBuilder(RealNameIdentity, 'rni')
+      .where('rni.userId = :userId', { userId })
+      .getOne()
+    if (existingIdentity) {
+      await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
+        realName: historicIdentity.realName,
+        idCard: historicIdentity.idCard,
+        idCardHash,
+        eidBizSeqNo: `reauth_${Date.now()}`,
+        verifiedAt: now,
+        status: 0,
+      })
+    } else {
+      await this.entityManager.insert(RealNameIdentity, {
+        userId,
+        realName: historicIdentity.realName,
+        idCard: historicIdentity.idCard,
+        idCardHash,
+        eidBizSeqNo: `reauth_${Date.now()}`,
+        verifiedAt: now,
+        status: 0,
+      })
+    }
+
+    // 更新 users 表认证状态
+    await this.userRepo.update(userId, {
+      eidCertStatus: EID_STATUS.DONE,
+      eidCertTime: now,
+      isRealName: 1,
+    })
+
+    // 写入 user_auths 表
+    const existing = await this.userAuthRepo.findOne({
+      where: { userId, authType: 'realname' },
+    })
+    if (existing) {
+      existing.authData = { realName: historicIdentity.realName, idCard: historicIdentity.idCard }
+      existing.status = 1
+      await this.userAuthRepo.save(existing)
+    } else {
+      await this.userAuthRepo.save(
+        this.userAuthRepo.create({
+          userId,
+          authType: 'realname',
+          status: 1,
+          authData: { realName: historicIdentity.realName, idCard: historicIdentity.idCard },
+        }),
+      )
+    }
+
+    this.logger.log(`用户 ${userId} 二次认证成功，复用历史身份记录 ${historicIdentity.id}`)
+    return { success: true, message: '二次认证成功' }
+  }
+
+  /**
+   * 读取配置：是否启用二次认证（realNameReAuthEnabled）
+   */
+  private async getReAuthEnabled(): Promise<boolean> {
+    try {
+      if (!this.systemService) return true // 默认启用
+      const configs = await this.systemService.getAllConfigs()
+      return configs.basic?.realNameReAuthEnabled !== false
+    } catch {
+      return true
+    }
+  }
+
+  /**
+   * 发送多账号使用同一身份证的预警通知
+   */
+  private async sendDuplicateAlert(
+    currentUserId: number,
+    identities: RealNameIdentity[],
+    relatedUsers: User[],
+  ) {
+    if (!this.notifyChannelService) return
+    const currentUser = await this.userRepo.findOne({ where: { id: currentUserId } })
+    if (!currentUser) return
+
+    const relatedInfo = identities
+      .map(ident => {
+        const user = relatedUsers.find(u => u.id === ident.userId)
+        return `UID:${ident.userId}(${user?.nickname || '?'}, 已注销=${user?.isDeleted})`
+      })
+      .join('、')
+
+    await this.notifyChannelService.sendAuditNotify({
+      type: 'realname_duplicate',
+      content: `【实名认证预警】身份证被多账号使用\n- 当前用户：UID:${currentUserId}(${currentUser.nickname || '?'})\n- 历史账号：${relatedInfo}`,
+      userId: currentUserId,
+      userNickname: currentUser.nickname,
+      source: 'eid-auth',
+    })
   }
 
   /**

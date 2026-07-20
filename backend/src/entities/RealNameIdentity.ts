@@ -48,6 +48,10 @@ export class RealNameIdentity {
   @Column({ type: 'datetime', nullable: true })
   verifiedAt: Date
 
+  /** 认证记录状态：0=有效 1=已注销（用户注销后标记，用于去重） */
+  @Column({ type: 'tinyint', default: 0 })
+  status: number
+
   @CreateDateColumn()
   createdAt: Date
 

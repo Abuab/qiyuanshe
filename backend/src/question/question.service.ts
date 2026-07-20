@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, Optional } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, Optional, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource, In } from 'typeorm'
+import { readdirSync, readFileSync, existsSync } from 'fs'
+import { resolve } from 'path'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
@@ -11,6 +13,7 @@ import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
+import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 
 /** 答案状态 */
 export const ANSWER_STATUS = {
@@ -46,7 +49,7 @@ export interface HotQuestionWithAvatars {
 }
 
 @Injectable()
-export class QuestionService {
+export class QuestionService implements OnModuleInit {
   constructor(
     @InjectRepository(HotQuestion)
     private readonly questionRepository: Repository<HotQuestion>,
@@ -69,6 +72,55 @@ export class QuestionService {
     @Optional()
     private readonly notifyChannelService?: NotifyChannelService,
   ) {}
+
+  /** DFA 敏感词过滤器（Trie 树多模式匹配，O(N) 复杂度） */
+  private sensitiveFilter = new SensitiveWordFilter()
+
+  async onModuleInit() {
+    await this.loadSensitiveWords()
+  }
+
+  /** 加载敏感词库（本地 config/sensitive-words/ 目录） */
+  private async loadSensitiveWords(): Promise<void> {
+    try {
+      const candidateDirs = [
+        resolve(process.cwd(), 'config/sensitive-words'),
+        resolve(__dirname, '../../../config/sensitive-words'),
+        resolve(__dirname, '../../../../config/sensitive-words'),
+      ]
+      const wordsDir = candidateDirs.find(dir => existsSync(dir))
+      if (wordsDir) {
+        const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
+        if (txtFiles.length > 0) {
+          const wordSet = new Set<string>()
+          for (const file of txtFiles) {
+            try {
+              const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
+              raw.split('\n')
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .forEach(word => wordSet.add(word))
+            } catch { /* 单个文件读取失败跳过 */ }
+          }
+          if (wordSet.size > 0) {
+            this.sensitiveFilter.build(Array.from(wordSet))
+            console.log(`[QuestionService] 敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
+            return
+          }
+        }
+      }
+    } catch (e: any) {
+      console.warn('[QuestionService] 敏感词库加载失败，使用硬编码兜底:', e?.message)
+    }
+    // 兜底：硬编码基础词库
+    this.sensitiveFilter.build([
+      '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
+      '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
+      '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
+      '加微信', '加我微信', '微商', '刷单',
+    ])
+    console.log('[QuestionService] 使用硬编码敏感词库兜底')
+  }
 
   async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {
     const skip = (page - 1) * limit
@@ -409,20 +461,15 @@ export class QuestionService {
   }
 
   /**
-   * 本地敏感词检查
+   * 本地敏感词检查（使用 DFA Trie 树 51K+ 词库）
+   * - 命中：直接拒绝
+   * - 未命中：进入待审核状态
    */
   private checkLocalBannedContent(content: string): 'pass' | 'reject' | 'review' {
-    const bannedKeywords = [
-      '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
-      '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
-      '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
-      '加微信', '加我微信', '微商', '刷单',
-    ]
-    const text = content.replace(/\s+/g, '').toLowerCase()
-    for (const kw of bannedKeywords) {
-      if (text.includes(kw.toLowerCase())) {
-        return 'reject'
-      }
+    const hit = this.sensitiveFilter.check(content)
+    if (hit) {
+      console.log(`[QuestionService] 敏感词命中: ${hit}`)
+      return 'reject'
     }
     return 'review'
   }
