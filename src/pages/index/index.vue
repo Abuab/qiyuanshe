@@ -564,7 +564,8 @@ const onSelectMatchmaker = (matchmaker: any) => {
 // 脱单需求确认弹窗事件
 const handleLoveIntentNoNeed = () => {
   showLoveIntent.value = false
-  uni.redirectTo({ url: '/pages/guest-guide/index' })
+  // 用户明确表示暂不需要脱单服务，直接登出以避免 guest-guide → 首页 → 弹窗的死循环
+  userStore.logout()
 }
 
 const handleLoveIntentSingle = async () => {

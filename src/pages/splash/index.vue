@@ -27,9 +27,12 @@ const systemStore = useSystemStore()
 const splashText = ref('正在为您寻找心仪的对象...')
 let navigationTimer: ReturnType<typeof setTimeout> | null = null
 
-onMounted(async () => {
-  await systemStore.loadSystemConfig()
+onMounted(() => {
+  // 优先使用本地缓存的配置（store 初始化时已从 storage 恢复），避免冷启动时阻塞导航
   splashText.value = systemStore.splashText || '正在为您寻找心仪的对象...'
+
+  // 后台异步拉取最新配置（不阻塞页面跳转），App.vue onLaunch 中也会同步触发
+  systemStore.loadSystemConfig()
 
   // 无论是否登录，直接进入首页（首次用户可预览，无需同意协议）
   startMainNavigation()

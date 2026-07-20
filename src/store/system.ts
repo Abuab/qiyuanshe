@@ -99,41 +99,52 @@ export const useSystemStore = defineStore('system', () => {
   let aiConfigLoadedAt = 0
   const AI_CONFIG_CACHE_MS = 5 * 60 * 1000 // 5分钟缓存过期
   let initialLoadDone = false
+  /** 防止并发重复请求：同一时刻只允许一个 loadSystemConfig 进行中 */
+  let loadingPromise: Promise<void> | null = null
 
   const loadSystemConfig = async () => {
-    try {
-      const res = await get<SystemConfig>('/system/config')
-      console.log('[SYSTEM] config res:', JSON.stringify(res))
-      if (res) {
-        splashText.value = res.splashText ?? splashText.value
-        appName.value = res.appName ?? appName.value
-        shareTitle.value = res.shareTitle ?? shareTitle.value
-        shareDesc.value = res.shareDesc ?? shareDesc.value
-        matchmakers.value = res.matchmakers ?? matchmakers.value
-        matchmakerHiText.value = res.matchmakerHiText ?? matchmakerHiText.value
-        matchmakerShowHi.value = res.matchmakerShowHi !== undefined ? res.matchmakerShowHi : matchmakerShowHi.value
-        matchmakerButtonText.value = res.matchmakerButtonText ?? matchmakerButtonText.value
-        quickEntryNames.value = res.quickEntryNames ?? quickEntryNames.value
-        followEmptyText.value = res.followEmptyText ?? followEmptyText.value
-        followerEmptyText.value = res.followerEmptyText ?? followerEmptyText.value
-        redLineTerm.value = res.redLineTerm ?? redLineTerm.value
-        vipCardTexts.value = res.vipCardTexts ?? vipCardTexts.value
-        matchmakerSafetyLabel.value = res.matchmakerSafetyLabel ?? matchmakerSafetyLabel.value
-        matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
-        showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
-        chatEnabled.value = res.chatEnabled !== undefined ? res.chatEnabled : chatEnabled.value
-        vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
-        defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
-        leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
-        storeCert.value = res.storeCert ?? storeCert.value
-        icons.value = res.icons ?? DEFAULT_ICONS
-        console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
-        saveToStorage()
-        initialLoadDone = true
+    // 已有正在进行的请求，直接复用，避免并发重复调用
+    if (loadingPromise) return loadingPromise
+
+    loadingPromise = (async () => {
+      try {
+        const res = await get<SystemConfig>('/system/config')
+        console.log('[SYSTEM] config res:', JSON.stringify(res))
+        if (res) {
+          splashText.value = res.splashText ?? splashText.value
+          appName.value = res.appName ?? appName.value
+          shareTitle.value = res.shareTitle ?? shareTitle.value
+          shareDesc.value = res.shareDesc ?? shareDesc.value
+          matchmakers.value = res.matchmakers ?? matchmakers.value
+          matchmakerHiText.value = res.matchmakerHiText ?? matchmakerHiText.value
+          matchmakerShowHi.value = res.matchmakerShowHi !== undefined ? res.matchmakerShowHi : matchmakerShowHi.value
+          matchmakerButtonText.value = res.matchmakerButtonText ?? matchmakerButtonText.value
+          quickEntryNames.value = res.quickEntryNames ?? quickEntryNames.value
+          followEmptyText.value = res.followEmptyText ?? followEmptyText.value
+          followerEmptyText.value = res.followerEmptyText ?? followerEmptyText.value
+          redLineTerm.value = res.redLineTerm ?? redLineTerm.value
+          vipCardTexts.value = res.vipCardTexts ?? vipCardTexts.value
+          matchmakerSafetyLabel.value = res.matchmakerSafetyLabel ?? matchmakerSafetyLabel.value
+          matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
+          showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
+          chatEnabled.value = res.chatEnabled !== undefined ? res.chatEnabled : chatEnabled.value
+          vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
+          defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
+          leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
+          storeCert.value = res.storeCert ?? storeCert.value
+          icons.value = res.icons ?? DEFAULT_ICONS
+          console.log('[SYSTEM] icons set:', JSON.stringify(icons.value))
+          saveToStorage()
+          initialLoadDone = true
+        }
+      } catch (e) {
+        console.error('[SystemStore] Failed to load system config:', e)
+      } finally {
+        loadingPromise = null
       }
-    } catch (e) {
-      console.error('[SystemStore] Failed to load system config:', e)
-    }
+    })()
+
+    return loadingPromise
   }
 
   /** 加载选项字典（职业、我的特点、希望TA） */
