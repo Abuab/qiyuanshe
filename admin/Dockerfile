@@ -10,8 +10,8 @@ WORKDIR /app
 # 复制 package 文件
 COPY package*.json ./
 
-# 严格按 lock 文件安装依赖（可复现构建）
-RUN npm ci
+# 安装依赖
+RUN npm install
 
 # 复制源代码
 COPY . .
