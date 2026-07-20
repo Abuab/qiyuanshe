@@ -119,7 +119,6 @@ install_docker_compose() {
 
     # 下载最新版本的 Docker Compose
     local latest_version=$(curl -s https://api.github.com/repos/docker/compose/releases/latest 2>/dev/null | grep -oP '"tag_name": "\K[^"]+' || echo "v2.24.0")
-    local version="${latest_version#v}"
 
     curl -L "https://github.com/docker/compose/releases/download/${latest_version}/docker-compose-$(uname -s)-$(uname -m)" \
         -o /usr/local/bin/docker-compose 2>/dev/null || \

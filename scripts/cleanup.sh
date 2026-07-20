@@ -62,17 +62,9 @@ cleanup_app_logs() {
         find "$app_logs_dir" -type d -empty -delete 2>/dev/null || true
     fi
 
-    # 清理 Docker 容器日志
-    # 注意：直接截断 Docker 内部日志文件可能导致 Docker 日志驱动状态不一致
-    # 推荐在 docker-compose.yml 中配置日志轮转（max-size / max-file），而非手动截断
-    log_info "清理 Docker 容器日志..."
-    for container in $(docker ps --format '{{.Names}}' 2>/dev/null); do
-        docker inspect --format='{{.LogPath}}' "$container" 2>/dev/null | while IFS= read -r log_file; do
-            if [ -n "$log_file" ] && [ -f "$log_file" ]; then
-                : > "$log_file" 2>/dev/null && log_info "已清理容器 $container 的日志" || true
-            fi
-        done
-    done
+    # Docker 容器日志轮转已在 docker-compose.yml 中配置（max-size: 10m / max-file: 3）
+    # 无需手动截断，避免与 Docker 日志驱动状态不一致
+    log_info "Docker 容器日志轮转由 docker-compose.yml 管理，跳过手动清理"
 
     if [ $deleted_count -gt 0 ]; then
         log_success "已清理 $deleted_count 个应用日志文件"
