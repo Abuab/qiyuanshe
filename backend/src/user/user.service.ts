@@ -640,12 +640,14 @@ export class UserService {
         .createQueryBuilder('v')
         .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
         .where('v.userId = :userId', { userId })
+        .andWhere('v.visitorUserId != :excludeSelf', { excludeSelf: userId })
         .getRawOne()
         .then(r => Number(r?.cnt) || 0),
       this.visitRepository
         .createQueryBuilder('v')
         .select('COUNT(DISTINCT v.userId)', 'cnt')
         .where('v.visitorUserId = :userId', { userId })
+        .andWhere('v.userId != :excludeSelf2', { excludeSelf2: userId })
         .getRawOne()
         .then(r => Number(r?.cnt) || 0),
     ])
@@ -920,7 +922,7 @@ export class UserService {
     const pageNum = Math.max(1, parseInt(page as any) || 1)
     const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
 
-    // 子查询：我浏览过的每个用户的最新一次浏览时间（排除已注销用户）
+    // 子查询：我浏览过的每个用户的最新一次浏览时间（排除已注销用户 & 自身）
     const subQuery = this.visitRepository
       .createQueryBuilder('v')
       .select('v.userId', 'targetUserId')
@@ -928,6 +930,7 @@ export class UserService {
       .addSelect('COUNT(v.id)', 'viewCount')
       .innerJoin('v.user', 'u')
       .where('v.visitorUserId = :userId', { userId })
+      .andWhere('v.userId != :selfId', { selfId: userId })
       .andWhere('u.isDeleted = :isDel', { isDel: 0 })
       .andWhere('u.status = :status', { status: 1 })
       .groupBy('v.userId')
@@ -937,6 +940,7 @@ export class UserService {
       .select('COUNT(DISTINCT v.userId)', 'cnt')
       .innerJoin('v.user', 'u')
       .where('v.visitorUserId = :userId', { userId })
+      .andWhere('v.userId != :selfId2', { selfId2: userId })
       .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
       .andWhere('u.status = :status2', { status2: 1 })
       .getRawOne()
@@ -1002,6 +1006,7 @@ export class UserService {
       .addSelect('COUNT(v.id)', 'viewCount')
       .innerJoin('v.visitorUser', 'u')
       .where('v.userId = :userId', { userId })
+      .andWhere('v.visitorUserId != :selfId', { selfId: userId })
       .andWhere('u.isDeleted = :isDel', { isDel: 0 })
       .andWhere('u.status = :status', { status: 1 })
       .groupBy('v.visitorUserId')
@@ -1011,6 +1016,7 @@ export class UserService {
       .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
       .innerJoin('v.visitorUser', 'u')
       .where('v.userId = :userId', { userId })
+      .andWhere('v.visitorUserId != :selfId2', { selfId2: userId })
       .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
       .andWhere('u.status = :status2', { status2: 1 })
       .getRawOne()

@@ -1122,16 +1122,22 @@ export class AdminUserService {
   // ===== 浏览记录管理 =====
 
   async getUserViewDetail(userId: number, page = 1, limit = 20) {
-    const result = await this.visitRepository
-      .createQueryBuilder('v')
-      .leftJoinAndSelect('v.user', 'targetUser')
-      .where('v.visitorUserId = :userId', { userId })
-      .orderBy('v.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany()
-
-    const total = await this.visitRepository.count({ where: { visitorUserId: userId } })
+    const [result, total] = await Promise.all([
+      this.visitRepository
+        .createQueryBuilder('v')
+        .leftJoinAndSelect('v.user', 'targetUser')
+        .where('v.visitorUserId = :userId', { userId })
+        .andWhere('v.userId != :selfId', { selfId: userId })
+        .orderBy('v.createdAt', 'DESC')
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getMany(),
+      this.visitRepository
+        .createQueryBuilder('v')
+        .where('v.visitorUserId = :userId', { userId })
+        .andWhere('v.userId != :selfId2', { selfId2: userId })
+        .getCount(),
+    ])
 
     const list = result.map(v => ({
       id: v.id,
@@ -1155,6 +1161,7 @@ export class AdminUserService {
       .addSelect('MAX(v.createdAt)', 'lastViewedAt')
       .addSelect('COUNT(v.id)', 'viewCount')
       .where('v.visitorUserId = :userId', { userId })
+      .andWhere('v.userId != :selfId', { selfId: userId })
       .groupBy('v.userId')
       .addGroupBy('targetUser.nickname')
       .addGroupBy('targetUser.avatar')
@@ -1180,6 +1187,7 @@ export class AdminUserService {
       .addSelect('MAX(v.createdAt)', 'lastVisitedAt')
       .addSelect('COUNT(v.id)', 'viewCount')
       .where('v.userId = :userId', { userId })
+      .andWhere('v.visitorUserId != :selfId', { selfId: userId })
       .groupBy('v.visitorUserId')
       .addGroupBy('visitorUser.nickname')
       .addGroupBy('visitorUser.avatar')

@@ -15,6 +15,9 @@ import { initEid } from '@/mp_ecard_sdk/main'
 // eID 数字身份小程序 appId（用于识别从 E证通返回的场景）
 const EID_APPID = 'wx0e2cb0b052a91c92'
 
+// 冷启动时 onLaunch 后立刻触发 onShow，防止重复请求
+let launched = false
+
 onLaunch(() => {
   logger.info('App Launch')
   const userStore = useUserStore()
@@ -42,6 +45,8 @@ onLaunch(() => {
       console.log('[分享]showShareMenu 开发工具跳过')
     },
   })
+
+  launched = true
 })
 
 onShow((options: any) => {
@@ -54,10 +59,13 @@ onShow((options: any) => {
   }
 
   // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
+  // 冷启动时 onLaunch 已加载过，跳过本次避免重复请求造成超时
   const systemStore = useSystemStore()
-  systemStore.loadSystemConfig().then(() => {
-    logger.setTag(systemStore.appName)
-  })
+  if (launched) {
+    systemStore.loadSystemConfig().then(() => {
+      logger.setTag(systemStore.appName)
+    })
+  }
 
   // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
   const userStore = useUserStore()

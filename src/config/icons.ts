@@ -32,7 +32,7 @@ export const icons = {
     successCouple: '/static/couple.png',
   },
   common: {
-    defaultAvatar: '/static/default-avatar.png',
+    defaultAvatar: '/static/icons/default_avatar.png',
     heart: '/static/heart.png',
   },
 } as const

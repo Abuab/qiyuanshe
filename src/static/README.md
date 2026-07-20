@@ -3,7 +3,7 @@
 ## 素材目录结构
 ```
 static/
-├── default-avatar.png          # 默认头像
+├── default-avatar.png          # 默认头像（已迁移至 static/icons/default_avatar.png）
 ├── heart.png                   # 开场爱心动画图标
 ├── matchmaker.png              # 红娘悬浮按钮图标
 └── tabbar/
