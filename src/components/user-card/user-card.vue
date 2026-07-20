@@ -22,7 +22,7 @@
           <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
-          <text v-if="voiceEnabled && user.hasVoice" class="voice-icon">🎤</text>
+          <text v-if="voiceEnabled && user.hasVoice" class="voice-tag">语音</text>
         </view>
         <view v-if="user.isRealName" class="real-name-badge">
           <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />
@@ -484,10 +484,14 @@ const onLike = async () => {
   100% { transform: scale(1); }
 }
 
-.voice-icon {
-  margin-left: 8rpx;
-  display: inline-flex;
-  align-items: center;
+.voice-tag {
+  font-size: 18rpx;
+  color: #fff;
+  background: #FF9500;
+  padding: 2rpx 8rpx;
+  border-radius: 6rpx;
   flex-shrink: 0;
+  margin-left: 6rpx;
+  line-height: 1.4;
 }
 </style>

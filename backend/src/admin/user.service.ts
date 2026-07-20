@@ -912,6 +912,8 @@ export class AdminUserService {
     }
 
     await this.userRepository.update(id, safeData)
+    // 清除推荐列表缓存，确保用户资料变更后首页列表及时更新
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   /** 重新生成用户照片动态（用于修复历史数据） */

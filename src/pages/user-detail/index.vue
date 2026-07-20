@@ -18,7 +18,7 @@
 
       <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
-        <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px' }">
+        <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px', height: `calc(50vh + ${frostTotalHeight}px)` }">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
@@ -900,7 +900,8 @@ const formatCityDistrict = (address: string): string => {
 async function fetchVoiceEnabled() {
   try {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
-    if (res.code === 0 && res.data) voiceEnabled.value = res.data.value !== 'false'
+    // request() 已解包 result.data，res 直接是 { value: 'true' } 等
+    if (res) voiceEnabled.value = res.value !== 'false'
   } catch { voiceEnabled.value = true }
 }
 
@@ -942,8 +943,9 @@ async function fetchVoiceIntro() {
   if (!voiceEnabled.value) return
   try {
     const res: any = await request({ url: `/users/${userId.value}/voice-intro`, method: 'GET' })
-    if (res.code === 0 && res.data) voiceData.value = res.data
-  } catch { /* 404 不显示 */ }
+    // request() 已解包 result.data，res 直接是 { voiceUrl, duration, auditStatus }
+    if (res) voiceData.value = res
+  } catch { /* 无语音数据不显示 */ }
 }
 
 onMounted(async () => {
