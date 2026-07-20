@@ -85,8 +85,8 @@
               type="primary"
               size="large"
               :loading="loading"
+              native-type="submit"
               class="login-button"
-              @click="handleLogin"
             >
               {{ loading ? '登录中...' : '登 录' }}
             </el-button>
