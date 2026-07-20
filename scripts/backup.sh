@@ -46,7 +46,9 @@ mkdir -p "$(dirname "$LOG_FILE")"
 # 加载环境变量
 load_env() {
     if [ -f "${PROJECT_DIR}/.env" ]; then
-        export $(grep -v '^#' "${PROJECT_DIR}/.env" | xargs)
+        set -a
+        source "${PROJECT_DIR}/.env"
+        set +a
     fi
 }
 
@@ -64,7 +66,7 @@ backup_database() {
     fi
 
     # 执行备份
-    if docker-compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql mysqldump \
+    if docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql mysqldump \
         -u root \
         -p"${MYSQL_ROOT_PASSWORD}" \
         --single-transaction \

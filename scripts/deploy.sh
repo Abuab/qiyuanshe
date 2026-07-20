@@ -53,9 +53,9 @@ check_docker() {
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker compose &> /dev/null; then
         log_error "Docker Compose 未安装，请先安装"
-        echo "安装命令：apt install docker-compose"
+        echo "安装命令：apt install docker compose"
         exit 1
     fi
 
@@ -72,7 +72,9 @@ load_env() {
     log_info "加载环境变量..."
 
     if [ -f .env ]; then
-        export $(grep -v '^#' .env | xargs)
+        set -a
+        source .env
+        set +a
         log_success "环境变量加载成功"
     else
         if [ -f .env.example ]; then
@@ -96,7 +98,7 @@ backup_database() {
 
     BACKUP_FILE="${BACKUP_DIR}/lingtong_$(date +%Y%m%d_%H%M%S).sql"
 
-    if docker-compose exec -T mysql mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --single-transaction --routines --triggers lingtong_match > "$BACKUP_FILE" 2>/dev/null; then
+    if docker compose exec -T mysql mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --single-transaction --routines --triggers lingtong_match > "$BACKUP_FILE" 2>/dev/null; then
         # 压缩备份文件
         gzip "$BACKUP_FILE"
         BACKUP_FILE="${BACKUP_FILE}.gz"
@@ -137,10 +139,10 @@ build_and_start() {
     fi
 
     # 停止现有容器（保留数据卷）
-    docker-compose down --remove-orphans 2>/dev/null || true
+    docker compose down --remove-orphans 2>/dev/null || true
 
     # 构建并启动容器
-    docker-compose up -d --build
+    docker compose up -d --build
 
     log_success "容器启动成功"
 }
@@ -158,7 +160,7 @@ health_check() {
     # 检查 MySQL
     log_info "检查 MySQL..."
     for i in {1..30}; do
-        if docker-compose exec -T mysql mysqladmin ping -h localhost -u root -p"${MYSQL_ROOT_PASSWORD}" &> /dev/null; then
+        if docker compose exec -T mysql mysqladmin ping -h localhost -u root -p"${MYSQL_ROOT_PASSWORD}" &> /dev/null; then
             log_success "MySQL 运行正常"
             break
         fi
@@ -172,7 +174,7 @@ health_check() {
     # 检查 Redis
     log_info "检查 Redis..."
     for i in {1..30}; do
-        if docker-compose exec -T redis redis-cli -a "${REDIS_PASSWORD}" ping &> /dev/null; then
+        if docker compose exec -T redis redis-cli -a "${REDIS_PASSWORD}" ping &> /dev/null; then
             log_success "Redis 运行正常"
             break
         fi
@@ -204,7 +206,7 @@ show_result() {
     echo "============================================="
     echo "           部署完成！服务状态："
     echo "============================================="
-    docker-compose ps
+    docker compose ps
 
     echo ""
     echo "============================================="
@@ -225,9 +227,9 @@ show_result() {
     echo "============================================="
     echo "           常用命令："
     echo "============================================="
-    echo "查看日志: docker-compose logs -f [服务名]"
-    echo "重启服务: docker-compose restart [服务名]"
-    echo "停止服务: docker-compose down"
+    echo "查看日志: docker compose logs -f [服务名]"
+    echo "重启服务: docker compose restart [服务名]"
+    echo "停止服务: docker compose down"
     echo "============================================="
 }
 

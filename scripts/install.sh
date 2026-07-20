@@ -110,8 +110,8 @@ install_docker() {
 install_docker_compose() {
     log_info "检查 Docker Compose..."
 
-    if command -v docker-compose &> /dev/null; then
-        log_success "Docker Compose 已安装: $(docker-compose --version)"
+    if command -v docker compose &> /dev/null; then
+        log_success "Docker Compose 已安装: $(docker compose --version)"
         return 0
     fi
 
@@ -129,7 +129,7 @@ install_docker_compose() {
     chmod +x /usr/local/bin/docker-compose
     ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-    log_success "Docker Compose 安装完成: $(docker-compose --version)"
+    log_success "Docker Compose 安装完成: $(docker compose --version)"
 }
 
 # 创建项目目录结构
@@ -170,11 +170,11 @@ generate_env() {
         cp "$PROJECT_DIR/.env.example" "$PROJECT_DIR/.env"
     fi
 
-    # 生成随机密码
-    local random_suffix=$(head -c 4 /dev/urandom | xxd -p)
+    # 生成随机密码（使用 od 替代 xxd，兼容性更好）
+    local random_suffix=$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')
     local db_password="lingtong_${random_suffix}"
     local redis_password="lingtong_${random_suffix}"
-    local jwt_secret=$(head -c 32 /dev/urandom | xxd -p -c 32)
+    local jwt_secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
 
     # 更新 .env 文件
     sed -i "s/^MYSQL_ROOT_PASSWORD=.*/MYSQL_ROOT_PASSWORD=${db_password}_root/" "$PROJECT_DIR/.env" 2>/dev/null || true
@@ -230,7 +230,7 @@ start_services() {
 
     # 构建并启动容器
     log_info "构建并启动容器（首次构建可能需要几分钟）..."
-    docker-compose up -d --build
+    docker compose up -d --build
 
     log_success "容器启动完成"
 }
@@ -273,9 +273,9 @@ show_result() {
     echo "  密码: admin123 (首次登录后请修改)"
     echo ""
     echo "常用命令:"
-    echo "  查看日志: docker-compose logs -f"
-    echo "  重启服务: docker-compose restart"
-    echo "  停止服务: docker-compose down"
+    echo "  查看日志: docker compose logs -f"
+    echo "  重启服务: docker compose restart"
+    echo "  停止服务: docker compose down"
     echo "  更新部署: bash scripts/deploy.sh"
     echo ""
     echo "配置文件位置:"

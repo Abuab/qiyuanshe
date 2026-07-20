@@ -1,5 +1,5 @@
 # 栖缘社后端服务 Dockerfile
-# 基于 Node.js 18 Alpine 镜像构建
+# 基于 Node.js 20 Alpine 镜像构建，多阶段构建
 
 FROM node:20-alpine AS builder
 
@@ -24,8 +24,8 @@ RUN npm prune --omit=dev
 # 生产阶段镜像
 FROM node:20-alpine AS production
 
-# 安装 dumb-init、curl（用于健康检查）、su-exec（用于启动脚本切换用户）、字体包（svg-captcha 需要）和 tzdata（时区数据，使 TZ=Asia/Shanghai 生效）
-RUN apk add --no-cache dumb-init curl su-exec fontconfig ttf-dejavu tzdata
+# 安装 curl（健康检查）、su-exec（启动脚本切换用户）、字体包（svg-captcha）和 tzdata（时区）
+RUN apk add --no-cache curl su-exec fontconfig ttf-dejavu tzdata
 
 # 设置工作目录
 WORKDIR /app

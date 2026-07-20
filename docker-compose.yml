@@ -211,7 +211,7 @@ services:
       # SSL 证书（由 certbot 申请后挂载）
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
       # certbot 验证目录（用于证书申请和续期）
-      - ./docker/nginx/certbot/www:/var/www/certbot:ro
+      - ./docker/nginx/certbot/www:/var/www/certbot
       # 用户上传文件目录（Nginx 直接服务静态文件，减少后端压力）
       - ./data/uploads:/var/www/uploads:ro
       - nginx_logs:/var/log/nginx

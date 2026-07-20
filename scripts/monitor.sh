@@ -217,12 +217,12 @@ check_mysql() {
     fi
 
     # 获取 MySQL 连接数
-    local connections=$(docker-compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql \
+    local connections=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql \
         mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
         -e "SHOW STATUS LIKE 'Threads_connected';" \
         2>/dev/null | grep Threads_connected | awk '{print $2}' || echo "N/A")
 
-    local max_connections=$(docker-compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql \
+    local max_connections=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T mysql \
         mysql -u root -p"${MYSQL_ROOT_PASSWORD}" \
         -e "SHOW VARIABLES LIKE 'max_connections';" \
         2>/dev/null | grep max_connections | awk '{print $2}' || echo "N/A")
@@ -253,7 +253,7 @@ check_redis() {
         return
     fi
 
-    local redis_info=$(docker-compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T redis \
+    local redis_info=$(docker compose -f "${PROJECT_DIR}/docker-compose.yml" exec -T redis \
         redis-cli -a "${REDIS_PASSWORD}" INFO memory 2>/dev/null | grep -E "used_memory_human|maxmemory_human" || echo "")
 
     if [ -n "$redis_info" ]; then
@@ -299,7 +299,9 @@ main() {
 
     # 加载环境变量
     if [ -f "${PROJECT_DIR}/.env" ]; then
-        export $(grep -v '^#' "${PROJECT_DIR}/.env" | xargs)
+        set -a
+        source "${PROJECT_DIR}/.env"
+        set +a
     fi
 
     echo ""

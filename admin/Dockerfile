@@ -10,8 +10,8 @@ WORKDIR /app
 # 复制 package 文件
 COPY package*.json ./
 
-# 安装依赖
-RUN npm install
+# 严格按 lock 文件安装依赖（可复现构建）
+RUN npm ci
 
 # 复制源代码
 COPY . .
@@ -29,13 +29,11 @@ FROM nginx:alpine AS production
 # 复制自定义 nginx 配置（覆盖默认配置）
 COPY nginx.conf.example /etc/nginx/nginx.conf
 
-# 从构建阶段复制编译产物
-COPY --from=builder /app/dist /usr/share/nginx/html
+# 从构建阶段复制编译产物并设置属主
+COPY --from=builder --chown=nginx:nginx /app/dist /usr/share/nginx/html
 
-# 创建 nginx 日志目录
-RUN mkdir -p /var/log/nginx && \
-    chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/log/nginx
+# 创建日志目录并授权
+RUN mkdir -p /var/log/nginx && chown -R nginx:nginx /var/log/nginx
 
 # 安装 curl（用于健康检查）
 RUN apk add --no-cache curl
