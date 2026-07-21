@@ -214,10 +214,10 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '个人中心', requiresAuth: true },
       },
       {
-        path: '/notice/list',
-        name: 'NoticeList',
-        component: () => import('../views/notice/index.vue'),
-        meta: { title: '公告管理', requiresAuth: true },
+        path: '/notification/broadcast',
+        name: 'NotificationBroadcast',
+        component: () => import('../views/notification/broadcast.vue'),
+        meta: { title: '群发消息', requiresAuth: true },
       },
       {
         path: '/admin-user',

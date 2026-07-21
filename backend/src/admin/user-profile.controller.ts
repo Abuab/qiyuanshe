@@ -63,6 +63,18 @@ export class UserProfileController {
     return Result.success(notification, '通知已发送')
   }
 
+  /** 群发系统通知给所有用户 */
+  @Post('notifications/broadcast')
+  async broadcastNotification(
+    @Body() body: { title: string; content: string },
+  ) {
+    const result = await this.profileService.broadcastNotification(
+      body.title || '系统通知',
+      body.content,
+    )
+    return Result.success(result, `已向 ${result.totalSent} 位用户发送通知`)
+  }
+
   @Post(':id/answers')
   async createAnswer(
     @Param('id', ParseIntPipe) id: number,

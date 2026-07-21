@@ -20,18 +20,8 @@
       :scroll-top="scrollToVal"
       :scroll-with-animation="true"
     >
-      <!-- 顶部粉色区域：通知栏 + 功能图标 -->
+      <!-- 顶部粉色区域：功能图标 -->
       <view class="top-pink-area">
-        <view v-if="showNotice && notices.length" class="notice-bar">
-          <text class="notice-icon">📢</text>
-          <swiper class="notice-swiper" vertical autoplay circular interval="3000">
-            <swiper-item v-for="n in notices" :key="n.id" @tap="goNotice(n.id)">
-              <text class="notice-text">{{ n.title }}</text>
-            </swiper-item>
-          </swiper>
-          <text class="notice-close" @tap.stop="closeNotice">×</text>
-        </view>
-
         <view class="quick-entry-section">
           <view class="grid-item" @tap="handleQuickEntry(1)">
             <view class="icon-wrapper" style="background-color: #FFF0F3;">
@@ -302,8 +292,6 @@ const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
 const showFilter = ref(false)
-const showNotice = ref(true)
-const notices = ref<any[]>([])
 const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
 const scrollViewStyle = computed(() => {
@@ -613,34 +601,6 @@ const onCityPickerConfirm = (value: string) => {
   cityPickerVisible.value = false
 }
 
-// 从后端获取公告列表
-const fetchAnnouncements = async () => {
-  try {
-    const res: any = await get('/notices')
-    if (Array.isArray(res)) {
-      notices.value = res
-    } else if (res?.data && Array.isArray(res.data)) {
-      notices.value = res.data
-    } else if (res?.list && Array.isArray(res.list)) {
-      notices.value = res.list
-    } else {
-      notices.value = []
-    }
-  } catch (e) {
-    console.log('[公告] 接口获取失败', e)
-    notices.value = []
-  }
-}
-
-const closeNotice = () => {
-  showNotice.value = false
-  uni.setStorageSync('notice_closed', new Date().toDateString())
-}
-
-const goNotice = (id: number) => {
-  uni.navigateTo({ url: `/pages/notice-detail/index?id=${id}` })
-}
-
 /** 应用筛选条件并重新加载 */
 const applyFilter = (data: FilterData) => {
   isEmptyFromFilter.value = true
@@ -669,49 +629,8 @@ onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
-  // 公告通知栏
-  showNotice.value = uni.getStorageSync('notice_closed') !== new Date().toDateString()
-  fetchAnnouncements()
-
-  // 公告弹窗：每天首次进入弹出 popup 类型公告
-  const today = new Date().toDateString()
-  const alreadyShown = uni.getStorageSync('popup_notice_date') === today
-
-  if (alreadyShown) {
-    loadUserList(true)
-    loadHotQuestions()
-  } else {
-    // 从后端获取弹窗类型公告
-    setTimeout(async () => {
-      let title = `欢迎来到${systemStore.appName}！`
-      let content = `${systemStore.appName}小程序正式上线啦！在这里你可以找到心仪的TA，开启美好缘分~\n\n开通VIP可享受更多特权，包括无限查看资料、优先推荐等超值服务！`
-
-      try {
-        const res: any = await get('/notices')
-        const list = Array.isArray(res) ? res : (res?.data || res?.list || [])
-        const popupNotice = list.find((n: any) => n.type === 'popup' && n.status === 1)
-        if (popupNotice) {
-          title = popupNotice.title
-          content = popupNotice.content
-        }
-      } catch (e) {
-        console.log('[弹窗公告] 接口获取失败，使用默认文案')
-      }
-
-      uni.showModal({
-        title,
-        content,
-        showCancel: false,
-        confirmText: '我知道了',
-        confirmColor: '#FF6B9D',
-        success: () => {
-          uni.setStorageSync('popup_notice_date', today)
-          loadUserList(true)
-          loadHotQuestions()
-        },
-      })
-    }, 700)
-  }
+  loadUserList(true)
+  loadHotQuestions()
 
   // 开启分享菜单
   uni.showShareMenu({
@@ -722,13 +641,14 @@ onMounted(() => {
 })
 
 // 每次页面显示时也检查（如从其他页返回）
-onShow(async () => {
-  // 刷新用户资料以获取最新状态（如管理后台锁定/解锁等）
-  await userStore.refreshProfile()
-  // 账户锁定检查：status=4 时弹出脱单需求确认弹窗
-  if (userStore.userInfo?.status === 4) {
-    showLoveIntent.value = true
-  }
+onShow(() => {
+  // 刷新用户资料以获取最新状态，不阻塞页面生命周期
+  userStore.refreshProfile().then(() => {
+    // 账户锁定检查：status=4 时弹出脱单需求确认弹窗
+    if (userStore.userInfo?.status === 4) {
+      showLoveIntent.value = true
+    }
+  }).catch(() => {})
   // 浮动按钮配置：每次显示都拉取，保证后台切换模式后即时生效
   loadFloatConfig()
   // 弱网恢复后补报离线埋点队列
@@ -796,37 +716,6 @@ const onShareTimeline = () => {
 .top-pink-area {
   background: linear-gradient(180deg, #FFF0F5 0%, #FFF0F5 5%, #FFF8FA 50%, #FFF8FA 100%);
   padding-top: 16rpx;
-}
-
-.notice-bar {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 32rpx 4rpx;
-
-  .notice-swiper {
-    flex: 1;
-    height: 40rpx;
-    margin: 0 16rpx;
-  }
-
-  .notice-text {
-    font-size: 26rpx;
-    color: #FF6B9D;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
-  }
-}
-
-.notice-icon {
-  font-size: 28rpx;
-}
-
-.notice-close {
-  font-size: 32rpx;
-  color: #999;
-  padding-left: 16rpx;
 }
 
 .quick-entry-section {

@@ -162,7 +162,7 @@
         <el-menu-item index="/system/config">基础配置</el-menu-item>
         <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
         <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
-        <el-menu-item index="/notice/list">公告管理</el-menu-item>
+        <el-menu-item index="/notification/broadcast">群发消息</el-menu-item>
         <el-menu-item index="/agreement">协议管理</el-menu-item>
         <el-menu-item index="/agreement-log-storage">同意记录存储配置</el-menu-item>
         <el-menu-item index="/system/dict">选项配置</el-menu-item>

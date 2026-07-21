@@ -27,8 +27,6 @@ import { AdminProfileService } from './profile.service'
 import { MfaController } from './mfa.controller'
 import { MfaService } from './mfa.service'
 import { ForgotPasswordController } from './forgot-password.controller'
-import { AdminNoticeController } from './notice.controller'
-import { Notice } from '../entities/Notice'
 import { Report } from '../entities/Report'
 import { AdminUser as AdminUserEntity } from '../entities/AdminUser'
 import { ChatMessage } from '../entities/ChatMessage'
@@ -96,7 +94,6 @@ import { AiModule } from '../ai/ai.module'
       RedLineUsage,
       AuditLog,
       SystemConfig,
-      Notice,
       Report,
       AdminUserEntity,
       UserNotification,
@@ -138,7 +135,6 @@ import { AiModule } from '../ai/ai.module'
     AdminProfileController,
     MfaController,
     ForgotPasswordController,
-    AdminNoticeController,
     AdminReportController,
     AdminChatController,
     UserProfileController,

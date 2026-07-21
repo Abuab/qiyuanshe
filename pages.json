@@ -195,13 +195,6 @@
       }
     },
     {
-      "path": "pages/notice-detail/index",
-      "style": {
-        "navigationBarTitleText": "公告详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/matchmaker-reviews/index",
       "style": {
         "navigationBarTitleText": "红娘评语",

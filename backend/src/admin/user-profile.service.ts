@@ -34,6 +34,8 @@ export class UserProfileService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly dynamicService: DynamicService,
   ) {}
 
@@ -293,5 +295,42 @@ export class UserProfileService {
     await this.auditLogRepository.save(auditLog)
 
     return saved
+  }
+
+  /** 群发系统通知给所有活跃用户 */
+  async broadcastNotification(title: string, content: string, senderId?: number) {
+    const BATCH_SIZE = 500
+    let totalSent = 0
+    let offset = 0
+
+    // 分批查询活跃用户（isDeleted = 0 未删除），使用 skip + take 正确分页
+    while (true) {
+      const users = await this.userRepository.find({
+        where: { isDeleted: 0 },
+        select: ['id'],
+        order: { id: 'ASC' },
+        skip: offset,
+        take: BATCH_SIZE,
+      })
+      if (users.length === 0) break
+
+      // 批量创建通知
+      const notifications = users.map(u =>
+        this.notificationRepository.create({
+          userId: u.id,
+          title,
+          content,
+          senderType: 'admin',
+          senderId,
+        }),
+      )
+      await this.notificationRepository.save(notifications)
+      totalSent += notifications.length
+
+      if (users.length < BATCH_SIZE) break
+      offset += BATCH_SIZE
+    }
+
+    return { totalSent }
   }
 }

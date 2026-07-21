@@ -197,7 +197,7 @@
       <!-- 底部固定操作栏 -->
       <view class="action-bar">
         <view class="reset-btn" @tap="handleReset">
-          <view class="refresh-icon"></view>
+          <text class="reset-icon-text">↻</text>
           <text class="reset-text">重置</text>
         </view>
         <view class="confirm-btn" @tap="handleConfirm">
@@ -617,12 +617,13 @@ defineExpose({
     transition: transform 0.3s ease-out;
   }
 
-  // 作为独立页面：去掉下拉动画
+  // 作为独立页面：去掉下拉动画，固定全屏高度让 scroll-view 正常工作
   &.fullPage {
     max-height: none;
+    height: 100vh;
     border-radius: 0;
     transform: none;
-    overflow: visible;
+    overflow: hidden;
   }
 }
 
@@ -916,27 +917,10 @@ defineExpose({
   height: 80rpx;
 }
 
-.refresh-icon {
-  position: relative;
-  width: 20rpx;
-  height: 20rpx;
-  margin-right: 8rpx;
-  border: 2rpx solid #999;
-  border-radius: 50%;
-  border-right-color: transparent;
-  box-sizing: border-box;
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: -2rpx;
-    right: -2rpx;
-    width: 0;
-    height: 0;
-    border: 4rpx solid transparent;
-    border-bottom-color: #999;
-    transform: rotate(45deg);
-  }
+.reset-icon-text {
+  font-size: 28rpx;
+  color: #999;
+  margin-right: 4rpx;
 }
 
 .reset-text {

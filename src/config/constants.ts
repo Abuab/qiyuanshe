@@ -150,8 +150,6 @@ export const STORAGE_KEY = {
   HAS_AGREED_PROTOCOL: 'hasAgreedProtocol',
   PROTOCOL_AGREED: 'protocolAgreed',
   UNREAD_MESSAGE_COUNT: 'unreadMessageCount',
-  NOTICE_CLOSED: 'notice_closed',
-  POPUP_NOTICE_DATE: 'popup_notice_date',
   OA_BANNER_CLOSED: 'oa_banner_closed',
   SYSTEM_CONFIG: 'systemConfig',
   AI_FEATURE_CONFIG: 'aiFeatureConfig',
