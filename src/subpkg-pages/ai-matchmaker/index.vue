@@ -206,7 +206,8 @@ onMounted(async () => {
     // eslint-disable-next-line
     const sysInfo: any = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || sysInfo.safeArea?.bottom || 0
+    const raw = sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 0
+    safeAreaBottom.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
     // #endif
   } catch {}
 
@@ -363,7 +364,8 @@ $pink-light: #FF8FA8;
 $nav-right-width: 190rpx; // 微信胶囊按钮安全间距
 
 .ai-matchmaker-page {
-  width: 100%; height: 100%;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   display: flex; flex-direction: column;
   background: #F8F8F8;
   overflow: hidden;

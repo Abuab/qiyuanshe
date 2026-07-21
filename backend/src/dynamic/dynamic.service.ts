@@ -32,25 +32,24 @@ export class DynamicService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /** 获取动态列表（支持按类型过滤） */
+  /** 获取动态列表（支持按类型和性别过滤） */
   async getDynamics(
     page: number,
     limit: number,
     currentUserId?: number,
     type?: string,
+    gender?: number,
   ) {
     // 红娘动态：从 match_records 表查询
     if (type === DynamicType.MATCHMAKER) {
-      return this.getMatchmakerDynamics(page, limit, currentUserId)
+      return this.getMatchmakerDynamics(page, limit, currentUserId, gender)
     }
 
     // 并行查询两个数据源：用户卡片 + 问答动态
-    // 跨数据源分页：各取「前 page*limit 条」最新数据后再统一合并切片，
-    // 避免单个数据源被另一数据源挤出、以及翻页时 skip 独立计算导致的漏项/重复。
     const fetchLimit = page * limit
     const [userResult, answerResult] = await Promise.all([
-      this.getUserDynamics(1, fetchLimit, currentUserId, type),
-      this.getAnswerDynamics(1, fetchLimit, currentUserId, type),
+      this.getUserDynamics(1, fetchLimit, currentUserId, type, gender),
+      this.getAnswerDynamics(1, fetchLimit, currentUserId, type, gender),
     ])
 
     // 合并并按时间排序
@@ -71,6 +70,7 @@ export class DynamicService {
     limit: number,
     currentUserId?: number,
     type?: string,
+    gender?: number,
   ) {
     const qb = this.userRepository
       .createQueryBuilder('user')
@@ -83,6 +83,11 @@ export class DynamicService {
 
     if (currentUserId) {
       qb.andWhere('user.id != :currentUserId', { currentUserId })
+    }
+
+    // 性别过滤：只展示异性动态
+    if (gender) {
+      qb.andWhere('user.gender = :gender', { gender })
     }
 
     // "关注" tab：只显示当前用户关注的人
@@ -174,6 +179,7 @@ export class DynamicService {
     limit: number,
     currentUserId?: number,
     type?: string,
+    gender?: number,
   ) {
     const qb = this.dynamicRepository
       .createQueryBuilder('dynamic')
@@ -187,6 +193,11 @@ export class DynamicService {
 
     if (currentUserId) {
       qb.andWhere('dynamic.userId != :currentUserId', { currentUserId })
+    }
+
+    // 性别过滤：只展示异性动态
+    if (gender) {
+      qb.andWhere('user.gender = :gender', { gender })
     }
 
     // "关注" tab：只显示当前用户关注的人的问答
@@ -266,6 +277,7 @@ export class DynamicService {
     page: number,
     limit: number,
     currentUserId?: number,
+    gender?: number,
   ) {
     const qb = this.matchRecordRepository
       .createQueryBuilder('record')
@@ -278,6 +290,11 @@ export class DynamicService {
 
     if (currentUserId) {
       qb.andWhere('record.userId != :currentUserId', { currentUserId })
+    }
+
+    // 性别过滤：只展示异性动态
+    if (gender) {
+      qb.andWhere('matchedUser.gender = :gender', { gender })
     }
 
     const [records, total] = await qb.getManyAndCount()

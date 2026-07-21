@@ -870,7 +870,10 @@ const frostTotalHeight = computed(() => {
 })
 const safeAreaBottom = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
-  return (sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 20)
+  const safeBottom = sysInfo.safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 0
+  // Android 部分设备 safe-area 返回 0，但视觉上按钮需要底部安全间距
+  if (safeBottom > 0) return safeBottom
+  return sysInfo.platform === 'android' ? 28 : 0
 })
 
 // ===== 订阅弹窗 =====

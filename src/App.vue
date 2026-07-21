@@ -9,8 +9,6 @@ import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
 import { get } from '@/utils/request'
 import MatchModal from '@/components/MatchModal/MatchModal.vue'
-// @ts-ignore 腾讯云 E证通 SDK 无类型声明
-import { initEid } from '@/mp_ecard_sdk/main'
 
 // eID 数字身份小程序 appId（用于识别从 E证通返回的场景）
 const EID_APPID = 'wx0e2cb0b052a91c92'
@@ -52,9 +50,10 @@ onLaunch(() => {
   uni.addInterceptor('redirectTo', { invoke(args: any) { return blockNav(args.url) } })
   uni.addInterceptor('reLaunch', { invoke(args: any) { return blockNav(args.url) } })
 
-  // 延迟初始化 E证通 SDK，避免阻塞冷启动（后续实名认证时才真正用到）
-  setTimeout(() => {
+  // 延迟动态导入 E证通 SDK，避免启动时同步 require 阻塞冷启动
+  setTimeout(async () => {
     try {
+      const { initEid } = await import('@/subpkg-pages/mp_ecard_sdk/main')
       initEid()
     } catch (e) {
       logger.error('initEid failed:', e as any)

@@ -27,6 +27,7 @@ export class DynamicController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('type') type?: string,
+    @Query('gender') gender?: number,
     @Headers('authorization') auth?: string,
   ) {
     let currentUserId: number | undefined
@@ -43,6 +44,7 @@ export class DynamicController {
       limit || 10,
       currentUserId,
       type,
+      gender || undefined,
     )
     return { success: true, ...result }
   }

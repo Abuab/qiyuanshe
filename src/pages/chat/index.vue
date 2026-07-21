@@ -273,7 +273,8 @@ onMounted(() => {
   try {
     const sysInfo = uni.getSystemInfoSync()
     statusBarHeight.value = sysInfo.statusBarHeight || 0
-    safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || sysInfo.safeArea?.bottom || 0
+    const raw = (sysInfo as any).safeAreaInsets?.bottom ?? sysInfo.safeArea?.bottom ?? 0
+    safeAreaBottom.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
   } catch {}
 
   const pages = getCurrentPages()

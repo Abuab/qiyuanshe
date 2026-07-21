@@ -105,6 +105,26 @@ export class EidAuthService {
         })
         // 创建/更新 UserAuth 实名认证记录（使用前端表单中填写的姓名/身份证号）
         if (identityInfo?.realName && identityInfo?.idCard) {
+          // 去重校验：检查该身份证号是否已被其他激活用户绑定
+          const duplicateCheck = await this.checkIdCardDuplicate(userId, identityInfo.idCard)
+          if (!duplicateCheck.canProceed) {
+            this.logger.warn(
+              `用户 ${userId} E证通核身通过但身份证号冲突: ${duplicateCheck.message}`,
+            )
+            // 认证标记为失败，不允许写入身份信息
+            await this.userRepo.update(userId, {
+              eidCertStatus: EID_STATUS.FAILED,
+              eidCertTime: now,
+            })
+            // 发送管理后台预警
+            this.sendDuplicateAlert(
+              userId,
+              duplicateCheck.duplicateUserId ? [] : [],
+              [],
+            ).catch(e => this.logger.warn('发送身份证冲突预警失败: ' + e?.message))
+            return { status: EID_STATUS.FAILED, certTime: now }
+          }
+
           const existing = await this.userAuthRepo.findOne({
             where: { userId, authType: 'realname' },
           })
@@ -222,6 +242,7 @@ export class EidAuthService {
     duplicateUserId?: number
   }> {
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+    const idCardTrim = idCard.trim()
 
     // 查找使用相同身份证号的所有记录（排除本人）
     const identities = await this.entityManager
@@ -230,14 +251,47 @@ export class EidAuthService {
       .andWhere('rni.userId != :userId', { userId })
       .getMany()
 
+    // 如果 real_name_identities 没找到，兜底检查 user_auths 表（兼容旧数据迁移前已认证的用户）
+    let fallbackDuplicateUserId: number | null = null
     if (identities.length === 0) {
+      try {
+        const legacyAuth = await this.userAuthRepo
+          .createQueryBuilder('ua')
+          .select('ua.userId', 'userId')
+          .where("ua.authType = 'realname'")
+          .andWhere('ua.status = 1')
+          .andWhere('ua.userId != :userId', { userId })
+          .getRawMany<{ userId: number }>()
+
+        for (const row of legacyAuth) {
+          // 逐个检查 authData JSON 中的 idCard（MySQL JSON_EXTRACT 可能带引号，需精确比较）
+          const authRecord = await this.userAuthRepo.findOne({
+            where: { userId: row.userId, authType: 'realname', status: 1 },
+          })
+          const rawIdCard = authRecord?.authData?.idCard
+          if (rawIdCard && String(rawIdCard).trim() === idCardTrim) {
+            fallbackDuplicateUserId = row.userId
+            break
+          }
+        }
+      } catch (e: any) {
+        this.logger.warn(`兜底查询 user_auths 异常（不影响主流）：${e?.message || e}`)
+      }
+    }
+
+    // 合并 real_name_identities 和 user_auths 兜底结果
+    if (identities.length === 0 && !fallbackDuplicateUserId) {
       return { canProceed: true }
     }
 
-    // 检查关联的 user 状态
-    const relatedUserIds = identities.map(i => i.userId)
+    // 构建关联用户 ID 列表（real_name_identities + user_auths 兜底）
+    const allRelatedIds: number[] = identities.map(i => i.userId)
+    if (fallbackDuplicateUserId && !allRelatedIds.includes(fallbackDuplicateUserId)) {
+      allRelatedIds.push(fallbackDuplicateUserId)
+    }
+
     const relatedUsers = await this.userRepo.find({
-      where: relatedUserIds.map(id => ({ id })),
+      where: allRelatedIds.map(id => ({ id })),
       select: ['id', 'nickname', 'isDeleted', 'status'],
     })
 
@@ -249,6 +303,12 @@ export class EidAuthService {
       this.logger.warn(
         `用户 ${userId} 身份证号已绑定激活账号 ${activeUsers[0].id}（${activeNickname}），拒绝认证`,
       )
+      // 发现通过 user_auths 兜底查出的重复，发送预警
+      if (fallbackDuplicateUserId) {
+        this.sendDuplicateAlert(userId, identities, relatedUsers).catch(e =>
+          this.logger.warn('发送身份证多账号预警失败: ' + e?.message),
+        )
+      }
       return {
         canProceed: false,
         reason: 'duplicate_active',
@@ -258,7 +318,6 @@ export class EidAuthService {
     }
 
     // 场景 B：关联用户记录全部缺失或均已注销 → 阻止直接认证（需走二次认证）
-    // 关联用户缺失通常意味着已被硬删除或数据异常，为安全起见按二次认证处理
     const reAuthEnabled = await this.getReAuthEnabled()
     if (!reAuthEnabled) {
       return {

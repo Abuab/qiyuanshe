@@ -22,11 +22,13 @@
           <text v-if="user.gender" class="gender-tag" :class="user.gender === 1 ? 'male' : 'female'">
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
-          <text v-if="voiceEnabled && user.hasVoice" class="voice-tag">语音</text>
+          <view v-if="user.isRealName" class="real-name-badge">
+            <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />
+            <text>已实名</text>
+          </view>
         </view>
-        <view v-if="user.isRealName" class="real-name-badge">
-          <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />
-          <text>已实名</text>
+        <view v-if="matchBadgeText" class="match-badge" :class="{ untested: viewerUntested }">
+          <text class="match-badge-text">{{ matchBadgeText }}</text>
         </view>
       </view>
 
@@ -35,6 +37,7 @@
           <text v-if="user.age" class="tag-badge tag-age">{{ user.age }}岁</text>
           <text v-if="user.height" class="tag-badge tag-height">{{ user.height }}cm</text>
           <text v-if="user.education" class="tag-badge tag-edu">{{ user.education }}</text>
+          <text v-if="voiceEnabled && user.hasVoice" class="tag-badge tag-voice">语音</text>
         </view>
         <view v-if="computedSecondLine.length > 0" class="tags-line tags-line-2">
           <text class="tag-dot-text">{{ computedSecondLine.join(' · ') }}</text>
@@ -44,11 +47,6 @@
       <view class="meta-row">
         <text v-if="user.residence || user.city" class="loc-text">📍 {{ (user.residence || user.city || '').replace(/\//g, ',') }}</text>
         <text v-if="user.matchmakerComment" class="mk-brief">{{ user.matchmakerComment }}</text>
-      </view>
-
-      <!-- 人格匹配度标识（仅视觉标签，不影响推荐排序） -->
-      <view v-if="matchBadgeText" class="match-badge" :class="{ untested: viewerUntested }">
-        <text class="match-badge-text">{{ matchBadgeText }}</text>
       </view>
 
       <view v-if="displayIntro" class="intro-row">
@@ -290,25 +288,26 @@ const onLike = async () => {
 .user-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 2rpx;
 }
 
 .name-section {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
-  max-width: 60%;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .nickname {
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
-  max-width: 160rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
 }
 
 .gender-tag {
@@ -332,7 +331,7 @@ const onLike = async () => {
   background-color: #e6f7ff;
   border-radius: 20rpx;
   line-height: 1.6;
-  margin-left: 8rpx;
+  margin-left: 6rpx;
 }
 
 .real-name-icon-img {
@@ -371,7 +370,8 @@ const onLike = async () => {
 
 .tag-age { color: #FF6B9D; background-color: #FFF0F5; }
 .tag-height { color: #909399; background-color: #F4F4F5; }
-.tag-edu { color: #409EFF; background-color: #ECF5FF; margin-right: 0; }
+.tag-edu { color: #409EFF; background-color: #ECF5FF; }
+.tag-voice { color: #FF9500; background-color: #FFF7E6; margin-right: 0; }
 
 .tag-dot-text {
   font-size: 22rpx;
@@ -401,16 +401,14 @@ const onLike = async () => {
 
 /* --- 人格匹配度标识 --- */
 .match-badge {
-  position: absolute;
-  top: 0;
-  right: 8rpx;
+  flex-shrink: 0;
   padding: 2rpx 12rpx;
   border-radius: 20rpx;
   background: linear-gradient(90deg, #FFE8CC 0%, #FFD9C0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1;
+  margin-left: 8rpx;
 }
 
 .match-badge.untested {
@@ -490,16 +488,5 @@ const onLike = async () => {
   0% { transform: scale(1); }
   50% { transform: scale(1.25); }
   100% { transform: scale(1); }
-}
-
-.voice-tag {
-  font-size: 18rpx;
-  color: #fff;
-  background: #FF9500;
-  padding: 2rpx 8rpx;
-  border-radius: 6rpx;
-  flex-shrink: 0;
-  margin-left: 6rpx;
-  line-height: 1.4;
 }
 </style>

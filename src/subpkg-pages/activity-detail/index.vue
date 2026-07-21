@@ -531,9 +531,10 @@ function goBack() {
 
 onMounted(() => {
   // 获取状态栏高度
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo: any = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  safeAreaBottom.value = sysInfo.safeAreaInsets?.bottom || 0
+  const raw = sysInfo.safeAreaInsets?.bottom ?? 0
+  safeAreaBottom.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
 
   // 激活右上角原生分享按钮
   uni.showShareMenu({

@@ -75,11 +75,12 @@
       </view>
     </view>
 
+    <view class="scroll-wrap">
     <scroll-view
       class="content-scroll"
       scroll-y
-      enable-flex
-      :style="{ height: 'calc(100vh - 100rpx - ' + navTotalHeight + 'px)' }"
+      :enhanced="true"
+      :show-scrollbar="false"
       :key="'scroll-' + (aiAssistantExpanded ? '1' : '0')"
     >
       <!-- ========== 会员卡片 ========== -->
@@ -203,6 +204,7 @@
       </view>
       <view class="bottom-safe-area"></view>
     </scroll-view>
+    </view>
 
     <tab-bar />
 
@@ -694,6 +696,7 @@ const toolGrid7 = [
 
 // ========== 顶部粉色区域 ==========
 .top-pink-area {
+  flex-shrink: 0;
   background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
 }
 
@@ -893,11 +896,15 @@ const toolGrid7 = [
 }
 
 // ========== 内容滚动区 ==========
-.content-scroll {
+.scroll-wrap {
   flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.content-scroll {
+  height: 100%;
+  width: 100%;
   background-color: #FFF8FA;
-  display: flex;
-  flex-direction: column;
 }
 
 // ========== 会员卡片 ==========

@@ -315,6 +315,14 @@ const systemStore = useSystemStore()
 const { getPageIcon } = useIcon()
 const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
 
+// 动态页异性过滤：女性只看男性动态，男性只看女性动态
+const oppositeGender = computed(() => {
+  const myGender = (userStore.userInfo as any)?.gender
+  if (myGender === 2) return 1 // 女性 → 只看男性
+  if (myGender === 1) return 2 // 男性 → 只看女性
+  return 0 // 未设置性别 → 不过滤
+})
+
 // 动态页左上角返回主页图标（后台可配置）
 const dynamicHomeIcon = computed(() => {
   return getPageIcon('dynamicHome') || '/static/icons/icon-home.png'
@@ -428,6 +436,9 @@ const fetchList = async (reset = false) => {
     }
     if (currentTab.value !== 'all') {
       params.type = currentTab.value
+    }
+    if (oppositeGender.value) {
+      params.gender = oppositeGender.value
     }
     const res = await request<{ list: DynamicItem[]; total?: number }>({
       url: '/dynamics',

@@ -22,7 +22,7 @@ const handleTap = () => {
 .back-top-btn {
   position: fixed;
   right: 20rpx;
-  bottom: 160rpx;
+  bottom: 240rpx;
   z-index: 998;
 }
 

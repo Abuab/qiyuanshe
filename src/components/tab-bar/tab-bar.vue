@@ -99,9 +99,10 @@ onMounted(() => {
   updateCurrentTab()
   loadUnreadCount()
 
-  // 使用新版 API 获取安全区域信息
-  const windowInfo = uni.getWindowInfo()
-  safeAreaBottom.value = windowInfo.safeAreaInsets?.bottom || 0
+  // 使用系统 API 获取安全区域信息
+  const sysInfo: any = uni.getSystemInfoSync()
+  const raw = sysInfo.safeAreaInsets?.bottom ?? 0
+  safeAreaBottom.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
 })
 
 onShow(() => {

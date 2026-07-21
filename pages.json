@@ -8,12 +8,6 @@
       }
     },
     {
-      "path": "mp_ecard_sdk/index/index",
-      "style": {
-        "navigationBarTitleText": "腾讯云E证通授权"
-      }
-    },
-    {
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "首页",
@@ -138,6 +132,12 @@
     {
       "root": "subpkg-pages",
       "pages": [
+        {
+          "path": "mp_ecard_sdk/index/index",
+          "style": {
+            "navigationBarTitleText": "腾讯云E证通授权"
+          }
+        },
         {
           "path": "questions/index",
           "style": {

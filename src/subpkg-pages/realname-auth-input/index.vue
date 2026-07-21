@@ -134,7 +134,7 @@ import { getFullImageUrl, showToast } from '@/utils/common'
 import { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
-import { startEid } from '@/mp_ecard_sdk/main'
+import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 
@@ -309,6 +309,23 @@ async function handleSubmit() {
   }
   if (submitting.value) return
   submitting.value = true
+
+  // 去重检查：在创建 E证通订单之前，先检查该身份证号是否已被其他用户绑定
+  try {
+    const dupCheck: any = await post('/eid-auth/check-duplicate', { idCard: idCard.value.trim() })
+    const dupData = dupCheck?.data || dupCheck
+    if (dupData && !dupData.canProceed) {
+      submitting.value = false
+      uni.showToast({ title: dupData.message || '该身份证已绑定其他账号，如有疑问请联系客服', icon: 'none', duration: 3000 })
+      return
+    }
+  } catch (e: any) {
+    submitting.value = false
+    // check-duplicate 接口异常时不要静默放过——block 认证以防重复
+    uni.showToast({ title: e?.message || '身份校验异常，请稍后重试', icon: 'none' })
+    return
+  }
+
   uni.showLoading({ title: '发起认证...', mask: true })
   try {
     const res: any = await post('/eid-auth/create-order')
