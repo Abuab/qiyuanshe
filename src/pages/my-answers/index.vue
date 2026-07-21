@@ -8,7 +8,7 @@
         <text class="nav-placeholder"></text>
       </view>
     </view>
-    <scroll-view class="answer-scroll" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
+    <scroll-view class="answer-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">还没有回答过问题</text>
       </view>
@@ -25,17 +25,24 @@
         <text>加载中...</text>
       </view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import BackTop from '@/components/back-top/back-top.vue'
 
 const list = ref<any[]>([])
 const loading = ref(true)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any

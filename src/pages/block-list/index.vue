@@ -9,7 +9,7 @@
       </view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y :style="{ paddingTop: navTopPx + 'px' }">
+    <scroll-view class="content-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: navTopPx + 'px' }">
       <!-- 空状态 -->
       <view v-if="list.length === 0 && !loading" class="empty-state">
         <text class="empty-text">暂无拉黑的用户</text>
@@ -53,12 +53,14 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { get, del } from '@/utils/request'
+import BackTop from '@/components/back-top/back-top.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 
@@ -75,6 +77,10 @@ const list = ref<BlockItem[]>([])
 const loading = ref(true)
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any

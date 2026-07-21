@@ -28,6 +28,8 @@
       class="activity-scroll"
       scroll-y
       enable-flex
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
@@ -84,12 +86,15 @@
 
       <view class="bottom-safe-area"></view>
     </scroll-view>
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import BackTop from '@/components/back-top/back-top.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface Activity {
@@ -117,6 +122,12 @@ const noMoreData = ref(false)
 const currentPage = ref(1)
 const statusBarHeight = ref(0)
 const pageSize = 10
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 function getStatusText(status: number) {
   const map: Record<number, string> = {

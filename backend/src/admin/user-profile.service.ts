@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { Report } from '../entities/Report'
 import { UserBlock } from '../entities/UserBlock'
 import { UserNotification } from '../entities/UserNotification'
@@ -383,6 +383,37 @@ export class UserProfileService {
       skip: (page - 1) * limit,
       take: limit,
     })
-    return { list, total, page, limit }
+
+    // 收集所有 targetUserIds 中的用户 ID
+    const allUserIds = new Set<number>()
+    for (const log of list) {
+      if (log.targetUserIds && log.targetUserIds.length > 0) {
+        for (const uid of log.targetUserIds) {
+          allUserIds.add(uid)
+        }
+      }
+    }
+
+    // 批量查询用户昵称
+    let userMap: Record<number, string> = {}
+    if (allUserIds.size > 0) {
+      const users = await this.userRepository.find({
+        where: { id: In(Array.from(allUserIds)) },
+        select: ['id', 'nickname'],
+      })
+      for (const u of users) {
+        userMap[u.id] = u.nickname
+      }
+    }
+
+    // 为每条日志附加用户信息
+    const enrichedList = list.map(log => ({
+      ...log,
+      targetUsers: log.targetUserIds
+        ? log.targetUserIds.map(id => ({ id, nickname: userMap[id] || '未知用户' }))
+        : null,
+    }))
+
+    return { list: enrichedList, total, page, limit }
   }
 }

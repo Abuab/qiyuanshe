@@ -213,10 +213,32 @@
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="title" label="消息标题" min-width="150" show-overflow-tooltip />
             <el-table-column prop="content" label="消息内容" min-width="200" show-overflow-tooltip />
-            <el-table-column label="发送范围" width="110">
+            <el-table-column label="发送范围" min-width="180">
               <template #default="{ row }">
                 <el-tag v-if="!row.targetUserIds" type="primary" size="small">全部用户</el-tag>
-                <el-tag v-else size="small">{{ row.targetUserIds.length }} 位用户</el-tag>
+                <template v-else>
+                  <el-tag size="small" class="user-tag">
+                    {{ row.targetUserIds.length }} 位用户
+                    <el-popover
+                      trigger="hover"
+                      placement="top"
+                      :width="220"
+                    >
+                      <template #reference>
+                        <el-icon class="info-icon"><InfoFilled /></el-icon>
+                      </template>
+                      <div class="user-popover-list">
+                        <div
+                          v-for="u in row.targetUsers"
+                          :key="u.id"
+                          class="user-popover-item"
+                        >
+                          ID:{{ u.id }} {{ u.nickname }}
+                        </div>
+                      </div>
+                    </el-popover>
+                  </el-tag>
+                </template>
               </template>
             </el-table-column>
             <el-table-column prop="totalSent" label="实际发送" width="80" />
@@ -245,7 +267,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
-import { Search, ArrowRight, Close } from '@element-plus/icons-vue'
+import { Search, ArrowRight, Close, InfoFilled } from '@element-plus/icons-vue'
 import request from '../../api/request'
 import { adminUsers } from '../../api/user'
 
@@ -400,6 +422,9 @@ async function handleSend() {
     handleReset()
     sendMode.value = 'all'
     rightList.value = []
+    // 自动刷新发送日志（重置到第一页确保最新记录可见）
+    logPage.value = 1
+    loadLogs()
   } catch (e: any) {
     resultSuccess.value = false
     resultMsg.value = e?.message || '发送失败，请稍后重试'
@@ -609,5 +634,39 @@ onMounted(() => {
   padding: 40px 0;
   color: #ccc;
   font-size: 13px;
+}
+
+// 发送日志 - 用户标签 popover
+.user-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.info-icon {
+  font-size: 14px;
+  color: #909399;
+  cursor: pointer;
+
+  &:hover {
+    color: #409eff;
+  }
+}
+
+.user-popover-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.user-popover-item {
+  padding: 4px 0;
+  font-size: 13px;
+  color: #606266;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 </style>

@@ -18,6 +18,8 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       :refresher-enabled="true"
       :refresher-triggered="refreshing"
       @refresherrefresh="onRefresh"
@@ -65,6 +67,8 @@
       </view>
       <view class="bottom-spacer" />
     </scroll-view>
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -73,6 +77,7 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import BackTop from '@/components/back-top/back-top.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface Question {
@@ -93,6 +98,12 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const statusBarHeight = ref(0)
 const navInnerHeight = 44
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()

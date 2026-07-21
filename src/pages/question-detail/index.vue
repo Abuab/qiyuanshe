@@ -15,6 +15,8 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       :style="{ paddingTop: (statusBarHeight + navInnerHeight) + 'px' }"
     >
       <!-- 标题区 + 更多链接 -->
@@ -88,6 +90,8 @@
     <view class="float-answer-btn" @tap="goToAnswer">
       <text class="answer-btn-text">回答</text>
     </view>
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -98,6 +102,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import BackTop from '@/components/back-top/back-top.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 interface Answer {
@@ -129,6 +134,12 @@ const loading = ref(false)
 const noMore = ref(false)
 const statusBarHeight = ref(20)
 const navInnerHeight = 44
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()

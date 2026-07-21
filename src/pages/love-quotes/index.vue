@@ -9,7 +9,7 @@
       </view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y :style="{ paddingTop: navTopPx + 'px' }">
+    <scroll-view class="content-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: navTopPx + 'px' }">
       <!-- 展示当前语录的卡片 -->
       <view class="quote-card">
         <view class="quote-content">
@@ -35,17 +35,23 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
+import BackTop from '@/components/back-top/back-top.vue'
 import { get, put } from '@/utils/request'
 
 const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 const quotes = ref<string[]>([])
 const currentIndex = ref(0)
 

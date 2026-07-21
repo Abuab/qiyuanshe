@@ -12,6 +12,8 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       enable-flex
       :style="{ paddingTop: (44 + statusBarHeight) + 'px' }"
     >
@@ -97,6 +99,7 @@
       />
       <text class="send-btn" :class="{ active: commentText.trim() }" @tap="submitComment">发送</text>
     </view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -106,6 +109,7 @@ import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
+import BackTop from '@/components/back-top/back-top.vue'
 import { useImageFallback } from '@/composables/useImageFallback'
 const { handleImageError } = useImageFallback()
 
@@ -139,6 +143,10 @@ const statusBarHeight = ref(0)
 const commentText = ref('')
 const loadingComments = ref(false)
 let hasMounted = false
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''

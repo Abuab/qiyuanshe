@@ -7,7 +7,7 @@
         <view class="nav-right"></view>
       </view>
     </view>
-    <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
+    <scroll-view class="content" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view v-if="loading" class="loading">加载中...</view>
       <view v-else-if="comments.length === 0" class="empty">暂无评语</view>
       <view v-for="item in comments" :key="item.id" class="comment-card" @tap="goToUser(item.userId)">
@@ -25,6 +25,7 @@
       </view>
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -33,6 +34,7 @@ import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { icons } from '@/config/icons'
+import BackTop from '@/components/back-top/back-top.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 
@@ -41,6 +43,10 @@ const entryName = computed(() => systemStore.quickEntryNames?.[0] || '红娘评�
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 const loading = ref(true)
 const comments = ref<any[]>([])
 

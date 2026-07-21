@@ -7,7 +7,7 @@
         <view class="nav-right" @tap="goToPublish"><text class="publish-btn">发帖</text></view>
       </view>
     </view>
-    <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }" @scrolltolower="loadMore">
+    <scroll-view class="content" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }" @scrolltolower="loadMore">
       <view v-if="loading" class="loading">加载中...</view>
       <view v-else-if="posts.length === 0" class="empty">暂无帖子，快来发布第一个吧</view>
       <view v-for="p in posts" :key="p.id" class="post-card">
@@ -26,6 +26,7 @@
       <view v-if="noMore" class="no-more">— 没有更多了 —</view>
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -33,6 +34,7 @@
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import BackTop from '@/components/back-top/back-top.vue'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -42,6 +44,11 @@ const page = ref(1)
 const noMore = ref(false)
 const circleId = ref(0)
 const circleName = ref('')
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any

@@ -13,6 +13,7 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal" @scroll="onScroll"
       :style="{ paddingTop: navBarTop + 'px' }"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
@@ -138,6 +139,7 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -148,6 +150,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
+import BackTop from '@/components/back-top/back-top.vue'
 
 const systemStore = useSystemStore()
 const entryName = computed(() => systemStore.quickEntryNames?.[3] || '佳偶天成')
@@ -162,6 +165,11 @@ const loading = ref(true)
 const loadingMore = ref(false)
 const noMore = ref(false)
 const isRefreshing = ref(false)
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any

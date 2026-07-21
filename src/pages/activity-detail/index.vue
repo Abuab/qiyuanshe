@@ -9,7 +9,7 @@
       <view class="nav-placeholder"></view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y enable-flex v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
+    <scroll-view class="content-scroll" scroll-y enable-flex :scroll-top="scrollToVal" @scroll="onScroll" v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
       <!-- 顶部 Banner 大图（全宽+底部圆角） -->
       <view class="banner-wrapper">
         <image class="banner-image" :src="activity.coverImage" mode="aspectFill" />
@@ -237,6 +237,8 @@
       @close="matchmakerListVisible = false"
       @contact="onSelectMatchmaker"
     />
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -250,6 +252,7 @@ import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl, getImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
+import BackTop from '@/components/back-top/back-top.vue'
 import { useSystemStore } from '@/store/system'
 
 interface Activity {
@@ -281,6 +284,13 @@ const statusBarHeight = ref(0)
 const safeAreaBottom = ref(0)
 const activeTab = ref<'detail' | 'scene'>('detail')
 const tabAnimating = ref(false)
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+
 const matchmakerList = ref<any[]>([])
 const selectedMatchmaker = ref({
   id: 1,

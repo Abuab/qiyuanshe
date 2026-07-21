@@ -170,10 +170,7 @@
       </template>
     </view>
 
-    <!-- 一键回到顶部按钮 -->
-    <view v-if="showBackTop && !showLoveIntent" class="float-backtop" @tap="scrollToTop">
-      <text class="backtop-arrow">↑</text>
-    </view>
+    <BackTop :show="showBackTop && !showLoveIntent" @click="scrollToTop" />
 
     <!-- 固定筛选栏：原始筛选栏滚出视野后固定到品牌栏下方 -->
     <view v-if="showFixedFilter && !showLoveIntent" class="filter-section-fixed" :style="{ top: (statusBarHeight + 44) + 'px' }">
@@ -257,6 +254,7 @@ import CityPicker from '@/components/city-picker/city-picker.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import LoveIntentPopup from '@/components/love-intent-popup/love-intent-popup.vue'
+import BackTop from '@/components/back-top/back-top.vue'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
@@ -985,29 +983,6 @@ const onShareTimeline = () => {
   .float-label-test {
     color: #ffffff;
     font-weight: 700;
-  }
-}
-
-// 一键回到顶部按钮
-.float-backtop {
-  position: fixed;
-  right: 20rpx;
-  bottom: 500rpx;
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #FFB3C6 0%, #FFD1DC 40%, #FFFFFF 100%);
-  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 998;
-
-  .backtop-arrow {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #F098B4;
-    line-height: 1;
   }
 }
 

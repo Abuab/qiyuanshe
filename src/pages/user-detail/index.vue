@@ -16,7 +16,7 @@
         </view>
       </view>
 
-      <scroll-view class="page-scroll" scroll-y :enhanced="true" :show-scrollbar="false">
+      <scroll-view class="page-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :enhanced="true" :show-scrollbar="false">
         <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
         <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px', height: `calc(50vh + ${frostTotalHeight}px)` }">
           <image
@@ -711,6 +711,8 @@
     <view v-else class="empty-container">
       <text>用户不存在</text>
     </view>
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -744,6 +746,7 @@ import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
+import BackTop from '@/components/back-top/back-top.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const userStore = useUserStore()
@@ -765,6 +768,12 @@ const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 const matchmakerList = ref<any[]>([])
 const followLoading = ref(false)
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 // ===== 照片 =====
 const activePhotoIndex = ref(0)

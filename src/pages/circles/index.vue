@@ -13,6 +13,7 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal" @scroll="onScroll"
       :style="{ paddingTop: navBarTop + 'px' }"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
@@ -95,6 +96,7 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -106,6 +108,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
+import BackTop from '@/components/back-top/back-top.vue'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 
 const systemStore = useSystemStore()
@@ -125,6 +128,11 @@ const pageSize = 10
 const loadingMore = ref(false)
 const noMore = ref(false)
 const isRefreshing = ref(false)
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any

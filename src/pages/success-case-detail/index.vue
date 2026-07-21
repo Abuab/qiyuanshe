@@ -7,7 +7,7 @@
         <view class="nav-right"></view>
       </view>
     </view>
-    <scroll-view class="content" scroll-y :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
+    <scroll-view class="content" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view v-if="loading" class="loading">加载中...</view>
       <template v-else-if="item">
         <image v-if="item.cover" class="cover" :src="item.cover" mode="aspectFill" />
@@ -21,6 +21,7 @@
       </template>
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -28,11 +29,17 @@
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
+import BackTop from '@/components/back-top/back-top.vue'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 const loading = ref(true)
 const item = ref<any>(null)
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo() as any

@@ -29,6 +29,8 @@
     <scroll-view
       class="msg-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       enable-flex
       @scrolltolower="loadMore"
       :refresher-enabled="true"
@@ -64,6 +66,7 @@
         <text>没有更多了</text>
       </view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -73,6 +76,7 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useSystemStore } from '@/store/system'
+import BackTop from '@/components/back-top/back-top.vue'
 import { logger } from '@/utils/logger'
 
 interface NotifyItem {
@@ -91,6 +95,10 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const bannerClosed = ref(false)
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any

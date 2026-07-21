@@ -22,6 +22,8 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
@@ -43,6 +45,7 @@
         <text class="empty-text">暂无访客</text>
       </view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -50,6 +53,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import BackTop from '@/components/back-top/back-top.vue'
 import VisitorCard from '@/components/VisitorCard/VisitorCard.vue'
 
 interface Visitor {
@@ -67,6 +71,10 @@ const currentTab = ref(0)
 const list = ref<Visitor[]>([])
 const newLikeCount = ref(0)
 const isRefreshing = ref(false)
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 function switchTab(index: number) {
   if (currentTab.value === index) return

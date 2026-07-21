@@ -21,6 +21,7 @@
     <scroll-view
       class="content"
       scroll-y
+      :scroll-top="scrollToVal" @scroll="onScroll"
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx + tabRowHeightPx) + 'px' }"
       @scrolltolower="loadMore"
     >
@@ -78,6 +79,7 @@
 
       <view class="bottom-safe"></view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
@@ -91,6 +93,7 @@ import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 import { icons as iconConfig } from '@/config/icons'
 import { requireLogin } from '@/utils/auth'
+import BackTop from '@/components/back-top/back-top.vue'
 
 const systemStore = useSystemStore()
 const { appName, followEmptyText, followerEmptyText, icons } = storeToRefs(systemStore)
@@ -107,6 +110,11 @@ const followingPage = ref(1)
 const followerPage = ref(1)
 const followingNoMore = ref(false)
 const followerNoMore = ref(false)
+
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 const followEmptyIcon = computed(() => icons.value?.page?.followEmptyIcon || '')
 

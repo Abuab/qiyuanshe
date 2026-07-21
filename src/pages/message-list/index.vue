@@ -13,6 +13,8 @@
       :style="{ paddingTop: (44 + statusBarHeight) + 'px', height: 'calc(100vh - 120rpx - ' + (44 + statusBarHeight) + 'px)' }"
       scroll-y
       enable-flex
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       @scrolltolower="loadMore"
       :refresher-enabled="true"
       @refresherrefresh="onRefresh"
@@ -83,6 +85,8 @@
         <text>没有更多了</text>
       </view>
     </scroll-view>
+
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 
   <tab-bar />
@@ -98,6 +102,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
+import BackTop from '@/components/back-top/back-top.vue'
 import { useIcon } from '@/composables/useIcon'
 
 const systemStore = useSystemStore()
@@ -134,6 +139,12 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
+
+// ===== 回到顶部 =====
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 // 系统通知图标（后台可配置）
 const systemNotifyIcon = computed(() => {

@@ -29,6 +29,8 @@
     <scroll-view
       class="content-scroll"
       scroll-y
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
       :refresher-enabled="true"
       :refresher-triggered="isRefreshing"
@@ -73,12 +75,14 @@
         <text class="empty-text">{{ emptyText }}</text>
       </view>
     </scroll-view>
+    <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import BackTop from '@/components/back-top/back-top.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 
@@ -103,6 +107,10 @@ const isRefreshing = ref(false)
 const statusBarHeight = ref(0)
 // nav-level1 (88rpx ≈ 44px) + nav-level2 (88rpx ≈ 44px)
 const navBarHeightPx = 88
+const scrollToVal = ref(0)
+const showBackTop = ref(false)
+const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
+const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
 
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']
