@@ -429,16 +429,16 @@ function onLoginCta() {
 }
 
 function retest() {
-  uni.redirectTo({ url: '/pages/personality/test?retest=1' })
+  uni.redirectTo({ url: '/subpkg-pages/personality/test?retest=1' })
 }
 
 function goTest() {
-  uni.redirectTo({ url: '/pages/personality/test' })
+  uni.redirectTo({ url: '/subpkg-pages/personality/test' })
 }
 
 function goPoster() {
   const q = selectedCopy.value ? `?shareText=${encodeURIComponent(selectedCopy.value)}` : ''
-  uni.navigateTo({ url: `/pages/personality/poster${q}` })
+  uni.navigateTo({ url: `/subpkg-pages/personality/poster${q}` })
 }
 
 function goMatchList() {

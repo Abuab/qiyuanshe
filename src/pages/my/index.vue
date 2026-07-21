@@ -475,23 +475,23 @@ const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
 const goToQuestions = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
   // 优先跳转我的回答，失败则跳转问答广场
-  safeNavigateTo('/pages/my-answers/index', '/pages/questions/index')
+  safeNavigateTo('/subpkg-pages/my-answers/index', '/subpkg-pages/questions/index')
 }
 const goToAiMatchmaker = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  safeNavigateTo('/pages/ai-matchmaker/index')
+  safeNavigateTo('/subpkg-pages/ai-matchmaker/index')
 }
 const goToAiQuiz = () => {
-  safeNavigateTo('/pages/ai-quiz/ai-quiz')
+  safeNavigateTo('/subpkg-pages/ai-quiz/ai-quiz')
 }
 
 // AI 性格解读：未测试→测试页；已测试→结果页（含 AI 深度解读卡片）
 const goToAiPersonality = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
   if (personalityTested.value) {
-    safeNavigateTo('/pages/personality/result')
+    safeNavigateTo('/subpkg-pages/personality/result')
   } else {
-    safeNavigateTo('/pages/personality/test')
+    safeNavigateTo('/subpkg-pages/personality/test')
   }
 }
 
@@ -500,9 +500,9 @@ const goMyPersonality = () => {
   reportCopyClick('my_personality_entry', myEntryItemId.value)
   // 测一测允许游客参与
   if (personalityTested.value) {
-    safeNavigateTo('/pages/personality/result')
+    safeNavigateTo('/subpkg-pages/personality/result')
   } else {
-    safeNavigateTo('/pages/personality/test')
+    safeNavigateTo('/subpkg-pages/personality/test')
   }
 }
 
@@ -580,15 +580,15 @@ const refreshMyProfileGen = async () => {
     profileGenLoading.value = false
   }
 }
-const goToSettings = () => safeNavigateTo('/pages/settings/index')
-const goToFollows = () => safeNavigateTo('/pages/my-follows/index?tab=following')
-const goToFollowers = () => safeNavigateTo('/pages/my-follows/index?tab=followers')
-const goToVisitors = () => safeNavigateTo('/pages/my-visitors/index?tab=visitors')
-const goToFootprints = () => safeNavigateTo('/pages/my-visitors/index?tab=views')
+const goToSettings = () => safeNavigateTo('/subpkg-pages/settings/index')
+const goToFollows = () => safeNavigateTo('/subpkg-pages/my-follows/index?tab=following')
+const goToFollowers = () => safeNavigateTo('/subpkg-pages/my-follows/index?tab=followers')
+const goToVisitors = () => safeNavigateTo('/subpkg-pages/my-visitors/index?tab=visitors')
+const goToFootprints = () => safeNavigateTo('/subpkg-pages/my-visitors/index?tab=views')
 const goToPhotos = () => safeNavigateTo('/pages/edit-profile/index')
 const goToRealnameAuth = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
-  safeNavigateTo('/pages/realname-auth/index')
+  safeNavigateTo('/subpkg-pages/realname-auth/index')
 }
 
 const showMatchmaker = ref(false)
@@ -634,9 +634,9 @@ const onSelectMatchmaker = (matchmaker: any) => {
   showMatchmaker.value = true
 }
 
-const goToLoveQuotes = () => safeNavigateTo('/pages/love-quotes/index')
-const goToMyLikes = () => safeNavigateTo('/pages/my-likes/my-likes')
-const goToPrivacySettings = () => safeNavigateTo('/pages/privacy-settings/index')
+const goToLoveQuotes = () => safeNavigateTo('/subpkg-pages/love-quotes/index')
+const goToMyLikes = () => safeNavigateTo('/subpkg-pages/my-likes/my-likes')
+const goToPrivacySettings = () => safeNavigateTo('/subpkg-pages/privacy-settings/index')
 const goToUserAgreement = () => safeNavigateTo('/pages/agreement/index?type=user')
 const goToAntiFraud = () => safeNavigateTo('/pages/agreement/index?type=antiFraud')
 

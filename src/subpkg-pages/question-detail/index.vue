@@ -211,8 +211,8 @@ const handleBack = () => safeNavigateBack()
 
 const goToQuestions = () => {
   uni.navigateTo({
-    url: '/pages/questions/index',
-    fail: () => uni.switchTab({ url: '/pages/questions/index' }),
+    url: '/subpkg-pages/questions/index',
+    fail: () => uni.switchTab({ url: '/subpkg-pages/questions/index' }),
   })
 }
 
@@ -226,14 +226,14 @@ const goToAnswer = () => {
     return
   }
   uni.navigateTo({
-    url: `/pages/answer/index?questionId=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
+    url: `/subpkg-pages/answer/index?questionId=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
   })
 }
 
 const onShareAppMessage = () => {
   return {
     title: questionTitle.value || `问答详情 - ${systemStore.appName}`,
-    path: `/pages/question-detail/index?id=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
+    path: `/subpkg-pages/question-detail/index?id=${questionId.value}&title=${encodeURIComponent(questionTitle.value)}`,
   }
 }
 </script>

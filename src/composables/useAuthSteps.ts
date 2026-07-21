@@ -56,7 +56,7 @@ export function goAuthPhone() {
 
 /** 实名认证：跳转至实名认证页面 */
 export function goRealNameAuth() {
-  uni.navigateTo({ url: '/pages/realname-auth/index' })
+  uni.navigateTo({ url: '/subpkg-pages/realname-auth/index' })
 }
 
 /** 刷新认证状态（登录后/绑定手机后调用） */

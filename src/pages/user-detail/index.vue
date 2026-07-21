@@ -1145,7 +1145,7 @@ const goToLogin = () => {
 const goToAnswer = (item: any) => {
   const questionId = item.id || item.questionId
   const title = encodeURIComponent(item.question || '')
-  uni.navigateTo({ url: `/pages/answer/index?questionId=${questionId}&title=${title}` })
+  uni.navigateTo({ url: `/subpkg-pages/answer/index?questionId=${questionId}&title=${title}` })
 }
 
 const remindVerify = () => {
@@ -1434,7 +1434,7 @@ const openPersonalityPopup = () => {
 const goViewerTest = () => {
   reportCopyClick('user_detail_test_guide', viewerGuideItemId.value)
   if (!isLoggedIn.value) { goToLogin(); return }
-  uni.navigateTo({ url: '/pages/personality/test' })
+  uni.navigateTo({ url: '/subpkg-pages/personality/test' })
 }
 
 // 绘制对方简化雷达图（radar: { 维度code: 0-100 }）

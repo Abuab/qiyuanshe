@@ -466,11 +466,11 @@ const handleQuickEntry = (id: number) => {
     app.globalData.dynamicTab = 'matchmaker'
     uni.switchTab({ url: '/pages/dynamic/index' })
   } else if (id === 2) {
-    uni.navigateTo({ url: '/pages/activity-list/index' })
+    uni.navigateTo({ url: '/subpkg-pages/activity-list/index' })
   } else if (id === 3) {
-    uni.navigateTo({ url: '/pages/circles/index' })
+    uni.navigateTo({ url: '/subpkg-pages/circles/index' })
   } else if (id === 4) {
-    uni.navigateTo({ url: '/pages/success-cases/index' })
+    uni.navigateTo({ url: '/subpkg-pages/success-cases/index' })
   } else {
     showToast('功能开发中', 'none')
   }
@@ -478,8 +478,8 @@ const handleQuickEntry = (id: number) => {
 
 const goToQuestions = () => {
   uni.switchTab({
-    url: '/pages/questions/index',
-    fail: () => uni.navigateTo({ url: '/pages/questions/index' }),
+    url: '/subpkg-pages/questions/index',
+    fail: () => uni.navigateTo({ url: '/subpkg-pages/questions/index' }),
   })
 }
 
@@ -496,7 +496,7 @@ const loadHotQuestions = async () => {
 
 const goToQuestionDetail = (q: { id: number; title: string }) => {
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${q.id}&title=${encodeURIComponent(q.title)}`,
+    url: `/subpkg-pages/question-detail/index?id=${q.id}&title=${encodeURIComponent(q.title)}`,
   })
 }
 

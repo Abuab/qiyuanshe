@@ -37,14 +37,6 @@
       }
     },
     {
-      "path": "pages/questions/index",
-      "style": {
-        "navigationBarTitleText": "问答列表",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": true
-      }
-    },
-    {
       "path": "pages/guest-guide/index",
       "style": {
         "navigationBarTitleText": "",
@@ -72,22 +64,6 @@
       "path": "pages/filter/index",
       "style": {
         "navigationBarTitleText": "筛选",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
-      "path": "pages/question-detail/index",
-      "style": {
-        "navigationBarTitleText": "问答详情",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
-      "path": "pages/answer/index",
-      "style": {
-        "navigationBarTitleText": "回答问题",
-        "navigationStyle": "custom",
         "enablePullDownRefresh": false
       }
     },
@@ -136,22 +112,6 @@
       }
     },
     {
-      "path": "pages/activity-list/index",
-      "style": {
-        "navigationBarTitleText": "活动",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": true
-      }
-    },
-    {
-      "path": "pages/activity-detail/index",
-      "style": {
-        "navigationBarTitleText": "活动详情",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
       "path": "pages/edit-profile/index",
       "style": {
         "navigationBarTitleText": "编辑资料",
@@ -166,289 +126,342 @@
       }
     },
     {
-      "path": "pages/dynamic-detail/index",
-      "style": {
-        "navigationBarTitleText": "动态详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/agreement/index",
       "style": {
         "navigationBarTitleText": "用户协议",
         "navigationBarBackgroundColor": "#ffffff",
         "navigationBarTextStyle": "black"
       }
-    },
-    {
-      "path": "pages/my-answers/index",
-      "style": {
-        "navigationBarTitleText": "我的回答",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/settings/index",
-      "style": {
-        "navigationBarTitleText": "设置",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/matchmaker-reviews/index",
-      "style": {
-        "navigationBarTitleText": "红娘评语",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/circles/index",
-      "style": {
-        "navigationBarTitleText": "相亲圈子",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/circle-posts/index",
-      "style": {
-        "navigationBarTitleText": "帖子列表",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/circle-publish/index",
-      "style": {
-        "navigationBarTitleText": "发帖",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/success-cases/index",
-      "style": {
-        "navigationBarTitleText": "我们脱单了",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/success-case-detail/index",
-      "style": {
-        "navigationBarTitleText": "成功故事",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/my-follows/index",
-      "style": {
-        "navigationBarTitleText": "我的关注",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/my-visitors/index",
-      "style": {
-        "navigationBarTitleText": "谁看过我",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/my-photos/index",
-      "style": {
-        "navigationBarTitleText": "我的照片",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/realname-auth/index",
-      "style": {
-        "navigationBarTitleText": "实名认证",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/single-promise/index",
-      "style": {
-        "navigationBarTitleText": "单身承诺",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/education-auth/index",
-      "style": {
-        "navigationBarTitleText": "学历认证",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/property-auth/index",
-      "style": {
-        "navigationBarTitleText": "房产认证",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/car-auth/index",
-      "style": {
-        "navigationBarTitleText": "车认证",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/help/index",
-      "style": {
-        "navigationBarTitleText": "帮助与反馈",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/about/index",
-      "style": {
-        "navigationBarTitleText": "关于我们",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/love-quotes/index",
-      "style": {
-        "navigationBarTitleText": "爱情语录",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/privacy-settings/index",
-      "style": {
-        "navigationBarTitleText": "隐私设置",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/account-cancel/index",
-      "style": {
-        "navigationBarTitleText": "注销账号",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/basic-info/index",
-      "style": {
-        "navigationBarTitleText": "灵通相亲",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/upload-avatar/index",
-      "style": {
-        "navigationBarTitleText": "灵通相亲",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/detail-info/index",
-      "style": {
-        "navigationBarTitleText": "灵通相亲",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/mate-requirement/index",
-      "style": {
-        "navigationBarTitleText": "灵通相亲",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/real-name-auth/index",
-      "style": {
-        "navigationBarTitleText": "灵通相亲",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/realname-auth-input/index",
-      "style": {
-        "navigationBarTitleText": "实名认证",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/tencent-eid-auth/index",
-      "style": {
-        "navigationBarTitleText": "腾讯云E证通授权",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/privacy-switches/index",
-      "style": {
-        "navigationBarTitleText": "隐私设置",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/block-list/index",
-      "style": {
-        "navigationBarTitleText": "黑名单",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/ai-matchmaker/index",
-      "style": {
-        "navigationBarTitleText": "AI 红娘",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/system-messages/index",
-      "style": {
-        "navigationBarTitleText": "系统消息",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/my-likes/my-likes",
-      "style": { "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/daily-recommend/daily-recommend",
-      "style": { "navigationBarTitleText": "每日缘分" }
-    },
-    {
-      "path": "pages/ai-match-report/ai-match-report",
-      "style": { "navigationBarTitleText": "AI 匹配报告" }
-    },
-    {
-      "path": "pages/ai-quiz/ai-quiz",
-      "style": { "navigationBarTitleText": "", "navigationStyle": "custom" }
-    },
-    {
-      "path": "pages/visitors/visitors",
-      "style": { "navigationBarTitleText": "访客记录" }
-    },
-    {
-      "path": "pages/personality/test",
-      "style": {
-        "navigationBarTitleText": "人格测试",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
-      "path": "pages/personality/result",
-      "style": {
-        "navigationBarTitleText": "性格测试结果",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
-      "path": "pages/personality/poster",
-      "style": {
-        "navigationBarTitleText": "分享我的性格",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
     }
   ],
+  "subPackages": [
+    {
+      "root": "subpkg-pages",
+      "pages": [
+        {
+          "path": "questions/index",
+          "style": {
+            "navigationBarTitleText": "问答列表",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "question-detail/index",
+          "style": {
+            "navigationBarTitleText": "问答详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "answer/index",
+          "style": {
+            "navigationBarTitleText": "回答问题",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "activity-list/index",
+          "style": {
+            "navigationBarTitleText": "活动",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": true
+          }
+        },
+        {
+          "path": "activity-detail/index",
+          "style": {
+            "navigationBarTitleText": "活动详情",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "dynamic-detail/index",
+          "style": {
+            "navigationBarTitleText": "动态详情",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-answers/index",
+          "style": {
+            "navigationBarTitleText": "我的回答",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "settings/index",
+          "style": {
+            "navigationBarTitleText": "设置",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "matchmaker-reviews/index",
+          "style": {
+            "navigationBarTitleText": "红娘评语",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "circles/index",
+          "style": {
+            "navigationBarTitleText": "相亲圈子",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "circle-posts/index",
+          "style": {
+            "navigationBarTitleText": "帖子列表",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "circle-publish/index",
+          "style": {
+            "navigationBarTitleText": "发帖",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "success-cases/index",
+          "style": {
+            "navigationBarTitleText": "我们脱单了",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "success-case-detail/index",
+          "style": {
+            "navigationBarTitleText": "成功故事",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-follows/index",
+          "style": {
+            "navigationBarTitleText": "我的关注",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-visitors/index",
+          "style": {
+            "navigationBarTitleText": "谁看过我",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-photos/index",
+          "style": {
+            "navigationBarTitleText": "我的照片",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "realname-auth/index",
+          "style": {
+            "navigationBarTitleText": "实名认证",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "single-promise/index",
+          "style": {
+            "navigationBarTitleText": "单身承诺",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "education-auth/index",
+          "style": {
+            "navigationBarTitleText": "学历认证",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "property-auth/index",
+          "style": {
+            "navigationBarTitleText": "房产认证",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "car-auth/index",
+          "style": {
+            "navigationBarTitleText": "车认证",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "help/index",
+          "style": {
+            "navigationBarTitleText": "帮助与反馈",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "about/index",
+          "style": {
+            "navigationBarTitleText": "关于我们",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "love-quotes/index",
+          "style": {
+            "navigationBarTitleText": "爱情语录",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "privacy-settings/index",
+          "style": {
+            "navigationBarTitleText": "隐私设置",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "account-cancel/index",
+          "style": {
+            "navigationBarTitleText": "注销账号",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "basic-info/index",
+          "style": {
+            "navigationBarTitleText": "灵通相亲",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "upload-avatar/index",
+          "style": {
+            "navigationBarTitleText": "灵通相亲",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "detail-info/index",
+          "style": {
+            "navigationBarTitleText": "灵通相亲",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "mate-requirement/index",
+          "style": {
+            "navigationBarTitleText": "灵通相亲",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "real-name-auth/index",
+          "style": {
+            "navigationBarTitleText": "灵通相亲",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "realname-auth-input/index",
+          "style": {
+            "navigationBarTitleText": "实名认证",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "tencent-eid-auth/index",
+          "style": {
+            "navigationBarTitleText": "腾讯云E证通授权",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "privacy-switches/index",
+          "style": {
+            "navigationBarTitleText": "隐私设置",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "block-list/index",
+          "style": {
+            "navigationBarTitleText": "黑名单",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "ai-matchmaker/index",
+          "style": {
+            "navigationBarTitleText": "AI 红娘",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "system-messages/index",
+          "style": {
+            "navigationBarTitleText": "系统消息",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "my-likes/my-likes",
+          "style": { "navigationStyle": "custom" }
+        },
+        {
+          "path": "daily-recommend/daily-recommend",
+          "style": { "navigationBarTitleText": "每日缘分" }
+        },
+        {
+          "path": "ai-match-report/ai-match-report",
+          "style": { "navigationBarTitleText": "AI 匹配报告" }
+        },
+        {
+          "path": "ai-quiz/ai-quiz",
+          "style": { "navigationBarTitleText": "", "navigationStyle": "custom" }
+        },
+        {
+          "path": "visitors/visitors",
+          "style": { "navigationBarTitleText": "访客记录" }
+        },
+        {
+          "path": "personality/test",
+          "style": {
+            "navigationBarTitleText": "人格测试",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "personality/result",
+          "style": {
+            "navigationBarTitleText": "性格测试结果",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        },
+        {
+          "path": "personality/poster",
+          "style": {
+            "navigationBarTitleText": "分享我的性格",
+            "navigationStyle": "custom",
+            "enablePullDownRefresh": false
+          }
+        }
+      ]
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index": {
+      "network": "all",
+      "packages": ["subpkg-pages"]
+    }
+  },
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "交友平台",

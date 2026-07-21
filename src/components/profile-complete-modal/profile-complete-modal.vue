@@ -33,7 +33,7 @@ watch(
 )
 
 const handleConfirm = () => {
-  uni.navigateTo({ url: '/pages/basic-info/index' })
+  uni.navigateTo({ url: '/subpkg-pages/basic-info/index' })
 }
 </script>
 

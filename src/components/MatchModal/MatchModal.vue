@@ -68,7 +68,7 @@ function close() {
 
 function goMyLikes() {
   visible.value = false
-  uni.navigateTo({ url: '/pages/my-likes/my-likes?tab=2' })
+  uni.navigateTo({ url: '/subpkg-pages/my-likes/my-likes?tab=2' })
 }
 </script>
 

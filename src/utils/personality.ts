@@ -113,11 +113,11 @@ export async function fetchPersonalityResult(isLoggedIn: boolean): Promise<any |
 export async function goPersonalityEntry(isLoggedIn: boolean): Promise<void> {
   const result = await fetchPersonalityResult(isLoggedIn)
   if (result && result.typeCode) {
-    uni.navigateTo({ url: '/pages/personality/result' })
+    uni.navigateTo({ url: '/subpkg-pages/personality/result' })
     return
   }
   if (!isLoggedIn) await ensureGuestToken()
-  uni.navigateTo({ url: '/pages/personality/test' })
+  uni.navigateTo({ url: '/subpkg-pages/personality/test' })
 }
 
 // ==================== 文案合规 ====================

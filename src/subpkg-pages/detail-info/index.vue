@@ -638,7 +638,7 @@ const handleSubmit = async () => {
 
     showToast('保存成功', 'success')
     setTimeout(() => {
-      uni.navigateTo({ url: '/pages/mate-requirement/index' })
+      uni.navigateTo({ url: '/subpkg-pages/mate-requirement/index' })
     }, 800)
   } catch (err: any) {
     console.error('[detail-info] 提交失败:', err?.message || err)
@@ -647,7 +647,7 @@ const handleSubmit = async () => {
 }
 
 const handleSkip = () => {
-  uni.navigateTo({ url: '/pages/mate-requirement/index' })
+  uni.navigateTo({ url: '/subpkg-pages/mate-requirement/index' })
 }
 </script>
 

@@ -220,7 +220,7 @@ function onLoadMore() {
 
 function goToDetail(id: number) {
   uni.navigateTo({
-    url: `/pages/activity-detail/index?id=${id}`,
+    url: `/subpkg-pages/activity-detail/index?id=${id}`,
   })
 }
 

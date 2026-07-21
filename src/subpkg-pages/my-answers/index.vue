@@ -67,7 +67,7 @@ const fetchAnswers = async () => {
 
 const goToDetail = (item: any) => {
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${item.questionId || item.id}&title=${encodeURIComponent(item.questionTitle || '')}`,
+    url: `/subpkg-pages/question-detail/index?id=${item.questionId || item.id}&title=${encodeURIComponent(item.questionTitle || '')}`,
   })
 }
 

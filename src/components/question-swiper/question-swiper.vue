@@ -75,7 +75,7 @@ const fetchQuestions = async () => {
 
 const goToDetail = (question: Question) => {
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${question.id}&title=${encodeURIComponent(question.title)}`,
+    url: `/subpkg-pages/question-detail/index?id=${question.id}&title=${encodeURIComponent(question.title)}`,
   })
 }
 </script>

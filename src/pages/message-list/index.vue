@@ -259,7 +259,7 @@ const handleBack = () => {
 
 const handleClick = (item: MessageItem) => {
   if (item.type === 'systemAggregate') {
-    uni.navigateTo({ url: '/pages/system-messages/index' })
+    uni.navigateTo({ url: '/subpkg-pages/system-messages/index' })
   }
 }
 

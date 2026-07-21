@@ -279,7 +279,7 @@ const handleSubmit = async () => {
     showToast('上传成功', 'success')
 
     setTimeout(() => {
-      uni.navigateTo({ url: '/pages/detail-info/index' })
+      uni.navigateTo({ url: '/subpkg-pages/detail-info/index' })
     }, 800)
   } catch (err: any) {
     uni.hideLoading()

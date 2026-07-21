@@ -321,23 +321,23 @@ function handleItemTap(type: string) {
   }
 
   if (type === 'realname') {
-    uni.navigateTo({ url: '/pages/realname-auth-input/index' })
+    uni.navigateTo({ url: '/subpkg-pages/realname-auth-input/index' })
     return
   }
   if (type === 'single') {
-    uni.navigateTo({ url: '/pages/single-promise/index' })
+    uni.navigateTo({ url: '/subpkg-pages/single-promise/index' })
     return
   }
   if (type === 'education') {
-    uni.navigateTo({ url: '/pages/education-auth/index' })
+    uni.navigateTo({ url: '/subpkg-pages/education-auth/index' })
     return
   }
   if (type === 'house' || type === 'property') {
-    uni.navigateTo({ url: '/pages/property-auth/index' })
+    uni.navigateTo({ url: '/subpkg-pages/property-auth/index' })
     return
   }
   if (type === 'car') {
-    uni.navigateTo({ url: '/pages/car-auth/index' })
+    uni.navigateTo({ url: '/subpkg-pages/car-auth/index' })
     return
   }
   if (type === 'store') {

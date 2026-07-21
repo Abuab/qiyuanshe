@@ -170,7 +170,7 @@ const handleBack = () => safeNavigateBack()
 
 const goToDetail = (question: Question) => {
   uni.navigateTo({
-    url: `/pages/question-detail/index?id=${question.id}&title=${encodeURIComponent(question.title)}`,
+    url: `/subpkg-pages/question-detail/index?id=${question.id}&title=${encodeURIComponent(question.title)}`,
   })
 }
 
@@ -180,7 +180,7 @@ const goToAnswer = (question: Question) => {
     return
   }
   uni.navigateTo({
-    url: `/pages/answer/index?questionId=${question.id}&title=${encodeURIComponent(question.title)}`,
+    url: `/subpkg-pages/answer/index?questionId=${question.id}&title=${encodeURIComponent(question.title)}`,
   })
 }
 </script>

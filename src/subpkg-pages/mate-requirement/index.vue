@@ -629,7 +629,7 @@ const handleSubmit = async () => {
 
     showToast('保存成功', 'success')
     setTimeout(() => {
-      uni.navigateTo({ url: '/pages/real-name-auth/index' })
+      uni.navigateTo({ url: '/subpkg-pages/real-name-auth/index' })
     }, 800)
   } catch (err: any) {
     console.error('[mate-requirement] 提交失败:', err?.message || err)
@@ -638,7 +638,7 @@ const handleSubmit = async () => {
 }
 
 const handleSkip = () => {
-  uni.navigateTo({ url: '/pages/real-name-auth/index' })
+  uni.navigateTo({ url: '/subpkg-pages/real-name-auth/index' })
 }
 </script>
 

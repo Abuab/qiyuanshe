@@ -297,7 +297,7 @@ async function submit() {
     const wait = Math.max(0, 1500 - (Date.now() - analyzeStart))
     setTimeout(() => {
       analyzing.value = false
-      uni.redirectTo({ url: '/pages/personality/result' })
+      uni.redirectTo({ url: '/subpkg-pages/personality/result' })
     }, wait)
   } catch (e: any) {
     analyzing.value = false

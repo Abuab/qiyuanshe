@@ -422,7 +422,7 @@ const handleSubmit = async () => {
     // 保存成功，进入上传头像流程
     showToast('保存成功', 'success')
     setTimeout(() => {
-      uni.navigateTo({ url: '/pages/upload-avatar/index' })
+      uni.navigateTo({ url: '/subpkg-pages/upload-avatar/index' })
     }, 800)
   } catch (err: any) {
     console.error('[basic-info] 提交失败:', err?.message || err)

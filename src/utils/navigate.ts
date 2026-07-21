@@ -3,7 +3,7 @@
  */
 const TAB_BAR_PAGES = [
   '/pages/index/index',
-  '/pages/questions/index',
+  '/subpkg-pages/questions/index',
   '/pages/vip/index',
   '/pages/message-list/index',
   '/pages/my/index',

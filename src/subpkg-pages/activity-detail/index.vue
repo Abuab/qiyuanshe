@@ -558,7 +558,7 @@ const onShareAppMessage = () => {
   if (!activity.value) return {}
   return {
     title: `${activity.value.title} - ${systemStore.appName}活动`,
-    path: `/pages/activity-detail/index?id=${activity.value.id}`,
+    path: `/subpkg-pages/activity-detail/index?id=${activity.value.id}`,
     imageUrl: activity.value.coverImage || '/static/heart.png',
   }
 }

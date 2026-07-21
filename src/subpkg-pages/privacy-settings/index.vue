@@ -109,7 +109,7 @@ const handleBack = () => {
 }
 
 const goToBlockList = () => {
-  uni.navigateTo({ url: '/pages/block-list/index' })
+  uni.navigateTo({ url: '/subpkg-pages/block-list/index' })
 }
 
 const goToAgreement = () => {
@@ -121,7 +121,7 @@ const goToSelfDiscipline = () => {
 }
 
 const goToPrivacySwitches = () => {
-  uni.navigateTo({ url: '/pages/privacy-switches/index' })
+  uni.navigateTo({ url: '/subpkg-pages/privacy-switches/index' })
 }
 
 const showDeactivateDialog = () => {
@@ -150,7 +150,7 @@ const confirmDeactivate = async () => {
 }
 
 const handleDeactivate = () => {
-  uni.navigateTo({ url: '/pages/account-cancel/index' })
+  uni.navigateTo({ url: '/subpkg-pages/account-cancel/index' })
 }
 </script>
 

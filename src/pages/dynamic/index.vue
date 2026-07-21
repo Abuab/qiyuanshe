@@ -548,7 +548,7 @@ const goToQuestion = (questionId?: number, title?: string) => {
   if (!questionId) return
   const query = title ? `id=${questionId}&title=${encodeURIComponent(title)}` : `id=${questionId}`
   uni.navigateTo({
-    url: `/pages/question-detail/index?${query}`,
+    url: `/subpkg-pages/question-detail/index?${query}`,
   })
 }
 

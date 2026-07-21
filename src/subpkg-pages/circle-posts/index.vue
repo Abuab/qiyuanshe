@@ -80,7 +80,7 @@ function loadMore() {
 
 function handleBack() { safeNavigateBack() }
 function goToPublish() {
-  uni.navigateTo({ url: `/pages/circle-publish/index?id=${circleId.value}&name=${encodeURIComponent(circleName.value)}` })
+  uni.navigateTo({ url: `/subpkg-pages/circle-publish/index?id=${circleId.value}&name=${encodeURIComponent(circleName.value)}` })
 }
 </script>
 
