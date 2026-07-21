@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import request, { getBaseUrl } from '@/utils/request'
+import request, { getServerBaseUrl } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -481,7 +481,9 @@ const drawQRCode = async (ctx: any, template: PosterTemplate) => {
   ctx.stroke()
 
   // 加载真实小程序码：扫码直达该用户详情页（后端优先返回微信小程序码，失败回退链接二维码）
-  const qrCodeUrl = `${getBaseUrl()}/personality/user-share-qr?userId=${userId.value}`
+  // 注意：必须显式拼接 /api 前缀，因为 getBaseUrl() 在某些环境下可能不含 /api，
+  // 导致 uni.downloadFile 请求的 URL 缺失 /api 路径前缀而 404
+  const qrCodeUrl = `${getServerBaseUrl()}/api/personality/user-share-qr?userId=${userId.value}`
 
   try {
     const tempFilePath = await downloadImage(qrCodeUrl)

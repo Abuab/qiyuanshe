@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad, onReady } from '@dcloudio/uni-app'
-import { get, getBaseUrl } from '@/utils/request'
+import { get, getServerBaseUrl } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -142,7 +142,7 @@ async function drawPoster(result: any, ctx: any) {
 
   // 预下载头像和二维码到本地临时文件（旧接口 drawImage 接受本地路径）
   const avatarUrl = getFullImageUrl(userStore.userInfo?.avatar || '')
-  const qrUrl = `${getBaseUrl()}/personality/share-qr?userId=${uid}`
+  const qrUrl = `${getServerBaseUrl()}/api/personality/share-qr?userId=${uid}`
   const [avatarPath, qrPath] = await Promise.all([
     downloadImage(avatarUrl).catch(() => ''),
     downloadImage(qrUrl).catch(() => ''),

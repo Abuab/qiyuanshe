@@ -113,45 +113,114 @@ export class EidAuthService {
       const passed = errCode === 0 || errCode === '0'
       if (passed) {
         const now = new Date()
-        // 去重校验必须在标记 DONE 之前：检查该身份证号是否已被其他激活用户绑定
-        if (identityInfo?.realName && identityInfo?.idCard) {
-          const duplicateCheck = await this.checkIdCardDuplicate(userId, identityInfo.idCard)
-          if (!duplicateCheck.canProceed) {
-            this.logger.warn(
-              `用户 ${userId} E证通核身通过但身份证号冲突: ${duplicateCheck.message}`,
-            )
-            // 认证标记为失败，不允许写入身份信息
-            await this.userRepo.update(userId, {
-              eidCertStatus: EID_STATUS.FAILED,
+        const hasIdentity = !!(identityInfo?.realName && identityInfo?.idCard)
+
+        try {
+          // 事务内：查重 + 写入身份记录 + 标记 DONE 原子化
+          // FOR UPDATE 间隙锁防止两个用户并发使用同一身份证号通过认证
+          await this.entityManager.transaction(async (txnManager) => {
+            if (hasIdentity) {
+              const idCardHash = crypto
+                .createHash('sha256')
+                .update(identityInfo!.idCard.trim())
+                .digest('hex')
+
+              // SELECT ... FOR UPDATE：锁住 idCardHash 索引间隙，阻止并发插入相同哈希
+              const existingRecords = await txnManager
+                .createQueryBuilder(RealNameIdentity, 'rni')
+                .where('rni.idCardHash = :hash', { hash: idCardHash })
+                .andWhere('rni.userId != :userId', { userId })
+                .setLock('pessimistic_write')
+                .getMany()
+
+              // 遍历所有匹配记录：同一哈希可能对应多条（已注销用户 + 二次认证用户）
+              for (const record of existingRecords) {
+                const recordUser = await txnManager.findOne(User, {
+                  where: { id: record.userId },
+                  select: ['id', 'nickname', 'isDeleted'],
+                })
+                if (recordUser && recordUser.isDeleted === 0) {
+                  await txnManager.update(User, userId, {
+                    eidCertStatus: EID_STATUS.FAILED,
+                    eidCertTime: now,
+                  })
+                  this.logger.warn(
+                    `用户 ${userId} E证通核身通过但身份证号冲突（事务内检测）：已绑定用户 ${record.userId}`,
+                  )
+                  throw { __duplicate: true, duplicateUserId: record.userId }
+                }
+              }
+
+              // 写入 real_name_identities
+              const existingIdentity = await txnManager
+                .createQueryBuilder(RealNameIdentity, 'rni')
+                .where('rni.userId = :userId', { userId })
+                .getOne()
+              if (existingIdentity) {
+                await txnManager.update(RealNameIdentity, existingIdentity.id, {
+                  realName: identityInfo!.realName,
+                  idCard: identityInfo!.idCard,
+                  idCardHash,
+                  eidBizSeqNo: user.eidBizSeqNo,
+                  verifiedAt: now,
+                  status: 0,
+                })
+              } else {
+                await txnManager.insert(RealNameIdentity, {
+                  userId,
+                  realName: identityInfo!.realName,
+                  idCard: identityInfo!.idCard,
+                  idCardHash,
+                  eidBizSeqNo: user.eidBizSeqNo || '',
+                  verifiedAt: now,
+                  status: 0,
+                })
+              }
+
+              // 写入 user_auths
+              const existingAuth = await txnManager.findOne(UserAuth, {
+                where: { userId, authType: 'realname' },
+              })
+              if (existingAuth) {
+                existingAuth.authData = {
+                  realName: identityInfo!.realName,
+                  idCard: identityInfo!.idCard,
+                }
+                existingAuth.status = 1
+                await txnManager.save(existingAuth)
+              } else {
+                const newAuth = txnManager.create(UserAuth, {
+                  userId,
+                  authType: 'realname',
+                  status: 1,
+                  authData: {
+                    realName: identityInfo!.realName,
+                    idCard: identityInfo!.idCard,
+                  },
+                })
+                await txnManager.save(newAuth)
+              }
+            }
+
+            // 标记 DONE
+            await txnManager.update(User, userId, {
+              eidCertStatus: EID_STATUS.DONE,
               eidCertTime: now,
+              isRealName: 1,
             })
-            // 发送管理后台预警
-            this.sendDuplicateAlert(
-              userId,
-              duplicateCheck.identities || [],
-              duplicateCheck.relatedUsers || [],
-            ).catch(e => this.logger.warn('发送身份证冲突预警失败: ' + e?.message))
+          })
+
+          this.logger.log(`用户 ${userId} E证通认证成功`)
+          return { status: EID_STATUS.DONE, certTime: now }
+        } catch (e: any) {
+          if (e?.__duplicate) {
+            this.sendDuplicateAlert(userId, [], []).catch(err =>
+              this.logger.warn('发送身份证冲突预警失败: ' + err?.message),
+            )
             return { status: EID_STATUS.FAILED, certTime: now }
           }
+          throw e
         }
-
-        await this.userRepo.update(userId, {
-          eidCertStatus: EID_STATUS.DONE,
-          eidCertTime: now,
-          isRealName: 1,
-        })
-        // 同步写入 UserAuth + real_name_identities
-        if (identityInfo?.realName && identityInfo?.idCard) {
-          await this.syncIdentityRecords({
-            userId,
-            realName: identityInfo.realName,
-            idCard: identityInfo.idCard,
-            eidBizSeqNo: user.eidBizSeqNo,
-            verifiedAt: now,
-          })
-        }
-        this.logger.log(`用户 ${userId} E证通认证成功`)
-        return { status: EID_STATUS.DONE, certTime: now }
       }
       // 有明确结果但未通过
       await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })

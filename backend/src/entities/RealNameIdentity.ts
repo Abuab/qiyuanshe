@@ -37,6 +37,7 @@ export class RealNameIdentity {
   idCard: string
 
   /** 身份证号哈希（SHA-256），用于去重查询，避免明文比对 */
+  @Index()
   @Column({ type: 'varchar', length: 64, nullable: true })
   idCardHash: string
 
