@@ -602,7 +602,7 @@ defineExpose({
 
 .panel-content {
   position: relative;
-  max-height: 75vh;
+  height: 75vh;
   background-color: #ffffff;
   // 顶部直角与 Tab 栏贴合，底部圆角
   border-radius: 0 0 24rpx 24rpx;
@@ -619,7 +619,6 @@ defineExpose({
 
   // 作为独立页面：去掉下拉动画，固定全屏高度让 scroll-view 正常工作
   &.fullPage {
-    max-height: none;
     height: 100vh;
     border-radius: 0;
     transform: none;

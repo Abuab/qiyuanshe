@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   Body,
+  Req,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
@@ -63,16 +64,30 @@ export class UserProfileController {
     return Result.success(notification, '通知已发送')
   }
 
-  /** 群发系统通知给所有用户 */
+  /** 群发系统通知给所有用户（或指定用户） */
   @Post('notifications/broadcast')
   async broadcastNotification(
-    @Body() body: { title: string; content: string },
+    @Body() body: { title: string; content: string; targetUserIds?: number[] },
+    @Req() req: any,
   ) {
+    const senderId = req.user?.id
     const result = await this.profileService.broadcastNotification(
       body.title || '系统通知',
       body.content,
+      senderId,
+      body.targetUserIds,
     )
     return Result.success(result, `已向 ${result.totalSent} 位用户发送通知`)
+  }
+
+  /** 查询群发消息日志 */
+  @Get('notifications/broadcast/logs')
+  async getBroadcastLogs(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const result = await this.profileService.getBroadcastLogs(+page || 1, +limit || 20)
+    return Result.success(result)
   }
 
   @Post(':id/answers')

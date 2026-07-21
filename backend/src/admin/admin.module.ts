@@ -76,6 +76,7 @@ import { RedisService } from '../common/redis.service'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
+import { BroadcastLog } from '../entities/BroadcastLog'
 import { AiModule } from '../ai/ai.module'
 
 @Module({
@@ -112,6 +113,7 @@ import { AiModule } from '../ai/ai.module'
       NotifyLog,
       AiFeatureSwitchLog,
       Feedback,
+      BroadcastLog,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,

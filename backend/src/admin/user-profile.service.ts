@@ -11,6 +11,7 @@ import { MatchmakerReview } from '../entities/MatchmakerReview'
 import { User } from '../entities/User'
 import { Dynamic } from '../entities/Dynamic'
 import { AuditLog } from '../entities/AuditLog'
+import { BroadcastLog } from '../entities/BroadcastLog'
 import { DynamicService } from '../dynamic/dynamic.service'
 
 @Injectable()
@@ -36,6 +37,8 @@ export class UserProfileService {
     private readonly dynamicRepository: Repository<Dynamic>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(BroadcastLog)
+    private readonly broadcastLogRepository: Repository<BroadcastLog>,
     private readonly dynamicService: DynamicService,
   ) {}
 
@@ -297,40 +300,89 @@ export class UserProfileService {
     return saved
   }
 
-  /** 群发系统通知给所有活跃用户 */
-  async broadcastNotification(title: string, content: string, senderId?: number) {
+  /** 群发系统通知给所有活跃用户（或指定用户） */
+  async broadcastNotification(
+    title: string,
+    content: string,
+    senderId: number,
+    targetUserIds?: number[],
+  ) {
     const BATCH_SIZE = 500
     let totalSent = 0
-    let offset = 0
 
-    // 分批查询活跃用户（isDeleted = 0 未删除），使用 skip + take 正确分页
-    while (true) {
-      const users = await this.userRepository.find({
-        where: { isDeleted: 0 },
-        select: ['id'],
-        order: { id: 'ASC' },
-        skip: offset,
-        take: BATCH_SIZE,
-      })
-      if (users.length === 0) break
+    if (targetUserIds && targetUserIds.length > 0) {
+      // 指定用户：直接按 ID 列表分批查询
+      for (let i = 0; i < targetUserIds.length; i += BATCH_SIZE) {
+        const batch = targetUserIds.slice(i, i + BATCH_SIZE)
+        const users = await this.userRepository.find({
+          where: batch.map(id => ({ id, isDeleted: 0 } as any)),
+          select: ['id'],
+        })
+        if (users.length === 0) continue
 
-      // 批量创建通知
-      const notifications = users.map(u =>
-        this.notificationRepository.create({
-          userId: u.id,
-          title,
-          content,
-          senderType: 'admin',
-          senderId,
-        }),
-      )
-      await this.notificationRepository.save(notifications)
-      totalSent += notifications.length
+        const notifications = users.map(u =>
+          this.notificationRepository.create({
+            userId: u.id,
+            title,
+            content,
+            senderType: 'admin',
+            senderId,
+          }),
+        )
+        await this.notificationRepository.save(notifications)
+        totalSent += notifications.length
+      }
+    } else {
+      // 全部用户：skip + take 分页
+      let offset = 0
+      while (true) {
+        const users = await this.userRepository.find({
+          where: { isDeleted: 0 },
+          select: ['id'],
+          order: { id: 'ASC' },
+          skip: offset,
+          take: BATCH_SIZE,
+        })
+        if (users.length === 0) break
 
-      if (users.length < BATCH_SIZE) break
-      offset += BATCH_SIZE
+        const notifications = users.map(u =>
+          this.notificationRepository.create({
+            userId: u.id,
+            title,
+            content,
+            senderType: 'admin',
+            senderId,
+          }),
+        )
+        await this.notificationRepository.save(notifications)
+        totalSent += notifications.length
+
+        if (users.length < BATCH_SIZE) break
+        offset += BATCH_SIZE
+      }
     }
 
+    // 写入发送日志
+    await this.broadcastLogRepository.save(
+      this.broadcastLogRepository.create({
+        senderId,
+        title,
+        content,
+        totalSent,
+        targetUserIds: targetUserIds || null,
+      }),
+    )
+
     return { totalSent }
+  }
+
+  /** 查询群发消息日志 */
+  async getBroadcastLogs(page = 1, limit = 20) {
+    const [list, total] = await this.broadcastLogRepository.findAndCount({
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    })
+    return { list, total, page, limit }
   }
 }
