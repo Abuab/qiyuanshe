@@ -78,7 +78,11 @@ export class EidAuthService {
       throw new Error('用户不存在')
     }
     // 已认证/失败的最终态直接返回，避免重复消费 token（token 有效期 3 天）
+    // 但如果管理后台已将 isRealName 回退，不应返回已认证状态
     if (user.eidCertStatus === EID_STATUS.DONE) {
+      if (user.isRealName !== 1) {
+        return { status: EID_STATUS.NONE, certTime: user.eidCertTime }
+      }
       return { status: user.eidCertStatus, certTime: user.eidCertTime }
     }
     if (!user.eidBizSeqNo || !isEidConfigured()) {

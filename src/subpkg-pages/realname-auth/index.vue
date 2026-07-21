@@ -245,13 +245,14 @@ async function fetchAuthStatus(url: string, actionRef: any, classRef: any) {
   }
 }
 
-// 实名认证状态以 E证通结果(eidCertStatus)为准：2已认证 / 1认证中，不再依赖旧的 isRealName 标记
+// 实名认证状态以 E证通结果(eidCertStatus)为准：2已认证 / 1认证中，同时校验 isRealName 防止管理后台单独回退
 async function fetchRealnameStatus() {
   try {
     const res: any = await get('/auth/profile')
     const p = res?.data || res
     const s = Number(p?.eidCertStatus) || 0
-    if (s === 2) {
+    const isRealName = Number(p?.isRealName) || 0
+    if (s === 2 && isRealName === 1) {
       realnameAction.value = '已认证'
       realnameActionClass.value = 'done'
     } else if (s === 1) {

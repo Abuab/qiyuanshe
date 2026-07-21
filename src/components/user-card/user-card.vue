@@ -254,6 +254,7 @@ const onLike = async () => {
 }
 
 .avatar {
+  display: block;
   width: 180rpx;
   height: 180rpx;
   border-radius: 12rpx;

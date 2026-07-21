@@ -169,8 +169,10 @@ onMounted(() => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
   const info: any = userStore.userInfo || {}
-  // 实名认证以 E证通结果(eidCertStatus)为唯一依据，不再回退到旧的 isRealName 标记
-  certStatus.value = info.eidCertStatus || 0
+  const eidStatus = info.eidCertStatus || 0
+  const isRealName = Number(info.isRealName) || 0
+  // 同时校验 eidCertStatus 和 isRealName，防止管理后台单独回退 isRealName
+  certStatus.value = (eidStatus === 2 && isRealName !== 1) ? 0 : eidStatus
 })
 
 // 从 eID 数字身份小程序返回时兜底查询结果（防止 verifyDoneCallback 未触发）

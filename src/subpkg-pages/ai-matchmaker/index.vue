@@ -308,6 +308,7 @@ const sendText = async () => {
       url: '/ai/matchmaker/chat',
       method: 'POST',
       data: { message: text },
+      skipToast: true,
     })
     if (res) {
       messages.value.push({
@@ -323,11 +324,20 @@ const sendText = async () => {
         remainingRounds.value = res.remainingRounds
       }
     }
-  } catch {
-    messages.value.push({
-      role: 'ai',
-      content: '红娘正在忙，请稍后再试～',
-    })
+  } catch (e: any) {
+    const errMsg = e?.message || ''
+    // 配额相关错误，在聊天区完整展示后端返回的文案
+    if (errMsg.includes('次数已用完') || errMsg.includes('QUOTA')) {
+      messages.value.push({
+        role: 'ai',
+        content: errMsg,
+      })
+    } else {
+      messages.value.push({
+        role: 'ai',
+        content: '红娘正在忙，请稍后再试～',
+      })
+    }
     scrollToBottom()
   }
   typing.value = false
