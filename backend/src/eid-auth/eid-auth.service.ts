@@ -102,14 +102,8 @@ export class EidAuthService {
       const passed = errCode === 0 || errCode === '0'
       if (passed) {
         const now = new Date()
-        await this.userRepo.update(userId, {
-          eidCertStatus: EID_STATUS.DONE,
-          eidCertTime: now,
-          isRealName: 1,
-        })
-        // 创建/更新 UserAuth 实名认证记录（使用前端表单中填写的姓名/身份证号）
+        // 去重校验必须在标记 DONE 之前：检查该身份证号是否已被其他激活用户绑定
         if (identityInfo?.realName && identityInfo?.idCard) {
-          // 去重校验：检查该身份证号是否已被其他激活用户绑定
           const duplicateCheck = await this.checkIdCardDuplicate(userId, identityInfo.idCard)
           if (!duplicateCheck.canProceed) {
             this.logger.warn(
@@ -123,11 +117,20 @@ export class EidAuthService {
             // 发送管理后台预警
             this.sendDuplicateAlert(
               userId,
-              duplicateCheck.duplicateUserId ? [] : [],
-              [],
+              duplicateCheck.identities || [],
+              duplicateCheck.relatedUsers || [],
             ).catch(e => this.logger.warn('发送身份证冲突预警失败: ' + e?.message))
             return { status: EID_STATUS.FAILED, certTime: now }
           }
+        }
+
+        await this.userRepo.update(userId, {
+          eidCertStatus: EID_STATUS.DONE,
+          eidCertTime: now,
+          isRealName: 1,
+        })
+        // 创建/更新 UserAuth 实名认证记录（使用前端表单中填写的姓名/身份证号）
+        if (identityInfo?.realName && identityInfo?.idCard) {
 
           const existing = await this.userAuthRepo.findOne({
             where: { userId, authType: 'realname' },
@@ -244,6 +247,8 @@ export class EidAuthService {
     reason?: string
     message?: string
     duplicateUserId?: number
+    identities?: RealNameIdentity[]
+    relatedUsers?: User[]
   }> {
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
     const idCardTrim = idCard.trim()
@@ -285,7 +290,7 @@ export class EidAuthService {
 
     // 合并 real_name_identities 和 user_auths 兜底结果
     if (identities.length === 0 && !fallbackDuplicateUserId) {
-      return { canProceed: true }
+      return { canProceed: true, identities: [], relatedUsers: [] }
     }
 
     // 构建关联用户 ID 列表（real_name_identities + user_auths 兜底）
@@ -318,6 +323,8 @@ export class EidAuthService {
         reason: 'duplicate_active',
         message: `该身份证已绑定其他账号（${activeNickname}），如有疑问请联系客服`,
         duplicateUserId: activeUsers[0].id,
+        identities,
+        relatedUsers,
       }
     }
 
@@ -328,6 +335,8 @@ export class EidAuthService {
         canProceed: false,
         reason: 'duplicate_active',
         message: '该身份证已绑定其他账号，如有疑问请联系客服',
+        identities,
+        relatedUsers,
       }
     }
     if (identities.length >= 1) {
@@ -339,6 +348,8 @@ export class EidAuthService {
       canProceed: false,
       reason: 'requires_reauth',
       message: '检测到您之前已完成实名认证，重新验证需支付 1 元',
+      identities,
+      relatedUsers,
     }
   }
 
