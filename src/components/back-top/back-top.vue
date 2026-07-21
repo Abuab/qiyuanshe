@@ -22,20 +22,12 @@ const handleTap = () => {
 .back-top-btn {
   position: fixed;
   right: 20rpx;
-  bottom: 240rpx;
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #FFB3C6 0%, #FFD1DC 40%, #FFFFFF 100%);
-  box-shadow: 0 4rpx 16rpx rgba(214, 51, 132, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  bottom: 200rpx;
   z-index: 998;
 }
 
 .back-top-icon {
-  width: 48rpx;
-  height: 48rpx;
+  width: 72rpx;
+  height: 72rpx;
 }
 </style>

@@ -918,15 +918,15 @@ onMounted(async () => {
 
   let info: any = userStore.userInfo
 
-  // 本地无缓存时从服务器获取最新资料（如重新编译后 storage 被清空）
-  if (!info) {
-    try {
-      const profile = await get<any>('/auth/profile')
-      if (profile) {
-        info = profile
-        userStore.updateProfile(profile)
-      }
-    } catch (_) { /* 网络失败或无登录态时静默跳过 */ }
+  // 始终从服务器获取最新资料，确保管理后台更新后小程序端能即时同步
+  try {
+    const profile = await get<any>('/auth/profile')
+    if (profile) {
+      info = profile
+      userStore.updateProfile(profile)
+    }
+  } catch (_) {
+    // 网络失败或无登录态时使用本地缓存兜底
   }
 
   if (info) {
@@ -990,6 +990,10 @@ onMounted(async () => {
 
 const parseTags = (val: any): string[] => {
   if (Array.isArray(val)) return val
+  // 兼容管理后台历史结构化对象格式 {character:[], hobby:[], loveRule:[]}
+  if (typeof val === 'object' && val !== null) {
+    return [...(val.character || []), ...(val.hobby || []), ...(val.loveRule || [])]
+  }
   if (typeof val === 'string') return val.split(',').map((s) => s.trim()).filter(Boolean)
   return []
 }

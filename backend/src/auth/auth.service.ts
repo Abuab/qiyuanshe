@@ -89,14 +89,11 @@ export class AuthService {
     })
 
     if (!user) {
-      // 生成 7 位随机数字
-      const randomSuffix = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
-      const randomNickname = `昵称${randomSuffix}`
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
         unionId: session.unionid || null,
-        nickname: randomNickname,
+        nickname: `昵称${userId}`,
         userId: userId,
         status: await this.getNewUserStatus(),
       })
@@ -187,12 +184,11 @@ export class AuthService {
         throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
       }
       // 新用户注册
-      const randomSuffix = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
         unionId: session.unionid || null,
-        nickname: `昵称${randomSuffix}`,
+        nickname: `昵称${userId}`,
         userId,
         phone: phoneData.purePhoneNumber,
         status: await this.getNewUserStatus(),

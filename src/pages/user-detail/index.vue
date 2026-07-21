@@ -75,7 +75,11 @@
               <view v-if="voiceData.auditStatus === 1" class="voice-right">
                 <text class="voice-duration">{{ voiceData.duration }}″</text>
                 <view class="voice-play-btn" @tap="toggleVoicePlay">
-                  <text class="voice-play-text">{{ isVoicePlaying ? '⏸' : '▶' }}</text>
+                  <view v-if="isVoicePlaying" class="ico-pause">
+                    <view class="ico-pause-bar"></view>
+                    <view class="ico-pause-bar"></view>
+                  </view>
+                  <view v-else class="ico-play"></view>
                 </view>
               </view>
             </view>
@@ -922,15 +926,24 @@ function toggleVoicePlay() {
     url: voiceData.value.voiceUrl,
     success: (res: any) => {
       if (res.statusCode === 200) {
-        if (!voiceAudioCtx) {
-          voiceAudioCtx = uni.createInnerAudioContext()
-          voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
-          voiceAudioCtx.onError((err: any) => {
-            console.error('[UserDetail] voice play error', JSON.stringify(err))
-            isVoicePlaying.value = false
-          })
+        if (voiceAudioCtx) {
+          voiceAudioCtx.destroy()
+          voiceAudioCtx = null
         }
+        // #ifdef MP-WEIXIN
+        wx.setInnerAudioOption({ obeyMuteSwitch: false })
+        voiceAudioCtx = wx.createInnerAudioContext({ useWebAudioImplement: true }) as any
+        // #endif
+        // #ifndef MP-WEIXIN
+        voiceAudioCtx = uni.createInnerAudioContext()
+        // #endif
+        voiceAudioCtx.obeyMuteSwitch = false
         voiceAudioCtx.src = res.tempFilePath
+        voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
+        voiceAudioCtx.onError((err: any) => {
+          console.error('[UserDetail] voice play error', JSON.stringify(err))
+          isVoicePlaying.value = false
+        })
         voiceAudioCtx.play()
         isVoicePlaying.value = true
       }
@@ -1766,9 +1779,16 @@ $text-hint: #999999;
 
 .voice-duration { font-size: 28rpx; color: #666; }
 
-.voice-play-btn { margin-left: 16rpx; }
+.voice-play-btn {
+  width: 60rpx; height: 60rpx; border-radius: 50%;
+  background: #ff6b81; display: flex; align-items: center; justify-content: center;
+  margin-left: 16rpx; flex-shrink: 0;
+}
 
-.voice-play-text { font-size: 40rpx; color: #ff6b6b; line-height: 1; }
+.ico-pause { display: flex; align-items: center; justify-content: center; }
+.ico-pause-bar { width: 6rpx; height: 24rpx; background: #ffffff; border-radius: 2rpx; margin: 0 3rpx; }
+
+.ico-play { width: 0; height: 0; border-style: solid; border-width: 12rpx 0 12rpx 20rpx; border-color: transparent transparent transparent #ffffff; margin-left: 4rpx; }
 
 // ===== 2. 白色资料卡片（微覆盖背景图 4rpx，顶部大圆角浮层） =====
 .info-card {

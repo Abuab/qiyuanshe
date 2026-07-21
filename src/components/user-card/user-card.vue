@@ -284,6 +284,7 @@ const onLike = async () => {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .user-header {
@@ -400,11 +401,16 @@ const onLike = async () => {
 
 /* --- 人格匹配度标识 --- */
 .match-badge {
-  align-self: flex-start;
-  margin-bottom: 2rpx;
+  position: absolute;
+  top: 0;
+  right: 8rpx;
   padding: 2rpx 12rpx;
   border-radius: 20rpx;
   background: linear-gradient(90deg, #FFE8CC 0%, #FFD9C0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
 }
 
 .match-badge.untested {
@@ -414,6 +420,8 @@ const onLike = async () => {
 .match-badge-text {
   font-size: 20rpx;
   color: #E8792B;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .match-badge.untested .match-badge-text {
