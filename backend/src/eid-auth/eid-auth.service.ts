@@ -83,6 +83,17 @@ export class EidAuthService {
       if (user.isRealName !== 1) {
         return { status: EID_STATUS.NONE, certTime: user.eidCertTime }
       }
+      // 兜底补写：handleCallback 回调先于前端回调抵达时，可能已标记 DONE 但缺少
+      // UserAuth / RealNameIdentity 记录。此时前端传入了 identityInfo，补写身份记录。
+      if (identityInfo?.realName && identityInfo?.idCard) {
+        this.syncIdentityRecords({
+          userId,
+          realName: identityInfo.realName,
+          idCard: identityInfo.idCard,
+          eidBizSeqNo: user.eidBizSeqNo,
+          verifiedAt: user.eidCertTime || new Date(),
+        }).catch(e => this.logger.warn(`补写身份信息失败: ${e?.message}`))
+      }
       return { status: user.eidCertStatus, certTime: user.eidCertTime }
     }
     if (!user.eidBizSeqNo || !isEidConfigured()) {
@@ -129,51 +140,15 @@ export class EidAuthService {
           eidCertTime: now,
           isRealName: 1,
         })
-        // 创建/更新 UserAuth 实名认证记录（使用前端表单中填写的姓名/身份证号）
+        // 同步写入 UserAuth + real_name_identities
         if (identityInfo?.realName && identityInfo?.idCard) {
-
-          const existing = await this.userAuthRepo.findOne({
-            where: { userId, authType: 'realname' },
+          await this.syncIdentityRecords({
+            userId,
+            realName: identityInfo.realName,
+            idCard: identityInfo.idCard,
+            eidBizSeqNo: user.eidBizSeqNo,
+            verifiedAt: now,
           })
-          if (existing) {
-            existing.authData = { realName: identityInfo.realName, idCard: identityInfo.idCard }
-            existing.status = 1
-            await this.userAuthRepo.save(existing)
-          } else {
-            await this.userAuthRepo.save(
-              this.userAuthRepo.create({
-                userId,
-                authType: 'realname',
-                status: 1,
-                authData: { realName: identityInfo.realName, idCard: identityInfo.idCard },
-              }),
-            )
-          }
-
-          // 同步写入 real_name_identities 表（新表，结构化存储）
-          const idCardHash = crypto.createHash('sha256').update(identityInfo.idCard.trim()).digest('hex')
-          const existingIdentity = await this.entityManager
-            .createQueryBuilder(RealNameIdentity, 'rni')
-            .where('rni.userId = :userId', { userId })
-            .getOne()
-          if (existingIdentity) {
-            await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
-              realName: identityInfo.realName,
-              idCard: identityInfo.idCard,
-              idCardHash,
-              eidBizSeqNo: user.eidBizSeqNo,
-              verifiedAt: now,
-            })
-          } else {
-            await this.entityManager.insert(RealNameIdentity, {
-              userId,
-              realName: identityInfo.realName,
-              idCard: identityInfo.idCard,
-              idCardHash,
-              eidBizSeqNo: user.eidBizSeqNo,
-              verifiedAt: now,
-            })
-          }
         }
         this.logger.log(`用户 ${userId} E证通认证成功`)
         return { status: EID_STATUS.DONE, certTime: now }
@@ -385,30 +360,14 @@ export class EidAuthService {
 
     // 将历史身份信息写入当前用户
     const now = new Date()
-    const existingIdentity = await this.entityManager
-      .createQueryBuilder(RealNameIdentity, 'rni')
-      .where('rni.userId = :userId', { userId })
-      .getOne()
-    if (existingIdentity) {
-      await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
-        realName: historicIdentity.realName,
-        idCard: historicIdentity.idCard,
-        idCardHash,
-        eidBizSeqNo: `reauth_${Date.now()}`,
-        verifiedAt: now,
-        status: 0,
-      })
-    } else {
-      await this.entityManager.insert(RealNameIdentity, {
-        userId,
-        realName: historicIdentity.realName,
-        idCard: historicIdentity.idCard,
-        idCardHash,
-        eidBizSeqNo: `reauth_${Date.now()}`,
-        verifiedAt: now,
-        status: 0,
-      })
-    }
+    await this.syncIdentityRecords({
+      userId,
+      realName: historicIdentity.realName,
+      idCard: historicIdentity.idCard,
+      eidBizSeqNo: `reauth_${Date.now()}`,
+      verifiedAt: now,
+      status: 0,
+    })
 
     // 更新 users 表认证状态
     await this.userRepo.update(userId, {
@@ -416,25 +375,6 @@ export class EidAuthService {
       eidCertTime: now,
       isRealName: 1,
     })
-
-    // 写入 user_auths 表
-    const existing = await this.userAuthRepo.findOne({
-      where: { userId, authType: 'realname' },
-    })
-    if (existing) {
-      existing.authData = { realName: historicIdentity.realName, idCard: historicIdentity.idCard }
-      existing.status = 1
-      await this.userAuthRepo.save(existing)
-    } else {
-      await this.userAuthRepo.save(
-        this.userAuthRepo.create({
-          userId,
-          authType: 'realname',
-          status: 1,
-          authData: { realName: historicIdentity.realName, idCard: historicIdentity.idCard },
-        }),
-      )
-    }
 
     this.logger.log(`用户 ${userId} 二次认证成功，复用历史身份记录 ${historicIdentity.id}`)
     return { success: true, message: '二次认证成功' }
@@ -450,6 +390,67 @@ export class EidAuthService {
       return configs.basic?.realNameReAuthEnabled !== false
     } catch {
       return true
+    }
+  }
+
+  /**
+   * 写入/同步实名身份信息到 user_auths 和 real_name_identities 表。
+   * 解决 handleCallback 回调先于前端回调抵达时"已标记 DONE 但缺少身份记录"的问题。
+   */
+  private async syncIdentityRecords(params: {
+    userId: number
+    realName: string
+    idCard: string
+    eidBizSeqNo?: string
+    verifiedAt?: Date
+    status?: number
+  }): Promise<void> {
+    const { userId, realName, idCard, eidBizSeqNo, verifiedAt, status = 0 } = params
+
+    // 1. 写入 UserAuth 实名认证记录
+    const existingAuth = await this.userAuthRepo.findOne({
+      where: { userId, authType: 'realname' },
+    })
+    if (existingAuth) {
+      existingAuth.authData = { realName, idCard }
+      existingAuth.status = 1
+      await this.userAuthRepo.save(existingAuth)
+    } else {
+      await this.userAuthRepo.save(
+        this.userAuthRepo.create({
+          userId,
+          authType: 'realname',
+          status: 1,
+          authData: { realName, idCard },
+        }),
+      )
+    }
+
+    // 2. 写入 real_name_identities 表
+    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+    const existingIdentity = await this.entityManager
+      .createQueryBuilder(RealNameIdentity, 'rni')
+      .where('rni.userId = :userId', { userId })
+      .getOne()
+    if (existingIdentity) {
+      await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
+        realName,
+        idCard,
+        idCardHash,
+        eidBizSeqNo: eidBizSeqNo ?? existingIdentity.eidBizSeqNo,
+        verifiedAt: verifiedAt ?? existingIdentity.verifiedAt,
+        status,
+      })
+    } else {
+      await this.entityManager.insert(RealNameIdentity, {
+        userId,
+        realName,
+        idCard,
+        idCardHash,
+        eidBizSeqNo: eidBizSeqNo || '',
+        verifiedAt: verifiedAt || new Date(),
+        status,
+      })
     }
   }
 
