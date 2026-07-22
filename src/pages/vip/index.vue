@@ -281,7 +281,7 @@
     </scroll-view>
 
     <!-- 底部支付栏（仅VIP会员Tab显示） -->
-    <view v-if="activeTab === 'vip'" class="bottom-bar">
+    <view v-if="activeTab === 'vip'" class="bottom-bar" :style="{ bottom: `calc(120rpx + ${safeAreaOffset}px)` }">
       <view class="bottom-price">
         <text class="price-label" v-if="selectedPackage">{{ vipActionLabel }}</text>
         <text class="price-total" v-if="selectedPackage">
@@ -294,7 +294,7 @@
         <text>{{ vipActionButtonText }}</text>
       </view>
     </view>
-    <view v-if="activeTab === 'vip' && vipActionHint" class="bottom-hint">
+    <view v-if="activeTab === 'vip' && vipActionHint" class="bottom-hint" :style="{ bottom: `calc(120rpx + 58px + ${safeAreaOffset}px)` }">
       <text>{{ vipActionHint }}</text>
     </view>
 
@@ -351,6 +351,7 @@ interface FeatureItem {
 
 // ===== 导航 =====
 const statusBarHeight = ref(20)
+const safeAreaOffset = ref(0)
 const navBarHeightPx = ref(82) // 36px level1 + 46px level2
 
 const tabs = computed(() => {
@@ -678,6 +679,11 @@ const handleUseTopCard = async () => {
 onMounted(() => {
   const systemInfo = uni.getWindowInfo()
   statusBarHeight.value = systemInfo.statusBarHeight || 20
+
+  // 安全区偏移，与 tab-bar 组件保持一致（Android 陀螺仪导航栏预留28px）
+  const sysInfo: any = uni.getSystemInfoSync()
+  const raw = sysInfo.safeAreaInsets?.bottom ?? 0
+  safeAreaOffset.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
 
   fetchPackagesAndProfile()
   fetchCustomConfig()
@@ -1090,7 +1096,7 @@ onShow(() => {
 // ===== 底部支付栏（深色椭圆形风格，紧凑包裹文字） =====
 .bottom-bar {
   position: fixed;
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  bottom: 120rpx;
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;
@@ -1152,7 +1158,7 @@ onShow(() => {
 
 .bottom-hint {
   position: fixed;
-  bottom: calc(120rpx + 58px + env(safe-area-inset-bottom));
+  bottom: calc(120rpx + 58px);
   left: 50%;
   transform: translateX(-50%);
   text-align: center;

@@ -9,7 +9,6 @@ export interface SystemConfigs {
   audit?: Record<string, any>
   notify?: Record<string, any>
   intro?: Record<string, any>
-  icon?: Record<string, any>
   loveQuotes?: Record<string, any>
   photoAudit?: Record<string, any>
 }

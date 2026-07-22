@@ -470,87 +470,6 @@
         </el-card>
       </el-tab-pane>
 
-      <el-tab-pane label="图标配置" name="icon">
-        <el-card class="config-card">
-          <el-alert type="info" :closable="false" show-icon class="icon-tip">
-            <template #title>
-              上传 PNG 图标后小程序端实时生效；留空则使用本地默认图标。
-            </template>
-          </el-alert>
-
-          <el-divider content-position="left">底部 TabBar 图标</el-divider>
-          <div class="icon-grid">
-            <div
-              v-for="item in tabbarIconList"
-              :key="item.key"
-              class="icon-upload-item"
-            >
-              <div class="icon-label">{{ item.label }}</div>
-              <div class="icon-preview-row">
-                <div class="icon-preview-box">
-                  <el-image
-                    v-if="iconConfig.tabbar[item.key].default"
-                    :src="iconConfig.tabbar[item.key].default"
-                    fit="contain"
-                    class="icon-preview-img"
-                  />
-                  <span v-else class="icon-empty">默认</span>
-                  <el-upload
-                    action="#"
-                    :http-request="(opts: any) => uploadIcon(opts, 'tabbar', item.key, 'default')"
-                    :show-file-list="false"
-                  >
-                    <el-button size="small" link>上传默认</el-button>
-                  </el-upload>
-                </div>
-                <div class="icon-preview-box">
-                  <el-image
-                    v-if="iconConfig.tabbar[item.key].active"
-                    :src="iconConfig.tabbar[item.key].active"
-                    fit="contain"
-                    class="icon-preview-img"
-                  />
-                  <span v-else class="icon-empty active">选中</span>
-                  <el-upload
-                    action="#"
-                    :http-request="(opts: any) => uploadIcon(opts, 'tabbar', item.key, 'active')"
-                    :show-file-list="false"
-                  >
-                    <el-button size="small" link>上传选中</el-button>
-                  </el-upload>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <el-divider content-position="left">页面内图标</el-divider>
-          <div class="icon-grid">
-            <div
-              v-for="item in pageIconList"
-              :key="item.key"
-              class="icon-upload-item"
-            >
-              <div class="icon-label">{{ item.label }}</div>
-              <div class="icon-preview-box">
-                <el-image
-                  v-if="iconConfig.page[item.key]"
-                  :src="iconConfig.page[item.key]"
-                  fit="contain"
-                  class="icon-preview-img"
-                />
-                <span v-else class="icon-empty">未上传</span>
-                <el-upload
-                  action="#"
-                  :http-request="(opts: any) => uploadIcon(opts, 'page', item.key)"
-                  :show-file-list="false"
-                >
-                  <el-button size="small" link>上传图标</el-button>
-                </el-upload>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-tab-pane>
     </el-tabs>
 
     <div class="config-footer">
@@ -644,113 +563,6 @@ const loveQuotesConfig = reactive({
   quotes: ['', '', '', '', '', ''] as string[],
 })
 
-const tabbarIconList = [
-  { key: 'home', label: '首页' },
-  { key: 'dynamic', label: '动态' },
-  { key: 'vip', label: '会员' },
-  { key: 'message', label: '消息' },
-  { key: 'my', label: '我的' },
-]
-
-const pageIconList = [
-  { key: 'dynamicHome', label: '动态页返回首页' },
-  { key: 'copy', label: '复制ID图标' },
-  { key: 'heartFill', label: '心形填充(通用)' },
-  { key: 'qaIcon', label: '我的问答图标' },
-  { key: 'matchmakerIcon', label: '专属红娘图标' },
-  { key: 'oaHeart', label: '公众号心形图标' },
-  { key: 'footerHeart', label: '底部陪伴心形' },
-  { key: 'myPhotos', label: '我的相册' },
-  { key: 'loveQuotes', label: '爱情语录' },
-  { key: 'myGifts', label: '我的礼物' },
-  { key: 'privacy', label: '隐私设置' },
-  { key: 'feedback', label: '问题反馈' },
-  { key: 'userAgreement', label: '用户协议' },
-  { key: 'antiFraud', label: '防骗提醒' },
-  { key: 'copyIcon', label: '红娘弹窗-复制图标' },
-  { key: 'saveIcon', label: '红娘弹窗-保存图标' },
-  { key: 'shareFriendIcon', label: '用户详情-分享好友图标' },
-  { key: 'posterIcon', label: '用户详情-生成海报图标' },
-  { key: 'shareMoreIcon', label: '用户详情-右上角分享图标' },
-  { key: 'followIcon', label: '用户详情-关注图标' },
-  { key: 'shareBtnIcon', label: '用户详情-分享按钮图标' },
-  { key: 'realNameIcon', label: '已实名图标' },
-  { key: 'messageNotifyIcon', label: '消息-系统通知图标' },
-  { key: 'mmEye', label: '红娘牵线-眼睛图标' },
-  { key: 'deletePhotoIcon', label: '编辑资料-删除照片图标' },
-  { key: 'followEmptyIcon', label: '关注/粉丝空状态图标' },
-  { key: 'blockListIcon', label: '隐私设置-黑名单图标' },
-  { key: 'privacyPolicyIcon', label: '隐私设置-隐私政策图标' },
-  { key: 'privacySettingIcon', label: '隐私设置图标' },
-  { key: 'deactivateIcon', label: '隐私设置-注销账号图标' },
-  { key: 'refreshIcon', label: '爱情语录-换一个图标' },
-  { key: 'filterResetIcon', label: '筛选面板-重置按钮图标' },
-  { key: 'certRealnameIcon', label: '认证页-实名认证图标' },
-  { key: 'certSingleIcon', label: '认证页-单身承诺图标' },
-  { key: 'certEducationIcon', label: '认证页-学历认证图标' },
-  { key: 'certHouseIcon', label: '认证页-房产认证图标' },
-  { key: 'certCarIcon', label: '认证页-车产认证图标' },
-  { key: 'certStoreIcon', label: '认证页-到店认证图标' },
-]
-
-interface TabbarIconItem {
-  default: string
-  active: string
-}
-
-const iconConfig = reactive({
-  tabbar: {
-    home: { default: '', active: '' },
-    dynamic: { default: '', active: '' },
-    vip: { default: '', active: '' },
-    message: { default: '', active: '' },
-    my: { default: '', active: '' },
-  } as Record<string, TabbarIconItem>,
-  menu: {
-    vipCenter: '',
-    activities: '',
-    answers: '',
-    follows: '',
-    visitors: '',
-    photos: '',
-    realnameAuth: '',
-    help: '',
-    settings: '',
-  } as Record<string, string>,
-  page: {
-    dynamicHome: '',
-    copy: '',
-    heartFill: '',
-    qaIcon: '',
-    matchmakerIcon: '',
-    oaHeart: '',
-    footerHeart: '',
-    myPhotos: '',
-    loveQuotes: '',
-    myGifts: '',
-    privacy: '',
-    feedback: '',
-    userAgreement: '',
-    antiFraud: '',
-    copyIcon: '',
-    saveIcon: '',
-    shareFriendIcon: '',
-    posterIcon: '',
-    shareMoreIcon: '',
-    followIcon: '',
-    shareBtnIcon: '',
-    deletePhotoIcon: '',
-    mmEye: '',
-    followEmptyIcon: '',
-    blockListIcon: '',
-    privacyPolicyIcon: '',
-    privacySettingIcon: '',
-    deactivateIcon: '',
-    refreshIcon: '',
-    filterResetIcon: '',
-  } as Record<string, string>,
-})
-
 // 模拟预览：与后端 buildIntroFromUser 同逻辑
 const introPreview = computed(() => {
   const demo = {
@@ -798,12 +610,6 @@ async function fetchConfig() {
       if (res.data.loveQuotes) {
         loveQuotesConfig.quotes = res.data.loveQuotes.quotes || ['', '', '', '', '', '']
       }
-      // 图标配置
-      if (res.data.icon) {
-        Object.assign(iconConfig.tabbar, res.data.icon.tabbar || {})
-        Object.assign(iconConfig.menu, res.data.icon.menu || {})
-        Object.assign(iconConfig.page, res.data.icon.page || {})
-      }
       // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
       logoError.value = false
 
@@ -842,11 +648,6 @@ async function handleSave() {
       payment: { ...paymentConfig },
       audit: { ...auditConfig },
       intro: { ...introConfig },
-      icon: {
-        tabbar: { ...iconConfig.tabbar },
-        menu: { ...iconConfig.menu },
-        page: { ...iconConfig.page },
-      },
       loveQuotes: { quotes: loveQuotesConfig.quotes.filter(q => q && q.trim()) },
       photoAudit: { ...photoAuditConfig, rejectTags: JSON.parse(JSON.stringify(photoAuditConfig.rejectTags)) },
       matchmaker: {
@@ -933,31 +734,7 @@ async function uploadCertFile(options: any) {
   } catch (error) {
     ElMessage.error('上传失败')
   }
-}
-
-async function uploadIcon(
-  options: any,
-  group: 'tabbar' | 'menu' | 'page',
-  key: string,
-  subKey?: 'default' | 'active',
-) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  try {
-    const res = await adminSystem.upload(formData)
-    if (res.success && res.data?.url) {
-      if (group === 'tabbar' && subKey) {
-        iconConfig.tabbar[key][subKey] = res.data.url
-      } else {
-        iconConfig[group][key] = res.data.url
-      }
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}
-</script>
+}</script>
 
 <style scoped lang="scss">
 .system-config {
@@ -1095,67 +872,5 @@ code {
   border-radius: 3px;
   font-size: 12px;
   color: #e74c3c;
-}
-
-.icon-tip {
-  margin-bottom: 16px;
-}
-
-.icon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-}
-
-.icon-upload-item {
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 12px;
-  background: #fafafa;
-
-  .icon-label {
-    font-size: 14px;
-    color: #606266;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
-  .icon-preview-row {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-  }
-
-  .icon-preview-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .icon-preview-img {
-    width: 48px;
-    height: 48px;
-    border: 1px dashed #dcdfe6;
-    border-radius: 4px;
-    background: #fff;
-  }
-
-  .icon-empty {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed #dcdfe6;
-    border-radius: 4px;
-    background: #fff;
-    font-size: 12px;
-    color: #c0c4cc;
-
-    &.active {
-      color: #ff6b9d;
-    }
-  }
 }
 </style>
