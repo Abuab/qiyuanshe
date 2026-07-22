@@ -318,13 +318,21 @@ async function handleSubmit() {
     const dupData = dupCheck?.data || dupCheck
     if (dupData && !dupData.canProceed) {
       submitting.value = false
-      uni.showToast({ title: dupData.message || '该身份证已绑定其他账号，如有疑问请联系客服', icon: 'none', duration: 3000 })
+      uni.showModal({
+        title: '提示',
+        content: dupData.message || '该身份证已绑定其他账号，如有疑问请联系客服',
+        showCancel: false,
+      })
       return
     }
   } catch (e: any) {
     submitting.value = false
     // check-duplicate 接口异常时不要静默放过——block 认证以防重复
-    uni.showToast({ title: e?.message || '身份校验异常，请稍后重试', icon: 'none' })
+    uni.showModal({
+      title: '提示',
+      content: e?.message || '身份校验异常，请稍后重试',
+      showCancel: false,
+    })
     return
   }
 
