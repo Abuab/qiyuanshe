@@ -57,6 +57,7 @@ import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
 import { Dynamic } from '../entities/Dynamic'
 import { ProfileVisit } from '../entities/ProfileVisit'
+import { RealNameIdentity } from '../entities/RealNameIdentity'
 import { AdminReportController } from './report.controller'
 import { AdminFeedbackController } from './feedback.controller'
 import { AdminStoreCertController } from './store-cert.controller'
@@ -110,6 +111,7 @@ import { AiModule } from '../ai/ai.module'
       SinglePromise,
       Dynamic,
       ProfileVisit,
+      RealNameIdentity,
       NotifyLog,
       AiFeatureSwitchLog,
       Feedback,
