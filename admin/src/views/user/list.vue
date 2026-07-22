@@ -434,11 +434,9 @@
             <el-tag v-else size="small" type="info">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="eidCertStatus" label="实名认证" width="100">
+        <el-table-column label="实名认证" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.eidCertStatus === 2" type="success" size="small">已认证</el-tag>
-            <el-tag v-else-if="row.eidCertStatus === 1" type="warning" size="small">认证中</el-tag>
-            <el-tag v-else-if="row.eidCertStatus === 3" type="danger" size="small">认证失败</el-tag>
+            <el-tag v-if="row.isRealName === 1" type="success" size="small">已认证</el-tag>
             <el-tag v-else type="info" size="small">未认证</el-tag>
           </template>
         </el-table-column>

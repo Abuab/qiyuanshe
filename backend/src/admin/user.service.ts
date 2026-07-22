@@ -9,6 +9,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
+import { RealNameIdentity } from '../entities/RealNameIdentity'
 import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
@@ -69,6 +70,8 @@ export class AdminUserService {
     private readonly visitRepository: Repository<ProfileVisit>,
     private readonly dynamicService: DynamicService,
     private readonly redis: RedisService,
+    @InjectRepository(RealNameIdentity)
+    private readonly realNameIdentityRepo: Repository<RealNameIdentity>,
   ) {}
 
   async list(filter: UserFilter) {
@@ -912,6 +915,21 @@ export class AdminUserService {
     }
 
     await this.userRepository.update(id, safeData)
+
+    // 管理员手动取消实名认证时，同步清除 eidCertStatus 和 real_name_identities 记录
+    // 确保详情页、列表页和二次认证查重逻辑的一致性
+    if (safeData.isRealName === 0) {
+      await this.userRepository.update(id, { eidCertStatus: 0, eidCertTime: null } as any)
+      try {
+        await this.realNameIdentityRepo.update(
+          { userId: id },
+          { status: 1 }, // 1 = 已注销
+        )
+      } catch (_) {
+        // 没有实名记录时忽略
+      }
+    }
+
     // 清除推荐列表缓存，确保用户资料变更后首页列表及时更新
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }

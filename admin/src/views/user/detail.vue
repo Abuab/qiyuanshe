@@ -89,9 +89,7 @@
               <el-descriptions-item label="属相">{{ user.zodiac || '-' }}</el-descriptions-item>
               <el-descriptions-item label="星座">{{ user.constellation || '-' }}</el-descriptions-item>
               <el-descriptions-item label="实名认证">
-                <el-tag v-if="user.eidCertStatus === 2" type="success" size="small">已认证</el-tag>
-                <el-tag v-else-if="user.eidCertStatus === 1" type="warning" size="small">认证中</el-tag>
-                <el-tag v-else-if="user.eidCertStatus === 3" type="danger" size="small">认证失败</el-tag>
+                <el-tag v-if="user.isRealName === 1" type="success" size="small">已认证</el-tag>
                 <el-tag v-else type="info" size="small">未认证</el-tag>
               </el-descriptions-item>
               <el-descriptions-item label="注册时间">{{ formatDate(user.createdAt) }}</el-descriptions-item>
@@ -411,9 +409,7 @@
                   <el-tag :type="getAuditTagType(user.photoAuditStatus)" size="small">{{ getAuditStatusLabel(user.photoAuditStatus) }}</el-tag>
                 </el-descriptions-item>
                 <el-descriptions-item label="实名认证">
-                  <el-tag v-if="user.eidCertStatus === 2" type="success" size="small">已认证</el-tag>
-                  <el-tag v-else-if="user.eidCertStatus === 1" type="warning" size="small">认证中</el-tag>
-                  <el-tag v-else-if="user.eidCertStatus === 3" type="danger" size="small">认证失败</el-tag>
+                  <el-tag v-if="user.isRealName === 1" type="success" size="small">已认证</el-tag>
                   <el-tag v-else type="info" size="small">未认证</el-tag>
                 </el-descriptions-item>
               </el-descriptions>
