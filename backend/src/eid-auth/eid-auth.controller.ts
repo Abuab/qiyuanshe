@@ -19,13 +19,13 @@ export class EidAuthController {
   /** 实名认证前检查身份证号是否已被绑定 */
   @Post('check-duplicate')
   @UseGuards(JwtAuthGuard)
-  async checkDuplicate(@Request() req: any, @Body() body: { idCard?: string }) {
+  async checkDuplicate(@Request() req: any, @Body() body: { idCard?: string; realName?: string }) {
     const userId = req.user.id || req.user.sub
     if (!body?.idCard) {
       return Result.error('请提供身份证号')
     }
     try {
-      const data = await this.service.checkIdCardDuplicate(userId, body.idCard)
+      const data = await this.service.checkIdCardDuplicate(userId, body.idCard, body.realName)
       return Result.success(data)
     } catch (e: any) {
       return Result.error(e?.message || '检查失败')

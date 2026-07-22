@@ -286,6 +286,7 @@ export class EidAuthService {
   async checkIdCardDuplicate(
     userId: number,
     idCard: string,
+    realName?: string,
   ): Promise<{
     canProceed: boolean
     reason?: string
@@ -296,6 +297,7 @@ export class EidAuthService {
   }> {
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
     const idCardTrim = idCard.trim()
+    const realNameTrim = (realName || '').trim().replace(/\s+/g, '')
 
     // 查找使用相同身份证号的所有记录（排除本人）
     const identities = await this.entityManager
@@ -304,31 +306,84 @@ export class EidAuthService {
       .andWhere('rni.userId != :userId', { userId })
       .getMany()
 
-    // 如果 real_name_identities 没找到，兜底检查 user_auths 表（兼容旧数据迁移前已认证的用户）
+    // 兜底检查 user_auths 表（兼容旧数据迁移前已认证的用户，同时校验姓名+身份证号）
     let fallbackDuplicateUserId: number | null = null
     if (identities.length === 0) {
       try {
         const legacyAuth = await this.userAuthRepo
           .createQueryBuilder('ua')
-          .select('ua.userId', 'userId')
+          .select(['ua.userId', 'ua.authData'])
           .where("ua.authType = 'realname'")
           .andWhere('ua.status = 1')
           .andWhere('ua.userId != :userId', { userId })
-          .getRawMany<{ userId: number }>()
+          .getRawMany<{ ua_userId: number; ua_authData: string }>()
 
         for (const row of legacyAuth) {
-          // 逐个检查 authData JSON 中的 idCard（MySQL JSON_EXTRACT 可能带引号，需精确比较）
-          const authRecord = await this.userAuthRepo.findOne({
-            where: { userId: row.userId, authType: 'realname', status: 1 },
-          })
-          const rawIdCard = authRecord?.authData?.idCard
+          let authData: any = row.ua_authData
+          if (typeof authData === 'string') {
+            try { authData = JSON.parse(authData) } catch { continue }
+          }
+          const rawIdCard = authData?.idCard
           if (rawIdCard && String(rawIdCard).trim() === idCardTrim) {
-            fallbackDuplicateUserId = row.userId
+            fallbackDuplicateUserId = row.ua_userId
             break
+          }
+        }
+
+        // 如果身份证号匹配没找到，再查 real_name_identities 和 user_auths 的姓名+身份证联合匹配
+        // （防止 idCard 格式不一致导致 hash 不匹配的情况）
+        // 注意：这种全表扫描仅在 real_name_identities 和 user_auths 都没命中时才执行
+        if (!fallbackDuplicateUserId && realNameTrim) {
+          // 查询所有其他用户的 user_auths 记录，逐个比对 realName + idCard
+          const allLegacyAuth = await this.userAuthRepo
+            .createQueryBuilder('ua')
+            .select(['ua.userId', 'ua.authData'])
+            .where("ua.authType = 'realname'")
+            .andWhere('ua.status = 1')
+            .andWhere('ua.userId != :userId', { userId })
+            .getRawMany<{ ua_userId: number; ua_authData: string }>()
+
+          for (const row of allLegacyAuth) {
+            let authData: any = row.ua_authData
+            if (typeof authData === 'string') {
+              try { authData = JSON.parse(authData) } catch { continue }
+            }
+            const rawName = (authData?.realName || '').trim().replace(/\s+/g, '')
+            const rawId = (authData?.idCard || '').trim()
+            if (rawName === realNameTrim && rawId === idCardTrim) {
+              fallbackDuplicateUserId = row.ua_userId
+              break
+            }
           }
         }
       } catch (e: any) {
         this.logger.warn(`兜底查询 user_auths 异常（不影响主流）：${e?.message || e}`)
+      }
+    }
+
+    // 如果 real_name_identities 和 user_auths 都没找到匹配，但有姓名和身份证号，
+    // 再在 real_name_identities 中按身份证号哈希以外的维度做兜底查询
+    // （兼容 idCard 存储时的空格/大小写差异）
+    if (identities.length === 0 && !fallbackDuplicateUserId && realNameTrim) {
+      try {
+        const allIdentities = await this.entityManager
+          .createQueryBuilder(RealNameIdentity, 'rni')
+          .select(['rni.userId', 'rni.realName', 'rni.idCard'])
+          .where('rni.userId != :userId', { userId })
+          .andWhere('rni.status = 0')
+          .getMany()
+
+        for (const idt of allIdentities) {
+          const idtName = (idt.realName || '').trim().replace(/\s+/g, '')
+          const idtIdCard = (idt.idCard || '').trim()
+          if (idtName === realNameTrim && idtIdCard === idCardTrim) {
+            // 找到了姓名+身份证完全匹配的记录，补充到 identities 列表中
+            identities.push(idt)
+            break
+          }
+        }
+      } catch (e: any) {
+        this.logger.warn(`全表兜底查询 real_name_identities 姓名异常：${e?.message || e}`)
       }
     }
 

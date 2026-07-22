@@ -314,7 +314,7 @@ async function handleSubmit() {
 
   // 去重检查：在创建 E证通订单之前，先检查该身份证号是否已被其他用户绑定
   try {
-    const dupCheck: any = await post('/eid-auth/check-duplicate', { idCard: idCard.value.trim() })
+    const dupCheck: any = await post('/eid-auth/check-duplicate', { idCard: idCard.value.trim(), realName: realName.value.trim() })
     const dupData = dupCheck?.data || dupCheck
     if (dupData && !dupData.canProceed) {
       submitting.value = false
