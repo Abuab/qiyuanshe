@@ -131,7 +131,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
-import { get, post } from '@/utils/request'
+import { get, post, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
 import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
@@ -318,6 +318,49 @@ async function handleSubmit() {
     const dupData = dupCheck?.data || dupCheck
     if (dupData && !dupData.canProceed) {
       submitting.value = false
+      // 二次认证：已注销用户需支付 1 元复用历史身份信息
+      if (dupData.reason === 'requires_reauth') {
+        const res = await new Promise<boolean>((resolve) => {
+          uni.showModal({
+            title: '二次认证',
+            content: dupData.message || '检测到您之前已完成实名认证，重新验证需支付 1 元',
+            cancelText: '取消',
+            confirmText: '去支付',
+            success: (r) => resolve(r.confirm),
+          })
+        })
+        if (!res) return
+        try {
+          submitting.value = true
+          uni.showLoading({ title: '验证中...', mask: true })
+          const reVerifyRes: any = await put('/eid-auth/re-verify', { idCard: idCard.value.trim() })
+          const rvData = reVerifyRes?.data || reVerifyRes
+          uni.hideLoading()
+          if (rvData && (rvData.code === 0 || rvData.status === 'success')) {
+            uni.showToast({ title: '认证完成', icon: 'success' })
+            // 二次认证成功，刷新用户信息并返回
+            userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+            uni.navigateBack()
+          } else {
+            uni.showModal({
+              title: '提示',
+              content: rvData?.message || rvData?.msg || '二次认证失败，请稍后重试',
+              showCancel: false,
+            })
+          }
+        } catch (e2: any) {
+          uni.hideLoading()
+          uni.showModal({
+            title: '提示',
+            content: e2?.message || '二次认证失败，请稍后重试',
+            showCancel: false,
+          })
+        } finally {
+          submitting.value = false
+        }
+        return
+      }
+      // 普通重复：已有激活账号绑定 → 拒绝
       uni.showModal({
         title: '提示',
         content: dupData.message || '该身份证已绑定其他账号，如有疑问请联系客服',
