@@ -330,20 +330,10 @@ export class EidAuthService {
           }
         }
 
-        // 如果身份证号匹配没找到，再查 real_name_identities 和 user_auths 的姓名+身份证联合匹配
+        // 如果身份证号匹配没找到，再在上述 user_auths 结果中做姓名+身份证联合匹配
         // （防止 idCard 格式不一致导致 hash 不匹配的情况）
-        // 注意：这种全表扫描仅在 real_name_identities 和 user_auths 都没命中时才执行
         if (!fallbackDuplicateUserId && realNameTrim) {
-          // 查询所有其他用户的 user_auths 记录，逐个比对 realName + idCard
-          const allLegacyAuth = await this.userAuthRepo
-            .createQueryBuilder('ua')
-            .select(['ua.userId', 'ua.authData'])
-            .where("ua.authType = 'realname'")
-            .andWhere('ua.status = 1')
-            .andWhere('ua.userId != :userId', { userId })
-            .getRawMany<{ ua_userId: number; ua_authData: string }>()
-
-          for (const row of allLegacyAuth) {
+          for (const row of legacyAuth) {
             let authData: any = row.ua_authData
             if (typeof authData === 'string') {
               try { authData = JSON.parse(authData) } catch { continue }
