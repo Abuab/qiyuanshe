@@ -14,6 +14,7 @@ import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
 import { RedisService } from '../common/redis.service'
+import { ContentFilterService } from '../common/content-filter.service'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -69,6 +70,7 @@ export class AdminUserService {
     private readonly visitRepository: Repository<ProfileVisit>,
     private readonly dynamicService: DynamicService,
     private readonly redis: RedisService,
+    private readonly contentFilter: ContentFilterService,
   ) {}
 
   async list(filter: UserFilter) {
@@ -768,6 +770,12 @@ export class AdminUserService {
     // 管理员手动创建的用户默认为待审核状态(status=2)
     const status = data.status !== undefined ? data.status : 2
     
+    // 敏感词过滤 - 用户自定义文本字段
+    if (data.nickname) this.contentFilter.checkAndThrow(data.nickname, '昵称')
+    if (data.occupation) this.contentFilter.checkAndThrow(data.occupation, '职业')
+    if (data.hometown) this.contentFilter.checkAndThrow(data.hometown, '家乡')
+    if (data.residence) this.contentFilter.checkAndThrow(data.residence, '现居地')
+
     // 处理 personalityTags: 兼容结构化对象 / 逗号分隔字符串 / 数组
     let personalityTags: any = null
     if (typeof data.personalityTags === 'object' && data.personalityTags !== null) {
@@ -906,6 +914,13 @@ export class AdminUserService {
     if (safeData.tags && typeof safeData.tags === 'string') {
       safeData.tags = safeData.tags.split(',').map((s: string) => s.trim()).filter(Boolean)
     }
+
+    // 敏感词过滤 - 用户自定义文本字段
+    if (safeData.nickname) this.contentFilter.checkAndThrow(safeData.nickname, '昵称')
+    if (safeData.occupation) this.contentFilter.checkAndThrow(safeData.occupation, '职业')
+    if (safeData.hometown) this.contentFilter.checkAndThrow(safeData.hometown, '家乡')
+    if (safeData.residence) this.contentFilter.checkAndThrow(safeData.residence, '现居地')
+    if (safeData.mateRequirement) this.contentFilter.checkAndThrow(safeData.mateRequirement, '择偶要求')
 
     if (data['password']) {
       safeData['password'] = await bcrypt.hash(data['password'], 10)

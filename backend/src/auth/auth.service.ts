@@ -13,6 +13,7 @@ import { jwtConfig, parseExpirySeconds } from '../config/jwt'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
+import { ContentFilterService } from '../common/content-filter.service'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
@@ -54,6 +55,7 @@ export class AuthService {
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly userService: UserService,
     private readonly entityManager: EntityManager,
+    private readonly contentFilter: ContentFilterService,
   ) {}
 
   /**
@@ -351,6 +353,13 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('用户不存在')
     }
+
+    // 敏感词过滤 - 用户自定义文本字段
+    if (dto.nickname) this.contentFilter.checkAndThrow(dto.nickname, '昵称')
+    if (dto.occupation) this.contentFilter.checkAndThrow(dto.occupation, '职业')
+    if (dto.hometown) this.contentFilter.checkAndThrow(dto.hometown, '家乡')
+    if (dto.residence) this.contentFilter.checkAndThrow(dto.residence, '现居地')
+    if (dto.mateRequirement) this.contentFilter.checkAndThrow(dto.mateRequirement, '择偶要求')
 
     // 未成年人保护：设置出生年份时校验年龄
     if (dto.birthYear !== undefined) {

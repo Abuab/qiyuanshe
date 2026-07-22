@@ -17,12 +17,14 @@ import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto, UpdateProfileDto } from
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import { Result } from '../common/result'
 import { Feedback } from '../entities/Feedback'
+import { ContentFilterService } from '../common/content-filter.service'
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     @InjectRepository(Feedback) private feedbackRepo: Repository<Feedback>,
+    private readonly contentFilter: ContentFilterService,
   ) {}
 
   @Post('wechat-login')
@@ -97,9 +99,15 @@ export class AuthController {
     if (body.content.length > 200) {
       return Result.badRequest('反馈内容不能超过200字')
     }
+    // 敏感词过滤
+    const content = body.content.trim()
+    const hit = this.contentFilter.check(content)
+    if (hit) {
+      return Result.badRequest('反馈内容包含违规信息，请修改后重试')
+    }
     const feedback = this.feedbackRepo.create({
       userId: req.user.id,
-      content: body.content.trim(),
+      content,
       images: body.images || [],
     })
     await this.feedbackRepo.save(feedback)

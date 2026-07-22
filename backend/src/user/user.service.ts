@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { ContentFilterService } from '../common/content-filter.service'
 import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
@@ -73,6 +74,7 @@ export class UserService {
     private readonly aiVoiceService: AiVoiceService,
     private readonly notifyService: NotifyChannelService,
     private readonly dataSource: DataSource,
+    private readonly contentFilter: ContentFilterService,
   ) {}
 
   /**
@@ -727,6 +729,13 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('用户不存在')
     }
+
+    // 敏感词过滤 - 用户自定义文本字段
+    if (dto.nickname) this.contentFilter.checkAndThrow(dto.nickname, '昵称')
+    if (dto.wechat) this.contentFilter.checkAndThrow(dto.wechat, '微信号')
+    if (dto.occupation) this.contentFilter.checkAndThrow(dto.occupation, '职业')
+    if (dto.hometown) this.contentFilter.checkAndThrow(dto.hometown, '家乡')
+    if (dto.residence) this.contentFilter.checkAndThrow(dto.residence, '现居地')
 
     // 只更新传入的非 undefined 字段
     if (dto.nickname !== undefined) user.nickname = dto.nickname

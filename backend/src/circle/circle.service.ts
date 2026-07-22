@@ -7,6 +7,7 @@ import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { Follow } from '../entities/Follow'
+import { ContentFilterService } from '../common/content-filter.service'
 
 @Injectable()
 export class CircleService {
@@ -23,6 +24,7 @@ export class CircleService {
     private readonly commentRepo: Repository<MatchmakerComment>,
     @InjectRepository(Follow)
     private readonly followRepo: Repository<Follow>,
+    private readonly contentFilter: ContentFilterService,
   ) {}
 
   // ========== 小程序端 ==========
@@ -145,6 +147,8 @@ export class CircleService {
   }
 
   async createPost(data: { circleId: number; userId: number; content: string; images: string[] }) {
+    // 敏感词过滤
+    if (data.content) this.contentFilter.checkAndThrow(data.content, '帖子内容')
     const post = this.postRepo.create({
       ...data,
       likes: 0,

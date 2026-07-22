@@ -82,6 +82,7 @@ import { VipModule } from './vip/vip.module'
 import { CosModule } from './cos/cos.module'
 import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
+import { ContentFilterService } from './common/content-filter.service'
 
 @Global()
 @Module({
@@ -175,7 +176,7 @@ import { DatabaseIndexService } from './common/database-index.service'
     CosModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService, DatabaseIndexService],
-  exports: [TypeOrmModule, RedisService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
+  providers: [RedisService, DatabaseIndexService, ContentFilterService],
+  exports: [TypeOrmModule, RedisService, ContentFilterService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}
