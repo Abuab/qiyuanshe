@@ -27,7 +27,7 @@
 set -euo pipefail
 
 # ----- MySQL 连接配置（通过 Docker 容器） -----
-MYSQL_CMD="docker exec -i lingtong_mysql mysql -uroot -plingtong_root_2024_secure qiyuanshe"
+MYSQL_CMD="docker exec -i lingtong_mysql mysql -uroot -plingtong_root_2024_secure lingtong_match"
 
 # ----- 辅助函数：执行 SQL 并格式化输出 -----
 run_sql() {
