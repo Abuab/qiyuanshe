@@ -96,9 +96,6 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { safeNavigateBack } from '@/utils/navigate'
-import { useUserStore } from '@/store/user'
-
-const userStore = useUserStore()
 
 interface Activity {
   id: number
@@ -234,7 +231,7 @@ function goBack() {
 onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  if (userStore.isLoggedIn) fetchActivities(true)
+  fetchActivities(true)
 })
 </script>
 

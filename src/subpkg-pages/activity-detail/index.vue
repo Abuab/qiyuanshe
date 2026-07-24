@@ -252,7 +252,6 @@ import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { getFullImageUrl, getImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
-import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useSystemStore } from '@/store/system'
 
@@ -275,7 +274,6 @@ interface Activity {
 }
 
 const systemStore = useSystemStore()
-const userStore = useUserStore()
 
 const activity = ref<Activity | null>(null)
 const signupAvatars = ref<string[]>([])
@@ -551,7 +549,7 @@ onMounted(() => {
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1] as any
   const id = currentPage.options?.id || currentPage.$page?.options?.id
-  if (id && userStore.isLoggedIn) {
+  if (id) {
     fetchActivityDetail(Number(id))
     fetchMatchmakerList()
   }

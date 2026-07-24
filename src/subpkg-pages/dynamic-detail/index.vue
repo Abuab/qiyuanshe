@@ -276,7 +276,7 @@ onMounted(() => {
   const currentPage = pages[pages.length - 1] as any
   const options = currentPage.options || {}
   dynamicId.value = parseInt(options.id) || 0
-  if (dynamicId.value && userStore.isLoggedIn) {
+  if (dynamicId.value) {
     fetchDetail()
     fetchComments()
   }

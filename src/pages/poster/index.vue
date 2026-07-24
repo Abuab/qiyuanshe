@@ -181,7 +181,7 @@ onMounted(async () => {
     userId.value = userStore.userInfo?.id || 0
   }
 
-  if (userId.value && userStore.isLoggedIn) {
+  if (userId.value) {
     await fetchUserGender()
   }
 })
