@@ -128,7 +128,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
 import { get, post, put } from '@/utils/request'
@@ -151,6 +151,32 @@ const pendingVerify = ref(false)
 const querying = ref(false)
 const isCertified = computed(() => certStatus.value === 2)
 
+// ========== 二次认证预检：输入完姓名和身份证后提前检测是否需要付费 ==========
+const needsReauth = ref(false)
+const checkingDuplicate = ref(false)
+let dupPrecheckTimer: ReturnType<typeof setTimeout> | null = null
+
+/** 当真实姓名和身份证号都填写完整且格式正确时，预检是否需要二次认证（1 元） */
+async function precheckDuplicate() {
+  const name = realName.value.trim()
+  const id = idCard.value.trim()
+  if (!name || !id || !validateIdCard(id)) {
+    needsReauth.value = false
+    return
+  }
+  if (checkingDuplicate.value) return
+  checkingDuplicate.value = true
+  try {
+    const res: any = await post('/eid-auth/check-duplicate', { idCard: id, realName: name })
+    const data = res?.data || res
+    needsReauth.value = !!(data && data.reason === 'requires_reauth')
+  } catch (_) {
+    needsReauth.value = false
+  } finally {
+    checkingDuplicate.value = false
+  }
+}
+
 // 脱敏展示（仅当本次会话用户填写过时可展示，后端不存储身份信息）
 const maskedName = computed(() => {
   const n = (realName.value || '').trim()
@@ -162,7 +188,12 @@ const maskedIdCard = computed(() => {
   if (id.length < 8) return ''
   return id.slice(0, 3) + '*'.repeat(id.length - 7) + id.slice(-4)
 })
-const submitBtnText = computed(() => (certStatus.value === 1 ? '认证中，点击继续' : '开始认证（免费）'))
+const submitBtnText = computed(() => {
+  if (certStatus.value === 1) return '认证中，点击继续'
+  if (checkingDuplicate.value) return '检测中...'
+  if (needsReauth.value) return '开始认证（1元）'
+  return '开始认证（免费）'
+})
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
@@ -191,6 +222,12 @@ const handleBack = () => {
 const realName = ref('')
 const idCard = ref('')
 const agree = ref(false)
+
+// 监听姓名和身份证号输入，800ms 防抖后预检是否需要二次认证
+watch([realName, idCard], () => {
+  if (dupPrecheckTimer) clearTimeout(dupPrecheckTimer)
+  dupPrecheckTimer = setTimeout(() => precheckDuplicate(), 800)
+})
 
 // ========== 未勾选协议提示气泡 ==========
 const showAgreeTip = ref(false)
