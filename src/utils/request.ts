@@ -9,11 +9,10 @@ function getToken(): string {
 }
 
 /**
- * 域名白名单：只允许 HTTPS 协议的生产域名 + 开发环境 localhost/127.0.0.1
- * 生产域名使用占位符，部署前需替换为实际域名。
+ * 域名白名单：仅允许 HTTPS 协议的生产域名 + 开发环境 localhost/127.0.0.1
  */
 const ALLOWED_DOMAINS = [
-  'YOUR_PRODUCTION_DOMAIN.com',   // TODO: 替换为实际生产域名
+  'date.arvine.cn',
 ]
 
 function isAllowedOrigin(url: string): boolean {

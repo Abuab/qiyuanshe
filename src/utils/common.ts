@@ -19,8 +19,12 @@ export const calcAge = (birthYear: number): number => {
 }
 
 export const hidePhone = (phone: string): string => {
-  if (!phone || phone.length !== 11) return phone
-  return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
+  if (!phone) return ''
+  // 提取纯数字
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length < 7) return phone
+  // 前3后4，中间脱敏
+  return digits.slice(0, 3) + '****' + digits.slice(-4)
 }
 
 export const copyText = (text: string): Promise<void> => {
@@ -212,11 +216,7 @@ export const getImageUrl = (key: string | null | undefined): string => {
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }
 
-/**
- * 将相对图片路径转换为完整 URL。
- * @deprecated 请使用 getImageUrl 替代，新方法统一走 COS 网关（/api/cos/image）。
- * uni-app <image> 组件无法发送自定义 HTTP 头，JWT token 通过 ?token= 查询参数携带。
- */
+/** 将相对图片路径转换为完整 URL */
 export const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) return ''
   // 过滤 picsum.photos / placeholder 等不可用外部图片源
@@ -261,9 +261,6 @@ export const getFullImageUrl = (path: string | null | undefined): string => {
   const tokenParam = token ? `&token=${encodeURIComponent(token)}` : ''
   return `${serverBase}/api/cos/image?key=${encodeURIComponent(cleanKey)}${tokenParam}`
 }
-
-/** @deprecated 使用 getImageUrl 替代 */
-export const formatImageUrl = getImageUrl
 
 export const switchTab = (url: string): void => {
   uni.switchTab({ url })

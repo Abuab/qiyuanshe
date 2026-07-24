@@ -91,6 +91,7 @@
 import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { STORAGE_KEY } from '@/config/constants'
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
@@ -166,9 +167,9 @@ const submitCancel = async () => {
         uni.removeStorageSync('token')
         uni.removeStorageSync('userInfo')
         try {
-          uni.removeStorageSync('_qys_tk')
-          uni.removeStorageSync('_qys_ui')
-          uni.removeStorageSync('_qys_rt')
+          uni.removeStorageSync(STORAGE_KEY.TOKEN)
+          uni.removeStorageSync(STORAGE_KEY.USER_INFO)
+          uni.removeStorageSync(STORAGE_KEY.REFRESH_TOKEN)
         } catch (_) { /* ignore */ }
 
         // 跳转到首页（游客态）

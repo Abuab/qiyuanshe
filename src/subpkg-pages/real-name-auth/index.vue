@@ -129,6 +129,7 @@ import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { showToast } from '@/utils/common'
+import { STORAGE_KEY } from '@/config/constants'
 
 const userStore = useUserStore()
 
@@ -226,7 +227,7 @@ const handleContact = () => {
 // ========== 流程终结 ==========
 const finishFlow = () => {
   userStore.isProfileComplete = true
-  uni.setStorageSync('_qys_pc', '1')
+  uni.setStorageSync(STORAGE_KEY.PHONE_CREDENTIAL, '1')
   uni.reLaunch({ url: '/pages/index/index' })
 }
 </script>

@@ -160,7 +160,6 @@ export const STORAGE_KEY = {
   PRIVACY_AGREED: 'privacy_agreed',
   PRIVACY_AGREED_AT: 'privacy_agreed_at',
   AGREEMENT_CONTENT: 'agreement_content',
-  TOKEN_KEY: 'token',
 } as const
 
 // ================================================================

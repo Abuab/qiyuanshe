@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
 import { get } from '@/utils/request'
+import { STORAGE_KEY } from '@/config/constants'
 
 interface UserInfo {
   id: number
@@ -97,7 +98,7 @@ const isVipValid = computed(() => {
 
     secureStorage.setToken(newToken)
     secureStorage.setUserInfo(newUserInfo)
-    uni.setStorageSync('_qys_pc', isProfileComplete.value ? '1' : '0')
+    uni.setStorageSync(STORAGE_KEY.PHONE_CREDENTIAL, isProfileComplete.value ? '1' : '0')
   }
 
   const logout = () => {
@@ -108,7 +109,7 @@ const isVipValid = computed(() => {
     isProfileComplete.value = true
 
     secureStorage.clearAll()
-    try { uni.removeStorageSync('_qys_pc') } catch (_) { /* ignore */ }
+    try { uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL) } catch (_) { /* ignore */ }
 
     uni.reLaunch({
       url: '/pages/index/index'
@@ -194,11 +195,12 @@ const isVipValid = computed(() => {
     try {
       const res: any = await get('/auth/profile')
       const profile = res?.data || res
-      if (profile) {
-        userInfo.value = profile
+      if (profile && userInfo.value) {
+        // 增量合并而非全量替换，避免后端不返回的可选字段被清空
+        Object.assign(userInfo.value, profile)
         isVip.value = !!profile.isVip
         vipExpireTime.value = profile.vipExpireTime ?? ''
-        secureStorage.setUserInfo(profile)
+        secureStorage.setUserInfo(userInfo.value)
       }
     } catch (_) { /* 静默失败，不影响正常使用 */ }
   }
@@ -231,7 +233,7 @@ const isVipValid = computed(() => {
       isVip.value = !!storedUserInfo.isVip
       vipExpireTime.value = storedUserInfo.vipExpireTime ?? ''
       try {
-        isProfileComplete.value = uni.getStorageSync('_qys_pc') !== '0'
+        isProfileComplete.value = uni.getStorageSync(STORAGE_KEY.PHONE_CREDENTIAL) !== '0'
       } catch (_) {
         isProfileComplete.value = true
       }

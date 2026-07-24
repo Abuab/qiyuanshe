@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { get } from '@/utils/request'
+import { logger } from '@/utils/logger'
 
 interface Matchmaker {
   id: number
@@ -109,7 +110,7 @@ export const useSystemStore = defineStore('system', () => {
     loadingPromise = (async () => {
       try {
         const res = await get<SystemConfig>('/system/config')
-        console.log('[SYSTEM] config loaded, appName:', res?.appName)
+        logger.info('[SYSTEM] config loaded, appName:', res?.appName)
         if (res) {
           splashText.value = res.splashText ?? splashText.value
           appName.value = res.appName ?? appName.value
@@ -137,7 +138,7 @@ export const useSystemStore = defineStore('system', () => {
           initialLoadDone = true
         }
       } catch (e) {
-        console.error('[SystemStore] Failed to load system config:', e)
+        logger.error('[SystemStore] Failed to load system config:', e)
       } finally {
         loadingPromise = null
       }
@@ -154,7 +155,7 @@ export const useSystemStore = defineStore('system', () => {
         dicts.value = res
       }
     } catch (e) {
-      console.error('[SystemStore] Failed to load dicts:', e)
+      logger.error('[SystemStore] Failed to load dicts:', e)
     }
   }
 
@@ -188,7 +189,7 @@ export const useSystemStore = defineStore('system', () => {
           icons.value = config.icons ?? icons.value
         }
       } catch (e) {
-        console.error('[SystemStore] Failed to parse system config:', e)
+        logger.error('[SystemStore] Failed to parse system config:', e)
       }
     }
 
@@ -224,7 +225,7 @@ export const useSystemStore = defineStore('system', () => {
         }))
       }
     } catch (e) {
-      console.error('[SystemStore] Failed to load AI feature config:', e)
+      logger.error('[SystemStore] Failed to load AI feature config:', e)
     }
   }
 

@@ -89,6 +89,7 @@ import { post, get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
+import { STORAGE_KEY } from '@/config/constants'
 import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 interface LoginResult {
   user: any
@@ -129,14 +130,14 @@ const checkLogin = () => {
     return
   }
   // 未登录用户检查是否已同意协议（uniStorage + 本地缓存兜底）
-  const hasAgreed = uni.getStorageSync('hasAgreedProtocol') === true
+  const hasAgreed = uni.getStorageSync(STORAGE_KEY.HAS_AGREED_PROTOCOL) === true
   if (!hasAgreed && !secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
   }
 }
 
 const handleAgree = () => {
-  uni.setStorageSync('hasAgreedProtocol', true)
+  uni.setStorageSync(STORAGE_KEY.HAS_AGREED_PROTOCOL, true)
   secureStorage.setProtocolAgreed()
   showProtocol.value = false
   // 此时尚未登录（无 token），标记待登录成功后再补记同意，避免 401

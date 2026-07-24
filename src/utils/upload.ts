@@ -1,5 +1,6 @@
 import { getToken } from './auth'
 import { getBaseUrl } from './request'
+import { logger } from './logger'
 
 /** 单张图片上传返回结果 */
 export interface UploadResult {
@@ -73,7 +74,7 @@ export function uploadImage(filePath: string, fieldName = 'file'): Promise<Uploa
         }
       },
       fail: (err) => {
-        console.error('[upload] 上传失败:', err)
+        logger.error('[upload] 上传失败:', err)
         const msg = err.errMsg?.includes('timeout')
           ? '上传超时，请检查网络'
           : '上传失败，请重试'
@@ -98,7 +99,7 @@ export async function uploadImages(filePaths: string[]): Promise<UploadResult[]>
     const batchResults = await Promise.all(
       batch.map((path) =>
         uploadImage(path).catch((err) => {
-          console.error('[upload] 批量上传中单张失败:', err)
+          logger.error('[upload] 批量上传中单张失败:', err)
           return null
         }),
       ),
