@@ -91,6 +91,7 @@
 import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
 
 // ========== 导航相关 ==========
@@ -163,13 +164,11 @@ const submitCancel = async () => {
         userStore.isVip = false
         userStore.vipExpireTime = ''
 
-        // 清除持久化存储
-        uni.removeStorageSync('token')
-        uni.removeStorageSync('userInfo')
+        // 彻底清除所有持久化数据（secureStorage + 协议 + phone credential）
+        secureStorage.clearAll()
+        secureStorage.revokeAllAgreements()
         try {
-          uni.removeStorageSync(STORAGE_KEY.TOKEN)
-          uni.removeStorageSync(STORAGE_KEY.USER_INFO)
-          uni.removeStorageSync(STORAGE_KEY.REFRESH_TOKEN)
+          uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL)
         } catch (_) { /* ignore */ }
 
         // 跳转到首页（游客态）

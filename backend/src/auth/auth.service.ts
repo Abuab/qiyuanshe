@@ -180,6 +180,17 @@ export class AuthService {
       }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
+    } else {
+      // 已有用户且协议曾被撤回 → 重置个人资料，视为重新注册（保留 VIP / 实名认证等权益）
+      if (!user.protocolAgreedAt) {
+        // 暂存权益字段，resetReactivatedUser 会清空它们
+        const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        const savedRealName = { isRealName: user.isRealName, eidCertStatus: user.eidCertStatus, eidCertTime: user.eidCertTime, eidBizSeqNo: user.eidBizSeqNo }
+        this.resetReactivatedUser(user)
+        user.status = await this.getNewUserStatus()
+        // 恢复权益字段
+        Object.assign(user, savedVip, savedRealName)
+      }
     }
 
     if (user.status === 3) {
@@ -285,6 +296,17 @@ export class AuthService {
       // 已有用户，绑定手机号（如果之前未绑定）
       if (!user.phone) {
         user.phone = phoneData.purePhoneNumber
+      }
+      // 用户主动撤回过协议同意（protocolAgreedAt 为 null）→ 重置个人资料，视为重新注册（保留 VIP / 实名认证等权益）
+      if (!user.protocolAgreedAt) {
+        // 暂存权益字段，resetReactivatedUser 会清空它们
+        const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        const savedRealName = { isRealName: user.isRealName, eidCertStatus: user.eidCertStatus, eidCertTime: user.eidCertTime, eidBizSeqNo: user.eidBizSeqNo }
+        this.resetReactivatedUser(user)
+        user.status = await this.getNewUserStatus()
+        user.phone = phoneData.purePhoneNumber
+        // 恢复权益字段
+        Object.assign(user, savedVip, savedRealName)
       }
     }
 

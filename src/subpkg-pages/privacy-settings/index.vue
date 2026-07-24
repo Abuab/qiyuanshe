@@ -88,6 +88,7 @@ import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import { secureStorage } from '@/utils/crypto'
 import { post } from '@/utils/request'
+import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 
 const systemStore = useSystemStore()
@@ -140,7 +141,12 @@ const confirmDeactivate = async () => {
       version: '1.0',
       action: 'revoke',
     })
+    // 立即清除所有持久化数据（防止 App 被关闭后下次打开仍读到旧缓存）
+    secureStorage.clearAll()
     secureStorage.revokeAllAgreements()
+    try {
+      uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL)
+    } catch (_) { /* ignore */ }
     uni.showToast({ title: '已撤回同意', icon: 'success' })
     setTimeout(() => { userStore.logout() }, 1200)
   } catch (err: any) {
