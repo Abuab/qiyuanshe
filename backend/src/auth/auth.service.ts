@@ -71,6 +71,70 @@ export class AuthService {
     return 2
   }
 
+  /**
+   * 重新激活已注销用户：复位 isDeleted/status 并清除所有个人资料字段，等同于重新注册
+   */
+  private resetReactivatedUser(user: User): void {
+    user.isDeleted = 0
+    user.deleteReason = null
+    user.nickname = `昵称${user.userId}`
+    user.avatar = ''
+    user.avatarReviewStatus = null
+    user.gender = 0
+    user.birthYear = null
+    user.birthMonth = null
+    user.birthDay = null
+    user.height = null
+    user.weight = null
+    user.education = null
+    user.occupation = null
+    user.incomeRange = null
+    user.housingStatus = null
+    user.carStatus = null
+    user.maritalStatus = null
+    user.onlyChild = null
+    user.whenMarry = null
+    user.zodiac = null
+    user.constellation = null
+    user.hometown = null
+    user.residence = null
+    user.partnerAgeRange = null
+    user.partnerHeightMin = null
+    user.partnerEducation = null
+    user.partnerIncome = null
+    user.housingRequirement = null
+    user.partnerMaritalStatus = null
+    user.acceptChildren = null
+    user.mateRequirement = null
+    user.isRealName = 0
+    user.eidCertStatus = 0
+    user.eidCertTime = null
+    user.eidBizSeqNo = null
+    user.isVip = 0
+    user.vipLevel = 0
+    user.vipExpireTime = null
+    user.vipPackageName = null
+    user.wechat = null
+    user.tags = null
+    user.personalityTags = null
+    user.hopeTaTags = null
+    user.profileScore = 0
+    user.protocolAgreedAt = null
+    user.protocolVersion = null
+    user.voiceUrl = null
+    user.voiceAuditStatus = null
+    user.voiceDuration = null
+    user.loveQuote = null
+    user.adminRemark = null
+    user.manualBoostScore = 0
+    user.pinnedExpireAt = null
+    user.exposurePool = 'city'
+    user.password = null
+    user.mfaSecret = null
+    user.isMfaEnabled = false
+    user.mfaType = 'none'
+  }
+
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
 
@@ -83,9 +147,8 @@ export class AuthService {
       where: { openid: session.openid },
     })
     if (existingUser && existingUser.isDeleted === 1) {
-      existingUser.isDeleted = 0
+      this.resetReactivatedUser(existingUser)
       existingUser.status = await this.getNewUserStatus()
-      existingUser.deleteReason = null
       await this.userRepository.save(existingUser)
     }
 
@@ -187,9 +250,8 @@ export class AuthService {
       })
       if (deletedUser) {
         user = deletedUser
-        user.isDeleted = 0
+        this.resetReactivatedUser(user)
         user.status = await this.getNewUserStatus()
-        user.deleteReason = null
         user.phone = phoneData.purePhoneNumber
         await this.userRepository.save(user)
       } else {
