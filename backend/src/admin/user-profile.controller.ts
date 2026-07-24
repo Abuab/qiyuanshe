@@ -19,18 +19,20 @@ import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 
 @Controller('admin/user-profiles')
-@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class UserProfileController {
   constructor(private readonly profileService: UserProfileService) {}
 
   @Get(':id/reports')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getReports(@Param('id', ParseIntPipe) id: number) {
     const data = await this.profileService.getReports(id)
     return Result.success(data)
   }
 
   @Get(':id/blocks')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getBlocks(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page?: number,
@@ -41,6 +43,7 @@ export class UserProfileController {
   }
 
   @Get(':id/notifications')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getNotifications(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page?: number,
@@ -82,6 +85,7 @@ export class UserProfileController {
 
   /** 查询群发消息日志 */
   @Get('notifications/broadcast/logs')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getBroadcastLogs(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -100,6 +104,7 @@ export class UserProfileController {
   }
 
   @Get(':id/answers')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getAnswers(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page?: number,
@@ -125,6 +130,7 @@ export class UserProfileController {
   }
 
   @Get(':id/matches')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getMatchRecords(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page?: number,
@@ -135,6 +141,7 @@ export class UserProfileController {
   }
 
   @Get(':id/matchmaker-reviews')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getReviews(@Param('id', ParseIntPipe) id: number) {
     const data = await this.profileService.getReviews(id)
     return Result.success(data)

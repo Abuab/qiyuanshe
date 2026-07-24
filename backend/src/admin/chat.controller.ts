@@ -5,7 +5,6 @@ import {
   Param,
   Query,
   Body,
-  Req,
   Request,
   UseGuards,
   ParseIntPipe,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Like, In } from 'typeorm'
 import * as crypto from 'crypto'
@@ -205,6 +205,16 @@ export class AdminUserService {
     }
 
     if (filter.sort) {
+      // 白名单校验：仅允许对用户表的安全字段排序，防止 SQL 注入
+      const ALLOWED_SORT_COLUMNS = [
+        'id', 'userId', 'nickname', 'gender', 'age', 'birthYear', 'height', 'weight',
+        'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
+        'maritalStatus', 'status', 'isRealName', 'eidCertStatus', 'isVip', 'vipLevel',
+        'createdAt', 'updatedAt', 'lastLoginAt', 'lastActiveAt',
+      ]
+      if (!ALLOWED_SORT_COLUMNS.includes(filter.sort)) {
+        throw new BadRequestException(`不支持的排序字段: ${filter.sort}`)
+      }
       const order = filter.order?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
       queryBuilder.orderBy(`user.${filter.sort}`, order)
     } else {
@@ -502,11 +512,6 @@ export class AdminUserService {
       protocolAgreedAt: user.protocolAgreedAt || null,
       protocolVersion: user.protocolVersion || null,
     }
-  }
-
-  async getUserBasicInfo(id: number) {
-    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'nickname'] })
-    return user
   }
 
   async updateStatus(id: number, status: number) {
@@ -1145,37 +1150,7 @@ export class AdminUserService {
     return users
   }
 
-  // ===== 浏览记录管理 =====
-
-  async getUserViewDetail(userId: number, page = 1, limit = 20) {
-    const [result, total] = await Promise.all([
-      this.visitRepository
-        .createQueryBuilder('v')
-        .leftJoinAndSelect('v.user', 'targetUser')
-        .where('v.visitorUserId = :userId', { userId })
-        .andWhere('v.userId != :selfId', { selfId: userId })
-        .orderBy('v.createdAt', 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getMany(),
-      this.visitRepository
-        .createQueryBuilder('v')
-        .where('v.visitorUserId = :userId', { userId })
-        .andWhere('v.userId != :selfId2', { selfId2: userId })
-        .getCount(),
-    ])
-
-    const list = result.map(v => ({
-      id: v.id,
-      targetUserId: v.userId,
-      userId: v.visitorUserId,
-      nickname: (v as any)?.user?.nickname || '',
-      avatar: normalizeImageUrl((v as any)?.user?.avatar),
-      createdAt: v.createdAt,
-    }))
-
-    return { list, total, page, limit }
-  }
+  // ===== 浏览记录管理（聚合版） =====
 
   async getUserViewDetailGrouped(userId: number) {
     const result = await this.visitRepository

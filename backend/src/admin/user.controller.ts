@@ -48,7 +48,7 @@ interface UserFilter {
 }
 
 @Controller('admin/users')
-@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminUserController {
   constructor(
@@ -58,18 +58,21 @@ export class AdminUserController {
   ) {}
 
   @Get()
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async list(@Query() filter: UserFilter) {
     const result = await this.userService.list(filter)
     return Result.success(result)
   }
 
   @Get('deactivated')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async listDeactivated(@Query() query: { page?: number; limit?: number; keyword?: string }) {
     const result = await this.userService.listDeactivated(query)
     return Result.success(result)
   }
 
   @Get('export')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async export(@Query() filter: any) {
     const ids = filter.ids ? filter.ids.split(',').map(Number) : []
     const data = await this.userService.export({ ...filter, ids })
@@ -77,6 +80,7 @@ export class AdminUserController {
   }
 
   @Get('search')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async searchUsers(@Query('keyword') keyword: string) {
     const users = await this.userService.searchUsers(keyword)
     return Result.success(users)
@@ -84,12 +88,14 @@ export class AdminUserController {
 
   /** 获取用户财务记录（VIP订单等） */
   @Get(':id/orders')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async userOrders(@Param('id', ParseIntPipe) id: number) {
     const result = await this.paymentService.getUserOrders(id)
     return Result.success(result)
   }
 
   @Get(':id')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async detail(@Param('id', ParseIntPipe) id: number) {
     const user = await this.userService.detail(id)
     return Result.success(user)
@@ -131,6 +137,7 @@ export class AdminUserController {
   }
 
   @Get(':id/photos')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getPhotos(@Param('id', ParseIntPipe) id: number) {
     const photos = await this.userService.getPhotos(id)
     return Result.success(photos)
@@ -246,12 +253,14 @@ export class AdminUserController {
   // ===== 关注管理（后台手动管理用户的关注和粉丝） =====
 
   @Get(':id/follow-stats')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getFollowStats(@Param('id', ParseIntPipe) id: number) {
     const stats = await this.userService.getUserFollowStats(id)
     return Result.success(stats)
   }
 
   @Get(':id/admin-following')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserFollowing(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page: number = 1,
@@ -262,6 +271,7 @@ export class AdminUserController {
   }
 
   @Get(':id/admin-followers')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserFollowers(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page: number = 1,
@@ -301,6 +311,7 @@ export class AdminUserController {
   // ===== 浏览记录 =====
 
   @Get(':id/view-detail')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserViewDetail(
     @Param('id', ParseIntPipe) id: number,
     @Query('page') page = 1,
@@ -311,6 +322,7 @@ export class AdminUserController {
   }
 
   @Get(':id/visitor-detail')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserVisitorDetail(
     @Param('id', ParseIntPipe) id: number,
   ) {
@@ -337,12 +349,14 @@ export class AdminUserController {
   // ===== 喜欢管理（后台手动管理用户的喜欢） =====
 
   @Get(':id/like-stats')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getLikeStats(@Param('id', ParseIntPipe) id: number) {
     const stats = await this.userService.getUserLikeStats(id)
     return Result.success(stats)
   }
 
   @Get(':id/admin-likes')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserLikes(
     @Param('id', ParseIntPipe) id: number,
     @Query('type') type: string = 'liked',
