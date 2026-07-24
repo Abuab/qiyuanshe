@@ -76,6 +76,7 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useSystemStore } from '@/store/system'
+import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
 import { logger } from '@/utils/logger'
 
@@ -88,6 +89,7 @@ interface NotifyItem {
 }
 
 const systemStore = useSystemStore()
+const userStore = useUserStore()
 const statusBarHeight = ref(0)
 const list = ref<NotifyItem[]>([])
 const loading = ref(false)
@@ -105,11 +107,11 @@ onMounted(() => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   // 检查本地是否已关闭过横幅
   bannerClosed.value = uni.getStorageSync('oa_banner_closed') === true
-  fetchList()
+  if (userStore.isLoggedIn) fetchList()
 })
 
 onShow(() => {
-  fetchList(true)
+  if (userStore.isLoggedIn) fetchList(true)
 })
 
 const fetchList = async (isRefresh = false) => {

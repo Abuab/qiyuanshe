@@ -86,6 +86,9 @@ import { getFullImageUrl } from '@/utils/common'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
@@ -116,7 +119,7 @@ onMounted(async () => {
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
 
-  await loadSettings()
+  if (userStore.isLoggedIn) await loadSettings()
 })
 
 /** 加载当前隐私设置 */

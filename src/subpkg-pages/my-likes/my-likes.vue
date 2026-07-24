@@ -85,8 +85,10 @@ import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
+import { useUserStore } from '@/store/user'
 
 const systemStore = useSystemStore()
+const userStore = useUserStore()
 
 interface LikeUser {
   id: number
@@ -183,7 +185,7 @@ onMounted(() => {
   if (opts.tab === '2') {
     currentTab.value = 2
   }
-  loadData()
+  if (userStore.isLoggedIn) loadData()
 })
 </script>
 

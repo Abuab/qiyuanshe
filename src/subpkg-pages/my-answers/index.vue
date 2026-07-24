@@ -33,6 +33,9 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 const list = ref<any[]>([])
 const loading = ref(true)
@@ -50,7 +53,7 @@ onMounted(() => {
   // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
-  fetchAnswers()
+  if (userStore.isLoggedIn) fetchAnswers()
 })
 
 const fetchAnswers = async () => {

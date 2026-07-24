@@ -6,6 +6,7 @@ import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
+import { ContentFilterService } from '../common/content-filter.service'
 import { SystemService } from '../system/system.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { AiQuotaService } from './ai-quota.service'
@@ -46,6 +47,7 @@ export class AiMatchmakerService {
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
+    private readonly contentFilter: ContentFilterService,
     private readonly systemService: SystemService,
     private readonly quickQuestionService: QuickQuestionService,
     private readonly quotaService: AiQuotaService,
@@ -417,7 +419,10 @@ export class AiMatchmakerService {
       throw new BadRequestException('请输入您的问题')
     }
 
-    // 2. 安全边界检查 → 输入拦截
+    // 2. 敏感违禁词过滤（ContentFilterService DFA）
+    this.contentFilter.checkAndThrow(message, '聊天内容')
+
+    // 3. 安全边界检查 → 输入拦截
     const boundaryNotice = checkSafetyBoundary(message)
     if (boundaryNotice) {
       const rendered = await this.systemService.replaceTemplateVars(boundaryNotice)
@@ -428,7 +433,7 @@ export class AiMatchmakerService {
       }
     }
 
-    // 3. 敏感词检查 → 输入拦截
+    // 4. 敏感词检查 → 输入拦截（AiSafetyService 51K词库）
     const inputCheck = this.safetyService.checkText(message)
     if (!inputCheck.passed) {
       const rendered = await this.systemService.replaceTemplateVars(
@@ -441,7 +446,7 @@ export class AiMatchmakerService {
       }
     }
 
-    // 4. 校验次数限制（仅免费用户）
+    // 5. 校验次数限制（仅免费用户）
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) throw new BadRequestException('用户不存在')
 
@@ -472,7 +477,7 @@ export class AiMatchmakerService {
       })
     }
 
-    // 5. 搜索用户库
+    // 6. 搜索用户库
     let users: MatchmakerSearchUser[] | undefined
     let searchContext = ''
     let isSmartMatch = false
@@ -588,10 +593,10 @@ export class AiMatchmakerService {
       }
     }
 
-    // 6. 获取对话历史
+    // 7. 获取对话历史
     const history = await this.getContext(userId)
 
-    // 7. 记录调用日志
+    // 8. 记录调用日志
     const callLog = this.callLogRepo.create({
       userId,
       callType: AiCallType.MATCHMAKER,

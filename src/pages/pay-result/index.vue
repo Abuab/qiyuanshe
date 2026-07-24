@@ -38,7 +38,9 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { logger } from '@/utils/logger'
+import { useUserStore } from '@/store/user'
 
+const userStore = useUserStore()
 const status = ref('success')
 const failReason = ref('')
 const orderNo = ref('')
@@ -54,7 +56,7 @@ onMounted(() => {
   failReason.value = options.reason ? decodeURIComponent(options.reason) : ''
   orderNo.value = options.orderNo || ''
 
-  if (status.value === 'success') {
+  if (status.value === 'success' && userStore.isLoggedIn) {
     fetchOrderDetail()
   }
 })

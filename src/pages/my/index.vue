@@ -14,7 +14,7 @@
         <!-- 未登录 -->
         <view v-if="!isLoggedIn" class="profile-row guest-row">
           <view class="guest-avatar">
-            <image class="guest-avatar-img" :src="icons.common.defaultAvatar" mode="aspectFill" />
+            <image class="guest-avatar-img" :src="icons.common.guestAvatar" mode="aspectFill" />
           </view>
           <view class="profile-info">
             <text class="profile-nickname">注册/登录</text>

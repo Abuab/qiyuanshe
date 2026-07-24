@@ -155,6 +155,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 interface AuditItem {
   id: number
@@ -204,7 +207,7 @@ const selectedTypeLabel = computed(() => {
 })
 
 onMounted(() => {
-  fetchList()
+  if (userStore.isLoggedIn) fetchList()
 })
 
 const fetchList = async (isRefresh = false) => {

@@ -63,6 +63,9 @@ import { get, del } from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 interface BlockItem {
   id: number
@@ -86,7 +89,7 @@ onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
-  loadList()
+  if (userStore.isLoggedIn) loadList()
 })
 
 const resolveAvatar = (avatar: string) => {

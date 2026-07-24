@@ -113,7 +113,7 @@ function goVip() {
 
 onMounted(() => {
   fetchVipStatus()
-  loadData()
+  if (userStore.isLoggedIn) loadData()
 })
 </script>
 

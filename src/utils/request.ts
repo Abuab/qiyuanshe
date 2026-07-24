@@ -95,13 +95,29 @@ function statusMessage(statusCode: number): string {
   return map[statusCode] || `请求异常(${statusCode})`
 }
 
+/** 标记是否正在跳转登录页，防止并发 401 推入多个登录页 */
+let isNavigatingToLogin = false
+
+/** 无需登录即可访问的认证端点：这些端点的 401 不应触发全局限流跳转 */
+const AUTH_WHITELIST = ['/auth/phone-login', '/auth/wechat-login', '/auth/refresh']
+
 /** 统一处理 401 */
 function handleUnauthorized(tokenWasPresent: boolean): void {
   // 场景1：请求根本没带 token → 未登录，引导登录（不清除不存在的 token）
   if (!tokenWasPresent) {
+    // 防止并发 401 推入多个登录页
+    if (isNavigatingToLogin) return
+    // 已在登录页则不重复跳转
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]?.route
+    if (currentPage === 'pages/login/index') return
+
+    isNavigatingToLogin = true
     uni.showToast({ title: '请先登录', icon: 'none', duration: 2000 })
     setTimeout(() => {
       uni.navigateTo({ url: '/pages/login/index' })
+      // 3秒后重置标记，允许用户返回后再触发
+      setTimeout(() => { isNavigatingToLogin = false }, 3000)
     }, 1500)
     return
   }
@@ -312,6 +328,16 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
         const statusCode = response.statusCode
 
         // ---- 401 自动刷新 token ----
+        // 认证端点（登录/刷新）返回 401 由调用方自行处理，不触发全局跳转
+        if (statusCode === 401 && AUTH_WHITELIST.includes(url)) {
+          const responseBody = response.data as Record<string, unknown> | undefined
+          const msg = (responseBody?.msg || responseBody?.message || 'Unauthorized') as string
+          const err = new Error(msg) as Error & { statusCode: number; bizCode: number }
+          err.statusCode = 401
+          err.bizCode = (responseBody?.code as number) || 401
+          reject(err)
+          return
+        }
         if (statusCode === 401) {
           handle401AndRetry(fullUrl, method, data, header, retryCount, !!token, resolve, reject)
           return

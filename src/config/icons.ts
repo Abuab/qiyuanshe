@@ -33,6 +33,7 @@ export const icons = {
   },
   common: {
     defaultAvatar: '/static/icons/default_avatar.png',
+    guestAvatar: '/static/icons/def_avatar.png',
     heart: '/static/heart.png',
   },
 } as const

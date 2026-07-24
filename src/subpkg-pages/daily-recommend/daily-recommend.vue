@@ -80,6 +80,9 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
 
 interface UserInfo {
   id: number
@@ -154,7 +157,7 @@ async function onLike(item: UserInfo, index: number) {
 }
 
 onMounted(() => {
-  fetchData()
+  if (userStore.isLoggedIn) fetchData()
 })
 </script>
 
