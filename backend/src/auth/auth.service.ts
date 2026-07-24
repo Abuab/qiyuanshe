@@ -78,12 +78,15 @@ export class AuthService {
       throw new UnauthorizedException('微信登录失败，无效的code')
     }
 
-    // 先查该openid是否存在（包括已删除的），如果已删除则禁止登录
+    // 先查该openid是否存在（包括已删除的），如果已删除则重新激活
     const existingUser = await this.userRepository.findOne({
       where: { openid: session.openid },
     })
     if (existingUser && existingUser.isDeleted === 1) {
-      throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
+      existingUser.isDeleted = 0
+      existingUser.status = await this.getNewUserStatus()
+      existingUser.deleteReason = null
+      await this.userRepository.save(existingUser)
     }
 
     let user = await this.userRepository.findOne({
@@ -178,13 +181,18 @@ export class AuthService {
     })
 
     if (!user) {
-      // 检查是否已删除
+      // 检查是否已删除：如果已注销则重新激活（相当于重新注册）
       const deletedUser = await this.userRepository.findOne({
         where: { openid: session.openid, isDeleted: 1 },
       })
       if (deletedUser) {
-        throw new UnauthorizedException('账号已被删除，如有疑问请联系客服')
-      }
+        user = deletedUser
+        user.isDeleted = 0
+        user.status = await this.getNewUserStatus()
+        user.deleteReason = null
+        user.phone = phoneData.purePhoneNumber
+        await this.userRepository.save(user)
+      } else {
       // 新用户注册
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
@@ -210,6 +218,7 @@ export class AuthService {
       }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
+      }
     } else {
       // 已有用户，绑定手机号（如果之前未绑定）
       if (!user.phone) {
