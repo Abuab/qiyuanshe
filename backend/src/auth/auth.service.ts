@@ -235,8 +235,16 @@ export class AuthService {
       throw new UnauthorizedException('微信登录失败，无效的code')
     }
 
-    // 2. 解密手机号
-    const phoneData = this.decryptPhone(session.session_key, encryptedData, iv)
+    // 2. 解密手机号（session key 可能因时序问题不匹配，捕获 bad decrypt 返回友好错误）
+    let phoneData: WechatPhoneData
+    try {
+      phoneData = this.decryptPhone(session.session_key, encryptedData, iv)
+    } catch (err: any) {
+      if (err?.message?.includes('bad decrypt')) {
+        throw new UnauthorizedException('手机号解密失败，请重新授权手机号')
+      }
+      throw err
+    }
     if (!phoneData || !phoneData.purePhoneNumber) {
       throw new UnauthorizedException('手机号解密失败')
     }

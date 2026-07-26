@@ -107,6 +107,8 @@ const loading = ref(false)
 const illustrationImg = ref('')
 // 协议弹窗被同意时置为 true，登录成功（已鉴权）后再补记同意，避免未登录上报 401
 const pendingAgreementReport = ref(false)
+// 预存 wx.login code，在 getPhoneNumber 之前获取，确保 session key 一致
+const phoneLoginCode = ref('')
 
 onMounted(async () => {
   await loadLoginConfig()
@@ -175,9 +177,19 @@ const openPrivacy = () => {
   uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
 }
 
-const handlePhoneLogin = () => {
+const handlePhoneLogin = async () => {
   if (!secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
+    return
+  }
+  // 先调用 wx.login 获取 code，确保 session key 与后续 getPhoneNumber 一致
+  try {
+    const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
+      uni.login({ provider: 'weixin', success: resolve, fail: reject })
+    })
+    phoneLoginCode.value = loginRes.code
+  } catch {
+    showToast('登录失败，请重试', 'none')
     return
   }
   showPhonePopup.value = true
@@ -246,16 +258,37 @@ const onGetPhoneNumber = async (e: any) => {
   }
   showPhonePopup.value = false
   loading.value = true
-  try {
-    const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
-      uni.login({ provider: 'weixin', success: resolve, fail: reject })
-    })
+
+  const tryLogin = async (code: string): Promise<LoginResult | null> => {
     const result = await post<LoginResult>('/auth/phone-login', {
-      code: loginRes.code,
+      code,
       encryptedData: e.detail.encryptedData,
       iv: e.detail.iv,
       deviceInfo: getDeviceInfo(),
     })
+    return result || null
+  }
+
+  try {
+    // 使用预存的 phoneLoginCode 或重新获取（避免 session 不匹配）
+    let code = phoneLoginCode.value
+    if (!code) {
+      const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
+        uni.login({ provider: 'weixin', success: resolve, fail: reject })
+      })
+      code = loginRes.code
+    }
+
+    let result = await tryLogin(code)
+
+    // 如果解密失败（session 不匹配），重新 wx.login 后重试一次
+    if (!result && phoneLoginCode.value) {
+      const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
+        uni.login({ provider: 'weixin', success: resolve, fail: reject })
+      })
+      result = await tryLogin(loginRes.code)
+    }
+
     if (result?.user && result?.tokens) {
       const profileComplete = !result.user.isNewUser
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
@@ -263,11 +296,16 @@ const onGetPhoneNumber = async (e: any) => {
       reportAgreementIfPending()
       showToast('登录成功', 'success')
       handleLoginSuccess()
+    } else {
+      showToast('登录失败，请重试', 'none')
     }
   } catch (error: any) {
     logger.error('手机号登录失败:', error)
     showToast(error.message || '登录失败，请重试', 'none')
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+    phoneLoginCode.value = ''
+  }
 }
 
 const handleLoginSuccess = () => {
