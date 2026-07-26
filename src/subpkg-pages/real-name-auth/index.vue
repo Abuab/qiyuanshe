@@ -126,6 +126,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import { STORAGE_KEY } from '@/config/constants'
+// @ts-ignore 腾讯云 E证通 SDK 无类型声明
 import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
