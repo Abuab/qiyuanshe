@@ -135,7 +135,7 @@ function onDislike(_item: UserInfo, index: number) {
 async function onLike(item: UserInfo, index: number) {
   uni.showLoading({ title: '心动中...', mask: true })
   try {
-    const res: any = await request({ url: `/api/users/${item.id}/like`, method: 'POST' })
+    const res: any = await request({ url: `/users/${item.id}/like`, method: 'POST' })
     if (res?.isMatched && res.matchUser) {
       uni.$emit('match:success', res.matchUser)
     } else {
