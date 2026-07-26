@@ -1381,6 +1381,9 @@ export class UserService {
       await this.userRepository.update(userId, {
         protocolAgreedAt: null,
       })
+      // 清除推荐缓存：确保撤回同意的用户不出现在推荐列表中
+      try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
+      try { await this.recommendService.clearAllListCaches() } catch (_) {}
     }
   }
 }
