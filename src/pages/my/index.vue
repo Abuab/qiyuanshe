@@ -235,7 +235,7 @@
       :show="showProfilePopup"
       :percent="profilePercent"
       :nickname="userStore.displayNickname || ''"
-      :avatar-url="avatarSrc"
+      :avatar-url="profilePopupAvatarUrl"
       :avatar-review-status="userStore.userInfo?.avatarReviewStatus"
       :next-step-url="profileNextStepUrl"
     />
@@ -266,6 +266,7 @@ const systemStore = useSystemStore()
 const showProfilePopup = ref(false)
 const profilePercent = ref(0)
 const profileNextStepUrl = ref('/subpkg-pages/basic-info/index')
+const profilePopupAvatarUrl = ref('')
 
 /** 计算资料完善度百分比和下一步跳转路径 */
 const calcProfileProgress = () => {
@@ -282,7 +283,12 @@ const calcProfileProgress = () => {
   if (isBasicDone) percent += 20
   // 第2步：上传头像
   const isAvatarDone = info.avatar && info.avatar.trim() !== ''
-  if (isAvatarDone) percent += 20
+  if (isAvatarDone) {
+    percent += 20
+    profilePopupAvatarUrl.value = getFullImageUrl(info.avatar)
+  } else {
+    profilePopupAvatarUrl.value = ''
+  }
   // 第3步：详细信息
   const isDetailDone = info.residence && info.residence.trim() !== ''
   if (isDetailDone) percent += 20

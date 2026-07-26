@@ -312,7 +312,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { post } from '@/utils/request'
+import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
@@ -601,7 +601,7 @@ const handleSubmit = async () => {
 
   try {
     const weightNum = parseInt(form.weight.replace('kg', '')) || 0
-    await post('/users/profile', {
+    await put('/users/profile', {
       residence: form.residence,
       hometown: form.hometown,
       weight: weightNum,

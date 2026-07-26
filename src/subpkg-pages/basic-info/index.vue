@@ -189,7 +189,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { post } from '@/utils/request'
+import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { showToast } from '@/utils/common'
 
@@ -368,7 +368,7 @@ const handleSubmit = async () => {
     // 性别转数字
     const genderNum = form.gender === '男' ? 1 : 2
 
-    await post('/users/profile', {
+    await put('/users/profile', {
       gender: genderNum,
       height: heightNum,
       education: form.education,

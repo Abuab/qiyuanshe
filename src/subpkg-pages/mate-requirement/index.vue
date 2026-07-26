@@ -336,7 +336,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { post } from '@/utils/request'
+import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
@@ -578,7 +578,7 @@ const handleSubmit = async () => {
   }
 
   try {
-    await post('/users/profile', {
+    await put('/users/profile', {
       partnerAgeRange: form.ageRange,
       partnerHeightMin: form.minHeight,
       partnerEducation: form.minEducation,
