@@ -138,8 +138,12 @@ onMounted(() => {
   uni.setNavigationBarTitle({ title: appName.value })
 })
 
+// ========== 流程防重 ==========
+const flowFinished = ref(false)
+
 // 从 E证通返回时检测认证结果
 onShow(() => {
+  if (flowFinished.value) return
   if (pendingVerify.value) {
     pendingVerify.value = false
     setTimeout(() => refreshCertResult(), 600)
@@ -326,6 +330,8 @@ const handleContact = async () => {
 
 // ========== 流程终结 ==========
 const finishFlow = () => {
+  if (flowFinished.value) return
+  flowFinished.value = true
   userStore.isProfileComplete = true
   uni.setStorageSync(STORAGE_KEY.PHONE_CREDENTIAL, '1')
   uni.reLaunch({ url: '/pages/index/index' })
