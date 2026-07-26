@@ -78,16 +78,6 @@
     </view>
 
   </view>
-
-  <!-- 底部选择弹窗（复用 PhotoGuide，放在 flex 容器外避免 Android fixed 定位异常） -->
-  <PhotoGuide
-    v-model:visible="showPhotoGuide"
-    :good-examples="photoGuideGoodExamples"
-    :bad-examples="photoGuideBadExamples"
-    @camera="onGuideCamera"
-    @album="onGuideAlbum"
-    @cancel="showPhotoGuide = false"
-  />
 </template>
 
 <script setup lang="ts">
@@ -97,7 +87,6 @@ import { useSystemStore } from '@/store/system'
 import { uploadImage } from '@/utils/upload'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { showToast, getFullImageUrl } from '@/utils/common'
-import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -117,22 +106,7 @@ onMounted(() => {
 })
 
 // ========== 选择头像 → 裁剪 ==========
-const showPhotoGuide = ref(false)
-
-// PhotoGuide 弹窗内示例数据
-const photoGuideGoodExamples = [
-  { src: '', label: '光线充足' },
-  { src: '', label: '五官清晰' },
-  { src: '', label: '正面照' },
-]
-
-const photoGuideBadExamples = [
-  { src: '', label: '衣着不当' },
-  { src: '', label: '模糊遮挡' },
-  { src: '', label: '非人物照' },
-  { src: '', label: '无正脸' },
-  { src: '', label: '网络照片' },
-]
+// 使用原生 ActionSheet 避免 PhotoGuide 遮罩 fixed 定位在 Android 上导致页面飞出白屏
 
 // 页面示例照片数据
 const goodPhotoExamples = [
@@ -149,16 +123,15 @@ const badPhotoExamples = [
   { label: '网络图片' },
 ]
 
+/** 点击上传区域 → 弹出原生 ActionSheet 选择来源 */
 const handleSelectAvatar = () => {
-  showPhotoGuide.value = true
-}
-
-const onGuideCamera = () => {
-  pickAndCropAvatar('camera')
-}
-
-const onGuideAlbum = () => {
-  pickAndCropAvatar('album')
+  uni.showActionSheet({
+    itemList: ['从相册中选取', '拍照'],
+    success: (res) => {
+      const sourceType: 'album' | 'camera' = res.tapIndex === 0 ? 'album' : 'camera'
+      pickAndCropAvatar(sourceType)
+    },
+  })
 }
 
 // ========== 选择图片 + 裁剪（复用 edit-profile 模式） ==========
