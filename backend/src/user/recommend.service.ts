@@ -321,6 +321,14 @@ export class RecommendService {
   }
 
   /**
+   * 清除所有推荐列表缓存
+   * 用户注销/删除时调用，确保已注销用户不会出现在推荐流中
+   */
+  async clearAllListCaches(): Promise<void> {
+    await this.redis.delByPattern(`v${CACHE_VERSION}:rec:*`)
+  }
+
+  /**
    * 人格匹配加分微调：在已排好序的当前页列表上，按人格匹配度对非置顶用户做轻量重排。
    * - 置顶用户保持在最前不动
    * - 人格加分仅作为「加分项」，最多上浮约 K 个名次，不会颠覆主排序

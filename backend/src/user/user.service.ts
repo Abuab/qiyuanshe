@@ -1195,8 +1195,9 @@ export class UserService {
 
     await queryRunner.release()
 
-    // 清除推荐缓存
+    // 清除推荐缓存（包括列表缓存，确保已注销用户不出现在推荐流中）
     try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
+    try { await this.recommendService.clearAllListCaches() } catch (_) {}
 
     if (failedTables.length === 0) {
       this.logger.log(`用户 ${userId} 注销：已清理关联数据`)
