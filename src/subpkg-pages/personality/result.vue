@@ -175,7 +175,7 @@
 <script setup lang="ts">
 import { ref, computed, getCurrentInstance } from 'vue'
 import { onLoad, onReady, onShow } from '@dcloudio/uni-app'
-import { get, post } from '@/utils/request'
+import request, { get, post } from '@/utils/request'
 import { logger } from '@/utils/logger'
 import { useUserStore } from '@/store/user'
 import {
@@ -276,7 +276,7 @@ async function loadResult() {
       // 游客登录后：迁移 Redis 结果到账号，并回传转化
       const gt = getGuestToken()
       if (gt) {
-        try { await post('/personality/migrate', { guestToken: gt }) } catch { /* 无游客结果时忽略 */ }
+        try { await request({ url: '/personality/migrate', method: 'POST', data: { guestToken: gt }, skipToast: true }) } catch { /* 无游客结果时忽略 */ }
         clearGuestToken()
       }
       reportPendingConversion()

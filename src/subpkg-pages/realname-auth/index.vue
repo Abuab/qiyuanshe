@@ -187,6 +187,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { requireLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get } from '@/utils/request'
@@ -228,6 +229,13 @@ onMounted(async () => {
     fetchAuthStatus('/car-auth/status', carAction, carActionClass),
     fetchStoreCertStatus(),
   ])
+})
+
+let certStatusMounted = false
+onShow(() => {
+  // 从子页面（单身承诺等）返回时刷新认证状态，避免 onMounted 仅执行一次导致状态滞后
+  if (!certStatusMounted) { certStatusMounted = true; return }
+  fetchSinglePromiseStatus()
 })
 
 // 学历/房产/车产：返回 { exists, status }（0待审核 / 1已通过 / 2已拒绝）
