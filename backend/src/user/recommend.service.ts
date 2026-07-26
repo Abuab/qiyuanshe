@@ -446,7 +446,6 @@ export class RecommendService {
     qb.andWhere('user.pinnedExpireAt > NOW()')
     qb.andWhere('user.status = :status', { status: 1 })
     qb.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
-    qb.andWhere('user.protocolAgreedAt IS NOT NULL')
 
     // 性别过滤
     if (Number.isFinite(targetGender) && targetGender >= 1 && targetGender <= 2) {
@@ -532,7 +531,6 @@ export class RecommendService {
     const qb = this.baseSelectQuery()
     qb.where('user.status = :status', { status: 1 })
     qb.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
-    qb.andWhere('user.protocolAgreedAt IS NOT NULL')
 
     if (currentUserId) {
       qb.andWhere('user.id != :selfId', { selfId: currentUserId })

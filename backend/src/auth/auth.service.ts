@@ -182,15 +182,14 @@ export class AuthService {
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     } else {
-      // 已有用户且协议曾被撤回 → 重置个人资料，视为重新注册（保留 VIP / 实名认证等权益）
+      // 已有用户且协议曾被撤回 → 重置个人资料，视为重新注册（仅保留 VIP 权益）
       if (!user.protocolAgreedAt) {
         // 暂存权益字段，resetReactivatedUser 会清空它们
         const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
-        const savedRealName = { isRealName: user.isRealName, eidCertStatus: user.eidCertStatus, eidCertTime: user.eidCertTime, eidBizSeqNo: user.eidBizSeqNo }
         this.resetReactivatedUser(user)
         user.status = await this.getNewUserStatus()
         // 恢复权益字段
-        Object.assign(user, savedVip, savedRealName)
+        Object.assign(user, savedVip)
         // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
         await this.userService.cleanupDeletedUserData(user.id)
       }
@@ -309,16 +308,15 @@ export class AuthService {
       if (!user.phone) {
         user.phone = phoneData.purePhoneNumber
       }
-      // 用户主动撤回过协议同意（protocolAgreedAt 为 null）→ 重置个人资料，视为重新注册（保留 VIP / 实名认证等权益）
+      // 用户主动撤回过协议同意（protocolAgreedAt 为 null）→ 重置个人资料，视为重新注册（仅保留 VIP 权益）
       if (!user.protocolAgreedAt) {
         // 暂存权益字段，resetReactivatedUser 会清空它们
         const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
-        const savedRealName = { isRealName: user.isRealName, eidCertStatus: user.eidCertStatus, eidCertTime: user.eidCertTime, eidBizSeqNo: user.eidBizSeqNo }
         this.resetReactivatedUser(user)
         user.status = await this.getNewUserStatus()
         user.phone = phoneData.purePhoneNumber
         // 恢复权益字段
-        Object.assign(user, savedVip, savedRealName)
+        Object.assign(user, savedVip)
         // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
         await this.userService.cleanupDeletedUserData(user.id)
       }

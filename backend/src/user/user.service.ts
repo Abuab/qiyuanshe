@@ -1377,13 +1377,10 @@ export class UserService {
         protocolVersion: version,
       })
     } else if (action === 'revoke') {
-      // 撤回同意：清空最近同意时间，管理后台可据此识别当前为未同意状态
-      await this.userRepository.update(userId, {
-        protocolAgreedAt: null,
-      })
-      // 清除推荐缓存：确保撤回同意的用户不出现在推荐列表中
-      try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
-      try { await this.recommendService.clearAllListCaches() } catch (_) {}
+      // 撤回同意协议：与注销账户走相同逻辑，彻底清除用户数据并从推荐列表移除
+      await this.deactivateAccount(userId)
+      // deactivateAccount 不处理协议字段，此处补充清空
+      await this.userRepository.update(userId, { protocolAgreedAt: null })
     }
   }
 }
