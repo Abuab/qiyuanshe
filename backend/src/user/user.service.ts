@@ -1076,7 +1076,7 @@ export class UserService {
   }
 
   /** 清理已注销用户的关联数据（问答、报名、关注、喜欢等） */
-  private async cleanupDeletedUserData(userId: number): Promise<void> {
+  public async cleanupDeletedUserData(userId: number): Promise<void> {
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -1132,6 +1132,11 @@ export class UserService {
         { sql: 'DELETE FROM ai_call_logs WHERE userId = ?', desc: 'ai_call_logs' },
         // 承诺
         { sql: 'DELETE FROM single_promises WHERE userId = ?', desc: 'single_promises' },
+        // 人格测试
+        { sql: 'DELETE FROM personality_answer_records WHERE userId = ?', desc: 'personality_answer_records' },
+        { sql: 'DELETE FROM personality_results WHERE userId = ?', desc: 'personality_results' },
+        // AI问答报告
+        { sql: 'DELETE FROM ai_fun_quiz_reports WHERE userId = ?', desc: 'ai_fun_quiz_reports' },
         // 快问
         { sql: 'DELETE FROM quick_questions WHERE userId = ?', desc: 'quick_questions' },
       ]

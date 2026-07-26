@@ -165,7 +165,7 @@ export class AuthService {
       this.resetReactivatedUser(existingUser)
       existingUser.status = await this.getNewUserStatus()
       await this.userRepository.save(existingUser)
-      await this.cleanupUserFollows(existingUser.id)
+      await this.userService.cleanupDeletedUserData(existingUser.id)
     }
 
     let user = await this.userRepository.findOne({
@@ -206,8 +206,8 @@ export class AuthService {
         user.status = await this.getNewUserStatus()
         // 恢复权益字段
         Object.assign(user, savedVip, savedRealName)
-        // 清空关注/粉丝关系（撤回同意协议时不会触发 cleanupDeletedUserData）
-        await this.cleanupUserFollows(user.id)
+        // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
+        await this.userService.cleanupDeletedUserData(user.id)
       }
     }
 
@@ -291,7 +291,7 @@ export class AuthService {
         user.status = await this.getNewUserStatus()
         user.phone = phoneData.purePhoneNumber
         await this.userRepository.save(user)
-        await this.cleanupUserFollows(user.id)
+        await this.userService.cleanupDeletedUserData(user.id)
       } else {
       // 新用户注册
       const userId = await this.userService.generateUserId()
@@ -334,11 +334,10 @@ export class AuthService {
         user.phone = phoneData.purePhoneNumber
         // 恢复权益字段
         Object.assign(user, savedVip, savedRealName)
-        // 清空关注/粉丝关系（撤回同意协议时不会触发 cleanupDeletedUserData）
-        await this.cleanupUserFollows(user.id)
+        // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
+        await this.userService.cleanupDeletedUserData(user.id)
       }
     }
-
     if (user.status === 3) {
       throw new UnauthorizedException('账号已被禁用')
     }
