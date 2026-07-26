@@ -846,10 +846,14 @@ const onSelectMatchmaker = (matchmaker: any) => {
 
 // 只读信息展示计算属性
 const birthDisplay = computed(() => {
-  if (!form.value.birthYear) return '--'
-  const month = form.value.birthMonth ? `${form.value.birthMonth}月` : ''
-  const day = form.value.birthDay ? `${form.value.birthDay}日` : ''
-  return `${form.value.birthYear}年${month}${day}`
+  // 优先使用表单值，空值时回退到 userStore（防止 onShow 数据同步延迟或 API 失败）
+  const year = form.value.birthYear || userStore.userInfo?.birthYear
+  if (!year) return '--'
+  const month = form.value.birthMonth || userStore.userInfo?.birthMonth || 0
+  const day = form.value.birthDay || userStore.userInfo?.birthDay || 0
+  const monthStr = month ? `${month}月` : ''
+  const dayStr = day ? `${day}日` : ''
+  return `${year}年${monthStr}${dayStr}`
 })
 const heightDisplay = computed(() => {
   return form.value.height ? `${form.value.height}cm` : ''
@@ -1801,6 +1805,37 @@ onShow(async () => {
     const profile = await get<any>('/auth/profile')
     if (profile) {
       userStore.updateProfile(profile)
+      // 同步基础资料字段（完善资料流程后字段可能已更新）
+      form.value.birthYear = profile.birthYear || userStore.userInfo?.birthYear
+      form.value.birthMonth = profile.birthMonth || userStore.userInfo?.birthMonth
+      form.value.birthDay = profile.birthDay || userStore.userInfo?.birthDay
+      form.value.height = profile.height
+      form.value.education = profile.education || ''
+      form.value.incomeRange = profile.incomeRange || ''
+      form.value.maritalStatus = profile.maritalStatus || ''
+      form.value.nickname = profile.nickname || ''
+      form.value.gender = profile.gender ?? 0
+      // 同步其他可编辑字段
+      form.value.zodiac = profile.zodiac || userStore.userInfo?.zodiac || ''
+      form.value.constellation = profile.constellation || userStore.userInfo?.constellation || ''
+      form.value.occupation = profile.occupation || ''
+      form.value.weight = profile.weight
+      form.value.residence = (profile.residence || '').replace(/\//g, ',')
+      form.value.hometown = (profile.hometown || '').replace(/\//g, ',')
+      form.value.onlyChild = profile.onlyChild || ''
+      form.value.whenMarry = profile.whenMarry || ''
+      form.value.carStatus = profile.carStatus || ''
+      form.value.housingStatus = profile.housingStatus || ''
+      form.value.personalityTags = parseTags(profile.personalityTags)
+      // 同步择偶要求字段
+      form.value.partnerAgeRange = profile.partnerAgeRange || ''
+      form.value.partnerHeightMin = profile.partnerHeightMin || ''
+      form.value.partnerEducation = profile.partnerEducation || ''
+      form.value.partnerIncome = profile.partnerIncome || ''
+      form.value.housingRequirement = profile.housingRequirement || ''
+      form.value.partnerMaritalStatus = profile.partnerMaritalStatus || ''
+      form.value.acceptChildren = profile.acceptChildren || ''
+      form.value.hopeTaTags = parseTags(profile.hopeTaTags)
       // 仅在后台头像已通过审核时同步到本地（跳过待审核状态的头像，避免覆盖本地预览）
       if (profile.avatar && form.value.avatarReviewStatus !== 0 && profile.avatar !== form.value.avatar) {
         form.value.avatar = profile.avatar

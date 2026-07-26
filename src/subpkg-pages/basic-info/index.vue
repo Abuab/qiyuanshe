@@ -372,18 +372,20 @@ const handleSubmit = async () => {
     // 性别转数字
     const genderNum = form.gender === '男' ? 1 : 2
 
+    const birthdayParts = form.birthday.split('-')
     await put('/users/profile', {
       gender: genderNum,
       height: heightNum,
       education: form.education,
       incomeRange: form.income,
-      birthday: form.birthday,
+      birthYear: parseInt(birthdayParts[0]),
+      birthMonth: parseInt(birthdayParts[1]),
+      birthDay: parseInt(birthdayParts[2]),
       maritalStatus: form.marital,
       nickname: form.nickname,
     })
 
     // 同步更新 store 中的生日字段，供后续页面计算星座/生肖
-    const birthdayParts = form.birthday.split('-')
     ;(userStore.updateProfile as any)({
       birthYear: parseInt(birthdayParts[0]),
       birthMonth: parseInt(birthdayParts[1]),

@@ -610,6 +610,8 @@ const handleSubmit = async () => {
       whenMarry: form.whenMarry,
       carStatus: form.carStatus,
       housingStatus: form.housingStatus,
+      zodiac: form.zodiac || '',
+      constellation: form.constellation || '',
       personalityTags: form.personalityTags.join(','),
     })
 
@@ -623,6 +625,8 @@ const handleSubmit = async () => {
       whenMarry: form.whenMarry,
       carStatus: form.carStatus,
       housingStatus: form.housingStatus,
+      zodiac: form.zodiac || '',
+      constellation: form.constellation || '',
       personalityTags: form.personalityTags.join(','),
     })
 

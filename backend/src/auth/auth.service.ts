@@ -72,21 +72,6 @@ export class AuthService {
   }
 
   /**
-   * 清空用户的关注/粉丝关系（重新激活时兜底清理，防止 cleanupDeletedUserData 异步失败
-   * 或撤回同意协议场景下 follows 数据残留）
-   */
-  private async cleanupUserFollows(userId: number): Promise<void> {
-    try {
-      await this.entityManager.query(
-        'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?',
-        [userId, userId],
-      )
-    } catch (err: any) {
-      console.error(`[auth] 清理用户 ${userId} 关注数据失败:`, err?.message || err)
-    }
-  }
-
-  /**
    * 重新激活已注销用户：复位 isDeleted/status 并清除所有个人资料字段，等同于重新注册
    */
   private resetReactivatedUser(user: User): void {
@@ -442,13 +427,14 @@ export class AuthService {
       const authData = authRecord?.authData || {}
       let realName = authData.realName || authData.name || ''
 
-      // 2. 如果 user_auths 中没找到，查询新的 real_name_identities 表
+      // 2. 如果 user_auths 中没找到，查询新的 real_name_identities 表（仅 status=0 有效记录）
       if (!realName) {
         const identityRecord = await this.entityManager
           .createQueryBuilder()
           .select('rni.realName')
           .from('real_name_identities', 'rni')
           .where('rni.userId = :userId', { userId })
+          .andWhere('rni.status = :sts', { sts: 0 })
           .orderBy('rni.createdAt', 'DESC')
           .getRawOne()
         if (identityRecord?.realName) {

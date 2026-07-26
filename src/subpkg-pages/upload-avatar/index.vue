@@ -85,7 +85,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { uploadImage } from '@/utils/upload'
-import { put } from '@/utils/request'
+import { put, post } from '@/utils/request'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { showToast, getFullImageUrl } from '@/utils/common'
 
@@ -223,6 +223,11 @@ const handleSubmit = async () => {
     await put('/users/profile', {
       avatar: uploadRes.url,
       avatarReviewStatus: 0,
+    })
+
+    // 提交头像审核（创建审计日志 + 发送审核通知，不影响主流程）
+    post('/users/avatar-review', { avatarUrl: uploadRes.url }).catch((e: any) => {
+      console.error('[upload-avatar] 提交头像审核失败:', e?.message || e)
     })
 
     // 更新 store

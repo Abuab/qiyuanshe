@@ -44,10 +44,11 @@ export class NotifyChannelService {
     }
 
     // 检查是否需要通知此类型（未配置类型列表时允许所有类型）
+    // 同时检查 type（如 'photo'、'voice'）和 source（如 'photo_upload'、'voice_upload'），任一匹配即可
     const types = config.notifyTypes || []
-    if (types.length > 0 && !types.includes(type)) {
-      this.logger.log(`通知类型 ${type} 未在配置中勾选，跳过发送`)
-      await this.writeLog(type, '', false, `通知类型 ${type} 未勾选`, userId, userNickname, source || type, content)
+    if (types.length > 0 && !types.includes(type) && !types.includes(source || '')) {
+      this.logger.log(`通知类型 ${type}(source=${source}) 未在配置中勾选，跳过发送`)
+      await this.writeLog(type, '', false, `通知类型 ${type}(source=${source}) 未勾选`, userId, userNickname, source || type, content)
       return
     }
 
