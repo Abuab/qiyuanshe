@@ -230,6 +230,16 @@
       @close="showFeedback = false"
     />
 
+    <!-- 完善资料强制弹窗（资料未完成时显示，无法关闭） -->
+    <ProfileCompletePopup
+      :show="showProfilePopup"
+      :percent="profilePercent"
+      :nickname="userStore.displayNickname || ''"
+      :avatar-url="avatarSrc"
+      :avatar-review-status="userStore.userInfo?.avatarReviewStatus"
+      :next-step-url="profileNextStepUrl"
+    />
+
   </view>
 </template>
 
@@ -243,6 +253,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
+import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
@@ -250,6 +261,53 @@ import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+
+// ========== 资料完善度弹窗 ==========
+const showProfilePopup = ref(false)
+const profilePercent = ref(0)
+const profileNextStepUrl = ref('/subpkg-pages/basic-info/index')
+
+/** 计算资料完善度百分比和下一步跳转路径 */
+const calcProfileProgress = () => {
+  const info = userStore.userInfo as any
+  if (!info) {
+    profilePercent.value = 0
+    profileNextStepUrl.value = '/subpkg-pages/basic-info/index'
+    return
+  }
+
+  let percent = 0
+  // 第1步：基本信息（昵称已自定义表示已完成）
+  const isBasicDone = info.nickname && !/^昵称/.test(info.nickname)
+  if (isBasicDone) percent += 20
+  // 第2步：上传头像
+  const isAvatarDone = info.avatar && info.avatar.trim() !== ''
+  if (isAvatarDone) percent += 20
+  // 第3步：详细信息
+  const isDetailDone = info.residence && info.residence.trim() !== ''
+  if (isDetailDone) percent += 20
+  // 第4步：择偶要求
+  const isMateDone = !!(info.partnerAgeRange)
+  if (isMateDone) percent += 20
+  // 第5步：实名认证
+  if (info.isRealName) percent += 20
+
+  profilePercent.value = percent
+
+  // 确定下一步跳转路径
+  if (!isBasicDone) {
+    profileNextStepUrl.value = '/subpkg-pages/basic-info/index'
+  } else if (!isAvatarDone) {
+    profileNextStepUrl.value = '/subpkg-pages/upload-avatar/index'
+  } else if (!isDetailDone) {
+    profileNextStepUrl.value = '/subpkg-pages/detail-info/index'
+  } else if (!isMateDone) {
+    profileNextStepUrl.value = '/subpkg-pages/mate-requirement/index'
+  } else {
+    profileNextStepUrl.value = '/subpkg-pages/real-name-auth/index'
+  }
+}
+
 const avatarError = ref(false)
 const statusBarHeight = ref(20)
 // 导航栏总高度（px）：statusBar + 88rpx → px
@@ -339,6 +397,13 @@ onShow(() => {
     uni.switchTab({ url: '/pages/index/index' })
     return
   }
+
+  // 完善资料强制弹窗：资料未完成时每次进入"我的"页面都弹出
+  if (userStore.isLoggedIn && !userStore.isProfileComplete) {
+    calcProfileProgress()
+    showProfilePopup.value = true
+  }
+
   loadStats()
   refreshProfile()
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
