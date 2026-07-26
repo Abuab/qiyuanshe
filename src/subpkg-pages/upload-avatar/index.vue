@@ -85,6 +85,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { uploadImage } from '@/utils/upload'
+import { put } from '@/utils/request'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { showToast, getFullImageUrl } from '@/utils/common'
 
@@ -217,6 +218,12 @@ const handleSubmit = async () => {
     uni.showLoading({ title: '上传中...', mask: true })
 
     const uploadRes = await uploadImage(avatarPath.value)
+
+    // 保存头像到后端数据库
+    await put('/users/profile', {
+      avatar: uploadRes.url,
+      avatarReviewStatus: 0,
+    })
 
     // 更新 store
     userStore.updateProfile({ avatar: uploadRes.url, avatarReviewStatus: 0 })

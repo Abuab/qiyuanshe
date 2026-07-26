@@ -14,6 +14,8 @@ interface UserInfo {
   phone?: string
   gender?: number
   birthYear?: number
+  birthMonth?: number
+  birthDay?: number
   height?: number
   weight?: number
   education?: string
@@ -144,7 +146,7 @@ const isVipValid = computed(() => {
     ] as const
 
     const numberFields = [
-      'gender', 'birthYear', 'height', 'weight', 'avatarReviewStatus',
+      'gender', 'birthYear', 'birthMonth', 'birthDay', 'height', 'weight', 'avatarReviewStatus',
       'voiceAuditStatus', 'voiceDuration', 'eidCertStatus', 'status',
     ] as const
 
