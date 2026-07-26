@@ -656,6 +656,9 @@ export class AuthService {
       sanitized.photos = user['photos']
     }
 
+    // 新用户标识：头像为空 且 昵称为系统自动生成（以"昵称"开头）
+    sanitized.isNewUser = (!user.avatar || !user.avatar.trim()) && /^昵称/.test(user.nickname || '')
+
     return sanitized
   }
 
