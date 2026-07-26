@@ -77,33 +77,39 @@
       </view>
     </view>
 
-    <!-- ========== 底部选择弹窗（复用 PhotoGuide） ========== -->
-    <PhotoGuide
-      v-model:visible="showPhotoGuide"
-      :good-examples="photoGuideGoodExamples"
-      :bad-examples="photoGuideBadExamples"
-      @camera="onGuideCamera"
-      @album="onGuideAlbum"
-      @cancel="showPhotoGuide = false"
-    />
   </view>
+
+  <!-- 底部选择弹窗（复用 PhotoGuide，放在 flex 容器外避免 Android fixed 定位异常） -->
+  <PhotoGuide
+    v-model:visible="showPhotoGuide"
+    :good-examples="photoGuideGoodExamples"
+    :bad-examples="photoGuideBadExamples"
+    @camera="onGuideCamera"
+    @album="onGuideAlbum"
+    @cancel="showPhotoGuide = false"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { uploadImage } from '@/utils/upload'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '灵通相亲')
 
 // ========== 头像数据 ==========
 const avatarPath = ref('') // 裁剪后的本地临时路径
 
 // 进入时若已有头像，回显
 onMounted(() => {
+  uni.setNavigationBarTitle({ title: appName.value })
+
   const avatar = userStore.userInfo?.avatar
   if (avatar) {
     avatarPath.value = getFullImageUrl(avatar)

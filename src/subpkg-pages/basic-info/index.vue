@@ -191,9 +191,12 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '灵通相亲')
 
 // ========== 表单数据 ==========
 const form = reactive({
@@ -208,6 +211,7 @@ const form = reactive({
 
 // 初始化已有数据（用户撤回同意/注销重新登录后数据为空，不会回填）
 onMounted(() => {
+  uni.setNavigationBarTitle({ title: appName.value })
   const userInfo = userStore.userInfo
   if (userInfo) {
     if (userInfo.gender) {
