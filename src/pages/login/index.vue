@@ -309,9 +309,9 @@ const onGetPhoneNumber = async (e: any) => {
 }
 
 const handleLoginSuccess = () => {
-  // 新用户：弹窗引导完善资料（无法关闭，必须点击去完善资料）
+  // 新用户：跳转到"我的"页面，由"我的"页面 onShow 触发完善资料弹窗（带 nextStepUrl）
   if (userStore.userInfo && /^昵称/.test(userStore.userInfo.nickname || '') && !userStore.userInfo.avatar) {
-    showProfilePopup.value = true
+    uni.switchTab({ url: '/pages/my/index' })
     return
   }
   const pages = getCurrentPages()

@@ -180,10 +180,10 @@ const isVipValid = computed(() => {
       if (typeof data[key] === 'boolean') (updates as any)[key] = data[key]
     }
 
-    // 后端 /auth/profile 返回 isNewUser 表示资料未完善，同步更新 isProfileComplete
-    if (typeof data['isNewUser'] === 'boolean') {
-      isProfileComplete.value = !data['isNewUser']
-    }
+    // 注意：不在此处根据 isNewUser 更新 isProfileComplete
+    // isProfileComplete 仅由登录流程（login）和实名认证完成（finishFlow）控制
+    // refreshProfile() 刷新用户数据时不应改变 isProfileComplete，否则会导致
+    // "我的"页面完善资料弹窗在用户填写部分信息后被意外关闭
 
     Object.assign(userInfo.value, updates)
     secureStorage.setUserInfo(userInfo.value)
