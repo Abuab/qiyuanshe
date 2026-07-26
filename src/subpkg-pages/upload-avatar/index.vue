@@ -45,13 +45,6 @@
           :key="idx"
           class="example-photo-item"
         >
-          <view class="example-photo-wrap example-photo-wrap--tall">
-            <view class="example-photo-placeholder placeholder-good" />
-            <view class="example-photo-like">
-              <text class="like-text">999+ 关注</text>
-              <text class="like-heart">❤️</text>
-            </view>
-          </view>
           <text class="example-photo-label">{{ item.label }}</text>
         </view>
       </view>
@@ -66,12 +59,6 @@
           :key="idx"
           class="example-photo-item"
         >
-          <view class="example-photo-wrap example-photo-wrap--short">
-            <view class="example-photo-placeholder placeholder-bad" />
-            <view class="example-photo-mark mark-red">
-              <text class="mark-cross">×</text>
-            </view>
-          </view>
           <text class="example-photo-label--small">{{ item.label }}</text>
         </view>
       </view>

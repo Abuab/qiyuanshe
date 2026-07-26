@@ -178,6 +178,7 @@
     <CityPicker
       :visible="showCityPicker"
       :default-location="{ province: '山西省', city: '运城市' }"
+      :require-leaf="true"
       @confirm="onCityConfirm"
       @close="showCityPicker = false"
     />
@@ -257,8 +258,8 @@
           <text class="tag-hint-text">建议每个类型至少选择3项</text>
         </view>
 
-        <!-- 已选标签区 -->
-        <scroll-view v-if="tempTags.length" class="tag-selected-wrap" scroll-x>
+        <!-- 已选标签区（换行显示） -->
+        <view v-if="tempTags.length" class="tag-selected-wrap">
           <view
             v-for="(tag, idx) in tempTags"
             :key="idx"
@@ -268,7 +269,7 @@
             <text class="tag-selected-name">{{ tag }}</text>
             <text class="tag-selected-close">×</text>
           </view>
-        </scroll-view>
+        </view>
 
         <!-- Tab 切换 -->
         <view class="tag-tabs">
@@ -1019,10 +1020,12 @@ const handleSkip = () => {
 }
 
 .tag-selected-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
   padding: 12rpx 24rpx;
-  white-space: nowrap;
-  height: auto;
-  max-height: 120rpx;
+  max-height: 200rpx;
+  overflow-y: auto;
 }
 
 .tag-selected-item {

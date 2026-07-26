@@ -297,8 +297,8 @@
           <text class="popup-close" @tap="closeHopeTaPicker">✕</text>
         </view>
 
-        <!-- 已选标签区 -->
-        <scroll-view v-if="hopeTaTempTags.length" class="tag-selected-wrap" scroll-x>
+        <!-- 已选标签区（换行显示） -->
+        <view v-if="hopeTaTempTags.length" class="tag-selected-wrap">
           <view
             v-for="(tag, idx) in hopeTaTempTags"
             :key="idx"
@@ -308,7 +308,7 @@
             <text class="tag-selected-name">{{ tag }}</text>
             <text class="tag-selected-close">×</text>
           </view>
-        </scroll-view>
+        </view>
 
         <scroll-view class="tag-cloud-wrap" scroll-y>
           <view class="tag-cloud">
@@ -1102,10 +1102,12 @@ const handleSkip = () => {
 }
 
 .tag-selected-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
   padding: 12rpx 24rpx;
-  white-space: nowrap;
-  height: auto;
-  max-height: 120rpx;
+  max-height: 200rpx;
+  overflow-y: auto;
 }
 
 .tag-selected-item {

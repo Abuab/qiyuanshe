@@ -49,6 +49,15 @@ export interface UserListItem {
   followedAt?: Date | null
 }
 
+/** 系统预置职业列表，来自选择器而非用户自由输入，跳过内容过滤 */
+const KNOWN_OCCUPATIONS = new Set([
+  '事业编', '中学老师', '小学老师', '幼师', '服务行业', '保险', '老师', '药剂师',
+  '设计', '运营', '个体工商户', '普通职员', '银行', '工程', '财务', '技术',
+  '餐饮', '体制内', '事业单位', '销售', '公务员', '国企职员', '工程师', '银行职员',
+  '个体户', '老板创业者', '公司职员', '公司高管', '律师', '设计师', 'IT从业者', '客服', '人事',
+  '财务会计', '军人', '服务业', '教师', '医生', '护士', '警察', '其他',
+])
+
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name)
@@ -731,9 +740,15 @@ export class UserService {
     }
 
     // 敏感词过滤 - 用户自定义文本字段
-    if (dto.nickname) this.contentFilter.checkAndThrow(dto.nickname, '昵称')
+    // 系统默认昵称（格式：昵称+ID）不校验
+    if (dto.nickname && !/^昵称\d+$/.test(dto.nickname)) {
+      this.contentFilter.checkAndThrow(dto.nickname, '昵称')
+    }
     if (dto.wechat) this.contentFilter.checkAndThrow(dto.wechat, '微信号')
-    if (dto.occupation) this.contentFilter.checkAndThrow(dto.occupation, '职业')
+    // 职业若来自系统预置列表则跳过校验（非用户自由输入）
+    if (dto.occupation && !KNOWN_OCCUPATIONS.has(dto.occupation)) {
+      this.contentFilter.checkAndThrow(dto.occupation, '职业')
+    }
     if (dto.hometown) this.contentFilter.checkAndThrow(dto.hometown, '家乡')
     if (dto.residence) this.contentFilter.checkAndThrow(dto.residence, '现居地')
 
