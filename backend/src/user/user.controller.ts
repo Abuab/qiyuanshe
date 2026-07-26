@@ -256,10 +256,14 @@ export class UserController {
     const count = await this.photoRepo.count({ where: { userId } })
     if (count >= 6) return Result.serverError('最多上传6张照片')
 
-    // 第一张照片自动设为头像，并更新更新时间（repo.update 不触发 @UpdateDateColumn）
+    // 第一张照片自动设为头像，但仅在用户尚未设置头像时生效
+    // 避免覆盖用户通过"上传头像"流程单独设置的专属头像
     if (count === 0) {
-      const now = new Date()
-      await this.userRepo.update(userId, { avatar: body.url, updatedAt: now })
+      const currentUser = await this.userRepo.findOne({ where: { id: userId }, select: ['avatar'] })
+      if (!currentUser?.avatar) {
+        const now = new Date()
+        await this.userRepo.update(userId, { avatar: body.url, updatedAt: now })
+      }
     }
 
     const isMain = count === 0 ? 1 : 0

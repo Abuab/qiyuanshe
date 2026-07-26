@@ -120,11 +120,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { post, get } from '@/utils/request'
+import { onShow } from '@dcloudio/uni-app'
+import { post, get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import { STORAGE_KEY } from '@/config/constants'
+import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const userStore = useUserStore()
@@ -134,35 +136,59 @@ const appName = computed(() => systemStore.appName || '灵通相亲')
 // ========== 设置原生导航栏标题 ==========
 onMounted(() => {
   uni.setNavigationBarTitle({ title: appName.value })
+})
 
-  // 自动填充已有实名信息
-  if (userStore.userInfo?.isRealName && (userStore.userInfo as any).realName) {
-    realName.value = (userStore.userInfo as any).realName || ''
-    idCard.value = (userStore.userInfo as any).idCard || ''
+// 从 E证通返回时检测认证结果
+onShow(() => {
+  if (pendingVerify.value) {
+    pendingVerify.value = false
+    setTimeout(() => refreshCertResult(), 600)
+  }
+  // 若已完成实名认证，自动结束流程
+  if ((userStore.userInfo?.isRealName as any) === true || (userStore.userInfo as any)?.isRealName === 1) {
+    finishFlow()
   }
 })
 
 // ========== 表单数据 ==========
 const realName = ref('')
 const idCard = ref('')
+const submitting = ref(false)
+const pendingVerify = ref(false)
+
+// ========== E证通结果轮询 ==========
+const refreshCertResult = async () => {
+  try {
+    const res: any = await get('/eid-auth/result')
+    const d = res?.data || res
+    if (d && d.isRealName === true) {
+      userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+      showToast('认证成功', 'success')
+      setTimeout(() => finishFlow(), 800)
+    } else if (d && d.status === 'pending') {
+      // 仍在认证中，允许用户再次发起
+      showToast('认证仍在处理中，请稍后再试')
+      pendingVerify.value = false
+    }
+  } catch (e: any) {
+    console.error('[real-name-auth] 查询认证结果失败:', e?.message || e)
+    pendingVerify.value = false
+  }
+}
 
 // ========== 身份证校验 ==========
 const validateIdCard = (id: string): boolean => {
-  // 18位格式
   if (!/^\d{17}[\dXx]$/.test(id)) return false
-
-  // 校验码
   const weight = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
   const checkMap = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
   let sum = 0
   for (let i = 0; i < 17; i++) {
     sum += parseInt(id[i]) * weight[i]
   }
-  const mod = sum % 11
-  return checkMap[mod] === id[17].toUpperCase()
+  return checkMap[sum % 11] === id[17].toUpperCase()
 }
 
-// ========== 提交 ==========
+// ========== 提交 - 调用腾讯云 E证通 SDK 进行人脸核身 ==========
 const handleSubmit = async () => {
   if (!realName.value.trim()) {
     showToast('请填写真实姓名')
@@ -176,23 +202,98 @@ const handleSubmit = async () => {
     showToast('身份证号格式不正确')
     return
   }
+  if (submitting.value) return
+  submitting.value = true
 
+  // 去重检查
   try {
-    await post('/users/real-name-auth', {
-      realName: realName.value.trim(),
+    const dupCheck: any = await post('/eid-auth/check-duplicate', {
       idCard: idCard.value.trim(),
+      realName: realName.value.trim(),
     })
+    const dupData = dupCheck?.data || dupCheck
+    if (dupData && !dupData.canProceed) {
+      submitting.value = false
+      if (dupData.reason === 'requires_reauth') {
+        const res = await new Promise<boolean>((resolve) => {
+          uni.showModal({
+            title: '二次认证',
+            content: dupData.message || '检测到您之前已完成实名认证，重新验证需支付 1 元',
+            cancelText: '取消',
+            confirmText: '去支付',
+            success: (r) => resolve(r.confirm),
+          })
+        })
+        if (!res) return
+        try {
+          submitting.value = true
+          uni.showLoading({ title: '验证中...', mask: true })
+          const reVerifyRes: any = await put('/eid-auth/re-verify', { idCard: idCard.value.trim() })
+          const rvData = reVerifyRes?.data || reVerifyRes
+          uni.hideLoading()
+          if (rvData && (rvData.code === 0 || rvData.status === 'success')) {
+            userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+            showToast('认证成功', 'success')
+            setTimeout(() => finishFlow(), 800)
+          } else {
+            uni.showModal({
+              title: '提示',
+              content: rvData?.message || rvData?.msg || '二次认证失败，请稍后重试',
+              showCancel: false,
+            })
+          }
+        } catch (e2: any) {
+          uni.hideLoading()
+          uni.showModal({
+            title: '提示',
+            content: e2?.message || '二次认证失败，请稍后重试',
+            showCancel: false,
+          })
+        } finally {
+          submitting.value = false
+        }
+        return
+      }
+      uni.showModal({
+        title: '提示',
+        content: dupData.message || '该身份证已绑定其他账号，如有疑问请联系客服',
+        showCancel: false,
+      })
+      return
+    }
+  } catch (e: any) {
+    submitting.value = false
+    uni.showModal({
+      title: '提示',
+      content: e?.message || '身份校验异常，请稍后重试',
+      showCancel: false,
+    })
+    return
+  }
 
-    // 更新 store
-    ;(userStore.updateProfile as any)({ isRealName: true })
-
-    showToast('认证成功', 'success')
-    setTimeout(() => {
-      finishFlow()
-    }, 800)
-  } catch (err: any) {
-    console.error('[real-name-auth] 提交失败:', err?.message || err)
-    showToast(err?.message || '提交失败，请稍后重试')
+  uni.showLoading({ title: '发起认证...', mask: true })
+  try {
+    const res: any = await post('/eid-auth/create-order')
+    const d = res?.data || res
+    const token = d && d.eidToken
+    uni.hideLoading()
+    if (!token) {
+      showToast('发起认证失败，请稍后重试')
+      return
+    }
+    pendingVerify.value = true
+    // 调起腾讯云 E证通 SDK，SDK 内部跳转 eID 数字身份小程序完成人脸核身
+    startEid({
+      data: { token },
+      verifyDoneCallback: () => {
+        refreshCertResult()
+      },
+    })
+  } catch (e: any) {
+    uni.hideLoading()
+    showToast(e?.message || '网络异常，请稍后重试')
+  } finally {
+    submitting.value = false
   }
 }
 

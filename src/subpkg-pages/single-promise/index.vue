@@ -149,7 +149,9 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken, requireLogin } from '@/utils/auth'
 import { getFullImageUrl } from '@/utils/common'
+import { useUserStore } from '@/store/user'
 
+const userStore = useUserStore()
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 
@@ -207,13 +209,18 @@ async function loadStatus() {
       existingSignatureUrl.value = getFullImageUrl(data.signatureUrl || '')
       signedDate.value = formatDate(data.createdAt)
     } else {
-      // 从用户资料获取真实姓名
+      // 从用户资料获取真实姓名（优先 E证通存储，回退 userStore）
       try {
         const profile: any = await get('/auth/profile')
-        if (profile?.data?.realName || profile?.realName) {
-          realName.value = profile.data?.realName || profile?.realName || '用户'
-        }
-      } catch (_) {}
+        const profileData = profile?.data || profile
+        const fromProfile = profileData?.realName
+        const fromStore = (userStore.userInfo as any)?.realName
+        realName.value = fromProfile || fromStore || '用户'
+      } catch (_) {
+        // 回退：从 userStore 获取
+        const fromStore = (userStore.userInfo as any)?.realName
+        if (fromStore) realName.value = fromStore
+      }
     }
   } catch (e) {
     console.error('加载单身承诺状态失败:', e)
