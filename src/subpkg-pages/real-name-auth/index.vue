@@ -1,21 +1,8 @@
 <template>
   <view class="real-name-auth-page">
-    <!-- 自定义导航栏 -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
-        <text class="nav-title">灵通相亲</text>
-        <text class="nav-placeholder"></text>
-      </view>
-    </view>
-
     <!-- 内容区 -->
-    <scroll-view
-      class="page-content"
-      scroll-y
-      :style="{ paddingTop: navTopPx + 'px' }"
-    >
-      <!-- ========== 三步进度指示器（全部完成） ========== -->
+    <scroll-view class="page-content" scroll-y>
+      <!-- ========== 三步进度指示器（全部完成：第1、2步 done，第3步 active） ========== -->
       <view class="steps-bar">
         <view class="step-item">
           <view class="step-circle step-circle--done">
@@ -47,25 +34,25 @@
       <view class="advantages-area">
         <view class="advantage-item">
           <view class="advantage-icon advantage-icon--blue">
-            <text class="advantage-icon-text">✓</text>
+            <text class="advantage-icon-text">&#10003;</text>
           </view>
           <text class="advantage-label">上万认证</text>
         </view>
         <view class="advantage-item">
           <view class="advantage-icon advantage-icon--pink">
-            <text class="advantage-icon-text">♥</text>
+            <text class="advantage-icon-text">&#9829;</text>
           </view>
           <text class="advantage-label">真实相亲</text>
         </view>
         <view class="advantage-item">
           <view class="advantage-icon advantage-icon--purple">
-            <text class="advantage-icon-text">🔒</text>
+            <text class="advantage-icon-text">&#128274;</text>
           </view>
           <text class="advantage-label">隐私保障</text>
         </view>
         <view class="advantage-item">
           <view class="advantage-icon advantage-icon--green">
-            <text class="advantage-icon-text">◉</text>
+            <text class="advantage-icon-text">&#9673;</text>
           </view>
           <text class="advantage-label">腾讯实名认证</text>
         </view>
@@ -86,7 +73,7 @@
         </view>
 
         <!-- 身份证号 -->
-        <view class="form-item form-item--id">
+        <view class="form-item">
           <text class="form-label">身份证号</text>
           <input
             class="form-input"
@@ -121,36 +108,39 @@
       <!-- 底部安全区 -->
       <view class="safe-bottom" />
     </scroll-view>
+
+    <!-- ========== 红娘联系弹窗 ========== -->
+    <matchmaker-popup
+      :show="showMatchmaker"
+      :matchmaker="matchmakerData || {}"
+      @close="showMatchmaker = false"
+    />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { post } from '@/utils/request'
+import { ref, computed, onMounted } from 'vue'
+import { post, get } from '@/utils/request'
 import { useUserStore } from '@/store/user'
-import { showToast } from '@/utils/common'
+import { useSystemStore } from '@/store/system'
+import { showToast, getFullImageUrl } from '@/utils/common'
 import { STORAGE_KEY } from '@/config/constants'
+import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '灵通相亲')
 
-// ========== 导航相关 ==========
-const statusBarHeight = ref(20)
-const navTopPx = ref(64)
-
+// ========== 设置原生导航栏标题 ==========
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  uni.setNavigationBarTitle({ title: appName.value })
+
   // 自动填充已有实名信息
   if (userStore.userInfo?.isRealName && (userStore.userInfo as any).realName) {
     realName.value = (userStore.userInfo as any).realName || ''
     idCard.value = (userStore.userInfo as any).idCard || ''
   }
 })
-
-const handleBack = () => {
-  uni.navigateBack()
-}
 
 // ========== 表单数据 ==========
 const realName = ref('')
@@ -210,18 +200,27 @@ const handleSkip = () => {
   finishFlow()
 }
 
-const handleContact = () => {
-  // 联系客服：复用项目已有客服逻辑
-  if (typeof (uni as any).openCustomerServiceChat === 'function') {
-    ;(uni as any).openCustomerServiceChat({
-      extInfo: { url: '' },
-      corpId: '',
-      success: () => {},
-      fail: () => {},
-    })
-  } else {
-    showToast('请联系客服')
+// ========== 联系客服 - 红娘弹窗 ==========
+const showMatchmaker = ref(false)
+const matchmakerData = ref<any>(null)
+
+const handleContact = async () => {
+  try {
+    if (!matchmakerData.value) {
+      const res: any = await get('/matchmakers')
+      const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
+      if (rawList.length > 0) {
+        matchmakerData.value = {
+          ...rawList[0],
+          qrCode: getFullImageUrl(rawList[0].qrCode || rawList[0].qr_code || rawList[0].qrcode),
+          avatar: getFullImageUrl(rawList[0].avatar),
+        }
+      }
+    }
+  } catch {
+    // 获取失败仍显示弹窗
   }
+  showMatchmaker.value = true
 }
 
 // ========== 流程终结 ==========
@@ -240,99 +239,217 @@ const finishFlow = () => {
   flex-direction: column;
 }
 
-// ========== 导航栏 ==========
-.nav-wrap {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 100; background: #ffffff;
+.page-content {
+  flex: 1;
+  height: 100vh;
+  box-sizing: border-box;
 }
-.nav-bar {
-  height: 88rpx; display: flex; align-items: center;
-  justify-content: space-between; padding: 0 32rpx;
-}
-.nav-back { font-size: 36rpx; color: #333; width: 80rpx; }
-.nav-title { font-size: 34rpx; font-weight: bold; color: #333; }
-.nav-placeholder { width: 80rpx; }
-
-.page-content { flex: 1; height: 100vh; box-sizing: border-box; }
 
 // ========== 进度指示器 ==========
 .steps-bar {
-  display: flex; align-items: center; justify-content: center;
-  background: #ffffff; padding: 32rpx 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 32rpx 60rpx;
 }
-.step-item { display: flex; flex-direction: column; align-items: center; gap: 16rpx; }
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
 .step-circle {
-  width: 64rpx; height: 64rpx; border-radius: 50%;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
   background: #E0E0E0;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 28rpx; color: #ffffff; font-weight: bold; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 28rpx;
+    color: #ffffff;
+    font-weight: bold;
+  }
 }
-.step-circle--active, .step-circle--done { background: #FF4D6A; }
-.step-label { font-size: 28rpx; color: #999999; }
-.step-label--active, .step-label--done { color: #FF4D6A; }
+
+.step-circle--active,
+.step-circle--done {
+  background: #FF4D6A;
+}
+
+.step-label {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+.step-label--active,
+.step-label--done {
+  color: #FF4D6A;
+}
+
 .step-line {
-  flex: 1; height: 2rpx; margin: 0 12rpx; margin-bottom: 52rpx;
+  flex: 1;
+  height: 2rpx;
+  margin: 0 12rpx;
+  margin-bottom: 52rpx;
   border-top: 2rpx dashed #CCCCCC;
 }
 
 // ========== 认证优势图标区 ==========
 .advantages-area {
-  display: flex; justify-content: space-around;
+  display: flex;
+  justify-content: space-around;
   padding: 40rpx 16rpx 0;
 }
-.advantage-item { display: flex; flex-direction: column; align-items: center; gap: 16rpx; }
-.advantage-icon {
-  width: 96rpx; height: 96rpx; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
+
+.advantage-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
 }
-.advantage-icon--blue  { background: #E8F4FD; }
-.advantage-icon--pink  { background: #FDE8EE; }
-.advantage-icon--purple { background: #F0E8FD; }
-.advantage-icon--green { background: #E8FDF0; }
-.advantage-icon-text { font-size: 40rpx; }
-.advantage-label { font-size: 24rpx; color: #666666; }
+
+.advantage-icon {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advantage-icon--blue {
+  background: #E8F4FD;
+}
+
+.advantage-icon--pink {
+  background: #FDE8EE;
+}
+
+.advantage-icon--purple {
+  background: #F0E8FD;
+}
+
+.advantage-icon--green {
+  background: #E8FDF0;
+}
+
+.advantage-icon-text {
+  font-size: 40rpx;
+}
+
+.advantage-label {
+  font-size: 24rpx;
+  color: #666666;
+}
 
 // ========== 表单输入区 ==========
-.form-area { padding: 48rpx 32rpx 0; display: flex; flex-direction: column; gap: 20rpx; }
-.form-item {
-  background: #ffffff; border-radius: 16rpx; height: 100rpx;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28rpx; box-sizing: border-box;
+.form-area {
+  padding: 48rpx 32rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 }
-.form-label { font-size: 30rpx; font-weight: bold; color: #333333; flex-shrink: 0; }
+
+.form-item {
+  background: #ffffff;
+  border-radius: 16rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+}
+
+.form-label {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333333;
+  flex-shrink: 0;
+}
+
 .form-input {
-  flex: 1; text-align: right; font-size: 28rpx; color: #333333;
-  height: 100%; background: transparent;
+  flex: 1;
+  text-align: right;
+  font-size: 28rpx;
+  color: #333333;
+  height: 100%;
+  background: transparent;
 }
 
 // ========== 按钮区 ==========
-.submit-btn-area { padding: 48rpx 60rpx 0; }
+.submit-btn-area {
+  padding: 48rpx 60rpx 0;
+}
+
 .submit-btn {
-  height: 96rpx; background: #FF4D6A; border-radius: 48rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 32rpx; font-weight: bold; color: #ffffff; }
-  &:active { opacity: 0.85; }
+  height: 96rpx;
+  background: #FF4D6A;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 
 // ========== 暂时跳过 ==========
 .skip-btn {
-  margin-top: 24rpx; text-align: center;
-  text { font-size: 28rpx; color: #CCCCCC; text-decoration: underline; }
-  &:active { text { color: #999999; } }
+  margin-top: 24rpx;
+  text-align: center;
+
+  text {
+    font-size: 28rpx;
+    color: #CCCCCC;
+    text-decoration: underline;
+  }
+
+  &:active {
+    text {
+      color: #999999;
+    }
+  }
 }
 
 // ========== 底部说明 ==========
 .bottom-desc {
   padding: 60rpx 32rpx 0;
-  display: flex; flex-direction: column; gap: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
-.desc-line { font-size: 24rpx; color: #666666; line-height: 1.6; }
-.desc-link { color: #FF4D6A; &:active { opacity: 0.7; } }
+
+.desc-line {
+  font-size: 24rpx;
+  color: #666666;
+  line-height: 1.6;
+}
+
+.desc-link {
+  color: #FF4D6A;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
 
 // 安全区
 .safe-bottom {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  min-height: 40rpx;
+  height: calc(40rpx + constant(safe-area-inset-bottom));
+  height: calc(40rpx + env(safe-area-inset-bottom));
 }
 </style>

@@ -335,36 +335,31 @@
         {
           "path": "basic-info/index",
           "style": {
-            "navigationBarTitleText": "灵通相亲",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "灵通相亲"
           }
         },
         {
           "path": "upload-avatar/index",
           "style": {
-            "navigationBarTitleText": "灵通相亲",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "灵通相亲"
           }
         },
         {
           "path": "detail-info/index",
           "style": {
-            "navigationBarTitleText": "灵通相亲",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "灵通相亲"
           }
         },
         {
           "path": "mate-requirement/index",
           "style": {
-            "navigationBarTitleText": "灵通相亲",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "灵通相亲"
           }
         },
         {
           "path": "real-name-auth/index",
           "style": {
-            "navigationBarTitleText": "灵通相亲",
-            "navigationStyle": "custom"
+            "navigationBarTitleText": "灵通相亲"
           }
         },
         {

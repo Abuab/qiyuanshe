@@ -1,100 +1,81 @@
 <template>
   <view class="upload-avatar-page">
-    <!-- 自定义导航栏 -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
-        <text class="nav-title">灵通相亲</text>
-        <text class="nav-placeholder"></text>
+    <!-- 标题区 -->
+    <view class="header-section">
+      <text class="header-title">上传头像</text>
+      <text class="header-subtitle">真实的头像，没有相片何来眼缘，仅需几秒，缘分就会开启！</text>
+    </view>
+
+    <!-- 上传区域 -->
+    <view class="upload-area" @tap="handleSelectAvatar">
+      <view class="upload-box">
+        <!-- 已上传：显示图片 -->
+        <image
+          v-if="avatarPath"
+          :src="avatarPath"
+          mode="aspectFill"
+          class="upload-image"
+        />
+        <!-- 未上传：显示十字 + -->
+        <view v-else class="upload-plus">
+          <view class="plus-h" />
+          <view class="plus-v" />
+        </view>
+      </view>
+      <text class="upload-hint">请上传本人头像</text>
+    </view>
+
+    <!-- 提交上传按钮 -->
+    <view class="submit-btn-area">
+      <view
+        class="submit-btn"
+        :class="avatarPath ? 'submit-btn--active' : 'submit-btn--disabled'"
+        @tap="handleSubmit"
+      >
+        <text>提交上传</text>
       </view>
     </view>
 
-    <!-- 内容区 -->
-    <scroll-view
-      class="page-content"
-      scroll-y
-      :style="{ paddingTop: navTopPx + 'px' }"
-    >
-      <!-- 标题区 -->
-      <view class="header-section">
-        <text class="header-title">上传头像</text>
-        <text class="header-subtitle">真实的头像，没有相片何来眼缘，仅需几秒，缘分就会开启！</text>
-      </view>
-
-      <!-- 上传区域 -->
-      <view class="upload-area" @tap="handleSelectAvatar">
-        <view class="upload-box">
-          <!-- 已上传：显示图片 -->
-          <image
-            v-if="avatarPath"
-            :src="avatarPath"
-            mode="aspectFill"
-            class="upload-image"
-          />
-          <!-- 未上传：显示十字 + -->
-          <view v-else class="upload-plus">
-            <view class="plus-h" />
-            <view class="plus-v" />
-          </view>
-        </view>
-        <text class="upload-hint">请上传本人头像</text>
-      </view>
-
-      <!-- 提交上传按钮 -->
-      <view class="submit-btn-area">
+    <!-- ========== 示例照片区 ========== -->
+    <view class="example-section">
+      <text class="section-title--light">这样的照片会受到更多的关注</text>
+      <view class="example-grid example-grid--3">
         <view
-          class="submit-btn"
-          :class="avatarPath ? 'submit-btn--active' : 'submit-btn--disabled'"
-          @tap="handleSubmit"
+          v-for="(item, idx) in goodPhotoExamples"
+          :key="idx"
+          class="example-photo-item"
         >
-          <text>提交上传</text>
-        </view>
-      </view>
-
-      <!-- ========== 示例照片区 ========== -->
-      <view class="example-section">
-        <text class="section-title--light">这样的照片会受到更多的关注</text>
-        <view class="example-grid example-grid--3">
-          <view
-            v-for="(item, idx) in goodPhotoExamples"
-            :key="idx"
-            class="example-photo-item"
-          >
-            <view class="example-photo-wrap example-photo-wrap--tall">
-              <view class="example-photo-placeholder placeholder-good" />
-              <view class="example-photo-like">
-                <text class="like-text">999+ 关注</text>
-                <text class="like-heart">❤️</text>
-              </view>
+          <view class="example-photo-wrap example-photo-wrap--tall">
+            <view class="example-photo-placeholder placeholder-good" />
+            <view class="example-photo-like">
+              <text class="like-text">999+ 关注</text>
+              <text class="like-heart">❤️</text>
             </view>
-            <text class="example-photo-label">{{ item.label }}</text>
           </view>
+          <text class="example-photo-label">{{ item.label }}</text>
         </view>
       </view>
+    </view>
 
-      <!-- ========== 禁止上传照片区 ========== -->
-      <view class="example-section">
-        <text class="section-title--light">请勿上传以下几类照片</text>
-        <view class="example-grid example-grid--5">
-          <view
-            v-for="(item, idx) in badPhotoExamples"
-            :key="idx"
-            class="example-photo-item"
-          >
-            <view class="example-photo-wrap example-photo-wrap--short">
-              <view class="example-photo-placeholder placeholder-bad" />
-              <view class="example-photo-mark mark-red">
-                <text class="mark-cross">×</text>
-              </view>
+    <!-- ========== 禁止上传照片区 ========== -->
+    <view class="example-section">
+      <text class="section-title--light">请勿上传以下几类照片</text>
+      <view class="example-grid example-grid--5">
+        <view
+          v-for="(item, idx) in badPhotoExamples"
+          :key="idx"
+          class="example-photo-item"
+        >
+          <view class="example-photo-wrap example-photo-wrap--short">
+            <view class="example-photo-placeholder placeholder-bad" />
+            <view class="example-photo-mark mark-red">
+              <text class="mark-cross">×</text>
             </view>
-            <text class="example-photo-label--small">{{ item.label }}</text>
           </view>
+          <text class="example-photo-label--small">{{ item.label }}</text>
         </view>
       </view>
-
-      <!-- 底部安全区 -->
-      <view class="safe-bottom" />
-    </scroll-view>
+    </view>
 
     <!-- ========== 底部选择弹窗（复用 PhotoGuide） ========== -->
     <PhotoGuide
@@ -117,20 +98,6 @@ import { showToast, getFullImageUrl } from '@/utils/common'
 import PhotoGuide from '@/components/photo-guide/photo-guide.vue'
 
 const userStore = useUserStore()
-
-// ========== 导航相关 ==========
-const statusBarHeight = ref(20)
-const navTopPx = ref(64)
-
-onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
-})
-
-const handleBack = () => {
-  uni.navigateBack()
-}
 
 // ========== 头像数据 ==========
 const avatarPath = ref('') // 裁剪后的本地临时路径
@@ -294,47 +261,8 @@ const handleSubmit = async () => {
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
-}
-
-// ========== 导航栏 ==========
-.nav-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #ffffff;
-}
-
-.nav-bar {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-}
-
-.nav-back {
-  font-size: 36rpx;
-  color: #333;
-  width: 80rpx;
-}
-
-.nav-title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.nav-placeholder {
-  width: 80rpx;
-}
-
-// ========== 内容区 ==========
-.page-content {
-  flex: 1;
-  height: 100vh;
-  box-sizing: border-box;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 // ========== 标题区 ==========
@@ -577,12 +505,5 @@ const handleSubmit = async () => {
   color: #999999;
   margin-top: 8rpx;
   text-align: center;
-}
-
-// ========== 底部安全区 ==========
-.safe-bottom {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  min-height: 40rpx;
 }
 </style>

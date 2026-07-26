@@ -1,28 +1,13 @@
 <template>
   <view class="basic-info-page">
-    <!-- 自定义导航栏 -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
-        <text class="nav-title">灵通相亲</text>
-        <text class="nav-placeholder"></text>
-      </view>
+    <!-- 标题区 -->
+    <view class="header-section">
+      <text class="header-title">基本信息</text>
+      <text class="header-subtitle">填写基本信息，只需几秒，开启缘分！</text>
     </view>
 
-    <!-- 内容区 -->
-    <scroll-view
-      class="page-content"
-      scroll-y
-      :style="{ paddingTop: navTopPx + 'px' }"
-    >
-      <!-- 页面标题区 -->
-      <view class="header-section">
-        <text class="header-title">基本信息</text>
-        <text class="header-subtitle">填写基本信息，只需几秒，开启缘分！</text>
-      </view>
-
-      <!-- 表单列表 -->
-      <view class="form-list">
+    <!-- 表单列表 -->
+    <view class="form-list">
         <!-- 性别 -->
         <view class="form-item" @tap="openPicker('gender')">
           <text class="form-label">性别</text>
@@ -115,10 +100,6 @@
           <text>下一步</text>
         </view>
       </view>
-
-      <!-- iPhone X 底部安全区占位 -->
-      <view class="safe-bottom" />
-    </scroll-view>
 
     <!-- ========== 单列选择器弹窗 ========== -->
     <view
@@ -214,20 +195,6 @@ import { showToast } from '@/utils/common'
 
 const userStore = useUserStore()
 
-// ========== 导航相关 ==========
-const statusBarHeight = ref(20)
-const navTopPx = ref(64)
-
-onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
-})
-
-const handleBack = () => {
-  uni.navigateBack()
-}
-
 // ========== 表单数据 ==========
 const form = reactive({
   gender: '',
@@ -239,7 +206,7 @@ const form = reactive({
   nickname: '',
 })
 
-// 初始化已有数据
+// 初始化已有数据（用户撤回同意/注销重新登录后数据为空，不会回填）
 onMounted(() => {
   const userInfo = userStore.userInfo
   if (userInfo) {
@@ -419,7 +386,7 @@ const handleSubmit = async () => {
       birthDay: parseInt(birthdayParts[2]),
     })
 
-    // 保存成功，进入上传头像流程
+    // 保存成功，跳转上传头像页
     showToast('保存成功', 'success')
     setTimeout(() => {
       uni.navigateTo({ url: '/subpkg-pages/upload-avatar/index' })
@@ -436,47 +403,8 @@ const handleSubmit = async () => {
   background-color: #f5f5f5;
   display: flex;
   flex-direction: column;
-}
-
-// ========== 导航栏 ==========
-.nav-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #ffffff;
-}
-
-.nav-bar {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-}
-
-.nav-back {
-  font-size: 36rpx;
-  color: #333;
-  width: 80rpx;
-}
-
-.nav-title {
-  font-size: 34rpx;
-  font-weight: bold;
-  color: #333;
-}
-
-.nav-placeholder {
-  width: 80rpx;
-}
-
-// ========== 内容区 ==========
-.page-content {
-  flex: 1;
-  height: 100vh;
-  box-sizing: border-box;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 // ========== 标题区 ==========
@@ -599,13 +527,6 @@ const handleSubmit = async () => {
   &:active {
     opacity: 0.85;
   }
-}
-
-// ========== iPhone X 底部安全区 ==========
-.safe-bottom {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  min-height: 40rpx;
 }
 
 // ========== 单列选择器弹窗 ==========

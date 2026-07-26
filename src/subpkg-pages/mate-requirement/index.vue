@@ -1,20 +1,7 @@
 <template>
   <view class="mate-requirement-page">
-    <!-- 自定义导航栏 -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
-        <text class="nav-title">灵通相亲</text>
-        <text class="nav-placeholder"></text>
-      </view>
-    </view>
-
     <!-- 内容区 -->
-    <scroll-view
-      class="page-content"
-      scroll-y
-      :style="{ paddingTop: navTopPx + 'px' }"
-    >
+    <scroll-view class="page-content" scroll-y>
       <!-- ========== 三步进度指示器 ========== -->
       <view class="steps-bar">
         <view class="step-item">
@@ -126,7 +113,7 @@
         <view class="form-item" @tap="openHopeTaPicker">
           <text class="form-label">希望TA</text>
           <view class="form-value">
-            <text :class="form.hopeTaTags.length ? 'form-value--selected' : 'form-value--placeholder'">
+            <text class="form-value--tags" :class="form.hopeTaTags.length ? 'form-value--selected' : 'form-value--placeholder'">
               {{ form.hopeTaTags.length ? form.hopeTaTags.join('、') : '请选择' }}
             </text>
             <text class="form-arrow">&gt;</text>
@@ -209,7 +196,7 @@
               <picker-view-column>
                 <view
                   v-for="(opt, idx) in ageOptions"
-                  :key="'min-'+idx"
+                  :key="'min-' + idx"
                   class="age-picker-item"
                   :class="{ 'age-picker-item--active': ageMinValue === idx }"
                 >
@@ -231,7 +218,7 @@
               <picker-view-column>
                 <view
                   v-for="(opt, idx) in ageOptions"
-                  :key="'max-'+idx"
+                  :key="'max-' + idx"
                   class="age-picker-item"
                   :class="{ 'age-picker-item--active': ageMaxValue === idx }"
                 >
@@ -356,22 +343,9 @@ import { showToast } from '@/utils/common'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '灵通相亲')
 
-// ========== 导航相关 ==========
-const statusBarHeight = ref(20)
-const navTopPx = ref(64)
-
-onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
-})
-
-const handleBack = () => {
-  uni.navigateBack()
-}
-
-// ========== 表单数据 ==========
+// ========== 初始化（导航标题 + 数据回填） ==========
 const form = reactive({
   ageRange: '',
   minHeight: '',
@@ -383,21 +357,23 @@ const form = reactive({
   hopeTaTags: [] as string[],
 })
 
-// 自动填充已有数据
 onMounted(() => {
-  const info = userStore.userInfo
+  uni.setNavigationBarTitle({ title: appName.value })
+
+  // 从 store 自动填充已有择偶要求数据（映射 edit-profile 字段名）
+  const info = userStore.userInfo as any
   if (!info) return
-  if ((info as any).ageRange) form.ageRange = (info as any).ageRange
-  if ((info as any).minHeight) form.minHeight = (info as any).minHeight
-  if ((info as any).minEducation) form.minEducation = (info as any).minEducation
-  if ((info as any).minIncome) form.minIncome = (info as any).minIncome
-  if ((info as any).maritalRequirement) form.maritalRequirement = (info as any).maritalRequirement
-  if ((info as any).housingRequirement) form.housingRequirement = (info as any).housingRequirement
+  if (info.partnerAgeRange) form.ageRange = info.partnerAgeRange
+  if (info.partnerHeightMin) form.minHeight = info.partnerHeightMin
+  if (info.partnerEducation) form.minEducation = info.partnerEducation
+  if (info.partnerIncome) form.minIncome = info.partnerIncome
+  if (info.partnerMaritalStatus) form.maritalRequirement = info.partnerMaritalStatus
+  if (info.housingRequirement) form.housingRequirement = info.housingRequirement
   if (info.acceptChildren) form.acceptChildren = info.acceptChildren
-  if ((info as any).hopeTaTags) {
-    form.hopeTaTags = Array.isArray((info as any).hopeTaTags)
-      ? (info as any).hopeTaTags
-      : (info as any).hopeTaTags.split(',')
+  if (info.hopeTaTags) {
+    form.hopeTaTags = Array.isArray(info.hopeTaTags)
+      ? info.hopeTaTags
+      : info.hopeTaTags.split(',')
   }
 })
 
@@ -445,8 +421,7 @@ const closeSinglePicker = () => {
 const selectSingleOption = (opt: string) => {
   const field = singleFieldMap[singlePickerType.value]
   if (field) {
-    // 若选"请选择"则清空值
-    (form as any)[field] = opt === '请选择' ? '' : opt
+    ;(form as any)[field] = opt === '请选择' ? '' : opt
   }
   closeSinglePicker()
 }
@@ -454,10 +429,10 @@ const selectSingleOption = (opt: string) => {
 // ========== 年龄范围双列选择器 ==========
 const agePickerVisible = ref(false)
 const agePickerAnimIn = ref(false)
-const ageMinValue = ref(0) // index: 0 = 不限, 1 = 18, ...
+const ageMinValue = ref(0)
 const ageMaxValue = ref(0)
 
-const ageOptions = ['不限', ...Array.from({ length: 43 }, (_, i) => String(18 + i))] // 不限, 18~60
+const ageOptions = ['不限', ...Array.from({ length: 43 }, (_, i) => String(18 + i))]
 
 const ageMinIndexes = ref([0])
 const ageMaxIndexes = ref([0])
@@ -503,7 +478,7 @@ const confirmAgePicker = () => {
   closeAgePicker()
 }
 
-// ========== 住房要求选择弹窗 ==========
+// ========== 住房要求选择弹窗（底部标签云，单选） ==========
 const housingOptions = [
   '不限', '和家人同住', '已购房', '租房', '婚后购房',
   '住在单位宿舍', '有婚房无贷款', '有婚房有贷款', '住亲朋家',
@@ -516,8 +491,12 @@ const housingAnimIn = ref(false)
 const housingTempValue = ref('')
 
 watch(showHousingPopup, (val) => {
-  if (val) setTimeout(() => { housingAnimIn.value = true }, 20)
-  else housingAnimIn.value = false
+  if (val) {
+    housingTempValue.value = form.housingRequirement
+    setTimeout(() => { housingAnimIn.value = true }, 20)
+  } else {
+    housingAnimIn.value = false
+  }
 })
 
 const closeHousingPicker = () => {
@@ -530,12 +509,7 @@ const confirmHousingPicker = () => {
   closeHousingPicker()
 }
 
-// 打开时初始化临时值
-watch(showHousingPopup, (val) => {
-  if (val) housingTempValue.value = form.housingRequirement
-})
-
-// ========== 希望TA标签多选弹窗 ==========
+// ========== 希望TA标签多选弹窗（底部标签云） ==========
 const DEFAULT_HOPE_TA_TAGS = [
   '品味出众', '喜欢厨艺', '不冷暴力', '重视家庭', '整洁干净', '阳光运动',
   '文艺范', '懂得尊重', '低调沉稳', '心地善良', '浪漫主义', '乐观积极',
@@ -605,27 +579,27 @@ const handleSubmit = async () => {
 
   try {
     await post('/users/profile', {
-      ageRange: form.ageRange,
-      minHeight: form.minHeight,
-      minEducation: form.minEducation,
-      minIncome: form.minIncome,
-      maritalRequirement: form.maritalRequirement,
+      partnerAgeRange: form.ageRange,
+      partnerHeightMin: form.minHeight,
+      partnerEducation: form.minEducation,
+      partnerIncome: form.minIncome,
+      partnerMaritalStatus: form.maritalRequirement,
       housingRequirement: form.housingRequirement,
       acceptChildren: form.acceptChildren,
       hopeTaTags: form.hopeTaTags.join(','),
     })
 
     // 同步更新 store
-    ;(userStore.updateProfile as any)({
-      ageRange: form.ageRange,
-      minHeight: form.minHeight,
-      minEducation: form.minEducation,
-      minIncome: form.minIncome,
-      maritalRequirement: form.maritalRequirement,
+    userStore.updateProfile({
+      partnerAgeRange: form.ageRange,
+      partnerHeightMin: form.minHeight,
+      partnerEducation: form.minEducation,
+      partnerIncome: form.minIncome,
+      partnerMaritalStatus: form.maritalRequirement,
       housingRequirement: form.housingRequirement,
       acceptChildren: form.acceptChildren,
       hopeTaTags: form.hopeTaTags.join(','),
-    })
+    } as any)
 
     showToast('保存成功', 'success')
     setTimeout(() => {
@@ -650,136 +624,307 @@ const handleSkip = () => {
   flex-direction: column;
 }
 
-// ========== 导航栏 ==========
-.nav-wrap {
-  position: fixed; top: 0; left: 0; right: 0;
-  z-index: 100; background: #ffffff;
+.page-content {
+  flex: 1;
+  height: 100vh;
+  box-sizing: border-box;
 }
-.nav-bar {
-  height: 88rpx; display: flex; align-items: center;
-  justify-content: space-between; padding: 0 32rpx;
-}
-.nav-back { font-size: 36rpx; color: #333; width: 80rpx; }
-.nav-title { font-size: 34rpx; font-weight: bold; color: #333; }
-.nav-placeholder { width: 80rpx; }
-
-.page-content { flex: 1; height: 100vh; box-sizing: border-box; }
 
 // ========== 进度指示器 ==========
 .steps-bar {
-  display: flex; align-items: center; justify-content: center;
-  background: #ffffff; padding: 32rpx 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  padding: 32rpx 60rpx;
 }
-.step-item { display: flex; flex-direction: column; align-items: center; gap: 16rpx; }
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+
 .step-circle {
-  width: 64rpx; height: 64rpx; border-radius: 50%;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
   background: #E0E0E0;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 28rpx; color: #ffffff; font-weight: bold; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 28rpx;
+    color: #ffffff;
+    font-weight: bold;
+  }
 }
-.step-circle--active, .step-circle--done { background: #FF4D6A; }
-.step-label { font-size: 28rpx; color: #999999; }
-.step-label--active { color: #FF4D6A; }
-.step-label--done { color: #FF4D6A; }
+
+.step-circle--active,
+.step-circle--done {
+  background: #FF4D6A;
+}
+
+.step-label {
+  font-size: 28rpx;
+  color: #999999;
+}
+
+.step-label--active {
+  color: #FF4D6A;
+}
+
+.step-label--done {
+  color: #FF4D6A;
+}
+
 .step-line {
-  flex: 1; height: 2rpx; margin: 0 12rpx; margin-bottom: 52rpx;
+  flex: 1;
+  height: 2rpx;
+  margin: 0 12rpx;
+  margin-bottom: 52rpx;
   border-top: 2rpx dashed #CCCCCC;
 }
 
 // ========== 表单列表 ==========
 .form-list {
   padding: 32rpx 32rpx 0;
-  display: flex; flex-direction: column; gap: 20rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
 }
+
 .form-item {
-  background: #ffffff; border-radius: 16rpx; height: 100rpx;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 28rpx; box-sizing: border-box;
-  &:active { background: #f9f9f9; }
+  background: #ffffff;
+  border-radius: 16rpx;
+  height: 100rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+
+  &:active {
+    background: #f9f9f9;
+  }
 }
-.form-label { font-size: 30rpx; font-weight: bold; color: #333333; flex-shrink: 0; }
+
+.form-label {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333333;
+  flex-shrink: 0;
+}
+
 .form-value {
-  display: flex; align-items: center; flex: 1;
-  justify-content: flex-end; gap: 8rpx;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: flex-end;
+  gap: 8rpx;
+  overflow: hidden;
 }
-.form-value--placeholder { font-size: 28rpx; color: #FF4D6A; }
-.form-value--selected { font-size: 28rpx; color: #333333; }
-.form-arrow { font-size: 28rpx; color: #999999; }
+
+.form-value--placeholder {
+  font-size: 28rpx;
+  color: #FF4D6A;
+}
+
+.form-value--selected {
+  font-size: 28rpx;
+  color: #333333;
+}
+
+.form-value--tags {
+  max-width: 420rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 28rpx;
+}
+
+.form-arrow {
+  font-size: 28rpx;
+  color: #999999;
+  flex-shrink: 0;
+}
 
 // ========== 底部 ==========
 .bottom-tip {
   padding: 32rpx 32rpx 0;
-  text { font-size: 24rpx; color: #999999; line-height: 1.5; }
+
+  text {
+    font-size: 24rpx;
+    color: #999999;
+    line-height: 1.5;
+  }
 }
-.submit-btn-area { padding: 40rpx 60rpx 0; }
+
+.submit-btn-area {
+  padding: 40rpx 60rpx 0;
+}
+
 .submit-btn {
-  height: 96rpx; background: #FF4D6A; border-radius: 48rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 32rpx; font-weight: bold; color: #ffffff; }
-  &:active { opacity: 0.85; }
+  height: 96rpx;
+  background: #FF4D6A;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 
 // ========== 暂时跳过 ==========
 .skip-btn {
-  margin-top: 24rpx; text-align: center;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-bottom: 40rpx;
-  text { font-size: 28rpx; color: #CCCCCC; text-decoration: underline; }
-  &:active { text { color: #999999; } }
+  margin-top: 24rpx;
+  text-align: center;
+
+  text {
+    font-size: 28rpx;
+    color: #CCCCCC;
+    text-decoration: underline;
+  }
+
+  &:active {
+    text {
+      color: #999999;
+    }
+  }
 }
 
 .safe-bottom {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  min-height: 40rpx;
+  height: calc(40rpx + constant(safe-area-inset-bottom));
+  height: calc(40rpx + env(safe-area-inset-bottom));
 }
 
 // ========== 单列选择器弹窗 ==========
 .picker-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1000; background: rgba(0, 0, 0, 0.6);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 200ms ease-out;
-  &--in { opacity: 1; }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  &--in {
+    opacity: 1;
+  }
 }
+
 .picker-box {
-  width: 480rpx; max-height: 720rpx;
-  background: #ffffff; border-radius: 24rpx;
-  display: flex; flex-direction: column; padding: 24rpx 0;
-  transform: scale(0.9); opacity: 0; transition: all 200ms ease-out;
-  &--in { transform: scale(1); opacity: 1; }
+  width: 480rpx;
+  max-height: 720rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+  padding: 24rpx 0;
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 200ms ease-out;
+
+  &--in {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 .picker-title {
-  font-size: 32rpx; font-weight: bold; color: #333333;
-  text-align: center; padding-bottom: 16rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  padding-bottom: 16rpx;
 }
-.picker-options { max-height: 600rpx; }
+
+.picker-options {
+  max-height: 600rpx;
+}
+
 .picker-option {
-  height: 88rpx; display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; color: #333333; }
-  &:active { background: #f5f5f5; }
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    color: #333333;
+  }
+
+  &:active {
+    background: #f5f5f5;
+  }
 }
-.picker-option--active { background: #FFF5F7; text { color: #FF4D6A; } }
+
+.picker-option--active {
+  background: #FFF5F7;
+
+  text {
+    color: #FF4D6A;
+  }
+}
 
 // ========== 底部弹窗通用 ==========
 .bottom-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1000; background: rgba(0, 0, 0, 0.6);
-  opacity: 0; transition: opacity 200ms ease-out;
-  &--in { opacity: 1; }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  &--in {
+    opacity: 1;
+  }
 }
+
 .bottom-panel {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: #ffffff; border-radius: 24rpx 24rpx 0 0;
-  transform: translateY(100%); transition: transform 200ms ease-out;
-  &--in { transform: translateY(0); }
-  display: flex; flex-direction: column; max-height: 75vh;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: 24rpx 24rpx 0 0;
+  transform: translateY(100%);
+  transition: transform 200ms ease-out;
+  display: flex;
+  flex-direction: column;
+  max-height: 75vh;
+
+  &--in {
+    transform: translateY(0);
+  }
 }
+
 .bottom-panel-title {
-  font-size: 32rpx; font-weight: bold; color: #333333;
-  text-align: center; padding: 24rpx 0 16rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  padding: 24rpx 0 16rpx;
 }
+
 .bottom-panel-safe {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
@@ -787,86 +932,200 @@ const handleSkip = () => {
 
 // 弹窗头部（标题+×）
 .popup-header-row {
-  display: flex; align-items: center; justify-content: center;
-  padding: 24rpx 32rpx 16rpx; position: relative;
-  .bottom-panel-title { padding: 0; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24rpx 32rpx 16rpx;
+  position: relative;
+
+  .bottom-panel-title {
+    padding: 0;
+  }
 }
+
 .popup-close {
-  position: absolute; right: 32rpx; top: 24rpx;
-  font-size: 36rpx; color: #999; padding: 8rpx;
+  position: absolute;
+  right: 32rpx;
+  top: 24rpx;
+  font-size: 36rpx;
+  color: #999;
+  padding: 8rpx;
 }
 
 // 标签云
-.tag-cloud-wrap { flex: 1; min-height: 0; padding: 0 24rpx; }
-.tag-cloud {
-  display: flex; flex-wrap: wrap; gap: 16rpx;
-  padding: 8rpx 0 16rpx;
-}
-.tag-cloud-item {
-  padding: 14rpx 28rpx; border-radius: 48rpx;
-  background: #F5F5F5;
-  text { font-size: 26rpx; color: #333333; }
-  &:active { opacity: 0.8; }
-}
-.tag-cloud-item--active {
-  background: #FF4D6A;
-  text { color: #ffffff; }
+.tag-cloud-wrap {
+  flex: 1;
+  min-height: 0;
+  padding: 0 24rpx;
 }
 
-.tag-confirm-area { padding: 24rpx 32rpx; }
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 8rpx 0 16rpx;
+}
+
+.tag-cloud-item {
+  padding: 14rpx 28rpx;
+  border-radius: 48rpx;
+  background: #F5F5F5;
+
+  text {
+    font-size: 26rpx;
+    color: #333333;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.tag-cloud-item--active {
+  background: #FF4D6A;
+
+  text {
+    color: #ffffff;
+  }
+}
+
+.tag-confirm-area {
+  padding: 24rpx 32rpx;
+}
+
 .tag-confirm-btn {
-  height: 88rpx; background: #FF4D6A; border-radius: 48rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; font-weight: bold; color: #ffffff; }
-  &:active { opacity: 0.85; }
+  height: 88rpx;
+  background: #FF4D6A;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 
 // ========== 年龄选择器 ==========
-.bottom-panel--age { max-height: 65vh; }
+.bottom-panel--age {
+  max-height: 65vh;
+}
 
 .age-columns {
-  display: flex; gap: 24rpx; padding: 0 32rpx;
+  display: flex;
+  gap: 24rpx;
+  padding: 0 32rpx;
 }
+
 .age-column {
-  flex: 1; display: flex; flex-direction: column;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
+
 .age-column-header {
-  font-size: 26rpx; color: #999999; text-align: center; padding: 8rpx 0;
+  font-size: 26rpx;
+  color: #999999;
+  text-align: center;
+  padding: 8rpx 0;
 }
+
 .age-picker-view {
-  height: 440rpx; width: 100%;
+  height: 440rpx;
+  width: 100%;
 }
+
 .age-picker-item {
-  height: 88rpx; display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; color: #999999; }
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    color: #999999;
+  }
 }
+
 .age-picker-item--active {
-  text { color: #333333; font-weight: bold; }
+  text {
+    color: #333333;
+    font-weight: bold;
+  }
 }
 
 .age-footer {
-  display: flex; gap: 24rpx; padding: 16rpx 32rpx;
+  display: flex;
+  gap: 24rpx;
+  padding: 16rpx 32rpx;
 }
+
 .age-footer-btn {
-  flex: 1; height: 80rpx; border-radius: 12rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; font-weight: bold; }
-  &--cancel { background: #F5F5F5; text { color: #333333; } }
-  &--confirm { background: #07C160; text { color: #ffffff; } }
+  flex: 1;
+  height: 80rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    font-weight: bold;
+  }
+
+  &--cancel {
+    background: #F5F5F5;
+
+    text {
+      color: #333333;
+    }
+  }
+
+  &--confirm {
+    background: #07C160;
+
+    text {
+      color: #ffffff;
+    }
+  }
 }
 
 // ========== 标签弹窗特有 ==========
-.bottom-panel--tag { max-height: 80vh; }
+.bottom-panel--tag {
+  max-height: 80vh;
+}
 
 .tag-selected-wrap {
-  padding: 12rpx 24rpx; white-space: nowrap;
-  height: auto; max-height: 120rpx;
+  padding: 12rpx 24rpx;
+  white-space: nowrap;
+  height: auto;
+  max-height: 120rpx;
 }
+
 .tag-selected-item {
-  display: inline-flex; align-items: center;
-  background: #FF4D6A; border-radius: 48rpx;
-  padding: 8rpx 16rpx; margin-right: 12rpx;
+  display: inline-flex;
+  align-items: center;
+  background: #FF4D6A;
+  border-radius: 48rpx;
+  padding: 8rpx 16rpx;
+  margin-right: 12rpx;
 }
-.tag-selected-name { font-size: 24rpx; color: #ffffff; margin-right: 6rpx; }
-.tag-selected-close { font-size: 24rpx; color: #ffffff; font-weight: bold; }
+
+.tag-selected-name {
+  font-size: 24rpx;
+  color: #ffffff;
+  margin-right: 6rpx;
+}
+
+.tag-selected-close {
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: bold;
+}
 </style>

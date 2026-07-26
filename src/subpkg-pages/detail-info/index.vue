@@ -1,20 +1,7 @@
 <template>
   <view class="detail-info-page">
-    <!-- 自定义导航栏 -->
-    <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
-        <text class="nav-title">灵通相亲</text>
-        <text class="nav-placeholder"></text>
-      </view>
-    </view>
-
     <!-- 内容区 -->
-    <scroll-view
-      class="page-content"
-      scroll-y
-      :style="{ paddingTop: navTopPx + 'px' }"
-    >
+    <scroll-view class="page-content" scroll-y>
       <!-- ========== 三步进度指示器 ========== -->
       <view class="steps-bar">
         <view class="step-item">
@@ -135,19 +122,19 @@
           </view>
         </view>
 
-        <!-- 星座（自动计算，只读） -->
+        <!-- 星座（自动计算，只读，不可点击） -->
         <view class="form-item form-item--readonly">
           <text class="form-label">星座</text>
           <view class="form-value">
-            <text class="form-value--selected">{{ form.constellation }}</text>
+            <text class="form-value--selected">{{ form.constellation || '' }}</text>
           </view>
         </view>
 
-        <!-- 生肖（自动计算，只读） -->
+        <!-- 生肖（自动计算，只读，不可点击） -->
         <view class="form-item form-item--readonly">
           <text class="form-label">生肖</text>
           <view class="form-value">
-            <text class="form-value--selected">{{ form.zodiac }}</text>
+            <text class="form-value--selected">{{ form.zodiac || '' }}</text>
           </view>
         </view>
 
@@ -155,7 +142,10 @@
         <view class="form-item" @tap="openTagPicker">
           <text class="form-label">我的特点</text>
           <view class="form-value">
-            <text :class="form.personalityTags.length ? 'form-value--selected' : 'form-value--placeholder'">
+            <text
+              class="form-value--tags"
+              :class="form.personalityTags.length ? 'form-value--selected' : 'form-value--placeholder'"
+            >
               {{ form.personalityTags.length ? form.personalityTags.join('、') : '请选择' }}
             </text>
             <text class="form-arrow">&gt;</text>
@@ -219,12 +209,12 @@
       </view>
     </view>
 
-    <!-- ========== 职业选择弹窗 ========== -->
+    <!-- ========== 职业选择弹窗（底部标签云） ========== -->
     <view
       v-if="showOccupationPopup"
       class="bottom-overlay"
       :class="{ 'bottom-overlay--in': occupationAnimIn }"
-      @tap="showOccupationPopup = false"
+      @tap="closeOccupationPicker"
     >
       <view
         class="bottom-panel"
@@ -330,20 +320,12 @@ import CityPicker from '@/components/city-picker/city-picker.vue'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const appName = computed(() => systemStore.appName || '灵通相亲')
 
-// ========== 导航相关 ==========
-const statusBarHeight = ref(20)
-const navTopPx = ref(64)
-
+// ========== 设置原生导航栏标题 ==========
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  uni.setNavigationBarTitle({ title: appName.value })
 })
-
-const handleBack = () => {
-  uni.navigateBack()
-}
 
 // ========== 星座/生肖计算 ==========
 const ZODIACS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
@@ -393,7 +375,7 @@ const form = reactive({
   personalityTags: [] as string[],
 })
 
-// 从 store 读取生日并计算星座/生肖
+// 从 store 读取生日并计算星座/生肖，自动填充已有数据
 onMounted(() => {
   const info = userStore.userInfo
   let year = info?.birthYear || 0
@@ -426,7 +408,9 @@ onMounted(() => {
     if (info.carStatus) form.carStatus = info.carStatus
     if (info.housingStatus) form.housingStatus = info.housingStatus
     if (info.personalityTags) {
-      form.personalityTags = Array.isArray(info.personalityTags) ? info.personalityTags : (info.personalityTags as string).split(',')
+      form.personalityTags = Array.isArray(info.personalityTags)
+        ? info.personalityTags
+        : (info.personalityTags as string).split(',')
     }
   }
 })
@@ -484,27 +468,33 @@ const closeSinglePicker = () => {
 
 const selectSingleOption = (opt: string) => {
   const field = singleFieldMap[singlePickerType.value]
-  if (field) { (form as any)[field] = opt }
+  if (field) {
+    ;(form as any)[field] = opt
+  }
   closeSinglePicker()
 }
 
 // ========== 职业选择弹窗 ==========
 const DEFAULT_OCCUPATION = [
-  '事业编','中学老师','小学老师','幼师','服务行业','保险','老师','药剂师',
-  '设计','运营','个体工商户','普通职员','银行','工程','财务','技术',
-  '餐饮','体制内','事业单位','销售','公务员','国企职员','工程师','银行职员',
-  '个体户','老板创业者','公司职员','公司高管','律师','设计师','IT从业者','客服','人事',
-  '财务会计','军人','服务业','教师','医生','护士','警察','其他',
+  '事业编', '中学老师', '小学老师', '幼师', '服务行业', '保险', '老师', '药剂师',
+  '设计', '运营', '个体工商户', '普通职员', '银行', '工程', '财务', '技术',
+  '餐饮', '体制内', '事业单位', '销售', '公务员', '国企职员', '工程师', '银行职员',
+  '个体户', '老板创业者', '公司职员', '公司高管', '律师', '设计师', 'IT从业者', '客服', '人事',
+  '财务会计', '军人', '服务业', '教师', '医生', '护士', '警察', '其他',
 ]
 
 const occupationOptions = computed(() => (systemStore.dicts.occupation as string[]) || DEFAULT_OCCUPATION)
 const showOccupationPopup = ref(false)
 const occupationAnimIn = ref(false)
 
-const selectOccupation = (opt: string) => {
-  form.occupation = opt
+const closeOccupationPicker = () => {
   occupationAnimIn.value = false
   setTimeout(() => { showOccupationPopup.value = false }, 200)
+}
+
+const selectOccupation = (opt: string) => {
+  form.occupation = opt
+  closeOccupationPicker()
 }
 
 // 监听弹窗显示触发动画
@@ -659,28 +649,12 @@ const handleSkip = () => {
   flex-direction: column;
 }
 
-// ========== 导航栏 ==========
-.nav-wrap {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #ffffff;
-}
-.nav-bar {
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32rpx;
-}
-.nav-back { font-size: 36rpx; color: #333; width: 80rpx; }
-.nav-title { font-size: 34rpx; font-weight: bold; color: #333; }
-.nav-placeholder { width: 80rpx; }
-
 // ========== 内容区 ==========
-.page-content { flex: 1; height: 100vh; box-sizing: border-box; }
+.page-content {
+  flex: 1;
+  height: 100vh;
+  box-sizing: border-box;
+}
 
 // ========== 三步进度指示器 ==========
 .steps-bar {
@@ -706,7 +680,12 @@ const handleSkip = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  text { font-size: 28rpx; color: #ffffff; font-weight: bold; }
+
+  text {
+    font-size: 28rpx;
+    color: #ffffff;
+    font-weight: bold;
+  }
 }
 
 .step-circle--active {
@@ -747,11 +726,16 @@ const handleSkip = () => {
   justify-content: space-between;
   padding: 0 28rpx;
   box-sizing: border-box;
-  &:active { background: #f9f9f9; }
+
+  &:active {
+    background: #f9f9f9;
+  }
 }
 
 .form-item--readonly {
-  &:active { background: #ffffff; }
+  &:active {
+    background: #ffffff;
+  }
 }
 
 .form-label {
@@ -767,6 +751,7 @@ const handleSkip = () => {
   flex: 1;
   justify-content: flex-end;
   gap: 8rpx;
+  overflow: hidden;
 }
 
 .form-value--placeholder {
@@ -779,21 +764,36 @@ const handleSkip = () => {
   color: #333333;
 }
 
+.form-value--tags {
+  max-width: 420rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 28rpx;
+}
+
 .form-arrow {
   font-size: 28rpx;
   color: #999999;
+  flex-shrink: 0;
 }
 
 // ========== 底部提示 ==========
 .bottom-tip {
   padding: 32rpx 32rpx 0;
-  text { font-size: 24rpx; color: #999999; line-height: 1.5; }
+
+  text {
+    font-size: 24rpx;
+    color: #999999;
+    line-height: 1.5;
+  }
 }
 
 // ========== 下一步按钮 ==========
 .submit-btn-area {
   padding: 40rpx 60rpx 0;
 }
+
 .submit-btn {
   height: 96rpx;
   background: #FF4D6A;
@@ -801,85 +801,159 @@ const handleSkip = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  text { font-size: 32rpx; font-weight: bold; color: #ffffff; }
-  &:active { opacity: 0.85; }
+
+  text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 
 // ========== 暂时跳过 ==========
 .skip-btn {
   margin-top: 24rpx;
   text-align: center;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-bottom: 40rpx;
+
   text {
     font-size: 28rpx;
     color: #CCCCCC;
     text-decoration: underline;
   }
-  &:active { text { color: #999999; } }
+
+  &:active {
+    text {
+      color: #999999;
+    }
+  }
 }
 
 // ========== 底部安全区 ==========
 .safe-bottom {
-  height: constant(safe-area-inset-bottom);
-  height: env(safe-area-inset-bottom);
-  min-height: 40rpx;
+  height: calc(40rpx + constant(safe-area-inset-bottom));
+  height: calc(40rpx + env(safe-area-inset-bottom));
 }
 
 // ========== 单列选择器弹窗 ==========
 .picker-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1000;
   background: rgba(0, 0, 0, 0.6);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 200ms ease-out;
-  &--in { opacity: 1; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  &--in {
+    opacity: 1;
+  }
 }
+
 .picker-box {
-  width: 480rpx; max-height: 720rpx;
-  background: #ffffff; border-radius: 24rpx;
-  display: flex; flex-direction: column;
+  width: 480rpx;
+  max-height: 720rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
   padding: 24rpx 0;
-  transform: scale(0.9); opacity: 0; transition: all 200ms ease-out;
-  &--in { transform: scale(1); opacity: 1; }
+  transform: scale(0.9);
+  opacity: 0;
+  transition: all 200ms ease-out;
+
+  &--in {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 .picker-title {
-  font-size: 32rpx; font-weight: bold; color: #333333;
-  text-align: center; padding-bottom: 16rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  padding-bottom: 16rpx;
 }
-.picker-options { max-height: 600rpx; }
+
+.picker-options {
+  max-height: 600rpx;
+}
+
 .picker-option {
   height: 88rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; color: #333333; }
-  &:active { background: #f5f5f5; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    color: #333333;
+  }
+
+  &:active {
+    background: #f5f5f5;
+  }
 }
+
 .picker-option--active {
   background: #FFF5F7;
-  text { color: #FF4D6A; }
+
+  text {
+    color: #FF4D6A;
+  }
 }
 
 // ========== 底部弹窗通用（职业/标签） ==========
 .bottom-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 1000; background: rgba(0, 0, 0, 0.6);
-  opacity: 0; transition: opacity 200ms ease-out;
-  &--in { opacity: 1; }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+
+  &--in {
+    opacity: 1;
+  }
 }
+
 .bottom-panel {
-  position: absolute; bottom: 0; left: 0; right: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   background: #ffffff;
   border-radius: 24rpx 24rpx 0 0;
-  transform: translateY(100%); transition: transform 200ms ease-out;
-  &--in { transform: translateY(0); }
-  display: flex; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 200ms ease-out;
+  display: flex;
+  flex-direction: column;
   max-height: 75vh;
+
+  &--in {
+    transform: translateY(0);
+  }
 }
+
 .bottom-panel-title {
-  font-size: 32rpx; font-weight: bold; color: #333333;
-  text-align: center; padding: 24rpx 0 16rpx;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333333;
+  text-align: center;
+  padding: 24rpx 0 16rpx;
 }
+
 .bottom-panel-safe {
   height: constant(safe-area-inset-bottom);
   height: env(safe-area-inset-bottom);
@@ -891,31 +965,53 @@ const handleSkip = () => {
   min-height: 0;
   padding: 0 24rpx;
 }
+
 .tag-cloud {
-  display: flex; flex-wrap: wrap;
-  gap: 16rpx; padding: 8rpx 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  padding: 8rpx 0;
 }
+
 .tag-cloud-item {
   padding: 14rpx 28rpx;
   border-radius: 48rpx;
   background: #F5F5F5;
-  text { font-size: 26rpx; color: #666666; }
-  &:active { opacity: 0.8; }
+
+  text {
+    font-size: 26rpx;
+    color: #666666;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
 }
+
 .tag-cloud-item--active {
   background: #FF4D6A;
-  text { color: #ffffff; }
+
+  text {
+    color: #ffffff;
+  }
 }
 
 // ========== 标签弹窗特有样式 ==========
-.bottom-panel--tag { max-height: 80vh; }
+.bottom-panel--tag {
+  max-height: 80vh;
+}
 
 .tag-hint {
   padding: 16rpx 32rpx 12rpx;
-  display: flex; flex-direction: column; align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
+
 .tag-hint-text {
-  font-size: 24rpx; color: #FF4D6A; line-height: 1.6;
+  font-size: 24rpx;
+  color: #FF4D6A;
+  line-height: 1.6;
 }
 
 .tag-selected-wrap {
@@ -924,51 +1020,85 @@ const handleSkip = () => {
   height: auto;
   max-height: 120rpx;
 }
+
 .tag-selected-item {
-  display: inline-flex; align-items: center;
+  display: inline-flex;
+  align-items: center;
   background: #FF4D6A;
   border-radius: 48rpx;
   padding: 8rpx 16rpx;
   margin-right: 12rpx;
 }
+
 .tag-selected-name {
-  font-size: 24rpx; color: #ffffff;
+  font-size: 24rpx;
+  color: #ffffff;
   margin-right: 6rpx;
 }
+
 .tag-selected-close {
-  font-size: 24rpx; color: #ffffff; font-weight: bold;
+  font-size: 24rpx;
+  color: #ffffff;
+  font-weight: bold;
 }
 
 .tag-tabs {
-  display: flex; border-bottom: 1rpx solid #eee;
+  display: flex;
+  border-bottom: 1rpx solid #eee;
   padding: 0 24rpx;
 }
+
 .tag-tab {
-  flex: 1; text-align: center;
+  flex: 1;
+  text-align: center;
   padding: 20rpx 0;
   position: relative;
-  text { font-size: 28rpx; color: #666666; }
+
+  text {
+    font-size: 28rpx;
+    color: #666666;
+  }
 }
+
 .tag-tab--active {
-  text { color: #FF4D6A; font-weight: bold; }
+  text {
+    color: #FF4D6A;
+    font-weight: bold;
+  }
+
   &::after {
     content: '';
-    position: absolute; bottom: 0; left: 50%;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
     transform: translateX(-50%);
-    width: 60rpx; height: 4rpx;
-    background: #FF4D6A; border-radius: 2rpx;
+    width: 60rpx;
+    height: 4rpx;
+    background: #FF4D6A;
+    border-radius: 2rpx;
   }
 }
 
 .tag-confirm-area {
   padding: 24rpx 32rpx;
 }
+
 .tag-confirm-btn {
   height: 88rpx;
   background: #FF4D6A;
   border-radius: 48rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; font-weight: bold; color: #ffffff; }
-  &:active { opacity: 0.85; }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  text {
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #ffffff;
+  }
+
+  &:active {
+    opacity: 0.85;
+  }
 }
 </style>

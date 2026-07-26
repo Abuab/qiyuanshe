@@ -58,11 +58,11 @@ const props = defineProps<{
 }>()
 
 const handleGoProfile = () => {
-  // 先回到首页（清除登录页栈），再跳转编辑资料
+  // 先回到首页（清除登录页栈），再跳转基本信息填写页
   uni.switchTab({
     url: '/pages/index/index',
     success() {
-      uni.navigateTo({ url: '/pages/edit-profile/index' })
+      uni.navigateTo({ url: '/subpkg-pages/basic-info/index' })
     },
   })
 }
