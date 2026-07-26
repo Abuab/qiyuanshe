@@ -188,6 +188,22 @@ let lastY = 0
 onMounted(async () => {
   if (!requireLogin()) return
 
+  // 未完成实名认证时不允许进入单身承诺
+  const isRealNameVerified = (userStore.userInfo as any)?.isRealName === true
+    || (userStore.userInfo as any)?.isRealName === 1
+  if (!isRealNameVerified) {
+    uni.showModal({
+      title: '提示',
+      content: '请先完成实名认证后再签署单身承诺',
+      showCancel: false,
+      confirmText: '知道了',
+      success: () => {
+        uni.navigateBack()
+      },
+    })
+    return
+  }
+
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)

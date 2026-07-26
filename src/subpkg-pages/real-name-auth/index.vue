@@ -160,23 +160,40 @@ const idCard = ref('')
 const submitting = ref(false)
 const pendingVerify = ref(false)
 
+// ========== 认证状态：0未认证 1认证中 2已认证 3认证失败 ==========
+const certStatus = ref(0)
+const querying = ref(false)
+
 // ========== E证通结果轮询 ==========
 const refreshCertResult = async () => {
+  if (querying.value) return
+  querying.value = true
   try {
-    const res: any = await get('/eid-auth/result')
+    const res: any = await get('/eid-auth/result', {
+      realName: realName.value.trim(),
+      idCard: idCard.value.trim(),
+    } as Record<string, unknown>)
     const d = res?.data || res
-    if (d && d.isRealName === true) {
+    const status = d && typeof d.status === 'number' ? d.status : 0
+    certStatus.value = status
+    if (status === 2) {
+      // EID_STATUS.DONE = 2
       userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
       showToast('认证成功', 'success')
       setTimeout(() => finishFlow(), 800)
-    } else if (d && d.status === 'pending') {
-      // 仍在认证中，允许用户再次发起
+    } else if (status === 1) {
+      // EID_STATUS.DOING = 1 - 仍在认证中
       showToast('认证仍在处理中，请稍后再试')
-      pendingVerify.value = false
+    } else if (status === 3) {
+      // EID_STATUS.FAILED = 3
+      showToast('认证失败，请重试')
     }
+    pendingVerify.value = false
   } catch (e: any) {
     console.error('[real-name-auth] 查询认证结果失败:', e?.message || e)
     pendingVerify.value = false
+  } finally {
+    querying.value = false
   }
 }
 
