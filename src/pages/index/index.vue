@@ -640,6 +640,12 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
+  // 完善资料流程中断守卫：未完成资料的用户必须回到完善资料流程
+  if (userStore.isLoggedIn && !userStore.isProfileComplete) {
+    uni.navigateTo({ url: '/subpkg-pages/basic-info/index' })
+    return
+  }
+
   // 刷新用户资料以获取最新状态，不阻塞页面生命周期
   userStore.refreshProfile().then(() => {
     // 账户锁定检查：status=4 时弹出脱单需求确认弹窗

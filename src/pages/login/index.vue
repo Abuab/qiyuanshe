@@ -223,7 +223,7 @@ const performWechatLogin = async () => {
 
     const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code, deviceInfo: getDeviceInfo() })
     if (result?.user && result?.tokens) {
-      const profileComplete = result.user.isProfileComplete !== false
+      const profileComplete = !result.user.isNewUser
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
       reportAgreementIfPending()
@@ -257,7 +257,7 @@ const onGetPhoneNumber = async (e: any) => {
       deviceInfo: getDeviceInfo(),
     })
     if (result?.user && result?.tokens) {
-      const profileComplete = result.user.isProfileComplete !== false
+      const profileComplete = !result.user.isNewUser
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
       if (result.tokens.refreshToken) secureStorage.setRefreshToken(result.tokens.refreshToken)
       reportAgreementIfPending()
