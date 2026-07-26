@@ -72,6 +72,21 @@ export class AuthService {
   }
 
   /**
+   * 清空用户的关注/粉丝关系（重新激活时兜底清理，防止 cleanupDeletedUserData 异步失败
+   * 或撤回同意协议场景下 follows 数据残留）
+   */
+  private async cleanupUserFollows(userId: number): Promise<void> {
+    try {
+      await this.entityManager.query(
+        'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?',
+        [userId, userId],
+      )
+    } catch (err: any) {
+      console.error(`[auth] 清理用户 ${userId} 关注数据失败:`, err?.message || err)
+    }
+  }
+
+  /**
    * 重新激活已注销用户：复位 isDeleted/status 并清除所有个人资料字段，等同于重新注册
    */
   private resetReactivatedUser(user: User): void {
@@ -150,6 +165,7 @@ export class AuthService {
       this.resetReactivatedUser(existingUser)
       existingUser.status = await this.getNewUserStatus()
       await this.userRepository.save(existingUser)
+      await this.cleanupUserFollows(existingUser.id)
     }
 
     let user = await this.userRepository.findOne({
@@ -190,6 +206,8 @@ export class AuthService {
         user.status = await this.getNewUserStatus()
         // 恢复权益字段
         Object.assign(user, savedVip, savedRealName)
+        // 清空关注/粉丝关系（撤回同意协议时不会触发 cleanupDeletedUserData）
+        await this.cleanupUserFollows(user.id)
       }
     }
 
@@ -273,6 +291,7 @@ export class AuthService {
         user.status = await this.getNewUserStatus()
         user.phone = phoneData.purePhoneNumber
         await this.userRepository.save(user)
+        await this.cleanupUserFollows(user.id)
       } else {
       // 新用户注册
       const userId = await this.userService.generateUserId()
@@ -315,6 +334,8 @@ export class AuthService {
         user.phone = phoneData.purePhoneNumber
         // 恢复权益字段
         Object.assign(user, savedVip, savedRealName)
+        // 清空关注/粉丝关系（撤回同意协议时不会触发 cleanupDeletedUserData）
+        await this.cleanupUserFollows(user.id)
       }
     }
 
