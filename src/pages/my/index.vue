@@ -399,13 +399,19 @@ onShow(() => {
   }
 
   // 完善资料强制弹窗：资料未完成时每次进入"我的"页面都弹出
+  // 先用当前 store 数据快速计算并弹出，refreshProfile 后再重新计算一次以确保最新
   if (userStore.isLoggedIn && !userStore.isProfileComplete) {
     calcProfileProgress()
     showProfilePopup.value = true
   }
 
   loadStats()
-  refreshProfile()
+  refreshProfile().then(() => {
+    // 刷新完成后若弹窗仍在显示，用最新数据重新计算完成度
+    if (showProfilePopup.value) {
+      calcProfileProgress()
+    }
+  })
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
   loadAiProfileText()
   loadPersonalityEntry()
