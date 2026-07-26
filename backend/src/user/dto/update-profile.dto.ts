@@ -12,6 +12,13 @@ export class UpdateProfileDto {
   avatar?: string
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(2)
+  avatarReviewStatus?: number
+
+  @IsOptional()
   @IsString()
   @MaxLength(50)
   wechat?: string
