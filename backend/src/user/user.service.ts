@@ -868,6 +868,9 @@ export class UserService {
     user.profileScore = calcProfileScore(user)
     user.lastActiveAt = new Date()
     await this.userRepository.save(user)
+    // 清除推荐缓存：资料变更可能影响推荐排序和筛选结果
+    try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
+    try { await this.recommendService.clearAllListCaches() } catch (_) {}
     return user
   }
 

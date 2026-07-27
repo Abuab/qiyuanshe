@@ -186,6 +186,8 @@ export class UserController {
       userNickname: req.user.nickname || '',
       source: 'avatar_upload',
     }).catch(() => {})
+    // 清除推荐缓存：头像变更应立即反映在推荐列表中
+    this.redisService?.delByPattern('v3:rec:*').catch(() => {})
     return Result.success(null, '已提交审核')
   }
 
@@ -299,6 +301,9 @@ export class UserController {
       images: photoUrls,
     }).catch(() => {})
 
+    // 清除推荐缓存：新增照片可能影响推荐列表中的用户展示
+    this.redisService?.delByPattern('v3:rec:*').catch(() => {})
+
     return Result.success(saved)
   }
 
@@ -318,6 +323,9 @@ export class UserController {
       const now = new Date()
       await this.userRepo.update(userId, { avatar: mainPhoto.photoUrl, updatedAt: now })
     }
+
+    // 清除推荐缓存：主图变更影响推荐列表中的用户头像展示
+    this.redisService?.delByPattern('v3:rec:*').catch(() => {})
 
     return Result.success(null, '已设置主图')
   }
@@ -788,6 +796,9 @@ export class UserController {
       eidCertStatus: 2, // 已认证
       eidCertTime: new Date(),
     })
+
+    // 清除推荐缓存：实名认证状态变更影响推荐筛选结果
+    this.redisService?.delByPattern('v3:rec:*').catch(() => {})
 
     return Result.success(null, '认证成功')
   }

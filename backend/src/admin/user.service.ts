@@ -536,6 +536,8 @@ export class AdminUserService {
       updateData.vipPackageName = packageName
     }
     await this.userRepository.update(id, updateData)
+    // 清除推荐缓存：VIP 变更影响推荐排序权重
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   /**
@@ -611,6 +613,8 @@ export class AdminUserService {
     // 同步更新用户头像
     if (photo.photoUrl) {
       await this.userRepository.update(photo.userId, { avatar: photo.photoUrl })
+      // 清除推荐缓存：头像变更应立即反映在推荐列表中
+      this.redis.delByPattern('v3:rec:*').catch(() => {})
     }
   }
 
@@ -651,10 +655,14 @@ export class AdminUserService {
 
   async softDelete(id: number) {
     await this.userRepository.update(id, { isDeleted: 1 })
+    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   async batchSoftDelete(ids: number[]) {
     await this.userRepository.update(ids, { isDeleted: 1 })
+    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   /** 查询已注销用户列表 */
@@ -704,6 +712,8 @@ export class AdminUserService {
     user.status = 1
     user.deleteReason = null
     await this.userRepository.save(user)
+    // 清除推荐缓存：恢复的用户应立即出现在推荐列表中
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   /** 彻底删除用户（物理删除） */
@@ -711,6 +721,8 @@ export class AdminUserService {
     const user = await this.userRepository.findOne({ where: { id, isDeleted: 1 } })
     if (!user) throw new NotFoundException('用户不存在或未注销')
     await this.userRepository.remove(user)
+    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   /**
@@ -1221,6 +1233,9 @@ export class AdminUserService {
       }),
     )
 
+    // 清除推荐缓存：标签变更影响推荐排序和筛选
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
+
     return { userId, tags: uniqueTags }
   }
 
@@ -1250,6 +1265,9 @@ export class AdminUserService {
       })
       await manager.save(AuditLog, auditLog)
     })
+
+    // 清除推荐缓存：批量标签变更影响推荐排序和筛选（事务外执行，不影响主流程）
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
 
     return updatedCount
   }

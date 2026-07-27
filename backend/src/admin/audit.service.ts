@@ -11,6 +11,7 @@ import { Dynamic } from '../entities/Dynamic'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
 import { DynamicService } from '../dynamic/dynamic.service'
+import { RecommendService } from '../user/recommend.service'
 
 interface AuditFilter {
   page?: number
@@ -41,6 +42,7 @@ export class AdminAuditService {
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
     private readonly dynamicService: DynamicService,
+    private readonly recommendService: RecommendService,
   ) {}
 
   async list(filter: AuditFilter) {
@@ -203,9 +205,13 @@ export class AdminAuditService {
     } else if (audit.targetType === 'user' && audit.targetId) {
       // Sync user profile changes from audit content
       await this.applyUserProfileChanges(audit)
+      // 清除推荐缓存：资料审核通过后，变更的字段应立即反映在推荐列表中
+      this.recommendService.clearAllListCaches().catch(() => {})
     } else if (audit.targetType === 'user_create' && audit.targetId) {
       // 管理员创建用户审核通过 → 用户状态设为正常
       await this.userRepository.update(audit.targetId, { status: 1 })
+      // 清除推荐缓存：新用户应立即出现在推荐列表中
+      this.recommendService.clearAllListCaches().catch(() => {})
     } else if (audit.targetType === 'voice' && audit.targetId) {
       await this.userRepository.update(audit.targetId, { voiceAuditStatus: 1 })
       // 语音审核通过后，若用户状态为 INCOMPLETE 则自动转为 NORMAL
@@ -221,6 +227,8 @@ export class AdminAuditService {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (user && user.status === 2) {
       await this.userRepository.update(userId, { status: 1 })
+      // 清除推荐缓存：确保审核通过后该用户立即出现在首页推荐和动态页
+      try { await this.recommendService.clearAllListCaches() } catch (_) {}
     }
   }
 
@@ -297,6 +305,8 @@ export class AdminAuditService {
     } else if (audit.targetType === 'user_create' && audit.targetId) {
       // 管理员创建用户审核拒绝 → 用户状态设为禁用
       await this.userRepository.update(audit.targetId, { status: 0 })
+      // 清除推荐缓存：拒绝的用户应立即从推荐列表中移除
+      this.recommendService.clearAllListCaches().catch(() => {})
     } else if (audit.targetType === 'voice' && audit.targetId) {
       await this.userRepository.update(audit.targetId, { voiceAuditStatus: 2 })
     }

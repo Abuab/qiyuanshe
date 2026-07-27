@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
 import { jwtConfig } from '../config/jwt'
@@ -79,6 +79,7 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
 import { BroadcastLog } from '../entities/BroadcastLog'
 import { AiModule } from '../ai/ai.module'
+import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
@@ -124,6 +125,7 @@ import { AiModule } from '../ai/ai.module'
     PassportModule,
     AppDynamicModule,
     AiModule,
+    forwardRef(() => UserModule),
   ],
   controllers: [
     AdminUserController,

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { User, UserPhoto, Follow, Report, ProfileVisit, UserBlock, AuditLog } from '../entities'
 import { UserNotification } from '../entities/UserNotification'
@@ -29,7 +29,7 @@ import { RedisService } from '../common/redis.service'
       UserAuth, UserTagSelection, AiUserProfile, AiMatchReport,
       QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment, UserAgreement,
     ]),
-    SystemModule, DynamicModule, AdminModule, AiModule, AgreementLogStorageModule,
+    SystemModule, DynamicModule, forwardRef(() => AdminModule), AiModule, AgreementLogStorageModule,
     PersonalityTestModule,
   ],
   controllers: [UserController, UserNotificationController],

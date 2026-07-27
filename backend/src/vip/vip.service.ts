@@ -327,6 +327,8 @@ export class VipService {
 
       // 注意：不再清除置顶卡额度 (UserTopCardQuota) — dailyQuotaReset 会每天重新生成
       // 注意：不再清除红线索额度 (UserRedLineQuota) — 会员续费后保留原有额度
+      // 清除推荐缓存：VIP 变更影响推荐排序权重
+      this.redis.delByPattern('v3:rec:*').catch(() => {})
       console.log(`[VipService] 已降级 ${count} 名过期会员`)
     }
 

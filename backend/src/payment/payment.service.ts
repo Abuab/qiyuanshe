@@ -266,6 +266,9 @@ export class PaymentService {
         await queryRunner.commitTransaction()
 
         this.logger.log(`[回调] 支付成功: ${out_trade_no}`)
+        // 清除推荐缓存：VIP 开通影响推荐排序权重
+        this.redis.delByPattern('v3:rec:*').catch(() => {})
+        this.redis.del(`recommend:score:${order.userId}`).catch(() => {})
       } catch (e) {
         await queryRunner.rollbackTransaction()
         throw e
@@ -404,6 +407,9 @@ export class PaymentService {
 
       await queryRunner.commitTransaction()
       this.logger.log(`[模拟支付] orderNo=${orderNo}, userId=${userId}`)
+      // 清除推荐缓存：VIP 开通影响推荐排序权重
+      this.redis.delByPattern('v3:rec:*').catch(() => {})
+      this.redis.del(`recommend:score:${userId}`).catch(() => {})
     } catch (e) {
       await queryRunner.rollbackTransaction()
       throw e
