@@ -32,8 +32,11 @@
                 会员
               </el-tag>
               <el-tag v-if="user.status === 1" type="success">正常</el-tag>
-              <el-tag v-else-if="user.status === 2" type="warning">待审核</el-tag>
-              <el-tag v-else type="danger">禁用</el-tag>
+              <el-tag v-else-if="user.status === 0" type="warning">待审核</el-tag>
+              <el-tag v-else-if="user.status === 2" type="info">未完善</el-tag>
+              <el-tag v-else-if="user.status === 3" type="danger">已禁用</el-tag>
+              <el-tag v-else-if="user.status === 4" type="danger">已锁定</el-tag>
+              <el-tag v-else type="info">{{ user.status }}</el-tag>
             </div>
           </div>
           <!-- 右侧快捷操作：仅管理员可见（readonly角色不可见） -->
@@ -42,8 +45,10 @@
               {{ (user.isVip && (user.vipLevel || 0) > 0) ? '取消VIP' : '设为VIP' }}
             </el-button>
             <el-button :type="user.status === 1 ? 'danger' : 'success'" @click="handleToggleStatus">
-              {{ user.status === 1 ? '禁用' : '启用' }}
+              {{ user.status === 1 ? '禁用' : (user.status === 3 ? '启用' : '启用') }}
             </el-button>
+            <el-button v-if="user.status !== 4" type="warning" @click="handleLockUser">锁定</el-button>
+            <el-button v-else type="success" @click="handleUnlockUser">解锁</el-button>
             <el-button @click="handleSendNotify">发送通知</el-button>
             <el-button v-if="canMonitorChat" type="success" @click="handleViewChat">查看聊天</el-button>
             <el-button @click="handleEditProfile">编辑资料</el-button>
@@ -1947,9 +1952,29 @@ async function handleToggleStatus() {
   const action = user.value.status === 1 ? '禁用' : '启用'
   try {
     await ElMessageBox.confirm(`确定要${action}用户 ${user.value.nickname} 吗？`, `确认${action}`, { type: 'warning' })
-    const res = await adminUsers.updateStatus(user.value.id, user.value.status === 1 ? 0 : 1)
+    const res = await adminUsers.updateStatus(user.value.id, user.value.status === 1 ? 3 : 1)
     if (res.success) { ElMessage.success(`${action}成功`); fetchDetail() }
     else ElMessage.error(res.message || `${action}失败`)
+  } catch (e: any) { if (e !== 'cancel') console.error(e) }
+}
+
+async function handleLockUser() {
+  if (!user.value) return
+  try {
+    await ElMessageBox.confirm(`确定要锁定用户 ${user.value.nickname} 吗？\n\n此操作将使该用户处于「已锁定」状态，需等待用户确认脱单意向。`, '确认锁定', { type: 'warning' })
+    const res = await adminUsers.updateStatus(user.value.id, 4)
+    if (res.success) { ElMessage.success('锁定成功'); fetchDetail() }
+    else ElMessage.error(res.message || '锁定失败')
+  } catch (e: any) { if (e !== 'cancel') console.error(e) }
+}
+
+async function handleUnlockUser() {
+  if (!user.value) return
+  try {
+    await ElMessageBox.confirm(`确定要解锁用户 ${user.value.nickname} 吗？`, '确认解锁', { type: 'info' })
+    const res = await adminUsers.updateStatus(user.value.id, 1)
+    if (res.success) { ElMessage.success('解锁成功'); fetchDetail() }
+    else ElMessage.error(res.message || '解锁失败')
   } catch (e: any) { if (e !== 'cancel') console.error(e) }
 }
 

@@ -62,7 +62,7 @@
         >
           <image
             class="photo-thumb"
-            :class="{ 'photo-blur': index > 0 }"
+            :class="{ 'photo-blur': shouldBlurPhoto(index) }"
             :src="photo"
             mode="aspectFill"
             @error="onPhotoError(displayPhotos[index])"
@@ -86,6 +86,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
+import { useUserStore } from '@/store/user'
 
 export interface UserCardData {
   id: number
@@ -142,6 +143,7 @@ const computedSecondLine = computed(() => {
 })
 
 const store = useSystemStore()
+const userStore = useUserStore()
 const defaultAvatar = computed(() => store.defaultAvatar || icons.common.defaultAvatar)
 
 const avatarUrl = computed(() => {
@@ -190,6 +192,12 @@ const displayPhotos = computed(() => {
   }
   return []
 })
+
+/** 游客全部模糊；已登录仅模糊首张之后的照片 */
+const shouldBlurPhoto = (index: number): boolean => {
+  if (!userStore.isLoggedIn) return true
+  return index > 0
+}
 
 
 const handleClick = () => {

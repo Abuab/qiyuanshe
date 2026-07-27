@@ -195,10 +195,12 @@ export class AuthService {
     } else {
       // 已有用户且协议曾被撤回 → 重置个人资料，视为重新注册（仅保留 VIP 权益）
       if (!user.protocolAgreedAt) {
-        // 暂存权益字段，resetReactivatedUser 会清空它们
+        // 暂存权益字段和管理员终端状态，resetReactivatedUser 会清空权益字段
         const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        // 管理员设定的终端状态（禁用/锁定）应保留，不被 getNewUserStatus 覆盖
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
         this.resetReactivatedUser(user)
-        user.status = await this.getNewUserStatus()
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
         // 恢复权益字段
         Object.assign(user, savedVip)
         // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
@@ -323,10 +325,12 @@ export class AuthService {
       }
       // 用户主动撤回过协议同意（protocolAgreedAt 为 null）→ 重置个人资料，视为重新注册（仅保留 VIP 权益）
       if (!user.protocolAgreedAt) {
-        // 暂存权益字段，resetReactivatedUser 会清空它们
+        // 暂存权益字段和管理员终端状态，resetReactivatedUser 会清空权益字段
         const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        // 管理员设定的终端状态（禁用/锁定）应保留，不被 getNewUserStatus 覆盖
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
         this.resetReactivatedUser(user)
-        user.status = await this.getNewUserStatus()
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
         user.phone = phoneData.purePhoneNumber
         // 恢复权益字段
         Object.assign(user, savedVip)
