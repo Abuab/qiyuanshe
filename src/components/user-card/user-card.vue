@@ -229,8 +229,8 @@ const shouldBlurPhoto = (index: number): boolean => {
   if (myPhotoCount.value >= 0 && myPhotoCount.value <= 1) {
     return displayPhotos.value.length > 1
   }
-  // 自身照片>1：首张高清，其余模糊
-  return index > 0
+  // 自身照片>1：全部高清
+  return false
 }
 
 
