@@ -383,13 +383,20 @@ const onBlurPreviewChange = (e: any) => {
   blurPreviewIndex.value = e.detail.current
 }
 
-/** 判断是否应该模糊：查看者只有头像/单张照片时，其他用户的「多图」相册全部模糊，单图则正常显示 */
+/** 判断是否应该模糊：
+ *  - 自己的动态不模糊
+ *  - 已登录且上传多张照片（>1）→ 全部解锁
+ *  - 游客（未登录）→ 全部模糊
+ *  - 已登录但仅一张照片（锁定态）→ 对方单图正常，多图模糊
+ */
 const shouldBlur = (item: DynamicItem, _imgIndex: number): boolean => {
   // 自己的动态不模糊
   if (item.userId === myUserId.value) return false
   // 查看者已上传多张照片（>1）→ 全部解锁，不模糊
   if (myPhotoCount.value > 1) return false
-  // 查看者仅一张照片（锁定态）：其他用户只有一张图片时正常显示，多图则整组全部模糊
+  // 游客（未登录）→ 全部模糊
+  if (!userStore.isLoggedIn) return true
+  // 已登录但仅一张照片（锁定态）：其他用户只有一张图片时正常显示，多图则整组全部模糊
   if ((item.images?.length || 0) <= 1) return false
   return true
 }
