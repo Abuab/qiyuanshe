@@ -151,6 +151,10 @@ export class UserController {
   async submitAvatarReview(@Body() body: { avatarUrl: string }, @Request() req: any) {
     const userId = req.user.id
 
+    if (!body?.avatarUrl || !body.avatarUrl.trim()) {
+      throw new ForbiddenException('头像地址不能为空')
+    }
+
     // ===== 修改点 B：头像上传限流（Redis 计数器，每天 10 次） =====
     if (this.redisService) {
       const rateLimitKey = `rate_limit:avatar:user_${userId}`
@@ -339,6 +343,15 @@ export class UserController {
     const userId = req.user.id
     const photo = await this.photoRepo.findOne({ where: { id, userId } })
     if (!photo) return Result.serverError('照片不存在')
+
+    // 若删除的照片正被用作用户头像，清空头像避免僵尸 URL
+    if (photo.photoUrl) {
+      const user = await this.userRepo.findOne({ where: { id: userId }, select: ['avatar'] })
+      if (user?.avatar === photo.photoUrl) {
+        await this.userRepo.update(userId, { avatar: '', updatedAt: new Date() })
+      }
+    }
+
     await this.photoRepo.remove(photo)
     return Result.success(null, '已删除')
   }

@@ -355,10 +355,13 @@ export class UserService {
     const isSelfView = currentUserId === id
     const visiblePhotos = isSelfView ? photos : photos.filter(p => p.auditStatus === 1)
 
-    const userPhotos = visiblePhotos.map((p) => ({
+    const userPhotos = visiblePhotos.map((p, i) => ({
       id: p.id,
       url: p.photoUrl,
       sortOrder: p.sortOrder,
+      isFirst: i === 0,
+      needLogin: !isSelfView && i > 0,
+      isBlurred: !isSelfView && i > 0,
     }))
 
     // 若头像不在已审核照片中，将其作为第一张照片插入
@@ -369,7 +372,12 @@ export class UserService {
           id: 0,
           url: user.avatar,
           sortOrder: 0,
+          isFirst: true,
+          needLogin: false,
+          isBlurred: false,
         })
+        // 重新计算 isFirst
+        userPhotos.forEach((item, index) => { item.isFirst = index === 0 })
       }
     }
 

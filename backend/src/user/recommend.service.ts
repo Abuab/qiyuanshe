@@ -289,7 +289,14 @@ export class RecommendService {
       isRealName: user.isRealName || 0,
       isVip: user.isVip || 0,
       lastLoginAt: user.lastLoginAt,
-      photos: photosMap.get(user.id) || [],
+      photos: (() => {
+        const photos = photosMap.get(user.id) || []
+        // 将头像加入照片列表首部（如头像不在列表中），使前端卡片能正确展示缩略图
+        if (user.avatar && !photos.includes(user.avatar)) {
+          return [user.avatar, ...photos]
+        }
+        return photos
+      })(),
       isFollowed: followedIds.includes(user.id),
       isLiked: followedIds.includes(user.id),
       matchmakerComment: commentsMap.get(user.id) || '',

@@ -154,10 +154,10 @@ export class UserProfileDetailService {
     const aiFunQuizEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.FUN_QUIZ)
     const aiProfileGenEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.PROFILE_GEN)
 
-    // 加载当前用户的照片数量（用于判断是否触发上传引导）
+    // 加载当前用户的已审核通过照片数量（用于判断是否触发上传引导）
     let myPhotoCount = 0
     if (currentUserId && !isSelf) {
-      myPhotoCount = await this.photoRepo.count({ where: { userId: currentUserId } })
+      myPhotoCount = await this.photoRepo.count({ where: { userId: currentUserId, auditStatus: 1 } })
     }
 
     // 照片引导文案配置
@@ -201,7 +201,9 @@ export class UserProfileDetailService {
     }
 
     // 已登录但照片不足时，自己的照片需要额外场景（对方非首张也需要模糊）
-    const hasEnoughPhotos = !currentUserId || myPhotoCount > photoGuidance.minPhotoThreshold
+    // 已登录且照片充足时，解锁对方所有照片
+    // 未登录用户保持默认权限（只有首张照片清晰）
+    const hasEnoughPhotos = !!currentUserId && myPhotoCount > photoGuidance.minPhotoThreshold
     if (currentUserId && !isSelf && myPhotoCount <= photoGuidance.minPhotoThreshold) {
       for (const item of photoItems) {
         if (!item.isFirst) {
@@ -217,7 +219,7 @@ export class UserProfileDetailService {
     }
 
     return {
-      top: this.buildTop(user, photos, isSelf, !!isFollowed, followCount, followerCount),
+      top: this.buildTop(user, visiblePhotos, isSelf, !!isFollowed, followCount, followerCount),
       basicInfo: this.buildBasicInfo(user),
       identityAuth: this.buildIdentityAuth(auths, user, singlePromise),
       aboutMe: this.buildAboutMe(user, tagSelections, aiProfile),

@@ -59,11 +59,10 @@
           v-for="(photo, index) in displayPhotos"
           :key="index"
           class="photo-thumb-wrapper"
-          :class="{ 'photo-blur-wrapper': needBlurPhotos }"
         >
           <image
             class="photo-thumb"
-            :class="{ 'photo-blur': needBlurPhotos }"
+            :class="{ 'photo-blur': index > 0 }"
             :src="photo"
             mode="aspectFill"
             @error="onPhotoError(displayPhotos[index])"
@@ -192,8 +191,6 @@ const displayPhotos = computed(() => {
   return []
 })
 
-/** 该用户有多张照片时全部模糊，仅一张时清晰展示 */
-const needBlurPhotos = computed(() => displayPhotos.value.length > 1)
 
 const handleClick = () => {
   emit('click', props.user)
@@ -455,7 +452,6 @@ const onLike = async () => {
 
 .photo-thumb.photo-blur {
   filter: blur(3px) brightness(0.9);
-  transform: scale(1.08);
 }
 
 /* ===== 心动按钮 ===== */
