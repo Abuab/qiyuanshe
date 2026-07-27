@@ -193,9 +193,11 @@ const displayPhotos = computed(() => {
   return []
 })
 
-/** 游客全部模糊；已登录仅模糊首张之后的照片 */
+/** 游客：仅一张照片时高清显示，多张时全部模糊；已登录仅模糊首张之后的照片 */
 const shouldBlurPhoto = (index: number): boolean => {
-  if (!userStore.isLoggedIn) return true
+  if (!userStore.isLoggedIn) {
+    return displayPhotos.value.length > 1
+  }
   return index > 0
 }
 
