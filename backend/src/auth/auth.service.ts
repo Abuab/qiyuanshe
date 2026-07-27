@@ -14,6 +14,7 @@ import { AgreementLogStorageService } from '../agreement-log-storage/agreement-l
 import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
 import { ContentFilterService } from '../common/content-filter.service'
+import { RedisService } from '../common/redis.service'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
@@ -56,6 +57,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly entityManager: EntityManager,
     private readonly contentFilter: ContentFilterService,
+    private readonly redis: RedisService,
   ) {}
 
   /**
@@ -69,6 +71,14 @@ export class AuthService {
       if (config?.configValue === 'review') return 0
     } catch (_) { /* fall through to default */ }
     return 2
+  }
+
+  /** 清除重新激活用户的限流计数器（复用相同数据库 ID，旧限流 key 不应遗留） */
+  private clearRateLimitKeys(userId: number): void {
+    this.redis.del(`rate_limit:avatar:user_${userId}`).catch(() => {})
+    this.redis.del(`rate_limit:photo:user_${userId}`).catch(() => {})
+    this.redis.del(`rate_limit:question:user_${userId}`).catch(() => {})
+    this.redis.del(`rate_limit:chat:user_${userId}`).catch(() => {})
   }
 
   /**
@@ -151,6 +161,7 @@ export class AuthService {
       existingUser.status = await this.getNewUserStatus()
       await this.userRepository.save(existingUser)
       await this.userService.cleanupDeletedUserData(existingUser.id)
+      this.clearRateLimitKeys(existingUser.id)
     }
 
     let user = await this.userRepository.findOne({
@@ -192,6 +203,7 @@ export class AuthService {
         Object.assign(user, savedVip)
         // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
         await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
       }
     }
 
@@ -276,6 +288,7 @@ export class AuthService {
         user.phone = phoneData.purePhoneNumber
         await this.userRepository.save(user)
         await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
       } else {
       // 新用户注册
       const userId = await this.userService.generateUserId()
@@ -319,6 +332,7 @@ export class AuthService {
         Object.assign(user, savedVip)
         // 清空所有关联数据（撤回同意协议时不会触发 cleanupDeletedUserData）
         await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
       }
     }
     if (user.status === 3) {

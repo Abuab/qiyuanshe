@@ -212,10 +212,8 @@ const handleSubmit = async () => {
       avatarReviewStatus: 0,
     })
 
-    // 提交头像审核（创建审计日志 + 发送审核通知，不影响主流程）
-    post('/users/avatar-review', { avatarUrl: uploadRes.url }).catch((e: any) => {
-      console.error('[upload-avatar] 提交头像审核失败:', e?.message || e)
-    })
+    // 提交头像审核（创建审计日志 + 发送审核通知）
+    await post('/users/avatar-review', { avatarUrl: uploadRes.url })
 
     // 更新 store
     userStore.updateProfile({ avatar: uploadRes.url, avatarReviewStatus: 0 })
