@@ -148,6 +148,7 @@
         :match-map="matchMap"
         :show-match-badge="userStore.isLoggedIn"
         :viewer-tested="viewerTested"
+        :refresh-key="photoRefreshKey"
         :empty-text="isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户'"
         :show-clear-filter="isEmptyFromFilter"
         @user-click="goToUserDetail"
@@ -289,6 +290,8 @@ const isRefreshing = ref(false)
 const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
+// 每次 onShow 递增，通知 user-card 组件重新获取自身照片计数
+const photoRefreshKey = ref(0)
 const showFilter = ref(false)
 const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
@@ -640,6 +643,8 @@ onMounted(() => {
 
 // 每次页面显示时也检查（如从其他页返回）
 onShow(() => {
+  // 通知所有 user-card 组件刷新自身照片计数（解锁模糊效果）
+  photoRefreshKey.value++
   // 刷新用户资料以获取最新状态，不阻塞页面生命周期
   userStore.refreshProfile().then(() => {
     // 账户锁定检查：status=4 时弹出脱单需求确认弹窗

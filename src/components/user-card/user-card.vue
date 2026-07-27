@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
@@ -116,10 +116,13 @@ interface Props {
   matchPercent?: number
   /** 当前浏览者尚未测试人格，展示引导文案 */
   viewerUntested?: boolean
+  /** 刷新键：父页面 onShow 时递增，触发组件重新获取自身照片计数 */
+  refreshKey?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showPhotos: true,
+  refreshKey: 0,
 })
 
 const emit = defineEmits<{
@@ -249,6 +252,19 @@ onMounted(async () => {
   // 已登录时获取自身照片数量（模块级缓存，所有卡片实例共享同一请求）
   if (userStore.isLoggedIn) {
     myPhotoCount.value = await fetchMyPhotoCount()
+  } else {
+    myPhotoCount.value = 0
+  }
+})
+
+// 父页面 onShow 时 refreshKey 递增，触发重新获取照片计数
+watch(() => props.refreshKey, () => {
+  if (userStore.isLoggedIn) {
+    fetchMyPhotoCount().then(count => {
+      myPhotoCount.value = count
+    }).catch(() => {
+      myPhotoCount.value = 0
+    })
   } else {
     myPhotoCount.value = 0
   }
