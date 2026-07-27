@@ -169,8 +169,11 @@ export class UserProfileDetailService {
       minPhotoThreshold: 1,
     }
 
+    // 照片审核过滤：非本人查看时仅展示已审核通过的照片 (auditStatus=1)
+    const visiblePhotos = isSelf ? photos : photos.filter(p => p.auditStatus === 1)
+
     // 构建照片列表（含权限控制）
-    const photoItems: PhotoItem[] = photos.slice(0, 10).map((p, i) => {
+    const photoItems: PhotoItem[] = visiblePhotos.slice(0, 10).map((p, i) => {
       const isFirst = i === 0
       const canView = !!currentUserId || isFirst
       return {
@@ -180,6 +183,22 @@ export class UserProfileDetailService {
         isBlurred: !canView,
       }
     })
+
+    // 若头像 URL 不在任何已审核的照片中，将其作为第一张照片插入画廊
+    // （如通过完善资料流程单独上传头像后，头像未同步到 user_photos 表）
+    if (user.avatar) {
+      const avatarInPhotos = visiblePhotos.some(p => p.photoUrl === user.avatar)
+      if (!avatarInPhotos) {
+        photoItems.unshift({
+          url: user.avatar,
+          isFirst: true,
+          needLogin: false,
+          isBlurred: false,
+        })
+        // 重新计算 isFirst（首张不模糊）
+        photoItems.forEach((item, index) => { item.isFirst = index === 0 })
+      }
+    }
 
     // 已登录但照片不足时，自己的照片需要额外场景（对方非首张也需要模糊）
     const hasEnoughPhotos = !currentUserId || myPhotoCount > photoGuidance.minPhotoThreshold
@@ -240,7 +259,7 @@ export class UserProfileDetailService {
   ): TopSection {
     const firstPhoto = photos[0]
     return {
-      backgroundPhoto: firstPhoto?.photoUrl || user.avatar || '',
+      backgroundPhoto: user.avatar || firstPhoto?.photoUrl || '',
       avatar: user.avatar || '',
       nickname: user.nickname || '',
       displayName: user.nickname || (user.userId ? `昵称${user.userId}` : '用户'),

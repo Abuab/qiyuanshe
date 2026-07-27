@@ -351,6 +351,28 @@ export class UserService {
       order: { sortOrder: 'ASC' },
     })
 
+    // 非本人查看时仅展示已审核通过的照片
+    const isSelfView = currentUserId === id
+    const visiblePhotos = isSelfView ? photos : photos.filter(p => p.auditStatus === 1)
+
+    const userPhotos = visiblePhotos.map((p) => ({
+      id: p.id,
+      url: p.photoUrl,
+      sortOrder: p.sortOrder,
+    }))
+
+    // 若头像不在已审核照片中，将其作为第一张照片插入
+    if (user.avatar) {
+      const avatarInPhotos = visiblePhotos.some(p => p.photoUrl === user.avatar)
+      if (!avatarInPhotos) {
+        userPhotos.unshift({
+          id: 0,
+          url: user.avatar,
+          sortOrder: 0,
+        })
+      }
+    }
+
     let isFollowed = false
     let isSelf = false
 
@@ -372,12 +394,6 @@ export class UserService {
         isFollowed = !!follow
       }
     }
-
-    const userPhotos = photos.map((p) => ({
-      id: p.id,
-      url: p.photoUrl,
-      sortOrder: p.sortOrder,
-    }))
 
     // 获取红娘评语
     const reviews = await this.commentRepo.find({
@@ -667,7 +683,7 @@ export class UserService {
 
   private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
     const photos = await this.userPhotoRepository.find({
-      where: { userId: In(userIds), isMain: 1 },
+      where: { userId: In(userIds), isMain: 1, auditStatus: 1 },
       order: { sortOrder: 'ASC' },
     })
 
@@ -679,7 +695,7 @@ export class UserService {
     }
 
     const allPhotos = await this.userPhotoRepository.find({
-      where: { userId: In(userIds) },
+      where: { userId: In(userIds), auditStatus: 1 },
       order: { sortOrder: 'ASC' },
     })
 

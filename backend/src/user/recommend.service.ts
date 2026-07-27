@@ -654,7 +654,7 @@ export class RecommendService {
   private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
     if (userIds.length === 0) return new Map()
     const photos = await this.photoRepository.find({
-      where: { userId: In(userIds) },
+      where: { userId: In(userIds), auditStatus: 1 },
       order: { sortOrder: 'ASC' },
     })
     const map = new Map<number, string[]>()

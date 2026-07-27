@@ -255,36 +255,21 @@ export class UserController {
       }
     }
 
-    let photoCount = await this.photoRepo.count({ where: { userId } })
-    if (photoCount >= 6) return Result.serverError('最多上传6张照片')
+    const count = await this.photoRepo.count({ where: { userId } })
+    if (count >= 6) return Result.serverError('最多上传6张照片')
 
-    let sortOrder = photoCount
-
-    // 第一张照片自动设为主图和头像
-    if (photoCount === 0) {
+    // 第一张照片自动设为头像，但仅在用户尚未设置头像时生效
+    // 避免覆盖用户通过"上传头像"流程单独设置的专属头像
+    if (count === 0) {
       const currentUser = await this.userRepo.findOne({ where: { id: userId }, select: ['avatar'] })
-      if (currentUser?.avatar) {
-        // 用户已有头像（如通过完善资料流程单独上传）但无照片记录，
-        // 先为头像创建一条照片记录，确保头像出现在照片画廊中
-        await this.photoRepo.save(
-          this.photoRepo.create({
-            userId,
-            photoUrl: currentUser.avatar,
-            isMain: 1,
-            sortOrder: 0,
-            auditStatus: 1, // 头像已通过审核流程，照片记录直接设为通过
-          }),
-        )
-        sortOrder = 1
-      } else {
-        // 无头像，第一张照片自动设为主图和头像
+      if (!currentUser?.avatar) {
         const now = new Date()
         await this.userRepo.update(userId, { avatar: body.url, updatedAt: now })
       }
     }
 
-    const isMain = sortOrder === 0 ? 1 : 0
-    const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder, auditStatus: 0 })
+    const isMain = count === 0 ? 1 : 0
+    const photo = this.photoRepo.create({ userId, photoUrl: body.url, isMain, sortOrder: count, auditStatus: 0 })
     const saved = await this.photoRepo.save(photo)
 
     // 创建审核记录

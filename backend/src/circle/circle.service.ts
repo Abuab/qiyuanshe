@@ -106,7 +106,7 @@ export class CircleService {
   private async getPhotosMap(userIds: number[]): Promise<Map<number, string[]>> {
     if (userIds.length === 0) return new Map()
     const photosQuery = await this.userRepo.createQueryBuilder('user')
-      .leftJoinAndSelect('user.photos', 'photo')
+      .leftJoinAndSelect('user.photos', 'photo', 'photo.auditStatus = :auditStatus', { auditStatus: 1 })
       .where('user.id IN (:...ids)', { ids: userIds })
       .orderBy('photo.sortOrder', 'ASC')
       .getMany()
