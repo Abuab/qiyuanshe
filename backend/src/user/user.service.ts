@@ -376,8 +376,13 @@ export class UserService {
           needLogin: false,
           isBlurred: false,
         })
-        // 重新计算 isFirst
-        userPhotos.forEach((item, index) => { item.isFirst = index === 0 })
+        // 重新计算所有照片的 isFirst / needLogin / isBlurred
+        // avatar 前置后原始第一张照片滑到 index=1，权限标记也需要同步更新
+        userPhotos.forEach((item, index) => {
+          item.isFirst = index === 0
+          item.needLogin = !isSelfView && index > 0
+          item.isBlurred = !isSelfView && index > 0
+        })
       }
     }
 

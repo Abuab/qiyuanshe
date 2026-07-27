@@ -195,8 +195,15 @@ export class UserProfileDetailService {
           needLogin: false,
           isBlurred: false,
         })
-        // 重新计算 isFirst（首张不模糊）
-        photoItems.forEach((item, index) => { item.isFirst = index === 0 })
+        // 重新计算所有照片的 isFirst / needLogin / isBlurred
+        // avatar 前置后原始第一张照片滑到 index=1，权限标记也需要同步更新
+        photoItems.forEach((item, index) => {
+          const isFirst = index === 0
+          const canView = !!currentUserId || isFirst
+          item.isFirst = isFirst
+          item.needLogin = !canView
+          item.isBlurred = !canView
+        })
       }
     }
 

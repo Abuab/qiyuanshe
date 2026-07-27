@@ -448,6 +448,13 @@
         </view>
       </view>
 
+      <!-- ========== 自身未实名认证引导弹窗 ========== -->
+      <RealNameAuthPopup
+        :show="showAuthPopup"
+        @close="showAuthPopup = false"
+        @go-to-auth="goToRealNameAuth"
+      />
+
       <!-- ========== 对方未实名认证提示弹窗 ========== -->
       <view v-if="showRealNameDialog" class="dialog-overlay" @tap="showRealNameDialog = false">
         <view class="dialog-card" @tap.stop>
@@ -752,6 +759,7 @@ import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
+import RealNameAuthPopup from '@/components/real-name-auth-popup/real-name-auth-popup.vue'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -1570,6 +1578,13 @@ const refreshProfileGen = async () => {
   }
 }
 
+// ===== 当前用户未实名认证弹窗 =====
+const showAuthPopup = ref(false)
+// 当前用户是否已实名认证
+const isCurrentUserNotVerified = computed(() => {
+  return !userStore.userInfo?.isRealName
+})
+
 // ===== 对方未实名认证提示弹窗 =====
 const showRealNameDialog = ref(false)
 
@@ -1578,12 +1593,23 @@ const handleContact = () => {
     goToLogin()
     return
   }
+  // 检查当前用户自身是否实名认证（自身未实名则弹引导弹窗）
+  if (isCurrentUserNotVerified.value) {
+    showAuthPopup.value = true
+    return
+  }
   // 检查目标用户是否实名认证
   if (isRealNameNotVerified.value) {
     showRealNameDialog.value = true
     return
   }
   navigateToContactApply()
+}
+
+// 跳转到实名认证页面
+const goToRealNameAuth = () => {
+  showAuthPopup.value = false
+  uni.navigateTo({ url: '/subpkg-pages/realname-auth/index' })
 }
 
 const navigateToContactApply = () => {
