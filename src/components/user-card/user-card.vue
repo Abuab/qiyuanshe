@@ -196,21 +196,20 @@ const displayPhotos = computed(() => {
 // 当前用户自己的照片数量（-1=未获取，用于判断锁定态）
 const myPhotoCount = ref(-1)
 
-// 模块级缓存：避免每个卡片实例都请求一次 /users/photos
-let _myPhotoCountCached: number | null = null
+// 模块级并发去重：多个卡片实例同时挂载时共用同一个请求
 let _myPhotoCountLoading: Promise<number> | null = null
 
 const fetchMyPhotoCount = async (): Promise<number> => {
-  if (_myPhotoCountCached !== null) return _myPhotoCountCached
   if (_myPhotoCountLoading) return _myPhotoCountLoading
   _myPhotoCountLoading = (async (): Promise<number> => {
     try {
       const res: any = await request({ url: '/users/photos', method: 'GET' })
-      _myPhotoCountCached = res?.list?.length || 0
+      return res?.list?.length || 0
     } catch {
-      _myPhotoCountCached = 0
+      return 0
+    } finally {
+      _myPhotoCountLoading = null
     }
-    return _myPhotoCountCached as number
   })()
   return _myPhotoCountLoading
 }
