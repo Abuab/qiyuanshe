@@ -23,7 +23,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        drop_console: false, // 临时关闭以便调试 blur 逻辑
         drop_debugger: true
       }
     }
