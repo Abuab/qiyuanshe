@@ -317,15 +317,20 @@ const myPhotoCount = ref(-1)
 const fetchMyPhotoCount = async () => {
   try {
     const res: any = await get('/users/photos')
-    // eslint-disable-next-line no-console
-    console.log('[index] fetchMyPhotoCount raw', JSON.stringify(res))
     myPhotoCount.value = res?.list?.length || 0
     // eslint-disable-next-line no-console
-    console.log('[index] myPhotoCount set to', myPhotoCount.value)
-  } catch (e) {
+    console.log('[index] myPhotoCount=', myPhotoCount.value, 'rawListLen=', res?.list?.length)
+    // 临时调试弹窗
+    uni.showToast({
+      title: `照片数: ${myPhotoCount.value} 条(${res?.list?.length || 0})`,
+      icon: 'none',
+      duration: 5000,
+    })
+  } catch (e: any) {
     // eslint-disable-next-line no-console
     console.error('[index] fetchMyPhotoCount error', e)
     myPhotoCount.value = 0
+    uni.showToast({ title: `照片API失败: ${e?.message || e}`, icon: 'none', duration: 5000 })
   }
 }
 
