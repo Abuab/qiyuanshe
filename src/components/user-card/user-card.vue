@@ -116,13 +116,10 @@ interface Props {
   matchPercent?: number
   /** 当前浏览者尚未测试人格，展示引导文案 */
   viewerUntested?: boolean
-  /** 当前用户自己的照片数量（由父页面传入，-1=未获取） */
-  myPhotoCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showPhotos: true,
-  myPhotoCount: -1,
 })
 
 const emit = defineEmits<{
@@ -196,20 +193,43 @@ const displayPhotos = computed(() => {
   return []
 })
 
-/** 模糊判断：使用父页面传入的 myPhotoCount prop
+// 当前用户自己的照片数量（-1=未获取，用于判断锁定态）
+const myPhotoCount = ref(-1)
+
+// 模块级缓存：避免每个卡片实例都请求一次 /users/photos
+let _myPhotoCountCached: number | null = null
+let _myPhotoCountLoading: Promise<number> | null = null
+
+const fetchMyPhotoCount = async (): Promise<number> => {
+  if (_myPhotoCountCached !== null) return _myPhotoCountCached
+  if (_myPhotoCountLoading) return _myPhotoCountLoading
+  _myPhotoCountLoading = (async (): Promise<number> => {
+    try {
+      const res: any = await request({ url: '/users/photos', method: 'GET' })
+      _myPhotoCountCached = res?.list?.length || 0
+    } catch {
+      _myPhotoCountCached = 0
+    }
+    return _myPhotoCountCached as number
+  })()
+  return _myPhotoCountLoading
+}
+
+/** 模糊判断：
  *  - 游客：对方仅一张照片时高清，多张全部模糊
- *  - 已登录+自身照片>1：全部高清
+ *  - 已登录+自身照片>1：全部高清显示
  *  - 已登录+自身照片≤1：同游客逻辑
  */
-const shouldBlurPhoto = (_index: number): boolean => {
-  const count = props.myPhotoCount ?? -1
+const shouldBlurPhoto = (index: number): boolean => {
   if (!userStore.isLoggedIn) {
+    // 游客：对方仅一张照片时高清显示
     return displayPhotos.value.length > 1
   }
-  if (count >= 0 && count <= 1) {
+  // 已登录但自身照片≤1（锁定态）：同游客逻辑
+  if (myPhotoCount.value >= 0 && myPhotoCount.value <= 1) {
     return displayPhotos.value.length > 1
   }
-  // 自身照片>1：全部高清
+  // 自身照片>1：全部高清显示
   return false
 }
 
@@ -227,6 +247,12 @@ onMounted(async () => {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
     voiceEnabled.value = res?.value !== 'false'
   } catch { voiceEnabled.value = false }
+  // 已登录时获取自身照片数量（模块级缓存，所有卡片实例共享同一请求）
+  if (userStore.isLoggedIn) {
+    myPhotoCount.value = await fetchMyPhotoCount()
+  } else {
+    myPhotoCount.value = 0
+  }
 })
 
 const onLike = async () => {

@@ -148,7 +148,6 @@
         :match-map="matchMap"
         :show-match-badge="userStore.isLoggedIn"
         :viewer-tested="viewerTested"
-        :my-photo-count="myPhotoCount"
         :empty-text="isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户'"
         :show-clear-filter="isEmptyFromFilter"
         @user-click="goToUserDetail"
@@ -290,8 +289,6 @@ const isRefreshing = ref(false)
 const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
-// 当前用户自己的照片数量（页面级管理，通过 prop 传递给所有 user-card）
-const myPhotoCount = ref(-1)
 const showFilter = ref(false)
 const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
@@ -623,22 +620,12 @@ const goToUserDetail = (user: UserCardData) => {
   })
 }
 
-onMounted(async () => {
+onMounted(() => {
   // eslint-disable-next-line no-console
   console.log('[首页] BUILD=v15-6a3f1c0')
 
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-
-  // 先获取自身照片计数，再加载用户列表，确保 blur 状态正确
-  if (userStore.isLoggedIn) {
-    try {
-      const res: any = await get('/users/photos')
-      myPhotoCount.value = res?.list?.length || 0
-    } catch { myPhotoCount.value = 0 }
-  } else {
-    myPhotoCount.value = 0
-  }
 
   loadUserList(true)
   loadHotQuestions()
@@ -652,16 +639,7 @@ onMounted(async () => {
 })
 
 // 每次页面显示时也检查（如从其他页返回）
-onShow(async () => {
-  // 重新获取自身照片计数（用户可能在上传照片后返回）
-  if (userStore.isLoggedIn) {
-    try {
-      const res: any = await get('/users/photos')
-      myPhotoCount.value = res?.list?.length || 0
-    } catch { /* 失败保持原值 */ }
-  } else {
-    myPhotoCount.value = 0
-  }
+onShow(() => {
   // 刷新用户资料以获取最新状态，不阻塞页面生命周期
   userStore.refreshProfile().then(() => {
     // 账户锁定检查：status=4 时弹出脱单需求确认弹窗

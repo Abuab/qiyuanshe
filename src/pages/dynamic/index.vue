@@ -680,22 +680,22 @@ const onSelectMatchmaker = (matchmaker: any) => {
   showMatchmaker.value = true
 }
 
-onMounted(async () => {
+onMounted(() => {
   const sysInfo = uni.getWindowInfo() as any
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  if (userStore.isLoggedIn) await fetchMyPhotoCount()
   fetchList(true)
+  if (userStore.isLoggedIn) fetchMyPhotoCount()
 })
 
 // 监听来自首页"媒妁之言"跳转的红娘区切换（通过 globalData 传参）
-onShow(async () => {
+onShow(() => {
   const app = getApp()
-  // 刷新照片计数，防止用户上传照片后返回模糊状态未更新（仅登录用户）
-  if (userStore.isLoggedIn) await fetchMyPhotoCount()
   if (app?.globalData?.dynamicTab === 'matchmaker') {
     app.globalData.dynamicTab = ''
     switchTab('matchmaker')
   }
+  // 刷新照片计数，防止用户上传照片后返回模糊状态未更新（仅登录用户）
+  if (userStore.isLoggedIn) fetchMyPhotoCount()
 })
 </script>
 
