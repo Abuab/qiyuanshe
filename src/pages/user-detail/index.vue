@@ -24,7 +24,7 @@
             class="hero-bg"
             :class="{ 'hero-blur': activePhotoNeedsBlur, 'photo-slide': photoAnimating }"
             :src="activePhotoUrl"
-            mode="aspectFill"
+            mode="widthFix"
           />
           <view v-else class="hero-placeholder" />
           <view class="hero-gradient" />
@@ -1738,9 +1738,8 @@ $text-hint: #999999;
 }
 
 .hero-bg {
-  width: 100%; height: 100%;
+  width: 100%;
   border-radius: 33rpx 33rpx 0 0;
-  object-fit: cover; object-position: top center;
 }
 
 .hero-bg.photo-slide {
