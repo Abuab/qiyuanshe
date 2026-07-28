@@ -6,6 +6,7 @@
       :user="user"
       :match-percent="matchMap ? matchMap[user.id] : undefined"
       :viewer-untested="showMatchBadge && viewerTested === false"
+      :my-photo-count="myPhotoCount"
       @click="$emit('user-click', user)"
     />
 
@@ -44,6 +45,8 @@ interface Props {
   showMatchBadge?: boolean
   /** 当前浏览者是否已完成人格测试 */
   viewerTested?: boolean
+  /** 当前用户自己的照片数量（-1=未获取），由父页面管理 */
+  myPhotoCount?: number
 }
 
 withDefaults(defineProps<Props>(), {
@@ -52,6 +55,7 @@ withDefaults(defineProps<Props>(), {
   emptyText: '暂无匹配用户',
   showClearFilter: false,
   showMatchBadge: false,
+  myPhotoCount: -1,
 })
 
 defineEmits<{

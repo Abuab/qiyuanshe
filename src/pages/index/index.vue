@@ -148,6 +148,7 @@
         :match-map="matchMap"
         :show-match-badge="userStore.isLoggedIn"
         :viewer-tested="viewerTested"
+        :my-photo-count="myPhotoCount"
         :empty-text="isEmptyFromFilter ? '暂无符合条件的用户，试试放宽条件吧' : '暂无匹配用户'"
         :show-clear-filter="isEmptyFromFilter"
         @user-click="goToUserDetail"
@@ -309,6 +310,18 @@ const showLoveIntent = ref(false)
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
+
+// 当前登录用户自己的照片数量（-1=未获取），控制首页缩略图模糊逻辑
+const myPhotoCount = ref(-1)
+
+const fetchMyPhotoCount = async () => {
+  try {
+    const res: any = await get('/users/photos')
+    myPhotoCount.value = res?.list?.length || 0
+  } catch {
+    myPhotoCount.value = 0
+  }
+}
 
 const filterStore = useFilterStore()
 const userStore = useUserStore()
@@ -629,6 +642,7 @@ onMounted(() => {
 
   loadUserList(true)
   loadHotQuestions()
+  if (userStore.isLoggedIn) fetchMyPhotoCount()
 
   // 开启分享菜单
   uni.showShareMenu({
@@ -647,6 +661,8 @@ onShow(() => {
       showLoveIntent.value = true
     }
   }).catch(() => {})
+  // 刷新自身照片数量，确保从编辑资料页返回后模糊状态更新
+  if (userStore.isLoggedIn) fetchMyPhotoCount()
   // 浮动按钮配置：每次显示都拉取，保证后台切换模式后即时生效
   loadFloatConfig()
   // 弱网恢复后补报离线埋点队列
