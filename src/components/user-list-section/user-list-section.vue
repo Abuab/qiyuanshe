@@ -6,7 +6,7 @@
       :user="user"
       :match-percent="matchMap ? matchMap[user.id] : undefined"
       :viewer-untested="showMatchBadge && viewerTested === false"
-      :refresh-key="refreshKey"
+      :my-photo-count="myPhotoCount"
       @click="$emit('user-click', user)"
     />
 
@@ -45,8 +45,8 @@ interface Props {
   showMatchBadge?: boolean
   /** 当前浏览者是否已完成人格测试 */
   viewerTested?: boolean
-  /** 刷新键：父页面 onShow 时递增，透传给 user-card */
-  refreshKey?: number
+  /** 当前用户自己的照片数量（页面级传入，用于模糊判断） */
+  myPhotoCount?: number
 }
 
 withDefaults(defineProps<Props>(), {

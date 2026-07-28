@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
@@ -116,13 +116,13 @@ interface Props {
   matchPercent?: number
   /** 当前浏览者尚未测试人格，展示引导文案 */
   viewerUntested?: boolean
-  /** 刷新键：父页面 onShow 时递增，触发组件重新获取自身照片计数 */
-  refreshKey?: number
+  /** 当前用户自己的照片数量（由父页面传入，-1=未获取） */
+  myPhotoCount?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
   showPhotos: true,
-  refreshKey: 0,
+  myPhotoCount: -1,
 })
 
 const emit = defineEmits<{
@@ -196,39 +196,17 @@ const displayPhotos = computed(() => {
   return []
 })
 
-// 当前用户自己的照片数量（-1=未获取，用于判断锁定态）
-const myPhotoCount = ref(-1)
-
-// 模块级并发去重：多个卡片实例同时挂载时共用同一个请求
-let _myPhotoCountLoading: Promise<number> | null = null
-
-const fetchMyPhotoCount = async (): Promise<number> => {
-  if (_myPhotoCountLoading) return _myPhotoCountLoading
-  _myPhotoCountLoading = (async (): Promise<number> => {
-    try {
-      const res: any = await request({ url: '/users/photos', method: 'GET' })
-      return res?.list?.length || 0
-    } catch {
-      return 0
-    } finally {
-      _myPhotoCountLoading = null
-    }
-  })()
-  return _myPhotoCountLoading
-}
-
-/** 模糊判断：
+/** 模糊判断：使用父页面传入的 myPhotoCount prop
  *  - 游客：对方仅一张照片时高清，多张全部模糊
- *  - 已登录+自身照片>1：对方首张高清，其余模糊
+ *  - 已登录+自身照片>1：全部高清
  *  - 已登录+自身照片≤1：同游客逻辑
  */
-const shouldBlurPhoto = (index: number): boolean => {
+const shouldBlurPhoto = (_index: number): boolean => {
+  const count = props.myPhotoCount ?? -1
   if (!userStore.isLoggedIn) {
-    // 游客：对方仅一张照片时高清显示
     return displayPhotos.value.length > 1
   }
-  // 已登录但自身照片≤1（锁定态）：同游客逻辑
-  if (myPhotoCount.value >= 0 && myPhotoCount.value <= 1) {
+  if (count >= 0 && count <= 1) {
     return displayPhotos.value.length > 1
   }
   // 自身照片>1：全部高清
@@ -249,25 +227,6 @@ onMounted(async () => {
     const res: any = await request({ url: '/system/config?key=feature.voiceEnabled', method: 'GET' })
     voiceEnabled.value = res?.value !== 'false'
   } catch { voiceEnabled.value = false }
-  // 已登录时获取自身照片数量（模块级缓存，所有卡片实例共享同一请求）
-  if (userStore.isLoggedIn) {
-    myPhotoCount.value = await fetchMyPhotoCount()
-  } else {
-    myPhotoCount.value = 0
-  }
-})
-
-// 父页面 onShow 时 refreshKey 递增，触发重新获取照片计数
-watch(() => props.refreshKey, () => {
-  if (userStore.isLoggedIn) {
-    fetchMyPhotoCount().then(count => {
-      myPhotoCount.value = count
-    }).catch(() => {
-      myPhotoCount.value = 0
-    })
-  } else {
-    myPhotoCount.value = 0
-  }
 })
 
 const onLike = async () => {
