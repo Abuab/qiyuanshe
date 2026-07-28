@@ -317,8 +317,14 @@ const myPhotoCount = ref(-1)
 const fetchMyPhotoCount = async () => {
   try {
     const res: any = await get('/users/photos')
+    // eslint-disable-next-line no-console
+    console.log('[index] fetchMyPhotoCount raw', JSON.stringify(res))
     myPhotoCount.value = res?.list?.length || 0
-  } catch {
+    // eslint-disable-next-line no-console
+    console.log('[index] myPhotoCount set to', myPhotoCount.value)
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[index] fetchMyPhotoCount error', e)
     myPhotoCount.value = 0
   }
 }

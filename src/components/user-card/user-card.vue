@@ -202,16 +202,23 @@ const displayPhotos = computed(() => {
  *  - 已登录+自身照片≤1：同游客逻辑
  */
 const shouldBlurPhoto = (index: number): boolean => {
-  if (!userStore.isLoggedIn) {
-    // 游客：对方仅一张照片时高清显示
-    return displayPhotos.value.length > 1
+  const isLoggedIn = userStore.isLoggedIn
+  const count = props.myPhotoCount
+  const photosLen = displayPhotos.value.length
+
+  let result: boolean
+  if (!isLoggedIn) {
+    result = photosLen > 1
+  } else if (count >= 0 && count <= 1) {
+    result = photosLen > 1
+  } else {
+    result = false
   }
-  // 已登录但自身照片≤1（锁定态）：同游客逻辑
-  if (props.myPhotoCount >= 0 && props.myPhotoCount <= 1) {
-    return displayPhotos.value.length > 1
-  }
-  // 自身照片>1：全部高清显示
-  return false
+
+  // eslint-disable-next-line no-console
+  if (index === 0) console.log('[user-card] blur-debug', JSON.stringify({ isLoggedIn, myPhotoCount: count, photosLen, result }))
+
+  return result
 }
 
 

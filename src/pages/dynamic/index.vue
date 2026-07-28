@@ -162,7 +162,7 @@
               :key="idx"
               class="photo-item"
               :class="{
-                'photo-blur': shouldBlur(item, idx),
+                'photo-blur': shouldBlurDebug(item, idx),
                 'photo-last': idx === item.images.length - 1,
               }"
               :style="{ width: item.images.length === 2 ? '340rpx' : '220rpx', height: item.images.length === 2 ? '340rpx' : '220rpx' }"
@@ -401,6 +401,23 @@ const shouldBlur = (item: DynamicItem, _imgIndex: number): boolean => {
   return true
 }
 
+// 模糊调试 wrap：每次调用时打印第一条动态的关键参数
+const shouldBlurDebug = (item: DynamicItem, imgIndex: number): boolean => {
+  const result = shouldBlur(item, imgIndex)
+  if (imgIndex === 0) {
+    // eslint-disable-next-line no-console
+    console.log('[dynamic] blur-debug', JSON.stringify({
+      myPhotoCount: myPhotoCount.value,
+      isLoggedIn: userStore.isLoggedIn,
+      itemUserId: item.userId,
+      myUserId: myUserId.value,
+      imagesLen: item.images?.length || 0,
+      result,
+    }))
+  }
+  return result
+}
+
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
   const now = Date.now()
@@ -425,7 +442,12 @@ const fetchMyPhotoCount = async () => {
     })
     const data = res as any
     myPhotoCount.value = data?.list?.length || 0
-  } catch { /* ignore */ }
+    // eslint-disable-next-line no-console
+    console.log('[dynamic] fetchMyPhotoCount set to', myPhotoCount.value)
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.error('[dynamic] fetchMyPhotoCount error', e)
+  }
 }
 
 const fetchList = async (reset = false) => {
