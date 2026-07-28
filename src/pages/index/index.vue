@@ -317,20 +317,9 @@ const myPhotoCount = ref(-1)
 const fetchMyPhotoCount = async () => {
   try {
     const res: any = await get('/users/photos')
-    myPhotoCount.value = res?.list?.length || 0
-    // eslint-disable-next-line no-console
-    console.log('[index] myPhotoCount=', myPhotoCount.value, 'rawListLen=', res?.list?.length)
-    // 临时调试弹窗
-    uni.showToast({
-      title: `照片数: ${myPhotoCount.value} 条(${res?.list?.length || 0})`,
-      icon: 'none',
-      duration: 5000,
-    })
-  } catch (e: any) {
-    // eslint-disable-next-line no-console
-    console.error('[index] fetchMyPhotoCount error', e)
-    myPhotoCount.value = 0
-    uni.showToast({ title: `照片API失败: ${e?.message || e}`, icon: 'none', duration: 5000 })
+    myPhotoCount.value = (res?.list?.length || 0) + 1  // +1 计入头像
+  } catch {
+    myPhotoCount.value = 1  // 至少1张头像
   }
 }
 

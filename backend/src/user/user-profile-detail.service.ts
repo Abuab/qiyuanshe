@@ -155,9 +155,9 @@ export class UserProfileDetailService {
     const aiProfileGenEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.PROFILE_GEN)
 
     // 加载当前用户的已审核通过照片数量（用于判断是否触发上传引导）
-    let myPhotoCount = 0
+    let myPhotoCount = 1  // 至少1张头像
     if (currentUserId && !isSelf) {
-      myPhotoCount = await this.photoRepo.count({ where: { userId: currentUserId, auditStatus: 1 } })
+      myPhotoCount = await this.photoRepo.count({ where: { userId: currentUserId, auditStatus: 1 } }) + 1  // +1 计入头像
     }
 
     // 照片引导文案配置

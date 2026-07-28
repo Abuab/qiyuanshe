@@ -198,35 +198,22 @@ const displayPhotos = computed(() => {
 
 /** 模糊判断：每个照片索引是否模糊，使用 computed 确保响应式
  *  - 游客：对方仅一张照片时高清，多张全部模糊
- *  - 已登录+自身照片>1：全部高清显示
- *  - 已登录+自身照片≤1：同游客逻辑
+ *  - 已登录+自身照片>1(头像+≥1张上传)：全部高清显示
+ *  - 已登录+自身照片≤1(仅头像)：同游客逻辑
  */
-let _blurToastShown = false
 const blurStates = computed(() => {
   const isLoggedIn = userStore.isLoggedIn
   const count = props.myPhotoCount
   const photosLen = displayPhotos.value.length
 
-  return displayPhotos.value.map((_, index) => {
-    let result: boolean
+  return displayPhotos.value.map(() => {
     if (!isLoggedIn) {
-      result = photosLen > 1
-    } else if (count >= 0 && count <= 1) {
-      result = photosLen > 1
-    } else {
-      result = false
+      return photosLen > 1
     }
-    if (index === 0 && !_blurToastShown) {
-      _blurToastShown = true
-      // eslint-disable-next-line no-console
-      console.log('[user-card] blur-debug', JSON.stringify({ isLoggedIn, myPhotoCount: count, photosLen, result }))
-      uni.showToast({
-        title: `模糊=${result ? '是' : '否'} 自身照片${count} 对方${photosLen}张`,
-        icon: 'none',
-        duration: 4000,
-      })
+    if (count <= 1) {
+      return photosLen > 1
     }
-    return result
+    return false
   })
 })
 

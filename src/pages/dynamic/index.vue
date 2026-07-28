@@ -441,13 +441,8 @@ const fetchMyPhotoCount = async () => {
       method: 'GET',
     })
     const data = res as any
-    myPhotoCount.value = data?.list?.length || 0
-    // eslint-disable-next-line no-console
-    console.log('[dynamic] fetchMyPhotoCount set to', myPhotoCount.value)
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.error('[dynamic] fetchMyPhotoCount error', e)
-  }
+    myPhotoCount.value = (data?.list?.length || 0) + 1  // +1 计入头像
+  } catch { /* ignore */ }
 }
 
 const fetchList = async (reset = false) => {
