@@ -62,7 +62,7 @@
         >
           <image
             class="photo-thumb"
-            :class="{ 'photo-blur': shouldBlurPhoto(index) }"
+            :class="{ 'photo-blur': blurStates[index] }"
             :src="photo"
             mode="aspectFill"
             @error="onPhotoError(displayPhotos[index])"
@@ -196,30 +196,32 @@ const displayPhotos = computed(() => {
   return []
 })
 
-/** 模糊判断：
+/** 模糊判断：每个照片索引是否模糊，使用 computed 确保响应式
  *  - 游客：对方仅一张照片时高清，多张全部模糊
  *  - 已登录+自身照片>1：全部高清显示
  *  - 已登录+自身照片≤1：同游客逻辑
  */
-const shouldBlurPhoto = (index: number): boolean => {
+const blurStates = computed(() => {
   const isLoggedIn = userStore.isLoggedIn
   const count = props.myPhotoCount
   const photosLen = displayPhotos.value.length
 
-  let result: boolean
-  if (!isLoggedIn) {
-    result = photosLen > 1
-  } else if (count >= 0 && count <= 1) {
-    result = photosLen > 1
-  } else {
-    result = false
-  }
-
-  // eslint-disable-next-line no-console
-  if (index === 0) console.log('[user-card] blur-debug', JSON.stringify({ isLoggedIn, myPhotoCount: count, photosLen, result }))
-
-  return result
-}
+  return displayPhotos.value.map((_, index) => {
+    let result: boolean
+    if (!isLoggedIn) {
+      result = photosLen > 1
+    } else if (count >= 0 && count <= 1) {
+      result = photosLen > 1
+    } else {
+      result = false
+    }
+    if (index === 0) {
+      // eslint-disable-next-line no-console
+      console.log('[user-card] blur-debug', JSON.stringify({ isLoggedIn, myPhotoCount: count, photosLen, result }))
+    }
+    return result
+  })
+})
 
 
 const handleClick = () => {
