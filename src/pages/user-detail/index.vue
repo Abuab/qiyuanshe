@@ -17,8 +17,8 @@
       </view>
 
       <scroll-view class="page-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :enhanced="true" :show-scrollbar="false">
-        <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
-        <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px', height: `calc(50vh + ${frostTotalHeight}px)` }">
+        <!-- ========== 1. 顶部大背景图（60vh，顶部大圆角） ========== -->
+        <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px', height: `calc(60vh + ${frostTotalHeight}px)` }">
           <image
             v-if="activePhotoUrl"
             class="hero-bg"
@@ -1731,9 +1731,9 @@ $text-hint: #999999;
   height: 100vh;
 }
 
-// ===== 1. 顶部大背景图（50vh，顶部大圆角） =====
+// ===== 1. 顶部大背景图（60vh，顶部大圆角） =====
 .hero-section {
-  position: relative; width: 100%; height: 50vh; overflow: hidden;
+  position: relative; width: 100%; height: 60vh; overflow: hidden;
   border-radius: 33rpx 33rpx 0 0; box-sizing: border-box;
 }
 

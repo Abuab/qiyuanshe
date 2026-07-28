@@ -571,11 +571,39 @@ export class AdminUserService {
   }
 
   async getPhotos(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId }, select: ['avatar'] })
     const photos = await this.userPhotoRepository.find({
       where: { userId },
       order: { createdAt: 'DESC' },
     })
-    return photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) }))
+
+    const result: any[] = photos.map(p => ({ ...p, photoUrl: normalizeImageUrl(p.photoUrl) }))
+
+    if (user?.avatar?.trim()) {
+      const avatarUrl = normalizeImageUrl(user.avatar)
+      const matchedIdx = result.findIndex(p => p.photoUrl === avatarUrl)
+
+      // 所有实际照片清除 isMain（避免历史脏数据导致错误的"当前头像"标签）
+      result.forEach(p => { p.isMain = 0 })
+
+      if (matchedIdx >= 0) {
+        // 头像 URL 匹配某张已上传照片 → 标注为主图
+        result[matchedIdx].isMain = 1
+      } else {
+        // 头像是独立上传的 → 在列表头部插入虚拟头像条目
+        result.unshift({
+          id: 0,
+          userId,
+          photoUrl: avatarUrl,
+          isMain: 1,
+          sortOrder: 0,
+          auditStatus: 1,
+          createdAt: new Date(),
+        })
+      }
+    }
+
+    return result
   }
 
   async addPhoto(userId: number, photoUrl: string) {

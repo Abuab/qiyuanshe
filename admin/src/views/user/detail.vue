@@ -243,7 +243,7 @@
                   <div class="photo-actions">
                     <el-tag v-if="photo.isMain" type="success" size="small">当前头像</el-tag>
                     <el-button v-else type="primary" link size="small" @click="handleSetMainPhoto(photo.id)">设为头像</el-button>
-                    <el-button type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
+                    <el-button v-if="photo.id !== 0" type="danger" link size="small" @click="handleDeletePhoto(photo.id)">删除</el-button>
                     <!-- 照片审核操作 -->
                     <template v-if="photo.auditStatus === 0">
                       <el-button type="success" link size="small" @click="handleAuditPhoto(photo.id, 'approve')">通过</el-button>
