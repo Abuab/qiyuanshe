@@ -1740,6 +1740,7 @@ $text-hint: #999999;
 .hero-bg {
   width: 100%; height: 100%;
   border-radius: 33rpx 33rpx 0 0;
+  object-position: top;
 }
 
 .hero-bg.photo-slide {
