@@ -87,6 +87,7 @@ export class AuthService {
   private resetReactivatedUser(user: User): void {
     user.isDeleted = 0
     user.deleteReason = null
+    user.unionId = null       // 清除旧 unionId，避免微信账号主体变更后冲突
     user.nickname = `昵称${user.userId}`
     user.avatar = ''
     user.avatarReviewStatus = null
@@ -152,23 +153,17 @@ export class AuthService {
       throw new UnauthorizedException('微信登录失败，无效的code')
     }
 
-    // 先查该openid是否存在（包括已删除的），如果已删除则重新激活
-    const existingUser = await this.userRepository.findOne({
+    // 按 openid 查找（包括已删除的），如果已删除则重新激活，避免二次查询窗口
+    let user = await this.userRepository.findOne({
       where: { openid: session.openid },
     })
-    if (existingUser && existingUser.isDeleted === 1) {
-      this.resetReactivatedUser(existingUser)
-      existingUser.status = await this.getNewUserStatus()
-      await this.userRepository.save(existingUser)
-      await this.userService.cleanupDeletedUserData(existingUser.id)
-      this.clearRateLimitKeys(existingUser.id)
-    }
-
-    let user = await this.userRepository.findOne({
-      where: { openid: session.openid, isDeleted: 0 },
-    })
-
-    if (!user) {
+    if (user && user.isDeleted === 1) {
+      this.resetReactivatedUser(user)
+      user.status = await this.getNewUserStatus()
+      await this.userRepository.save(user)
+      await this.userService.cleanupDeletedUserData(user.id)
+      this.clearRateLimitKeys(user.id)
+    } else if (!user) {
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
@@ -399,12 +394,17 @@ export class AuthService {
     }
   }
 
-  async validateUserById(userId: number): Promise<Partial<User>> {
+  async validateUserById(userId: number, tokenVersion?: number): Promise<Partial<User>> {
     const user = await this.userRepository.findOne({
       where: { id: userId, isDeleted: 0 },
     })
 
     if (!user || user.status === 0 || user.status === 3) {
+      return null
+    }
+
+    // 注销后旧 token 失效：token 签发时的版本号与当前版本号不一致则拒绝
+    if (tokenVersion !== undefined && user.tokenVersion !== tokenVersion) {
       return null
     }
 
@@ -508,6 +508,7 @@ export class AuthService {
         sub: user.id,
         openid: user.openid,
         type: 'access',
+        tokenVersion: user.tokenVersion,
       },
       {
         expiresIn: accessExpiry,

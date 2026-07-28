@@ -173,6 +173,9 @@ export class User {
   @Column({ type: 'varchar', length: 50, nullable: true })
   deleteReason: string
 
+  @Column({ type: 'int', default: 0 })
+  tokenVersion: number
+
   @Column({ type: 'simple-json', nullable: true })
   tags: string[]
 

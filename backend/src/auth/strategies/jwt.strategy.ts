@@ -8,6 +8,7 @@ export interface JwtPayload {
   sub: number
   openid: string
   type: 'access' | 'refresh'
+  tokenVersion?: number
 }
 
 @Injectable()
@@ -25,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('无效的访问令牌')
     }
 
-    const user = await this.authService.validateUserById(payload.sub)
+    const user = await this.authService.validateUserById(payload.sub, payload.tokenVersion)
     if (!user) {
       throw new UnauthorizedException('用户不存在或已被禁用')
     }

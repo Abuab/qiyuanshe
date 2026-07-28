@@ -1244,6 +1244,8 @@ export class UserService {
     user.isDeleted = 1
     user.status = 0
     user.deleteReason = '用户自行注销'
+    user.phone = null          // 释放手机号，避免跨账号唯一索引冲突
+    user.tokenVersion += 1     // 使所有已签发的 access token 立即失效
     await this.userRepository.save(user)
     // 同步清理关联数据，避免未清理完就被用户重新注册导致旧数据残留
     await this.cleanupDeletedUserData(userId)
@@ -1255,9 +1257,12 @@ export class UserService {
     if (!user) throw new NotFoundException('用户不存在')
     if (user.isDeleted === 1) return // 已注销，幂等
 
+    const oldPhone = user.phone // 留作审计日志
     user.isDeleted = 1
     user.status = 0
     user.deleteReason = '用户自行注销'
+    user.phone = null          // 释放手机号
+    user.tokenVersion += 1     // 使所有已签发 token 失效
     await this.userRepository.save(user)
 
     // 写入审计日志
@@ -1268,7 +1273,7 @@ export class UserService {
       reason: '用户主动注销',
       content: JSON.stringify({
         nickname: user.nickname,
-        phone: user.phone,
+        phone: oldPhone,
         canceledAt: beijingISO(),
       }),
     })
