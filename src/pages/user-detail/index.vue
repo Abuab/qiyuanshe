@@ -867,14 +867,14 @@ const statusBarHeight = computed(() => {
     return uni.getSystemInfoSync().statusBarHeight || 44
   } catch { return 44 }
 })
-// frost 卡片总高度（px）：statusBarHeight + frost-inner 的 88rpx 转为 px
+// frost 卡片总高度（px）：statusBarHeight + frost-inner 的 88rpx 转为 px + 2px 防遮挡缓冲
 const frostTotalHeight = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
   const statusBarH = sysInfo.statusBarHeight || 44
   const screenWidth = sysInfo.screenWidth || 390
   const rpxRatio = screenWidth / 750
   const frostInnerPx = 88 * rpxRatio // 88rpx → px
-  return statusBarH + frostInnerPx
+  return statusBarH + frostInnerPx + 2
 })
 const safeAreaBottom = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
