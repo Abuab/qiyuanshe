@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import router from '../router'
 import { adminAudit } from '../api/audit'
+import { adminAuth } from '../api/auth'
 
 export interface AdminUser {
   id: number
@@ -17,7 +18,6 @@ export interface AdminUser {
 export const useAdminStore = defineStore('admin', () => {
   const token = ref<string>(localStorage.getItem('admin_token') || '')
   const userInfo = ref<AdminUser | null>(null)
-  const permissions = ref<string[]>([])
   const isCollapsed = ref(false)
   // 审核管理（资料/照片等）待审核数
   const pendingAuditCount = ref(0)
@@ -47,74 +47,59 @@ export const useAdminStore = defineStore('admin', () => {
     }
   }
 
+  function finishLogin(data: any, rememberMe?: boolean) {
+    token.value = data.token || ''
+    userInfo.value = data.user || null
+
+    localStorage.setItem('admin_token', data.token || '')
+    localStorage.setItem('admin_user', JSON.stringify(data.user))
+
+    // 存储 refreshToken
+    if (data.refreshToken) {
+      localStorage.setItem('admin_refresh_token', data.refreshToken)
+    }
+
+    if (rememberMe) {
+      localStorage.setItem('admin_remember', 'true')
+    }
+
+    ElMessage.success('登录成功')
+
+    const redirect = router.currentRoute.value.query.redirect as string
+    router.push(redirect || '/dashboard')
+  }
+
   async function login(username: string, password: string, captcha: string, rememberMe: boolean, captchaKey?: string) {
-    const response = await fetch('/api/admin/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, captcha, captchaKey }),
-    })
+    const res = await adminAuth.login({ username, password, captcha, captchaKey })
+    const data = res.data
 
-    const result = await response.json()
-    const data = result.data || result
-
-    if (data.success) {
+    if (data && data.success) {
       if (data.needMfa) {
         return {
           needMfa: true,
-          mfaType: data.mfaType,
-          phoneMask: data.phoneMask,
-          tempToken: data.tempToken,
+          mfaType: data.mfaType || '',
+          phoneMask: data.phoneMask || '',
+          tempToken: data.tempToken || '',
         } as MfaRequired
       }
 
-      token.value = data.token
-      userInfo.value = data.user
-      permissions.value = data.permissions || []
-
-      localStorage.setItem('admin_token', data.token)
-      localStorage.setItem('admin_user', JSON.stringify(data.user))
-
-      if (rememberMe) {
-        localStorage.setItem('admin_remember', 'true')
-      }
-
-      ElMessage.success('登录成功')
-
-      const redirect = router.currentRoute.value.query.redirect as string
-      router.push(redirect || '/dashboard')
-
+      finishLogin(data, rememberMe)
       return { needMfa: false } as MfaRequired
     } else {
-      const errorMsg = data.message || '登录失败'
+      const errorMsg = data?.message || '登录失败'
       ElMessage.error(errorMsg)
       throw new Error(errorMsg)
     }
   }
 
   async function mfaLoginVerify(tempToken: string, code: string) {
-    const response = await fetch('/api/admin/mfa/login-verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tempToken, code }),
-    })
+    const res = await adminAuth.mfaLoginVerify({ tempToken, code })
+    const data = res.data
 
-    const result = await response.json()
-    const data = result.data || result
-
-    if (data.success) {
-      token.value = data.token
-      userInfo.value = data.user
-      permissions.value = data.permissions || []
-
-      localStorage.setItem('admin_token', data.token)
-      localStorage.setItem('admin_user', JSON.stringify(data.user))
-
-      ElMessage.success('登录成功')
-
-      const redirect = router.currentRoute.value.query.redirect as string
-      router.push(redirect || '/dashboard')
+    if (data && data.success) {
+      finishLogin(data)
     } else {
-      const errorMsg = data.message || '验证失败'
+      const errorMsg = data?.message || '验证失败'
       ElMessage.error(errorMsg)
       throw new Error(errorMsg)
     }
@@ -123,22 +108,16 @@ export const useAdminStore = defineStore('admin', () => {
   function logout() {
     token.value = ''
     userInfo.value = null
-    permissions.value = []
-
     localStorage.removeItem('admin_token')
     localStorage.removeItem('admin_user')
+    localStorage.removeItem('admin_refresh_token')
     localStorage.removeItem('admin_remember')
-
     router.push({ name: 'Login' })
     ElMessage.success('已退出登录')
   }
 
   function toggleSidebar() {
     isCollapsed.value = !isCollapsed.value
-  }
-
-  function hasPermission(permission: string): boolean {
-    return permissions.value.includes(permission)
   }
 
   function updateUserInfo(info: Partial<AdminUser>) {
@@ -168,7 +147,6 @@ export const useAdminStore = defineStore('admin', () => {
   return {
     token,
     userInfo,
-    permissions,
     isCollapsed,
     pendingAuditCount,
     pendingSinglePromiseCount,
@@ -182,7 +160,6 @@ export const useAdminStore = defineStore('admin', () => {
     mfaLoginVerify,
     logout,
     toggleSidebar,
-    hasPermission,
     updateUserInfo,
     fetchPendingAuditCount,
   }

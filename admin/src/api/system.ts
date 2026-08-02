@@ -17,14 +17,6 @@ export const system = {
   getConfigs(): Promise<ApiResponse<SystemConfigs>> {
     return request.get('/admin/system/configs')
   },
-
-  saveConfigs(configs: SystemConfigs): Promise<ApiResponse> {
-    return request.put('/admin/system/configs', configs)
-  },
-
-  getConfig(key: string): Promise<ApiResponse<string>> {
-    return request.get(`/admin/system/config/${key}`)
-  },
 }
 
 export const adminSystem = {
@@ -34,10 +26,6 @@ export const adminSystem = {
 
   updateConfig(key: string, value: string): Promise<ApiResponse> {
     return request.put(`/admin/system/config/${key}`, { value })
-  },
-
-  batchUpdateConfigs(configs: Record<string, string>): Promise<ApiResponse> {
-    return request.put('/admin/system/configs', { configs })
   },
 
   getConfigByKey(key: string): Promise<ApiResponse<string>> {
@@ -95,15 +83,6 @@ export const adminSystem = {
   getCircleMembers(id: number): Promise<ApiResponse> {
     return request.get(`/admin/circles/${id}/members`)
   },
-  addCircleMember(id: number, userId: number): Promise<ApiResponse> {
-    return request.post(`/admin/circles/${id}/members`, { userId })
-  },
-  removeCircleMember(id: number, userId: number): Promise<ApiResponse> {
-    return request.delete(`/admin/circles/${id}/members/${userId}`)
-  },
-  searchUsers(keyword: string): Promise<ApiResponse> {
-    return request.get('/admin/circles/users/search', { params: { keyword } })
-  },
   // 所有用户分页列表（穿梭框左侧数据源）
   getAllUsers(page = 1, limit = 20, keyword = ''): Promise<ApiResponse<{ list: any[]; total: number; page: number; limit: number }>> {
     return request.get('/admin/circles/users', { params: { page, limit, keyword } })
@@ -117,9 +96,6 @@ export const adminSystem = {
   getSuccessCases(params?: { page?: number; limit?: number; keyword?: string; dateFrom?: string; dateTo?: string }): Promise<ApiResponse> {
     return request.get('/admin/success-cases', { params: { page: params?.page ?? 1, limit: params?.limit ?? 20, ...params } })
   },
-  getSuccessCaseDetail(id: number): Promise<ApiResponse> {
-    return request.get(`/admin/success-cases/${id}`)
-  },
   createSuccessCase(data: any): Promise<ApiResponse> {
     return request.post('/admin/success-cases', data)
   },
@@ -128,12 +104,6 @@ export const adminSystem = {
   },
   deleteSuccessCase(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/success-cases/${id}`)
-  },
-  getSuccessCaseBanner(): Promise<ApiResponse> {
-    return request.get('/admin/success-cases/banner')
-  },
-  saveSuccessCaseBanner(data: { bannerImage?: string; pageTitle?: string }): Promise<ApiResponse> {
-    return request.put('/admin/success-cases/banner', data)
   },
 
   // 通知日志

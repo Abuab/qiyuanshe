@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule } from '@nestjs/throttler'
+import { APP_INTERCEPTOR } from '@nestjs/core'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
 import {
@@ -83,6 +84,7 @@ import { CosModule } from './cos/cos.module'
 import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
 import { ContentFilterService } from './common/content-filter.service'
+import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
 
 @Global()
 @Module({
@@ -176,7 +178,7 @@ import { ContentFilterService } from './common/content-filter.service'
     CosModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService, DatabaseIndexService, ContentFilterService],
+  providers: [RedisService, DatabaseIndexService, ContentFilterService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
   exports: [TypeOrmModule, RedisService, ContentFilterService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}

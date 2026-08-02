@@ -197,6 +197,7 @@ const pagination = reactive({
 })
 
 const viewDialogVisible = ref(false)
+const viewLoading = ref(false)
 const currentRow = ref<ReportItem | null>(null)
 
 const processDialogVisible = ref(false)
@@ -260,6 +261,16 @@ function handlePageChange() {
 function handleView(row: ReportItem) {
   currentRow.value = row
   viewDialogVisible.value = true
+  viewLoading.value = true
+  adminReport.detail(row.id).then((res) => {
+    if (res.success && res.data) {
+      currentRow.value = res.data as ReportItem
+    }
+  }).catch(() => {
+    // 降级使用列表行数据
+  }).finally(() => {
+    viewLoading.value = false
+  })
 }
 
 function handleProcess(row: ReportItem) {

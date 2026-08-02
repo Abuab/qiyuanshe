@@ -166,6 +166,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { personalityStatsApi } from '../../api/personality-stats'
 import type {
@@ -253,7 +254,9 @@ const loadAll = async () => {
     renderPie()
     renderDimension()
     renderFunnel()
-  } catch { /* ignore */ }
+  } catch {
+    ElMessage.error('加载统计数据失败')
+  }
   finally { loading.value = false }
 }
 

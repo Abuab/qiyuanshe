@@ -158,10 +158,6 @@ export const adminUsers = {
     return request.get('/admin/users/export', { params: queryParams })
   },
 
-  resetPassword(id: number): Promise<ApiResponse> {
-    return request.post(`/admin/users/${id}/reset-password`)
-  },
-
   sendNotification(id: number, content: string): Promise<ApiResponse> {
     return request.post(`/admin/users/${id}/notify`, { content })
   },
@@ -211,10 +207,6 @@ export const adminUsers = {
     return request.post(`/admin/user-profiles/${id}/matchmaker-reviews`, data)
   },
 
-  updateReview(reviewId: number, data: { content?: string; difficulty?: string }): Promise<ApiResponse> {
-    return request.put(`/admin/user-profiles/matchmaker-reviews/${reviewId}`, data)
-  },
-
   deleteReview(reviewId: number): Promise<ApiResponse> {
     return request.delete(`/admin/user-profiles/matchmaker-reviews/${reviewId}`)
   },
@@ -259,9 +251,6 @@ export const adminUsers = {
   },
 
   // 喜欢管理
-  getLikeStats(id: number): Promise<ApiResponse<{ liked: number; likedBy: number; mutual: number }>> {
-    return request.get(`/admin/users/${id}/like-stats`)
-  },
   getAdminLikes(id: number, type: string = 'liked', page = 1, limit = 50): Promise<ApiResponse<{ list: any[]; total: number }>> {
     return request.get(`/admin/users/${id}/admin-likes`, { params: { type, page, limit } })
   },
@@ -270,10 +259,6 @@ export const adminUsers = {
   },
   removeAdminLike(id: number, targetUserId: number): Promise<ApiResponse> {
     return request.delete(`/admin/users/${id}/admin-like/${targetUserId}`)
-  },
-
-  searchUsers(keyword: string): Promise<ApiResponse<any[]>> {
-    return request.get('/admin/users/search', { params: { keyword } })
   },
 
   // 标签管理

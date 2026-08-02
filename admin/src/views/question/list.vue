@@ -219,15 +219,18 @@ async function handleDeleteAnswer(questionId: number, answerId: number) {
   }
 }
 
-async function handleExpandChange(row: Question, expanded: boolean) {
-  if (expanded && (!row.answers || row.answers.length === 0)) {
-    try {
-      const res = await adminQuestion.getAnswers(row.id)
-      if (res.success && res.data) {
-        row.answers = res.data.list || []
+async function handleExpandChange(toggledRow: Question, currentlyExpanded: Question[]) {
+  expandedRows.value = currentlyExpanded.map(r => r.id)
+  if (currentlyExpanded.some(r => r.id === toggledRow.id)) {
+    if (!toggledRow.answers || toggledRow.answers.length === 0) {
+      try {
+        const res = await adminQuestion.getAnswers(toggledRow.id)
+        if (res.success && res.data) {
+          toggledRow.answers = res.data.list || []
+        }
+      } catch (error) {
+        console.error(error)
       }
-    } catch (error) {
-      console.error(error)
     }
   }
 }

@@ -39,6 +39,9 @@ export class AdminUser {
   @Column({ type: 'boolean', default: false })
   isMfaEnabled: boolean
 
+  @Column({ type: 'int', default: 0 })
+  tokenVersion: number
+
   @Column({ type: 'varchar', length: 500, default: '' })
   avatar: string
 

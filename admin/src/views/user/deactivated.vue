@@ -160,9 +160,18 @@ const handleRestore = async (row: any) => {
 }
 
 const handlePermanentDelete = async (row: any) => {
-  await adminUsers.permanentDeleteUser(row.id)
-  ElMessage.success('已彻底删除')
-  fetchData()
+  try {
+    await ElMessageBox.confirm(
+      `确定要彻底删除用户「${row.nickname}」的数据吗？\n\n此操作不可逆，所有数据（个人信息、照片、问答、匹配记录等）将被永久清除。`,
+      '危险操作',
+      { confirmButtonText: '确认永久删除', cancelButtonText: '取消', type: 'error', confirmButtonClass: 'el-button--danger' },
+    )
+    await adminUsers.permanentDeleteUser(row.id)
+    ElMessage.success('已彻底删除')
+    fetchData()
+  } catch {
+    // 用户取消
+  }
 }
 
 const formatDate = (dateStr: string) => {

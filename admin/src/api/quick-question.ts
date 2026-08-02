@@ -39,11 +39,6 @@ export const adminQuickQuestion = {
     return request.get('/admin/quick-questions', { params })
   },
 
-  /** 获取单条 */
-  getOne(id: number): Promise<ApiResponse<QuickQuestionItem>> {
-    return request.get(`/admin/quick-questions/${id}`)
-  },
-
   /** 新增 */
   create(data: {
     content: string
@@ -82,11 +77,6 @@ export const adminQuickQuestion = {
   /** 重新排序 */
   reorder(id: number, sort: number): Promise<ApiResponse> {
     return request.put(`/admin/quick-questions/${id}/reorder`, { sort })
-  },
-
-  /** 获取点击统计 */
-  getClickStats(period?: string): Promise<ApiResponse<QuickQuestionItem[]>> {
-    return request.get('/admin/quick-questions/stats/click', { params: { period } })
   },
 
   // ========== 分类管理 ==========

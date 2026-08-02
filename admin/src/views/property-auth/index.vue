@@ -101,7 +101,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getPropertyAuthList, auditPropertyAuth } from '@/api/property-auth'
+import { propertyAuthApi } from '@/api/property-auth'
 import { useAdminStore } from '../../store/admin'
 
 const adminStore = useAdminStore()
@@ -150,7 +150,7 @@ async function fetchList() {
     if (filterStatus.value !== '' && filterStatus.value !== null && filterStatus.value !== undefined) {
       params.status = filterStatus.value
     }
-    const res: any = await getPropertyAuthList(params)
+    const res: any = await propertyAuthApi.list(params)
     const data = res?.data || res
     list.value = data?.list || []
     total.value = data?.total || 0
@@ -168,7 +168,7 @@ function handleSearch() {
 
 async function approve(row: any) {
   try {
-    await auditPropertyAuth({ id: row.id, status: 1 })
+    await propertyAuthApi.audit({ id: row.id, status: 1 })
     ElMessage.success('已通过')
     fetchList()
     adminStore.fetchPendingAuditCount()
@@ -191,7 +191,7 @@ async function confirmReject() {
   }
   rejecting.value = true
   try {
-    await auditPropertyAuth({ id: rejectTarget.value.id, status: 2, rejectReason: rejectReason.value.trim() })
+    await propertyAuthApi.audit({ id: rejectTarget.value.id, status: 2, rejectReason: rejectReason.value.trim() })
     ElMessage.success('已拒绝')
     rejectVisible.value = false
     fetchList()
@@ -205,7 +205,7 @@ async function confirmReject() {
 
 async function reAudit(row: any) {
   try {
-    await auditPropertyAuth({ id: row.id, status: 0 })
+    await propertyAuthApi.audit({ id: row.id, status: 0 })
     ElMessage.success('已退回待审核')
     fetchList()
   } catch (e: any) {

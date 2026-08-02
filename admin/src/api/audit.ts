@@ -75,8 +75,4 @@ export const adminAudit = {
   getHistory(type: string, targetId: number): Promise<ApiResponse> {
     return request.get(`/admin/audit/history/${type}/${targetId}`)
   },
-
-  voiceAudit(userId: number, status: number, remark?: string): Promise<ApiResponse> {
-    return request.post('/admin/audit/voice-audit', { userId, status, remark })
-  },
 }

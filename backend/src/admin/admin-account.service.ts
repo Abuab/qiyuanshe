@@ -72,4 +72,9 @@ export class AdminAccountService {
     }
     await this.repo.delete(id)
   }
+
+  /** 递增 tokenVersion 使该用户所有已签发的 token 失效 */
+  async incrementTokenVersion(id: number) {
+    await this.repo.increment({ id }, 'tokenVersion', 1)
+  }
 }

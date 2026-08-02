@@ -21,14 +21,4 @@ export const adminAgreement = {
   save(data: { type: string; title: string; content: string }): Promise<ApiResponse<Agreement>> {
     return request.post('/admin/agreements', data)
   },
-
-  /** 更新协议 */
-  update(id: number, data: Partial<Agreement>): Promise<ApiResponse<Agreement>> {
-    return request.put(`/admin/agreements/${id}`, data)
-  },
-
-  /** 删除协议 */
-  remove(id: number): Promise<ApiResponse<{ success: boolean }>> {
-    return request.delete(`/admin/agreements/${id}`)
-  },
 }

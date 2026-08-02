@@ -1,25 +1,23 @@
 import request from './request'
+import type { ApiResponse } from './request'
 
-export function getCarAuthList(params: {
-  page?: number
-  pageSize?: number
-  status?: number | string
-}) {
-  return request({
-    url: '/car-auth/admin/list',
-    method: 'get',
-    params,
-  })
-}
-
-export function auditCarAuth(data: {
+export interface CarAuthItem {
   id: number
+  userId: number
+  nickname?: string
+  avatar?: string
   status: number
   rejectReason?: string
-}) {
-  return request({
-    url: '/car-auth/admin/audit',
-    method: 'post',
-    data,
-  })
+  imageUrl?: string
+  createdAt: string
+}
+
+export const carAuthApi = {
+  list(params: { page?: number; pageSize?: number; status?: number | string }): Promise<ApiResponse<{ list: CarAuthItem[]; total: number }>> {
+    return request.get('/car-auth/admin/list', { params })
+  },
+
+  audit(data: { id: number; status: number; rejectReason?: string }): Promise<ApiResponse> {
+    return request.post('/car-auth/admin/audit', data)
+  },
 }

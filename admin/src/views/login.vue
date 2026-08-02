@@ -154,6 +154,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
 import { adminSystem } from '../api'
+import { adminAuth } from '../api/auth'
 import { User, Lock, CircleCheck, View, Hide } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
@@ -222,11 +223,12 @@ onMounted(() => {
 
 async function refreshCaptcha() {
   try {
-    const response = await fetch('/api/admin/captcha')
-    const result = await response.json()
-    const data = result.data || result
-    captchaSvg.value = data.svg
-    captchaKey.value = data.key
+    const res = await adminAuth.getCaptcha()
+    const data = res.data
+    if (data) {
+      captchaSvg.value = data.svg
+      captchaKey.value = data.key
+    }
   } catch (error) {
     console.error('Failed to fetch captcha:', error)
   }

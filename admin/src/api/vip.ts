@@ -20,26 +20,6 @@ export interface VipPackage {
   updatedAt: string
 }
 
-export interface TopRecord {
-  id: number
-  userId: number
-  user?: { id: number; nickname: string; avatar?: string }
-  topStartTime: string
-  topEndTime: string
-  source: string
-  status: number
-  createdAt: string
-}
-
-export interface TopRecordFilter {
-  page?: number
-  limit?: number
-  keyword?: string
-  source?: string
-  startDate?: string
-  endDate?: string
-}
-
 export const vipPackages = {
   list(page = 1, limit = 20): Promise<ApiResponse<{ list: VipPackage[]; total: number }>> {
     return request.get('/admin/vip-packages', { params: { page, limit } })
@@ -59,16 +39,6 @@ export const vipPackages = {
 
   remove(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/vip-packages/${id}`)
-  },
-
-  updateSort(items: { id: number; sortOrder: number }[]): Promise<ApiResponse> {
-    return request.put('/admin/vip-packages/sort/batch', { items })
-  },
-}
-
-export const topRecords = {
-  list(filter: TopRecordFilter): Promise<ApiResponse<{ list: TopRecord[]; total: number }>> {
-    return request.get('/admin/top-records', { params: filter })
   },
 }
 

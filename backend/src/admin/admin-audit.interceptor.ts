@@ -1,0 +1,96 @@
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common'
+import { Observable } from 'rxjs'
+import { tap } from 'rxjs/operators'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { AdminAuditLog } from '../entities/AdminAuditLog'
+
+/** 需要记录操作日志的管理后台 API 路径前缀 */
+const AUDIT_ROUTE_PREFIXES = [
+  '/admin/users',
+  '/admin/audit',
+  '/admin/payment',
+  '/admin/questions',
+  '/admin/activities',
+  '/admin/system',
+  '/admin/reports',
+  '/admin/feedbacks',
+  '/admin/matchmakers',
+  '/admin/circles',
+  '/admin/success-cases',
+  '/admin/admin-users',
+  '/admin/vip-packages',
+  '/admin/vip-config',
+  '/admin/ai',
+  '/admin/chat',
+  '/admin/single-promise',
+  '/admin/store-cert',
+]
+
+/** 从路径中提取模块名 */
+function extractModule(url: string): string {
+  const match = url.match(/\/admin\/([^\/\?]+)/)
+  return match ? match[1] : 'unknown'
+}
+
+/** 将 HTTP 方法映射为中文操作名（模块信息已存储在独立 module 列） */
+function actionLabel(method: string): string {
+  switch (method.toUpperCase()) {
+    case 'POST': return '创建'
+    case 'PUT': return '更新'
+    case 'DELETE': return '删除'
+    default: return method
+  }
+}
+
+@Injectable()
+export class AdminAuditInterceptor implements NestInterceptor {
+  constructor(
+    @InjectRepository(AdminAuditLog)
+    private readonly auditRepo: Repository<AdminAuditLog>,
+  ) {}
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest()
+    const url = request.url || ''
+    const method = request.method || ''
+
+    // 只记录写操作（POST/PUT/DELETE），跳过轮询接口
+    if (method === 'GET') return next.handle()
+
+    const isAudited = AUDIT_ROUTE_PREFIXES.some(prefix => url.startsWith(prefix))
+    if (!isAudited) return next.handle()
+
+    const adminUser = (request as any).user
+    const adminId = adminUser?.id || 0
+    const adminUsername = adminUser?.username || 'unknown'
+    const module = extractModule(url)
+    const ip = request.ip || request.connection?.remoteAddress || ''
+
+    return next.handle().pipe(
+      tap(() => {
+        try {
+          const log = this.auditRepo.create({
+            adminId,
+            adminUsername,
+            action: actionLabel(method),
+            module,
+            method: method.toUpperCase(),
+            url: url.substring(0, 500),
+            ip,
+          })
+          this.auditRepo.save(log).catch(() => {
+            // 日志记录失败不阻塞主流程
+          })
+        } catch {
+          // 日志记录失败不阻塞主流程
+        }
+      }),
+    )
+  }
+}

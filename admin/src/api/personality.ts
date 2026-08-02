@@ -86,9 +86,6 @@ export const personalityDimensionApi = {
   list(): Promise<ApiResponse<PersonalityDimensionItem[]>> {
     return request.get('/admin/personality/dimensions')
   },
-  enabled(): Promise<ApiResponse<PersonalityDimensionItem[]>> {
-    return request.get('/admin/personality/dimensions/enabled')
-  },
   create(data: Partial<PersonalityDimensionItem>): Promise<ApiResponse<PersonalityDimensionItem>> {
     return request.post('/admin/personality/dimensions', data)
   },
@@ -97,9 +94,6 @@ export const personalityDimensionApi = {
   },
   setStatus(id: number, isEnabled: number): Promise<ApiResponse> {
     return request.put(`/admin/personality/dimensions/${id}/status`, { isEnabled })
-  },
-  reorder(id: number, sort: number): Promise<ApiResponse> {
-    return request.put(`/admin/personality/dimensions/${id}/reorder`, { sort })
   },
   remove(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/personality/dimensions/${id}`)
@@ -117,9 +111,6 @@ export const personalityQuestionApi = {
     isEnabled?: number
   }): Promise<ApiResponse<PersonalityQuestionListData>> {
     return request.get('/admin/personality/questions', { params })
-  },
-  getOne(id: number): Promise<ApiResponse<PersonalityQuestionItem>> {
-    return request.get(`/admin/personality/questions/${id}`)
   },
   create(data: {
     content: string
@@ -169,9 +160,6 @@ export const personalityTypeApi = {
   },
   options(): Promise<ApiResponse<PersonalityTypeOption[]>> {
     return request.get('/admin/personality/types/options')
-  },
-  getOne(id: number): Promise<ApiResponse<PersonalityTypeItem>> {
-    return request.get(`/admin/personality/types/${id}`)
   },
   create(data: Partial<PersonalityTypeItem>): Promise<ApiResponse<PersonalityTypeItem>> {
     return request.post('/admin/personality/types', data)

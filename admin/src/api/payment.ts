@@ -54,33 +54,11 @@ export const adminPayment = {
     return request.get('/admin/payment/orders', { params })
   },
 
-  orderDetail(id: number): Promise<ApiResponse<Order>> {
-    return request.get(`/admin/payment/orders/${id}`)
-  },
-
   refund(id: number, reason: string): Promise<ApiResponse> {
     return request.post(`/admin/payment/refund`, { orderId: id, reason })
   },
 
   stats(params: StatsParams): Promise<ApiResponse<any>> {
     return request.get('/admin/payment/stats', { params })
-  },
-}
-
-export const adminOrders = {
-  list(params: OrderFilter): Promise<ApiResponse<OrderListResponse>> {
-    return request.get('/admin/payment/orders', { params })
-  },
-
-  detail(id: number): Promise<ApiResponse<Order>> {
-    return request.get(`/admin/payment/orders/${id}`)
-  },
-
-  detailByOrderNo(orderNo: string): Promise<ApiResponse<Order>> {
-    return request.get(`/admin/payment/orders/${orderNo}`)
-  },
-
-  export(params: OrderFilter): Promise<ApiResponse<string>> {
-    return request.get('/admin/payment/orders', { params })
   },
 }

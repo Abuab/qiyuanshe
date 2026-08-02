@@ -49,15 +49,6 @@ export const adminChat = {
     return request.get('/admin/chat/resolve-user', { params: { publicId } })
   },
 
-  /** 所有用户会话列表 */
-  getAllConversations(params: {
-    page?: number
-    limit?: number
-    keyword?: string
-  }): Promise<ApiResponse<ConversationListResponse>> {
-    return request.get('/admin/chat/conversations', { params })
-  },
-
   /** 两个用户之间的消息记录 */
   getMessages(
     fromUserId: number,
@@ -94,11 +85,6 @@ export const adminChat = {
     return request.post('/admin/chat/monitor/end', { targetUserId })
   },
 
-  /** 获取用户活跃监控状态 */
-  getMonitorStatus(userId: number): Promise<ApiResponse<{ active: boolean; operatorName?: string }>> {
-    return request.get(`/admin/chat/monitor/status/${userId}`)
-  },
-
   /** 代发消息 */
   proxySend(targetUserId: number, toUserId: number, content: string): Promise<ApiResponse<any>> {
     return request.post('/admin/chat/proxy/send', { targetUserId, toUserId, content })
@@ -107,11 +93,6 @@ export const adminChat = {
   /** 操作日志查询 */
   getOperationLogs(params: Record<string, any>): Promise<ApiResponse<any>> {
     return request.get('/admin/chat/operation-logs', { params })
-  },
-
-  /** 活跃监控会话 */
-  getActiveSessions(): Promise<ApiResponse<any[]>> {
-    return request.get('/admin/chat/monitor/active')
   },
 
   /** 轮询增量拉取新消息 */

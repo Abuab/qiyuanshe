@@ -78,10 +78,6 @@ export const adminQuestion = {
     return request.delete(`/admin/questions/${id}`)
   },
 
-  sort(id: number, sortOrder: number): Promise<ApiResponse> {
-    return request.put(`/admin/questions/${id}/sort`, { sortOrder })
-  },
-
   getAnswers(questionId: number, page?: number, limit?: number): Promise<ApiResponse<AnswerListResponse>> {
     return request.get('/admin/questions/answers', { params: { questionId, page, limit } })
   },

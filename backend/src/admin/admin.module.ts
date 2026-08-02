@@ -78,8 +78,11 @@ import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
 import { BroadcastLog } from '../entities/BroadcastLog'
+import { AdminAuditLog } from '../entities/AdminAuditLog'
 import { AiModule } from '../ai/ai.module'
 import { UserModule } from '../user/user.module'
+import { AdminAuditLogController } from './admin-audit-log.controller'
+import { AdminAuditInterceptor } from './admin-audit.interceptor'
 
 @Module({
   imports: [
@@ -117,6 +120,7 @@ import { UserModule } from '../user/user.module'
       AiFeatureSwitchLog,
       Feedback,
       BroadcastLog,
+      AdminAuditLog,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,
@@ -148,6 +152,7 @@ import { UserModule } from '../user/user.module'
     AdminVipConfigController,
     AdminFeedbackController,
     AdminStoreCertController,
+    AdminAuditLogController,
   ],
   providers: [
     AdminUserService,
@@ -171,6 +176,7 @@ import { UserModule } from '../user/user.module'
     VipService,
     RedisService,
     AdminSeederService,
+    AdminAuditInterceptor,
   ],
   exports: [
     AdminUserService,

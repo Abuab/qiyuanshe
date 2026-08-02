@@ -50,7 +50,6 @@
       </div>
 
       <el-table
-        ref="tableRef"
         :data="tableData"
         v-loading="loading"
         row-key="id"

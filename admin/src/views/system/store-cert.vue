@@ -1,5 +1,5 @@
 <template>
-  <div class="store-cert-config-page">
+  <div class="store-cert-config-page" v-loading="loading">
     <el-card class="config-card">
       <template #header>
         <div class="card-header">
@@ -48,6 +48,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import type { FormInstance } from 'element-plus'
 import request from '../../api/request'
 
 interface StoreCertForm {
@@ -66,6 +67,7 @@ const form = reactive<StoreCertForm>({
 
 const saving = ref(false)
 const loading = ref(false)
+const formRef = ref<FormInstance>()
 
 // 注：这里使用 window.fetch 直接调后端，避免依赖复杂的 admin API 层
 // 管理后台的 request 拦截器会自动加上 token

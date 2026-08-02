@@ -57,6 +57,28 @@ export class AdminLoginController {
     private readonly redisService: RedisService,
   ) {}
 
+  /** 生成管理员 token 对（accessToken + refreshToken） */
+  private generateTokens(adminUser: { id: number; username: string; role: string; tokenVersion: number }) {
+    const payload = {
+      sub: adminUser.id,
+      username: adminUser.username,
+      role: adminUser.role,
+      tokenVersion: adminUser.tokenVersion,
+    }
+
+    const accessToken = this.jwtService.sign(
+      { ...payload, type: 'admin_access' },
+      { secret: adminJwtConfig.secret, expiresIn: adminJwtConfig.expiresIn },
+    )
+
+    const refreshToken = this.jwtService.sign(
+      { ...payload, type: 'admin_refresh' },
+      { secret: adminJwtConfig.secret, expiresIn: adminJwtConfig.refreshTokenExpiresIn },
+    )
+
+    return { accessToken, refreshToken }
+  }
+
   /**
    * 获取登录尝试记录：优先从 Redis 读取，不可用时降级为内存 Map
    */
@@ -158,13 +180,7 @@ export class AdminLoginController {
       }
     }
 
-    const token = this.jwtService.sign(
-      { sub: adminUser.id, username: adminUser.username, role: adminUser.role, type: 'admin' },
-      {
-        secret: adminJwtConfig.secret,
-        expiresIn: adminJwtConfig.expiresIn,
-      },
-    )
+    const tokens = this.generateTokens(adminUser)
 
     const user = {
       id: adminUser.id,
@@ -178,7 +194,7 @@ export class AdminLoginController {
 
     const permissions = this.getPermissionsByRole(adminUser.role)
 
-    return { success: true, token, user, permissions }
+    return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
   }
 
   @Post('mfa/login-verify')
@@ -210,13 +226,7 @@ export class AdminLoginController {
       return { success: false, message: '账号不存在' }
     }
 
-    const token = this.jwtService.sign(
-      { sub: adminUser.id, username: adminUser.username, role: adminUser.role, type: 'admin' },
-      {
-        secret: adminJwtConfig.secret,
-        expiresIn: adminJwtConfig.expiresIn,
-      },
-    )
+    const tokens = this.generateTokens(adminUser)
 
     const user = {
       id: adminUser.id,
@@ -230,7 +240,41 @@ export class AdminLoginController {
 
     const permissions = this.getPermissionsByRole(adminUser.role)
 
-    return { success: true, token, user, permissions }
+    return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
+  }
+
+  // ===== Token 刷新 =====
+
+  @Post('auth/refresh')
+  async refreshToken(@Body() dto: { refreshToken: string }) {
+    const { refreshToken } = dto
+    if (!refreshToken) {
+      return { success: false, message: '缺少 refreshToken' }
+    }
+
+    let payload: any
+    try {
+      payload = this.jwtService.verify(refreshToken, { secret: adminJwtConfig.secret })
+    } catch {
+      return { success: false, message: 'refreshToken 无效或已过期' }
+    }
+
+    if (payload.type !== 'admin_refresh') {
+      return { success: false, message: '无效的令牌类型' }
+    }
+
+    const adminUser = await this.adminAccountService.findById(payload.sub)
+    if (!adminUser || adminUser.status !== 1) {
+      return { success: false, message: '账号不存在或已禁用' }
+    }
+
+    // 验证 tokenVersion
+    if (payload.tokenVersion !== undefined && adminUser.tokenVersion !== payload.tokenVersion) {
+      return { success: false, message: '令牌已失效，请重新登录' }
+    }
+
+    const tokens = this.generateTokens(adminUser)
+    return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken }
   }
 
   // ===== 子账号管理接口（仅超级管理员） =====

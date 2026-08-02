@@ -149,7 +149,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   personalityQuestionApi,
   personalityDimensionApi,
@@ -327,15 +327,23 @@ const toggleEnabled = async (row: PersonalityQuestionItem) => {
   try {
     await personalityQuestionApi.setStatus(row.id, next)
     row.isEnabled = next
-  } catch { /* ignore */ }
+    ElMessage.success(next === 1 ? '已启用' : '已禁用')
+  } catch {
+    ElMessage.error('状态切换失败')
+  }
 }
 
 const handleDelete = async (row: PersonalityQuestionItem) => {
   try {
+    await ElMessageBox.confirm('确定删除该题目？', '删除确认', { type: 'warning' })
     await personalityQuestionApi.remove(row.id)
     ElMessage.success('删除成功')
     loadList()
-  } catch { /* ignore */ }
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const moveUp = async (row: PersonalityQuestionItem) => {
@@ -350,16 +358,27 @@ const moveDown = async (row: PersonalityQuestionItem) => {
 
 const batchEnable = async (isEnabled: number) => {
   if (!selectedIds.value.length) return
-  await personalityQuestionApi.batchSetStatus(selectedIds.value, isEnabled)
-  ElMessage.success('批量操作成功')
-  loadList()
+  try {
+    await personalityQuestionApi.batchSetStatus(selectedIds.value, isEnabled)
+    ElMessage.success('批量操作成功')
+    loadList()
+  } catch {
+    ElMessage.error('批量操作失败')
+  }
 }
 const batchDelete = async () => {
   if (!selectedIds.value.length) return
-  await personalityQuestionApi.batchRemove(selectedIds.value)
-  ElMessage.success('批量删除成功')
-  selectedIds.value = []
-  loadList()
+  try {
+    await ElMessageBox.confirm(`确定要删除选中的 ${selectedIds.value.length} 道题目吗？`, '批量删除确认', { type: 'warning' })
+    await personalityQuestionApi.batchRemove(selectedIds.value)
+    ElMessage.success('批量删除成功')
+    selectedIds.value = []
+    loadList()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error('批量删除失败')
+    }
+  }
 }
 
 onMounted(() => {

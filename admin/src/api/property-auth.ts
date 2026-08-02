@@ -1,25 +1,23 @@
 import request from './request'
+import type { ApiResponse } from './request'
 
-export function getPropertyAuthList(params: {
-  page?: number
-  pageSize?: number
-  status?: number | string
-}) {
-  return request({
-    url: '/property-auth/admin/list',
-    method: 'get',
-    params,
-  })
-}
-
-export function auditPropertyAuth(data: {
+export interface PropertyAuthItem {
   id: number
+  userId: number
+  nickname?: string
+  avatar?: string
   status: number
   rejectReason?: string
-}) {
-  return request({
-    url: '/property-auth/admin/audit',
-    method: 'post',
-    data,
-  })
+  imageUrl?: string
+  createdAt: string
+}
+
+export const propertyAuthApi = {
+  list(params: { page?: number; pageSize?: number; status?: number | string }): Promise<ApiResponse<{ list: PropertyAuthItem[]; total: number }>> {
+    return request.get('/property-auth/admin/list', { params })
+  },
+
+  audit(data: { id: number; status: number; rejectReason?: string }): Promise<ApiResponse> {
+    return request.post('/property-auth/admin/audit', data)
+  },
 }

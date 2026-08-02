@@ -1,5 +1,5 @@
 <template>
-  <div class="stats-card" :style="{ borderLeftColor: color }">
+  <div class="stats-card" :style="{ borderLeftColor: color }" :class="{ 'stats-card--alert': alert }">
     <div class="card-header">
       <span class="card-title">{{ title }}</span>
       <el-icon class="card-icon" :style="{ color }">
@@ -33,6 +33,7 @@ interface Props {
   color?: string
   change?: number
   prefix?: string
+  alert?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -41,6 +42,7 @@ const props = withDefaults(defineProps<Props>(), {
   color: '#409EFF',
   change: undefined,
   prefix: '',
+  alert: false,
 })
 
 const displayValue = computed(() => {
@@ -70,6 +72,16 @@ const changeClass = computed(() => ({
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
+
+  &--alert {
+    animation: alert-pulse 2s ease-in-out infinite;
+    box-shadow: 0 2px 12px rgba(245, 108, 108, 0.2);
+  }
+}
+
+@keyframes alert-pulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(245, 108, 108, 0.2); }
+  50% { box-shadow: 0 2px 20px rgba(245, 108, 108, 0.4); }
 }
 
 .card-header {

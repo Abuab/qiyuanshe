@@ -94,14 +94,14 @@
       <el-button type="primary" :loading="saving" @click="handleSave">
         保存配置
       </el-button>
-      <el-button @click="fetchConfig">重置</el-button>
+      <el-button @click="handleReset">重置</el-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminSystem } from '../../api'
 
 const saving = ref(false)
@@ -128,6 +128,16 @@ async function fetchConfig() {
     }
   } catch (error) {
     console.error('获取配额配置失败:', error)
+  }
+}
+
+async function handleReset() {
+  try {
+    await ElMessageBox.confirm('重置将丢弃当前未保存的修改，确定继续？', '确认重置', { type: 'warning' })
+    await fetchConfig()
+    ElMessage.success('已重置')
+  } catch {
+    // 用户取消
   }
 }
 

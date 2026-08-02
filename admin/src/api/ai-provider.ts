@@ -48,34 +48,6 @@ export interface BalanceAlertRecord {
   lastAlertAt?: string
 }
 
-/** 成本统计项 */
-export interface CostStats {
-  providerId: number
-  providerName: string
-  totalCalls: number
-  successCalls: number
-  failedCalls: number
-  totalInputTokens: number
-  totalOutputTokens: number
-  estimatedCost: number
-  avgDurationMs: number
-}
-
-/** 调用摘要 */
-export interface StatsSummary {
-  todayCalls: number
-  todayCost: number
-  activeProviders: number
-  totalProviders: number
-}
-
-/** 调用类型统计 */
-export interface CallTypeStats {
-  callType: string
-  totalCalls: number
-  byProvider: Record<string, number>
-}
-
 export const aiProviderApi = {
   // ==================== Provider CRUD ====================
   /** 获取所有 Provider 列表 */
@@ -101,11 +73,6 @@ export const aiProviderApi = {
   /** 设为默认 Provider */
   setDefault(id: number): Promise<ApiResponse> {
     return request.put(`/admin/ai/provider/${id}/set-default`)
-  },
-
-  /** 同步 Redis */
-  syncRedis(): Promise<ApiResponse> {
-    return request.post('/admin/ai/provider/sync-redis')
   },
 
   /** 从 .env 同步 Provider 到数据库 */
@@ -135,11 +102,6 @@ export const aiProviderApi = {
     return request.get('/admin/ai/provider/cooldown-list')
   },
 
-  /** 手动恢复 */
-  recoverProvider(id: number): Promise<ApiResponse> {
-    return request.post(`/admin/ai/provider/${id}/recover`)
-  },
-
   // ==================== 余额 ====================
   /** 余额告警列表 */
   getBalanceAlerts(): Promise<ApiResponse<BalanceAlertRecord[]>> {
@@ -149,32 +111,6 @@ export const aiProviderApi = {
   /** 手动查询单个余额 */
   queryBalance(id: number): Promise<ApiResponse<BalanceAlertRecord>> {
     return request.post(`/admin/ai/provider/balance/query/${id}`)
-  },
-
-  /** 全量余额检查 */
-  checkAllBalances(): Promise<ApiResponse<{ checked: number; alerted: number }>> {
-    return request.post('/admin/ai/provider/balance/check-all')
-  },
-
-  // ==================== 统计 ====================
-  /** 摘要 */
-  getStatsSummary(): Promise<ApiResponse<StatsSummary>> {
-    return request.get('/admin/ai/provider/stats/summary')
-  },
-
-  /** 每日统计 */
-  getDailyStats(): Promise<ApiResponse<CostStats[]>> {
-    return request.get('/admin/ai/provider/stats/daily')
-  },
-
-  /** 成本统计 (日期范围) */
-  getCostStats(params: { startDate?: string; endDate?: string }): Promise<ApiResponse<CostStats[]>> {
-    return request.get('/admin/ai/provider/stats/cost', { params })
-  },
-
-  /** 调用类型统计 */
-  getCallTypeStats(params: { startDate?: string; endDate?: string }): Promise<ApiResponse<CallTypeStats[]>> {
-    return request.get('/admin/ai/provider/stats/call-types', { params })
   },
 
   /** 调用日志查询 */

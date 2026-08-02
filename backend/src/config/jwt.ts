@@ -63,4 +63,6 @@ export const jwtConfig = {
 export const adminJwtConfig = {
   get secret() { return getAdminJwtSecret() },
   expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '24h',
+  /** admin refreshToken 有效期，默认 7 天 */
+  refreshTokenExpiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRES_IN || '7d',
 }

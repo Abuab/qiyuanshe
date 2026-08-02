@@ -1,5 +1,5 @@
 <template>
-  <div class="question-edit">
+  <div class="question-edit" v-loading="loading">
     <div class="page-header">
       <el-button @click="handleBack" :icon="ArrowLeft">返回</el-button>
       <h2 class="page-title">{{ isEdit ? '编辑问题' : '添加问题' }}</h2>

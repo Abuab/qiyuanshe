@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
+import { isRouteAllowed } from '../config/permissions'
+import { ElMessage } from 'element-plus'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -130,6 +132,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '人工审核队列', requiresAuth: true },
       },
       {
+        path: '/audit-log',
+        name: 'AuditLogList',
+        component: () => import('../views/audit-log/index.vue'),
+        meta: { title: '操作审计日志', requiresAuth: true },
+      },
+      {
         path: '/agreement',
         name: 'AgreementEdit',
         component: () => import('../views/agreement/edit.vue'),
@@ -256,6 +264,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '套餐管理', requiresAuth: true },
       },
       {
+        path: '/vip/page-config',
+        name: 'VipPageConfig',
+        component: () => import('../views/vip/page-config.vue'),
+        meta: { title: '页面配置', requiresAuth: true },
+      },
+      {
         path: '/feedback',
         name: 'FeedbackList',
         component: () => import('../views/feedback/index.vue'),
@@ -345,6 +359,14 @@ router.beforeEach((to, from, next) => {
   }
 
   if (to.name === 'Login' && adminStore.isLoggedIn) {
+    next({ name: 'Dashboard' })
+    return
+  }
+
+  // 角色-路由权限守卫
+  const role = adminStore.userInfo?.role
+  if (role && !isRouteAllowed(role, to.path)) {
+    ElMessage.warning('无权访问该页面')
     next({ name: 'Dashboard' })
     return
   }

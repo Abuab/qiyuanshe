@@ -2,12 +2,24 @@
   <div class="dashboard">
     <div class="dashboard-header">
       <h2 class="page-title">数据看板</h2>
-      <el-radio-group v-model="timeRange" size="default" @change="handleTimeRangeChange">
-        <el-radio-button label="today">今日</el-radio-button>
-        <el-radio-button label="week">本周</el-radio-button>
-        <el-radio-button label="month">本月</el-radio-button>
-        <el-radio-button label="year">本年</el-radio-button>
-      </el-radio-group>
+      <div class="header-actions">
+        <el-tooltip :content="autoRefresh ? '点击关闭自动刷新' : '点击开启自动刷新'" placement="bottom">
+          <el-button
+            :type="autoRefresh ? 'success' : 'default'"
+            size="small"
+            @click="toggleAutoRefresh"
+          >
+            <el-icon><Refresh /></el-icon>
+            {{ autoRefresh ? `自动刷新 ${refreshInterval}s` : '自动刷新' }}
+          </el-button>
+        </el-tooltip>
+        <el-radio-group v-model="timeRange" size="default" @change="handleTimeRangeChange">
+          <el-radio-button label="today">今日</el-radio-button>
+          <el-radio-button label="week">本周</el-radio-button>
+          <el-radio-button label="month">本月</el-radio-button>
+          <el-radio-button label="year">本年</el-radio-button>
+        </el-radio-group>
+      </div>
     </div>
 
     <el-row :gutter="20" class="stats-row">
@@ -27,6 +39,7 @@
           icon="Plus"
           color="#67C23A"
           :change="stats.todayGrowth"
+          :alert="stats.todayGrowth < 0"
         />
       </el-col>
       <el-col :span="6">
@@ -36,6 +49,7 @@
           suffix="人"
           icon="Medal"
           color="#E6A23C"
+          :alert="false"
         />
       </el-col>
       <el-col :span="6">
@@ -46,6 +60,7 @@
           icon="Money"
           color="#F56C6C"
           :change="stats.revenueGrowth"
+          :alert="stats.revenueGrowth < -20"
         />
       </el-col>
     </el-row>
@@ -162,7 +177,8 @@ import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import StatsCard from '../components/stats-card.vue'
 import { ElMessage } from 'element-plus'
-import { adminDashboard, adminUsers, adminOrders } from '../api'
+import { Refresh } from '@element-plus/icons-vue'
+import { adminDashboard, adminUsers, adminPayment } from '../api'
 import { formatDate } from '../utils/date'
 
 interface Stats {
@@ -218,6 +234,11 @@ const latestUsers = ref<any[]>([])
 const latestOrders = ref<any[]>([])
 const cachedUserTrendData = ref<any[]>([])
 
+// 自动刷新
+const autoRefresh = ref(false)
+const refreshInterval = ref(30)
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
 let userChart: echarts.ECharts | null = null
 let genderChart: echarts.ECharts | null = null
 let ageChart: echarts.ECharts | null = null
@@ -238,6 +259,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  stopAutoRefresh()
   userChart?.dispose()
   genderChart?.dispose()
   ageChart?.dispose()
@@ -245,12 +267,28 @@ onUnmounted(() => {
   funnelChart?.dispose()
 })
 
+function toggleAutoRefresh() {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    refreshTimer = setInterval(fetchDashboardData, refreshInterval.value * 1000)
+  } else {
+    stopAutoRefresh()
+  }
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
 async function fetchDashboardData() {
   try {
     const results = await Promise.allSettled([
       adminDashboard.getStats({ timeRange: timeRange.value }),
       adminUsers.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
-      adminOrders.list({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
+      adminPayment.orders({ page: 1, limit: 10, sort: 'createdAt', order: 'desc' }),
       adminDashboard.getUserTrend({ timeRange: timeRange.value }),
       adminDashboard.getGenderDistribution(),
       adminDashboard.getAgeDistribution(),
@@ -703,6 +741,12 @@ function getVipName(level: number) {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .page-title {

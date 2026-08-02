@@ -206,7 +206,10 @@ const toggleEnabled = async (row: PersonalityDimensionItem) => {
   try {
     await personalityDimensionApi.setStatus(row.id, next)
     row.isEnabled = next
-  } catch { /* ignore */ }
+    ElMessage.success(next === 1 ? '已启用' : '已禁用')
+  } catch {
+    ElMessage.error('状态切换失败')
+  }
 }
 
 const handleDelete = async (row: PersonalityDimensionItem) => {

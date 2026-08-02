@@ -295,7 +295,10 @@ const toggleEnabled = async (row: PersonalityTypeItem) => {
   try {
     await personalityTypeApi.setStatus(row.id, next)
     row.isEnabled = next
-  } catch { /* ignore */ }
+    ElMessage.success(next === 1 ? '已启用' : '已禁用')
+  } catch {
+    ElMessage.error('状态切换失败')
+  }
 }
 
 const handleDelete = async (row: PersonalityTypeItem) => {
@@ -304,7 +307,9 @@ const handleDelete = async (row: PersonalityTypeItem) => {
     ElMessage.success('删除成功')
     loadList()
     loadOptions()
-  } catch { /* ignore */ }
+  } catch {
+    ElMessage.error('删除失败')
+  }
 }
 
 onMounted(() => {

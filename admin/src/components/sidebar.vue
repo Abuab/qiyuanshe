@@ -124,6 +124,7 @@
           <span>会员管理</span>
         </template>
         <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
+        <el-menu-item index="/vip/page-config">页面配置</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canManageActivity" index="/activity">
@@ -175,6 +176,7 @@
         <el-menu-item index="/system/quota">用量限额</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
+        <el-menu-item index="/audit-log">操作审计日志</el-menu-item>
       </el-sub-menu>
     </el-menu>
 
@@ -203,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
