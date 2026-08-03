@@ -778,11 +778,6 @@
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="密码" :prop="editingUserId ? undefined : 'password'">
-              <el-input v-model="createForm.password" type="password" :placeholder="editingUserId ? '留空则不修改密码' : '请输入密码'" show-password />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
             <el-form-item label="性别" prop="gender">
               <el-radio-group v-model="createForm.gender">
                 <el-radio :label="1">男</el-radio>
@@ -1681,7 +1676,6 @@ const createForm = reactive({
   avatar: '',
   nickname: '',
   phone: '',
-  password: '',
   gender: 1,
   birthYear: undefined as number | undefined,
   birthMonth: undefined as number | undefined,
@@ -1723,7 +1717,6 @@ const createForm = reactive({
 const createRules = {
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
 }
 
@@ -1942,7 +1935,6 @@ async function handleCreate() {
     avatar: '',
     nickname: '',
     phone: '',
-    password: '',
     gender: 1,
     birthYear: undefined,
     birthMonth: undefined,
@@ -2000,8 +1992,8 @@ async function handleCreate() {
 }
 
 async function handleCreateSubmit() {
-  if (!editingUserId.value && (!createForm.nickname || !createForm.phone || !createForm.password)) {
-    ElMessage.warning('请填写昵称、手机号和密码')
+  if (!editingUserId.value && (!createForm.nickname || !createForm.phone)) {
+    ElMessage.warning('请填写昵称和手机号')
     return
   }
   if (!createForm.nickname || !createForm.phone) {
@@ -2028,9 +2020,6 @@ async function handleCreateSubmit() {
     // Edit mode — personalityTags 和 hopeTaTags 已在 payload 中按数组格式赋值
     editLoading.value = true
     try {
-      if (!payload.password) {
-        delete payload.password
-      }
       delete payload.photoUrls
       await adminUsers.update(editingUserId.value, payload)
 
@@ -2205,7 +2194,6 @@ async function handleEditUser(row: User) {
     avatar: '',
     nickname: '',
     phone: '',
-    password: '',
     gender: 1,
     birthYear: undefined,
     birthMonth: undefined,
@@ -2274,7 +2262,6 @@ async function handleEditUser(row: User) {
   createForm.avatar = user.avatar || ''
   createForm.nickname = user.nickname || ''
   createForm.phone = user.phone || ''
-  createForm.password = ''
   createForm.gender = user.gender || 1
   createForm.birthYear = user.birthYear ?? undefined
   createForm.birthMonth = user.birthMonth ?? undefined

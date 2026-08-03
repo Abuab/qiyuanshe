@@ -620,9 +620,6 @@
             </el-row>
             <el-row :gutter="12">
               <el-col :span="12">
-                <el-form-item label="密码"><el-input v-model="editForm.password" type="password" placeholder="留空则不修改" show-password /></el-form-item>
-              </el-col>
-              <el-col :span="12">
                 <el-form-item label="性别">
                   <el-radio-group v-model="editForm.gender">
                     <el-radio :value="1">男</el-radio>
@@ -1274,7 +1271,7 @@ const notifyForm = reactive({ title: '', content: '' })
 const editDialogVisible = ref(false)
 const editSaving = ref(false)
 const editForm = reactive({
-  nickname: '', phone: '', password: '', gender: 0, birthYear: undefined as number | undefined,
+  nickname: '', phone: '', gender: 0, birthYear: undefined as number | undefined,
   birthMonth: undefined as number | undefined, birthDay: undefined as number | undefined,
   height: undefined as number | undefined, weight: undefined as number | undefined,
   education: '', occupation: '', incomeRange: '', housingStatus: '', carStatus: '',
@@ -2044,7 +2041,6 @@ async function handleEditProfile() {
   const u = user.value
   editForm.nickname = u.nickname || ''
   editForm.phone = u.phone || ''
-  editForm.password = ''
   editForm.gender = u.gender || 0
   editForm.birthYear = u.birthYear
   editForm.birthMonth = u.birthMonth
@@ -2156,8 +2152,6 @@ async function handleEditSave() {
       status: editForm.status, isRealName: editForm.isRealName,
       showBasicProfile: editForm.showBasicProfile, delegateToPlatform: editForm.delegateToPlatform,
     }
-    // 仅当密码非空时才传入
-    if (editForm.password) data.password = editForm.password
     // 清理 null 值以防止 DTO 验证失败
     const numericKeys = ['birthMonth', 'birthDay', 'birthYear', 'height', 'weight']
     for (const key of numericKeys) {
