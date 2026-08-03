@@ -40,11 +40,12 @@
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="270" fixed="right">
           <template #default="{ row }">
             <template v-if="row.role !== 'super_admin'">
               <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
               <el-button type="warning" link @click="handleResetPwd(row)">重置密码</el-button>
+              <el-button type="success" link @click="handleImpersonate(row)">一键登录</el-button>
               <el-popconfirm
                 title="确定要删除该子账号吗？"
                 @confirm="handleDelete(row.id)"
@@ -128,10 +129,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminAccountApi } from '../../api/admin-user'
+import { useAdminStore } from '../../store/admin'
 import { formatDate } from '../../utils/date'
 import type { AdminAccount } from '../../api/admin-user'
+
+const adminStore = useAdminStore()
 
 const loading = ref(false)
 const tableData = ref<AdminAccount[]>([])
@@ -269,6 +273,19 @@ async function handleDelete(id: number) {
   } catch (error: any) {
     ElMessage.error(error?.message || '删除失败')
   }
+}
+
+async function handleImpersonate(row: AdminAccount) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要以 ${row.nickname || row.username}（${getRoleName(row.role)}）的身份登录吗？退出登录后将自动恢复超级管理员身份。`,
+      '一键登录确认',
+      { type: 'warning' },
+    )
+  } catch {
+    return // 用户取消
+  }
+  await adminStore.impersonate(row.id)
 }
 
 function getRoleName(role: string) {

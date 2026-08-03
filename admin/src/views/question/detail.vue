@@ -66,7 +66,6 @@
               {{ formatDate(row.createdAt) }}
             </template>
           </el-table-column>
-          <el-table-column prop="likeCount" label="点赞数" width="90" align="center" />
           <el-table-column prop="status" label="审核状态" width="110">
             <template #default="{ row }">
               <el-tag :type="getAnswerStatusType(row.status)" size="small">

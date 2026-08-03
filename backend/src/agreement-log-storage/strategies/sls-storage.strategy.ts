@@ -190,20 +190,33 @@ export class SlsStorageStrategy implements IAgreementLogStorageStrategy {
       this.logger.error(`SLS write failed: ${e?.message}, falling back to local`)
     }
 
-    // 本地备份（默认开启）
+    // 本地备份（默认开启），按 userId + agreementType 去重
     if (this.localBackup || !slsSuccess) {
       try {
-        const entity = this.localRepo.create({
-          userId: log.userId,
-          agreementType: log.agreementType,
-          version: log.version,
-          action: log.action,
-          ipAddress: log.ipAddress,
-          userAgent: log.userAgent,
-          storageSource: slsSuccess ? 'sls' : 'local',
-          slsLogId: logId || undefined,
+        const existing = await this.localRepo.findOne({
+          where: { userId: log.userId, agreementType: log.agreementType },
         })
-        await this.localRepo.save(entity)
+        if (existing) {
+          existing.version = log.version
+          existing.action = log.action
+          existing.ipAddress = log.ipAddress
+          existing.userAgent = log.userAgent
+          existing.storageSource = slsSuccess ? 'sls' : 'local'
+          existing.slsLogId = logId || undefined
+          await this.localRepo.save(existing)
+        } else {
+          const entity = this.localRepo.create({
+            userId: log.userId,
+            agreementType: log.agreementType,
+            version: log.version,
+            action: log.action,
+            ipAddress: log.ipAddress,
+            userAgent: log.userAgent,
+            storageSource: slsSuccess ? 'sls' : 'local',
+            slsLogId: logId || undefined,
+          })
+          await this.localRepo.save(entity)
+        }
       } catch (e: any) {
         this.logger.error(`Local backup write failed: ${e?.message}`)
       }

@@ -36,6 +36,11 @@ instance.interceptors.response.use(
   async (response) => {
     const { data, config } = response
 
+    // 文件下载类请求（responseType: 'blob'），直接透传原始 response
+    if (config.responseType === 'blob' && data instanceof Blob) {
+      return data
+    }
+
     if (data === null || data === undefined) {
       return { success: true, data: null }
     }

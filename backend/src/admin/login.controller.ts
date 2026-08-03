@@ -311,6 +311,36 @@ export class AdminLoginController {
     return { success: true, message: '删除成功' }
   }
 
+  @Post('admin-users/:id/impersonate')
+  @Roles(AdminRole.SUPER_ADMIN)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  async impersonate(@Param('id', ParseIntPipe) id: number) {
+    const target = await this.adminAccountService.findById(id)
+    if (!target) {
+      return { success: false, message: '子账号不存在' }
+    }
+    if (target.status !== 1) {
+      return { success: false, message: '该账号已被禁用，无法登录' }
+    }
+
+    const tokens = this.generateTokens(target)
+
+    return {
+      success: true,
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: target.id,
+        username: target.username,
+        nickname: target.nickname || target.username,
+        role: target.role,
+        avatar: target.avatar || '',
+        mfaEnabled: target.isMfaEnabled || false,
+        mfaType: 'none',
+      },
+    }
+  }
+
   private getPermissionsByRole(role: AdminRole): string[] {
     switch (role) {
       case AdminRole.SUPER_ADMIN:

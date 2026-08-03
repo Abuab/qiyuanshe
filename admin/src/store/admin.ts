@@ -29,6 +29,7 @@ export const useAdminStore = defineStore('admin', () => {
   const pendingCirclePostCount = ref(0)
 
   const isLoggedIn = computed(() => !!token.value)
+  const isImpersonating = computed(() => !!sessionStorage.getItem('admin_original_session'))
 
   function initApp() {
     const savedToken = localStorage.getItem('admin_token')
@@ -106,6 +107,25 @@ export const useAdminStore = defineStore('admin', () => {
   }
 
   function logout() {
+    // 如果是模拟登录状态，恢复到超级管理员原始会话
+    const original = sessionStorage.getItem('admin_original_session')
+    if (original) {
+      try {
+        const parsed = JSON.parse(original)
+        token.value = parsed.token || ''
+        userInfo.value = parsed.user || null
+        localStorage.setItem('admin_token', parsed.token || '')
+        localStorage.setItem('admin_user', JSON.stringify(parsed.user))
+        if (parsed.refreshToken) {
+          localStorage.setItem('admin_refresh_token', parsed.refreshToken)
+        }
+        sessionStorage.removeItem('admin_original_session')
+        ElMessage.success('已恢复超级管理员身份')
+        router.push({ name: 'AdminUserList' })
+        return
+      } catch { /* ignore */ }
+    }
+
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('admin_token')
@@ -124,6 +144,24 @@ export const useAdminStore = defineStore('admin', () => {
     if (userInfo.value) {
       userInfo.value = { ...userInfo.value, ...info }
       localStorage.setItem('admin_user', JSON.stringify(userInfo.value))
+    }
+  }
+
+  /** 超级管理员一键模拟登录为子账号 */
+  async function impersonate(targetId: number) {
+    const { adminAccountApi } = await import('../api/admin-user')
+    const res = await adminAccountApi.impersonate(targetId)
+    if (res && res.success) {
+      // 保存当前超级管理员会话到 sessionStorage
+      sessionStorage.setItem('admin_original_session', JSON.stringify({
+        token: token.value,
+        user: userInfo.value,
+        refreshToken: localStorage.getItem('admin_refresh_token') || '',
+      }))
+      // 替换为子账号
+      finishLogin(res)
+    } else {
+      ElMessage.error(res?.message || '模拟登录失败')
     }
   }
 
@@ -155,12 +193,14 @@ export const useAdminStore = defineStore('admin', () => {
     pendingCarCount,
     pendingCirclePostCount,
     isLoggedIn,
+    isImpersonating,
     initApp,
     login,
     mfaLoginVerify,
     logout,
     toggleSidebar,
     updateUserInfo,
+    impersonate,
     fetchPendingAuditCount,
   }
 })

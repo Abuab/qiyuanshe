@@ -25,6 +25,19 @@ export class LocalStorageStrategy implements IAgreementLogStorageStrategy {
   ) {}
 
   async save(log: AgreementLogData): Promise<{ id: string }> {
+    // 按 userId + agreementType 去重：同用户同协议只保留一条记录，再次同意时更新
+    const existing = await this.repo.findOne({
+      where: { userId: log.userId, agreementType: log.agreementType },
+    })
+    if (existing) {
+      existing.version = log.version
+      existing.action = log.action
+      existing.ipAddress = log.ipAddress
+      existing.userAgent = log.userAgent
+      existing.storageSource = 'local'
+      await this.repo.save(existing)
+      return { id: String(existing.id) }
+    }
     const entity = this.repo.create({
       userId: log.userId,
       agreementType: log.agreementType,

@@ -45,4 +45,9 @@ export const adminAccountApi = {
   delete(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/admin-users/${id}`)
   },
+
+  /** 超级管理员一键登录为子账号 */
+  impersonate(id: number): Promise<{ success: boolean; token: string; refreshToken: string; user: any; message?: string }> {
+    return request.post(`/admin/admin-users/${id}/impersonate`)
+  },
 }
