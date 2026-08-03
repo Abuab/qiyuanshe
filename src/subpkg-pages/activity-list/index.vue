@@ -34,6 +34,7 @@
       :refresher-triggered="isRefreshing"
       @refresherrefresh="onRefresh"
       @scrolltolower="onLoadMore"
+      :style="{ height: 'calc(100vh - ' + (88 + statusBarHeight) + 'px)' }"
     >
       <view class="activity-list">
         <view
@@ -309,11 +310,6 @@ onMounted(() => {
       }
     }
   }
-}
-
-/* 活动列表 */
-.activity-scroll {
-  height: calc(100vh - 176rpx);
 }
 
 .activity-list {
