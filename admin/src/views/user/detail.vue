@@ -674,21 +674,21 @@
               </el-col>
             </el-row>
             <el-row :gutter="12">
-              <el-col :span="12">
+              <el-col :span="8">
                 <el-form-item label="月收入">
                   <el-select v-model="editForm.incomeRange" placeholder="请选择" style="width:100%">
                     <el-option v-for="o in INCOME_OPTIONS" :key="o" :label="o" :value="o" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="8">
                 <el-form-item label="住房">
                   <el-select v-model="editForm.housingStatus" placeholder="请选择" style="width:100%">
                     <el-option v-for="o in HOUSING_OPTIONS" :key="o" :label="o" :value="o" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="8">
                 <el-form-item label="车辆">
                   <el-select v-model="editForm.carStatus" placeholder="请选择" style="width:100%">
                     <el-option v-for="o in CAR_OPTIONS" :key="o" :label="o" :value="o" />
@@ -697,14 +697,14 @@
               </el-col>
             </el-row>
             <el-row :gutter="12">
-              <el-col :span="8">
+              <el-col :span="12">
                 <el-form-item label="婚况">
                   <el-select v-model="editForm.maritalStatus" placeholder="请选择" style="width:100%">
                     <el-option v-for="o in MARITAL_OPTIONS" :key="o" :label="o" :value="o" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="12">
                 <el-form-item label="独生子女">
                   <el-select v-model="editForm.onlyChild" placeholder="请选择" clearable style="width:100%">
                     <el-option label="是" value="是" />
@@ -712,7 +712,9 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
                 <el-form-item label="何时结婚">
                   <el-select v-model="editForm.whenMarry" placeholder="请选择" clearable style="width:100%">
                     <el-option v-for="o in WHEN_MARRY_OPTIONS" :key="o" :label="o" :value="o" />
@@ -858,22 +860,28 @@
               </el-col>
             </el-row>
             <el-row :gutter="12">
-              <el-col :span="8">
+              <el-col :span="12">
                 <el-form-item label="住房要求">
                   <el-select v-model="editForm.housingRequirement" placeholder="请选择" clearable style="width:100%">
                     <el-option v-for="o in HOUSING_REQUIREMENT_OPTIONS" :key="o" :label="o" :value="o" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :span="12">
                 <el-form-item label="婚况要求">
                   <el-select v-model="editForm.partnerMaritalStatus" placeholder="请选择" style="width:100%">
                     <el-option v-for="o in MARITAL_OPTIONS" :key="o" :label="o" :value="o" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
-                <el-form-item label="接受小孩"><el-input v-model="editForm.acceptChildren" /></el-form-item>
+            </el-row>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="接受小孩">
+                  <el-select v-model="editForm.acceptChildren" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in ACCEPT_CHILDREN_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
               </el-col>
             </el-row>
           </el-form>
@@ -1292,6 +1300,7 @@ const HOUSING_OPTIONS = ['已购房', '未购房', '租房', '与父母同住', 
 const CAR_OPTIONS = ['已购车', '未购车']
 const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
 const HOUSING_REQUIREMENT_OPTIONS = ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置']
+const ACCEPT_CHILDREN_OPTIONS = ['不限', '不接受', '无所谓']
 
 const ZODIAC_OPTIONS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
 const CONSTELLATION_OPTIONS = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座']
