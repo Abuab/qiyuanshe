@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -58,6 +59,7 @@ export class UserProfileController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { title?: string; content: string; senderType?: string },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('通知内容不能超过500字')
     const notification = await this.profileService.sendNotification(
       id,
       body.title || '系统通知',
@@ -73,6 +75,7 @@ export class UserProfileController {
     @Body() body: { title: string; content: string; targetUserIds?: number[] },
     @Req() req: any,
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('通知内容不能超过500字')
     const senderId = req.user?.id
     const result = await this.profileService.broadcastNotification(
       body.title || '系统通知',
@@ -99,6 +102,7 @@ export class UserProfileController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { questionId: number; content: string },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('回答不能超过500字')
     const answer = await this.profileService.createAnswer(id, body.questionId, body.content)
     return Result.success(answer, '回答添加成功')
   }

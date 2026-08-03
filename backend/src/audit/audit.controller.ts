@@ -30,6 +30,7 @@ export class AuditController {
   }
 
   @Post('text')
+  @UseGuards(JwtAuthGuard)
   async auditText(@Body() dto: AuditTextDto) {
     return this.auditService.auditText(dto)
   }

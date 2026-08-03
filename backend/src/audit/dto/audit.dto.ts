@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsEnum, Min, Max } from 'class-validator'
+import { IsString, IsNumber, IsOptional, IsEnum, Min, Max, MaxLength } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export enum AuditType {
@@ -28,6 +28,7 @@ export class AuditPhotoDto {
 
 export class AuditTextDto {
   @IsString()
+  @MaxLength(1000, { message: '审核文本不能超过1000字' })
   text: string
 
   @IsEnum(AuditType)

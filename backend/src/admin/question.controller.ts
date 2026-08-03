@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Request,
+  BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -56,6 +57,7 @@ export class AdminQuestionController {
 
   @Post()
   async create(@Body() data: any, @Request() req: any) {
+    if (data.content && data.content.length > 500) throw new BadRequestException('问题内容不能超过500字')
     await this.questionService.create(data, req.user?.id)
     return Result.success(null, '添加成功')
   }

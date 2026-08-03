@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
@@ -66,6 +67,7 @@ export class AdminQuickQuestionController {
    */
   @Post()
   async create(@Body() body: any) {
+    if (body.content && body.content.length > 200) throw new BadRequestException('快捷问题不能超过200字')
     const data = await this.service.create(body)
     return Result.success(data, '新增成功')
   }
@@ -77,6 +79,7 @@ export class AdminQuickQuestionController {
    */
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any) {
+    if (body.content && body.content.length > 200) throw new BadRequestException('快捷问题不能超过200字')
     const data = await this.service.update(parseInt(id, 10), body)
     return Result.success(data, '更新成功')
   }

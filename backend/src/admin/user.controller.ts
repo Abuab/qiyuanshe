@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -228,9 +229,14 @@ export class AdminUserController {
       housingRequirement?: string
       partnerMaritalStatus?: string
       acceptChildren?: string
+      mateRequirement?: string
       photoUrls?: string[]
     },
   ) {
+    // 长度限制
+    if (body.nickname && body.nickname.length > 50) throw new BadRequestException('昵称不能超过50字')
+    if (body.phone && body.phone.length > 20) throw new BadRequestException('手机号格式不正确')
+    if (body.mateRequirement && body.mateRequirement.length > 2000) throw new BadRequestException('择偶要求不能超过2000字')
     const user = await this.userService.createUser({ ...body, adminId: req.user?.id })
     return Result.success(user, '用户创建成功')
   }
@@ -240,6 +246,9 @@ export class AdminUserController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: any,
   ) {
+    // 长度限制
+    if (body.mateRequirement && String(body.mateRequirement).length > 2000) throw new BadRequestException('择偶要求不能超过2000字')
+    if (body.nickname && String(body.nickname).length > 50) throw new BadRequestException('昵称不能超过50字')
     await this.userService.updateUser(id, body)
     return Result.success(null, '用户更新成功')
   }

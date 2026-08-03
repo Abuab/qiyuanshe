@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Request,
+  BadRequestException,
   ForbiddenException,
 } from '@nestjs/common'
 import { ThrottlerGuard } from '@nestjs/throttler'
@@ -738,6 +739,13 @@ export class UserController {
     @Body() body: { targetId: number; type: string; reason: string; description?: string; evidence?: string },
     @Request() req: any,
   ) {
+    // 长度限制
+    if (body.description && body.description.length > 500) {
+      throw new BadRequestException('描述不能超过500字')
+    }
+    if (body.evidence && body.evidence.length > 2000) {
+      throw new BadRequestException('证据不能超过2000字')
+    }
     const report = this.reportRepo.create({
       reporterId: req.user.id,
       targetId: body.targetId,

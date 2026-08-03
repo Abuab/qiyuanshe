@@ -214,20 +214,6 @@
           }
         },
         {
-          "path": "circle-posts/index",
-          "style": {
-            "navigationBarTitleText": "帖子列表",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "circle-publish/index",
-          "style": {
-            "navigationBarTitleText": "发帖",
-            "navigationStyle": "custom"
-          }
-        },
-        {
           "path": "success-cases/index",
           "style": {
             "navigationBarTitleText": "我们脱单了",

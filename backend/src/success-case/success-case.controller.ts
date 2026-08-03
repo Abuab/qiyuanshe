@@ -9,6 +9,7 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
@@ -91,6 +92,7 @@ export class AdminSuccessCaseController {
       status?: number
     },
   ) {
+    if (body.storyContent && body.storyContent.length > 10000) throw new BadRequestException('故事内容不能超过10000字')
     const item = await this.successCaseService.create(body)
     return Result.success(item, '创建成功')
   }

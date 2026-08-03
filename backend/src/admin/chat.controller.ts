@@ -150,6 +150,9 @@ export class AdminChatController {
     if (!content || !content.trim()) {
       return Result.error('消息内容不能为空', 400)
     }
+    if (content.length > 500) {
+      return Result.error('消息不能超过500字', 400)
+    }
 
     const operatorId = req.user.id
     const operatorName = req.user.nickname || '运营人员'

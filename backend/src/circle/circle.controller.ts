@@ -36,16 +36,6 @@ export class CircleController {
     return Result.success(circle)
   }
 
-  @Get(':id/posts')
-  async getPosts(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-  ) {
-    const result = await this.circleService.getPosts(id, +page, +limit)
-    return Result.success(result)
-  }
-
   @Get(':id/users')
   @UseGuards(OptionalJwtAuthGuard)
   async getCircleUsers(
@@ -56,34 +46,6 @@ export class CircleController {
   ) {
     const result = await this.circleService.getCircleUsers(id, +page, +limit, req?.user?.id)
     return Result.success(result)
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('posts')
-  async createPost(
-    @Request() req: any,
-    @Body() body: { circleId: number; content: string; images: string[] },
-  ) {
-    const post = await this.circleService.createPost({
-      circleId: body.circleId,
-      userId: req.user.id,
-      content: body.content,
-      images: body.images || [],
-    })
-    return Result.success(post)
-  }
-
-  @Get('post/:postId')
-  async getPostDetail(@Param('postId', ParseIntPipe) postId: number) {
-    const post = await this.circleService.getPostDetail(postId)
-    return Result.success(post)
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Delete('post/:postId')
-  async deletePost(@Param('postId', ParseIntPipe) postId: number) {
-    await this.circleService.deletePost(postId)
-    return Result.success({ postId }, '删除成功')
   }
 }
 
@@ -171,31 +133,5 @@ export class AdminCircleController {
   ) {
     await this.circleService.saveCircleMembersBatch(id, body.members || [])
     return Result.success(null, '保存成功')
-  }
-
-  @Get('posts')
-  async getPosts(
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Query('status') status: number,
-  ) {
-    const result = await this.circleService.getPostsAll(+page, +limit, status ? +status : undefined)
-    return Result.success(result)
-  }
-
-  @Put('posts/:id/audit')
-  async auditPost(
-    @Param('id', ParseIntPipe) id: number,
-    @Body('status') status: number,
-  ) {
-    await this.circleService.auditPost(id, status)
-    return Result.success(null, '操作成功')
-  }
-
-  @Delete('posts/:id')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR, AdminRole.MATCHMAKER)
-  async deletePost(@Param('id', ParseIntPipe) id: number) {
-    await this.circleService.deletePost(id)
-    return Result.success({ id }, '删除成功')
   }
 }

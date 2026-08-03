@@ -1,21 +1,17 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { FindOptionsWhere, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { Circle } from '../entities/Circle'
-import { CirclePost } from '../entities/CirclePost'
 import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { Follow } from '../entities/Follow'
-import { ContentFilterService } from '../common/content-filter.service'
 
 @Injectable()
 export class CircleService {
   constructor(
     @InjectRepository(Circle)
     private readonly circleRepo: Repository<Circle>,
-    @InjectRepository(CirclePost)
-    private readonly postRepo: Repository<CirclePost>,
     @InjectRepository(CircleMember)
     private readonly memberRepo: Repository<CircleMember>,
     @InjectRepository(User)
@@ -24,7 +20,6 @@ export class CircleService {
     private readonly commentRepo: Repository<MatchmakerComment>,
     @InjectRepository(Follow)
     private readonly followRepo: Repository<Follow>,
-    private readonly contentFilter: ContentFilterService,
   ) {}
 
   // ========== 小程序端 ==========
@@ -136,36 +131,6 @@ export class CircleService {
     return map
   }
 
-  async getPosts(circleId: number, page = 1, limit = 10) {
-    const [list, total] = await this.postRepo.findAndCount({
-      where: { circleId, status: 1 },
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    })
-    return { list, total, page, limit }
-  }
-
-  async createPost(data: { circleId: number; userId: number; content: string; images: string[] }) {
-    // 敏感词过滤
-    if (data.content) this.contentFilter.checkAndThrow(data.content, '帖子内容')
-    const post = this.postRepo.create({
-      ...data,
-      likes: 0,
-      comments: 0,
-      status: 1,
-    })
-    return this.postRepo.save(post)
-  }
-
-  async getPostDetail(id: number) {
-    return this.postRepo.findOne({ where: { id } })
-  }
-
-  async deletePost(id: number) {
-    await this.postRepo.update(id, { status: 0 })
-  }
-
   // ========== 管理后台 ==========
 
   async getCirclesAll() {
@@ -183,9 +148,8 @@ export class CircleService {
   }
 
   async deleteCircle(id: number) {
-    // 先删除该圈子下的成员、帖子
+    // 先删除该圈子下的成员
     await this.memberRepo.delete({ circleId: id } as any)
-    await this.postRepo.delete({ circleId: id } as any)
     // 再硬删除圈子
     await this.circleRepo.delete(id)
   }
@@ -303,23 +267,5 @@ export class CircleService {
       .andWhere('user.isDeleted = 0')
       .take(20)
       .getMany()
-  }
-
-  async getPostsAll(page = 1, limit = 10, status?: number) {
-    const where: FindOptionsWhere<CirclePost> = {}
-    if (status !== undefined && status !== null) {
-      where.status = status
-    }
-    const [list, total] = await this.postRepo.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    })
-    return { list, total, page, limit }
-  }
-
-  async auditPost(id: number, status: number) {
-    await this.postRepo.update(id, { status })
   }
 }

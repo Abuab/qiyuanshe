@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Request,
+  BadRequestException,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
@@ -44,6 +45,9 @@ export class MatchmakerCommentController {
     @Request() req: any,
     @Body() body: { userId: number; content: string; rating: number },
   ) {
+    if (body.content && body.content.length > 500) {
+      throw new BadRequestException('评语不能超过500字')
+    }
     const comment = await this.commentService.create({
       matchmakerId: req.user.id,
       userId: body.userId,
@@ -81,6 +85,7 @@ export class AdminMatchmakerCommentController {
   async create(
     @Body() body: { matchmakerId: number; userId: number; content: string; rating: number },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('评语不能超过500字')
     const comment = await this.commentService.create(body)
     return Result.success(comment)
   }
