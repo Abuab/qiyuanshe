@@ -46,9 +46,11 @@
 - **路由**: Vue Router 4
 
 ### 基础设施
-- **容器化**: Docker + Docker Compose
-- **反向代理**: Nginx
-- **SSL**: Let's Encrypt
+- **云服务器**: 腾讯云轻量应用服务器（4C4G / 70GB SSD）
+- **容器化**: Docker 24.0+ + Docker Compose 2.0+
+- **反向代理**: Nginx (Alpine)
+- **SSL**: Let's Encrypt（certbot 自动续期）
+- **监控**: 腾讯云云监控 + UptimeRobot（零服务器资源占用）
 
 ## 项目结构
 
@@ -1343,7 +1345,9 @@ bash scripts/cleanup.sh
 
 ### `scripts/monitor.sh` — 系统监控告警
 
-**用途**：监控服务器磁盘、内存使用率，以及 API 响应时间，自动发送告警。
+**用途**：本地脚本监控服务器磁盘、内存及 API 存活状态，通过 Webhook 发送告警。
+
+> **注意**：本脚本作为备用方案。推荐优先使用腾讯云轻量应用服务器自带的「云监控」告警策略 + UptimeRobot（详见上方「监控与告警方案」章节），无需消耗服务器资源。
 
 **用法**：
 
@@ -1357,11 +1361,11 @@ bash scripts/monitor.sh
 
 **监控指标**：
 
-| 指标 | 阈值 | 环境变量 |
-|------|------|----------|
-| 磁盘使用率 | 80% | `DISK_USAGE_THRESHOLD` |
-| 内存使用率 | 85% | `MEMORY_USAGE_THRESHOLD` |
-| API 响应时间 | 3000ms | `API_RESPONSE_TIME_THRESHOLD` |
+| 指标 | 阈值 | 说明 |
+|------|------|------|
+| 磁盘使用率 | 80% | 超过后发送企业微信/钉钉告警 |
+| 内存使用率 | 85% | 超过后发送企业微信/钉钉告警 |
+| API 响应时间 | 3000ms | 超过后发送企业微信/钉钉告警 |
 
 **告警渠道**（`.env` 中配置）：
 - 企业微信机器人：`WECHAT_WEBHOOK_URL`
@@ -1659,11 +1663,13 @@ systemctl restart docker
 
 | 容器 | mem_limit | 实测占用 | 说明 |
 |------|-----------|----------|------|
-| mysql | 512m | ~200-250m（调优后） | 调优前逼近 512m（83%），有 OOM 风险 |
-| api (NestJS) | 1536m | 100m 起，随运行增长 | 堆上限 `--max-old-space-size=1024` |
-| redis | 256m | ~15m | `maxmemory 256mb` 保护 |
-| admin (nginx) | 128m | ~12m | 静态资源 |
-| nginx | 64m | ~5m | 反向代理 |
+| mysql | 768m | ~350-450MB | MySQL 8.0，`innodb_buffer_pool_size=384M` |
+| api (NestJS) | 1280m | ~400MB 起 | Node.js 堆上限 `--max-old-space-size=768M`（30+ 模块 + DFA + WebSocket + AI） |
+| redis | 256m | ~15MB | `maxmemory 256mb`，AOF 持久化 |
+| admin (nginx) | 128m | ~12MB | 静态资源 |
+| nginx | 64m | ~5MB | 反向代理 |
+
+容器限额合计约 2.5GB，操作系统占用 ~900MB，总计约 3.4GB，4GB 机器剩余 ~600MB 缓冲。
 
 Linux 的 `free` 命令中 `free` 偏低是正常现象（空闲内存被 `buff/cache` 占用，可随时回收），应关注 **`available`** 列而非 `free`。
 
@@ -1697,12 +1703,12 @@ MySQL 8.0 默认内存占用偏高，本项目全部为 InnoDB 表，已在 `my.
 |------|-----|------|
 | `performance_schema` | `OFF` | 关闭实时性能采样，节省约 100-150MB（小型应用无需） |
 | `key_buffer_size` | `8M` | MyISAM 键缓冲，InnoDB 项目基本用不到，最小化 |
-| `innodb_buffer_pool_size` | `192M` | InnoDB 数据/索引缓存，按数据量设置 |
+| `innodb_buffer_pool_size` | `384M` | InnoDB 数据/索引缓存，为数据增长预留空间（4C4G 服务器调优值） |
 | `table_open_cache` | `512` | 按实际表数量收敛（默认 4000 过大） |
 | `table_definition_cache` | `512` | 同上 |
 | `max_connections` | `150` | 按实际并发收敛（需同时改 `docker-compose.yml` 命令行，命令行会覆盖 my.cnf） |
 
-> 调优效果：MySQL 容器内存从 ~427MB 降到 ~200-250MB，彻底摆脱贴近 512m 上限被 OOM 的风险。
+> 调优说明：MySQL 内存限额从 512MB 提升至 768MB，缓冲池从 192M 翻倍至 384M，为数据增长预留空间。MySQL 容器实际占用约 350-450MB，留有充足余量防止 OOM。`long_query_time` 已从 2s 调整为 1s 以更早发现慢查询。
 
 ### 3. Redis 配置（`docker-compose.yml` command）
 
@@ -1724,7 +1730,7 @@ command: >
 
 ### 4. NestJS API 堆上限
 
-`docker-compose.yml` 中 API 容器设置 `NODE_OPTIONS=--max-old-space-size=1024`（容器 mem_limit 1536m，为非堆内存/缓冲区预留约 512MB）。本应用体量较大（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器 + 连接池），512MB/768MB 均会在负载下堆逼近上限触发颠簸式 GC 最终 OOM，故提升至 1024MB。
+`docker-compose.yml` 中 API 容器设置 `NODE_OPTIONS=--max-old-space-size=768`（容器 mem_limit 1280m，为非堆内存/缓冲区预留约 512MB）。本应用体量较大（30+ 模块 + TypeORM + WebSocket + AI + 51K 词 DFA 过滤器 + 连接池），低于此值可能在负载下堆逼近上限触发颠簸式 GC 最终 OOM。
 
 ### 5. 数据库索引
 
@@ -1741,6 +1747,58 @@ free -h
 
 # MySQL 关键内存参数
 docker exec lingtong_mysql sh -c 'mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "SELECT @@innodb_buffer_pool_size/1024/1024 AS pool_mb, @@max_connections, @@performance_schema;"'
+```
+
+## 监控与告警方案
+
+当前服务器为单台 4C4G 腾讯云轻量应用服务器，不部署 Prometheus/Grafana/Loki 等自建监控（会挤占 ~1GB 内存），改用以下零资源开销方案：
+
+### 三层监控体系
+
+| 层级 | 工具 | 监控内容 | 成本 |
+|------|------|----------|------|
+| **服务器层** | 腾讯云轻量应用服务器控制台 → 实例详情 → 监控 | CPU 使用率、内存使用率、磁盘使用率、内网/外网带宽 | 免费，已内置 |
+| **存活检测** | [UptimeRobot](https://uptimerobot.com) 免费版 | HTTP(s) 每隔 5 分钟探测 `GET /api/health`，连续失败则告警 | 免费 50 个监控项 |
+| **应用层** | `notify-channel.service.ts` → 企业微信/飞书/钉钉 Webhook | 审核命中通知、AI Provider 余额不足告警 | 免费 |
+
+### 腾讯云告警策略配置步骤
+
+1. 登录 [腾讯云轻量应用服务器控制台](https://console.cloud.tencent.com/lighthouse)
+2. 左侧菜单 → **云监控** → **告警策略** → **新建策略**
+3. 选择策略类型：**轻量应用服务器 / 实例**
+4. 添加以下告警规则：
+
+| 告警项 | 阈值 | 持续周期 | 说明 |
+|--------|------|----------|------|
+| 内存利用率 | > 85% | 3 个周期（15 分钟） | 容器 OOM 风险预警 |
+| 磁盘利用率 | > 80% | 1 个周期（5 分钟） | 备份/上传文件积累预警 |
+| CPU 利用率 | > 90% | 3 个周期（15 分钟） | 持续高负载预警 |
+
+5. **通知模板**：绑定企业微信机器人 Webhook 地址（企业微信群 → 群设置 → 群机器人 → 添加机器人）
+
+### UptimeRobot 配置步骤
+
+1. 注册 [UptimeRobot](https://uptimerobot.com)（免费套餐）
+2. **Add New Monitor** → Monitor Type: `HTTP(s)`
+3. URL: `https://yourdomain.com/api/health`
+4. Monitoring Interval: `5 minutes`，Timeout: `30 seconds`
+5. **Alert Contacts**：添加邮箱和企业微信通知（支持 Webhook）
+
+### 应用层告警
+
+由后端 `notify-channel.service.ts` 和 `ai-provider.scheduler.ts` 自动驱动：
+
+- **审核通知**：用户内容命中敏感词或 AI 审核拦截时，推送至 Webhook
+- **AI Provider 余额**：AI 服务商余额低于设定阈值时，每天定时检查并通知
+- 告警通道配置在 `.env` 中：`WECHAT_WEBHOOK_URL` / `FEISHU_WEBHOOK_URL` / `DINGTALK_WEBHOOK_URL`
+
+### 无监控时的应急检查
+
+如果没配置任何外部监控，可 SSH 到服务器执行：
+
+```bash
+# 快速健康检查（一键）
+docker compose ps && echo "---" && docker compose exec -T api curl -s http://localhost:3000/api/health
 ```
 
 ## 常用命令汇总
@@ -1859,5 +1917,5 @@ MIT License
 
 ---
 
-*文档版本: v2.1*
-*最后更新: 2026-06-02*
+*文档版本: v2.2*
+*最后更新: 2026-08-04*
