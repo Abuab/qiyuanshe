@@ -126,6 +126,7 @@
           placeholder-class="input-placeholder"
           :adjust-position="false"
           :confirm-type="'send'"
+          maxlength="100"
           @confirm="sendText"
         />
         <view
@@ -297,6 +298,10 @@ const sendQuick = (q: QuickQuestion) => {
 const sendText = async () => {
   const text = inputText.value.trim()
   if (!text || typing.value) return
+  if (text.length > 100) {
+    uni.showToast({ title: '最多输入100个字', icon: 'none' })
+    return
+  }
 
   inputText.value = ''
   messages.value.push({ role: 'user', content: text })

@@ -43,6 +43,7 @@
         type="text"
         placeholder="输入你的想法..."
         confirm-type="send"
+        maxlength="100"
         @confirm="sendMessage"
       />
       <view class="btn-send" @tap="sendMessage">发送</view>
@@ -122,6 +123,10 @@ async function nextQuestion() {
 function sendMessage() {
   const text = inputText.value.trim()
   if (!text) return
+  if (text.length > 100) {
+    uni.showToast({ title: '最多输入100个字', icon: 'none' })
+    return
+  }
 
   messages.value.push({ type: 'user', content: text })
   inputText.value = ''

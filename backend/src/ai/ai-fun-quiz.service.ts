@@ -8,6 +8,7 @@ import { AiSafetyService } from './ai-safety.service'
 import { AiQuotaService } from './ai-quota.service'
 import { RedisService } from '../common/redis.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { AuditLog } from '../entities/AuditLog'
 import { beijingISO, beijingDateStr } from '../common/utils/date-utils'
 import { AiFunQuizReport } from '../entities/AiFunQuizReport'
 import { User } from '../entities/User'
@@ -22,6 +23,9 @@ import {
   calcZodiac,
   getConstellationDateRange,
 } from './ai-fun-quiz.types'
+
+/** 用户输入最大字数 */
+const MAX_INPUT_LENGTH = 100
 
 /** 禁止出现的迷信词汇（AI 输出后将再次过滤） */
 const FORBIDDEN_OCCULT_WORDS = [
@@ -38,6 +42,8 @@ export class AiFunQuizService {
     private readonly callLogRepo: Repository<AiCallLog>,
     @InjectRepository(AiFunQuizReport)
     private readonly quizReportRepo: Repository<AiFunQuizReport>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepo: Repository<AuditLog>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly aiConfigService: AiConfigService,
@@ -101,12 +107,20 @@ export class AiFunQuizService {
   ): Promise<{ reply: string; remaining: number }> {
     await this.checkFeatureEnabled()
 
-    // 敏感词输入检测
+    // 空输入检查
     if (!answer?.trim()) {
       return { reply: '可以多说说你的想法吗？一句话也行～', remaining: 0 }
     }
+
+    // 输入长度限制
+    if (answer.length > MAX_INPUT_LENGTH) {
+      throw new BadRequestException(`消息不能超过${MAX_INPUT_LENGTH}字`)
+    }
+
+    // 敏感词输入检测 + 写入 AuditLog
     const inputCheck = this.safetyService.checkText(answer)
     if (!inputCheck.passed) {
+      await this.writeAuditLog(userId, answer, inputCheck.hitWords)
       return { reply: '感谢你的分享～换个轻松的话题聊聊吧！', remaining: 0 }
     }
 
@@ -164,7 +178,7 @@ export class AiFunQuizService {
 好的回复："幽默感是最高级的性感！而且会幽默的人通常情商都不低。你是喜欢那种冷幽默还是热热闹闹的搞笑类型？"
 
 用户刚才回答了一个关于恋爱/交友的话题，内容如下：
-"${answer}"
+"${answer.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"
 
 请用自然温暖的口吻回复，像朋友聊天一样，80-150字。
 只返回回复文本，不要加任何前缀、编号或角色说明。`
@@ -354,6 +368,27 @@ export class AiFunQuizService {
   }
 
   // ==================== 内部方法 ====================
+
+  /**
+   * 用户输入命中敏感词时写入 AuditLog
+   */
+  private async writeAuditLog(userId: number, content: string, hitWords: string[]): Promise<void> {
+    try {
+      const auditLog = this.auditLogRepo.create({
+        action: 'TEXT_REJECT',
+        targetType: 'ai_fun_quiz',
+        targetId: userId,
+        submitterId: userId,
+        content: content.substring(0, 500),
+        reason: JSON.stringify({ keywords: hitWords, filter: 'ai_safety' }),
+        aiResult: 'Blocked',
+      })
+      await this.auditLogRepo.save(auditLog)
+      this.logger.warn(`[AI趣味] 用户输入敏感词 userId=${userId} words=${hitWords.join(',')}`)
+    } catch (e: any) {
+      this.logger.warn(`[AI趣味] AuditLog 写入失败: ${e?.message}`)
+    }
+  }
 
   /**
    * 输出合规清洗：

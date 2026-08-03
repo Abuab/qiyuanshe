@@ -11,6 +11,7 @@ import { SystemService } from '../system/system.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { AiQuotaService } from './ai-quota.service'
 import { AiCallLog, AiCallType } from '../entities/AiCallLog'
+import { AuditLog } from '../entities/AuditLog'
 import { beijingISO } from '../common/utils/date-utils'
 import { User } from '../entities/User'
 import {
@@ -27,6 +28,9 @@ import {
   QUICK_QUESTIONS,
 } from './ai-matchmaker.types'
 
+/** 用户输入最大字数 */
+const MAX_INPUT_LENGTH = 100
+
 /** Redis 对话上下文 key 前缀 */
 const CONTEXT_KEY_PREFIX = 'ai:matchmaker:ctx:'
 /** 每个会话保存最近消息数 */
@@ -41,6 +45,8 @@ export class AiMatchmakerService {
   constructor(
     @InjectRepository(AiCallLog)
     private readonly callLogRepo: Repository<AiCallLog>,
+    @InjectRepository(AuditLog)
+    private readonly auditLogRepo: Repository<AuditLog>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly redis: RedisService,
@@ -419,6 +425,11 @@ export class AiMatchmakerService {
       throw new BadRequestException('请输入您的问题')
     }
 
+    // 输入长度限制
+    if (message.length > MAX_INPUT_LENGTH) {
+      throw new BadRequestException(`消息不能超过${MAX_INPUT_LENGTH}字`)
+    }
+
     // 2. 敏感违禁词过滤（ContentFilterService DFA）
     this.contentFilter.checkAndThrow(message, '聊天内容')
 
@@ -433,9 +444,10 @@ export class AiMatchmakerService {
       }
     }
 
-    // 4. 敏感词检查 → 输入拦截（AiSafetyService 51K词库）
+    // 4. 敏感词检查 → 输入拦截（AiSafetyService 51K词库） + 写入 AuditLog
     const inputCheck = this.safetyService.checkText(message)
     if (!inputCheck.passed) {
+      await this.writeAuditLog(userId, message, inputCheck.hitWords)
       const rendered = await this.systemService.replaceTemplateVars(
         '请保持文明交流。{{appName}}是一个真诚、健康的婚恋交友平台，我们应该相互尊重',
       )
@@ -751,6 +763,27 @@ export class AiMatchmakerService {
   }
 
   // ==================== 内部方法 ====================
+
+  /**
+   * 用户输入命中敏感词时写入 AuditLog
+   */
+  private async writeAuditLog(userId: number, content: string, hitWords: string[]): Promise<void> {
+    try {
+      const auditLog = this.auditLogRepo.create({
+        action: 'TEXT_REJECT',
+        targetType: 'ai_matchmaker',
+        targetId: userId,
+        submitterId: userId,
+        content: content.substring(0, 500),
+        reason: JSON.stringify({ keywords: hitWords, filter: 'ai_safety' }),
+        aiResult: 'Blocked',
+      })
+      await this.auditLogRepo.save(auditLog)
+      this.logger.warn(`[AI红娘] 用户输入敏感词 userId=${userId} words=${hitWords.join(',')}`)
+    } catch (e: any) {
+      this.logger.warn(`[AI红娘] AuditLog 写入失败: ${e?.message}`)
+    }
+  }
 
   private getContextKey(userId: number): string {
     return `${CONTEXT_KEY_PREFIX}${userId}`
