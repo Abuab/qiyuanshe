@@ -64,6 +64,7 @@ export class AdminQuestionController {
 
   @Put(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() data: any) {
+    if (data.content && data.content.length > 500) throw new BadRequestException('问题内容不能超过500字')
     const result = await this.questionService.update(id, data)
     return Result.success(result, '更新成功')
   }

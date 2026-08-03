@@ -102,6 +102,7 @@ export class AdminSuccessCaseController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: any,
   ) {
+    if (body.storyContent && body.storyContent.length > 10000) throw new BadRequestException('故事内容不能超过10000字')
     const item = await this.successCaseService.update(id, body)
     return Result.success(item, '更新成功')
   }

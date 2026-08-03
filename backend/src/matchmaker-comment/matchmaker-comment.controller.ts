@@ -96,6 +96,7 @@ export class AdminMatchmakerCommentController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { content?: string; rating?: number },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('评语不能超过500字')
     const comment = await this.commentService.update(id, body)
     return Result.success(comment, '更新成功')
   }

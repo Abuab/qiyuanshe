@@ -156,6 +156,7 @@ export class UserProfileController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { matchmakerId: number; content?: string; difficulty?: string },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('评价内容不能超过500字')
     const review = await this.profileService.createReview(id, body)
     return Result.success(review, '评价添加成功')
   }
@@ -165,6 +166,7 @@ export class UserProfileController {
     @Param('reviewId', ParseIntPipe) reviewId: number,
     @Body() body: { content?: string; difficulty?: string },
   ) {
+    if (body.content && body.content.length > 500) throw new BadRequestException('评价内容不能超过500字')
     const review = await this.profileService.updateReview(reviewId, body)
     return Result.success(review, '评价更新成功')
   }
