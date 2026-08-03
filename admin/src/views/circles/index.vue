@@ -17,7 +17,7 @@
 
       <el-table :data="list" border stripe v-loading="loading">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="name" label="名称" width="140" />
+        <el-table-column prop="name" label="名称" min-width="140" show-overflow-tooltip />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column prop="sort" label="排序" width="70" align="center" />
         <el-table-column label="成员数量" width="90" align="center">

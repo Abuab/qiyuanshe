@@ -68,7 +68,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="url" label="接口路径" min-width="240" show-overflow-tooltip />
-        <el-table-column prop="ip" label="IP" width="140" />
+        <el-table-column prop="ip" label="IP" min-width="140" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="操作时间" width="180">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}

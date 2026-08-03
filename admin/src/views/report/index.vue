@@ -44,13 +44,13 @@
       <!-- 表格 -->
       <el-table :data="tableData" v-loading="loading" row-key="id">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column label="举报人" width="130">
+        <el-table-column label="举报人" min-width="130">
           <template #default="{ row }">
             <div>{{ row.reporterNickname || '-' }}</div>
             <div style="color:#999;font-size:12px">ID:{{ row.reporterPublicId || '-' }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="被举报人" width="130">
+        <el-table-column label="被举报人" min-width="130">
           <template #default="{ row }">
             <div>{{ row.targetNickname || '-' }}</div>
             <div style="color:#999;font-size:12px">ID:{{ row.targetPublicId || '-' }}</div>

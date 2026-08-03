@@ -634,7 +634,11 @@
             <el-row :gutter="12">
               <!-- 第一行：出生年月日 -->
               <el-col :span="8">
-                <el-form-item label="出生年份"><el-input-number v-model="editForm.birthYear" :min="1950" :max="2010" controls-position="right" style="width:100%" /></el-form-item>
+                <el-form-item label="出生年份">
+                  <el-select v-model="editForm.birthYear" placeholder="请选择" filterable clearable style="width:100%">
+                    <el-option v-for="y in BIRTH_YEAR_OPTIONS" :key="y" :label="y + '年'" :value="y" />
+                  </el-select>
+                </el-form-item>
               </el-col>
               <el-col :span="8">
                 <el-form-item label="月">
@@ -657,7 +661,7 @@
                 <el-form-item label="身高(cm)"><el-input-number v-model="editForm.height" :min="100" :max="250" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="30" :max="200" controls-position="right" style="width:100%" /></el-form-item>
+                <el-form-item label="体重(kg)"><el-input-number v-model="editForm.weight" :min="20" :max="200" controls-position="right" style="width:100%" /></el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="12">
@@ -704,15 +708,36 @@
                 </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="独生子女"><el-input v-model="editForm.onlyChild" /></el-form-item>
+                <el-form-item label="独生子女">
+                  <el-select v-model="editForm.onlyChild" placeholder="请选择" clearable style="width:100%">
+                    <el-option label="是" value="是" />
+                    <el-option label="否" value="否" />
+                  </el-select>
+                </el-form-item>
               </el-col>
               <el-col :span="8">
-                <el-form-item label="何时结婚"><el-input v-model="editForm.whenMarry" /></el-form-item>
+                <el-form-item label="何时结婚">
+                  <el-select v-model="editForm.whenMarry" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in WHEN_MARRY_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="12">
-              <el-col :span="8"><el-form-item label="属相"><el-input v-model="editForm.zodiac" /></el-form-item></el-col>
-              <el-col :span="8"><el-form-item label="星座"><el-input v-model="editForm.constellation" /></el-form-item></el-col>
+              <el-col :span="8">
+                <el-form-item label="属相">
+                  <el-select v-model="editForm.zodiac" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in ZODIAC_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="星座">
+                  <el-select v-model="editForm.constellation" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in CONSTELLATION_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
               <el-col :span="8" />
             </el-row>
             <!-- 家乡 -->
@@ -805,10 +830,18 @@
             <el-divider content-position="left">择偶要求</el-divider>
             <el-row :gutter="12">
               <el-col :span="12">
-                <el-form-item label="年龄范围"><el-input v-model="editForm.partnerAgeRange" placeholder="如 25-35" /></el-form-item>
+                <el-form-item label="年龄范围">
+                  <el-select v-model="editForm.partnerAgeRange" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in PARTNER_AGE_RANGE_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="最低身高"><el-input v-model="editForm.partnerHeightMin" placeholder="如 170" /></el-form-item>
+                <el-form-item label="最低身高">
+                  <el-select v-model="editForm.partnerHeightMin" placeholder="请选择" clearable style="width:100%">
+                    <el-option v-for="o in PARTNER_HEIGHT_OPTIONS" :key="o" :label="o" :value="o" />
+                  </el-select>
+                </el-form-item>
               </el-col>
             </el-row>
             <el-row :gutter="12">
@@ -1258,10 +1291,22 @@ const editForm = reactive({
 // 编辑资料下拉选项常量（与列表页保持一致）
 const EDU_OPTIONS = ['初中', '高中', '中专', '大专', '本科', '硕士', '博士']
 const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '2-5万', '5万以上']
-const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住']
+const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住', '租房', '与父母同住', '其他']
 const CAR_OPTIONS = ['已购车', '未购车']
 const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
 const HOUSING_REQUIREMENT_OPTIONS = ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置']
+
+const ZODIAC_OPTIONS = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+const CONSTELLATION_OPTIONS = ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座']
+const WHEN_MARRY_OPTIONS = ['闪婚', '一年内', '两年内', '三年内', '时机成熟就结婚', '顺其自然']
+const PARTNER_AGE_RANGE_OPTIONS = ['不限', '18-22岁', '20-25岁', '22-28岁', '25-30岁', '28-33岁', '30-35岁', '33-38岁', '35-40岁', '40岁以上']
+const PARTNER_HEIGHT_OPTIONS = ['不限', '150cm以上', '155cm以上', '160cm以上', '165cm以上', '170cm以上', '175cm以上', '180cm以上', '185cm以上']
+const BIRTH_YEAR_OPTIONS = (() => {
+  const currentYear = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = currentYear - 18; y >= 1940; y--) years.push(y)
+  return years
+})()
 
 // 编辑资料 - 性格/爱好/恋爱准则/希望TA 下拉选项（与列表页保持一致）
 const editDicts = reactive<Record<string, string[]>>({

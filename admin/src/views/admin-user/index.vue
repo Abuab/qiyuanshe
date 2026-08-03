@@ -8,8 +8,8 @@
     <div class="card">
       <el-table :data="tableData" v-loading="loading" row-key="id">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="username" label="账号" width="140" />
-        <el-table-column prop="nickname" label="姓名" width="120">
+        <el-table-column prop="username" label="账号" min-width="140" show-overflow-tooltip />
+        <el-table-column prop="nickname" label="姓名" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">
             {{ row.nickname || '-' }}
           </template>

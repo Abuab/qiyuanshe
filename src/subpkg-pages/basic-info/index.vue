@@ -83,7 +83,7 @@
               v-model="form.nickname"
               placeholder="请填写昵称"
               placeholder-style="color: #FF4D6A"
-              maxlength="20"
+              maxlength="50"
             />
           </view>
         </view>

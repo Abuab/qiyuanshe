@@ -57,13 +57,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column label="用户" width="120">
+        <el-table-column label="用户" min-width="140">
           <template #default="{ row }">
             <span>{{ row.userNickname || '-' }}</span>
             <span style="color:#999;font-size:12px"> (ID:{{ row.userId }})</span>
           </template>
         </el-table-column>
-        <el-table-column label="功能类型" width="110">
+        <el-table-column label="功能类型" min-width="110">
           <template #default="{ row }">
             {{ callTypeMap[row.callType] || row.callType }}
           </template>

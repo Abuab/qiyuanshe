@@ -345,7 +345,7 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('incomeRange')" prop="incomeRange" label="月收入" width="100">
+        <el-table-column v-if="isColumnVisible('incomeRange')" prop="incomeRange" label="月收入" min-width="100">
           <template #default="{ row }">
             <span>{{ row.incomeRange || '-' }}</span>
           </template>
@@ -360,8 +360,9 @@
         <el-table-column v-if="isColumnVisible('housingStatus')" prop="housingStatus" label="住房" width="90">
           <template #default="{ row }">
             <el-tag v-if="row.housingStatus === '已购房'" type="success" size="small">有房</el-tag>
+            <el-tag v-else-if="row.housingStatus === '未购房'" type="info" size="small">未购房</el-tag>
             <el-tag v-else-if="row.housingStatus === '租房'" type="warning" size="small">租房</el-tag>
-            <el-tag v-else-if="row.housingStatus === '与父母同住'" type="info" size="small">与父母同住</el-tag>
+            <el-tag v-else-if="row.housingStatus === '与父母同住' || row.housingStatus === '和父母同住'" type="info" size="small">与父母同住</el-tag>
             <el-tag v-else-if="row.housingStatus === '其他'" type="info" size="small">其他</el-tag>
             <span v-else>{{ row.housingStatus || '-' }}</span>
           </template>
@@ -468,7 +469,7 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('userTags')" label="用户标签" width="200">
+        <el-table-column v-if="isColumnVisible('userTags')" label="用户标签" min-width="200">
           <template #default="{ row }">
             <template v-if="getUserTags(row).length">
               <el-tag v-for="tag in getUserTags(row).slice(0, 3)" :key="tag" :type="getTagType(tag)" size="small" style="margin-right:4px;margin-bottom:2px">{{ tag }}</el-tag>
@@ -1065,6 +1066,7 @@
               <el-radio-group v-model="createForm.status">
                 <el-radio :label="1">正常</el-radio>
                 <el-radio :label="0">禁用</el-radio>
+                <el-radio :label="2">待审核</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -1074,6 +1076,19 @@
                 <el-radio :label="1">已实名</el-radio>
                 <el-radio :label="0">未实名</el-radio>
               </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="显示基本资料">
+              <el-switch v-model="createForm.showBasicProfile" active-text="显示" inactive-text="隐藏" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="委托平台">
+              <el-switch v-model="createForm.delegateToPlatform" active-text="已委托" inactive-text="未委托" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1250,9 +1265,9 @@ const birthYearOptions = (() => {
 })()
 
 const createDicts: Record<string, string[]> = {
-  education: ['高中', '大专', '本科', '硕士', '博士'],
-  incomeRange: ['3千以下', '3-5千', '5-8千', '8千-1.2万', '1.2-2万', '2-5万', '5万以上'],
-  housingStatus: ['已购房', '租房', '与父母同住', '其他'],
+  education: ['初中', '高中', '中专', '大专', '本科', '硕士', '博士'],
+  incomeRange: ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '2-5万', '5万以上'],
+  housingStatus: ['已购房', '未购房', '和父母同住', '租房', '与父母同住', '其他'],
   carStatus: ['已购车', '未购车'],
   maritalStatus: ['未婚', '离异', '丧偶'],
   occupation: [],
@@ -1266,7 +1281,7 @@ const createDicts: Record<string, string[]> = {
   constellation: ['白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座'],
   partnerAgeRange: ['不限', '18-22岁', '20-25岁', '22-28岁', '25-30岁', '28-33岁', '30-35岁', '33-38岁', '35-40岁', '40岁以上'],
   partnerHeight: ['不限', '150cm以上', '155cm以上', '160cm以上', '165cm以上', '170cm以上', '175cm以上', '180cm以上', '185cm以上'],
-  partnerEducation: ['不限', '高中', '大专', '本科', '硕士', '博士'],
+  partnerEducation: ['不限', '初中', '高中', '中专', '大专', '本科', '硕士', '博士'],
   partnerIncome: ['不限', '3千以上', '5千以上', '8千以上', '1万以上', '2万以上', '3万以上', '5万以上'],
   housingRequirement: ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置'],
   partnerMaritalStatus: ['不限', '仅限未婚', '仅限离异'],
@@ -1700,6 +1715,8 @@ const createForm = reactive({
   acceptChildren: undefined as string | undefined,
   status: 1,
   isRealName: 0 as number,
+  showBasicProfile: true as boolean,
+  delegateToPlatform: false as boolean,
 })
 
 const createRules = {
@@ -1959,6 +1976,8 @@ async function handleCreate() {
     acceptChildren: undefined,
     status: 1,
     isRealName: 0,
+    showBasicProfile: true,
+    delegateToPlatform: false,
   })
   createPhotoUrls.value = []
   editingOriginalPhotoUrls.value = []
@@ -1998,8 +2017,10 @@ async function handleCreateSubmit() {
       hobby: createForm.hobbyTagsArr,
       loveRule: createForm.loveRuleTagsArr,
     },
-    hopeTaTags: createForm.hopeTaTagsArr.join(','),
+    hopeTaTags: createForm.hopeTaTagsArr,
     photoUrls: createPhotoUrls.value,
+    showBasicProfile: createForm.showBasicProfile,
+    delegateToPlatform: createForm.delegateToPlatform,
   } as any
 
   if (editingUserId.value) {
@@ -2192,6 +2213,8 @@ async function handleEditUser(row: User) {
     password: '',
     gender: 1,
     birthYear: undefined,
+    birthMonth: undefined,
+    birthDay: undefined,
     height: undefined,
     weight: undefined,
     education: undefined,
@@ -2219,6 +2242,8 @@ async function handleEditUser(row: User) {
     acceptChildren: undefined,
     status: 1,
     isRealName: 0,
+    showBasicProfile: true,
+    delegateToPlatform: false,
   })
   createPhotoUrls.value = []
   hometownProvinceId.value = undefined
@@ -2289,6 +2314,8 @@ async function handleEditUser(row: User) {
   createForm.acceptChildren = user.acceptChildren ?? undefined
   createForm.status = user.status ?? 1
   createForm.isRealName = user.isRealName ?? 0
+  createForm.showBasicProfile = (user as any).showBasicProfile ?? true
+  createForm.delegateToPlatform = (user as any).delegateToPlatform ?? false
   createForm.hometown = user.hometown || ''
   createForm.residence = user.residence || ''
 

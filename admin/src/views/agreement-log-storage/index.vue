@@ -153,7 +153,7 @@
 
       <el-table :data="logs" border stripe v-loading="logLoading" style="margin-top: 10px">
         <el-table-column prop="id" label="ID" width="70" />
-        <el-table-column prop="nickname" label="用户昵称" width="120" />
+        <el-table-column prop="nickname" label="用户昵称" min-width="120" show-overflow-tooltip />
         <el-table-column prop="publicUserId" label="用户ID" width="100">
           <template #default="{ row }">
             {{ row.publicUserId || '-' }}
@@ -173,7 +173,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="ipAddress" label="IP地址" width="140" />
+        <el-table-column prop="ipAddress" label="IP地址" min-width="160" show-overflow-tooltip />
         <el-table-column prop="userAgent" label="UserAgent" min-width="200" show-overflow-tooltip />
         <el-table-column prop="storageSource" label="存储来源" width="100">
           <template #default="{ row }">

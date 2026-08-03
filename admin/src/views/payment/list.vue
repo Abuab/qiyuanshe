@@ -55,7 +55,7 @@
         row-key="id"
       >
         <el-table-column prop="orderNo" label="订单号" width="180" />
-        <el-table-column label="用户" width="150">
+        <el-table-column label="用户" min-width="150">
           <template #default="{ row }">
             <div class="user-info">
               <el-image :src="row.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
@@ -69,7 +69,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="packageName" label="套餐" width="150">
+        <el-table-column prop="packageName" label="套餐" min-width="150">
           <template #default="{ row }">
             <el-tag type="primary" size="small">{{ row.packageName || '-' }}</el-tag>
           </template>

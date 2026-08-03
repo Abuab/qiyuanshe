@@ -28,7 +28,7 @@
         <el-table-column prop="publicUserId" label="用户ID" width="100">
           <template #default="{ row }">{{ row.publicUserId || '-' }}</template>
         </el-table-column>
-        <el-table-column prop="nickname" label="昵称" width="120">
+        <el-table-column prop="nickname" label="昵称" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">{{ row.nickname || '-' }}</template>
         </el-table-column>
         <el-table-column prop="content" label="反馈内容" min-width="240">

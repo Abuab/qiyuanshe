@@ -11,7 +11,7 @@
 
       <el-table :data="list" border stripe v-loading="loading" style="width: 100%" row-key="id">
         <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column label="红娘" width="140">
+        <el-table-column label="红娘" min-width="140">
           <template #default="{ row }">
             <div class="cell-with-avatar">
               <el-avatar v-if="row.matchmaker?.avatar" :src="row.matchmaker.avatar" :size="28" />
@@ -19,7 +19,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="会员" width="160">
+        <el-table-column label="会员" min-width="160">
           <template #default="{ row }">
             <div class="cell-with-avatar">
               <el-avatar v-if="row.user?.avatar" :src="row.user.avatar" :size="28" />
