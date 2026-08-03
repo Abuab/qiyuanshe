@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, Min, Max } from 'class-validator'
+import { IsNumber, IsString, IsOptional, Min, Max, MaxLength } from 'class-validator'
 import { Type } from 'class-transformer'
 
 export class SendMessageDto {
@@ -7,6 +7,7 @@ export class SendMessageDto {
   toUserId: number
 
   @IsString()
+  @MaxLength(500, { message: '消息不能超过500字' })
   content: string
 
   @IsString()
