@@ -78,6 +78,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { logger } from '@/utils/logger'
 
 interface NotifyItem {
@@ -98,12 +99,10 @@ const noMore = ref(false)
 const page = ref(1)
 const bannerClosed = ref(false)
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   // 检查本地是否已关闭过横幅
   bannerClosed.value = uni.getStorageSync('oa_banner_closed') === true

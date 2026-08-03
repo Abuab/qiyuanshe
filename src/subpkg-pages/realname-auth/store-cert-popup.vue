@@ -104,6 +104,7 @@ import { ref, watch, nextTick, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { get } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 
 const props = defineProps<{ show: boolean }>()
@@ -122,7 +123,8 @@ const storeLng = computed(() => systemStore.storeCert?.longitude || 0)
 // 红娘弹窗
 const matchmakerPopupShow = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
+
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -161,20 +163,6 @@ function openNavigation() {
   } else {
     // uni.openLocation 依赖经纬度，未配置坐标时无法定位
     uni.showToast({ title: '暂未配置门店导航坐标', icon: 'none' })
-  }
-}
-
-async function fetchMatchmakerList() {
-  try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-      avatar: getFullImageUrl(item.avatar),
-    }))
-  } catch {
-    matchmakerList.value = []
   }
 }
 

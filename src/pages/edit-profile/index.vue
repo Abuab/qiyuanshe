@@ -599,8 +599,10 @@ import request, { put, get, getServerBaseUrl } from '@/utils/request'
 import { secureStorage } from '@/utils/crypto'
 import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { requireLogin } from '@/utils/auth'
 import { setCropImageData } from '@/utils/crop-bridge'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
@@ -811,19 +813,13 @@ const cityTarget = ref<'residence' | 'hometown'>('residence')
 const showMatchmakerPopup = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
+
+
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const openMatchmaker = async () => {
   if (matchmakerList.value.length === 0) {
-    try {
-      const res: any = await get('/matchmakers')
-      const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-      matchmakerList.value = rawList.map((item: any) => ({
-        ...item,
-        qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode || ''),
-        avatar: getFullImageUrl(item.avatar || ''),
-      }))
-    } catch { /* 获取失败时静默 */ }
+    await fetchMatchmakerList()
   }
   if (matchmakerList.value.length === 0) {
     uni.showToast({ title: '暂无红娘信息', icon: 'none' })
@@ -911,7 +907,7 @@ onMounted(async () => {
     if (data?.path) handleCroppedAvatar(data.path)
   })
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
@@ -1039,7 +1035,7 @@ const chooseAvatar = () => {
         uni.showToast({ title: '已提交审核', icon: 'success' })
       } catch (err: unknown) {
         const error = err as Error
-        console.error('头像上传失败:', error)
+        logger.error('头像上传失败:', error)
         const msg = error.message === 'Unauthorized' ? '请先登录' : '上传失败，请重试'
         uni.showToast({ title: msg, icon: 'none' })
       } finally {
@@ -1113,7 +1109,7 @@ const pickAndCropAvatar = (sourceType: 'album' | 'camera') => {
 
 /** 处理裁剪后的头像上传 */
 const handleCroppedAvatar = async (filePath: string) => {
-  console.log('[编辑资料] 收到裁剪结果, path:', filePath)
+  logger.debug('[编辑资料] 收到裁剪结果, path:', filePath)
   if (!filePath) {
     uni.showToast({ title: '裁剪结果无效', icon: 'none' })
     return
@@ -1121,7 +1117,7 @@ const handleCroppedAvatar = async (filePath: string) => {
   uni.showLoading({ title: '上传中...' })
   try {
     const uploadRes = await uploadImage(filePath)
-    console.log('[编辑资料] 上传成功:', uploadRes)
+    logger.debug('[编辑资料] 上传成功:', uploadRes)
     const avatarUrl = uploadRes.url
     form.value.avatar = avatarUrl
     form.value.avatarReviewStatus = 0
@@ -1133,7 +1129,7 @@ const handleCroppedAvatar = async (filePath: string) => {
     uni.showToast({ title: '已提交审核', icon: 'success' })
   } catch (err: unknown) {
     const error = err as Error
-    console.error('[编辑资料] 头像上传失败:', error)
+    logger.error('[编辑资料] 头像上传失败:', error)
     const msg = error.message === 'Unauthorized' ? '请先登录' : '上传失败，请重试'
     uni.showToast({ title: msg, icon: 'none' })
   } finally {
@@ -1333,7 +1329,7 @@ const fetchPhotos = async () => {
   try {
     const res: any = await request({ url: '/users/photos', method: 'GET' } as any)
     photos.value = res?.list || []
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
 }
 
 const uploadPhoto = () => {
@@ -1361,7 +1357,7 @@ const doUploadPhoto = (sourceType: ('album' | 'camera')[]) => {
             await request({ url: '/users/photos', method: 'POST', data: { url: uploadRes.url } } as any)
           }
         } catch (e: any) {
-          console.error(e)
+          logger.error(e)
           if (e.message !== 'Unauthorized') {
             uni.showToast({ title: '上传失败', icon: 'none' })
           }
@@ -1484,7 +1480,7 @@ function togglePlayVoice() {
         }
       },
       fail: (err: any) => {
-        console.error('[EditProfile] download voice error', JSON.stringify(err))
+        logger.error('[EditProfile] download voice error', JSON.stringify(err))
         uni.showToast({ title: '语音加载失败', icon: 'none' })
       },
       complete: () => { try { uni.hideLoading() } catch (_) {} },
@@ -1517,7 +1513,7 @@ function playDownloadedVoice(localPath: string) {
   voiceAudioCtx.onPlay(() => { isVoicePlaying.value = true })
   voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false; stopVoicePlay() })
   voiceAudioCtx.onError((err: any) => {
-    console.error('[EditProfile] play voice error', JSON.stringify(err), 'src=', localPath)
+    logger.error('[EditProfile] play voice error', JSON.stringify(err), 'src=', localPath)
     uni.showToast({ title: '播放失败 errCode=' + (err?.errCode || '?'), icon: 'none', duration: 3000 })
     isVoicePlaying.value = false
   })
@@ -1777,7 +1773,7 @@ const handleSave = async () => {
     }, 1200)
   } catch (err: unknown) {
     const error = err as Error
-    console.error('保存失败:', error.message)
+    logger.error('保存失败:', error.message)
     if (error.message !== 'Unauthorized') {
       uni.showToast({ title: error.message || '保存失败，请重试', icon: 'none' })
     }

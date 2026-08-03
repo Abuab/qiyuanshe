@@ -258,6 +258,7 @@
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
@@ -266,9 +267,11 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
 import { onShow } from '@dcloudio/uni-app'
+import { logger } from '@/utils/logger'
 const { handleImageError } = useImageFallback()
 
 interface DynamicItem {
@@ -340,19 +343,8 @@ const scrollViewStyle = computed(() => {
 })
 
 // 一键回到顶部 & 固定标签栏
-const showBackTop = ref(false)
 const scrollToVal = ref(0)
-
-const onScroll = (e: any) => {
-  const top = e.detail.scrollTop
-  // 滚动超过 600px 时显示回到顶部按钮
-  showBackTop.value = top > 600
-}
-
-const scrollToTop = () => {
-  scrollToVal.value = scrollToVal.value ? 0 : 0.001
-  showBackTop.value = false
-}
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 // 当前登录用户的照片数量（用于判断是否模糊）
 const myPhotoCount = ref(0)
@@ -361,7 +353,7 @@ const myPhotoCount = ref(0)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
+
 
 const tabs = computed(() => {
   const list: { key: string; label: string }[] = [
@@ -528,7 +520,7 @@ const fetchList = async (reset = false) => {
       page.value++
     }
   } catch (e) {
-    console.error('fetch dynamics error', e)
+    logger.error('fetch dynamics error', e)
   } finally {
     loading.value = false
     loadingMore.value = false
@@ -654,20 +646,7 @@ const handleContactMatchmaker = async (item: any) => {
   handleMatchmaker(item)
 }
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await request({ url: '/matchmakers', method: 'GET' })
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-      avatar: getFullImageUrl(item.avatar),
-    }))
-  } catch {
-    // 静默失败
-    matchmakerList.value = []
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const openMatchmakerList = () => {
   showMatchmaker.value = false
@@ -681,7 +660,7 @@ const onSelectMatchmaker = (matchmaker: any) => {
 }
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchList(true)
   if (userStore.isLoggedIn) fetchMyPhotoCount()

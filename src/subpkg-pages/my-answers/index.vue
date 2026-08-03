@@ -33,7 +33,9 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { useUserStore } from '@/store/user'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 
@@ -43,12 +45,10 @@ const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
@@ -62,7 +62,7 @@ const fetchAnswers = async () => {
     const data = res?.data || res?.list || res || []
     list.value = Array.isArray(data) ? data : []
   } catch (e) {
-    console.log('[我的回答] 接口获取失败', (e as any)?.message)
+    logger.debug('[我的回答] 接口获取失败', (e as any)?.message)
   } finally {
     loading.value = false
   }

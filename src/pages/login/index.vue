@@ -155,7 +155,7 @@ const reportAgreementIfPending = () => {
     version: '1.0',
     action: 'agree',
   }).catch((err: any) => {
-    console.error('[agreement] 协议同意上报失败:', err?.message || err)
+    logger.error('[agreement] 协议同意上报失败:', err?.message || err)
   })
 }
 

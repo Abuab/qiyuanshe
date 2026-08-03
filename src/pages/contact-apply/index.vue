@@ -134,6 +134,7 @@ import { ref, computed, onMounted } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
@@ -330,30 +331,12 @@ const handleConfirm = async () => {
 }
 
 // ===== 复制并联系红娘 =====
-const matchmakerList = ref<any[]>([])
+
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await request({ url: '/matchmakers', method: 'GET', timeout: 15000 })
-    const rawList = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      avatar: getFullImageUrl(item.avatar || item.avatarUrl),
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-    }))
-    if (matchmakerList.value.length > 0) {
-      selectedMatchmaker.value = matchmakerList.value[0]
-    }
-  } catch {
-    matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: icons.common.defaultAvatar, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
-    ]
-    selectedMatchmaker.value = matchmakerList.value[0]
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const handleCopyAndContact = async () => {
   try {

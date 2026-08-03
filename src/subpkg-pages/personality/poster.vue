@@ -46,6 +46,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { sanitizeShareText } from '@/utils/personality'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -60,13 +61,13 @@ const errorText = ref('')
 const shareText = ref('')
 
 const navTotalHeight = computed(() => {
-  const info = uni.getWindowInfo() as any
+  const info = uni.getWindowInfo()
   const screenWidth = info.screenWidth || 375
   return statusBarHeight.value + 44 * (screenWidth / 375)
 })
 
 onLoad((opts: any) => {
-  const info = uni.getWindowInfo() as any
+  const info = uni.getWindowInfo()
   statusBarHeight.value = info.statusBarHeight || 20
   shareText.value = sanitizeShareText(opts?.shareText ? decodeURIComponent(opts.shareText) : '')
 })
@@ -427,7 +428,7 @@ async function savePoster() {
         // 其余错误：暴露真实原因，便于定位（如隐私协议未声明、机型不支持等）
         saving = false
         // eslint-disable-next-line no-console
-        console.error('[poster] saveImageToPhotosAlbum fail:', msg)
+        logger.error('[poster] saveImageToPhotosAlbum fail:', msg)
         const brief = msg.replace('saveImageToPhotosAlbum:fail', '').trim() || '未知错误'
         uni.showToast({ title: '保存失败：' + brief, icon: 'none', duration: 3000 })
       },

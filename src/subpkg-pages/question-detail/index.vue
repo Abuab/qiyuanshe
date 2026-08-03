@@ -103,7 +103,9 @@ import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
 
 interface Answer {
   id: number
@@ -137,9 +139,7 @@ const navInnerHeight = 44
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
@@ -186,7 +186,7 @@ const fetchAnswers = async (isRefresh = false) => {
     if (list.length < limit) noMore.value = true
     page.value++
   } catch (e) {
-    console.error('fetch answers error', e)
+    logger.error('fetch answers error', e)
   } finally {
     loading.value = false
   }

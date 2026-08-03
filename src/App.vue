@@ -33,7 +33,7 @@ onLaunch(() => {
     menus: ['shareAppMessage'],
     fail: () => {
       // 开发工具可能 ban，真机正常
-      console.log('[分享]showShareMenu 开发工具跳过')
+      logger.debug('[分享]showShareMenu 开发工具跳过')
     },
   })
 
@@ -87,7 +87,7 @@ onShow((options: any) => {
             vipLevel: p.vipLevel,
           })
         }
-      }).catch(() => { /* 静默失败 */ })
+      }).catch((err) => { logger.error('[App] 冷启动资料同步失败', err) })
     }
     return
   }
@@ -111,7 +111,7 @@ onShow((options: any) => {
           vipPackageName: p.vipPackageName,
         })
       }
-    }).catch(() => { /* 静默失败 */ })
+    }).catch((err) => { logger.error('[App] 热启动资料同步失败', err) })
   }
 
   // 每次切回应用时重试开启分享菜单

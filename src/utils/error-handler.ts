@@ -15,6 +15,4 @@ export const setupGlobalErrorHandling = () => {
   }
 }
 
-export const showError = (msg: string) => {
-  uni.showToast({ title: msg || '操作失败', icon: 'none', duration: 2000 })
-}
+

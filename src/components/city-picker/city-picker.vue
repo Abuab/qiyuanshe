@@ -51,6 +51,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import request from '@/utils/request'
+import { logger } from '@/utils/logger'
 
 interface RegionItem {
   id: number
@@ -133,7 +134,7 @@ const fetchRegions = async (parentId: number) => {
     const res = await request({ url: '/region', method: 'GET', data: { parentId } })
     return (res.list || res.data || res || []) as RegionItem[]
   } catch (e) {
-    console.error('fetch regions error', e)
+    logger.error('fetch regions error', e)
     return []
   } finally {
     isLoading.value = false

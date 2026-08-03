@@ -89,11 +89,13 @@ import { onLoad } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { storeToRefs } from 'pinia'
 import { requireLogin } from '@/utils/auth'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const { appName } = storeToRefs(systemStore)
@@ -111,9 +113,7 @@ const visitorPage = ref(1)
 const viewNoMore = ref(false)
 const visitorNoMore = ref(false)
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onLoad((options: any) => {
   if (!requireLogin()) return
@@ -126,7 +126,7 @@ onLoad((options: any) => {
 onMounted(async () => {
   if (!requireLogin()) return
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   tabRowHeightPx.value = Math.round(80 * (sysInfo.windowWidth || 375) / 750)
@@ -175,7 +175,7 @@ async function fetchList() {
       visitorNoMore.value = items.length < 20
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
   loading.value = false
 }
@@ -198,7 +198,7 @@ async function fetchMoreViews() {
     const items = res?.list || []
     viewList.value = viewList.value.concat(items)
     viewNoMore.value = items.length < 20
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
 }
 
 async function fetchMoreVisitors() {
@@ -207,7 +207,7 @@ async function fetchMoreVisitors() {
     const items = res?.list || []
     visitorList.value = visitorList.value.concat(items)
     visitorNoMore.value = items.length < 20
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
 }
 
 function handleBack() { safeNavigateBack() }

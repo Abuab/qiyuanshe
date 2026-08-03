@@ -113,7 +113,7 @@ const progressPercent = computed(() =>
 )
 
 onLoad((opts: any) => {
-  const sys = uni.getWindowInfo() as any
+  const sys = uni.getWindowInfo()
   statusBarHeight.value = sys.statusBarHeight || 20
   isRetest = opts?.retest === '1'
   // 重测不恢复缓存；否则若存在未完成进度，询问「继续答题 / 重新开始」

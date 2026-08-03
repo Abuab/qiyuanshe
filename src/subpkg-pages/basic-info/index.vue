@@ -193,6 +193,7 @@ import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -398,7 +399,7 @@ const handleSubmit = async () => {
       uni.navigateTo({ url: '/subpkg-pages/upload-avatar/index' })
     }, 800)
   } catch (err: any) {
-    console.error('[basic-info] 提交失败:', err?.message || err)
+    logger.error('[basic-info] 提交失败:', err?.message || err)
   }
 }
 </script>

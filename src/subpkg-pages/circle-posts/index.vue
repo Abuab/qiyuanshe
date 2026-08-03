@@ -35,6 +35,8 @@ import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
+import { logger } from '@/utils/logger'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -46,12 +48,10 @@ const circleId = ref(0)
 const circleName = ref('')
 
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   const pages = getCurrentPages()
@@ -68,7 +68,7 @@ async function fetchPosts() {
     if (page.value === 1) posts.value = list
     else posts.value = posts.value.concat(list)
     noMore.value = list.length < 10
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
   loading.value = false
 }
 

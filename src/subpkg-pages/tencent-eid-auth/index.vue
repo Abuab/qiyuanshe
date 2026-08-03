@@ -72,6 +72,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { showToast } from '@/utils/common'
+import { logger } from '@/utils/logger'
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
@@ -110,8 +111,8 @@ const closeJumpPopup = () => {
 
 const handleJump = () => {
   closeJumpPopup()
-  // FIXME: appId 需从后端接口获取或项目配置，当前为空值会导致跳转失败
-  const eidAppId = ''
+  // 腾讯 E证通 小程序 appId
+  const eidAppId = 'wx0e2cb0b052a91c92'
   if (!eidAppId) {
     showToast('E证通服务暂未配置，请联系管理员')
     return
@@ -121,10 +122,10 @@ const handleJump = () => {
     appId: eidAppId,
     path: 'pages/index/index',
     success: () => {
-      console.log('[eid] navigateToMiniProgram success')
+      logger.debug('[eid] navigateToMiniProgram success')
     },
     fail: (err: any) => {
-      console.error('[eid] navigateToMiniProgram fail:', err)
+      logger.error('[eid] navigateToMiniProgram fail:', err)
       showToast('跳转失败，请稍后再试')
     },
   })

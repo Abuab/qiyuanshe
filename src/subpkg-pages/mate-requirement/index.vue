@@ -340,6 +340,7 @@ import { put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -606,7 +607,7 @@ const handleSubmit = async () => {
       uni.navigateTo({ url: '/subpkg-pages/real-name-auth/index' })
     }, 800)
   } catch (err: any) {
-    console.error('[mate-requirement] 提交失败:', err?.message || err)
+    logger.error('[mate-requirement] 提交失败:', err?.message || err)
     showToast(err?.message || '保存失败，请稍后重试')
   }
 }

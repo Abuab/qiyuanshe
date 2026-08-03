@@ -94,6 +94,8 @@ import { storeToRefs } from 'pinia'
 import { icons as iconConfig } from '@/config/icons'
 import { requireLogin } from '@/utils/auth'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const { appName, followEmptyText, followerEmptyText, icons } = storeToRefs(systemStore)
@@ -112,9 +114,7 @@ const followingNoMore = ref(false)
 const followerNoMore = ref(false)
 
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 const followEmptyIcon = computed(() => icons.value?.page?.followEmptyIcon || '')
 
@@ -130,7 +130,7 @@ onLoad((options) => {
 onMounted(async () => {
   if (!requireLogin()) return
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   tabRowHeightPx.value = Math.round(80 * (sysInfo.windowWidth || 375) / 750)
@@ -183,7 +183,7 @@ async function fetchList() {
       followerNoMore.value = items.length < 20
     }
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   }
   loading.value = false
 }
@@ -206,7 +206,7 @@ async function fetchMoreFollowing() {
     const items = res?.list || []
     followingList.value = followingList.value.concat(items)
     followingNoMore.value = items.length < 20
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
 }
 
 async function fetchMoreFollowers() {
@@ -215,7 +215,7 @@ async function fetchMoreFollowers() {
     const items = res?.list || []
     followerList.value = followerList.value.concat(items)
     followerNoMore.value = items.length < 20
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
 }
 
 async function handleUnfollow(userId: number) {

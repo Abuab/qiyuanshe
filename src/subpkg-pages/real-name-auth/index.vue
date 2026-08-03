@@ -129,6 +129,7 @@ import { STORAGE_KEY } from '@/config/constants'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
 import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -191,7 +192,7 @@ const refreshCertResult = async () => {
     }
     pendingVerify.value = false
   } catch (e: any) {
-    console.error('[real-name-auth] 查询认证结果失败:', e?.message || e)
+    logger.error('[real-name-auth] 查询认证结果失败:', e?.message || e)
     pendingVerify.value = false
   } finally {
     querying.value = false

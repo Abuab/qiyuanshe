@@ -151,6 +151,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const entryName = computed(() => systemStore.quickEntryNames?.[3] || '佳偶天成')
@@ -167,12 +169,10 @@ const noMore = ref(false)
 const isRefreshing = ref(false)
 
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   await fetchList(true)
@@ -203,7 +203,7 @@ async function fetchList(reset = false) {
       noMore.value = true
     }
   } catch (e) {
-    console.error('[SuccessCases] fetchList error:', e)
+    logger.error('[SuccessCases] fetchList error:', e)
   } finally {
     loading.value = false
     loadingMore.value = false

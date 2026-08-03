@@ -83,6 +83,7 @@
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -103,7 +104,8 @@ const showTipDialog = ref(false)
 const showMatchmakerPopup = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<MatchmakerData | null>(null)
-const matchmakerList = ref<MatchmakerData[]>([])
+
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 const defaultMatchmaker: MatchmakerData = {
   id: 0,
   name: '红娘',
@@ -115,7 +117,7 @@ const defaultMatchmaker: MatchmakerData = {
 }
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
 
@@ -154,13 +156,12 @@ const handleGoContact = async () => {
   showTipDialog.value = false
 
   try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    if (rawList.length === 0) {
+    await fetchMatchmakerList()
+    if (matchmakerList.value.length === 0) {
       uni.showToast({ title: '暂无红娘信息', icon: 'none' })
       return
     }
-    const item = rawList[0]
+    const item = matchmakerList.value[0]
     selectedMatchmaker.value = {
       id: item.id || 0,
       name: item.name || '红娘',
@@ -168,17 +169,8 @@ const handleGoContact = async () => {
       title: item.title || '专属红娘',
       wechat: item.wechat || '',
       phone: item.phone || '',
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
+      qrCode: item.qrCode || '',
     }
-    matchmakerList.value = rawList.map((m: any) => ({
-      id: m.id || 0,
-      name: m.name || '红娘',
-      avatar: getFullImageUrl(m.avatar),
-      title: m.title || '专属红娘',
-      wechat: m.wechat || '',
-      phone: m.phone || '',
-      qrCode: getFullImageUrl(m.qrCode || m.qr_code || m.qrcode),
-    }))
     showMatchmakerPopup.value = true
   } catch {
     uni.showToast({ title: '加载失败，请稍后重试', icon: 'none' })

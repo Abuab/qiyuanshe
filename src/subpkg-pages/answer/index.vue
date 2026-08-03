@@ -48,6 +48,7 @@ import { onLoad } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
 
 const questionId = ref(0)
 const questionTitle = ref('')
@@ -107,7 +108,7 @@ const handleSubmit = async () => {
       uni.navigateBack()
     }, 1500)
   } catch (e: any) {
-    console.error('submit error', e)
+    logger.error('submit error', e)
     if (e.message !== 'Unauthorized') {
       uni.showToast({ title: e.message || '提交失败，请重试', icon: 'none' })
     }

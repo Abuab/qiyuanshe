@@ -38,6 +38,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { logger } from '@/utils/logger'
+import { formatDate } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 
 const userStore = useUserStore()
@@ -88,11 +89,6 @@ const getVipName = (level: number) => {
     3: '至尊VIP',
   }
   return names[level] || 'VIP'
-}
-
-const formatDate = (dateStr: string) => {
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 const retryPay = () => {

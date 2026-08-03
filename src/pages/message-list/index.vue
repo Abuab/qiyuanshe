@@ -103,6 +103,7 @@ import { useSystemStore } from '@/store/system'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { useIcon } from '@/composables/useIcon'
 
 const systemStore = useSystemStore()
@@ -142,9 +143,7 @@ let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 // 系统通知图标（后台可配置）
 const systemNotifyIcon = computed(() => {
@@ -152,7 +151,7 @@ const systemNotifyIcon = computed(() => {
 })
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   if (userStore.isLoggedIn) {
     fetchConversations()

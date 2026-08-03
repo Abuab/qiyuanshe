@@ -32,7 +32,7 @@
           </view>
           <view class="info-text-wrap">
             <text class="info-label">报名截止</text>
-            <text class="info-value">{{ formatDateOnly(activity.signUpEndTime) }}</text>
+            <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD') }}</text>
           </view>
         </view>
         <view class="info-row-sep" v-if="activity.signUpEndTime"></view>
@@ -42,7 +42,7 @@
           </view>
           <view class="info-text-wrap">
             <text class="info-label">活动时间</text>
-            <text class="info-value">{{ formatDateOnly(activity.startTime) }} - {{ formatDateOnly(activity.endTime) }}</text>
+            <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD') }}</text>
           </view>
         </view>
         <view class="info-row-sep"></view>
@@ -250,10 +250,13 @@ import BlockRenderer from '@/components/activity-blocks/BlockRenderer.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
-import { getFullImageUrl, getImageUrl } from '@/utils/common'
+import { getFullImageUrl, getImageUrl, formatDate } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 
 interface Activity {
   id: number
@@ -287,11 +290,9 @@ const tabAnimating = ref(false)
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
-const matchmakerList = ref<any[]>([])
+
 const selectedMatchmaker = ref({
   id: 1,
   name: '红娘老师',
@@ -376,12 +377,6 @@ function getHourText(hour: number) {
   return `晚上${hour - 12}点`
 }
 
-function formatDateOnly(dateStr: string) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`
-}
-
 function switchTab(tab: 'detail' | 'scene') {
   if (activeTab.value === tab) return
   tabAnimating.value = true
@@ -408,7 +403,7 @@ async function fetchActivityDetail(id: number) {
     activity.value = result
     signupAvatars.value = (result.signupAvatars || []).map((a: string) => getFullImageUrl(a))
   } catch (error) {
-    console.error('获取活动详情失败:', error)
+    logger.error('获取活动详情失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })
   }
 }
@@ -436,31 +431,7 @@ const onSelectMatchmaker = (matchmaker: any) => {
   }, 300)
 }
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await request({
-      url: '/matchmakers',
-      method: 'GET',
-    })
-
-    const rawList: any[] = Array.isArray(res) ? res : (res?.list || res?.data?.list || res?.data || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      avatar: getFullImageUrl(item.avatar || item.avatarUrl),
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-    }))
-
-    if (matchmakerList.value.length > 0) {
-      selectedMatchmaker.value = matchmakerList.value[0]
-    }
-  } catch (e: any) {
-    console.log('[红娘] 接口调用失败，使用 Mock 数据', e?.message || e)
-    matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: icons.common.defaultAvatar, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
-    ]
-    selectedMatchmaker.value = matchmakerList.value[0]
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 function handleSignup() {
   if (isFull.value) return
@@ -513,7 +484,7 @@ async function submitSignup() {
     }
   } catch (error: unknown) {
     const err = error as Error
-    console.error('报名失败:', err.message)
+    logger.error('报名失败:', err.message)
     if (err.message !== 'Unauthorized') {
       uni.showToast({ title: err.message || '报名失败，请重试', icon: 'none' })
       if (err.message?.includes('已报名')) {
@@ -542,7 +513,7 @@ onMounted(() => {
     menus: ['shareAppMessage', 'shareTimeline'],
     fail: () => {
       // showShareMenu 在开发工具中 ban，静默忽略
-      console.log('[分享]showShareMenu 开发工具跳过')
+      logger.debug('[分享]showShareMenu 开发工具跳过')
     },
   })
 

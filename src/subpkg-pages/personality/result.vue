@@ -222,7 +222,7 @@ const canvasReady = ref(false)
 
 // 固定顶栏总高度（px）：状态栏 + 88rpx 标题行
 const navTotalHeight = computed(() => {
-  const info = uni.getWindowInfo() as any
+  const info = uni.getWindowInfo()
   const screenWidth = info.screenWidth || 375
   return statusBarHeight.value + 88 * (screenWidth / 750)
 })
@@ -255,7 +255,7 @@ const styleOptions = [
 ]
 
 onLoad(() => {
-  const sys = uni.getWindowInfo() as any
+  const sys = uni.getWindowInfo()
   statusBarHeight.value = sys.statusBarHeight || 20
 })
 

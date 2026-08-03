@@ -1065,8 +1065,9 @@
             <el-form-item label="状态">
               <el-radio-group v-model="createForm.status">
                 <el-radio :label="1">正常</el-radio>
-                <el-radio :label="0">禁用</el-radio>
-                <el-radio :label="2">待审核</el-radio>
+                <el-radio :label="0">待审核</el-radio>
+                <el-radio :label="2">未完善</el-radio>
+                <el-radio :label="3">已禁用</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -1266,8 +1267,8 @@ const birthYearOptions = (() => {
 
 const createDicts: Record<string, string[]> = {
   education: ['初中', '高中', '中专', '大专', '本科', '硕士', '博士'],
-  incomeRange: ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '2-5万', '5万以上'],
-  housingStatus: ['已购房', '未购房', '和父母同住', '租房', '与父母同住', '其他'],
+  incomeRange: ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '8千-1.2万', '1.2-2万', '2-5万', '5万以上'],
+  housingStatus: ['已购房', '未购房', '租房', '与父母同住', '其他'],
   carStatus: ['已购车', '未购车'],
   maritalStatus: ['未婚', '离异', '丧偶'],
   occupation: [],
@@ -2024,13 +2025,7 @@ async function handleCreateSubmit() {
   } as any
 
   if (editingUserId.value) {
-    // Edit mode — hopeTaTags 直接传数组
-    payload.personalityTags = {
-      character: createForm.characterTagsArr,
-      hobby: createForm.hobbyTagsArr,
-      loveRule: createForm.loveRuleTagsArr,
-    }
-    payload.hopeTaTags = createForm.hopeTaTagsArr
+    // Edit mode — personalityTags 和 hopeTaTags 已在 payload 中按数组格式赋值
     editLoading.value = true
     try {
       if (!payload.password) {

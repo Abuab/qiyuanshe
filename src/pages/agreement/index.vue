@@ -24,6 +24,7 @@
 import { ref, onMounted } from 'vue'
 import { get } from '@/utils/request'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 
 const type = ref('user')
 const pageTitle = ref('用户协议')
@@ -64,7 +65,7 @@ onMounted(async () => {
     const res: any = await get(`/agreement?type=${typeMap[t]}`)
     htmlContent.value = res?.content || ''
   } catch (e) {
-    console.error(e)
+    logger.error(e)
   } finally {
     loading.value = false
   }

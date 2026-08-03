@@ -73,6 +73,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
 
 interface PosterTemplate {
   id: number
@@ -297,14 +298,14 @@ const generatePoster = async (template: PosterTemplate) => {
 
           await trackShareEvent(template.id)
         } catch (e) {
-          console.error('canvas to temp file error', e)
+          logger.error('canvas to temp file error', e)
           showLoading.value = false
           uni.showToast({ title: '生成失败', icon: 'none' })
         }
       }, 500)
     })
   } catch (e) {
-    console.error('generate poster error', e)
+    logger.error('generate poster error', e)
     showLoading.value = false
     uni.showToast({ title: '生成失败', icon: 'none' })
   }
@@ -567,7 +568,7 @@ const fetchUserData = async () => {
 
     return userData as Record<string, unknown>
   } catch (e) {
-    console.error('fetch user data error', e)
+    logger.error('fetch user data error', e)
     return {
       id: userId.value,
       nickname: '用户',
@@ -616,7 +617,7 @@ const trackShareEvent = async (templateId: number) => {
       },
     })
   } catch (e) {
-    console.error('track share event error', e)
+    logger.error('track share event error', e)
   }
 }
 
@@ -667,7 +668,7 @@ const savePoster = async () => {
       })
     })
   } catch (e) {
-    console.error('save poster error', e)
+    logger.error('save poster error', e)
   }
 }
 </script>

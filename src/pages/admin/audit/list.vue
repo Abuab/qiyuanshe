@@ -156,6 +156,7 @@
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 
@@ -249,7 +250,7 @@ const fetchList = async (isRefresh = false) => {
 
     page.value++
   } catch (e) {
-    console.error('fetch audit list error', e)
+    logger.error('fetch audit list error', e)
     refreshing.value = false
   } finally {
     loading.value = false
@@ -323,7 +324,7 @@ const handleApprove = async (item: AuditItem) => {
     uni.showToast({ title: '已通过', icon: 'success' })
     list.value = list.value.filter((i) => !(i.type === item.type && i.id === item.id))
   } catch (e) {
-    console.error('approve error', e)
+    logger.error('approve error', e)
     uni.showToast({ title: '操作失败', icon: 'none' })
   }
 }
@@ -357,7 +358,7 @@ const confirmReject = async () => {
     closeRejectModal()
     list.value = list.value.filter((i) => !(i.type === currentRejectItem.value!.type && i.id === currentRejectItem.value!.id))
   } catch (e) {
-    console.error('reject error', e)
+    logger.error('reject error', e)
     uni.showToast({ title: '操作失败', icon: 'none' })
   }
 }
@@ -383,7 +384,7 @@ const handleBatchApprove = async () => {
           selectedItems.value.clear()
           fetchList(true)
         } catch (e) {
-          console.error('batch approve error', e)
+          logger.error('batch approve error', e)
           uni.showToast({ title: '部分操作失败', icon: 'none' })
         }
       }

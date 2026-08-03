@@ -110,7 +110,9 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { useImageFallback } from '@/composables/useImageFallback'
+import { logger } from '@/utils/logger'
 const { handleImageError } = useImageFallback()
 
 interface DynamicDetail {
@@ -144,9 +146,7 @@ const commentText = ref('')
 const loadingComments = ref(false)
 let hasMounted = false
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 const formatTime = (dateStr: string): string => {
   if (!dateStr) return ''
@@ -188,7 +188,7 @@ const fetchDetail = async () => {
       }
     }
   } catch (e: any) {
-    console.error('获取动态详情失败:', e?.message || e)
+    logger.error('获取动态详情失败:', e?.message || e)
   }
 }
 
@@ -207,7 +207,7 @@ const fetchComments = async () => {
     }))
   } catch (e) {
     // 后端评论接口暂未部署，静默处理
-    console.log('[动态评论]接口未开通', (e as any)?.message || e)
+    logger.debug('[动态评论]接口未开通', (e as any)?.message || e)
   } finally {
     loadingComments.value = false
   }
@@ -266,7 +266,7 @@ const handleBack = () => {
 }
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
   if (hasMounted) return

@@ -90,6 +90,7 @@ import { secureStorage } from '@/utils/crypto'
 import { post } from '@/utils/request'
 import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -100,7 +101,7 @@ const showDialog = ref(false)
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
 })
@@ -150,7 +151,7 @@ const confirmDeactivate = async () => {
     uni.showToast({ title: '已撤回同意', icon: 'success' })
     setTimeout(() => { userStore.logout() }, 1200)
   } catch (err: any) {
-    console.error('[agreement] 协议撤回上报失败:', err?.message || err)
+    logger.error('[agreement] 协议撤回上报失败:', err?.message || err)
     uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })
   }
 }

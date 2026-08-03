@@ -31,6 +31,7 @@ import { post } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { safeNavigateBack } from '@/utils/navigate'
 import { requireLogin } from '@/utils/auth'
+import { logger } from '@/utils/logger'
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
@@ -42,7 +43,7 @@ const images = ref<string[]>([])
 onMounted(() => {
   if (!requireLogin()) return
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   const pages = getCurrentPages()
@@ -62,7 +63,7 @@ function chooseImage() {
         try {
           const result = await uploadImage(f.path || f.tempFilePath || f)
           if (result?.url) images.value.push(result.url)
-        } catch (e) { console.error(e) }
+        } catch (e) { logger.error(e) }
       }
     },
   })

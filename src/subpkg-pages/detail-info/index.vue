@@ -318,6 +318,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { showToast } from '@/utils/common'
 import CityPicker from '@/components/city-picker/city-picker.vue'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -636,7 +637,7 @@ const handleSubmit = async () => {
       uni.navigateTo({ url: '/subpkg-pages/mate-requirement/index' })
     }, 800)
   } catch (err: any) {
-    console.error('[detail-info] 提交失败:', err?.message || err)
+    logger.error('[detail-info] 提交失败:', err?.message || err)
     showToast(err?.message || '保存失败，请稍后重试')
   }
 }

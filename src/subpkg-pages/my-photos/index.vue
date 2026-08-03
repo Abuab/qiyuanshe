@@ -34,6 +34,7 @@ import { uploadImage } from '@/utils/upload'
 import { getFullImageUrl } from '@/utils/common'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 
@@ -42,7 +43,7 @@ const navBarHeightPx = ref(44)
 const photos = ref<any[]>([])
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   if (userStore.isLoggedIn) await fetchPhotos()
@@ -50,7 +51,7 @@ onMounted(async () => {
 
 async function fetchPhotos() {
   try { const res = await get<any>('/users/photos'); photos.value = res?.list || res || [] }
-  catch (e) { console.error(e) }
+  catch (e) { logger.error(e) }
 }
 
 async function chooseImage() {
@@ -65,7 +66,7 @@ async function chooseImage() {
             await post('/users/photos', { url: result.url })
             await fetchPhotos()
           }
-        } catch (e) { console.error(e) }
+        } catch (e) { logger.error(e) }
       }
     },
   })

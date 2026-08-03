@@ -75,6 +75,7 @@ import { uploadImage } from '@/utils/upload'
 import { put, post } from '@/utils/request'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { showToast, getFullImageUrl } from '@/utils/common'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -226,7 +227,7 @@ const handleSubmit = async () => {
     }, 800)
   } catch (err: any) {
     uni.hideLoading()
-    console.error('[upload-avatar] 上传失败:', err?.message || err)
+    logger.error('[upload-avatar] 上传失败:', err?.message || err)
   }
 }
 </script>

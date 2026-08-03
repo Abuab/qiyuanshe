@@ -254,9 +254,11 @@ import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import request, { getBaseUrl, get } from '@/utils/request'
 import { icons } from '@/config/icons'
 import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
@@ -375,7 +377,7 @@ const currentCarouselIdx = ref(0)
 let carouselTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   loadStats()
   // 启动会员卡片轮播（3秒切换一次）
@@ -519,7 +521,7 @@ const safeNavigateTo = (url: string, fallbackUrl?: string, fallbackFn?: () => vo
   uni.navigateTo({
     url,
     fail: (err: any) => {
-      console.warn('[navigateTo fail]', url, err?.errMsg)
+      logger.warn('[navigateTo fail]', url, err?.errMsg)
       // 超时则延迟300ms重试一次
       if (err?.errMsg?.includes('timeout')) {
         setTimeout(() => {
@@ -666,7 +668,6 @@ const goToRealnameAuth = () => {
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
 
 const goToMatchmaker = async () => {
   // 弹出红娘联系方式弹窗
@@ -681,19 +682,7 @@ const goToMatchmaker = async () => {
   showMatchmaker.value = true
 }
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-      avatar: getFullImageUrl(item.avatar),
-    }))
-  } catch {
-    matchmakerList.value = []
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const openMatchmakerList = () => {
   showMatchmaker.value = false

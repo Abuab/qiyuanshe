@@ -54,6 +54,7 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import VisitorCard from '@/components/VisitorCard/VisitorCard.vue'
 
 interface Visitor {
@@ -72,9 +73,7 @@ const list = ref<Visitor[]>([])
 const newLikeCount = ref(0)
 const isRefreshing = ref(false)
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 function switchTab(index: number) {
   if (currentTab.value === index) return

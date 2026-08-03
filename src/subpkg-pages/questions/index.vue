@@ -78,7 +78,9 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
 
 interface Question {
   id: number
@@ -101,9 +103,7 @@ const navInnerHeight = 44
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
@@ -131,10 +131,10 @@ const fetchQuestions = async (isRefresh = false) => {
       data: { page: page.value, limit },
     })
     const rawList = res.list || res || []
-    console.log('[questions] API response keys:', Object.keys(res || {}))
-    console.log('[questions] rawList length:', Array.isArray(rawList) ? rawList.length : 'not array')
+    logger.debug('[questions] API response keys:', Object.keys(res || {}))
+    logger.debug('[questions] rawList length:', Array.isArray(rawList) ? rawList.length : 'not array')
     if (Array.isArray(rawList) && rawList.length > 0) {
-      console.log('[questions] first item isAnsweredByUser:', (rawList[0] as any).isAnsweredByUser)
+      logger.debug('[questions] first item isAnsweredByUser:', (rawList[0] as any).isAnsweredByUser)
     }
     const list = rawList.map((item: any) => ({
       ...item,
@@ -150,7 +150,7 @@ const fetchQuestions = async (isRefresh = false) => {
     if (list.length < limit) noMore.value = true
     page.value++
   } catch (e) {
-    console.error('fetch questions error', e)
+    logger.error('fetch questions error', e)
     refreshing.value = false
   } finally {
     loading.value = false

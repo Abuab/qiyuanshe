@@ -83,6 +83,7 @@
 import { ref, watch, computed } from 'vue'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 
 export interface MatchmakerData {
   id: number
@@ -199,7 +200,7 @@ const saveQrcode = async () => {
     } else {
       uni.showToast({ title: '保存失败，请重试', icon: 'none' })
     }
-    console.error('save qrcode failed', e)
+    logger.error('save qrcode failed', e)
   }
 }
 

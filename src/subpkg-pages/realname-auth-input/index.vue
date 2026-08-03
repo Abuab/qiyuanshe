@@ -132,6 +132,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
 import { get, post, put } from '@/utils/request'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { useUserStore } from '@/store/user'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
 import { startEid } from '@/subpkg-pages/mp_ecard_sdk/main'
@@ -300,12 +301,10 @@ async function refreshCertResult() {
   querying.value = true
   const prev = certStatus.value
   try {
-    // FIXME: 身份证号等 PII 不应通过 GET query string 传输，
-    // 需要后端将 /eid-auth/result 改为 POST 接口，前端改用 post() 调用
-    const res: any = await get('/eid-auth/result', {
+    const res: any = await post('/eid-auth/result', {
       realName: realName.value.trim(),
       idCard: idCard.value.trim(),
-    } as Record<string, unknown>)
+    })
     const d = res?.data || res
     const status = d && typeof d.status === 'number' ? d.status : 0
     certStatus.value = status
@@ -455,21 +454,8 @@ const openAgreement = (type: string) => {
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-      avatar: getFullImageUrl(item.avatar),
-    }))
-  } catch {
-    matchmakerList.value = []
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const openContact = async () => {
   if (matchmakerList.value.length === 0) {

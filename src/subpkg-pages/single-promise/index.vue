@@ -148,8 +148,9 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken, requireLogin } from '@/utils/auth'
-import { getFullImageUrl } from '@/utils/common'
+import { getFullImageUrl, formatDate } from '@/utils/common'
 import { useUserStore } from '@/store/user'
+import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const statusBarHeight = ref(20)
@@ -204,7 +205,7 @@ onMounted(async () => {
     return
   }
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
@@ -223,7 +224,7 @@ async function loadStatus() {
       isSigned.value = true
       realName.value = data.realName || '用户'
       existingSignatureUrl.value = getFullImageUrl(data.signatureUrl || '')
-      signedDate.value = formatDate(data.createdAt)
+      signedDate.value = formatDate(data.createdAt, 'YYYY年MM月DD日')
     } else {
       // 从用户资料获取真实姓名（优先 E证通存储，回退 userStore）
       try {
@@ -239,7 +240,7 @@ async function loadStatus() {
       }
     }
   } catch (e) {
-    console.error('加载单身承诺状态失败:', e)
+    logger.error('加载单身承诺状态失败:', e)
   }
 }
 
@@ -326,11 +327,11 @@ function exportSignature(): Promise<string> {
         destHeight: (canvasHeight || 200) * 2,
         fileType: 'png',
         success: (res: any) => {
-          console.log('[签名导出] 成功:', res.tempFilePath)
+          logger.debug('[签名导出] 成功:', res.tempFilePath)
           resolve(res.tempFilePath)
         },
         fail: (err: any) => {
-          console.error('[签名导出] 失败:', err)
+          logger.error('[签名导出] 失败:', err)
           reject(err)
         },
       })
@@ -357,15 +358,15 @@ async function confirmSubmit() {
 
   try {
     // 导出签名图片
-    console.log('[提交] 开始导出签名...')
+    logger.debug('[提交] 开始导出签名...')
     const tempPath = await exportSignature()
-    console.log('[提交] 签名导出成功:', tempPath)
+    logger.debug('[提交] 签名导出成功:', tempPath)
 
     // 上传签名图片并提交
     const token = getToken()
     const baseUrl = getBaseUrl()
     const uploadUrl = `${baseUrl}/single-promise/submit`
-    console.log('[提交] 上传至:', uploadUrl)
+    logger.debug('[提交] 上传至:', uploadUrl)
 
     const res = await new Promise<any>((resolve, reject) => {
       uni.uploadFile({
@@ -375,7 +376,7 @@ async function confirmSubmit() {
         formData: { realName: realName.value },
         header: token ? { Authorization: `Bearer ${token}` } : {},
         success: (uploadRes) => {
-          console.log('[提交] 上传响应:', uploadRes.statusCode, uploadRes.data)
+          logger.debug('[提交] 上传响应:', uploadRes.statusCode, uploadRes.data)
           try {
             resolve(JSON.parse(uploadRes.data))
           } catch {
@@ -383,14 +384,14 @@ async function confirmSubmit() {
           }
         },
         fail: (err) => {
-          console.error('[提交] 上传失败:', err)
+          logger.error('[提交] 上传失败:', err)
           reject(err)
         },
       })
     })
 
     uni.hideLoading()
-    console.log('[提交] 服务端响应:', res)
+    logger.debug('[提交] 服务端响应:', res)
 
     if (res?.code === 200 || res?.success) {
       showSuccess.value = true
@@ -405,7 +406,7 @@ async function confirmSubmit() {
     }
   } catch (e: any) {
     uni.hideLoading()
-    console.error('[提交] 异常:', e)
+    logger.error('[提交] 异常:', e)
     uni.showToast({ title: e?.message || '提交失败，请重试', icon: 'none' })
   }
 }
@@ -423,16 +424,6 @@ function handleModify() {
       }
     },
   })
-}
-
-// ========== 工具函数 ==========
-function formatDate(dateStr: string): string {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  const y = d.getFullYear()
-  const m = (d.getMonth() + 1).toString().padStart(2, '0')
-  const day = d.getDate().toString().padStart(2, '0')
-  return `${y}年${m}月${day}日`
 }
 
 function handleBack() {

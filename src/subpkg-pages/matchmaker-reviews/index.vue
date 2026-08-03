@@ -35,8 +35,10 @@ import { get } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { icons } from '@/config/icons'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const entryName = computed(() => systemStore.quickEntryNames?.[0] || '红娘评语')
@@ -44,20 +46,18 @@ const entryName = computed(() => systemStore.quickEntryNames?.[0] || '红娘评�
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 const loading = ref(true)
 const comments = ref<any[]>([])
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   try {
     const res = await get<any>('/matchmaker-comments')
     comments.value = res || []
-  } catch (e) { console.error(e) }
+  } catch (e) { logger.error(e) }
   loading.value = false
 })
 

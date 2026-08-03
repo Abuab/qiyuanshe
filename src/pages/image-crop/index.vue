@@ -75,6 +75,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { getAndClearCropImageData } from '@/utils/crop-bridge'
+import { logger } from '@/utils/logger'
 
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
@@ -227,7 +228,7 @@ const handleConfirm = () => {
         },
         fail: (err: any) => {
           uni.hideLoading()
-          console.error('canvasToTempFilePath 失败:', err)
+          logger.error('canvasToTempFilePath 失败:', err)
           uni.showToast({ title: '裁剪失败，请重试', icon: 'none' })
         },
       })

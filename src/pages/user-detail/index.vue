@@ -748,6 +748,7 @@ import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { resolveAndExposeCopy, reportCopyClick } from '@/utils/personality'
 import { getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -758,6 +759,7 @@ import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-l
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import RealNameAuthPopup from '@/components/real-name-auth-popup/real-name-auth-popup.vue'
 
@@ -778,14 +780,12 @@ const showAiMatchPopup = ref(false)
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
+
 const followLoading = ref(false)
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 // ===== 照片 =====
 const activePhotoIndex = ref(0)
@@ -952,7 +952,7 @@ function toggleVoicePlay() {
         voiceAudioCtx.src = res.tempFilePath
         voiceAudioCtx.onEnded(() => { isVoicePlaying.value = false })
         voiceAudioCtx.onError((err: any) => {
-          console.error('[UserDetail] voice play error', JSON.stringify(err))
+          logger.error('[UserDetail] voice play error', JSON.stringify(err))
           isVoicePlaying.value = false
         })
         voiceAudioCtx.play()
@@ -960,7 +960,7 @@ function toggleVoicePlay() {
       }
     },
     fail: (err: any) => {
-      console.error('[UserDetail] download voice error', JSON.stringify(err))
+      logger.error('[UserDetail] download voice error', JSON.stringify(err))
     },
   })
 }
@@ -1053,21 +1053,7 @@ const checkBlockStatus = async () => {
   } catch { /* ignore */ }
 }
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await request({ url: '/matchmakers', method: 'GET', timeout: 15000 })
-    const rawList = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      avatar: getFullImageUrl(item.avatar || item.avatarUrl),
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-    }))
-  } catch {
-    matchmakerList.value = [
-      { id: 1, name: '小红娘', avatar: defaultAvatar.value, title: '资深红娘', wechat: 'hongniang001', phone: '15703592518', qrCode: '/static/matchmaker.png' },
-    ]
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const handleBack = () => safeNavigateBack()
 

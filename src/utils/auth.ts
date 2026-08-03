@@ -1,7 +1,5 @@
 import { useUserStore } from '@/store/user'
-import { post } from '@/utils/request'
 import { secureStorage } from './crypto'
-import { logger } from './logger'
 
 export const getToken = (): string => {
   return secureStorage.getToken()
@@ -30,79 +28,4 @@ export const requireLogin = (callback?: LoginCallback): boolean => {
   return false
 }
 
-export const requireVip = (callback?: LoginCallback): boolean => {
-  if (!checkLogin()) {
-    uni.navigateTo({
-      url: '/pages/login/index'
-    })
-    return false
-  }
 
-  const userStore = useUserStore()
-  if (userStore.isVipValid) {
-    if (callback) callback()
-    return true
-  }
-
-  uni.showModal({
-    title: '提示',
-    content: '开通VIP会员后才能享受此功能，是否前往开通？',
-    confirmText: '去开通',
-    cancelText: '取消',
-    success: (res) => {
-      if (res.confirm) {
-        uni.navigateTo({
-          url: '/pages/vip/index'
-        })
-      }
-    }
-  })
-
-  return false
-}
-
-export const getUserInfo = () => {
-  const userStore = useUserStore()
-  return userStore.userInfo
-}
-
-export const isVip = (): boolean => {
-  const userStore = useUserStore()
-  return userStore.isVipValid
-}
-
-export const refreshToken = async (): Promise<boolean> => {
-  const refreshTokenValue = secureStorage.getRefreshToken()
-  if (!refreshTokenValue) {
-    return false
-  }
-
-  try {
-    const result = await post<{ accessToken: string; refreshToken: string }>('/auth/refresh', {
-      refreshToken: refreshTokenValue,
-    })
-
-    if (result && result.accessToken) {
-      const userStore = useUserStore()
-      if (userStore.userInfo) {
-        userStore.login(result.accessToken, userStore.userInfo)
-      }
-
-      if (result.refreshToken) {
-        secureStorage.setRefreshToken(result.refreshToken)
-      }
-
-      return true
-    }
-  } catch (error) {
-    logger.error('刷新token失败:', error)
-    secureStorage.removeRefreshToken()
-  }
-
-  return false
-}
-
-export const logout = () => {
-  const userStore = useUserStore()
-  userStore.logout()
-}

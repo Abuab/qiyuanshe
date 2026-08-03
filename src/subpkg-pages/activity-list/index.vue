@@ -59,7 +59,7 @@
 
           <!-- 时间 -->
           <text class="activity-time">
-            活动时间: {{ formatDate(activity.startTime) }}-{{ formatDate(activity.endTime) }}
+            活动时间: {{ formatDate(activity.startTime, 'YYYY.MM.DD') }}-{{ formatDate(activity.endTime, 'YYYY.MM.DD') }}
           </text>
         </view>
 
@@ -95,7 +95,10 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { safeNavigateBack } from '@/utils/navigate'
+import { logger } from '@/utils/logger'
+import { formatDate } from '@/utils/common'
 
 interface Activity {
   id: number
@@ -125,9 +128,7 @@ const pageSize = 10
 
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 function getStatusText(status: number) {
   const map: Record<number, string> = {
@@ -145,12 +146,6 @@ function effectiveStatus(activity: Activity) {
     return 2
   }
   return activity.status
-}
-
-function formatDate(dateStr: string) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()}`
 }
 
 async function fetchActivities(reset = false) {
@@ -191,7 +186,7 @@ async function fetchActivities(reset = false) {
       }
     }
   } catch (error) {
-    console.error('获取活动列表失败:', error)
+    logger.error('获取活动列表失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })
   } finally {
     loading.value = false
@@ -229,7 +224,7 @@ function goBack() {
 }
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchActivities(true)
 })

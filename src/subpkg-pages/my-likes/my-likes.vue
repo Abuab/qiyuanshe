@@ -83,6 +83,7 @@
 import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
@@ -110,9 +111,7 @@ const statusBarHeight = ref(0)
 // nav-level1 (88rpx ≈ 44px) + nav-level2 (88rpx ≈ 44px)
 const navBarHeightPx = 88
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']

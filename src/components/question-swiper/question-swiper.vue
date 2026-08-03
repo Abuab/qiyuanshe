@@ -35,6 +35,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
+import { logger } from '@/utils/logger'
 
 interface Question {
   id: number
@@ -69,7 +70,7 @@ const fetchQuestions = async () => {
       recentAvatars: q.recentAvatars || [],
     }))
   } catch (e) {
-    console.error('fetch questions error', e)
+    logger.error('fetch questions error', e)
   }
 }
 

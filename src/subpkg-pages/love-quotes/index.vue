@@ -43,15 +43,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { get, put } from '@/utils/request'
 
 const systemStore = useSystemStore()
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 const quotes = ref<string[]>([])
 const currentIndex = ref(0)
 
@@ -63,7 +62,7 @@ const currentQuote = computed(() => {
 })
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
 })

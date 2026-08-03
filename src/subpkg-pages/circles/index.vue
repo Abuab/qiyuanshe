@@ -109,7 +109,9 @@ import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
+import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -130,12 +132,10 @@ const noMore = ref(false)
 const isRefreshing = ref(false)
 
 const scrollToVal = ref(0)
-const showBackTop = ref(false)
-const onScroll = (e: any) => { showBackTop.value = e.detail.scrollTop > 600 }
-const scrollToTop = () => { scrollToVal.value = scrollToVal.value ? 0 : 0.001; showBackTop.value = false }
+const { showBackTop, onScroll, scrollToTop } = useBackTop()
 
 onMounted(async () => {
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   await loadCircles()
@@ -153,7 +153,7 @@ async function loadCircles() {
       await loadUsers(true)
     }
   } catch (e) {
-    console.error('[Circles] loadCircles error:', e)
+    logger.error('[Circles] loadCircles error:', e)
   }
 }
 
@@ -196,7 +196,7 @@ async function loadUsers(reset = false) {
       noMore.value = true
     }
   } catch (e) {
-    console.error('[Circles] loadUsers error:', e)
+    logger.error('[Circles] loadUsers error:', e)
   } finally {
     loadingMore.value = false
   }

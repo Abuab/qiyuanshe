@@ -245,6 +245,7 @@ import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
+import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
@@ -256,6 +257,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import LoveIntentPopup from '@/components/love-intent-popup/love-intent-popup.vue'
 import BackTop from '@/components/back-top/back-top.vue'
+import { useBackTop } from '@/composables/useBackTop'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
@@ -297,14 +299,14 @@ const scrollViewStyle = computed(() => {
   const top = (statusBarHeight.value || 20) + 44
   return `position:absolute; top:${top}px; bottom:0; left:0; right:0;`
 })
-const showBackTop = ref(false)
+const showBackTop = useBackTop().showBackTop
 const showFixedFilter = ref(false)
 const scrollToVal = ref(0)
 // 红娘弹窗
 const showMatchmaker = ref(false)
 const showMatchmakerList = ref(false)
 const selectedMatchmaker = ref<any>(null)
-const matchmakerList = ref<any[]>([])
+
 // 脱单需求确认弹窗
 const showLoveIntent = ref(false)
 const pageSize = 10
@@ -534,20 +536,7 @@ const handleMatchmakerFloat = async () => {
   showMatchmaker.value = true
 }
 
-const fetchMatchmakerList = async () => {
-  try {
-    const res: any = await get('/matchmakers')
-    const rawList = Array.isArray(res) ? res : (res?.data || res?.list || [])
-    matchmakerList.value = rawList.map((item: any) => ({
-      ...item,
-      qrCode: getFullImageUrl(item.qrCode || item.qr_code || item.qrcode),
-      avatar: getFullImageUrl(item.avatar),
-    }))
-  } catch (e) {
-    console.log('[红娘] 接口获取失败', e)
-    matchmakerList.value = []
-  }
-}
+const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
 
 const openMatchmakerList = () => {
   showMatchmaker.value = false
@@ -635,9 +624,9 @@ const goToUserDetail = (user: UserCardData) => {
 
 onMounted(() => {
   // eslint-disable-next-line no-console
-  console.log('[首页] BUILD=v15-6a3f1c0')
+  logger.debug('[首页] BUILD=v15-6a3f1c0')
 
-  const sysInfo = uni.getWindowInfo() as any
+  const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
 
   loadUserList(true)
@@ -660,7 +649,7 @@ onShow(() => {
     if (userStore.userInfo?.status === 4) {
       showLoveIntent.value = true
     }
-  }).catch(() => {})
+  }).catch((err) => { logger.error('[首页] refreshProfile 失败', err) })
   // 刷新自身照片数量，确保从编辑资料页返回后模糊状态更新
   if (userStore.isLoggedIn) fetchMyPhotoCount()
   // 浮动按钮配置：每次显示都拉取，保证后台切换模式后即时生效

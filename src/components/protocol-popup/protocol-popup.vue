@@ -29,6 +29,7 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { get } from '@/utils/request'
 import { useSystemStore } from '@/store/system'
+import { logger } from '@/utils/logger'
 
 interface Props {
   show: boolean
@@ -215,7 +216,7 @@ const fetchAgreement = async () => {
       agreementContent.value = fallbackText.value
     }
   } catch (e) {
-    console.log('[协议] 接口获取失败，使用兜底内容')
+    logger.debug('[协议] 接口获取失败，使用兜底内容')
     agreementContent.value = fallbackText.value
   }
 }

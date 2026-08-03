@@ -1290,8 +1290,8 @@ const editForm = reactive({
 
 // 编辑资料下拉选项常量（与列表页保持一致）
 const EDU_OPTIONS = ['初中', '高中', '中专', '大专', '本科', '硕士', '博士']
-const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '2-5万', '5万以上']
-const HOUSING_OPTIONS = ['已购房', '未购房', '和父母同住', '租房', '与父母同住', '其他']
+const INCOME_OPTIONS = ['3千以下', '3-5千', '5-8千', '8千-1万', '1-2万', '8千-1.2万', '1.2-2万', '2-5万', '5万以上']
+const HOUSING_OPTIONS = ['已购房', '未购房', '租房', '与父母同住', '其他']
 const CAR_OPTIONS = ['已购车', '未购车']
 const MARITAL_OPTIONS = ['未婚', '离异', '丧偶']
 const HOUSING_REQUIREMENT_OPTIONS = ['不限', '已购房', '租房', '与父母同住', '婚后购房', '已购房无贷款', '已购房有贷款', '需要时可购置']
