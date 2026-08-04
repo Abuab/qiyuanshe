@@ -131,7 +131,7 @@
               </el-image>
               <div class="user-text">
                 <span class="user-name">{{ row.submitter.nickname }}</span>
-                <span class="user-id">ID: {{ row.submitter.id || row.submitterId }}</span>
+                <span class="user-id">ID: {{ row.submitter.userId || row.submitterId }}</span>
               </div>
             </div>
             <span v-else class="text-muted">-</span>

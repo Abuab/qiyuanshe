@@ -15,6 +15,7 @@ export interface AuditItem {
   submitterId?: number
   submitter?: {
     id: number
+    userId: string
     nickname: string
     avatar: string
   } | null

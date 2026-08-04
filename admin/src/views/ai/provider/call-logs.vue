@@ -59,8 +59,11 @@
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="用户" min-width="140">
           <template #default="{ row }">
-            <span>{{ row.userNickname || '-' }}</span>
-            <span style="color:#999;font-size:12px"> (ID:{{ row.userId }})</span>
+            <template v-if="row.userId">
+              <span>{{ row.userNickname || '未设置昵称' }}</span>
+              <span style="color:#999;font-size:12px"> (ID:{{ row.userId }})</span>
+            </template>
+            <span v-else style="color:#999">匿名用户</span>
           </template>
         </el-table-column>
         <el-table-column label="功能类型" min-width="110">

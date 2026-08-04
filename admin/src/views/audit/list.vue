@@ -82,7 +82,7 @@
                 </template>
               </el-image>
               <span class="submitter-nickname" @click="goUserDetail(row.submitter.id)">{{ row.submitter.nickname }}</span>
-              <span class="submitter-id">ID: {{ row.submitter.id ?? row.submitterId }}</span>
+              <span class="submitter-id">ID: {{ row.submitter.userId ?? row.submitterId }}</span>
             </div>
             <span v-else class="text-muted">系统提交</span>
           </template>

@@ -199,7 +199,7 @@ export class AdminAiProviderController {
       modelName: log.provider?.modelName || '-',
       callType: log.callType,
       userId: log.user?.userId || '',
-      userNickname: log.user?.nickname || '-',
+      userNickname: log.user?.nickname || '',
       inputTokens: log.inputTokens,
       outputTokens: log.outputTokens,
       durationMs: log.durationMs,

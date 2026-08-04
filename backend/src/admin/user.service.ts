@@ -290,13 +290,10 @@ export class AdminUserService {
     // Bulk query match counts
     const matchCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const matchCounts = await this.matchRecordRepository
-        .createQueryBuilder('mr')
-        .select('mr.userId', 'userId')
-        .addSelect('COUNT(mr.id)', 'cnt')
-        .where('mr.userId IN (:...userIds)', { userIds })
-        .groupBy('mr.userId')
-        .getRawMany<{ userId: number; cnt: number }>();
+      const matchCounts = await this.matchRecordRepository.manager.query(
+        `SELECT userId, COUNT(id) AS cnt FROM match_records WHERE userId IN (?) GROUP BY userId`,
+        [userIds],
+      )
       for (const row of matchCounts) {
         matchCountMap.set(Number(row.userId), Number(row.cnt))
       }
@@ -306,24 +303,18 @@ export class AdminUserService {
     const followingCountMap = new Map<number, number>()
     const followerCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const followingCounts = await this.followRepository
-        .createQueryBuilder('f')
-        .select('f.userId', 'userId')
-        .addSelect('COUNT(f.id)', 'cnt')
-        .where('f.userId IN (:...userIds)', { userIds })
-        .groupBy('f.userId')
-        .getRawMany<{ userId: number; cnt: number }>()
+      const followingCounts = await this.followRepository.manager.query(
+        `SELECT user_id AS userId, COUNT(id) AS cnt FROM follows WHERE user_id IN (?) GROUP BY user_id`,
+        [userIds],
+      )
       for (const row of followingCounts) {
         followingCountMap.set(Number(row.userId), Number(row.cnt))
       }
 
-      const followerCounts = await this.followRepository
-        .createQueryBuilder('f')
-        .select('f.targetUserId', 'userId')
-        .addSelect('COUNT(f.id)', 'cnt')
-        .where('f.targetUserId IN (:...userIds)', { userIds })
-        .groupBy('f.targetUserId')
-        .getRawMany<{ userId: number; cnt: number }>()
+      const followerCounts = await this.followRepository.manager.query(
+        `SELECT target_user_id AS userId, COUNT(id) AS cnt FROM follows WHERE target_user_id IN (?) GROUP BY target_user_id`,
+        [userIds],
+      )
       for (const row of followerCounts) {
         followerCountMap.set(Number(row.userId), Number(row.cnt))
       }
@@ -332,13 +323,10 @@ export class AdminUserService {
     // Bulk query view counts (how many unique users this user has viewed)
     const viewCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const viewCounts = await this.visitRepository
-        .createQueryBuilder('v')
-        .select('v.visitorUserId', 'userId')
-        .addSelect('COUNT(DISTINCT v.userId)', 'cnt')
-        .where('v.visitorUserId IN (:...userIds)', { userIds })
-        .groupBy('v.visitorUserId')
-        .getRawMany<{ userId: number; cnt: number }>()
+      const viewCounts = await this.visitRepository.manager.query(
+        `SELECT visitor_user_id AS userId, COUNT(DISTINCT user_id) AS cnt FROM profile_visits WHERE visitor_user_id IN (?) GROUP BY visitor_user_id`,
+        [userIds],
+      )
       for (const row of viewCounts) {
         viewCountMap.set(Number(row.userId), Number(row.cnt))
       }
