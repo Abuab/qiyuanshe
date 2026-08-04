@@ -9,7 +9,6 @@ import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 
 @Controller('admin/system')
-@Roles(AdminRole.SUPER_ADMIN)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class AdminSystemController {
   constructor(
@@ -25,6 +24,7 @@ export class AdminSystemController {
   }
 
   @Put('configs')
+  @Roles(AdminRole.SUPER_ADMIN)
   async saveConfigs(@Body() body: SystemConfigs) {
     await this.systemService.saveConfigs(body)
     return Result.success(null, '保存成功')
@@ -37,6 +37,7 @@ export class AdminSystemController {
   }
 
   @Put('config/:key')
+  @Roles(AdminRole.SUPER_ADMIN)
   async updateConfig(@Param('key') key: string, @Body('value') value: string) {
     await this.systemService.updateConfig(key, value)
     return Result.success(null, '更新成功')
@@ -51,6 +52,7 @@ export class AdminSystemController {
 
   /** 保存用量限额配置 */
   @Put('quota')
+  @Roles(AdminRole.SUPER_ADMIN)
   async saveQuotaConfig(@Body() body: QuotaConfig) {
     await this.quotaService.saveConfig(body)
     return Result.success(null, '保存成功')
@@ -63,6 +65,7 @@ export class AdminSystemController {
   }
 
   @Post('test-webhook')
+  @Roles(AdminRole.SUPER_ADMIN)
   async testWebhook(@Body('channel') channel: string, @Body('url') url: string) {
     if (!url) {
       return Result.error('Webhook 地址不能为空', 400)
@@ -76,6 +79,7 @@ export class AdminSystemController {
   }
 
   @Post('retry-webhook/:id')
+  @Roles(AdminRole.SUPER_ADMIN)
   async retryWebhook(@Param('id', ParseIntPipe) id: number) {
     try {
       await this.notifyService.retryWebhook(id)

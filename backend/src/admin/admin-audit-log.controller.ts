@@ -9,7 +9,7 @@ import { AdminRole } from '../shared/enums'
 
 @Controller('admin/audit-logs')
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
-@Roles(AdminRole.SUPER_ADMIN)
+@Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 export class AdminAuditLogController {
   constructor(
     @InjectRepository(AdminAuditLog)

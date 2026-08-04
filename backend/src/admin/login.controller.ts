@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Get, Put, Delete, Param, ParseIntPipe, UseGuards } from '@nestjs/common'
+import { Controller, Post, Body, Get, Put, Delete, Param, ParseIntPipe, UseGuards, Req } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
@@ -8,6 +10,7 @@ import { CaptchaService } from './captcha.service'
 import { MfaService } from './mfa.service'
 import { AdminAccountService } from './admin-account.service'
 import { RedisService } from '../common/redis.service'
+import { AdminAuditLog } from '../entities/AdminAuditLog'
 import { adminJwtConfig } from '../config/jwt'
 import { AdminRole } from '../shared/enums'
 
@@ -55,7 +58,17 @@ export class AdminLoginController {
     private readonly mfaService: MfaService,
     private readonly adminAccountService: AdminAccountService,
     private readonly redisService: RedisService,
+    @InjectRepository(AdminAuditLog)
+    private readonly auditRepo: Repository<AdminAuditLog>,
   ) {}
+
+  /** 写入审计日志（fire-and-forget，失败不阻塞主流程） */
+  private audit(action: string, module: string, adminId: number, adminUsername: string, detail?: string) {
+    try {
+      const log = this.auditRepo.create({ adminId, adminUsername, action, module, method: 'POST', detail: detail || null })
+      this.auditRepo.save(log).catch(() => {})
+    } catch {}
+  }
 
   /** 生成管理员 token 对（accessToken + refreshToken） */
   private generateTokens(adminUser: { id: number; username: string; role: string; tokenVersion: number }) {
@@ -141,6 +154,7 @@ export class AdminLoginController {
 
     const attemptRecord = await this.getLoginAttempt(username)
     if (attemptRecord.blockUntil > Date.now()) {
+      this.audit('登录', 'auth', 0, username, '登录被拒绝: 账号已锁定')
       return { success: false, message: '登录尝试次数过多，请15分钟后再试' }
     }
 
@@ -156,8 +170,10 @@ export class AdminLoginController {
       if (attemptRecord.count >= MAX_LOGIN_ATTEMPTS) {
         attemptRecord.blockUntil = Date.now() + LOGIN_BLOCK_DURATION_MS
         attemptRecord.count = 0
+        this.audit('登录', 'auth', 0, username, `登录失败锁定: 已尝试${MAX_LOGIN_ATTEMPTS}次以上，锁定15分钟`)
       }
       await this.setLoginAttempt(username, attemptRecord)
+      this.audit('登录', 'auth', 0, username, '登录失败: 用户名或密码错误')
       return { success: false, message: '用户名或密码错误' }
     }
 
@@ -194,6 +210,8 @@ export class AdminLoginController {
 
     const permissions = this.getPermissionsByRole(adminUser.role)
 
+    this.audit('登录', 'auth', adminUser.id, adminUser.username, '登录成功')
+
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
   }
 
@@ -218,6 +236,7 @@ export class AdminLoginController {
 
     const valid = await this.mfaService.verifyLoginMfa(payload.adminId, code)
     if (!valid) {
+      this.audit('MFA验证', 'auth', payload.adminId, 'unknown', 'MFA验证失败: 验证码错误')
       return { success: false, message: '验证码错误' }
     }
 
@@ -239,6 +258,8 @@ export class AdminLoginController {
     }
 
     const permissions = this.getPermissionsByRole(adminUser.role)
+
+    this.audit('MFA登录', 'auth', adminUser.id, adminUser.username, 'MFA验证通过，登录成功')
 
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
   }
@@ -274,6 +295,7 @@ export class AdminLoginController {
     }
 
     const tokens = this.generateTokens(adminUser)
+    this.audit('刷新令牌', 'auth', adminUser.id, adminUser.username, 'Token刷新成功')
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken }
   }
 
@@ -314,7 +336,7 @@ export class AdminLoginController {
   @Post('admin-users/:id/impersonate')
   @Roles(AdminRole.SUPER_ADMIN)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)
-  async impersonate(@Param('id', ParseIntPipe) id: number) {
+  async impersonate(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
     const target = await this.adminAccountService.findById(id)
     if (!target) {
       return { success: false, message: '子账号不存在' }
@@ -322,6 +344,15 @@ export class AdminLoginController {
     if (target.status !== 1) {
       return { success: false, message: '该账号已被禁用，无法登录' }
     }
+
+    const operator = req.user
+    this.audit(
+      '模拟登录',
+      'auth',
+      operator?.id || 0,
+      operator?.username || 'unknown',
+      `模拟登录子账号: ${target.username}(${target.nickname || target.username})`,
+    )
 
     const tokens = this.generateTokens(target)
 

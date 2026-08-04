@@ -28,14 +28,31 @@ const AUDIT_ROUTE_PREFIXES = [
   '/admin/vip-config',
   '/admin/ai',
   '/admin/chat',
-  '/admin/single-promise',
   '/admin/store-cert',
+
+  '/admin/user-profiles',
+  '/admin/quick-questions',
+  '/admin/matchmaker-comments',
+  '/admin/guide',
+  '/admin/agreement-log-storage',
+  '/admin/upload',
+  '/admin/mfa',
+  '/admin/personality',
+  '/admin/profile',
+
+  // 单线承诺书管理端路由格式为 /single-promise/admin/* 而非 /admin/single-promise/*
+  '/single-promise/admin',
 ]
 
-/** 从路径中提取模块名 */
+/** 从路径中提取模块名（兼容 /admin/xxx 和 /single-promise/admin 两种格式） */
 function extractModule(url: string): string {
-  const match = url.match(/\/admin\/([^\/\?]+)/)
-  return match ? match[1] : 'unknown'
+  // 先尝试 /admin/xxx 格式
+  let match = url.match(/\/admin\/([^\/\?]+)/)
+  if (match) return match[1]
+  // 再尝试 /single-promise/admin 格式
+  match = url.match(/\/(single-promise\/admin)/)
+  if (match) return match[1]
+  return 'unknown'
 }
 
 /** 将 HTTP 方法映射为中文操作名（模块信息已存储在独立 module 列） */
