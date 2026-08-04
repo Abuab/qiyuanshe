@@ -1441,21 +1441,22 @@ function formatLastActive(lastActiveAt: string | null): string {
 }
 
 // ===== 用户价值分层标签 =====
+// 阈值说明：profileScore 满分100，>=85 需17项+资料填充，>=60 需12项+，确保标签有区分度
 
 function getUserTier(row: any): string | null {
   const score = row.profileScore || 0
-  if (score >= 70) return '高价值'
-  if (score >= 45) return '潜力'
-  if (score >= 20) return '普通'
+  if (score >= 85) return '高价值'
+  if (score >= 60) return '潜力'
+  if (score >= 30) return '普通'
   if (score > 0) return '预警'
   return null
 }
 
 function getUserTierType(row: any): string {
   const score = row.profileScore || 0
-  if (score >= 70) return 'success'
-  if (score >= 45) return ''
-  if (score >= 20) return 'warning'
+  if (score >= 85) return 'success'
+  if (score >= 60) return ''
+  if (score >= 30) return 'warning'
   return 'danger'
 }
 
