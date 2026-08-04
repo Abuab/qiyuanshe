@@ -38,7 +38,8 @@ export class WechatQrService {
         await this.redis.set(WechatQrService.TOKEN_KEY, data.access_token, ttl).catch(() => {})
         return data.access_token
       }
-      this.logger.warn(`获取 access_token 失败: ${JSON.stringify(data)}`)
+      // 仅记录 errcode/errmsg，避免日志泄露 access_token
+      this.logger.warn(`获取 access_token 失败: ${data?.errcode || 'unknown'} ${data?.errmsg || ''}`)
       return null
     } catch (e: any) {
       this.logger.warn(`获取 access_token 异常: ${e?.message}`)
@@ -76,7 +77,7 @@ export class WechatQrService {
       const contentType = resp.headers.get('content-type') || ''
       if (contentType.includes('application/json')) {
         const err = await resp.json().catch(() => ({}))
-        this.logger.warn(`生成小程序码失败: ${JSON.stringify(err)}`)
+        this.logger.warn(`生成小程序码失败: errcode=${err?.errcode || 'unknown'} errmsg=${err?.errmsg || ''}`)
         return null
       }
       const arrayBuf = await resp.arrayBuffer()

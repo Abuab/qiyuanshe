@@ -250,7 +250,8 @@ export class AiVoiceService {
         text = rawContent.trim()
       }
       if (!text) {
-        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容, raw=${JSON.stringify(rawContent).slice(0, 200)}`)
+        // 仅记录调试信息（长度），不打印原始语音识别文本
+        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容, rawLen=${String(rawContent || '').length}`)
         return { text: null, error: '返回空内容' }
       }
 

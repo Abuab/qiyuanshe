@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common'
+import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, LessThan } from 'typeorm'
 import { readFileSync, existsSync, readdirSync } from 'fs'
@@ -37,6 +37,7 @@ const DEFAULT_QUOTA = {
 
 @Injectable()
 export class ChatService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(ChatService.name)
   private messageCountCache: Map<number, { count: number; date: string }> = new Map()
   /** 按匹配对的计数缓存: key = `${userId}_${targetUserId}` */
   private perMatchCountCache: Map<number, Map<number, number>> = new Map()
@@ -714,11 +715,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
             // 人工审核已启用，消息存入但需要标记（实体无 status/isVisible 字段，正常存入）
             // 审核日志已由 AuditService.auditText 自动写入
             // 调用 webhook 通知（预留接口，当前仅打印日志）
-            console.log('[ChatService] 消息进入人工审核队列', {
-              userId,
-              content: content.substring(0, 50),
-              time: new Date().toISOString(),
-            })
+            this.logger.log(`消息进入人工审核: userId=${userId} contentLen=${content.length}`)
             return // 消息允许保存，人工审核后端可查看 AuditLog 表
           }
           // 人工审核未启用，按拒绝处理

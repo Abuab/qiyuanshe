@@ -235,7 +235,7 @@ export class AiRateLimitService {
 
     for (const pattern of ABNORMAL_UA_PATTERNS) {
       if (pattern.test(userAgent)) {
-        this.logger.warn(`[RateLimit] Abnormal UA detected: ${userAgent.slice(0, 80)}`)
+        this.logger.warn(`[RateLimit] Abnormal UA detected (len=${userAgent.length})`)
         return {
           allowed: false,
           code: AiRateLimitCode.ABNORMAL_UA,

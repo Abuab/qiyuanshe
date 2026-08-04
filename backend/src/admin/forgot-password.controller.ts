@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   UseGuards,
+  Logger,
 } from '@nestjs/common'
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -16,6 +17,8 @@ import { Result } from '../common/result'
 
 @Controller('admin')
 export class ForgotPasswordController {
+  private readonly logger = new Logger(ForgotPasswordController.name)
+
   constructor(
     @InjectRepository(AdminUser)
     private readonly adminRepo: Repository<AdminUser>,
@@ -27,9 +30,9 @@ export class ForgotPasswordController {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('ADMIN_RESET_KEY environment variable is required in production')
     }
-    // 开发环境：生成临时密钥（仅当次有效），需从控制台日志获取
+    // 开发环境：生成临时密钥（仅当次有效），从控制台日志获取（不打印密钥本身）
     const tempKey = crypto.randomBytes(16).toString('hex')
-    console.warn(`[SECURITY] ADMIN_RESET_KEY not set. Temporary reset key (DO NOT use in production): ${tempKey}`)
+    this.logger.warn('[SECURITY] ADMIN_RESET_KEY not set — temporary reset key generated for this session')
     return tempKey
   }
 

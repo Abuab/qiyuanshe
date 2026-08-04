@@ -242,7 +242,8 @@ export class EidAuthService {
     eidToken?: string
     sign?: string
   }): Promise<{ ok: boolean }> {
-    this.logger.log(`收到E证通回调：${JSON.stringify(body || {})}`)
+    // 回调报文仅记录接收事件，不记录敏感字段（eidToken / sign）
+    this.logger.log(`收到E证通回调: eidToken长度=${(body?.eidToken || '').length} sign长度=${(body?.sign || '').length}`)
     const callbackKey = process.env.EID_CALLBACK_TOKEN || ''
     const eidToken = (body?.eidToken || '').trim()
     const sign = (body?.sign || '').trim()

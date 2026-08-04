@@ -160,7 +160,8 @@ export class PaymentService {
 
     const result = await resp.json() as any
     if (!result.prepay_id) {
-      this.logger.error(`[统一下单] 无 prepay_id: ${JSON.stringify(result)}`)
+      // 仅记录关键错误码，避免日志泄露完整支付响应
+      this.logger.error(`[统一下单] 无 prepay_id: errcode=${result?.errcode || 'unknown'} errmsg=${result?.errmsg || ''}`)
       throw new BadRequestException('微信下单失败，未获取到 prepay_id')
     }
 

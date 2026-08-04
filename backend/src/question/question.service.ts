@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Optional, OnModuleInit } from '@nestjs/common'
+import { Injectable, NotFoundException, ForbiddenException, Optional, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource, In } from 'typeorm'
 import { readdirSync, readFileSync, existsSync } from 'fs'
@@ -50,6 +50,7 @@ export interface HotQuestionWithAvatars {
 
 @Injectable()
 export class QuestionService implements OnModuleInit {
+  private readonly logger = new Logger(QuestionService.name)
   constructor(
     @InjectRepository(HotQuestion)
     private readonly questionRepository: Repository<HotQuestion>,
@@ -468,7 +469,7 @@ export class QuestionService implements OnModuleInit {
   private checkLocalBannedContent(content: string): 'pass' | 'reject' | 'review' {
     const hit = this.sensitiveFilter.check(content)
     if (hit) {
-      console.log(`[QuestionService] 敏感词命中: ${hit}`)
+      this.logger.log(`敏感词命中: hitLength=${hit.length}`)
       return 'reject'
     }
     return 'review'

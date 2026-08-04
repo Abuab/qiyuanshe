@@ -5,6 +5,7 @@ import {
   UseInterceptors,
   UseGuards,
   Request,
+  Logger,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
@@ -48,6 +49,7 @@ if (!existsSync(uploadsDir)) {
  */
 @Controller('upload')
 export class UploadController {
+  private readonly logger = new Logger(UploadController.name)
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -88,11 +90,11 @@ export class UploadController {
     const url = `/uploads/${file.filename}`
     // 记录上传者信息，用于后续追溯
     const uploaderId = req.user?.sub || req.user?.id || null
-    console.log('Upload success:', file.originalname, '->', url, 'uploaderId:', uploaderId)
+    this.logger.log(`Upload success: ${file.originalname} -> ${url} uploaderId=${uploaderId || 'anonymous'}`)
 
     return Result.success({ url, uploaderId })
     } catch (error: any) {
-      console.error('Upload error:', error?.message || error)
+      this.logger.error(`Upload error: ${error?.message || error}`)
       return Result.error('文件上传失败: ' + (error?.message || '未知错误'))
     }
   }
