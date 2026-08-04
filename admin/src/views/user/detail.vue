@@ -401,15 +401,12 @@
             </div>
           </el-tab-pane>
 
-          <!-- Tab 5: 审核记录（合并资料审核 + 照片审核 + 实名认证状态） -->
+          <!-- Tab 5: 审核记录（照片审核 + 实名认证状态） -->
           <el-tab-pane label="审核记录" name="audit">
             <div v-loading="tabLoading.audit">
               <!-- 当前审核状态 -->
               <h4 class="section-title">当前审核状态</h4>
               <el-descriptions :column="3" border>
-                <el-descriptions-item label="资料审核">
-                  <el-tag :type="getAuditTagType(user.profileAuditStatus)" size="small">{{ getAuditStatusLabel(user.profileAuditStatus) }}</el-tag>
-                </el-descriptions-item>
                 <el-descriptions-item label="照片审核">
                   <el-tag :type="getAuditTagType(user.photoAuditStatus)" size="small">{{ getAuditStatusLabel(user.photoAuditStatus) }}</el-tag>
                 </el-descriptions-item>
@@ -1162,8 +1159,7 @@ interface UserDetail {
   acceptChildren?: string
   adminRemark?: string
   photos?: { id: number; userId: number; photoUrl: string; isMain: number; sortOrder: number; auditStatus: number; createdAt: string }[]
-  profileAuditStatus?: number | string  // 后端返回字符串('PENDING'/'APPROVE'/'REJECT'/'unsubmitted')
-  photoAuditStatus?: number | string    // 同上
+  photoAuditStatus?: number | string    // 后端返回字符串('PENDING'/'APPROVE'/'REJECT'/'unsubmitted')
   voiceUrl?: string
   voiceDuration?: number
   voiceAuditStatus?: number
@@ -1688,7 +1684,7 @@ function handleTabChange(tabName: string) {
     case 'photos': loadPhotos(); break
     case 'chat': loadChatConversations(); break
     case 'interaction': loadInteractionData(); break  // 互动记录：合并关注 + 喜欢 + 浏览
-    case 'audit': loadAuditHistory(); break  // 审核记录：合并资料审核 + 照片审核
+    case 'audit': loadAuditHistory(); break  // 审核记录：照片审核
     case 'finance': loadFinanceData(); break  // 财务记录：从后端 /admin/users/:id/orders 加载
     case 'answers': loadUserAnswers(); break  // 问答：加载用户回答列表
     case 'basic': loadReviews(); loadOpLogs(); break  // 基本资料内加载红娘评价 + 操作日志
@@ -2389,7 +2385,7 @@ function getAuditTagType(status?: number | string) {
   return typeMap[status] || 'info'
 }
 function getAuditTypeLabel(targetType: string) {
-  const map: Record<string, string> = { profile: '资料审核', photo: '照片审核', realName: '实名认证' }
+  const map: Record<string, string> = { photo: '照片审核', realName: '实名认证' }
   return map[targetType] || targetType
 }
 
@@ -2406,20 +2402,11 @@ async function loadAuditHistory() {
   if (!user.value) return
   tabLoading.audit = true
   try {
-    // 审核记录：查询资料审核 + 照片审核的历史记录，仅限当前用户
-    // TODO: 后端接口增加 userId 过滤参数，当前先传 userId 并用前端过滤兜底
+    // 审核记录：查询照片审核的历史记录，仅限当前用户
     const { adminAudit } = await import('../../api/audit')
     const uid = user.value.id
-    const [profileRes, photoRes] = await Promise.all([
-      adminAudit.list({ type: 'user', userId: uid, limit: 50 } as any),
-      adminAudit.list({ type: 'photo', userId: uid, limit: 50 } as any),
-    ])
+    const photoRes = await adminAudit.list({ type: 'photo', userId: uid, limit: 50 } as any)
     const items: any[] = []
-    if (profileRes.success && profileRes.data) {
-      // 资料审核：targetId 即为 userId，前端过滤确保只展示当前用户记录
-      const filtered = (profileRes.data.list || []).filter((item: any) => item.userId === uid || item.targetId === uid)
-      items.push(...filtered)
-    }
     if (photoRes.success && photoRes.data) {
       // 照片审核：按 submitterId 或 targetId 过滤当前用户的照片审核记录
       const filtered = (photoRes.data.list || []).filter((item: any) => item.userId === uid || item.submitterId === uid || item.targetId === uid)

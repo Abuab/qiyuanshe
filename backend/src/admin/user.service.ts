@@ -248,23 +248,12 @@ export class AdminUserService {
 
     const [users, total] = await queryBuilder.getManyAndCount()
 
-    // Bulk query audit statuses
     const userIds = users.map(u => u.id)
 
-    const profileAuditMap = new Map<number, string>()
+    // Bulk query photo audit statuses (资料审核已废弃，仅查询照片审核)
     const photoAuditMap = new Map<number, string>()
 
     if (userIds.length > 0) {
-      const profileAudits = await this.auditLogRepository
-        .createQueryBuilder('a')
-        .select('a.targetId', 'targetId')
-        .addSelect('a.action', 'action')
-        .where('a.targetType = :userType', { userType: 'user' })
-        .andWhere('a.action IN (:...auditActions)', { auditActions: ['PENDING', 'APPROVE', 'REJECT'] })
-        .andWhere('a.targetId IN (:...userIds)', { userIds })
-        .orderBy('a.createdAt', 'DESC')
-        .getRawMany<{ targetId: number; action: string }>()
-
       const photoAudits = await this.auditLogRepository
         .createQueryBuilder('a')
         .select('a.targetId', 'targetId')
@@ -275,11 +264,6 @@ export class AdminUserService {
         .getRawMany<{ targetId: number; action: string }>()
 
       // Keep first (latest) record per targetId
-      for (const row of profileAudits) {
-        if (!profileAuditMap.has(row.targetId)) {
-          profileAuditMap.set(row.targetId, row.action)
-        }
-      }
       for (const row of photoAudits) {
         if (!photoAuditMap.has(row.targetId)) {
           photoAuditMap.set(row.targetId, row.action)
@@ -389,7 +373,6 @@ export class AdminUserService {
         hopeTaTags,
         adminRemark: user.adminRemark,
         age: user.birthYear ? new Date().getFullYear() - user.birthYear : null,
-        profileAuditStatus: profileAuditMap.get(user.id) || 'unsubmitted',
         photoAuditStatus: photoAuditMap.get(user.id) || 'unsubmitted',
         matchCount: matchCountMap.get(user.id) || 0,
         followingCount: followingCountMap.get(user.id) || 0,

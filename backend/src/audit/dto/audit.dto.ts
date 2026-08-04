@@ -2,7 +2,6 @@ import { IsString, IsNumber, IsOptional, IsEnum, Min, Max, MaxLength } from 'cla
 import { Type } from 'class-transformer'
 
 export enum AuditType {
-  USER = 'user',
   PHOTO = 'photo',
   ANSWER = 'answer',
 }

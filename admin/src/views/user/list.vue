@@ -469,20 +469,6 @@
             <el-tag v-else type="info" size="small">未认证</el-tag>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('profileAudit')" label="资料审核" width="110">
-          <template #default="{ row }">
-            <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.profileAuditStatus || row.profileAuditStatus === 'unsubmitted'">
-              <el-tag
-                :type="getAuditTagType(row.profileAuditStatus)"
-                size="small"
-                :style="row.profileAuditStatus && row.profileAuditStatus !== 'unsubmitted' ? 'cursor:pointer' : ''"
-                @click="goAudit(row, 'user')"
-              >
-                {{ getAuditStatusLabel(row.profileAuditStatus) }}
-              </el-tag>
-            </el-tooltip>
-          </template>
-        </el-table-column>
         <el-table-column v-if="isColumnVisible('photoAudit')" label="照片审核" width="110">
           <template #default="{ row }">
             <el-tooltip content="点击跳转审核管理" placement="top" :disabled="!row.photoAuditStatus || row.photoAuditStatus === 'unsubmitted'">
@@ -591,20 +577,8 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <!-- 快捷审核：仅在状态为 PENDING 时显示图标按钮，用 flex gap 统一间距 -->
+            <!-- 快捷审核：仅在照片审核 PENDING 时显示图标按钮 -->
             <span style="display:inline-flex;align-items:center;gap:4px;margin-left:8px">
-            <template v-if="row.profileAuditStatus === 'PENDING'">
-              <el-tooltip content="快速通过资料审核" placement="top">
-                <el-button size="small" type="success" @click="handleQuickAudit(row, 'user', 'approve')">
-                  <el-icon><CheckIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-              <el-tooltip content="快速拒绝资料审核" placement="top">
-                <el-button size="small" type="danger" @click="handleQuickAudit(row, 'user', 'reject')">
-                  <el-icon><CloseIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </template>
             <template v-if="row.photoAuditStatus === 'PENDING'">
               <el-tooltip content="快速通过照片审核" placement="top">
                 <el-button size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
@@ -1376,7 +1350,6 @@ const columnOptions = reactive([
   { key: 'manualBoostScore', label: '运营加权', visible: false },
   { key: 'exposurePool', label: '曝光池', visible: false },
   { key: 'createdAt', label: '注册时间', visible: false },
-  { key: 'profileAudit', label: '资料审核', visible: false },
   { key: 'photoAudit', label: '照片审核', visible: false },
   { key: 'userTags', label: '用户标签', visible: false },
   { key: 'matchCount', label: '匹配次数', visible: false },

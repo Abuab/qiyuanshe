@@ -123,29 +123,6 @@ export class UserController {
     }
   }
 
-  @Post('profile-review')
-  @UseGuards(JwtAuthGuard)
-  async submitProfileReview(@Body() body: any, @Request() req: any) {
-    // 创建审核记录到 audit_logs 表
-    const userId = req.user.id
-    const auditLog = this.auditLogRepo.create({
-      action: 'PENDING',
-      targetType: 'user',
-      targetId: userId,
-      submitterId: userId,
-      content: JSON.stringify(body || {}),
-    })
-    await this.auditLogRepo.save(auditLog)
-    // 发送即时审核通知（与头像/照片审核流程一致），触发管理端审核
-    this.notifyService.sendAuditNotify({
-      type: 'profile',
-      content: `用户 ${req.user.nickname || userId} 提交了资料审核`,
-      userId,
-      userNickname: req.user.nickname || '',
-      source: 'profile_review',
-    }).catch(() => {})
-    return Result.success(null, '已提交审核')
-  }
 
   @Post('avatar-review')
   @UseGuards(JwtAuthGuard)
