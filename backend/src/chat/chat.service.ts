@@ -93,7 +93,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     const REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000
     this.sensitiveWordsRefreshTimer = setInterval(() => {
       this.loadSensitiveWords().catch((e) => {
-        console.warn('[ChatService] 定时刷新敏感词库失败:', e?.message)
+        this.logger.warn('定时刷新敏感词库失败:', e?.message)
       })
     }, REFRESH_INTERVAL_MS)
 
@@ -127,20 +127,20 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     try {
       const remoteUrl = await this.getConfigValue('chat.sensitiveWordsUrl')
       if (remoteUrl) {
-        console.log(`[ChatService] 正在从远程 URL 拉取敏感词库: ${remoteUrl}`)
+        this.logger.log(`正在从远程 URL 拉取敏感词库: ${remoteUrl}`)
         const response = await fetch(remoteUrl, { signal: AbortSignal.timeout(10000) })
         if (response.ok) {
           const text = await response.text()
           remoteWords = this.parseSensitiveWords(text)
           if (remoteWords.length > 0) {
-            console.log(`[ChatService] 远程敏感词库加载成功，共 ${remoteWords.length} 个词`)
+            this.logger.log(`远程敏感词库加载成功，共 ${remoteWords.length} 个词`)
           }
         } else {
-          console.warn(`[ChatService] 远程敏感词库请求失败 HTTP ${response.status}`)
+          this.logger.warn(`远程敏感词库请求失败 HTTP ${response.status}`)
         }
       }
     } catch (e: any) {
-      console.warn('[ChatService] 远程敏感词库拉取失败，回退到本地文件:', e?.message)
+      this.logger.warn('远程敏感词库拉取失败，回退到本地文件:', e?.message)
     }
 
     // 2. 回退到本地文件（优先读取 config/sensitive-words/ 目录下的所有 .txt 文件）
@@ -170,12 +170,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
           }
           if (localWordSet.size > 0) {
             localWords = Array.from(localWordSet)
-            console.log(`[ChatService] 本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
+            this.logger.log(`本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
           }
         }
       }
     } catch (e: any) {
-      console.warn('[ChatService] 本地 .txt 词库目录加载失败:', e?.message)
+      this.logger.warn('本地 .txt 词库目录加载失败:', e?.message)
     }
 
     // 2.1 降级：txt 目录无数据时尝试 JSON 文件
@@ -190,7 +190,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
           }
         }
       } catch (e: any) {
-        console.warn('[ChatService] 本地敏感词 JSON 文件加载失败:', e?.message)
+        this.logger.warn('本地敏感词 JSON 文件加载失败:', e?.message)
       }
     }
 
@@ -208,14 +208,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     if (merged.size > 0) {
       this.bannedKeywords = Array.from(merged)
       this.sensitiveFilter.build(this.bannedKeywords)
-      console.log(`[ChatService] 敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}），DFA 已构建`)
+      this.logger.log(`敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}），DFA 已构建`)
       return
     }
 
     // 4. 全部失败，使用硬编码兜底
     this.bannedKeywords = [...ChatService.FALLBACK_KEYWORDS]
     this.sensitiveFilter.build(this.bannedKeywords)
-    console.log(`[ChatService] 使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
+    this.logger.log(`使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
   }
 
   /**
@@ -334,7 +334,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       } catch (e) {
         // Redis 限流异常时不阻断，继续往下走
         if (e instanceof ForbiddenException) throw e
-        console.error('Redis 限流检查失败，降级放行:', e)
+        this.logger.error('Redis 限流检查失败，降级放行:', e)
       }
     }
 
@@ -724,7 +724,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       } catch (e: any) {
         // 修改点 B-3：腾讯云审核 API 调用失败，降级为本地敏感词过滤
         if (e instanceof ForbiddenException) throw e
-        console.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
+        this.logger.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
         await this.checkLocalBannedContent(userId, content)
       }
     } else {
@@ -756,7 +756,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         await this.auditLogRepository.save(auditLog)
       }
     } catch (e: any) {
-      console.error('[ChatService] AuditLog 写入失败:', e?.message)
+      this.logger.error('AuditLog 写入失败:', e?.message)
     }
 
     // 触发 webhook 通知
@@ -869,7 +869,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       }
     }
     if (removed > 0) {
-      console.log(`[ChatService] messageCountCache 清理了 ${removed} 条过期记录，当前缓存 ${this.messageCountCache.size} 条`)
+      this.logger.log(`messageCountCache 清理了 ${removed} 条过期记录，当前缓存 ${this.messageCountCache.size} 条`)
     }
   }
 }

@@ -105,13 +105,13 @@ export class QuestionService implements OnModuleInit {
           }
           if (wordSet.size > 0) {
             this.sensitiveFilter.build(Array.from(wordSet))
-            console.log(`[QuestionService] 敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
+            this.logger.log(`敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
             return
           }
         }
       }
     } catch (e: any) {
-      console.warn('[QuestionService] 敏感词库加载失败，使用硬编码兜底:', e?.message)
+      this.logger.warn('敏感词库加载失败，使用硬编码兜底:', e?.message)
     }
     // 兜底：硬编码基础词库
     this.sensitiveFilter.build([
@@ -120,7 +120,7 @@ export class QuestionService implements OnModuleInit {
       '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
       '加微信', '加我微信', '微商', '刷单',
     ])
-    console.log('[QuestionService] 使用硬编码敏感词库兜底')
+    this.logger.log('使用硬编码敏感词库兜底')
   }
 
   async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {
@@ -264,7 +264,7 @@ export class QuestionService implements OnModuleInit {
         }
       } catch (e) {
         if (e instanceof ForbiddenException) throw e
-        console.error('Redis 限流检查失败，降级放行:', e)
+        this.logger.error('Redis 限流检查失败，降级放行:', e)
       }
     }
 
@@ -337,7 +337,7 @@ export class QuestionService implements OnModuleInit {
         userNickname: user?.nickname || '',
         content: `问题：${question.title}\n回答内容：${content.substring(0, 100)}`,
       }).catch((e) => {
-        console.error('[QuestionService] 发送审核通知失败:', e.message)
+        this.logger.error('发送审核通知失败:', e.message)
       })
     }
 
@@ -452,7 +452,7 @@ export class QuestionService implements OnModuleInit {
         })
         return auditResult.result as 'pass' | 'reject' | 'review'
       } catch (e) {
-        console.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
+        this.logger.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
         return this.checkLocalBannedContent(content)
       }
     }

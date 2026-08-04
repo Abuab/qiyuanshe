@@ -30,7 +30,7 @@ export class ForgotPasswordController {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('ADMIN_RESET_KEY environment variable is required in production')
     }
-    // 开发环境：生成临时密钥（仅当次有效），从控制台日志获取（不打印密钥本身）
+    // 开发环境：生成临时密钥（仅当次有效），请设置 ADMIN_RESET_KEY 环境变量以获取固定密钥
     const tempKey = crypto.randomBytes(16).toString('hex')
     this.logger.warn('[SECURITY] ADMIN_RESET_KEY not set — temporary reset key generated for this session')
     return tempKey
