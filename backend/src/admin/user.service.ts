@@ -271,60 +271,57 @@ export class AdminUserService {
       }
     }
 
-    // Bulk query match counts — 使用 createQueryBuilder 绕过 manager.query() 的参数展开问题
+    // Bulk query match counts — 使用 In + find 方式避免 raw SQL 参数传递问题
     const matchCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const matchCounts = await this.matchRecordRepository
-        .createQueryBuilder('mr')
-        .select('mr.userId', 'userId')
-        .addSelect('COUNT(mr.id)', 'cnt')
-        .where('mr.userId IN (:...userIds)', { userIds })
-        .groupBy('mr.userId')
-        .getRawMany<{ userId: string; cnt: string }>()
-      for (const row of matchCounts) {
-        matchCountMap.set(Number(row.userId), Number(row.cnt))
+      const records = await this.matchRecordRepository.find({
+        select: ['userId', 'id'],
+        where: { userId: In(userIds) },
+      })
+      for (const r of records) {
+        matchCountMap.set(r.userId, (matchCountMap.get(r.userId) || 0) + 1)
       }
     }
 
-    // Bulk query follow counts
+    // Bulk query follow counts — 分成两次 find 调用避免 OR 条件
     const followingCountMap = new Map<number, number>()
     const followerCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const followingCounts = await this.followRepository
-        .createQueryBuilder('f')
-        .select('f.userId', 'userId')
-        .addSelect('COUNT(f.id)', 'cnt')
-        .where('f.userId IN (:...userIds)', { userIds })
-        .groupBy('f.userId')
-        .getRawMany<{ userId: string; cnt: string }>()
-      for (const row of followingCounts) {
-        followingCountMap.set(Number(row.userId), Number(row.cnt))
+      const [followingRows, followerRows] = await Promise.all([
+        this.followRepository.find({
+          select: ['userId', 'id'],
+          where: { userId: In(userIds) },
+        }),
+        this.followRepository.find({
+          select: ['targetUserId', 'id'],
+          where: { targetUserId: In(userIds) },
+        }),
+      ])
+      for (const f of followingRows) {
+        followingCountMap.set(f.userId, (followingCountMap.get(f.userId) || 0) + 1)
       }
-
-      const followerCounts = await this.followRepository
-        .createQueryBuilder('f')
-        .select('f.targetUserId', 'userId')
-        .addSelect('COUNT(f.id)', 'cnt')
-        .where('f.targetUserId IN (:...userIds)', { userIds })
-        .groupBy('f.targetUserId')
-        .getRawMany<{ userId: string; cnt: string }>()
-      for (const row of followerCounts) {
-        followerCountMap.set(Number(row.userId), Number(row.cnt))
+      for (const f of followerRows) {
+        followerCountMap.set(f.targetUserId, (followerCountMap.get(f.targetUserId) || 0) + 1)
       }
     }
 
     // Bulk query view counts (how many unique users this user has viewed)
     const viewCountMap = new Map<number, number>()
     if (userIds.length > 0) {
-      const viewCounts = await this.visitRepository
-        .createQueryBuilder('pv')
-        .select('pv.visitorUserId', 'userId')
-        .addSelect('COUNT(DISTINCT pv.userId)', 'cnt')
-        .where('pv.visitorUserId IN (:...userIds)', { userIds })
-        .groupBy('pv.visitorUserId')
-        .getRawMany<{ userId: string; cnt: string }>()
-      for (const row of viewCounts) {
-        viewCountMap.set(Number(row.userId), Number(row.cnt))
+      const visits = await this.visitRepository.find({
+        select: ['userId', 'visitorUserId', 'id'],
+        where: { visitorUserId: In(userIds) },
+      })
+      // Per visitor, count unique users they've viewed
+      const visitorUniqueMap = new Map<number, Set<number>>()
+      for (const v of visits) {
+        if (!visitorUniqueMap.has(v.visitorUserId)) {
+          visitorUniqueMap.set(v.visitorUserId, new Set())
+        }
+        visitorUniqueMap.get(v.visitorUserId)!.add(v.userId)
+      }
+      for (const [visitorId, viewedSet] of visitorUniqueMap) {
+        viewCountMap.set(visitorId, viewedSet.size)
       }
     }
 
