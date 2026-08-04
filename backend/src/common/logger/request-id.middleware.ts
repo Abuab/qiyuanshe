@@ -18,9 +18,14 @@ export class RequestIdMiddleware implements NestMiddleware {
     // 写入响应头，便于前端/客户端关联
     res.setHeader('x-request-id', traceId)
 
+    const rawIp = req.ip || req.socket.remoteAddress || ''
+    // Docker 内网中 Express req.ip 返回 IPv4-mapped IPv6 格式 (::ffff:x.x.x.x)
+    // 去除 ::ffff: 前缀，保留纯 IPv4，非 IPv4-mapped 地址原样保留
+    const ip = rawIp.replace(/^::ffff:/, '') || undefined
+
     const ctx = {
       traceId,
-      ip: req.ip || req.socket.remoteAddress || undefined,
+      ip,
       method: req.method,
       url: req.originalUrl,
     }
