@@ -498,7 +498,7 @@ async function handlePay() {
   }
 }
 
-// ===== 定制会员配置数据（从后台获取，这里提供默认值兜底） =====
+// ===== 定制会员配置数据（硬编码） =====
 const customConfig = reactive({
   bannerUrl: '',
   suitableTitle: '哪些人适合1对1定制服务',
@@ -532,35 +532,6 @@ const aboutConfig = reactive({
     { icon: '👑', name: '私人定制专享红娘服务', desc: '一对一专属服务，全程陪伴指导', color: '#E8F5E9' },
   ] as FeatureItem[],
 })
-
-// 尝试从后台加载配置
-async function fetchCustomConfig() {
-  try {
-    const res: any = await get('/vip/custom-config')
-    if (res) {
-      if (res.bannerUrl) customConfig.bannerUrl = res.bannerUrl
-      if (res.suitableTitle) customConfig.suitableTitle = res.suitableTitle
-      if (res.suitableList?.length) customConfig.suitableList = res.suitableList
-      if (res.serviceTitle) customConfig.serviceTitle = res.serviceTitle
-      if (res.serviceList?.length) customConfig.serviceList = res.serviceList
-    }
-  } catch {
-    // 使用默认配置
-  }
-}
-
-async function fetchAboutConfig() {
-  try {
-    const res: any = await get('/vip/about-config')
-    if (res) {
-      if (res.bannerUrl) aboutConfig.bannerUrl = res.bannerUrl
-      if (res.title) aboutConfig.title = res.title
-      if (res.features?.length) aboutConfig.features = res.features
-    }
-  } catch {
-    // 使用默认配置
-  }
-}
 
 // ===== 安全征婚提示（固定文案） =====
 
@@ -686,8 +657,6 @@ onMounted(() => {
   safeAreaOffset.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
 
   fetchPackagesAndProfile()
-  fetchCustomConfig()
-  fetchAboutConfig()
   loadTopCardStatus()
 })
 
