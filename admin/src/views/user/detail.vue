@@ -938,6 +938,11 @@
 
     <!-- 标签管理弹窗 -->
     <el-dialog v-model="tagDialogVisible" title="标签管理" width="580px" destroy-on-close>
+      <el-alert type="info" :closable="false" style="margin-bottom:16px">
+        <template #default>
+          <span style="font-size:13px;color:#606266">运营标签仅在后台可见，用于运营人员对用户进行分类和筛选，用户端不可见。可自由输入自定义标签或从标签库中选择。</span>
+        </template>
+      </el-alert>
       <!-- 自定义标签输入 -->
       <el-form label-width="90px">
         <el-form-item label="自定义标签">

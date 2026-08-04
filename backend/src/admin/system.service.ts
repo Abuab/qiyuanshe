@@ -12,6 +12,7 @@ export interface SystemConfigs {
   dict?: Record<string, any>
   icon?: Record<string, any>
   notify?: Record<string, any>
+  health?: Record<string, any>
 }
 
 @Injectable()

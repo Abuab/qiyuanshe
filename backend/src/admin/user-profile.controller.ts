@@ -57,7 +57,7 @@ export class UserProfileController {
   @Post(':id/notifications')
   async sendNotification(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { title?: string; content: string; senderType?: string },
+    @Body() body: { title?: string; content: string; senderType?: string; templateId?: number },
   ) {
     if (body.content && body.content.length > 500) throw new BadRequestException('通知内容不能超过500字')
     const notification = await this.profileService.sendNotification(
@@ -65,6 +65,8 @@ export class UserProfileController {
       body.title || '系统通知',
       body.content,
       body.senderType || 'admin',
+      undefined,
+      body.templateId,
     )
     return Result.success(notification, '通知已发送')
   }
@@ -72,7 +74,7 @@ export class UserProfileController {
   /** 群发系统通知给所有用户（或指定用户） */
   @Post('notifications/broadcast')
   async broadcastNotification(
-    @Body() body: { title: string; content: string; targetUserIds?: number[] },
+    @Body() body: { title: string; content: string; targetUserIds?: number[]; templateId?: number },
     @Req() req: any,
   ) {
     if (body.content && body.content.length > 500) throw new BadRequestException('通知内容不能超过500字')
@@ -82,6 +84,7 @@ export class UserProfileController {
       body.content,
       senderId,
       body.targetUserIds,
+      body.templateId,
     )
     return Result.success(result, `已向 ${result.totalSent} 位用户发送通知`)
   }

@@ -9,6 +9,18 @@
     </div>
 
     <div class="card">
+      <el-alert type="info" :closable="false" show-icon style="margin-bottom: 16px">
+        <template #title>VIP 会员套餐说明</template>
+        <template #default>
+          <ul style="margin: 4px 0 0 0; padding-left: 16px; font-size: 13px; color: #606266; line-height: 1.8">
+            <li><b>价格：</b>输入「元」为单位，后端自动 ×100 转为「分」存储，确保精度</li>
+            <li><b>会员等级：</b>VIP 等级分为 1/2/3 级，等级越高用户推荐曝光权重越大</li>
+            <li><b>每日置顶卡：</b>每日自动获得该数量的置顶卡（有效期内），用户可手动使用置顶提升排名</li>
+            <li><b>红线数：</b>用户在有效期内可发送的红线（私聊）次数，终身累计</li>
+            <li><b>排序权重：</b>数值越大越靠前显示，用于小程序会员购买页排序</li>
+          </ul>
+        </template>
+      </el-alert>
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm">
           <el-form-item label="状态">

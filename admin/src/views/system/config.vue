@@ -470,6 +470,36 @@
         </el-card>
       </el-tab-pane>
 
+      <el-tab-pane label="健康阈值" name="health">
+        <el-card class="config-card">
+          <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px">
+            <template #title>
+              配置平台男女比例健康度告警阈值。当男性占比超过设定阈值时，数据看板将显示相应的告警级别。
+            </template>
+          </el-alert>
+          <el-form :model="healthConfig" label-width="180px">
+            <el-form-item label="警告阈值 (%)">
+              <el-input-number
+                v-model="healthConfig.warningThreshold"
+                :min="30" :max="95" :step="1"
+                controls-position="right"
+                style="width: 140px"
+              />
+              <div class="form-tip">男性占比超过此值时显示"需关注"警告（建议 55-65）</div>
+            </el-form-item>
+            <el-form-item label="严重失衡阈值 (%)">
+              <el-input-number
+                v-model="healthConfig.criticalThreshold"
+                :min="35" :max="98" :step="1"
+                controls-position="right"
+                style="width: 140px"
+              />
+              <div class="form-tip">男性占比超过此值时显示"严重失衡"警告（建议 65-75），严重警告阈值必须大于警告阈值</div>
+            </el-form-item>
+          </el-form>
+        </el-card>
+      </el-tab-pane>
+
     </el-tabs>
 
     <div class="config-footer">
@@ -563,6 +593,11 @@ const loveQuotesConfig = reactive({
   quotes: ['', '', '', '', '', ''] as string[],
 })
 
+const healthConfig = reactive({
+  warningThreshold: 60,
+  criticalThreshold: 70,
+})
+
 // 模拟预览：与后端 buildIntroFromUser 同逻辑
 const introPreview = computed(() => {
   const demo = {
@@ -633,6 +668,11 @@ async function fetchConfig() {
           basicConfig.redLineTerm = termRes.data
         }
       } catch { /* use default */ }
+
+      // 健康阈值配置
+      if (res.data.health) {
+        Object.assign(healthConfig, res.data.health)
+      }
     }
   } catch (error) {
     console.error(error)
@@ -654,6 +694,7 @@ async function handleSave() {
         safetyLabel: basicConfig.matchmakerSafetyLabel,
         safetyBoundaryLabel: basicConfig.matchmakerSafetyBoundaryLabel,
       },
+      health: { ...healthConfig },
     }
     const res = await adminSystem.saveConfigs(configs)
     if (res.success) {

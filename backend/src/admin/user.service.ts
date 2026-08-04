@@ -15,6 +15,7 @@ import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
 import { RedisService } from '../common/redis.service'
+import { AdminMessageTemplateService } from './message-template.service'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -72,6 +73,7 @@ export class AdminUserService {
     private readonly redis: RedisService,
     @InjectRepository(RealNameIdentity)
     private readonly realNameIdentityRepo: Repository<RealNameIdentity>,
+    private readonly templateService: AdminMessageTemplateService,
   ) {}
 
   async list(filter: UserFilter) {
@@ -559,7 +561,7 @@ export class AdminUserService {
     await this.userRepository.update(id, { password: hashedPassword })
   }
 
-  async sendNotification(userId: number, title: string, content: string) {
+  async sendNotification(userId: number, title: string, content: string, templateId?: number) {
     await this.notificationRepository.save(
       this.notificationRepository.create({
         userId,
@@ -568,6 +570,9 @@ export class AdminUserService {
         senderType: 'admin',
       }),
     )
+    if (templateId) {
+      await this.templateService.recordUsage(templateId)
+    }
   }
 
   async getPhotos(userId: number) {

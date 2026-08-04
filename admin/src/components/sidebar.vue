@@ -176,6 +176,8 @@
         <el-menu-item index="/system/quota">用量限额</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
+        <el-menu-item index="/system/message-template">消息模板</el-menu-item>
+        <el-menu-item index="/system/operation-tag">运营标签</el-menu-item>
         <el-menu-item index="/audit-log">操作审计日志</el-menu-item>
       </el-sub-menu>
     </el-menu>

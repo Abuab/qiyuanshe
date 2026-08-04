@@ -228,6 +228,7 @@
         <el-button type="success" size="small" @click="handleExport" :loading="exportLoading">批量导出Excel</el-button>
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
         <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
+        <el-button size="small" type="info" @click="handleRecalculateScores" :loading="scoresLoading">批量重算评分</el-button>
         <el-button size="small" @click="clearSelection">取消选择</el-button>
       </div>
 
@@ -301,6 +302,14 @@
               size="small"
               style="margin-left:6px"
             >{{ getLifecycleBadge(row)!.label }}</el-tag>
+            <!-- 用户价值分层标签 -->
+            <el-tag
+              v-if="getUserTier(row)"
+              :type="getUserTierType(row)"
+              size="small"
+              effect="dark"
+              style="margin-left:4px"
+            >{{ getUserTier(row) }}</el-tag>
             <!-- 运营标签：最多展示3个，多余显示+N 悬浮提示全部 -->
             <template v-if="getUserTags(row).length">
               <el-tag
@@ -385,7 +394,16 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('profileScore')" prop="profileScore" label="资料完整度" width="120" sortable="custom">
+        <el-table-column v-if="isColumnVisible('profileScore')" prop="profileScore" width="130" sortable="custom">
+          <template #header>
+            <el-tooltip
+              content="用户价值综合评分(0~100)：资料完善度30分 + VIP状态25分 + 实名认证20分 + 活跃度15分 + 互动量10分。≥70高价值，≥45潜力，≥20普通，&lt;20流失预警"
+              placement="top"
+              :show-after="300"
+            >
+              <span>用户评分 <el-icon style="vertical-align:-2px"><QuestionFilled /></el-icon></span>
+            </el-tooltip>
+          </template>
           <template #default="{ row }">
             <div style="display:flex;align-items:center;gap:6px">
               <el-progress
@@ -410,11 +428,20 @@
             <span v-else style="color:#909399;font-size:12px">-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('manualBoostScore')" prop="manualBoostScore" label="运营加权" width="90" sortable="custom">
-          <template #default="{ row }">
-            <span :style="{ color: row.manualBoostScore > 0 ? '#303133' : '#909399' }">{{ row.manualBoostScore || '-' }}</span>
-          </template>
-        </el-table-column>
+        <el-table-column v-if="isColumnVisible('manualBoostScore')" prop="manualBoostScore" width="100" sortable="custom">
+            <template #header>
+              <el-tooltip
+                content="运营手动加权分，直接影响用户在推荐列表和匹配结果中的排序优先级。默认0，建议范围0~100，分数越高排名越靠前。"
+                placement="top"
+                :show-after="300"
+              >
+                <span>运营加权 <el-icon style="vertical-align:-2px"><QuestionFilled /></el-icon></span>
+              </el-tooltip>
+            </template>
+            <template #default="{ row }">
+              <span :style="{ color: row.manualBoostScore > 0 ? '#303133' : '#909399' }">{{ row.manualBoostScore || '-' }}</span>
+            </template>
+          </el-table-column>
         <el-table-column v-if="isColumnVisible('exposurePool')" prop="exposurePool" label="曝光池" width="90">
           <template #default="{ row }">
             <span :style="{ color: row.exposurePool !== 'city' ? '#303133' : '#909399' }">{{ exposurePoolLabel(row.exposurePool) }}</span>
@@ -1234,7 +1261,7 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Check as CheckIcon, Close as CloseIcon, Loading } from '@element-plus/icons-vue'
+import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Check as CheckIcon, Close as CloseIcon, Loading, QuestionFilled } from '@element-plus/icons-vue'
 import { adminUsers, adminPayment } from '../../api'
 import { adminAudit } from '../../api/audit'
 import { userPin, vipPackages, VipPackage } from '../../api/vip'
@@ -1248,6 +1275,7 @@ const adminStore = useAdminStore()
 const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
 const loading = ref(false)
 const exportLoading = ref(false)
+const scoresLoading = ref(false)
 const tableData = ref<User[]>([])
 const selectedRows = ref<User[]>([])
 const tableRef = ref()
@@ -1436,6 +1464,25 @@ function formatLastActive(lastActiveAt: string | null): string {
   if (diffMinutes < 60) return `${diffMinutes}分钟前`
   if (diffHours < 24) return `${diffHours}小时前`
   return formatDate(lastActiveAt)
+}
+
+// ===== 用户价值分层标签 =====
+
+function getUserTier(row: any): string | null {
+  const score = row.profileScore || 0
+  if (score >= 70) return '高价值'
+  if (score >= 45) return '潜力'
+  if (score >= 20) return '普通'
+  if (score > 0) return '预警'
+  return null
+}
+
+function getUserTierType(row: any): string {
+  const score = row.profileScore || 0
+  if (score >= 70) return 'success'
+  if (score >= 45) return ''
+  if (score >= 20) return 'warning'
+  return 'danger'
 }
 
 // ===== 累计付费数据 =====
@@ -2615,6 +2662,23 @@ function clearSelection() {
   tableRef.value?.clearSelection()
   selectedRows.value = []
   selectAll.value = false
+}
+
+async function handleRecalculateScores() {
+  try {
+    scoresLoading.value = true
+    const res = await adminUsers.recalculateScores()
+    if (res.success) {
+      ElMessage.success(res.message || '评分已全部更新')
+      await fetchData()
+    } else {
+      ElMessage.error((res as any).message || '重算失败')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.message || '重算评分出错')
+  } finally {
+    scoresLoading.value = false
+  }
 }
 
 // 批量发送通知

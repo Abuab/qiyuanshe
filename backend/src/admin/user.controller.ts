@@ -20,6 +20,7 @@ import { Roles } from './roles.decorator'
 import { AdminUserService } from './user.service'
 import { AdminPaymentService } from './payment.service'
 import { VipService } from '../vip/vip.service'
+import { UserScoreService } from './user-score.service'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 
@@ -56,6 +57,7 @@ export class AdminUserController {
     private readonly userService: AdminUserService,
     private readonly paymentService: AdminPaymentService,
     private readonly vipService: VipService,
+    private readonly userScoreService: UserScoreService,
   ) {}
 
   @Get()
@@ -132,8 +134,9 @@ export class AdminUserController {
     @Param('id', ParseIntPipe) id: number,
     @Body('title') title: string,
     @Body('content') content: string,
+    @Body('templateId') templateId?: number,
   ) {
-    await this.userService.sendNotification(id, title, content)
+    await this.userService.sendNotification(id, title, content, templateId)
     return Result.success(null, '通知已发送')
   }
 
@@ -412,5 +415,37 @@ export class AdminUserController {
   ) {
     const result = await this.userService.updateTags(id, body.tags)
     return Result.success(result, '标签更新成功')
+  }
+
+  // ===== 用户评分与流失预警 =====
+
+  @Post('recalculate-scores')
+  async recalculateScores() {
+    const count = await this.userScoreService.batchUpdateScores()
+    return Result.success({ updated: count }, `已更新 ${count} 个用户评分`)
+  }
+
+  @Post(':id/recalculate-score')
+  async recalculateSingleScore(@Param('id', ParseIntPipe) id: number) {
+    const score = await this.userScoreService.calculateScore(id)
+    await this.userService.updateUser(id, { profileScore: score })
+    return Result.success({ score, tier: this.userScoreService.getUserTier(score) }, '评分已更新')
+  }
+
+  @Get('churn-risk')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+  async getChurnRiskUsers(@Query('days') days: number = 14, @Query('limit') limit: number = 50) {
+    const users = await this.userScoreService.getChurnRiskUsers(days, limit)
+    return Result.success(users.map(u => ({
+      ...u,
+      tier: this.userScoreService.getUserTier(u.profileScore || 0),
+    })))
+  }
+
+  @Get('score-distribution')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+  async getScoreDistribution() {
+    const data = await this.userScoreService.getScoreDistribution()
+    return Result.success(data)
   }
 }

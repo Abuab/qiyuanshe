@@ -8,6 +8,7 @@
     <el-tabs v-model="activeTab" class="config-tabs">
       <!-- ============ Tab 1: 定制会员页 ============ -->
       <el-tab-pane label="定制会员页" name="custom">
+        <el-alert type="info" :closable="false" style="margin-bottom:12px">小程序「VIP会员」页面的定制版块展示内容，包含顶部Banner、适合人群说明、服务介绍等。</el-alert>
         <el-card class="config-card" v-loading="customLoading">
           <template #header><span class="card-title">定制会员页配置</span></template>
 
@@ -92,6 +93,7 @@
 
       <!-- ============ Tab 2: 关于我们页 ============ -->
       <el-tab-pane label="关于我们页" name="about">
+        <el-alert type="info" :closable="false" style="margin-bottom:12px">小程序「VIP会员」页"关于我们"版块展示内容，配置后实时生效。</el-alert>
         <el-card class="config-card" v-loading="aboutLoading">
           <template #header><span class="card-title">关于我们页配置</span></template>
 
@@ -145,6 +147,7 @@
 
       <!-- ============ Tab 3: 安全提示 ============ -->
       <el-tab-pane label="安全提示" name="safety">
+        <el-alert type="info" :closable="false" style="margin-bottom:12px">小程序「VIP会员」页底部的安全提示文案，用于增强用户信任感，配置后实时生效。</el-alert>
         <el-card class="config-card" v-loading="safetyLoading">
           <template #header><span class="card-title">安全征婚提示配置</span></template>
 

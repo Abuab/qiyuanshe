@@ -42,4 +42,20 @@ export const adminDashboard = {
   getFunnelData(): Promise<ApiResponse<any[]>> {
     return request.get('/admin/dashboard/funnel')
   },
+
+  getMatchStats(params: { timeRange: string }): Promise<ApiResponse<any>> {
+    return request.get('/admin/dashboard/match-stats', { params })
+  },
+
+  getGenderHealth(): Promise<ApiResponse<any>> {
+    return request.get('/admin/dashboard/gender-health')
+  },
+
+  getActiveUserFunnel(): Promise<ApiResponse<any>> {
+    return request.get('/admin/dashboard/active-funnel')
+  },
+
+  getActivityAnalytics(params: { timeRange: string }): Promise<ApiResponse<any>> {
+    return request.get('/admin/dashboard/activity-analytics', { params })
+  },
 }

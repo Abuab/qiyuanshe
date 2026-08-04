@@ -13,6 +13,7 @@ import { Dynamic } from '../entities/Dynamic'
 import { AuditLog } from '../entities/AuditLog'
 import { BroadcastLog } from '../entities/BroadcastLog'
 import { DynamicService } from '../dynamic/dynamic.service'
+import { AdminMessageTemplateService } from './message-template.service'
 
 @Injectable()
 export class UserProfileService {
@@ -40,6 +41,7 @@ export class UserProfileService {
     @InjectRepository(BroadcastLog)
     private readonly broadcastLogRepository: Repository<BroadcastLog>,
     private readonly dynamicService: DynamicService,
+    private readonly templateService: AdminMessageTemplateService,
   ) {}
 
   async getReports(userId: number) {
@@ -216,7 +218,7 @@ export class UserProfileService {
     await this.reviewRepository.delete(reviewId)
   }
 
-  async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number) {
+  async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number, templateId?: number) {
     const notification = this.notificationRepository.create({
       userId,
       title,
@@ -224,7 +226,11 @@ export class UserProfileService {
       senderType,
       senderId,
     })
-    return this.notificationRepository.save(notification)
+    const saved = await this.notificationRepository.save(notification)
+    if (templateId) {
+      await this.templateService.recordUsage(templateId)
+    }
+    return saved
   }
 
   async approveAnswer(answerId: number) {
@@ -306,6 +312,7 @@ export class UserProfileService {
     content: string,
     senderId: number,
     targetUserIds?: number[],
+    templateId?: number,
   ) {
     const BATCH_SIZE = 500
     let totalSent = 0
@@ -372,6 +379,10 @@ export class UserProfileService {
         targetUserIds: targetUserIds || null,
       }),
     )
+
+    if (templateId) {
+      await this.templateService.recordUsage(templateId)
+    }
 
     return { totalSent }
   }

@@ -293,4 +293,18 @@ export const adminUsers = {
   permanentDeleteUser(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/users/${id}/permanent`)
   },
+
+  // 用户评分与流失预警
+  recalculateScores(): Promise<ApiResponse<{ updated: number }>> {
+    return request.post('/admin/users/recalculate-scores')
+  },
+  recalculateUserScore(id: number): Promise<ApiResponse<{ score: number; tier: string }>> {
+    return request.post(`/admin/users/${id}/recalculate-score`)
+  },
+  getChurnRiskUsers(days?: number, limit?: number): Promise<ApiResponse<any[]>> {
+    return request.get('/admin/users/churn-risk', { params: { days, limit } })
+  },
+  getScoreDistribution(): Promise<ApiResponse<any>> {
+    return request.get('/admin/users/score-distribution')
+  },
 }

@@ -65,6 +65,73 @@
       </el-col>
     </el-row>
 
+    <el-row :gutter="20" class="stats-row">
+      <el-col :span="4">
+        <stats-card
+          title="日活(DAU)"
+          :value="activeFunnel.dau"
+          suffix="人"
+          icon="Position"
+          color="#409EFF"
+        />
+      </el-col>
+      <el-col :span="4">
+        <stats-card
+          title="周活(WAU)"
+          :value="activeFunnel.wau"
+          suffix="人"
+          icon="TrendCharts"
+          color="#67C23A"
+        />
+      </el-col>
+      <el-col :span="4">
+        <stats-card
+          title="月活(MAU)"
+          :value="activeFunnel.mau"
+          suffix="人"
+          icon="DataAnalysis"
+          color="#E6A23C"
+        />
+      </el-col>
+      <el-col :span="4">
+        <stats-card
+          title="DAU留存"
+          :value="activeFunnel.dauRetention"
+          suffix="%"
+          icon="RefreshRight"
+          color="#F56C6C"
+          :alert="activeFunnel.dauRetention < 30"
+        />
+      </el-col>
+      <el-col :span="4">
+        <stats-card
+          title="匹配成功率"
+          :value="matchStats.successRate"
+          suffix="%"
+          icon="Connection"
+          color="#9B59B6"
+        />
+      </el-col>
+      <el-col :span="4">
+        <stats-card
+          title="今日消息"
+          :value="activeFunnel.todayMessages"
+          suffix="条"
+          icon="ChatDotSquare"
+          color="#1ABC9C"
+        />
+      </el-col>
+    </el-row>
+
+    <el-row v-if="genderHealth.level !== 'healthy'" :gutter="20" class="alert-row">
+      <el-col :span="24">
+        <div :class="['alert-card', `alert-${genderHealth.level}`]">
+          <el-icon size="20"><WarningFilled /></el-icon>
+          <span>性别比例{{ genderHealth.levelLabel }}：男女比 {{ genderHealth.maleRatio }}% : {{ genderHealth.femaleRatio }}%，请及时调整运营策略吸引异性用户</span>
+        </div>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="20" class="chart-row">
       <el-col :span="12">
         <div class="chart-card">
@@ -169,6 +236,65 @@
         </div>
       </el-col>
     </el-row>
+
+    <el-row :gutter="20" class="table-row" v-if="matchStats.byMatchmaker.length > 0">
+      <el-col :span="24">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>红娘匹配效果 {{ matchStats.total > 0 ? `(共${matchStats.total}次, 成功率${matchStats.successRate}%)` : '' }}</h3>
+          </div>
+          <el-table :data="matchStats.byMatchmaker" style="width: 100%">
+            <el-table-column prop="name" label="红娘" width="150" />
+            <el-table-column prop="total" label="匹配次数" width="120" align="center" />
+            <el-table-column prop="success" label="成功数" width="100" align="center" />
+            <el-table-column prop="rate" label="成功率" width="120" align="center">
+              <template #default="{ row }">
+                <el-progress :percentage="row.rate" :color="row.rate >= 50 ? '#67C23A' : '#E6A23C'" :stroke-width="8" />
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row :gutter="20" class="table-row" v-if="activityAnalytics.list.length > 0">
+      <el-col :span="24">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>活动效果分析 ({{ activityAnalytics.list.length }}个活动, 报名率{{ activityAnalytics.summary.avgFillRate }}%)</h3>
+          </div>
+          <el-table :data="activityAnalytics.list" style="width: 100%">
+            <el-table-column prop="title" label="活动名称" min-width="180" />
+            <el-table-column prop="type" label="类型" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.type === 'latest' ? 'success' : row.type === 'online' ? '' : 'warning'" size="small">
+                  {{ row.type === 'latest' ? '线下' : row.type === 'online' ? '线上' : 'CP' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="maxParticipants" label="最大人数" width="90" align="center" />
+            <el-table-column prop="signupTotal" label="报名数" width="80" align="center" />
+            <el-table-column prop="fillRate" label="满员率" width="120" align="center">
+              <template #default="{ row }">
+                <el-progress :percentage="row.fillRate" :color="row.fillRate >= 80 ? '#67C23A' : row.fillRate >= 50 ? '#E6A23C' : '#F56C6C'" :stroke-width="8" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="confirmRate" label="确认率" width="120" align="center">
+              <template #default="{ row }">
+                <el-progress :percentage="row.confirmRate" :color="row.confirmRate >= 70 ? '#67C23A' : '#E6A23C'" :stroke-width="8" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="status" label="状态" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.status === 1 ? 'success' : row.status === 2 ? 'info' : 'warning'" size="small">
+                  {{ row.status === 1 ? '进行中' : row.status === 2 ? '已结束' : '草稿' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </el-col>
+    </el-row>
   </div>
 </template>
 
@@ -177,7 +303,7 @@ import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import StatsCard from '../components/stats-card.vue'
 import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, WarningFilled } from '@element-plus/icons-vue'
 import { adminDashboard, adminUsers, adminPayment } from '../api'
 import { formatDate } from '../utils/date'
 
@@ -233,6 +359,12 @@ const stats = reactive<Stats>({
 const latestUsers = ref<any[]>([])
 const latestOrders = ref<any[]>([])
 const cachedUserTrendData = ref<any[]>([])
+
+// 新增指标数据
+const activeFunnel = reactive({ dau: 0, wau: 0, mau: 0, dauRetention: 0, todayMessages: 0, funnel: [] as any[] })
+const matchStats = reactive({ total: 0, success: 0, successRate: 0, inProgress: 0, pending: 0, failed: 0, byMatchmaker: [] as any[], dailyTrend: [] as any[] })
+const genderHealth = reactive({ maleRatio: 0, femaleRatio: 0, level: 'healthy' as string, levelLabel: '健康' as string, maleCount: 0, femaleCount: 0, total: 0, byAge: [] as any[] })
+const activityAnalytics = reactive({ summary: { totalActivities: 0, totalSignups: 0, avgFillRate: 0, ongoingCount: 0, endedCount: 0 } as any, list: [] as any[] })
 
 // 自动刷新
 const autoRefresh = ref(false)
@@ -294,9 +426,14 @@ async function fetchDashboardData() {
       adminDashboard.getAgeDistribution(),
       adminDashboard.getRevenueTrend({ timeRange: timeRange.value }),
       adminDashboard.getFunnelData(),
+      adminDashboard.getActiveUserFunnel(),
+      adminDashboard.getGenderHealth(),
+      adminDashboard.getMatchStats({ timeRange: timeRange.value }),
+      adminDashboard.getActivityAnalytics({ timeRange: timeRange.value }),
     ])
 
-    const [dashboardRes, usersRes, ordersRes, userTrendRes, genderRes, ageRes, revenueRes, funnelRes] = results
+    const [dashboardRes, usersRes, ordersRes, userTrendRes, genderRes, ageRes, revenueRes, funnelRes,
+           activeFunnelRes, genderHealthRes, matchStatsRes, activityRes] = results
 
     if (dashboardRes.status === 'fulfilled' && dashboardRes.value.success) {
       Object.assign(stats, dashboardRes.value.data)
@@ -308,6 +445,23 @@ async function fetchDashboardData() {
 
     if (ordersRes.status === 'fulfilled' && ordersRes.value.success) {
       latestOrders.value = ordersRes.value.list || []
+    }
+
+    if (activeFunnelRes.status === 'fulfilled' && activeFunnelRes.value.success) {
+      Object.assign(activeFunnel, activeFunnelRes.value.data)
+    }
+
+    if (genderHealthRes.status === 'fulfilled' && genderHealthRes.value.success) {
+      Object.assign(genderHealth, genderHealthRes.value.data)
+    }
+
+    if (matchStatsRes.status === 'fulfilled' && matchStatsRes.value.success) {
+      Object.assign(matchStats, matchStatsRes.value.data)
+    }
+
+    if (activityRes.status === 'fulfilled' && activityRes.value.success) {
+      Object.assign(activityAnalytics.summary, activityRes.value.data.summary || activityAnalytics.summary)
+      activityAnalytics.list = activityRes.value.data.list || []
     }
 
     const userTrendData: any[] = userTrendRes.status === 'fulfilled' && userTrendRes.value.success ? userTrendRes.value.data || [] : []
@@ -806,6 +960,32 @@ function getVipName(level: number) {
     font-size: 16px;
     font-weight: bold;
     color: #333;
+  }
+}
+
+.alert-row {
+  margin-bottom: 20px;
+}
+
+.alert-card {
+  border-radius: 8px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+
+  &.alert-warning {
+    background-color: #fdf6ec;
+    border: 1px solid #e6a23c;
+    color: #e6a23c;
+  }
+
+  &.alert-critical {
+    background-color: #fef0f0;
+    border: 1px solid #f56c6c;
+    color: #f56c6c;
   }
 }
 </style>

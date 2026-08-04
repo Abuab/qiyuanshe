@@ -47,4 +47,28 @@ export class AdminDashboardController {
     const data = await this.dashboardService.getFunnelData()
     return Result.success(data)
   }
+
+  @Get('match-stats')
+  async getMatchStats(@Query('timeRange') timeRange: string = 'week') {
+    const data = await this.dashboardService.getMatchStats(timeRange)
+    return Result.success(data)
+  }
+
+  @Get('gender-health')
+  async getGenderHealth() {
+    const data = await this.dashboardService.getGenderHealth()
+    return Result.success(data)
+  }
+
+  @Get('active-funnel')
+  async getActiveUserFunnel() {
+    const data = await this.dashboardService.getActiveUserFunnel()
+    return Result.success(data)
+  }
+
+  @Get('activity-analytics')
+  async getActivityAnalytics(@Query('timeRange') timeRange: string = 'month') {
+    const data = await this.dashboardService.getActivityAnalytics(timeRange)
+    return Result.success(data)
+  }
 }

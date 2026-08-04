@@ -126,6 +126,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '通知日志', requiresAuth: true },
       },
       {
+        path: '/system/message-template',
+        name: 'MessageTemplate',
+        component: () => import('../views/system/message-template.vue'),
+        meta: { title: '消息模板', requiresAuth: true },
+      },
+      {
+        path: '/system/operation-tag',
+        name: 'OperationTag',
+        component: () => import('../views/system/operation-tag.vue'),
+        meta: { title: '运营标签', requiresAuth: true },
+      },
+      {
         path: '/audit/queue',
         name: 'AuditQueue',
         component: () => import('../views/audit/queue.vue'),

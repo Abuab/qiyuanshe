@@ -83,6 +83,14 @@ import { AiModule } from '../ai/ai.module'
 import { UserModule } from '../user/user.module'
 import { AdminAuditLogController } from './admin-audit-log.controller'
 import { AdminAuditInterceptor } from './admin-audit.interceptor'
+import { UserScoreService } from './user-score.service'
+import { Follow } from '../entities/Follow'
+import { MessageTemplate } from '../entities/MessageTemplate'
+import { OperationTag } from '../entities/OperationTag'
+import { AdminMessageTemplateController } from './message-template.controller'
+import { AdminMessageTemplateService } from './message-template.service'
+import { AdminOperationTagController } from './operation-tag.controller'
+import { AdminOperationTagService } from './operation-tag.service'
 
 @Module({
   imports: [
@@ -121,6 +129,9 @@ import { AdminAuditInterceptor } from './admin-audit.interceptor'
       Feedback,
       BroadcastLog,
       AdminAuditLog,
+      Follow,
+      MessageTemplate,
+      OperationTag,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,
@@ -153,6 +164,8 @@ import { AdminAuditInterceptor } from './admin-audit.interceptor'
     AdminFeedbackController,
     AdminStoreCertController,
     AdminAuditLogController,
+    AdminMessageTemplateController,
+    AdminOperationTagController,
   ],
   providers: [
     AdminUserService,
@@ -177,6 +190,9 @@ import { AdminAuditInterceptor } from './admin-audit.interceptor'
     RedisService,
     AdminSeederService,
     AdminAuditInterceptor,
+    UserScoreService,
+    AdminMessageTemplateService,
+    AdminOperationTagService,
   ],
   exports: [
     AdminUserService,
