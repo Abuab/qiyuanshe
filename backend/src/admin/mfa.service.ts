@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as speakeasy from 'speakeasy'
@@ -8,6 +8,8 @@ import { RedisService } from '../common/redis.service'
 
 @Injectable()
 export class MfaService {
+  private readonly logger = new Logger(MfaService.name)
+
   constructor(
     @InjectRepository(AdminUser)
     private readonly adminRepo: Repository<AdminUser>,
@@ -24,11 +26,7 @@ export class MfaService {
 
     const otpauthUrl = `otpauth://totp/Qiyuanshe%3Aadmin-${adminId}?secret=${cleanBase32}&issuer=Qiyuanshe`
 
-    console.log('[MFA Setup] adminId:', adminId)
-    console.log('[MFA Setup] raw base32:', secret.base32)
-    console.log('[MFA Setup] cleanBase32:', cleanBase32)
-    console.log('[MFA Setup] otpauthUrl:', otpauthUrl)
-    console.log('[MFA Setup] server time:', new Date().toISOString())
+    this.logger.debug(`[MFA Setup] adminId: ${adminId}, server time: ${new Date().toISOString()}`)
 
     await this.redisService.set(`mfa:temp:${adminId}`, cleanBase32, 300)
 
@@ -40,18 +38,14 @@ export class MfaService {
   async enableTotp(adminId: number, code: string) {
     const tempSecret = await this.redisService.get(`mfa:temp:${adminId}`)
 
-    console.log('[MFA Verify] adminId:', adminId)
-    console.log('[MFA Verify] tempSecret from Redis:', tempSecret)
-    console.log('[MFA Verify] input code:', code)
-    console.log('[MFA Verify] server time:', new Date().toISOString())
+    this.logger.debug(`[MFA Verify] adminId: ${adminId}, server time: ${new Date().toISOString()}`)
 
     if (!tempSecret) {
-      console.log('[MFA Verify] FAIL: tempSecret not found in Redis (expired)')
+      this.logger.log(`[MFA Verify] FAIL: tempSecret expired for adminId=${adminId}`)
       throw new Error('绑定已过期，请重新发起设置')
     }
 
     const token = String(code).trim()
-    console.log('[MFA Verify] sanitized token:', token)
 
     const verified = speakeasy.totp.verify({
       secret: tempSecret,
@@ -60,22 +54,12 @@ export class MfaService {
       window: 5,
     })
 
-    console.log('[MFA Verify] result:', verified)
-
     if (!verified) {
-      console.log('[MFA Verify] FAIL: code does not match. Server tokens:')
-      for (let i = -2; i <= 2; i++) {
-        const t = speakeasy.totp({
-          secret: tempSecret,
-          encoding: 'base32',
-          time: Math.floor(Date.now() / 1000) + i * 30,
-        })
-        console.log(`[MFA Verify]   offset ${i}: ${t}`)
-      }
+      this.logger.log(`[MFA Verify] FAIL: code mismatch for adminId=${adminId}`)
       throw new Error('验证码错误或已过期')
     }
 
-    console.log('[MFA Verify] SUCCESS')
+    this.logger.log(`[MFA Verify] SUCCESS: adminId=${adminId} MFA enabled`)
 
     await this.adminRepo.update(adminId, {
       mfaSecret: tempSecret,
@@ -101,11 +85,12 @@ export class MfaService {
       window: 5,
     })
 
-    console.log('[MFA Disable] result:', verified)
-
     if (!verified) {
+      this.logger.log(`[MFA Disable] FAIL: code mismatch for adminId=${adminId}`)
       throw new Error('验证码错误')
     }
+
+    this.logger.log(`[MFA Disable] SUCCESS: adminId=${adminId} MFA disabled`)
 
     await this.adminRepo.update(adminId, {
       mfaSecret: null,
@@ -121,8 +106,7 @@ export class MfaService {
       return true
     }
 
-    console.log('[MFA Login] adminId:', adminId)
-    console.log('[MFA Login] input code:', code)
+    this.logger.debug(`[MFA Login] adminId: ${adminId}, verifying code`)
 
     const token = String(code).trim()
 
@@ -133,18 +117,10 @@ export class MfaService {
       window: 5,
     })
 
-    console.log('[MFA Login] result:', verified)
-
     if (!verified) {
-      console.log('[MFA Login] FAIL: no match. Server tokens:')
-      for (let i = -2; i <= 2; i++) {
-        const t = speakeasy.totp({
-          secret: admin.mfaSecret!,
-          encoding: 'base32',
-          time: Math.floor(Date.now() / 1000) + i * 30,
-        })
-        console.log(`[MFA Login]   offset ${i}: ${t}`)
-      }
+      this.logger.log(`[MFA Login] FAIL: code mismatch for adminId=${adminId}`)
+    } else {
+      this.logger.debug(`[MFA Login] SUCCESS: adminId=${adminId}`)
     }
 
     return verified

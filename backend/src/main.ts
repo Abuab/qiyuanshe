@@ -3,19 +3,33 @@ import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { WsAdapter } from '@nestjs/platform-ws'
+import { WinstonModule } from 'nest-winston'
 import * as fs from 'fs'
 import { AppModule } from './app.module'
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter'
 import { TransformInterceptor } from './common/interceptors/transform.interceptor'
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware'
+import { RequestIdMiddleware } from './common/logger/request-id.middleware'
+import { WinstonLoggerService } from './common/logger/winston-logger.service'
 
 // 设置 Node.js 进程时区为北京时间（影响 Logger 时间戳、toLocaleString、Date.toString 等）
 process.env.TZ = 'Asia/Shanghai'
 
 async function bootstrap() {
+  // 先创建一个临时 Winston 实例供 NestJS 启动阶段使用
+  const winstonLoggerService = new WinstonLoggerService()
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['log', 'error', 'warn'],
+    // 使用 Winston 替换 NestJS 内置 Logger，同时保留所有日志级别
+    logger: WinstonModule.createLogger({
+      instance: winstonLoggerService.getWinstonInstance(),
+    }),
   })
+
+  // 获取模块中已初始化的 WinstonLoggerService，供后续动态调整日志级别
+  const loggerService = app.get(WinstonLoggerService)
+  const logLevel = process.env.LOG_LEVEL || 'debug'
+  loggerService.setLogLevel(logLevel)
 
   // ===== 生产环境 CORS 校验 =====
   const isProduction = process.env.NODE_ENV === 'production'
@@ -23,7 +37,7 @@ async function bootstrap() {
   if (isProduction) {
     const corsOrigins = (process.env.CORS_ORIGINS || '').trim()
     if (!corsOrigins) {
-      console.error('FATAL: CORS_ORIGINS environment variable must be set in production')
+      loggerService.error('FATAL: CORS_ORIGINS environment variable must be set in production')
       process.exit(1)
     }
   }
@@ -63,6 +77,10 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   )
+
+  // 请求追踪 ID 中间件（必须在请求日志中间件之前执行）
+  const reqIdMiddleware = app.get(RequestIdMiddleware)
+  app.use((req, res, next) => reqIdMiddleware.use(req, res, next))
 
   // HTTP 请求日志（方法 路径 状态码 耗时）
   const reqLogger = new RequestLoggerMiddleware()
@@ -111,7 +129,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000
   await app.listen(port)
-  console.log(`Application is running on: http://localhost:${port}`)
+  loggerService.log(`Application is running on: http://localhost:${port}`, 'Bootstrap')
 }
 
 bootstrap()

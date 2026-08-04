@@ -86,6 +86,7 @@ import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
 import { ContentFilterService } from './common/content-filter.service'
 import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
+import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 
 @Global()
 @Module({
@@ -178,6 +179,7 @@ import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
     PersonalityTestModule,
     GuideCopyModule,
     CosModule,
+    WinstonLoggerModule,
   ],
   controllers: [HealthController],
   providers: [RedisService, DatabaseIndexService, ContentFilterService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],

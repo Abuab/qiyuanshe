@@ -15,6 +15,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
+    const request = ctx.getRequest()
     const response = ctx.getResponse<Response>()
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR
@@ -55,8 +56,54 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const result = Result.error(message, code, errorData)
 
-    // CORS 头由 main.ts 中的全局 CORS 配置统一处理，
-    // 此处不再覆盖，避免与 credentials: true 冲突导致浏览器拒绝携带 cookie。
+    // 服务器内部错误发送告警通知
+    const alertUrl = process.env.ERROR_ALERT_WEBHOOK_URL
+    if (status >= 500 && alertUrl) {
+      this.sendAlert(alertUrl, status, message, exception, request).catch(() => {})
+    }
+
     response.status(status).json(result)
+  }
+
+  /**
+   * 向企业微信/飞书/钉钉 Webhook 发送错误告警
+   * 消息格式兼容企业微信机器人 Markdown 类型
+   */
+  private async sendAlert(
+    webhookUrl: string,
+    status: number,
+    message: string,
+    exception: unknown,
+    request: any,
+  ) {
+    const traceId = request?.headers?.['x-request-id'] || '-'
+    const appEnv = process.env.NODE_ENV || 'unknown'
+    const instance = process.env.INSTANCE_ID || require('os')?.hostname?.() || 'unknown'
+    const stack = exception instanceof Error
+      ? (exception.stack || '').split('\n').slice(0, 5).join('\n')
+      : ''
+
+    const alertContent =
+      `## 🚨 服务器错误告警\n` +
+      `> 环境: <font color="warning">${appEnv}</font>\n` +
+      `> 实例: <font color="comment">${instance}</font>\n` +
+      `> 状态码: <font color="warning">${status}</font>\n` +
+      `> 错误: ${message}\n` +
+      `> TraceId: \`${traceId}\`\n` +
+      `> 时间: ${new Date().toISOString()}\n` +
+      (stack ? `\n**堆栈（前5行）:**\n\`\`\`\n${stack}\n\`\`\`` : '')
+
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          msgtype: 'markdown',
+          markdown: { content: alertContent },
+        }),
+      })
+    } catch {
+      // 告警发送失败静默处理，避免告警系统自身故障影响业务
+    }
   }
 }
