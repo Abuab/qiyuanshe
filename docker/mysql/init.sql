@@ -497,6 +497,44 @@ CREATE TABLE IF NOT EXISTS `match_records` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='匹配记录表';
 
 -- =============================================
+-- 消息模板表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `message_templates` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '模板ID',
+  `name` VARCHAR(100) NOT NULL COMMENT '模板名称',
+  `title` VARCHAR(200) DEFAULT '' COMMENT '默认消息标题',
+  `content` TEXT NOT NULL COMMENT '模板内容',
+  `category` VARCHAR(30) DEFAULT 'notification' COMMENT '分类',
+  `placeholders` JSON NULL COMMENT '支持的占位符列表',
+  `useCount` INT NOT NULL DEFAULT 0 COMMENT '使用次数',
+  `lastUsedAt` DATETIME NULL COMMENT '最近一次使用时间',
+  `isDeleted` TINYINT NOT NULL DEFAULT 0 COMMENT '软删除',
+  `sortOrder` INT NOT NULL DEFAULT 0 COMMENT '排序',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_isDeleted` (`isDeleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息模板表';
+
+-- =============================================
+-- 运营标签表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `operation_tags` (
+  `id` INT NOT NULL AUTO_INCREMENT COMMENT '标签ID',
+  `name` VARCHAR(50) NOT NULL COMMENT '标签名称',
+  `color` VARCHAR(10) DEFAULT '#409EFF' COMMENT '标签颜色',
+  `isEnabled` TINYINT NOT NULL DEFAULT 1 COMMENT '启用状态',
+  `sortOrder` INT NOT NULL DEFAULT 0 COMMENT '排序',
+  `isDeleted` TINYINT NOT NULL DEFAULT 0 COMMENT '软删除',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_isEnabled` (`isEnabled`),
+  KEY `idx_isDeleted` (`isDeleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='运营标签表';
+
+-- =============================================
 -- 红娘评价表
 -- =============================================
 CREATE TABLE IF NOT EXISTS `matchmaker_reviews` (

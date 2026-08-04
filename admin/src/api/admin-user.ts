@@ -27,6 +27,7 @@ export interface UpdateAdminAccountDto {
   nickname?: string
   role?: string
   status?: number
+  isMfaEnabled?: boolean
 }
 
 export const adminAccountApi = {

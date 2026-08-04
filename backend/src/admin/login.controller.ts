@@ -40,6 +40,7 @@ interface UpdateAdminUserDto {
   nickname?: string
   role?: AdminRole
   status?: number
+  isMfaEnabled?: boolean
 }
 
 const MAX_LOGIN_ATTEMPTS = 5

@@ -16,12 +16,16 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
+import { VipService } from '../vip/vip.service'
 
 @Controller('admin/vip-packages')
 @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
 @UseGuards(AdminJwtAuthGuard, RoleGuard)
 export class VipPackageController {
-  constructor(private readonly service: VipPackageService) {}
+  constructor(
+    private readonly service: VipPackageService,
+    private readonly vipService: VipService,
+  ) {}
 
   /** 套餐列表 */
   @Get()
@@ -66,5 +70,32 @@ export class VipPackageController {
   async batchSort(@Body('items') items: { id: number; sortOrder: number }[]) {
     await this.service.updateSort(items)
     return Result.success(null, '排序更新成功')
+  }
+
+  // ========================================================================
+  //  红线索管理（从 vip-config 迁移）
+  // ========================================================================
+
+  /** 获取红线索显示名称 */
+  @Get('red-line-term')
+  async getRedLineTerm() {
+    return Result.success({ term: await this.vipService.getRedLineTerm() })
+  }
+
+  /** 修改红线索显示名称 */
+  @Put('red-line-term')
+  async setRedLineTerm(@Body('term') term: string) {
+    await this.vipService.setRedLineTerm(term || '红线索')
+    return Result.success(null, '保存成功')
+  }
+
+  /** 查看用户红线索使用记录 */
+  @Get('red-line-usages/:userId')
+  async getRedLineUsages(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+  ) {
+    return Result.success(await this.vipService.getRedLineUsages(userId, page, limit))
   }
 }

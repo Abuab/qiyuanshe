@@ -28,7 +28,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="MFA" width="70">
+        <el-table-column label="MFA" width="85">
           <template #default="{ row }">
             <el-tag :type="row.isMfaEnabled ? 'success' : 'info'" size="small">
               {{ row.isMfaEnabled ? '已开启' : '未开启' }}
@@ -100,6 +100,13 @@
             inactive-text="禁用"
           />
         </el-form-item>
+        <el-form-item v-if="isEdit" label="强制MFA">
+          <el-switch
+            v-model="form.isMfaEnabled"
+            active-text="开启"
+            inactive-text="关闭"
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -151,6 +158,7 @@ const form = reactive({
   nickname: '',
   role: 'readonly',
   status: 1,
+  isMfaEnabled: true,
 })
 
 const formRules = {
@@ -189,6 +197,7 @@ function resetForm() {
   form.nickname = ''
   form.role = 'readonly'
   form.status = 1
+  form.isMfaEnabled = true
   isEdit.value = false
   editId.value = null
 }
@@ -206,6 +215,7 @@ function handleEdit(row: AdminAccount) {
   form.nickname = row.nickname || ''
   form.role = row.role
   form.status = row.status
+  form.isMfaEnabled = row.isMfaEnabled
   dialogVisible.value = true
 }
 
@@ -216,6 +226,7 @@ async function handleSubmit() {
       nickname: form.nickname,
       role: form.role,
       status: form.status,
+      isMfaEnabled: form.isMfaEnabled,
     }
     if (form.password) data.password = form.password
     if (!isEdit.value) data.username = form.username

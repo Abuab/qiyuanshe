@@ -99,24 +99,6 @@ export class VipController {
     }
   }
 
-  /** 定制会员页面配置 */
-  @Get('custom-config')
-  async getCustomConfig() {
-    return Result.success(await this.vipService.getCustomConfig())
-  }
-
-  /** 关于我们页面配置 */
-  @Get('about-config')
-  async getAboutConfig() {
-    return Result.success(await this.vipService.getAboutConfig())
-  }
-
-  /** 安全征婚提示 */
-  @Get('safety-tips')
-  async getSafetyTips() {
-    return Result.success(await this.vipService.getSafetyTipsConfig())
-  }
-
   // ========================================================================
   //  红线索 API
   // ========================================================================

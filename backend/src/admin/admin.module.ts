@@ -70,7 +70,6 @@ import { UserProfileController } from './user-profile.controller'
 import { VipPackageController } from './vip-package.controller'
 import { VipPackageService } from './vip-package.service'
 import { VipService } from '../vip/vip.service'
-import { AdminVipConfigController } from './vip-config.controller'
 import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 import { NotifyChannelService } from './notify-channel.service'
 import { RedisService } from '../common/redis.service'
@@ -164,7 +163,6 @@ import { AdminOperationTagService } from './operation-tag.service'
     AdminChatController,
     UserProfileController,
     VipPackageController,
-    AdminVipConfigController,
     AdminFeedbackController,
     AdminStoreCertController,
     AdminAuditLogController,
