@@ -271,12 +271,15 @@ export class AdminUserService {
       }
     }
 
+    // Bulk query: use explicit placeholders to avoid IN (?) array expansion issues with TypeORM's query runner
+    const inPlaceholders = userIds.map(() => '?').join(',')
+
     // Bulk query match counts
     const matchCountMap = new Map<number, number>()
     if (userIds.length > 0) {
       const matchCounts = await this.matchRecordRepository.manager.query(
-        `SELECT userId, COUNT(id) AS cnt FROM match_records WHERE userId IN (?) GROUP BY userId`,
-        [userIds],
+        `SELECT userId, COUNT(id) AS cnt FROM match_records WHERE userId IN (${inPlaceholders}) GROUP BY userId`,
+        userIds,
       )
       for (const row of matchCounts) {
         matchCountMap.set(Number(row.userId), Number(row.cnt))
@@ -288,16 +291,16 @@ export class AdminUserService {
     const followerCountMap = new Map<number, number>()
     if (userIds.length > 0) {
       const followingCounts = await this.followRepository.manager.query(
-        `SELECT user_id AS userId, COUNT(id) AS cnt FROM follows WHERE user_id IN (?) GROUP BY user_id`,
-        [userIds],
+        `SELECT user_id AS userId, COUNT(id) AS cnt FROM follows WHERE user_id IN (${inPlaceholders}) GROUP BY user_id`,
+        userIds,
       )
       for (const row of followingCounts) {
         followingCountMap.set(Number(row.userId), Number(row.cnt))
       }
 
       const followerCounts = await this.followRepository.manager.query(
-        `SELECT target_user_id AS userId, COUNT(id) AS cnt FROM follows WHERE target_user_id IN (?) GROUP BY target_user_id`,
-        [userIds],
+        `SELECT target_user_id AS userId, COUNT(id) AS cnt FROM follows WHERE target_user_id IN (${inPlaceholders}) GROUP BY target_user_id`,
+        userIds,
       )
       for (const row of followerCounts) {
         followerCountMap.set(Number(row.userId), Number(row.cnt))
@@ -308,8 +311,8 @@ export class AdminUserService {
     const viewCountMap = new Map<number, number>()
     if (userIds.length > 0) {
       const viewCounts = await this.visitRepository.manager.query(
-        `SELECT visitor_user_id AS userId, COUNT(DISTINCT user_id) AS cnt FROM profile_visits WHERE visitor_user_id IN (?) GROUP BY visitor_user_id`,
-        [userIds],
+        `SELECT visitor_user_id AS userId, COUNT(DISTINCT user_id) AS cnt FROM profile_visits WHERE visitor_user_id IN (${inPlaceholders}) GROUP BY visitor_user_id`,
+        userIds,
       )
       for (const row of viewCounts) {
         viewCountMap.set(Number(row.userId), Number(row.cnt))
