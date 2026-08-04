@@ -85,7 +85,7 @@ export class AdminPaymentService {
       userNickname: order.user?.nickname || '-',
       userAvatar: order.user?.avatar || '',
       userPhone: order.user?.phone || '',
-      orderType: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
+      packageName: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
     }))
 
     return {
@@ -254,7 +254,7 @@ export class AdminPaymentService {
       expireTime: order.expireTime,
       createdAt: order.createdAt,
       /** 订单类型：从套餐名称推导，便于运营区分 */
-      orderType: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
+      packageName: order.package?.name || (order.vipLevel > 0 ? 'VIP会员' : '--'),
     }))
 
     // 累计消费统计

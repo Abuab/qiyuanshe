@@ -82,6 +82,7 @@
                 </template>
               </el-image>
               <span class="submitter-nickname" @click="goUserDetail(row.submitter.id)">{{ row.submitter.nickname }}</span>
+              <span class="submitter-id">ID: {{ row.submitter.id ?? row.submitterId }}</span>
             </div>
             <span v-else class="text-muted">系统提交</span>
           </template>
@@ -615,6 +616,10 @@ function getTypeTagType(type: string) {
     &:hover {
       color: #409eff;
     }
+  }
+  .submitter-id {
+    font-size: 11px;
+    color: #909399;
   }
 }
 

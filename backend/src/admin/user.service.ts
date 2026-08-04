@@ -209,10 +209,11 @@ export class AdminUserService {
     if (filter.sort) {
       // 白名单校验：仅允许对用户表的安全字段排序，防止 SQL 注入
       const ALLOWED_SORT_COLUMNS = [
-        'id', 'userId', 'nickname', 'gender', 'age', 'birthYear', 'height', 'weight',
+        'id', 'userId', 'nickname', 'gender', 'birthYear', 'height', 'weight',
         'education', 'occupation', 'incomeRange', 'housingStatus', 'carStatus',
         'maritalStatus', 'status', 'isRealName', 'eidCertStatus', 'isVip', 'vipLevel',
         'createdAt', 'updatedAt', 'lastLoginAt', 'lastActiveAt',
+        'profileScore', 'manualBoostScore',
       ]
       if (!ALLOWED_SORT_COLUMNS.includes(filter.sort)) {
         throw new BadRequestException(`不支持的排序字段: ${filter.sort}`)

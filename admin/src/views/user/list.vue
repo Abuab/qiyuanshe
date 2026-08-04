@@ -411,6 +411,7 @@
                 :stroke-width="6"
                 :color="progressColor(row.profileScore)"
                 style="flex:1;min-width:50px"
+                :show-text="false"
               />
               <span style="font-size:12px;color:#909399;white-space:nowrap">{{ row.profileScore || 0 }}%</span>
             </div>
@@ -510,22 +511,22 @@
             <span v-else class="text-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('matchCount')" prop="matchCount" label="匹配次数" width="90" sortable="custom">
+        <el-table-column v-if="isColumnVisible('matchCount')" prop="matchCount" label="匹配次数" width="90">
           <template #default="{ row }">
             <span>{{ row.matchCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('followingCount')" prop="followingCount" label="关注数" width="80" sortable="custom">
+        <el-table-column v-if="isColumnVisible('followingCount')" prop="followingCount" label="关注数" width="80">
           <template #default="{ row }">
             <span>{{ row.followingCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('followerCount')" prop="followerCount" label="被关注数" width="90" sortable="custom">
+        <el-table-column v-if="isColumnVisible('followerCount')" prop="followerCount" label="被关注数" width="90">
           <template #default="{ row }">
             <span>{{ row.followerCount ?? 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column v-if="isColumnVisible('viewCount')" prop="viewCount" label="看过谁" width="80" sortable="custom">
+        <el-table-column v-if="isColumnVisible('viewCount')" prop="viewCount" label="看过谁" width="80">
           <template #default="{ row }">
             <el-button v-if="(row.viewCount ?? 0) > 0" link type="primary" size="small" @click="handleViewDetail(row)">
               {{ row.viewCount ?? 0 }}
@@ -2224,8 +2225,14 @@ function handleSelectAll(val: boolean) {
 }
 
 function handleSortChange({ prop, order }: { prop: string; order: string }) {
-  filterForm.sort = prop
-  filterForm.order = order === 'ascending' ? 'asc' : 'desc'
+  // age 不是数据库列，转换为 birthYear 排序（方向取反：年龄大 = 出生年份小）
+  if (prop === 'age') {
+    filterForm.sort = 'birthYear'
+    filterForm.order = order === 'ascending' ? 'desc' : 'asc'
+  } else {
+    filterForm.sort = prop
+    filterForm.order = order === 'ascending' ? 'asc' : 'desc'
+  }
   fetchData()
 }
 
