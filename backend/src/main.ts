@@ -31,6 +31,9 @@ async function bootstrap() {
   const logLevel = process.env.LOG_LEVEL || 'debug'
   loggerService.setLogLevel(logLevel)
 
+  // 将 Winston 设为全局 Logger，替换所有 new Logger() 实例的输出
+  app.useLogger(loggerService)
+
   // ===== 生产环境 CORS 校验 =====
   const isProduction = process.env.NODE_ENV === 'production'
 
