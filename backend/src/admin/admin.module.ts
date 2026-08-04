@@ -79,6 +79,8 @@ import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
 import { BroadcastLog } from '../entities/BroadcastLog'
 import { AdminAuditLog } from '../entities/AdminAuditLog'
+import { Activity } from '../entities/Activity'
+import { ActivitySignup } from '../entities/ActivitySignup'
 import { AiModule } from '../ai/ai.module'
 import { UserModule } from '../user/user.module'
 import { AdminAuditLogController } from './admin-audit-log.controller'
@@ -132,6 +134,8 @@ import { AdminOperationTagService } from './operation-tag.service'
       Follow,
       MessageTemplate,
       OperationTag,
+      Activity,
+      ActivitySignup,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,
