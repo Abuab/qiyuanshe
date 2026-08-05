@@ -1,60 +1,69 @@
 <template>
-  <view class="love-quotes-page">
-    <!-- 导航栏 -->
+  <view class="page">
+    <!-- 导航栏 — 白底深色，与 about/my-follows 统一的 nav 风格 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <text class="back-btn" @tap="handleBack">←</text>
-        <text class="nav-title">爱情语录</text>
-        <text class="nav-placeholder"></text>
+        <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
+        <text class="nav-title">{{ appName }}</text>
+        <view class="nav-right"></view>
       </view>
     </view>
 
-    <scroll-view class="content-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: navTopPx + 'px' }">
-      <!-- 展示当前语录的卡片 -->
+    <!-- 内容区 — 语录卡片 + 换一个 -->
+    <scroll-view
+      class="content-scroll"
+      scroll-y
+      :show-scrollbar="false"
+      :scroll-top="scrollToVal"
+      @scroll="onScroll"
+      :style="{ paddingTop: navTopPx + 'px' }"
+    >
+      <!-- 语录卡片 — 顶部对齐，白底圆角，文字左对齐 -->
       <view class="quote-card">
-        <view class="quote-content">
-          <text class="quote-text">{{ currentQuote }}</text>
-        </view>
+        <text class="quote-text">{{ currentQuote }}</text>
+        <view class="quote-text-bottom"></view>
       </view>
 
-      <!-- 换一个按钮（椭圆形胶囊，粉色描边，无填充） -->
+      <!-- 换一个按钮 — 胶囊形，白底粉色描边，unicode 刷新图标 -->
       <view class="refresh-row">
         <view class="refresh-btn" @tap="shuffleQuote">
-          <image v-if="pageIcons.refreshIcon" class="refresh-icon" :src="pageIcons.refreshIcon" mode="aspectFit" />
-          <text v-else class="refresh-icon-emoji">🔄</text>
+          <text class="refresh-icon-text">↻</text>
           <text class="refresh-text">换一个</text>
         </view>
       </view>
 
-      <!-- 提交按钮（浓粉色大椭圆形） -->
-      <view class="submit-section">
-        <view class="submit-btn" @tap="handleSubmit">
-          <text>提交</text>
-        </view>
-      </view>
-
-      <view class="bottom-safe"></view>
+      <!-- 给内容区留出底部按钮的高度 -->
+      <view class="bottom-placeholder"></view>
     </scroll-view>
+
+    <!-- 提交按钮 — 固定于底部，全宽大圆角粉色 -->
+    <view class="submit-bar">
+      <view class="submit-btn" @tap="handleSubmit">
+        <text>提交</text>
+      </view>
+      <view class="safe-bottom"></view>
+    </view>
+
     <BackTop :show="showBackTop" @click="scrollToTop" />
   </view>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { get, put } from '@/utils/request'
 
 const systemStore = useSystemStore()
+const { appName } = storeToRefs(systemStore)
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
 const scrollToVal = ref(0)
 const { showBackTop, onScroll, scrollToTop } = useBackTop()
 const quotes = ref<string[]>([])
 const currentIndex = ref(0)
-
-const pageIcons = computed(() => systemStore.icons?.page || {})
 
 const currentQuote = computed(() => {
   if (quotes.value.length === 0) return '缘分天注定，爱情需要主动争取。'
@@ -71,11 +80,9 @@ onMounted(() => {
 const loadQuotes = async () => {
   try {
     const res: any = await get('/system/config')
-    // loveQuotes 可能为空数组 [], 需用 length 判断而非 truthy
     if (res?.loveQuotes && Array.isArray(res.loveQuotes) && res.loveQuotes.length > 0) {
       quotes.value = res.loveQuotes.filter((q: string) => q && q.trim())
     }
-    // 如果后端未配置或为空，使用默认语录
     if (quotes.value.length === 0) {
       quotes.value = [
         '缘分天注定，爱情需要主动争取。',
@@ -123,18 +130,20 @@ loadQuotes()
 </script>
 
 <style lang="scss" scoped>
-.love-quotes-page {
+// ========== 页面背景：浅灰 ==========
+.page {
   min-height: 100vh;
-  background-color: #FFF8FA;
+  background: #f5f5f5;
 }
 
+// ========== 导航栏：纯白底，深色元素 ==========
 .nav-wrap {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background: linear-gradient(180deg, #FFE4EC 0%, #FFE4EC 70%, #FFF0F5 100%);
+  background: #fff;
 }
 
 .nav-bar {
@@ -145,54 +154,61 @@ loadQuotes()
   padding: 0 32rpx;
 }
 
-.back-btn {
-  font-size: 36rpx;
-  color: #FF6B9D;
-  font-weight: bold;
-  width: 80rpx;
+.nav-left,
+.nav-right {
+  width: 100rpx;
+}
+
+.back-icon {
+  font-size: 40rpx;
+  color: #333;
 }
 
 .nav-title {
-  font-size: 34rpx;
+  font-size: 32rpx;
   font-weight: bold;
   color: #333;
 }
 
-.nav-placeholder {
-  width: 80rpx;
-}
-
+// ========== 内容滚动区 ==========
 .content-scroll {
   height: 100vh;
-  padding: 0 32rpx;
+  padding: 32rpx;
+  box-sizing: border-box;
+
+  // 隐藏滚动条
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
 }
 
+// ========== 语录卡片：顶部对齐，白底圆角，左对齐 ==========
 .quote-card {
-  margin-top: 60rpx;
-  padding: 48rpx 40rpx;
   background: #fff;
-  border-radius: 20rpx;
-  box-shadow: 0 4rpx 20rpx rgba(255, 107, 157, 0.08);
-}
-
-.quote-content {
-  min-height: 200rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  margin-top: 20rpx;
 }
 
 .quote-text {
-  font-size: 34rpx;
+  font-size: 30rpx;
   color: #333;
   line-height: 1.8;
-  text-align: center;
+  text-align: left;
 }
 
+// 文字下方额外留白（<text> 组件 padding 不可靠，改用占位 view）
+.quote-text-bottom {
+  height: 100rpx;
+}
+
+// ========== 换一个按钮：胶囊形，白底 + 粉色描边 + 粉色文字 ==========
 .refresh-row {
   display: flex;
   justify-content: center;
-  margin-top: 40rpx;
+  margin-top: 32rpx;
 }
 
 .refresh-btn {
@@ -202,16 +218,19 @@ loadQuotes()
   padding: 16rpx 40rpx;
   border: 2rpx solid #FF6B9D;
   border-radius: 50rpx;
-  background: transparent;
+  background: #fff;
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
-.refresh-icon {
-  width: 32rpx;
-  height: 32rpx;
-}
-
-.refresh-icon-emoji {
-  font-size: 28rpx;
+// 刷新图标 — unicode ↻ (U+21BB 顺时针开口圆弧箭头)
+.refresh-icon-text {
+  font-size: 32rpx;
+  color: #FF6B9D;
+  font-weight: bold;
+  line-height: 1;
 }
 
 .refresh-text {
@@ -219,29 +238,44 @@ loadQuotes()
   color: #FF6B9D;
 }
 
-.submit-section {
-  display: flex;
-  justify-content: center;
-  margin-top: 60rpx;
+// ========== 底部提交按钮：固定于底部，全宽大圆角粉色 ==========
+.submit-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: #f5f5f5;
+  padding: 20rpx 40rpx 0;
 }
 
 .submit-btn {
-  width: 400rpx;
-  height: 88rpx;
+  height: 96rpx;
+  background: #FF4D6A;
+  border-radius: 48rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FF4081;
-  border-radius: 50rpx;
 
   text {
     font-size: 32rpx;
-    color: #fff;
     font-weight: bold;
+    color: #fff;
+  }
+
+  &:active {
+    opacity: 0.85;
   }
 }
 
-.bottom-safe {
-  height: 60rpx;
+// 底部安全区域
+.safe-bottom {
+  height: calc(40rpx + constant(safe-area-inset-bottom));
+  height: calc(40rpx + env(safe-area-inset-bottom));
+}
+
+// 内容区底部占位，确保不会被固定按钮遮挡
+.bottom-placeholder {
+  height: 200rpx;
 }
 </style>

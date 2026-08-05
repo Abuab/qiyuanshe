@@ -147,10 +147,13 @@ export class RecommendService {
     const pinnedUsers = isNewest ? [] : await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
 
     // 4. 非置顶用户排序
-    // tab=newest → 按注册时间降序；否则按推荐分
+    // tab=newest → 按注册时间降序；tab=active → 按最近活跃时间降序；否则按推荐分
+    const isActive = filters?.tab === 'active'
     const orderBy = isNewest
       ? 'user.createdAt'
-      : this.buildScoreExpression()
+      : isActive
+        ? 'user.lastActiveAt'
+        : this.buildScoreExpression()
     const orderDir: 'DESC' = 'DESC'
 
     // 同省曝光池优先展示同城用户的排序表达式
