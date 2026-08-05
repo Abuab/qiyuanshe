@@ -256,17 +256,17 @@ export class AdminUserService {
     if (userIds.length > 0) {
       const photoAudits = await this.auditLogRepository
         .createQueryBuilder('a')
-        .select('a.targetId', 'targetId')
+        .select('a.submitterId', 'submitterId')
         .addSelect('a.action', 'action')
         .where('a.targetType = :photoType', { photoType: 'photo' })
-        .andWhere('a.targetId IN (:...userIds)', { userIds })
+        .andWhere('a.submitterId IN (:...userIds)', { userIds })
         .orderBy('a.createdAt', 'DESC')
-        .getRawMany<{ targetId: number; action: string }>()
+        .getRawMany<{ submitterId: number; action: string }>()
 
-      // Keep first (latest) record per targetId
+      // Keep first (latest) record per submitterId
       for (const row of photoAudits) {
-        if (!photoAuditMap.has(row.targetId)) {
-          photoAuditMap.set(row.targetId, row.action)
+        if (!photoAuditMap.has(row.submitterId)) {
+          photoAuditMap.set(row.submitterId, row.action)
         }
       }
     }
