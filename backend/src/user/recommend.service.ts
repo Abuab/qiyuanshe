@@ -248,8 +248,8 @@ export class RecommendService {
     })
 
     // 6.5 人格匹配加分：作为加分项对当前页做轻量微调（置顶用户保持不动，非唯一排序依据）
-    // newest（最新）标签要求严格按注册时间排序，不施加人格微调，避免破坏其排序契约
-    if (!isNewest) {
+    // newest/active 标签要求严格按时间排序，不施加人格微调，避免破坏其排序契约
+    if (!isNewest && !isActive) {
       finalList = await this.applyPersonalityRerank(finalList, currentUserId, pinnedUsers)
     }
 
