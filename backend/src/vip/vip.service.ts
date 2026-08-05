@@ -396,24 +396,38 @@ export class VipService {
       throw new Error('boostScore 超出允许范围（0-1000）')
     }
     const now = new Date()
-    const topEndTime = new Date(now.getTime() + durationHours * 3600_000)
+    const isUnpin = durationHours <= 0
+    const topEndTime = isUnpin ? now : new Date(now.getTime() + durationHours * 3600_000)
 
-    // 写入置顶记录
-    const record = this.topRecordRepo.create({
-      userId,
-      topStartTime: now,
-      topEndTime,
-      source: 'manual',
-      status: 1,
-    })
-    await this.topRecordRepo.save(record)
+    if (isUnpin) {
+      // 取消置顶：将当前进行中的置顶记录标记为"已取消"
+      await this.topRecordRepo.update(
+        { userId, status: 1 },
+        { status: 3, topEndTime: now },
+      )
+    } else {
+      // 写入置顶记录
+      const record = this.topRecordRepo.create({
+        userId,
+        topStartTime: now,
+        topEndTime,
+        source: 'manual',
+        status: 1,
+      })
+      await this.topRecordRepo.save(record)
+    }
 
-    // 更新 user.pinnedExpireAt
+    // 更新 user.pinnedExpireAt 和 manualBoostScore
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (user) {
-      user.pinnedExpireAt = topEndTime
-      if (boostScore !== undefined && boostScore > 0) {
-        user.manualBoostScore = boostScore
+      if (isUnpin) {
+        user.pinnedExpireAt = null
+        user.manualBoostScore = 0
+      } else {
+        user.pinnedExpireAt = topEndTime
+        if (boostScore !== undefined && boostScore > 0) {
+          user.manualBoostScore = boostScore
+        }
       }
       await this.userRepo.save(user)
     }
