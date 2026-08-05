@@ -390,7 +390,6 @@ export class AdminUserService {
         /** 运营/推荐字段 */
         profileScore: calcProfileScore(user),
         manualBoostScore: user.manualBoostScore || 0,
-        exposurePool: user.exposurePool || 'city',
         pinnedExpireAt: user.pinnedExpireAt || null,
         lastActiveAt: user.lastActiveAt || null,
         protocolAgreedAt: user.protocolAgreedAt || null,

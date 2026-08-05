@@ -84,7 +84,7 @@ export class RecommendService {
     'height', 'education', 'occupation', 'incomeRange', 'housingStatus',
     'isRealName', 'isVip', 'vipLevel', 'lastLoginAt', 'lastActiveAt',
     'profileScore', 'manualBoostScore', 'pinnedExpireAt',
-    'exposurePool', 'residence', 'createdAt', 'status', 'isDeleted',
+    'residence', 'createdAt', 'status', 'isDeleted',
     'voiceUrl', 'voiceAuditStatus',
   ] as const
 
@@ -155,14 +155,6 @@ export class RecommendService {
         ? 'user.lastActiveAt'
         : this.buildScoreExpression()
     const orderDir: 'DESC' = 'DESC'
-
-    // 同省曝光池优先展示同城用户的排序表达式
-    const provinceCityBoost = this.buildProvinceCityBoost(city)
-    // 修复：为 :cityBoost 参数化占位符绑定实际值，消除 SQL 拼接注入风险
-    const safeCity = this.sanitizeCity(city)
-    if (safeCity && provinceCityBoost !== '1') {
-      baseQb.setParameter('cityBoost', `%${safeCity}%`)
-    }
 
     // newest 模式下排除所有置顶用户（手动置顶不可出现在最新列表）
     // 注意：不依赖 SQL NOT IN，改用结果后过滤确保可靠性
@@ -495,31 +487,6 @@ export class RecommendService {
 
 
   // ========================================================================
-  //  曝光池控制
-  // ========================================================================
-
-  /**
-   * 在查询构建器上施加曝光池城市约束
-   * - city:      仅同城（residence LIKE '%city%'）
-   * - province:  同城 + 同省
-   * - national:  无城市限制
-   */
-  private applyExposurePoolFilter(qb: ReturnType<typeof this.baseSelectQuery>, city: string): void {
-    if (!city) return
-
-    qb.andWhere(
-      `(
-        (user.exposurePool = 'national')
-        OR (user.exposurePool = 'city' AND user.residence LIKE :cityLike)
-        OR (user.exposurePool = 'province')
-      )`,
-      { cityLike: `%${city}%` },
-    )
-    // province 用户不强制 residence 匹配，依赖城市名 + 省后缀模糊匹配
-    // 如果 city 传入的是具体城市名如"杭州"，province 用户通过 residence 中含浙江省被自然包含
-  }
-
-  // ========================================================================
   //  内部工具方法
   // ========================================================================
 
@@ -547,7 +514,6 @@ export class RecommendService {
       qb.andWhere('user.gender = :gender', { gender: targetGender })
     }
 
-    this.applyExposurePoolFilter(qb, city)
     this.applyFilters(qb, filters)
 
     return qb
@@ -626,23 +592,6 @@ export class RecommendService {
   }
 
   // ---- 缓存 ----
-
-  /**
-   * 同省曝光池城市优先表达式
-   * province 池用户中，同城市（residence 匹配 city）优先展示
-   * city 参数经由前端传入，使用 sanitizeCity 防止 SQL 注入
-   * 修复：使用参数化占位符 :cityBoost 替代字符串拼接，消除 SQL 注入风险
-   */
-  private buildProvinceCityBoost(city: string): string {
-    const safe = this.sanitizeCity(city)
-    if (!safe) return '1'
-    return `(CASE WHEN user.exposurePool = 'province' AND user.residence LIKE :cityBoost THEN 1 ELSE 0 END)`
-  }
-
-  /** 对城市名做安全清洗，仅保留中文和拉丁字母，防止 SQL 注入 */
-  private sanitizeCity(city: string): string {
-    return city.replace(/[^a-zA-Z\u4e00-\u9fff\u3400-\u4dbf]/g, '').slice(0, 20)
-  }
 
   private buildListCacheKey(
     city: string, page: number, pageSize: number,

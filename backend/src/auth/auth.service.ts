@@ -139,7 +139,6 @@ export class AuthService {
     user.adminRemark = null
     user.manualBoostScore = 0
     user.pinnedExpireAt = null
-    user.exposurePool = 'city'
     user.password = null
     user.mfaSecret = null
     user.isMfaEnabled = false

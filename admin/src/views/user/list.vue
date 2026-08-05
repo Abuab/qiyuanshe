@@ -443,11 +443,6 @@
               <span :style="{ color: row.manualBoostScore > 0 ? '#303133' : '#909399' }">{{ row.manualBoostScore || '-' }}</span>
             </template>
           </el-table-column>
-        <el-table-column v-if="isColumnVisible('exposurePool')" prop="exposurePool" label="曝光池" width="90">
-          <template #default="{ row }">
-            <span :style="{ color: row.exposurePool !== 'city' ? '#303133' : '#909399' }">{{ exposurePoolLabel(row.exposurePool) }}</span>
-          </template>
-        </el-table-column>
         <el-table-column v-if="isColumnVisible('createdAt')" prop="createdAt" label="注册时间" width="160" sortable="custom">
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
@@ -1348,7 +1343,6 @@ const columnOptions = reactive([
   { key: 'pinnedStatus', label: '置顶状态', visible: false },
   { key: 'pinnedExpire', label: '置顶截至', visible: false },
   { key: 'manualBoostScore', label: '运营加权', visible: false },
-  { key: 'exposurePool', label: '曝光池', visible: false },
   { key: 'createdAt', label: '注册时间', visible: false },
   { key: 'photoAudit', label: '照片审核', visible: false },
   { key: 'userTags', label: '用户标签', visible: false },
@@ -1637,11 +1631,6 @@ async function handlePinSubmit() {
     fetchData()
   } catch { ElMessage.error('置顶设置失败') }
   pinSubmitting.value = false
-}
-
-function exposurePoolLabel(pool: string) {
-  const map: Record<string, string> = { city: '同城', province: '同省', national: '全国' }
-  return map[pool] || pool || '同城'
 }
 
 function progressColor(score: number): string {

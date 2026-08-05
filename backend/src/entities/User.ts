@@ -211,11 +211,6 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   pinnedExpireAt: Date | null
 
-  /** 曝光池级别: city=同城 / province=同省 / national=全国 */
-  @Index()
-  @Column({ type: 'varchar', length: 20, default: 'city' })
-  exposurePool: string
-
   /** 最后活跃时间（浏览/发消息/更新资料等） */
   @Index()
   @Column({ type: 'datetime', nullable: true })
