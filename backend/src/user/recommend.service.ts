@@ -142,13 +142,13 @@ export class RecommendService {
     const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
-    // tab=newest → 不展示置顶用户，按注册时间纯粹排序
+    // tab=newest / active → 不展示置顶用户，按时间纯粹排序
     const isNewest = filters?.tab === 'newest'
-    const pinnedUsers = isNewest ? [] : await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
+    const isActive = filters?.tab === 'active'
+    const pinnedUsers = (isNewest || isActive) ? [] : await this.getPinnedUsers(city, targetGender, currentUserId, effectiveFilters)
 
     // 4. 非置顶用户排序
     // tab=newest → 按注册时间降序；tab=active → 按最近活跃时间降序；否则按推荐分
-    const isActive = filters?.tab === 'active'
     const orderBy = isNewest
       ? 'user.createdAt'
       : isActive
