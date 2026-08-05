@@ -572,21 +572,6 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <!-- 快捷审核：仅在照片审核 PENDING 时显示图标按钮 -->
-            <span style="display:inline-flex;align-items:center;gap:4px;margin-left:8px">
-            <template v-if="row.photoAuditStatus === 'PENDING'">
-              <el-tooltip content="快速通过照片审核" placement="top">
-                <el-button size="small" type="success" @click="handleQuickAudit(row, 'photo', 'approve')">
-                  <el-icon><CheckIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-              <el-tooltip content="快速拒绝照片审核" placement="top">
-                <el-button size="small" type="danger" @click="handleQuickAudit(row, 'photo', 'reject')">
-                  <el-icon><CloseIcon /></el-icon>
-                </el-button>
-              </el-tooltip>
-            </template>
-            </span>
           </template>
         </el-table-column>
       </el-table>
@@ -1231,10 +1216,10 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Check as CheckIcon, Close as CloseIcon, Loading, QuestionFilled } from '@element-plus/icons-vue'
+import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Loading, QuestionFilled } from '@element-plus/icons-vue'
 import { adminUsers, adminPayment } from '../../api'
-import { adminAudit } from '../../api/audit'
 import { userPin, vipPackages, VipPackage } from '../../api/vip'
+import SearchIcon from '~icons/ep/search'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
@@ -2730,39 +2715,6 @@ async function handleDropdownCommand(cmd: string, row: User) {
     case 'tag': handleOpenTagDialog(row); break
     case 'viewNotes': handleViewNotes(row); break
   }
-}
-
-// 快捷审核：从审计列表找到PENDING记录并审批/拒绝
-async function handleQuickAudit(row: User, auditType: 'user' | 'photo', action: 'approve' | 'reject') {
-  const typeLabel = auditType === 'user' ? '资料' : '照片'
-  const actionLabel = action === 'approve' ? '通过' : '拒绝'
-  try {
-    await ElMessageBox.confirm(
-      `确定${actionLabel}用户「${row.nickname}」的${typeLabel}审核？`,
-      `快捷${actionLabel}审核`,
-      { type: 'warning', confirmButtonText: actionLabel, cancelButtonText: '取消' }
-    )
-  } catch { return /* 用户取消 */ }
-
-  try {
-    // 查询该用户的待审核审计记录（limit 设为极大值以确保不漏查）
-    const res = await adminAudit.list({ type: auditType, status: 0, limit: 99999 })
-    if (res.success && res.data) {
-      const auditItem = res.data.list.find((item: any) => item.targetId === row.id)
-      if (!auditItem) {
-        // 无审计记录，尝试直接调用审批接口（如支持）
-        ElMessage.warning(`未找到「${row.nickname}」的${typeLabel}待审核记录，请前往审核管理处理`)
-        return
-      }
-      if (action === 'approve') {
-        await adminAudit.approve(auditItem.id)
-      } else {
-        await adminAudit.reject(auditItem.id, '快捷拒绝')
-      }
-      ElMessage.success(`${typeLabel}审核已${actionLabel}`)
-      fetchData()
-    }
-  } catch { ElMessage.error(`${actionLabel}审核失败`) }
 }
 
 async function handleExport() {
