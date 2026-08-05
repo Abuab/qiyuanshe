@@ -428,6 +428,7 @@ export class AdminUserService {
 
     return users.map(u => ({
       ID: u.id,
+      用户ID: u.userId || '-',
       昵称: u.nickname,
       手机号: u.phone,
       性别: u.gender === 1 ? '男' : u.gender === 2 ? '女' : '未知',
