@@ -1190,7 +1190,7 @@ export class UserService {
       // AI缘分匹配报告
       { sql: 'DELETE FROM ai_match_reports WHERE userId = ? OR targetUserId = ?', desc: 'ai_match_reports' },
       // 审核日志（用户提交的审核记录）
-      { sql: 'DELETE FROM audit_logs WHERE submitterId = ? OR (targetType IN (\'voice\',\'photo\',\'avatar\') AND targetId = ?)', desc: 'audit_logs' },
+      { sql: 'DELETE FROM audit_logs WHERE submitterId = ? OR (targetType IN (\'voice\',\'avatar\',\'user\',\'user_cancel\') AND targetId = ?)', desc: 'audit_logs' },
       // 举报记录
       { sql: 'DELETE FROM reports WHERE reporterId = ? OR (type = \'user\' AND targetId = ?)', desc: 'reports' },
       // 协议操作日志

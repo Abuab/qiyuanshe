@@ -465,7 +465,7 @@ export class AdminUserService {
         where: { targetType: 'user', targetId: id, action: In(['PENDING', 'APPROVE', 'REJECT']) },
         order: { createdAt: 'DESC' },
       }),
-      this.auditLogRepository.findOne({ where: { targetType: 'photo', targetId: id }, order: { createdAt: 'DESC' } }),
+      this.auditLogRepository.findOne({ where: { targetType: 'photo', submitterId: id }, order: { createdAt: 'DESC' } }),
     ])
     const profileAuditStatus = profileAudit?.action || 'unsubmitted'
     const photoAuditStatus = photoAudit?.action || 'unsubmitted'
