@@ -181,7 +181,6 @@ export class RecommendService {
       const needMore = Math.max(0, pageSize - pinnedUsers.length)
       const qb = baseQb
         .orderBy(orderBy, orderDir)
-        .addOrderBy(provinceCityBoost, 'DESC')
         .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
         .skip(0)
         .take(needMore)
