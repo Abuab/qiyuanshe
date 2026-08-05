@@ -265,7 +265,7 @@ export class VipService {
     await this.quotaRepo.save(quota)
 
     // 写入置顶记录
-    const topHours = pkg.topCardValidHours || 24
+    const topHours = pkg.topCardValidHours ?? 24
     const topEndTime = new Date(now.getTime() + topHours * 3600_000)
 
     const record = this.topRecordRepo.create({

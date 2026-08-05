@@ -35,9 +35,9 @@ export class VipPackageService {
     const pkg = this.repo.create({
       name: data.name || '',
       price: Math.round((data.price || 0) * 100), // 元 → 分
-      durationDays: data.durationDays || 30,
+      durationDays: data.durationDays ?? 30,
       dailyTopCards: data.dailyTopCards || 0,
-      topCardValidHours: data.topCardValidHours || 24,
+      topCardValidHours: data.topCardValidHours ?? 24,
       redLineCount: data.redLineCount ?? 0,
       description: data.description || '',
       features: data.features || [],

@@ -52,7 +52,7 @@ export class MatchmakerCommentController {
       matchmakerId: req.user.id,
       userId: body.userId,
       content: body.content,
-      rating: body.rating || 5,
+      rating: body.rating ?? 5,
     })
     return Result.success(comment)
   }

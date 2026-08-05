@@ -236,7 +236,7 @@ export class PaymentService {
         await queryRunner.manager.update(VipOrder, { orderNo: out_trade_no }, { status: 1, paidAt: new Date(), transactionId: transaction_id || '' })
 
         const pkg = await this.packageRepository.findOne({ where: { id: order.packageId! } })
-        const durationDays = pkg?.durationDays || 30
+        const durationDays = pkg?.durationDays ?? 30
 
         const user = await queryRunner.manager.findOne(User, { where: { id: order.userId } })
         const now = new Date()
@@ -439,7 +439,7 @@ export class PaymentService {
       status: order.status,
       paidAt: order.paidAt,
       expireTime: order.paidAt && order.package
-        ? new Date(order.paidAt.getTime() + (order.package.durationDays || 30) * 86400000)
+        ? new Date(order.paidAt.getTime() + (order.package.durationDays ?? 30) * 86400000)
         : null,
       createdAt: order.createdAt,
     }))
@@ -454,7 +454,7 @@ export class PaymentService {
     const order = await this.orderRepository.findOne({ where, relations: ['package'] })
     if (!order) throw new NotFoundException('订单不存在')
 
-    const durationDays = order.package?.durationDays || 30
+    const durationDays = order.package?.durationDays ?? 30
     const expireTime = order.paidAt
       ? new Date(order.paidAt.getTime() + durationDays * 86400000)
       : null

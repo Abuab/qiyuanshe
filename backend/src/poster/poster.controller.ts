@@ -27,7 +27,7 @@ export class PosterController {
     @Request() req: any,
   ) {
     const userId = dto.userId || req.user.id
-    const templateId = dto.templateId || 1
+    const templateId = dto.templateId ?? 1
 
     const posterUrl = this.posterService.generatePosterUrl(userId, templateId)
 
