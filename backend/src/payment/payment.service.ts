@@ -386,7 +386,7 @@ export class PaymentService {
       if (!order) throw new NotFoundException('订单不存在或已处理')
 
       const pkg = await this.packageRepository.findOne({ where: { id: order.packageId! } })
-      const durationDays = pkg?.durationDays || 30
+      const durationDays = pkg?.durationDays ?? 30
 
       const now = new Date()
       const user = await queryRunner.manager.findOne(User, { where: { id: userId } })
