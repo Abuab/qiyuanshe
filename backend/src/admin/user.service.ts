@@ -439,7 +439,12 @@ export class AdminUserService {
       住房: u.housingStatus || '-',
       车辆: u.carStatus || '-',
       职业: u.occupation || '-',
+      实名认证: u.isRealName === 1 ? '已认证' : '未认证',
       会员等级: u.vipLevel === 1 ? '黄金' : u.vipLevel === 2 ? '钻石' : u.vipLevel === 3 ? '至尊' : '普通',
+      资料完整度: u.profileScore || '-',
+      运营加权: u.manualBoostScore || '-',
+      置顶截至: u.pinnedExpireAt ? new Date(u.pinnedExpireAt).toLocaleString('zh-CN') : '-',
+      最近活跃: u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('zh-CN') : '-',
       状态: u.status === 0 ? '待审核' : u.status === 1 ? '正常' : u.status === 2 ? '未完善' : u.status === 3 ? '已禁用' : u.status === 4 ? '已锁定' : '-',
       注册时间: u.createdAt ? new Date(u.createdAt).toLocaleString('zh-CN') : '-',
     }))
