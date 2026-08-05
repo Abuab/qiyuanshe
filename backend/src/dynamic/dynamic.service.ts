@@ -272,12 +272,12 @@ export class DynamicService {
     return { list: formattedList, total, page, limit }
   }
 
-  /** 获取红娘动态列表（从 match_records 查询） */
+  /** 获取红娘动态列表（从 match_records 查询）- 全局运营动态，不区分查看者 */
   private async getMatchmakerDynamics(
     page: number,
     limit: number,
-    currentUserId?: number,
-    gender?: number,
+    _currentUserId?: number,
+    _gender?: number,
   ) {
     const qb = this.matchRecordRepository
       .createQueryBuilder('record')
@@ -287,15 +287,6 @@ export class DynamicService {
       .orderBy('record.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
-
-    if (currentUserId) {
-      qb.andWhere('record.userId != :currentUserId', { currentUserId })
-    }
-
-    // 性别过滤：只展示异性动态
-    if (gender) {
-      qb.andWhere('matchedUser.gender = :gender', { gender })
-    }
 
     const [records, total] = await qb.getManyAndCount()
 
