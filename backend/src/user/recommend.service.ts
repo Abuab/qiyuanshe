@@ -196,7 +196,6 @@ export class RecommendService {
         const remain = pageSize - fromPinned.length
         const qb = baseQb
           .orderBy(orderBy, orderDir)
-          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(0)
           .take(remain)
@@ -205,7 +204,6 @@ export class RecommendService {
       } else {
         resultList = await baseQb
           .orderBy(orderBy, orderDir)
-          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(Math.max(0, skip))
           .take(take)
@@ -222,7 +220,6 @@ export class RecommendService {
         const alreadyFetchedTotal = offset + pageSize
         const moreQb = baseQb
           .orderBy(orderBy, orderDir)
-          .addOrderBy(provinceCityBoost, 'DESC')
           .addOrderBy(isNewest ? 'user.id' : 'user.lastActiveAt', 'DESC')
           .skip(alreadyFetchedTotal)
           .take(pageSize - resultList.length)
