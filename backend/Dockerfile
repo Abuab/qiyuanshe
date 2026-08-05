@@ -12,6 +12,9 @@ COPY package*.json ./
 # 安装依赖（包括开发依赖，用于编译 TypeScript）
 RUN npm ci
 
+# 缓存破坏参数：构建时传入 --build-arg CACHEBUST=$(date +%s) 可跳过 Docker 层缓存
+ARG CACHEBUST=0
+
 # 复制源代码
 COPY . .
 
