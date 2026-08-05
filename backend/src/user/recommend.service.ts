@@ -467,13 +467,10 @@ export class RecommendService {
       qb.andWhere('user.id != :selfId', { selfId: currentUserId })
     }
 
-    // 曝光池：置顶用户也要受城市约束
-    this.applyExposurePoolFilter(qb, city)
+    // 置顶用户跳过曝光池和常规筛选条件（运营手动选择，应全量可见）
+    // 仅保留性别过滤和实名筛选（tab=verified 强制实名）
 
-    // 应用筛选条件
-    this.applyFilters(qb, filters)
-
-    // 额外确保实名筛选对置顶用户同样生效（防御性编程）
+    // 实名筛选：仅 verified tab 对置顶用户也要求实名
     if (filters?.isRealName != null && Number(filters.isRealName) === 1) {
       qb.andWhere('user.isRealName = :pinRn', { pinRn: 1 })
     }

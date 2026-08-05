@@ -420,6 +420,7 @@ export class VipService {
 
     // 清除缓存
     await this.redis.del(`recommend:score:${userId}`)
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
 
     return { success: true, pinnedUntil: topEndTime }
   }
