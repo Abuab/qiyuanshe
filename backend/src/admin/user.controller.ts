@@ -351,7 +351,7 @@ export class AdminUserController {
     @Body('boostScore') boostScore?: number,
   ) {
     try {
-      const result = await this.vipService.adminPinUser(id, durationHours || 24, boostScore)
+      const result = await this.vipService.adminPinUser(id, durationHours ?? 24, boostScore)
       return Result.success(result, '置顶设置成功')
     } catch (error: any) {
       return Result.serverError(error?.message || '置顶设置失败')
