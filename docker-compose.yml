@@ -143,7 +143,7 @@ services:
       # 上传文件目录（bind mount 解决 Docker 命名卷权限问题）
       - ./data/uploads:/app/uploads
       # 日志目录
-      - ./data/logs:/app/logs
+      - ./data/logs/app:/app/logs
       # 支付证书目录
       - ./certs:/app/certs:ro
       # 敏感词库目录（51K 开源词库，聊天与 AI 内容审核共用；只读挂载，随 git 更新）
@@ -212,7 +212,8 @@ services:
       - ./docker/nginx/certbot/www:/var/www/certbot
       # 用户上传文件目录（Nginx 直接服务静态文件，减少后端压力）
       - ./data/uploads:/var/www/uploads:ro
-      - nginx_logs:/var/log/nginx
+      # Nginx 日志持久化到宿主机（与 app 日志统一在 data/logs/ 下）
+      - ./data/logs/nginx:/var/log/nginx
     ports:
       - "80:80"
       - "443:443"
@@ -236,8 +237,6 @@ volumes:
   mysql_data:
     driver: local
   redis_data:
-    driver: local
-  nginx_logs:
     driver: local
 
 # ============ 网络定义 ============
