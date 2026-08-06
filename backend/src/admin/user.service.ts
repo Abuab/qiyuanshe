@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, Like, In } from 'typeorm'
+import { Repository, Like, In, SelectQueryBuilder } from 'typeorm'
 import * as crypto from 'crypto'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
@@ -50,6 +50,8 @@ interface UserFilter {
   whenMarry?: string
   minMatchCount?: number
   maxMatchCount?: number
+  lastActiveAtStartDate?: string
+  lastActiveAtEndDate?: string
 }
 
 @Injectable()
@@ -87,127 +89,7 @@ export class AdminUserService {
 
     queryBuilder.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
 
-    if (filter.keyword) {
-      const isNumericId = /^\d{6,7}$/.test(filter.keyword.trim())
-      const userIdCondition = isNumericId ? ' OR user.userId = :userIdKw' : ''
-      const params: Record<string, any> = {
-        keyword: `%${filter.keyword}%`,
-        id: parseInt(filter.keyword) || 0,
-        phone: `%${filter.keyword}%`,
-      }
-      if (isNumericId) {
-        params.userIdKw = filter.keyword.trim()
-      }
-      queryBuilder.andWhere(
-        `(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone${userIdCondition})`,
-        params,
-      )
-    }
-
-    if (filter.gender) {
-      queryBuilder.andWhere('user.gender = :gender', { gender: filter.gender })
-    }
-
-    if (filter.status !== undefined) {
-      queryBuilder.andWhere('user.status = :status', { status: filter.status })
-    }
-
-    if (filter.eidCertStatus !== undefined) {
-      queryBuilder.andWhere('user.eidCertStatus = :eidCertStatus', { eidCertStatus: filter.eidCertStatus })
-    }
-
-    if (filter.isVip !== undefined) {
-      queryBuilder.andWhere('user.isVip = :isVip', { isVip: filter.isVip })
-    }
-
-    if (filter.vipLevel !== undefined) {
-      queryBuilder.andWhere('user.vipLevel = :vipLevel', { vipLevel: filter.vipLevel })
-    }
-
-    if (filter.minAge !== undefined || filter.maxAge !== undefined) {
-      const currentYear = new Date().getFullYear()
-      if (filter.minAge !== undefined) {
-        const maxBirthYear = currentYear - filter.minAge
-        queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
-      }
-      if (filter.maxAge !== undefined) {
-        const minBirthYear = currentYear - filter.maxAge
-        queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
-      }
-    }
-
-    if (filter.minHeight !== undefined) {
-      queryBuilder.andWhere('user.height >= :minHeight', { minHeight: filter.minHeight })
-    }
-    if (filter.maxHeight !== undefined) {
-      queryBuilder.andWhere('user.height <= :maxHeight', { maxHeight: filter.maxHeight })
-    }
-
-    if (filter.minWeight !== undefined) {
-      queryBuilder.andWhere('user.weight >= :minWeight', { minWeight: filter.minWeight })
-    }
-    if (filter.maxWeight !== undefined) {
-      queryBuilder.andWhere('user.weight <= :maxWeight', { maxWeight: filter.maxWeight })
-    }
-
-    if (filter.maritalStatus) {
-      queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: filter.maritalStatus })
-    }
-
-    if (filter.incomeRange) {
-      queryBuilder.andWhere('user.incomeRange = :incomeRange', { incomeRange: filter.incomeRange })
-    }
-
-    if (filter.housingStatus) {
-      queryBuilder.andWhere('user.housingStatus = :housingStatus', { housingStatus: filter.housingStatus })
-    }
-
-    if (filter.carStatus) {
-      queryBuilder.andWhere('user.carStatus = :carStatus', { carStatus: filter.carStatus })
-    }
-
-    if (filter.education) {
-      queryBuilder.andWhere('user.education = :education', { education: filter.education })
-    }
-
-    if (filter.occupation) {
-      queryBuilder.andWhere('user.occupation = :occupation', { occupation: filter.occupation })
-    }
-
-    if (filter.zodiac) {
-      queryBuilder.andWhere('user.zodiac = :zodiac', { zodiac: filter.zodiac })
-    }
-
-    if (filter.constellation) {
-      queryBuilder.andWhere('user.constellation = :constellation', { constellation: filter.constellation })
-    }
-
-    if (filter.onlyChild) {
-      queryBuilder.andWhere('user.onlyChild = :onlyChild', { onlyChild: filter.onlyChild })
-    }
-
-    if (filter.whenMarry) {
-      queryBuilder.andWhere('user.whenMarry = :whenMarry', { whenMarry: filter.whenMarry })
-    }
-
-    if (filter.tags && filter.tags.length > 0) {
-      const tagConditions = filter.tags.map((_, index) => `JSON_CONTAINS(user.tags, :tag${index})`).join(' OR ')
-      const tagParams: Record<string, string> = {}
-      filter.tags.forEach((tag, index) => {
-        tagParams[`tag${index}`] = JSON.stringify(tag)
-      })
-      queryBuilder.andWhere(`(${tagConditions})`, tagParams)
-    }
-
-    if (filter.startDate) {
-      queryBuilder.andWhere('user.createdAt >= :startDate', {
-        startDate: filter.startDate,
-      })
-    }
-
-    if (filter.endDate) {
-      queryBuilder.andWhere('user.createdAt <= :endDate', { endDate: filter.endDate })
-    }
+    this.applyListFilters(queryBuilder, filter)
 
     if (filter.sort) {
       // 白名单校验：仅允许对用户表的安全字段排序，防止 SQL 注入
@@ -408,6 +290,143 @@ export class AdminUserService {
     }
   }
 
+  /** 公共筛选器：对 queryBuilder 应用所有列表筛选条件（list 和 export 共用） */
+  private applyListFilters(queryBuilder: SelectQueryBuilder<User>, filter: UserFilter): void {
+    if (filter.keyword) {
+      const isNumericId = /^\d{6,7}$/.test(filter.keyword.trim())
+      const userIdCondition = isNumericId ? ' OR user.userId = :userIdKw' : ''
+      const params: Record<string, any> = {
+        keyword: `%${filter.keyword}%`,
+        id: parseInt(filter.keyword) || 0,
+        phone: `%${filter.keyword}%`,
+      }
+      if (isNumericId) {
+        params.userIdKw = filter.keyword.trim()
+      }
+      queryBuilder.andWhere(
+        `(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone${userIdCondition})`,
+        params,
+      )
+    }
+
+    if (filter.gender) {
+      queryBuilder.andWhere('user.gender = :gender', { gender: filter.gender })
+    }
+
+    if (filter.status !== undefined) {
+      queryBuilder.andWhere('user.status = :status', { status: filter.status })
+    }
+
+    if (filter.eidCertStatus !== undefined) {
+      queryBuilder.andWhere('user.eidCertStatus = :eidCertStatus', { eidCertStatus: filter.eidCertStatus })
+    }
+
+    if (filter.isVip !== undefined) {
+      queryBuilder.andWhere('user.isVip = :isVip', { isVip: filter.isVip })
+    }
+
+    if (filter.vipLevel !== undefined) {
+      queryBuilder.andWhere('user.vipLevel = :vipLevel', { vipLevel: filter.vipLevel })
+    }
+
+    if (filter.minAge !== undefined || filter.maxAge !== undefined) {
+      const currentYear = new Date().getFullYear()
+      if (filter.minAge !== undefined) {
+        const maxBirthYear = currentYear - filter.minAge
+        queryBuilder.andWhere('user.birthYear <= :maxBirthYear', { maxBirthYear })
+      }
+      if (filter.maxAge !== undefined) {
+        const minBirthYear = currentYear - filter.maxAge
+        queryBuilder.andWhere('user.birthYear >= :minBirthYear', { minBirthYear })
+      }
+    }
+
+    if (filter.minHeight !== undefined) {
+      queryBuilder.andWhere('user.height >= :minHeight', { minHeight: filter.minHeight })
+    }
+    if (filter.maxHeight !== undefined) {
+      queryBuilder.andWhere('user.height <= :maxHeight', { maxHeight: filter.maxHeight })
+    }
+
+    if (filter.minWeight !== undefined) {
+      queryBuilder.andWhere('user.weight >= :minWeight', { minWeight: filter.minWeight })
+    }
+    if (filter.maxWeight !== undefined) {
+      queryBuilder.andWhere('user.weight <= :maxWeight', { maxWeight: filter.maxWeight })
+    }
+
+    if (filter.maritalStatus) {
+      queryBuilder.andWhere('user.maritalStatus = :maritalStatus', { maritalStatus: filter.maritalStatus })
+    }
+
+    if (filter.incomeRange) {
+      queryBuilder.andWhere('user.incomeRange = :incomeRange', { incomeRange: filter.incomeRange })
+    }
+
+    if (filter.housingStatus) {
+      queryBuilder.andWhere('user.housingStatus = :housingStatus', { housingStatus: filter.housingStatus })
+    }
+
+    if (filter.carStatus) {
+      queryBuilder.andWhere('user.carStatus = :carStatus', { carStatus: filter.carStatus })
+    }
+
+    if (filter.education) {
+      queryBuilder.andWhere('user.education = :education', { education: filter.education })
+    }
+
+    if (filter.occupation) {
+      queryBuilder.andWhere('user.occupation = :occupation', { occupation: filter.occupation })
+    }
+
+    if (filter.zodiac) {
+      queryBuilder.andWhere('user.zodiac = :zodiac', { zodiac: filter.zodiac })
+    }
+
+    if (filter.constellation) {
+      queryBuilder.andWhere('user.constellation = :constellation', { constellation: filter.constellation })
+    }
+
+    if (filter.onlyChild) {
+      queryBuilder.andWhere('user.onlyChild = :onlyChild', { onlyChild: filter.onlyChild })
+    }
+
+    if (filter.whenMarry) {
+      queryBuilder.andWhere('user.whenMarry = :whenMarry', { whenMarry: filter.whenMarry })
+    }
+
+    if (filter.tags && filter.tags.length > 0) {
+      const tagConditions = filter.tags.map((_, index) => `JSON_CONTAINS(user.tags, :tag${index})`).join(' OR ')
+      const tagParams: Record<string, string> = {}
+      filter.tags.forEach((tag, index) => {
+        tagParams[`tag${index}`] = JSON.stringify(tag)
+      })
+      queryBuilder.andWhere(`(${tagConditions})`, tagParams)
+    }
+
+    if (filter.startDate) {
+      queryBuilder.andWhere('user.createdAt >= :startDate', {
+        startDate: filter.startDate,
+      })
+    }
+
+    if (filter.endDate) {
+      queryBuilder.andWhere('user.createdAt <= :endDate', { endDate: filter.endDate })
+    }
+
+    if (filter.lastActiveAtStartDate) {
+      queryBuilder.andWhere('user.lastActiveAt >= :lastActiveAtStartDate', {
+        lastActiveAtStartDate: filter.lastActiveAtStartDate,
+      })
+    }
+
+    if (filter.lastActiveAtEndDate) {
+      queryBuilder.andWhere('user.lastActiveAt <= :lastActiveAtEndDate', {
+        lastActiveAtEndDate: filter.lastActiveAtEndDate + ' 23:59:59',
+      })
+    }
+  }
+
   async export(filter: UserFilter & { ids?: number[] }) {
     const queryBuilder = this.userRepository.createQueryBuilder('user')
     queryBuilder.where('user.id != :adminId', { adminId: 1 })
@@ -417,15 +436,8 @@ export class AdminUserService {
       queryBuilder.andWhere('user.id IN (:...ids)', { ids: filter.ids })
     }
 
-    if (filter.keyword) {
-      queryBuilder.andWhere(
-        '(user.nickname LIKE :keyword OR user.id = :id OR user.phone LIKE :phone)',
-        { keyword: `%${filter.keyword}%`, id: parseInt(filter.keyword) || 0, phone: `%${filter.keyword}%` },
-      )
-    }
-    if (filter.education) {
-      queryBuilder.andWhere('user.education = :education', { education: filter.education })
-    }
+    // 复用与 list() 完全一致的筛选逻辑
+    this.applyListFilters(queryBuilder, filter)
 
     const users = await queryBuilder.orderBy('user.createdAt', 'DESC').getMany()
 
@@ -442,10 +454,10 @@ export class AdminUserService {
       住房: u.housingStatus || '-',
       车辆: u.carStatus || '-',
       职业: u.occupation || '-',
-      实名认证: u.isRealName === 1 ? '已认证' : '未认证',
+      实名认证: u.eidCertStatus === 2 ? '已认证' : u.eidCertStatus === 1 ? '认证中' : u.eidCertStatus === 3 ? '认证失败' : '未认证',
       会员等级: u.vipLevel === 1 ? '黄金' : u.vipLevel === 2 ? '钻石' : u.vipLevel === 3 ? '至尊' : '普通',
-      资料完整度: u.profileScore || '-',
-      运营加权: u.manualBoostScore || '-',
+      资料完整度: calcProfileScore(u),
+      运营加权: u.manualBoostScore || 0,
       置顶截至: u.pinnedExpireAt ? new Date(u.pinnedExpireAt).toLocaleString('zh-CN') : '-',
       最近活跃: u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleString('zh-CN') : '-',
       状态: u.status === 0 ? '待审核' : u.status === 1 ? '正常' : u.status === 2 ? '未完善' : u.status === 3 ? '已禁用' : u.status === 4 ? '已锁定' : '-',
@@ -1259,6 +1271,17 @@ export class AdminUserService {
     this.redis.delByPattern('v3:rec:*').catch(() => {})
 
     return { userId, tags: uniqueTags }
+  }
+
+  /** 获取所有用户表中实际存在的去重标签（用于筛选下拉框选项） */
+  async getDistinctTags(): Promise<string[]> {
+    const result = await this.userRepository.manager.query(
+      `SELECT DISTINCT jt.tag
+       FROM users,
+       JSON_TABLE(users.tags, '$[*]' COLUMNS (tag VARCHAR(255) PATH '$')) AS jt
+       WHERE users.is_deleted = 0 AND users.tags IS NOT NULL`,
+    )
+    return result.map((r: any) => r.tag).filter(Boolean)
   }
 
   /** 批量更新标签：为每个用户追加新标签（去重，不覆盖已有标签），使用事务 */

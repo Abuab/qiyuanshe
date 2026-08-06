@@ -149,12 +149,15 @@ export const adminUsers = {
     return request.post('/admin/users/batch-delete', { ids })
   },
 
+  searchUsers(keyword: string): Promise<ApiResponse<{ id: number; nickname: string }[]>> {
+    return request.get('/admin/users/search', { params: { keyword } })
+  },
+
   export(params: UserFilter & { ids?: number[] }): Promise<ApiResponse<User[]>> {
     const queryParams: any = { ...params }
     if (params.ids && params.ids.length > 0) {
       queryParams.ids = params.ids.join(',')
     }
-    delete queryParams.ids
     return request.get('/admin/users/export', { params: queryParams })
   },
 
@@ -268,6 +271,10 @@ export const adminUsers = {
 
   batchUpdateTags(ids: number[], tags: string[]): Promise<ApiResponse> {
     return request.put('/admin/users/batch/tags', { ids, tags })
+  },
+
+  getDistinctTags(): Promise<ApiResponse<string[]>> {
+    return request.get('/admin/users/tags/distinct')
   },
 
   // 浏览记录

@@ -425,7 +425,7 @@ export class VipService {
         user.manualBoostScore = 0
       } else {
         user.pinnedExpireAt = topEndTime
-        if (boostScore !== undefined && boostScore > 0) {
+        if (boostScore !== undefined) {
           user.manualBoostScore = boostScore
         }
       }

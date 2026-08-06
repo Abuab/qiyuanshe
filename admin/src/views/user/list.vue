@@ -397,7 +397,7 @@
         <el-table-column v-if="isColumnVisible('profileScore')" prop="profileScore" width="130" sortable="custom">
           <template #header>
             <el-tooltip
-              content="用户价值综合评分(0~100)：资料完善度30分 + VIP状态25分 + 实名认证20分 + 活跃度15分 + 互动量10分。≥70高价值，≥45潜力，≥20普通，&lt;20流失预警"
+              content="用户资料完整度评分(0~100)：基于18项资料字段加权计算。≥85高价值，≥60潜力，≥30普通，>0预警"
               placement="top"
               :show-after="300"
             >
@@ -460,7 +460,9 @@
         </el-table-column>
         <el-table-column label="实名认证" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.isRealName === 1" type="success" size="small">已认证</el-tag>
+            <el-tag v-if="row.eidCertStatus === 2" type="success" size="small">已认证</el-tag>
+            <el-tag v-else-if="row.eidCertStatus === 1" type="warning" size="small">认证中</el-tag>
+            <el-tag v-else-if="row.eidCertStatus === 3" type="danger" size="small">认证失败</el-tag>
             <el-tag v-else type="info" size="small">未认证</el-tag>
           </template>
         </el-table-column>
@@ -664,7 +666,9 @@
       </el-form>
       <template #footer>
         <el-button @click="notifyBatchDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleBatchNotifySubmit">发送</el-button>
+        <el-button type="primary" @click="handleBatchNotifySubmit" :loading="notifyBatchLoading" :disabled="notifyBatchLoading">
+          {{ notifyBatchLoading ? `发送中...` : '发送' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -1083,13 +1087,16 @@
                 <el-select
                   v-model="addFollowingId"
                   filterable
-                  placeholder="选择用户"
-                  @visible-change="onFollowSelectVisible"
+                  remote
+                  reserve-keyword
+                  placeholder="搜索用户"
+                  :remote-method="onFollowSearch"
+                  :loading="followSearchLoading"
                   clearable
                   style="flex:1"
                 >
                   <el-option
-                    v-for="u in allUsers"
+                    v-for="u in followSearchResults"
                     :key="u.id"
                     :label="u.nickname"
                     :value="u.id"
@@ -1114,13 +1121,16 @@
                 <el-select
                   v-model="addFollowerId"
                   filterable
-                  placeholder="选择用户"
-                  @visible-change="onFollowSelectVisible"
+                  remote
+                  reserve-keyword
+                  placeholder="搜索用户"
+                  :remote-method="onFollowSearch"
+                  :loading="followSearchLoading"
                   clearable
                   style="flex:1"
                 >
                   <el-option
-                    v-for="u in allUsers"
+                    v-for="u in followSearchResults"
                     :key="u.id"
                     :label="u.nickname"
                     :value="u.id"
@@ -1368,19 +1378,42 @@ function onColumnToggle() {
 type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
 // ===== 运营标签管理 =====
-// 从后端运营标签库动态获取（替代硬编码），筛选 + 打标签 + 颜色映射统一来源
+// 合并三个来源：①运营标签库（带颜色）②用户表中实际存在的标签 ③前端虚拟标签
 const presetTags = ref<{ label: string; color: string }[]>([])
 
 async function loadPresetTags() {
+  const tagMap = new Map<string, string>() // label -> color
+
+  // 1. 运营标签库（优先，带颜色）
   try {
     const res = await operationTagApi.getEnabled()
     if (res.success && res.data) {
-      presetTags.value = res.data.map((t: Pick<OperationTag, 'id' | 'name' | 'color'>) => ({
-        label: t.name,
-        color: t.color || '',
-      }))
+      for (const t of res.data) {
+        tagMap.set(t.name, t.color || '')
+      }
     }
-  } catch { /* 加载失败时保持空数组，不影响页面渲染 */ }
+  } catch { /* ignore */ }
+
+  // 2. 用户表中实际存在的标签（补充运营标签库中没有的，默认 info 色）
+  try {
+    const res = await adminUsers.getDistinctTags()
+    if (res.success && res.data) {
+      for (const tag of res.data) {
+        if (!tagMap.has(tag)) {
+          tagMap.set(tag, 'info')
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  // 3. 前端虚拟标签（getUserTags 自动拼接的）
+  for (const vt of ['后台添加', '真实注册']) {
+    if (!tagMap.has(vt)) {
+      tagMap.set(vt, 'info')
+    }
+  }
+
+  presetTags.value = Array.from(tagMap.entries()).map(([label, color]) => ({ label, color }))
 }
 
 /** 根据标签名返回 Element Plus el-tag 的 type，从动态标签库匹配颜色 */
@@ -1391,7 +1424,7 @@ function getTagType(tag: string): TagType | '' | 'info' {
   return found.color as TagType | ''
 }
 
-function getLifecycleBadge(row: any): { label: string; type: TagType } | null {
+function getLifecycleBadge(row: any): { label: string; type: TagType } {
   const now = Date.now()
   const createdAt = row.createdAt ? new Date(row.createdAt).getTime() : 0
   const lastActiveAt = row.lastActiveAt ? new Date(row.lastActiveAt).getTime() : 0
@@ -1445,14 +1478,13 @@ function getUserTierType(row: any): string {
 }
 
 // ===== 累计付费数据 =====
-// 从订单API汇总每个用户的累计付费金额
-// paymentMap 用于模板中展示累计付费列，loadingPayment 防止并发重复请求
+// 从订单API汇总每个用户的累计付费金额，加载一次后缓存，避免重复请求
 const paymentMap = ref<Record<number, number>>({})
-
+let paymentLoaded = false
 let loadingPayment = false
 
 async function loadPaymentData() {
-  if (loadingPayment) return // 已有请求在进行中，跳过
+  if (loadingPayment || paymentLoaded) return // 已有请求在进行中或已缓存，跳过
   loadingPayment = true
   try {
     const res = await adminPayment.orders({ limit: 99999 })
@@ -1501,23 +1533,24 @@ const followingFollows = ref<any[]>([])
 const followerFollows = ref<any[]>([])
 const addFollowingId = ref<number | null>(null)
 const addFollowerId = ref<number | null>(null)
-const allUsers = ref<any[]>([])
-let allUsersLoaded = false
 
-function onFollowSelectVisible(visible: boolean) {
-  if (visible && !allUsersLoaded) {
-    loadAllUsers()
+const followSearchResults = ref<{ id: number; nickname: string }[]>([])
+const followSearchLoading = ref(false)
+
+async function onFollowSearch(keyword: string) {
+  if (!keyword || keyword.trim().length < 1) {
+    followSearchResults.value = []
+    return
   }
-}
-
-async function loadAllUsers() {
+  followSearchLoading.value = true
   try {
-    const res = await adminUsers.list({ page: 1, limit: 200 })
-    if (res.success) {
-      allUsers.value = (res.data?.list || []).map((u: any) => ({ id: u.id, nickname: u.nickname }))
-      allUsersLoaded = true
-    }
-  } catch {}
+    const res = await adminUsers.searchUsers(keyword.trim())
+    followSearchResults.value = res.data || []
+  } catch {
+    followSearchResults.value = []
+  } finally {
+    followSearchLoading.value = false
+  }
 }
 
 async function loadFollowData(userId: number) {
@@ -1614,7 +1647,7 @@ async function handlePinSubmit() {
     await userPin.pinUser(
       pinTargetUser.value.id,
       pinForm.durationHours,
-      pinForm.boostScore || undefined,
+      pinForm.boostScore,
     )
     ElMessage.success('置顶设置成功')
     pinDialogVisible.value = false
@@ -1889,12 +1922,11 @@ async function fetchData() {
       params.endDate = dateRange.value[1]
     }
 
-    // 最近活跃时间筛选 — 后端暂不支持 lastActiveAt 查询参数，UI 保留等待后端跟进
-    // 后端需在 user.service.ts list() 中增加对 lastActiveAtStartDate/lastActiveAtEndDate 的处理
-    // if (lastActiveAtDateRange.value && lastActiveAtDateRange.value.length === 2) {
-    //   (params as any).lastActiveAtStartDate = lastActiveAtDateRange.value[0]
-    //   ;(params as any).lastActiveAtEndDate = lastActiveAtDateRange.value[1]
-    // }
+    // 最近活跃时间筛选
+    if (lastActiveAtDateRange.value && lastActiveAtDateRange.value.length === 2) {
+      (params as any).lastActiveAtStartDate = lastActiveAtDateRange.value[0]
+      ;(params as any).lastActiveAtEndDate = lastActiveAtDateRange.value[1]
+    }
 
     const res = await adminUsers.list(params)
     if (res.success && res.data) {
@@ -1994,10 +2026,6 @@ async function handleCreate() {
 }
 
 async function handleCreateSubmit() {
-  if (!editingUserId.value && (!createForm.nickname || !createForm.phone)) {
-    ElMessage.warning('请填写昵称和手机号')
-    return
-  }
   if (!createForm.nickname || !createForm.phone) {
     ElMessage.warning('请填写昵称和手机号')
     return
@@ -2146,6 +2174,8 @@ function handleReset() {
     whenMarry: undefined,
     minMatchCount: undefined,
     maxMatchCount: undefined,
+    sort: 'createdAt',
+    order: 'desc',
   })
   dateRange.value = []
   lastActiveAtRange.value = undefined
@@ -2178,7 +2208,14 @@ function handleSelectAll(val: boolean) {
   }
 }
 
-function handleSortChange({ prop, order }: { prop: string; order: string }) {
+function handleSortChange({ prop, order }: { prop: string; order: string | null }) {
+  // 取消排序（连续点击三次表头）时恢复默认排序
+  if (!order) {
+    filterForm.sort = 'createdAt'
+    filterForm.order = 'desc'
+    fetchData()
+    return
+  }
   // age 不是数据库列，转换为 birthYear 排序（方向取反：年龄大 = 出生年份小）
   if (prop === 'age') {
     filterForm.sort = 'birthYear'
@@ -2645,6 +2682,7 @@ async function handleRecalculateScores() {
 // 批量发送通知
 const notifyBatchDialogVisible = ref(false)
 const notifyBatchContent = ref('')
+const notifyBatchLoading = ref(false)
 
 function handleBatchSendNotify() {
   if (selectedRows.value.length === 0) return
@@ -2658,13 +2696,25 @@ async function handleBatchNotifySubmit() {
     return
   }
   const ids = selectedRows.value.map(r => r.id)
+  notifyBatchLoading.value = true
   let successCount = 0
   let failCount = 0
-  for (const id of ids) {
-    try {
-      await adminUsers.sendNotification(id, notifyBatchContent.value)
-      successCount++
-    } catch { failCount++ }
+
+  try {
+    // 分批并行发送，每批 5 个并发
+    const BATCH_SIZE = 5
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const batch = ids.slice(i, i + BATCH_SIZE)
+      const results = await Promise.allSettled(
+        batch.map(id => adminUsers.sendNotification(id, notifyBatchContent.value))
+      )
+      results.forEach(r => {
+        if (r.status === 'fulfilled') successCount++
+        else failCount++
+      })
+    }
+  } finally {
+    notifyBatchLoading.value = false
   }
   if (successCount > 0) {
     ElMessage.success(`通知已发送：${successCount} 人成功${failCount > 0 ? '，' + failCount + ' 人失败' : ''}`)
@@ -2734,6 +2784,10 @@ async function handleExport() {
     if (selectedRows.value.length > 0) {
       params.ids = selectedRows.value.map(r => r.id)
     }
+    if (lastActiveAtDateRange.value && lastActiveAtDateRange.value.length === 2) {
+      params.lastActiveAtStartDate = lastActiveAtDateRange.value[0]
+      params.lastActiveAtEndDate = lastActiveAtDateRange.value[1]
+    }
     const res = await adminUsers.export(params)
     if (res.success && res.data) {
       const data = Array.isArray(res.data) ? res.data : []
@@ -2791,8 +2845,8 @@ function getAuditTagType(status?: string) {
   return (map[status || ''] || 'info') as 'warning' | 'success' | 'danger' | 'info'
 }
 
-function goAudit(_row: User, auditType: string) {
-  router.push({ path: '/audit/list', query: { type: auditType } })
+function goAudit(row: User, auditType: string) {
+  router.push({ path: '/audit/list', query: { type: auditType, submitterId: row.id } })
 }
 
 function formatVipExpire(dateStr: string) {
@@ -2855,12 +2909,15 @@ function getUserTags(row: any): string[] {
 
 // ===== 标签管理操作函数 =====
 
+// 前端虚拟标签：仅用于展示，不应存入数据库
+const VIRTUAL_TAGS = ['后台添加', '真实注册']
+
 /** 打开打标签弹窗（单用户/批量共用） */
 function handleOpenTagDialog(row: User) {
   tagTargetUser.value = row
   tagDialogTitle.value = `为「${row.nickname}」打标签`
-  // 初始化草稿为当前用户标签
-  tagDraftSelected.value = [...getUserTags(row)]
+  // 初始化草稿为当前用户标签（排除虚拟标签，避免误存数据库）
+  tagDraftSelected.value = [...getUserTags(row).filter(t => !VIRTUAL_TAGS.includes(t))]
   tagInputValue.value = ''
   tagDialogVisible.value = true
 }

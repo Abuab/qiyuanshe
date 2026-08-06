@@ -402,6 +402,12 @@ export class AdminUserController {
 
   // ===== 标签管理 =====
 
+  @Get('tags/distinct')
+  async getDistinctTags() {
+    const tags = await this.userService.getDistinctTags()
+    return Result.success(tags)
+  }
+
   @Put('batch/tags')
   async batchUpdateTags(@Body() body: { ids: number[]; tags: string[] }) {
     const count = await this.userService.batchUpdateTags(body.ids, body.tags)
