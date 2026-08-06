@@ -1163,7 +1163,7 @@
           <el-tag
             v-for="pt in filteredPresetTags"
             :key="pt.label"
-            :type="pt.type"
+            :type="pt.color as any"
             size="default"
             style="cursor:pointer"
             @click="handleAddListPresetTag(pt.label)"
@@ -1219,6 +1219,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Loading, QuestionFilled } from '@element-plus/icons-vue'
 import { adminUsers, adminPayment } from '../../api'
 import { userPin, vipPackages, VipPackage } from '../../api/vip'
+import { operationTagApi, OperationTag } from '../../api/operation-tag'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
@@ -1367,22 +1368,27 @@ function onColumnToggle() {
 type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
 // ===== 运营标签管理 =====
-// 系统预设标签库（与详情页保持一致），用于筛选和展示
-const presetTags: { label: string; type: TagType | '' }[] = [
-  { label: '高付费意向', type: 'danger' },
-  { label: '需跟进', type: 'warning' },
-  { label: '资料优质', type: 'success' },
-  { label: '照片清晰', type: '' },       // Element Plus 默认蓝色
-  { label: '主动活跃', type: 'primary' },
-  { label: '疑似违规', type: 'info' },
-  { label: '红娘推荐', type: 'danger' },  // 粉色用 danger 近似
-]
+// 从后端运营标签库动态获取（替代硬编码），筛选 + 打标签 + 颜色映射统一来源
+const presetTags = ref<{ label: string; color: string }[]>([])
 
-/** 根据标签名返回 Element Plus el-tag 的 type，保留空字符串（默认蓝色） */
+async function loadPresetTags() {
+  try {
+    const res = await operationTagApi.getEnabled()
+    if (res.success && res.data) {
+      presetTags.value = res.data.map((t: Pick<OperationTag, 'id' | 'name' | 'color'>) => ({
+        label: t.name,
+        color: t.color || '',
+      }))
+    }
+  } catch { /* 加载失败时保持空数组，不影响页面渲染 */ }
+}
+
+/** 根据标签名返回 Element Plus el-tag 的 type，从动态标签库匹配颜色 */
 function getTagType(tag: string): TagType | '' | 'info' {
-  const found = presetTags.find(pt => pt.label === tag)
-  // 使用 ?? 保留空字符串（如"照片清晰"的 '' 表示蓝色）；未匹配到默认 info
-  return found ? found.type ?? 'info' : 'info'
+  const found = presetTags.value.find(pt => pt.label === tag)
+  if (!found || !found.color) return 'info'
+  // color 字段存储的是 Element Plus tag type（primary/success/warning/danger/info）
+  return found.color as TagType | ''
 }
 
 function getLifecycleBadge(row: any): { label: string; type: TagType } | null {
@@ -1475,7 +1481,7 @@ const tagDraftSelected = ref<string[]>([])
 const tagSaving = ref(false)
 // 过滤掉已选中的预设标签，避免重复添加
 const filteredPresetTags = computed(() =>
-  presetTags.filter(pt => !tagDraftSelected.value.includes(pt.label))
+  presetTags.value.filter(pt => !tagDraftSelected.value.includes(pt.label))
 )
 // 记录当前操作目标：单用户为 row 对象，批量为 null
 const tagTargetUser = ref<User | null>(null)
@@ -1831,6 +1837,7 @@ function buildResidenceLabel(pId?: number, cId?: number, dId?: number, sId?: num
 }
 
 onMounted(() => {
+  loadPresetTags()
   loadColumnPrefs() // 从 localStorage 恢复列偏好
   fetchData()
   loadDicts()
