@@ -1279,7 +1279,7 @@ export class AdminUserService {
       `SELECT DISTINCT jt.tag
        FROM users,
        JSON_TABLE(users.tags, '$[*]' COLUMNS (tag VARCHAR(255) PATH '$')) AS jt
-       WHERE users.is_deleted = 0 AND users.tags IS NOT NULL`,
+       WHERE users.isDeleted = 0 AND users.tags IS NOT NULL`,
     )
     return result.map((r: any) => r.tag).filter(Boolean)
   }
