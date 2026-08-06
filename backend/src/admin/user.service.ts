@@ -191,9 +191,12 @@ export class AdminUserService {
     }
 
     if (filter.tags && filter.tags.length > 0) {
+      const tagConditions = filter.tags.map((_, index) => `JSON_CONTAINS(user.tags, :tag${index})`).join(' OR ')
+      const tagParams: Record<string, string> = {}
       filter.tags.forEach((tag, index) => {
-        queryBuilder.andWhere(`JSON_CONTAINS(user.tags, :tag${index})`, { [`tag${index}`]: JSON.stringify(tag) })
+        tagParams[`tag${index}`] = JSON.stringify(tag)
       })
+      queryBuilder.andWhere(`(${tagConditions})`, tagParams)
     }
 
     if (filter.startDate) {
