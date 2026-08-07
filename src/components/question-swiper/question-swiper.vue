@@ -36,6 +36,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { logger } from '@/utils/logger'
+import { getFullImageUrl } from '@/utils/common'
 
 interface Question {
   id: number
@@ -67,7 +68,7 @@ const fetchQuestions = async () => {
       id: q.id,
       title: q.title,
       answerCount: q.answerCount || 0,
-      recentAvatars: q.recentAvatars || [],
+      recentAvatars: (q.recentAvatars || []).map((a: string) => getFullImageUrl(a)),
     }))
   } catch (e) {
     logger.error('fetch questions error', e)

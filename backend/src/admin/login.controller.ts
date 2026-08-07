@@ -13,6 +13,7 @@ import { RedisService } from '../common/redis.service'
 import { AdminAuditLog } from '../entities/AdminAuditLog'
 import { adminJwtConfig } from '../config/jwt'
 import { AdminRole } from '../shared/enums'
+import { resolveAvatarUrl } from '../common/image-url'
 
 interface LoginDto {
   username: string
@@ -204,7 +205,7 @@ export class AdminLoginController {
       username: adminUser.username,
       nickname: adminUser.nickname || adminUser.username,
       role: adminUser.role,
-      avatar: adminUser.avatar || '',
+      avatar: resolveAvatarUrl(adminUser.avatar) || '',
       mfaEnabled: adminUser.isMfaEnabled || false,
       mfaType: 'none',
     }
@@ -253,7 +254,7 @@ export class AdminLoginController {
       username: adminUser.username,
       nickname: adminUser.nickname || adminUser.username,
       role: adminUser.role,
-      avatar: adminUser.avatar || '',
+      avatar: resolveAvatarUrl(adminUser.avatar) || '',
       mfaEnabled: adminUser.isMfaEnabled || false,
       mfaType: 'none',
     }
@@ -366,7 +367,7 @@ export class AdminLoginController {
         username: target.username,
         nickname: target.nickname || target.username,
         role: target.role,
-        avatar: target.avatar || '',
+        avatar: resolveAvatarUrl(target.avatar) || '',
         mfaEnabled: target.isMfaEnabled || false,
         mfaType: 'none',
       },

@@ -37,7 +37,7 @@ import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { Result } from '../common/result'
 import { getDisplayName } from '../common/user-utils'
-import { normalizeImageUrl } from '../common/image-url'
+import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { RedisService } from '../common/redis.service'
@@ -414,7 +414,7 @@ export class UserController {
       userId: r.matchedUser?.userId || '',
       nickname: r.matchedUser?.nickname || '',
       displayName: getDisplayName(r.matchedUser?.nickname, r.matchedUser?.userId),
-      avatar: r.matchedUser?.avatar || '',
+      avatar: resolveAvatarUrl(r.matchedUser?.avatar) || '',
       createdAt: r.createdAt,
     }))
     return Result.success({ list, total: list.length })
@@ -448,7 +448,7 @@ export class UserController {
       userId: b.blockedUser?.userId || '',
       nickname: b.blockedUser?.nickname || '用户',
       displayName: getDisplayName(b.blockedUser?.nickname, b.blockedUser?.userId),
-      avatar: b.blockedUser?.avatar || '',
+      avatar: resolveAvatarUrl(b.blockedUser?.avatar) || '',
       isRealName: b.blockedUser?.isRealName || 0,
       createdAt: b.createdAt,
     }))
@@ -616,6 +616,9 @@ export class UserController {
       const isMatched = !!reverse
       if (isMatched && reverse) {
         const targetUser = await this.userRepo.findOne({ where: { id: targetUserId }, select: ['id', 'nickname', 'avatar'] })
+        if (targetUser) {
+          targetUser.avatar = resolveAvatarUrl(targetUser.avatar)
+        }
         return Result.success({ isMatched: true, matchUser: targetUser })
       }
 

@@ -86,7 +86,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { post, get } from '@/utils/request'
-import { showToast } from '@/utils/common'
+import { showToast, getFullImageUrl } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
@@ -120,7 +120,7 @@ const loadLoginConfig = async () => {
   try {
     const res: any = await get('/system/config')
     if (res?.loginPageIllustration) {
-      illustrationImg.value = res.loginPageIllustration
+      illustrationImg.value = getFullImageUrl(res.loginPageIllustration)
     }
   } catch {}
 }

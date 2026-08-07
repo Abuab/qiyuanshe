@@ -14,6 +14,7 @@ import { SystemService } from '../system/system.service'
 import { RedisService } from '../common/redis.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { SensitiveWordFilter } from '../common/sensitive-word.filter'
+import { resolveAvatarUrl } from '../common/image-url'
 
 /** 答案状态 */
 export const ANSWER_STATUS = {
@@ -179,7 +180,7 @@ export class QuestionService implements OnModuleInit {
         take: 3,
       })
       const avatarList = answers
-        .map((a) => a.user?.avatar || '')
+        .map((a) => resolveAvatarUrl(a.user?.avatar))
         .filter((url) => url && url.length > 0)
       result.push({
         id: q.id,
@@ -223,7 +224,7 @@ export class QuestionService implements OnModuleInit {
       createdAt: answer.createdAt,
       user: answer.user ? {
         nickname: answer.user.nickname,
-        avatar: answer.user.avatar,
+        avatar: resolveAvatarUrl(answer.user.avatar),
         age: answer.user.age,
         height: answer.user.height,
         weight: answer.user.weight,

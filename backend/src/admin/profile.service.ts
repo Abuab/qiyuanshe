@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
 import { AdminUser } from '../entities/AdminUser'
+import { resolveAvatarUrl } from '../common/image-url'
 
 export interface UpdateAdminProfileDto {
   nickname?: string
@@ -46,7 +47,7 @@ export class AdminProfileService {
       id: admin.id,
       nickname: admin.nickname,
       username: admin.username,
-      avatar: admin.avatar || '',
+      avatar: resolveAvatarUrl(admin.avatar) || '',
       role: admin.role,
     }
   }

@@ -16,6 +16,7 @@ import { AiConfigService } from '../ai/ai-config.service'
 import { AiFeatureKey } from '../ai/types'
 import { getDisplayName } from '../common/user-utils'
 import { beijingISO } from '../common/utils/date-utils'
+import { resolveAvatarUrl } from '../common/image-url'
 import {
   TopSection,
   BasicInfoSection,
@@ -249,7 +250,7 @@ export class UserProfileDetailService {
       hopeTaTags: user.hopeTaTags,
       matchmakerReviews: matchmakerComments.map((c): MatchmakerReviewItem => ({
         matchmakerName: c.matchmaker?.name || '',
-        matchmakerAvatar: c.matchmaker?.avatar || '',
+        matchmakerAvatar: resolveAvatarUrl(c.matchmaker?.avatar),
         content: c.content,
         rating: c.rating,
         createdAt: c.createdAt ? beijingISO(c.createdAt) : '',
@@ -269,8 +270,8 @@ export class UserProfileDetailService {
   ): TopSection {
     const firstPhoto = photos[0]
     return {
-      backgroundPhoto: user.avatar || firstPhoto?.photoUrl || '',
-      avatar: user.avatar || '',
+      backgroundPhoto: resolveAvatarUrl(user.avatar) || firstPhoto?.photoUrl || '',
+      avatar: resolveAvatarUrl(user.avatar),
       nickname: user.nickname || '',
       displayName: user.nickname || (user.userId ? `昵称${user.userId}` : '用户'),
       userId: user.userId || '',

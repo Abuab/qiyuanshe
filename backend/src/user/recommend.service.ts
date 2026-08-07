@@ -6,6 +6,7 @@ import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { RedisService } from '../common/redis.service'
 import { getDisplayName } from '../common/user-utils'
 import { PersonalityMatchService } from '../personality-test/personality-match.service'
+import { resolveAvatarUrl } from '../common/image-url'
 
 export interface PaginatedResult<T> {
   list: T[]
@@ -270,7 +271,7 @@ export class RecommendService {
       userId: user.userId || '',
       nickname: user.nickname,
       displayName: getDisplayName(user.nickname, user.userId),
-      avatar: user.avatar || '',
+      avatar: resolveAvatarUrl(user.avatar) || '',
       age: user.birthYear ? new Date().getFullYear() - user.birthYear : 0,
       height: user.height || 0,
       education: user.education || '',
@@ -284,7 +285,7 @@ export class RecommendService {
         const photos = photosMap.get(user.id) || []
         // 将头像加入照片列表首部（如头像不在列表中），使前端卡片能正确展示缩略图
         if (user.avatar && !photos.includes(user.avatar)) {
-          return [user.avatar, ...photos]
+          return [resolveAvatarUrl(user.avatar), ...photos]
         }
         return photos
       })(),

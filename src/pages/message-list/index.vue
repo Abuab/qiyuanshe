@@ -60,7 +60,7 @@
         <view v-else class="user-message" @tap.stop="goToChat(item)">
           <image
             class="user-avatar"
-            :src="item.avatar || icons.common.defaultAvatar"
+            :src="getFullImageUrl(item.avatar) || icons.common.defaultAvatar"
             mode="aspectFill"
             lazy-load
           />
@@ -101,6 +101,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { icons } from '@/config/icons'
+import { getFullImageUrl } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'

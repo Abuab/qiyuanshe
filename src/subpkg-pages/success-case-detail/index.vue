@@ -10,13 +10,13 @@
     <scroll-view class="content" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }">
       <view v-if="loading" class="loading">加载中...</view>
       <template v-else-if="item">
-        <image v-if="item.cover" class="cover" :src="item.cover" mode="aspectFill" />
+        <image v-if="item.cover" class="cover" :src="coverUrl" mode="aspectFill" />
         <text class="title">{{ item.title }}</text>
         <view class="story">
           <text class="story-text">{{ item.storyContent }}</text>
         </view>
         <view v-if="item.photos?.length" class="photos">
-          <image v-for="(p, idx) in item.photos" :key="idx" :src="p" mode="widthFix" class="photo" />
+          <image v-for="(p, idx) in photoUrls" :key="idx" :src="p" mode="widthFix" class="photo" />
         </view>
       </template>
       <view class="bottom-safe"></view>
@@ -26,8 +26,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { get } from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
@@ -37,6 +38,9 @@ const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
 const loading = ref(true)
 const item = ref<any>(null)
+
+const coverUrl = computed(() => getFullImageUrl(item.value?.cover))
+const photoUrls = computed(() => (item.value?.photos || []).map((p: string) => getFullImageUrl(p)))
 
 const scrollToVal = ref(0)
 const { showBackTop, onScroll, scrollToTop } = useBackTop()

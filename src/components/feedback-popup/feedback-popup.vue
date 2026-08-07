@@ -45,7 +45,7 @@
           >
             <image
               class="image-thumb"
-              :src="img.url"
+              :src="getFullImageUrl(img.url)"
               mode="aspectFill"
               @tap="previewImage(idx)"
             />
@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
 import { post } from '@/utils/request'
+import { getFullImageUrl } from '@/utils/common'
 import { uploadImage } from '@/utils/upload'
 
 interface ImageItem {

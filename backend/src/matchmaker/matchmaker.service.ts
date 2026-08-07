@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Matchmaker } from '../entities/Matchmaker'
 import { CreateMatchmakerDto, UpdateMatchmakerDto } from './dto'
-import { normalizeImageUrl } from '../common/image-url'
+import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 export interface MatchmakerListItem {
   id: number
@@ -35,11 +35,11 @@ export class MatchmakerService {
     return matchmakers.map((m) => ({
       id: m.id,
       name: m.name,
-      avatar: normalizeImageUrl(m.avatar),
+      avatar: resolveAvatarUrl(m.avatar),
       title: m.title,
       wechat: m.wechat || '',
       phone: m.phone || '',
-      qrCode: normalizeImageUrl(m.qrCode),
+      qrCode: resolveStaticUrl(m.qrCode),
       description: m.description || '',
       isActive: m.isActive,
       sortOrder: m.sortOrder,

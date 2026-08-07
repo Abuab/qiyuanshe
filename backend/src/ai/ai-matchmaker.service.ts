@@ -7,6 +7,7 @@ import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
 import { AiSafetyService } from './ai-safety.service'
 import { ContentFilterService } from '../common/content-filter.service'
+import { resolveAvatarUrl } from '../common/image-url'
 import { SystemService } from '../system/system.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { AiQuotaService } from './ai-quota.service'
@@ -329,7 +330,7 @@ export class AiMatchmakerService {
     return {
       id: u.id,
       nickname: u.nickname || '未设置昵称',
-      avatar: u.avatar || '',
+      avatar: resolveAvatarUrl(u.avatar) || '',
       gender: u.gender,
       age: u.birthYear ? currentYear - u.birthYear : 0,
       height: u.height || 0,

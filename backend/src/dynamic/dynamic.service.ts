@@ -10,6 +10,7 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
 import { SystemService } from '../system/system.service'
 import { DynamicType } from '../shared/enums'
+import { resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
 export class DynamicService {
@@ -151,7 +152,7 @@ export class DynamicService {
         type: 'photo',
         userId: user.id,
         nickname: user.nickname || '',
-        avatar: user.avatar || '',
+        avatar: resolveAvatarUrl(user.avatar) || '',
         isRealName: user.isRealName || 0,
         age: user.age || 0,
         height: user.height || 0,
@@ -250,7 +251,7 @@ export class DynamicService {
         type: 'answer',
         userId: item.userId,
         nickname: item.user?.nickname || '',
-        avatar: item.user?.avatar || '',
+        avatar: resolveAvatarUrl(item.user?.avatar) || '',
         isRealName: item.user?.isRealName || 0,
         age: item.user?.age || 0,
         height: item.user?.height || 0,
@@ -305,7 +306,7 @@ export class DynamicService {
       type: 'matchmaker',
       userId: r.userId,
       nickname: r.matchedUser?.nickname || '',
-      avatar: r.matchedUser?.avatar || '',
+      avatar: resolveAvatarUrl(r.matchedUser?.avatar) || '',
       isRealName: r.matchedUser?.isRealName || 0,
       age: r.matchedUser?.age || 0,
       height: r.matchedUser?.height || 0,
@@ -325,7 +326,7 @@ export class DynamicService {
       // 红娘信息
       matchmakerId: r.matchmaker?.id || 0,
       matchmakerName: r.matchmaker?.name || '',
-      matchmakerAvatar: r.matchmaker?.avatar || '',
+      matchmakerAvatar: resolveAvatarUrl(r.matchmaker?.avatar) || '',
       matchmakerTitle: r.matchmaker?.title || '',
       matchmakerPhone: r.matchmaker?.phone || '',
       matchmakerWechat: r.matchmaker?.wechat || '',

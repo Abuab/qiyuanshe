@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between, FindOptionsWhere } from 'typeorm'
 import { SuccessCase } from '../entities/SuccessCase'
 import { SystemConfig } from '../entities/SystemConfig'
+import { resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
 export class SuccessCaseService {
@@ -36,7 +37,7 @@ export class SuccessCaseService {
     const banner = await this.configRepo.findOne({ where: { configKey: 'successCase.bannerImage' } })
     const pageTitle = await this.configRepo.findOne({ where: { configKey: 'successCase.pageTitle' } })
     return {
-      bannerImage: banner?.configValue || '',
+      bannerImage: resolveStaticUrl(banner?.configValue),
       pageTitle: pageTitle?.configValue || '',
     }
   }
@@ -140,7 +141,7 @@ export class SuccessCaseService {
     const banner = await this.configRepo.findOne({ where: { configKey: 'successCase.bannerImage' } })
     const pageTitle = await this.configRepo.findOne({ where: { configKey: 'successCase.pageTitle' } })
     return {
-      bannerImage: banner?.configValue || '',
+      bannerImage: resolveStaticUrl(banner?.configValue),
       pageTitle: pageTitle?.configValue || '',
     }
   }
@@ -171,9 +172,9 @@ export class SuccessCaseService {
       id: item.id,
       title: item.title,
       displayNickname: item.displayNickname || '',
-      userAvatar: item.senderAvatar || '',
+      userAvatar: resolveAvatarUrl(item.senderAvatar),
       storyContent: item.storyContent,
-      photos: item.photos || [],
+      photos: (item.photos || []).map(p => resolveStaticUrl(p)),
       publishDate: item.publishDate,
       sort: item.sort,
       status: item.status,

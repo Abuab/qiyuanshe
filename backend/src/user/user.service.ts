@@ -15,7 +15,7 @@ import { RecommendService, RecommendFilters } from './recommend.service'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { calcProfileScore } from '../common/profile-score'
 import { getDisplayName } from '../common/user-utils'
-import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
+import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 import { AiVoiceService } from '../ai/ai-voice.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { beijingISO } from '../common/utils/date-utils'
@@ -260,7 +260,7 @@ export class UserService {
       userId: user.userId || '',
       nickname: user.nickname,
       displayName: getDisplayName(user.nickname, user.userId),
-      avatar: user.avatar || '',
+      avatar: resolveAvatarUrl(user.avatar) || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
       education: user.education || '',
@@ -427,7 +427,7 @@ export class UserService {
         userId: user.userId || '',
         nickname: user.nickname,
         displayName: getDisplayName(user.nickname, user.userId),
-        avatar: user.avatar,
+        avatar: resolveAvatarUrl(user.avatar),
         gender: user.gender,
         birthYear: user.birthYear,
         height: user.height,
@@ -569,7 +569,7 @@ export class UserService {
       userId: user.userId || '',
       nickname: user.nickname,
       displayName: getDisplayName(user.nickname, user.userId),
-      avatar: user.avatar || '',
+      avatar: resolveAvatarUrl(user.avatar) || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
       education: user.education || '',
@@ -647,7 +647,7 @@ export class UserService {
       userId: user.userId || '',
       nickname: user.nickname,
       displayName: getDisplayName(user.nickname, user.userId),
-      avatar: user.avatar || '',
+      avatar: resolveAvatarUrl(user.avatar) || '',
       age: this.calculateAge(user.birthYear),
       height: user.height || 0,
       education: user.education || '',
@@ -955,7 +955,7 @@ export class UserService {
             userId: v.visitorUser.userId || '',
             nickname: v.visitorUser.nickname,
             displayName: getDisplayName(v.visitorUser.nickname, v.visitorUser.userId),
-            avatar: v.visitorUser.avatar || '',
+            avatar: resolveAvatarUrl(v.visitorUser.avatar) || '',
           }
         : null,
       createdAt: v.createdAt,
@@ -1034,7 +1034,7 @@ export class UserService {
         userId: u?.userId || '',
         nickname: u?.nickname || '',
         displayName: getDisplayName(u?.nickname, u?.userId),
-        avatar: u?.avatar || '',
+        avatar: resolveAvatarUrl(u?.avatar) || '',
         age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
         occupation: u?.occupation || '',
         housingStatus: u?.housingStatus || '',
@@ -1110,7 +1110,7 @@ export class UserService {
         userId: u?.userId || '',
         nickname: u?.nickname || '',
         displayName: getDisplayName(u?.nickname, u?.userId),
-        avatar: u?.avatar || '',
+        avatar: resolveAvatarUrl(u?.avatar) || '',
         age: u?.birthYear ? new Date().getFullYear() - u.birthYear : null,
         occupation: u?.occupation || '',
         housingStatus: u?.housingStatus || '',
@@ -1358,7 +1358,7 @@ export class UserService {
           userId: user.userId || '',
           nickname: user.nickname,
           displayName: getDisplayName(user.nickname, user.userId),
-          avatar: user.avatar || '',
+          avatar: resolveAvatarUrl(user.avatar) || '',
           age: this.calculateAge(user.birthYear),
           gender: user.gender,
           location: user.residence || user.hometown || '',

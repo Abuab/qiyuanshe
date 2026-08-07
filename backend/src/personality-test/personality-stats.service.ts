@@ -14,6 +14,7 @@ import { User } from '../entities/User'
 import { PersonalityUserService } from './personality-user.service'
 import { shanghaiDayKey } from './personality-time.util'
 import { beijingISO } from '../common/utils/date-utils'
+import { resolveAvatarUrl } from '../common/image-url'
 
 /**
  * 人格测试 - 管理后台数据看板统计服务
@@ -156,7 +157,7 @@ export class PersonalityStatsService {
       return {
         userId: Number(r.userId),
         nickname: u?.nickname || `用户${r.userId}`,
-        avatar: u?.avatar || '',
+        avatar: resolveAvatarUrl(u?.avatar) || '',
         gender: u?.gender ?? 0,
         testedAt: r.testedAt ? beijingISO(r.testedAt) : null,
       }

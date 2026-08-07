@@ -8,11 +8,11 @@
       <view class="title">互相心动！</view>
 
       <view class="avatar-area">
-        <image class="avatar-img" :src="currentAvatar" mode="aspectFill" />
+        <image class="avatar-img" :src="currentAvatarUrl" mode="aspectFill" />
         <view class="heart-anim">
           <uni-icons type="heart-filled" size="48rpx" color="#FF6B6B"></uni-icons>
         </view>
-        <image class="avatar-img" :src="matchUser?.avatar || icons.common.defaultAvatar" mode="aspectFill" />
+        <image class="avatar-img" :src="matchUserAvatarUrl" mode="aspectFill" />
       </view>
 
       <view class="tip-text">你们互相喜欢了对方，现在可以无限畅聊啦</view>
@@ -26,8 +26,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { icons } from '@/config/icons'
+import { getFullImageUrl } from '@/utils/common'
 
 interface MatchUser {
   id: number
@@ -38,6 +39,9 @@ interface MatchUser {
 const visible = ref(false)
 const matchUser = ref<MatchUser | null>(null)
 const currentAvatar = ref(icons.common.defaultAvatar)
+
+const currentAvatarUrl = computed(() => getFullImageUrl(currentAvatar.value))
+const matchUserAvatarUrl = computed(() => getFullImageUrl(matchUser.value?.avatar || icons.common.defaultAvatar))
 
 onMounted(() => {
   try {

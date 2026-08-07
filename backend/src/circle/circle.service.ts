@@ -6,6 +6,7 @@ import { CircleMember } from '../entities/CircleMember'
 import { User } from '../entities/User'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { Follow } from '../entities/Follow'
+import { resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
 export class CircleService {
@@ -80,7 +81,7 @@ export class CircleService {
       return {
         id: user.id,
         nickname: user.nickname,
-        avatar: user.avatar,
+        avatar: resolveAvatarUrl(user.avatar),
         age,
         height: user.height,
         education: user.education,
@@ -188,7 +189,7 @@ export class CircleService {
       return {
         id: user.id,
         nickname: user.nickname,
-        avatar: user.avatar,
+        avatar: resolveAvatarUrl(user.avatar),
         gender: user.gender,
         age,
       }
@@ -224,7 +225,7 @@ export class CircleService {
       return {
         id: u.id,
         nickname: u.nickname,
-        avatar: u.avatar,
+        avatar: resolveAvatarUrl(u.avatar),
         gender: u.gender,
         age,
         sortOrder: sortMap.get(u.id) ?? 0,

@@ -10,7 +10,7 @@ import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { RealNameIdentity } from '../entities/RealNameIdentity'
-import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
+import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
@@ -224,7 +224,7 @@ export class AdminUserService {
         userId: user.userId || '',
         nickname: user.nickname,
         displayName: getDisplayName(user.nickname, user.userId),
-        avatar: user.avatar,
+        avatar: resolveAvatarUrl(user.avatar),
         phone: user.phone,
         openid: user.openid,
         gender: user.gender,
@@ -501,7 +501,7 @@ export class AdminUserService {
       ...safeUser,
       userId: user.userId || '',
       displayName: getDisplayName(user.nickname, user.userId),
-      avatar: normalizeImageUrl(safeUser.avatar),
+      avatar: resolveAvatarUrl(safeUser.avatar),
       // 语音相对路径拼接完整域名，供管理后台播放
       voiceUrl: resolveStaticUrl(safeUser.voiceUrl),
       // simple-json 列兜底解析，避免 findOne 未正确反序列化

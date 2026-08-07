@@ -15,6 +15,7 @@ import { RoleGuard } from './role.guard'
 import { Roles } from './roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
+import { resolveAvatarUrl } from '../common/image-url'
 
 @Controller('admin/store-cert')
 @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR)
@@ -62,7 +63,7 @@ export class AdminStoreCertController {
       id: row.id,
       publicUserId: row.userId || '',
       nickname: row.nickname,
-      avatar: row.avatar,
+      avatar: resolveAvatarUrl(row.avatar),
       gender: row.gender,
       age: row.birthYear ? currentYear - row.birthYear : null,
       phone: row.phone,
@@ -91,7 +92,7 @@ export class AdminStoreCertController {
       id: row.id,
       publicUserId: row.userId || '',
       nickname: row.nickname,
-      avatar: row.avatar,
+      avatar: resolveAvatarUrl(row.avatar),
       gender: row.gender,
       age: row.birthYear ? currentYear - row.birthYear : null,
       phone: row.phone,
