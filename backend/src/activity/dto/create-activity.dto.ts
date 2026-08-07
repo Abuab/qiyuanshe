@@ -42,6 +42,17 @@ export class CreateActivityDto {
   activityType: ActivityType
 
   @IsOptional()
+  @IsEnum(['poster', 'info'])
+  headerType?: string
+
+  @IsOptional()
+  @IsString()
+  compressedCover?: string
+
+  @IsOptional()
+  headerConfig?: Record<string, any>
+
+  @IsOptional()
   @IsDateString()
   signUpEndTime?: string
 

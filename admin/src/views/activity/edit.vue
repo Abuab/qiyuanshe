@@ -168,6 +168,38 @@
       </el-form>
     </el-card>
 
+    <!-- 信息卡片配置（仅 headerType === 'info' 时显示） -->
+    <el-card v-if="formData.headerType === 'info'" class="form-card">
+      <template #header>
+        <div class="card-header">
+          <span>信息卡片配置</span>
+        </div>
+      </template>
+      <el-form label-width="120px" size="small">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="背景颜色">
+              <el-color-picker v-model="formData.headerConfig.bgColor" />
+              <span class="form-tip">默认粉色渐变</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="标签颜色">
+              <el-color-picker v-model="formData.headerConfig.tagColor" />
+              <span class="form-tip">默认 #FF6B9D</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-form-item label="显示信息">
+          <el-checkbox-group v-model="formData.headerConfig.showTags">
+            <el-checkbox label="location">活动地点</el-checkbox>
+            <el-checkbox label="time">活动时间</el-checkbox>
+            <el-checkbox label="spots">剩余名额</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <!-- 积木编辑器区域：双 Tab -->
     <el-card class="editor-card">
       <template #header>
@@ -220,6 +252,8 @@ const formData = reactive<any>({
   title: '',
   subtitle: '',
   coverImage: '',
+  compressedCover: '',
+  headerConfig: { bgColor: '', tagColor: '', showTags: [] },
   detailBlocks: [] as any[],
   sceneBlocks: [] as any[],
   activityType: 'latest',
@@ -355,8 +389,7 @@ async function handleFileChange(event: Event) {
 
   try {
     ElMessage.info('正在上传海报...')
-    const url = await uploadFile(file)
-    formData.coverImage = url
+    await uploadFile(file)
     coverImageError.value = false
     ElMessage.success('海报上传成功')
   } catch (error) {
@@ -375,6 +408,8 @@ async function uploadFile(file: File): Promise<string> {
 
   const res = await adminActivity.upload(formDataObj)
   if (res.success && res.data?.url) {
+    formData.coverImage = res.data.url
+    formData.compressedCover = res.data.compressedUrl || res.data.url
     return res.data.url
   }
   throw new Error('上传失败')

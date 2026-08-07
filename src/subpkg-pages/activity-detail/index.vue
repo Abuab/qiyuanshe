@@ -12,29 +12,33 @@
     <scroll-view class="content-scroll" scroll-y enable-flex :scroll-top="scrollToVal" @scroll="onScroll" v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
       <!-- 顶部区域：info 卡片模式 或 poster 大图模式 -->
       <template v-if="activity.headerType === 'info'">
-        <!-- 粉色信纸信息卡片 -->
-        <view class="info-card">
+        <!-- 信息卡片 -->
+        <view class="info-card" :style="{ background: activity.headerConfig?.bgColor || '' }">
           <view class="ic-pattern-top"></view>
           <view class="ic-content">
-            <image v-if="activity.coverImage" class="ic-cover" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
+            <image v-if="activity.coverImage" class="ic-cover" :src="getFullImageUrl(activity.compressedCover || activity.coverImage)" mode="aspectFill" />
             <text class="ic-title">{{ activity.title }}</text>
             <text v-if="activity.subtitle" class="ic-subtitle">{{ activity.subtitle }}</text>
-            <view class="ic-divider"></view>
+            <view class="ic-divider" :style="{ background: activity.headerConfig?.tagColor ? `linear-gradient(90deg, ${activity.headerConfig.tagColor}, ${activity.headerConfig.tagColor}88)` : '' }"></view>
             <view class="ic-detail-list">
-              <view v-if="activity.signUpEndTime" class="ic-detail-item">
+              <view v-if="activity.signUpEndTime && showInfoTag('time')" class="ic-detail-item">
                 <text class="ic-detail-label">报名截止</text>
                 <text class="ic-detail-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD HH:mm') }}</text>
               </view>
-              <view class="ic-detail-item">
+              <view v-if="showInfoTag('time')" class="ic-detail-item">
                 <text class="ic-detail-label">活动时间</text>
                 <text class="ic-detail-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}</text>
               </view>
-              <view class="ic-detail-item">
+              <view v-if="showInfoTag('location')" class="ic-detail-item">
                 <text class="ic-detail-label">活动地址</text>
                 <text class="ic-detail-value">{{ activity.location || '待定' }}</text>
               </view>
+              <view v-if="showInfoTag('spots')" class="ic-detail-item">
+                <text class="ic-detail-label">剩余名额</text>
+                <text class="ic-detail-value">{{ activity.maxParticipants > 0 ? (activity.maxParticipants - activity.currentParticipants) + '人' : '不限' }}</text>
+              </view>
             </view>
-            <view v-if="effectiveStatus !== 1" class="ic-status-tag">
+            <view v-if="effectiveStatus !== 1" class="ic-status-tag" :style="{ color: activity.headerConfig?.tagColor || '#FF6B9D', background: activity.headerConfig?.tagColor ? activity.headerConfig.tagColor + '1A' : '' }">
               {{ getStatusText(effectiveStatus) }}
             </view>
           </view>
@@ -43,7 +47,7 @@
       <template v-else>
         <!-- 顶部 Banner 大图（全宽+底部圆角） -->
         <view class="banner-wrapper">
-          <image class="banner-image" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
+          <image class="banner-image" :src="getFullImageUrl(activity.compressedCover || activity.coverImage)" mode="aspectFill" />
           <view v-if="effectiveStatus !== 1" class="status-tag">
             {{ getStatusText(effectiveStatus) }}
           </view>
@@ -295,6 +299,8 @@ interface Activity {
   title: string
   subtitle?: string
   coverImage: string
+  compressedCover?: string
+  headerConfig?: { bgColor?: string; tagColor?: string; showTags?: string[] }
   content?: string
   detailBlocks?: any[]
   sceneBlocks?: any[]
@@ -415,6 +421,14 @@ function switchTab(tab: 'detail' | 'scene') {
   tabAnimating.value = true
   activeTab.value = tab
   setTimeout(() => { tabAnimating.value = false }, 200)
+}
+
+/** 根据 headerConfig.showTags 判断是否显示某个信息标签 */
+const defaultShowTags = ['time', 'location']
+function showInfoTag(tag: string): boolean {
+  const tags = activity.value?.headerConfig?.showTags
+  if (!tags || tags.length === 0) return defaultShowTags.includes(tag)
+  return tags.includes(tag)
 }
 
 /** 最多展示 10 个头像，超出显示 +N */

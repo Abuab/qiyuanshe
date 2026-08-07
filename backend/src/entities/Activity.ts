@@ -37,6 +37,12 @@ export class Activity {
   @Column({ type: 'varchar', length: 20, default: 'poster', name: 'headerType' })
   headerType: string
 
+  @Column({ type: 'varchar', length: 500, nullable: true, name: 'compressedCover' })
+  compressedCover: string
+
+  @Column({ type: 'json', nullable: true, name: 'headerConfig' })
+  headerConfig: { bgColor?: string; tagColor?: string; showTags?: string[] } | null
+
   @Column({ type: 'datetime', nullable: true, name: 'signUpEndTime' })
   signUpEndTime: Date
 

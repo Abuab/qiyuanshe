@@ -11,6 +11,8 @@ export interface Activity {
   sceneBlocks?: any[]
   activityType: string
   headerType?: string
+  compressedCover?: string
+  headerConfig?: Record<string, any>
   signUpEndTime?: string
   startTime: string
   endTime: string
