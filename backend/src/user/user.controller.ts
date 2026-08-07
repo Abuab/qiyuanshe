@@ -37,7 +37,7 @@ import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { Result } from '../common/result'
 import { getDisplayName } from '../common/user-utils'
-import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
+import { normalizeImageUrl, resolveAvatarUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { RedisService } from '../common/redis.service'
@@ -616,10 +616,10 @@ export class UserController {
       const isMatched = !!reverse
       if (isMatched && reverse) {
         const targetUser = await this.userRepo.findOne({ where: { id: targetUserId }, select: ['id', 'nickname', 'avatar'] })
-        if (targetUser) {
-          targetUser.avatar = resolveAvatarUrl(targetUser.avatar)
-        }
-        return Result.success({ isMatched: true, matchUser: targetUser })
+        const matchUser = targetUser
+          ? { ...targetUser, avatar: resolveAvatarUrl(targetUser.avatar) }
+          : null
+        return Result.success({ isMatched: true, matchUser })
       }
 
       return Result.success({ isMatched: false })
