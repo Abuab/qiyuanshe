@@ -6,6 +6,7 @@ import { ActivitySignup } from '../entities/ActivitySignup'
 import { User } from '../entities/User'
 import { CreateActivityDto, UpdateActivityDto } from './dto'
 import { AdminRole } from '../shared/enums'
+import { resolveStaticUrl } from '../common/image-url'
 
 interface ActivityFilter {
   page?: number
@@ -58,7 +59,13 @@ export class ActivityService {
     const [activities, total] = await queryBuilder.getManyAndCount()
 
     return {
-      list: activities.map((a) => this.applyEndedStatus(a)),
+      list: activities
+        .map((a) => this.applyEndedStatus(a))
+        .map((a) => ({
+          ...a,
+          // 将相对路径转为小程序可直接加载的完整 URL
+          coverImage: resolveStaticUrl(a.coverImage),
+        })),
       page,
       limit,
       total,
@@ -84,6 +91,8 @@ export class ActivityService {
 
     return this.applyEndedStatus({
       ...activity,
+      // 将相对路径转为小程序可直接加载的完整 URL
+      coverImage: resolveStaticUrl(activity.coverImage),
       signupAvatars: signups.map(s => s.avatar).filter(Boolean),
     })
   }
