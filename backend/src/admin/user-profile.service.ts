@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { Report } from '../entities/Report'
@@ -43,6 +43,7 @@ export class UserProfileService {
     private readonly dynamicService: DynamicService,
     private readonly templateService: AdminMessageTemplateService,
   ) {}
+  private readonly logger = new Logger(UserProfileService.name)
 
   async getReports(userId: number) {
     const reports = await this.reportRepository.find({
@@ -262,7 +263,7 @@ export class UserProfileService {
           questionId: answer.questionId,
           questionTitle: answer.question.title,
         }).catch((e) => {
-          console.error('[UserProfileService] 回答审批通过后生成动态失败:', e)
+          this.logger.error('[UserProfileService] 回答审批通过后生成动态失败:', e)
         })
       }
     }

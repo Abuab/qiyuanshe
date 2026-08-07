@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AuditLog } from '../entities/AuditLog'
@@ -44,6 +44,7 @@ export class AdminAuditService {
     private readonly dynamicService: DynamicService,
     private readonly recommendService: RecommendService,
   ) {}
+  private readonly logger = new Logger(AdminAuditService.name)
 
   async list(filter: AuditFilter) {
     const page = filter.page || 1
@@ -198,7 +199,7 @@ export class AdminAuditService {
             questionId: answer.questionId,
             questionTitle: answer.question.title,
           }).catch((e) => {
-            console.error('[AuditService] 回答审批通过后生成动态失败:', e)
+            this.logger.error('[AuditService] 回答审批通过后生成动态失败:', e)
           })
         }
       }

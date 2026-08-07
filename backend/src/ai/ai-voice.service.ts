@@ -136,7 +136,7 @@ export class AiVoiceService {
         return { text: null, error: '返回空内容' }
       }
 
-      this.logger.log(
+      this.logger.debug(
         `[${provider.displayName}] 语音转文字成功: ${text.length} 字符`,
       )
       return { text, error: undefined }
@@ -255,7 +255,7 @@ export class AiVoiceService {
         return { text: null, error: '返回空内容' }
       }
 
-      this.logger.log(
+      this.logger.debug(
         `[${provider.displayName}] Qwen3-ASR 转录成功: ${text.length} 字符`,
       )
       return { text, error: undefined }

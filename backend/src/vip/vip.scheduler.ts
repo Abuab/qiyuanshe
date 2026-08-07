@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { VipService } from './vip.service'
 import { RedisService } from '../common/redis.service'
@@ -9,6 +9,8 @@ import { RedisService } from '../common/redis.service'
  */
 @Injectable()
 export class VipScheduler {
+  private readonly logger = new Logger(VipScheduler.name)
+
   constructor(
     private readonly vipService: VipService,
     private readonly redis: RedisService,
@@ -26,7 +28,7 @@ export class VipScheduler {
 
     try {
       const count = await this.vipService.dailyQuotaReset()
-      console.log(`[VipScheduler] 置顶卡配额重置完成，生成 ${count} 条配额记录`)
+      this.logger.debug(`[VipScheduler] 置顶卡配额重置完成，生成 ${count} 条配额记录`)
     } finally {
       await this.redis.del(lockKey).catch(() => {})
     }
@@ -45,7 +47,7 @@ export class VipScheduler {
     try {
       const count = await this.vipService.checkExpiredVip()
       if (count > 0) {
-        console.log(`[VipScheduler] 已降级 ${count} 名过期会员`)
+        this.logger.debug(`[VipScheduler] 已降级 ${count} 名过期会员`)
       }
     } finally {
       await this.redis.del(lockKey).catch(() => {})

@@ -71,10 +71,10 @@ export class ContentFilterService implements OnModuleInit {
         }
       }
     } catch (e: any) {
-      console.warn('[ContentFilterService] 敏感词库加载失败，使用硬编码兜底:', e?.message)
+      this.logger.warn('[ContentFilterService] 敏感词库加载失败，使用硬编码兜底:', e?.message)
     }
     this.filter.build(ContentFilterService.FALLBACK_KEYWORDS)
-    console.log('[ContentFilterService] 使用硬编码敏感词库兜底')
+    this.logger.debug('[ContentFilterService] 使用硬编码敏感词库兜底')
   }
 
   /**

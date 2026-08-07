@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, DataSource } from 'typeorm'
 import { User } from '../entities/User'
@@ -29,6 +29,8 @@ function todayStr(): string {
 
 @Injectable()
 export class VipService {
+  private readonly logger = new Logger(VipService.name)
+
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
@@ -329,7 +331,7 @@ export class VipService {
       // 注意：不再清除红线索额度 (UserRedLineQuota) — 会员续费后保留原有额度
       // 清除推荐缓存：VIP 变更影响推荐排序权重
       this.redis.delByPattern('v3:rec:*').catch(() => {})
-      console.log(`[VipService] 已降级 ${count} 名过期会员`)
+      this.logger.debug(`[VipService] 已降级 ${count} 名过期会员`)
     }
 
     return count

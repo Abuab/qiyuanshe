@@ -61,7 +61,7 @@ export class EidAuthService {
       eidCertStatus: EID_STATUS.DOING,
       eidBizSeqNo: eidToken,
     })
-    this.logger.log(`用户 ${userId} 创建E证通订单，token=${eidToken}`)
+    this.logger.log(`用户 ${userId} 创建E证通订单，token长度=${eidToken.length}`)
     return { eidToken }
   }
 

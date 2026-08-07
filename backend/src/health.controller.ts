@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common'
+import { Controller, Get, Logger } from '@nestjs/common'
 import { Result } from './common/result'
 import { DataSource } from 'typeorm'
 import { RedisService } from './common/redis.service'
@@ -6,6 +6,8 @@ import { beijingISO } from './common/utils/date-utils'
 
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name)
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly redisService: RedisService,
@@ -20,7 +22,7 @@ export class HealthController {
       await this.dataSource.query('SELECT 1')
       mysqlOk = true
     } catch (error) {
-      console.error('MySQL health check failed:', error)
+      this.logger.error('MySQL health check failed:', error)
     }
 
     try {
@@ -28,7 +30,7 @@ export class HealthController {
       const result = await this.redisService.getClient().ping()
       redisOk = result === 'PONG'
     } catch (error) {
-      console.error('Redis health check failed:', error)
+      this.logger.error('Redis health check failed:', error)
     }
 
     return Result.success({

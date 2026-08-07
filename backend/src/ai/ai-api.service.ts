@@ -97,7 +97,7 @@ export class AiApiService {
         baseUrl += '/v1'
       }
       const url = `${baseUrl}/chat/completions`
-      this.logger.log(
+      this.logger.debug(
         `AI 调用: [${provider.displayName}] model=${provider.modelName}, messages=${messages.length}条`,
       )
 
@@ -139,7 +139,7 @@ export class AiApiService {
       }
 
       await this.selector.recordSuccess(provider.id)
-      this.logger.log(
+      this.logger.debug(
         `[${provider.displayName}] 调用成功: ${content.length}字符, ${inputTokens}+${outputTokens} tokens, ${durationMs}ms`,
       )
 

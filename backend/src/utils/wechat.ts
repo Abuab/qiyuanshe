@@ -1,4 +1,5 @@
 import * as crypto from 'crypto'
+import { Logger } from '@nestjs/common'
 import { wechatConfig } from '../config/wechat'
 
 interface AccessTokenResponse {
@@ -12,6 +13,7 @@ interface WechatResponse {
 }
 
 class WechatUtil {
+  private readonly logger = new Logger('WechatUtil')
   private accessTokenCache: { token: string; expiresAt: number } | null = null
 
   async code2Session(code: string): Promise<{
@@ -99,7 +101,7 @@ class WechatUtil {
     const result = await response.json() as WechatResponse
 
     if (result.errcode && result.errcode !== 0) {
-      console.error(`发送订阅消息失败: ${result.errmsg}`)
+      this.logger.error(`发送订阅消息失败: ${result.errmsg}`)
       return false
     }
 

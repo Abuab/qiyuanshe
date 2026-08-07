@@ -14,6 +14,7 @@ import {
   Request,
   BadRequestException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common'
 import { ThrottlerGuard } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
@@ -50,6 +51,8 @@ const RATE_LIMIT_WINDOW_SEC = 86400
 
 @Controller('users')
 export class UserController {
+  private readonly logger = new Logger(UserController.name)
+
   constructor(
     private readonly userService: UserService,
     private readonly profileDetailService: UserProfileDetailService,
@@ -97,7 +100,7 @@ export class UserController {
         { tab, ageMin, ageMax, heightMin, heightMax, education, incomeRange, maritalStatus, isRealName: effectiveIsRealName, residence, hometown, keyword },
       )
     } catch (error: any) {
-      console.error('findRecommend controller error:', error?.message || error)
+      this.logger.error('findRecommend controller error:', error?.message || error)
       return Result.serverError('推荐数据加载失败，请稍后重试: ' + (error?.message || ''))
     }
   }
@@ -117,7 +120,7 @@ export class UserController {
       const user = await this.userService.updateProfile(userId, dto)
       return Result.success(user, '保存成功')
     } catch (error: any) {
-      console.error('updateProfile error:', error?.message || error)
+      this.logger.error('updateProfile error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('保存失败: ' + (error?.message || '请稍后重试'))
     }
@@ -146,7 +149,7 @@ export class UserController {
         }
       } catch (e) {
         if (e instanceof ForbiddenException) throw e
-        console.error('Redis 限流检查失败，降级放行:', e)
+        this.logger.error('Redis 限流检查失败，降级放行:', e)
       }
     }
 
@@ -233,7 +236,7 @@ export class UserController {
         }
       } catch (e) {
         if (e instanceof ForbiddenException) throw e
-        console.error('Redis 限流检查失败，降级放行:', e)
+        this.logger.error('Redis 限流检查失败，降级放行:', e)
       }
     }
 
@@ -467,7 +470,7 @@ export class UserController {
       const list = await this.userService.getMyLikes(userId, type as 'liked' | 'likedBy' | 'mutual')
       return Result.success(list)
     } catch (error: any) {
-      console.error('getMyLikes error:', error?.message || error)
+      this.logger.error('getMyLikes error:', error?.message || error)
       return Result.serverError('查询失败')
     }
   }
@@ -482,7 +485,7 @@ export class UserController {
       const currentUserId = req?.user?.id
       return this.userService.getUserDetail(id, currentUserId)
     } catch (error: any) {
-      console.error('getUserDetail error:', error?.message || error)
+      this.logger.error('getUserDetail error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.notFound(error?.message || '用户不存在')
     }
@@ -568,7 +571,7 @@ export class UserController {
       await this.userService.followUser(userId, targetUserId)
       return Result.success(null, '关注成功')
     } catch (error: any) {
-      console.error('followUser error:', error?.message || error)
+      this.logger.error('followUser error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('关注失败: ' + (error?.message || '请稍后重试'))
     }
@@ -585,7 +588,7 @@ export class UserController {
       await this.userService.unfollowUser(userId, targetUserId)
       return Result.success(null, '取消关注成功')
     } catch (error: any) {
-      console.error('unfollowUser error:', error?.message || error)
+      this.logger.error('unfollowUser error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('取消关注失败: ' + (error?.message || '请稍后重试'))
     }
@@ -618,7 +621,7 @@ export class UserController {
 
       return Result.success({ isMatched: false })
     } catch (error: any) {
-      console.error('likeUser error:', error?.message || error)
+      this.logger.error('likeUser error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('操作失败')
     }
@@ -635,7 +638,7 @@ export class UserController {
       await this.followRepo.delete({ userId, targetUserId })
       return Result.success(null)
     } catch (error: any) {
-      console.error('unlikeUser error:', error?.message || error)
+      this.logger.error('unlikeUser error:', error?.message || error)
       return Result.serverError('操作失败')
     }
   }
@@ -655,7 +658,7 @@ export class UserController {
       await this.blockRepo.save(block)
       return Result.success(null, '已拉黑')
     } catch (error: any) {
-      console.error('blockUser error:', error?.message || error)
+      this.logger.error('blockUser error:', error?.message || error)
       return Result.serverError('拉黑失败')
     }
   }
@@ -686,7 +689,7 @@ export class UserController {
       const result = await this.userService.getFollowStatus(userId, targetUserId)
       return Result.success(result)
     } catch (error: any) {
-      console.error('getFollowStatus error:', error?.message || error)
+      this.logger.error('getFollowStatus error:', error?.message || error)
       if (error.getStatus) throw error
       return Result.serverError('查询失败: ' + (error?.message || ''))
     }

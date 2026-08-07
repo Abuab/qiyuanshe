@@ -190,7 +190,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
     }
 
     if (created > 0) {
-      this.logger.log(`[Index] 已创建 ${created}/${indexes.length} 个索引`)
+      this.logger.debug(`[Index] 已创建 ${created}/${indexes.length} 个索引`)
     }
   }
 }

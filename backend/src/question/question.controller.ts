@@ -9,6 +9,7 @@ import {
   Request,
   ParseIntPipe,
   Req,
+  Logger,
 } from '@nestjs/common'
 import { QuestionService } from './question.service'
 import { GetQuestionsDto, CreateAnswerDto } from './dto'
@@ -16,6 +17,8 @@ import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 
 @Controller('questions')
 export class QuestionController {
+  private readonly logger = new Logger(QuestionController.name)
+
   constructor(private readonly questionService: QuestionService) {}
 
   @Get('hot')
@@ -85,7 +88,7 @@ export class QuestionController {
         },
       }
     } catch (error: any) {
-      console.error('createAnswer error:', error?.message || error)
+      this.logger.error('createAnswer error:', error?.message || error)
       if (error.getStatus) throw error
       return {
         success: false,
@@ -111,7 +114,7 @@ export class QuestionController {
         ...result,
       }
     } catch (error: any) {
-      console.error('likeAnswer error:', error?.message || error)
+      this.logger.error('likeAnswer error:', error?.message || error)
       if (error.getStatus) throw error
       return {
         success: false,
@@ -123,6 +126,8 @@ export class QuestionController {
 
 @Controller('answers')
 export class AnswerController {
+  private readonly logger = new Logger(AnswerController.name)
+
   constructor(private readonly questionService: QuestionService) {}
 
   @Post(':id/like')
@@ -142,7 +147,7 @@ export class AnswerController {
         ...result,
       }
     } catch (error: any) {
-      console.error('AnswerController like error:', error?.message || error)
+      this.logger.error('AnswerController like error:', error?.message || error)
       if (error.getStatus) throw error
       return {
         success: false,

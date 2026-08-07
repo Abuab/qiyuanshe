@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, Optional, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, In } from 'typeorm'
 import { AuditLog } from '../entities/AuditLog'
@@ -48,6 +48,7 @@ export class AuditService {
     @Optional()
     private readonly systemService?: SystemService,
   ) {}
+  private readonly logger = new Logger(AuditService.name)
 
   /**
    * Webhook 通知：向已配置的通道（企业微信/飞书/钉钉）发送审核通知
@@ -167,7 +168,7 @@ export class AuditService {
     } catch {}
 
     if (!success) {
-      console.error(`[AuditService] Webhook ${channel} 发送失败:`, errorMessage)
+      this.logger.error(`[AuditService] Webhook ${channel} 发送失败:`, errorMessage)
     }
   }
 
@@ -246,7 +247,7 @@ export class AuditService {
         message: aiSuggestion === 'Block' ? '图片违规，已被拒绝' : aiSuggestion === 'Review' ? '需要人工复核' : '审核通过',
       }
     } catch (error) {
-      console.error('Photo audit error:', error)
+      this.logger.error('Photo audit error:', error)
       throw new BadRequestException('图片审核失败')
     }
   }
@@ -299,7 +300,7 @@ export class AuditService {
         keywords: result.keywords,
       }
     } catch (error) {
-      console.error('Text audit error:', error)
+      this.logger.error('Text audit error:', error)
       throw new BadRequestException('文本审核失败')
     }
   }

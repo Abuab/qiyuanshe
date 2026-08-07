@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Like, In, SelectQueryBuilder } from 'typeorm'
 import * as crypto from 'crypto'
@@ -77,6 +77,7 @@ export class AdminUserService {
     private readonly realNameIdentityRepo: Repository<RealNameIdentity>,
     private readonly templateService: AdminMessageTemplateService,
   ) {}
+  private readonly logger = new Logger(AdminUserService.name)
 
   async list(filter: UserFilter) {
     const page = filter.page || 1
@@ -628,7 +629,7 @@ export class AdminUserService {
       userId,
       type: 'photo',
       images: [normalizedUrl],
-    }).catch((err) => console.error('添加照片动态失败:', err?.message || err))
+    }).catch((err) => this.logger.error('添加照片动态失败:', err?.message || err))
 
     return saved
   }
@@ -678,7 +679,7 @@ export class AdminUserService {
         try {
           await this.auditLogRepository.save(auditLogs)
         } catch (err) {
-          console.error('批量审核日志写入失败:', err?.message || err)
+          this.logger.error('批量审核日志写入失败:', err?.message || err)
         }
       }
     }
@@ -894,7 +895,7 @@ export class AdminUserService {
         userId: saved.id,
         type: 'photo',
         images: data.photoUrls,
-      }).catch((err) => console.error('创建用户照片动态失败:', err?.message || err))
+      }).catch((err) => this.logger.error('创建用户照片动态失败:', err?.message || err))
     }
 
     // 创建审核记录

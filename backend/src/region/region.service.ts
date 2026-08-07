@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AddressRegion } from '../entities/AddressRegion'
@@ -13,6 +13,7 @@ export interface RegionItem {
 
 @Injectable()
 export class RegionService implements OnModuleInit {
+  private readonly logger = new Logger(RegionService.name)
   /** level → parentId → RegionItem[] */
   private regionsByParent = new Map<number, RegionItem[]>()
 
@@ -75,7 +76,7 @@ export class RegionService implements OnModuleInit {
         }
       }
     } catch (error: any) {
-      console.warn(`[RegionService] 加载行政区划数据失败: ${error?.message || error}`)
+      this.logger.warn(`[RegionService] 加载行政区划数据失败: ${error?.message || error}`)
     }
   }
 

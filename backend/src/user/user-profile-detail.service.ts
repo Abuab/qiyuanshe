@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { User } from '../entities/User'
@@ -66,6 +66,7 @@ export class UserProfileDetailService {
     private readonly visitRepo: Repository<ProfileVisit>,
     private readonly aiConfigService: AiConfigService,
   ) {}
+  private readonly logger = new Logger(UserProfileDetailService.name)
 
   /**
    * 获取用户详情页完整数据
@@ -92,7 +93,7 @@ export class UserProfileDetailService {
     if (currentUserId && !isSelf) {
       this.visitRepo.save(
         this.visitRepo.create({ userId, visitorUserId: currentUserId }),
-      ).catch((err) => console.error('Record visit error:', err?.message || err))
+      ).catch((err) => this.logger.error('Record visit error:', err?.message || err))
     }
 
     // 并行加载各分区数据

@@ -494,25 +494,25 @@ export class AiMatchmakerService {
     let searchContext = ''
     let isSmartMatch = false
     const isSearch = this.isSearchIntent(message)
-    this.logger.log(`[AI红娘] 搜索意图预检: isSearch=${isSearch}, message="${message.slice(0, 30)}"`)
+    this.logger.debug(`[AI红娘] 搜索意图预检: isSearch=${isSearch}, message="${message.slice(0, 30)}"`)
 
     if (isSearch) {
       try {
         // 先执行简单解析
         let filters: MatchmakerSearchFilters | null = this.parseSearchFiltersSimple(message, user.gender)
-        this.logger.log(`[AI红娘] 简单解析结果: ${JSON.stringify(filters)}`)
+        this.logger.debug(`[AI红娘] 简单解析结果: ${JSON.stringify(filters)}`)
 
         // 如果简单解析无结果，但用户有性别，构造默认搜索（搜异性）
         if (!filters && user.gender != null) {
           filters = { gender: user.gender === 1 ? 2 : 1, limit: 5 }
-          this.logger.log(`[AI红娘] 简单解析无结果，使用默认异性搜索: gender=${filters.gender}`)
+          this.logger.debug(`[AI红娘] 简单解析无结果，使用默认异性搜索: gender=${filters.gender}`)
         }
 
         // AI 增强解析
         if (filters && (await this.aiApiService.isConfigured())) {
           try {
             const aiFilters = await this.parseSearchFilters(message, user.gender)
-            this.logger.log(`[AI红娘] AI解析结果: ${JSON.stringify(aiFilters)}`)
+            this.logger.debug(`[AI红娘] AI解析结果: ${JSON.stringify(aiFilters)}`)
             if (aiFilters) {
               filters = aiFilters
             }
@@ -528,7 +528,7 @@ export class AiMatchmakerService {
             const myCity = me?.hometown || me?.residence
             if (myCity) {
               filters.city = myCity
-              this.logger.log(`[AI红娘] 同乡搜索: city="${myCity}"`)
+              this.logger.debug(`[AI红娘] 同乡搜索: city="${myCity}"`)
             }
           }
 
@@ -549,24 +549,24 @@ export class AiMatchmakerService {
             // 模糊推荐 → 智能匹配
             users = await this.smartMatch(userId, filters.gender, filters.limit || 5)
             isSmartMatch = true
-            this.logger.log(`[AI红娘] 智能匹配: 找到 ${users.length} 位用户`)
+            this.logger.debug(`[AI红娘] 智能匹配: 找到 ${users.length} 位用户`)
           } else {
             // 精确筛选 → 普通搜索
             users = await this.searchUsers(filters, userId)
-            this.logger.log(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
+            this.logger.debug(`[AI红娘] 精确搜索: 找到 ${users.length} 位用户`)
 
             // 如果没搜到，用更宽松的条件再搜一次
             if (users.length === 0 && filters.gender) {
               // 同乡搜索：精确城市没匹配上 → 回退到智能匹配（按地理位置打分优先）
               if (/家乡|同乡/.test(message)) {
-                this.logger.log(`[AI红娘] 同乡精确匹配无结果，回退到智能匹配（地理位置优先）`)
+                this.logger.debug(`[AI红娘] 同乡精确匹配无结果，回退到智能匹配（地理位置优先）`)
                 users = await this.smartMatch(userId, filters.gender, filters.limit || 5)
                 isSmartMatch = true
               } else {
-                this.logger.log(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
+                this.logger.debug(`[AI红娘] 精确搜索无结果，尝试宽松搜索（仅性别过滤）`)
                 users = await this.searchUsers({ gender: filters.gender, limit: 10 }, userId)
               }
-              this.logger.log(`[AI红娘] 回退搜索: 找到 ${users.length} 位用户`)
+              this.logger.debug(`[AI红娘] 回退搜索: 找到 ${users.length} 位用户`)
             }
           }
 
@@ -574,7 +574,7 @@ export class AiMatchmakerService {
             searchContext = users.map((u, i) =>
               `${i + 1}. ${u.nickname}，${u.gender === 1 ? '男' : '女'}，${u.age}岁，${u.height ? u.height + 'cm' : ''}，${u.education || ''}，${u.residence || u.hometown || ''}`
             ).join('\n')
-            this.logger.log(`[AI红娘] 搜索上下文: ${searchContext.slice(0, 200)}`)
+            this.logger.debug(`[AI红娘] 搜索上下文: ${searchContext.slice(0, 200)}`)
           } else {
             // 诊断：输出数据库中用户分布
             try {
@@ -590,15 +590,15 @@ export class AiMatchmakerService {
                   .where('u.isDeleted = 0')
                   .groupBy('u.status').getRawMany(),
               ])
-              this.logger.log(
+              this.logger.debug(
                 `[AI红娘] 📊 数据库诊断: 总用户=${totalAll}, status IN(1,2)=${totalActive}, ` +
                 `性别分布=${JSON.stringify(byGender)}, status分布=${JSON.stringify(byStatus)}`
               )
             } catch {}
-            this.logger.log(`[AI红娘] 搜索无结果，可能数据库无匹配用户`)
+            this.logger.debug(`[AI红娘] 搜索无结果，可能数据库无匹配用户`)
           }
         } else {
-          this.logger.log(`[AI红娘] 无法提取搜索条件，跳过搜索`)
+          this.logger.debug(`[AI红娘] 无法提取搜索条件，跳过搜索`)
         }
       } catch (e: any) {
         this.logger.warn(`[AI红娘] 搜索流程异常: ${e?.message}`)
@@ -655,11 +655,11 @@ export class AiMatchmakerService {
       reply = isSmartMatch
         ? `根据你的资料，为你智能匹配了 ${users.length} 位最优${genderLabel}：\n\n${userListText}${aiComment}`
         : `为你匹配到 ${users.length} 位${genderLabel}，快来看看吧～\n\n${userListText}${aiComment}`
-      this.logger.log(`[AI红娘] ${isSmartMatch ? '智能匹配' : '搜索'}命中，直接格式化推荐列表（${users.length}位用户）`)
+      this.logger.debug(`[AI红娘] ${isSmartMatch ? '智能匹配' : '搜索'}命中，直接格式化推荐列表（${users.length}位用户）`)
     } else if (isSearch && users !== undefined) {
       // 检测到搜索意图并执行了搜索，但无结果
       reply = `抱歉，暂时没有找到符合条件的用户。你可以调整一下筛选条件再试试，或者告诉我你想找什么类型的人，我帮你留意～`
-      this.logger.log(`[AI红娘] 搜索完成但无结果`)
+      this.logger.debug(`[AI红娘] 搜索完成但无结果`)
     } else {
       // 非搜索意图 → 正常 AI 对话
       try {

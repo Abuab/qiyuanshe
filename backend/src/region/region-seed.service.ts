@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AddressRegion } from '../entities/AddressRegion'
@@ -19,6 +19,8 @@ interface CDStreet { code: string; name: string; areaCode: string }
  */
 @Injectable()
 export class RegionSeedService implements OnModuleInit {
+  private readonly logger = new Logger(RegionSeedService.name)
+
   constructor(
     @InjectRepository(AddressRegion)
     private readonly repo: Repository<AddressRegion>,
@@ -33,16 +35,16 @@ export class RegionSeedService implements OnModuleInit {
 
       const total = await this.repo.count()
       if (total > 0) {
-        console.log('[RegionSeed] 检测到行政区划数据残缺（缺区县层），清空后重新导入...')
+        this.logger.debug('[RegionSeed] 检测到行政区划数据残缺（缺区县层），清空后重新导入...')
         await this.repo.clear()
       } else {
-        console.log('[RegionSeed] 开始导入完整行政区划数据...')
+        this.logger.debug('[RegionSeed] 开始导入完整行政区划数据...')
       }
 
       await this.importFromChinaDivision()
-      console.log('[RegionSeed] 行政区划数据导入完成')
+      this.logger.debug('[RegionSeed] 行政区划数据导入完成')
     } catch (error: any) {
-      console.error('[RegionSeed] 导入失败（不影响应用启动）:', error?.message || error)
+      this.logger.error('[RegionSeed] 导入失败（不影响应用启动）:', error?.message || error)
     }
   }
 
@@ -73,7 +75,7 @@ export class RegionSeedService implements OnModuleInit {
     for (let i = 0; i < rows.length; i += CHUNK) {
       await this.repo.insert(rows.slice(i, i + CHUNK))
     }
-    console.log(
+    this.logger.debug(
       `[RegionSeed] 导入 省${provinces.length} 市${cities.length} 区${areas.length} 街道${streets.length}，共 ${rows.length} 条`,
     )
   }

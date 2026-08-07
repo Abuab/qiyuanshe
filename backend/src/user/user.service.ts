@@ -395,11 +395,11 @@ export class UserService {
         // 记录来访
         this.visitRepository.save(
           this.visitRepository.create({ userId: id, visitorUserId: currentUserId }),
-        ).catch((err) => console.error('Record visit error:', err?.message || err))
+        ).catch((err) => this.logger.error('Record visit error:', err?.message || err))
 
         // 更新访问者的最后活跃时间
         this.userRepository.update(currentUserId, { lastActiveAt: new Date() })
-          .catch((err) => console.error('Update lastActiveAt error:', err?.message || err))
+          .catch((err) => this.logger.error('Update lastActiveAt error:', err?.message || err))
 
         const follow = await this.followRepository.findOne({
           where: { userId: currentUserId, targetUserId: id },
@@ -1405,7 +1405,7 @@ export class UserService {
       action,
       ipAddress: ipAddress || '',
       userAgent: userAgent || '',
-    }).catch(err => console.error('[user] saveLog failed:', err?.message || err))
+    }).catch(err => this.logger.error('[user] saveLog failed:', err?.message || err))
 
     // 同步更新 User 表中的最近同意时间与版本
     if (action === 'agree') {

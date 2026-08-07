@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
   Request,
+  Logger,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
@@ -22,6 +23,8 @@ import { AdminRole } from '../shared/enums'
 
 @Controller('activities')
 export class ActivityController {
+  private readonly logger = new Logger(ActivityController.name)
+
   constructor(private readonly activityService: ActivityService) {}
 
   // 小程序端 - 活动列表
@@ -55,7 +58,7 @@ export class ActivityController {
       const result = await this.activityService.signup(id, userId, data)
       return Result.success(result, '报名成功')
     } catch (error: any) {
-      console.error('signup error:', error?.message || error)
+      this.logger.error('signup error:', error?.message || error)
       // 如果是已知的 NestJS HTTP 异常，直接抛出
       if (error.getStatus) throw error
       return Result.serverError('报名失败: ' + (error?.message || '请稍后重试'))

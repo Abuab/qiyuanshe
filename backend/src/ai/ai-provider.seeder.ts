@@ -53,7 +53,7 @@ export class AiProviderSeeder implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     try {
       const result = await this.seedFromEnv()
-      this.logger.log(`[Seeder] ${result.message}`)
+      this.logger.debug(`[Seeder] ${result.message}`)
     } catch (e: any) {
       this.logger.error(`[Seeder] 启动同步异常: ${e?.message}`)
     }

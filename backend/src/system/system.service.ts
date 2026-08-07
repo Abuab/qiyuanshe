@@ -67,7 +67,7 @@ export class SystemService implements OnModuleInit {
             description: `选项字典: ${key}`,
           })
           await this.configRepository.save(entry)
-          this.logger.log(`[Dict] 初始化默认字典: ${key}`)
+          this.logger.debug(`[Dict] 初始化默认字典: ${key}`)
         }
       }
     } catch (error: any) {

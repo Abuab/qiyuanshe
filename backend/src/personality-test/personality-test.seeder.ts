@@ -66,7 +66,7 @@ export class PersonalityTestSeeder implements OnApplicationBootstrap {
       this.dimensionRepo.create({ ...d, isEnabled: 1, isDeleted: 0 }),
     )
     await this.dimensionRepo.save(entities)
-    this.logger.log(`已初始化 ${entities.length} 个人格测试维度`)
+    this.logger.debug(`已初始化 ${entities.length} 个人格测试维度`)
   }
 
   private async seedTypes(): Promise<void> {
@@ -90,6 +90,6 @@ export class PersonalityTestSeeder implements OnApplicationBootstrap {
       }),
     )
     await this.typeRepo.save(entities)
-    this.logger.log(`已初始化 ${entities.length} 种人格类型`)
+    this.logger.debug(`已初始化 ${entities.length} 种人格类型`)
   }
 }

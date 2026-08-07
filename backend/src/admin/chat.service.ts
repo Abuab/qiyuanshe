@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, LessThan } from 'typeorm'
 import { ChatMessage } from '../entities/ChatMessage'
@@ -14,6 +14,7 @@ export class AdminChatService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+  private readonly logger = new Logger(AdminChatService.name)
 
   /** 通过对外公开的 6 位 userId 解析出内部主键 id、昵称（监控页搜索用） */
   async resolveUserByPublicId(publicId: string) {
@@ -129,7 +130,7 @@ export class AdminChatService {
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
-      console.log('[AdminChat] getMessages loadMore beforeId=', beforeId, 'returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
+      this.logger.debug('[AdminChat] getMessages loadMore beforeId=', beforeId, 'returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     } else {
       // 首次加载/分页跳转：查最新的 limit 条，DESC + take + reverse 为正序（旧→新）
       ;[list, total] = await this.messageRepository.findAndCount({
@@ -139,7 +140,7 @@ export class AdminChatService {
         relations: ['fromUser', 'toUser'],
       })
       list.reverse()
-      console.log('[AdminChat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
+      this.logger.debug('[AdminChat] getMessages firstLoad returned=', list.length, 'total=', total, 'firstId=', list[0]?.id, 'firstTime=', list[0]?.createdAt, 'lastId=', list[list.length - 1]?.id, 'lastTime=', list[list.length - 1]?.createdAt)
     }
 
     // 将关联用户头像解析为完整 URL（兼容数据库中遗留的相对路径）

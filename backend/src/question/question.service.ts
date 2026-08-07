@@ -120,7 +120,7 @@ export class QuestionService implements OnModuleInit {
       '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
       '加微信', '加我微信', '微商', '刷单',
     ])
-    this.logger.log('使用硬编码敏感词库兜底')
+    this.logger.debug('使用硬编码敏感词库兜底')
   }
 
   async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {

@@ -68,7 +68,7 @@ export class GuideCopySeeder implements OnApplicationBootstrap {
           }),
         )
       }
-      this.logger.log(`已初始化 ${GuideCopySeeder.SLOTS.length} 个引导文案位及默认文案`)
+      this.logger.debug(`已初始化 ${GuideCopySeeder.SLOTS.length} 个引导文案位及默认文案`)
     } catch (e: any) {
       this.logger.warn(`引导文案基础数据初始化失败: ${e?.message}`)
     }

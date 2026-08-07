@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -59,6 +59,7 @@ export class AuthService {
     private readonly contentFilter: ContentFilterService,
     private readonly redis: RedisService,
   ) {}
+  private readonly logger = new Logger(AuthService.name)
 
   /**
    * 获取新用户注册时的默认状态
@@ -183,7 +184,7 @@ export class AuthService {
         action: 'agree',
         ipAddress: ipAddress || '',
         userAgent: userAgent || '',
-      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     } else {
@@ -222,7 +223,7 @@ export class AuthService {
         action: 'agree',
         ipAddress: ipAddress || '',
         userAgent: userAgent || '',
-      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }
@@ -308,7 +309,7 @@ export class AuthService {
         action: 'agree',
         ipAddress: ipAddress || '',
         userAgent: userAgent || '',
-      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
       }
@@ -351,7 +352,7 @@ export class AuthService {
         action: 'agree',
         ipAddress: ipAddress || '',
         userAgent: userAgent || '',
-      }).catch(err => console.error('[auth] saveLog failed:', err?.message || err))
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
     }

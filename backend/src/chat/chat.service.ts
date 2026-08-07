@@ -127,13 +127,13 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     try {
       const remoteUrl = await this.getConfigValue('chat.sensitiveWordsUrl')
       if (remoteUrl) {
-        this.logger.log(`正在从远程 URL 拉取敏感词库: ${remoteUrl}`)
+        this.logger.debug(`正在从远程 URL 拉取敏感词库: ${remoteUrl}`)
         const response = await fetch(remoteUrl, { signal: AbortSignal.timeout(10000) })
         if (response.ok) {
           const text = await response.text()
           remoteWords = this.parseSensitiveWords(text)
           if (remoteWords.length > 0) {
-            this.logger.log(`远程敏感词库加载成功，共 ${remoteWords.length} 个词`)
+            this.logger.debug(`远程敏感词库加载成功，共 ${remoteWords.length} 个词`)
           }
         } else {
           this.logger.warn(`远程敏感词库请求失败 HTTP ${response.status}`)
@@ -215,7 +215,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     // 4. 全部失败，使用硬编码兜底
     this.bannedKeywords = [...ChatService.FALLBACK_KEYWORDS]
     this.sensitiveFilter.build(this.bannedKeywords)
-    this.logger.log(`使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
+    this.logger.debug(`使用硬编码敏感词库兜底，共 ${this.bannedKeywords.length} 个词`)
   }
 
   /**

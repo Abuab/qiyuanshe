@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import * as tmsSdk from 'tencentcloud-sdk-nodejs-tms'
 import * as imsSdk from 'tencentcloud-sdk-nodejs-ims'
 
@@ -51,6 +51,7 @@ export class TencentCloudModerationProvider {
     this.textClient = new TmsClient(clientConfig)
     this.imageClient = new ImsClient(clientConfig)
   }
+  private readonly logger = new Logger(TencentCloudModerationProvider.name)
 
   async moderateText(text: string): Promise<TextModerationResponse> {
     if (!text || text.trim().length === 0) {
@@ -71,7 +72,7 @@ export class TencentCloudModerationProvider {
 
       return this.parseTextResponse(response)
     } catch (error) {
-      console.error('Text moderation error:', error)
+      this.logger.error('Text moderation error:', error)
       throw error
     }
   }
@@ -95,7 +96,7 @@ export class TencentCloudModerationProvider {
 
       return this.parseImageResponse(response)
     } catch (error) {
-      console.error('Image moderation error:', error)
+      this.logger.error('Image moderation error:', error)
       throw error
     }
   }
