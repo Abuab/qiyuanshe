@@ -47,7 +47,7 @@
           <view class="cover-wrapper">
             <image
               class="cover-image"
-              :src="activity.coverImage"
+              :src="getFullImageUrl(activity.coverImage)"
               mode="aspectFill"
             />
             <view v-if="effectiveStatus(activity) !== 1" class="status-tag">
@@ -99,7 +99,7 @@ import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
-import { formatDate } from '@/utils/common'
+import { formatDate, getFullImageUrl } from '@/utils/common'
 
 interface Activity {
   id: number

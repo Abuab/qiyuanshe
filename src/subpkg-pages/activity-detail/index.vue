@@ -12,7 +12,7 @@
     <scroll-view class="content-scroll" scroll-y enable-flex :scroll-top="scrollToVal" @scroll="onScroll" v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
       <!-- 顶部 Banner 大图（全宽+底部圆角） -->
       <view class="banner-wrapper">
-        <image class="banner-image" :src="activity.coverImage" mode="aspectFill" />
+        <image class="banner-image" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
         <view v-if="effectiveStatus !== 1" class="status-tag">
           {{ getStatusText(effectiveStatus) }}
         </view>
@@ -530,7 +530,7 @@ const onShareAppMessage = () => {
   return {
     title: `${activity.value.title} - ${systemStore.appName}活动`,
     path: `/subpkg-pages/activity-detail/index?id=${activity.value.id}`,
-    imageUrl: activity.value.coverImage || '/static/heart.png',
+    imageUrl: activity.value.coverImage ? getFullImageUrl(activity.value.coverImage) : '/static/heart.png',
   }
 }
 </script>

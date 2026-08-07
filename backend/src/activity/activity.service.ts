@@ -6,7 +6,7 @@ import { ActivitySignup } from '../entities/ActivitySignup'
 import { User } from '../entities/User'
 import { CreateActivityDto, UpdateActivityDto } from './dto'
 import { AdminRole } from '../shared/enums'
-import { resolveStaticUrl } from '../common/image-url'
+import { resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 
 interface ActivityFilter {
   page?: number
@@ -172,7 +172,7 @@ export class ActivityService {
       .limit(10)
       .getRawMany()
 
-    return signups.map(s => s.avatar).filter(Boolean)
+    return signups.map(s => resolveAvatarUrl(s.avatar)).filter(Boolean)
   }
 
   // 后台管理 - 获取活动列表
@@ -213,7 +213,10 @@ export class ActivityService {
     const [activities, total] = await queryBuilder.getManyAndCount()
 
     return {
-      list: activities,
+      list: activities.map((a) => ({
+        ...a,
+        coverImage: resolveStaticUrl(a.coverImage),
+      })),
       page,
       limit,
       total,
@@ -226,7 +229,10 @@ export class ActivityService {
     if (!activity) {
       throw new NotFoundException('活动不存在')
     }
-    return activity
+    return {
+      ...activity,
+      coverImage: resolveStaticUrl(activity.coverImage),
+    }
   }
 
   // 后台管理 - 创建活动
@@ -304,7 +310,10 @@ export class ActivityService {
     ])
 
     return {
-      list: signups,
+      list: signups.map((s: any) => ({
+        ...s,
+        userAvatar: resolveAvatarUrl(s.userAvatar),
+      })),
       page,
       limit,
       total,
