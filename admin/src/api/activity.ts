@@ -7,6 +7,8 @@ export interface Activity {
   subtitle?: string
   coverImage: string
   content?: string
+  detailBlocks?: any[]
+  sceneBlocks?: any[]
   activityType: string
   signUpEndTime?: string
   startTime: string

@@ -157,29 +157,22 @@
       </el-form>
     </el-card>
 
-    <!-- 活动详情编辑器区域 -->
+    <!-- 积木编辑器区域：双 Tab -->
     <el-card class="editor-card">
       <template #header>
         <div class="card-header">
           <span>活动详情</span>
-          <span class="header-tip">支持图文混排，可插入图片、链接、表格等</span>
+          <span class="header-tip">使用积木组件自由排版活动内容</span>
         </div>
       </template>
-      <div class="rich-editor-wrapper">
-        <Toolbar
-          :editor="editorRef"
-          :defaultConfig="toolbarConfig"
-          mode="default"
-          class="editor-toolbar"
-        />
-        <Editor
-          v-model="formData.content"
-          :defaultConfig="editorConfig"
-          mode="default"
-          class="editor-content"
-          @onCreated="handleCreated"
-        />
-      </div>
+      <el-tabs v-model="activeTab" class="block-tabs">
+        <el-tab-pane label="活动详情" name="detail">
+          <BlockEditor v-model="formData.detailBlocks" />
+        </el-tab-pane>
+        <el-tab-pane label="活动现场" name="scene">
+          <BlockEditor v-model="formData.sceneBlocks" :showTemplate="true" />
+        </el-tab-pane>
+      </el-tabs>
     </el-card>
 
     <!-- 操作按钮 -->
@@ -193,15 +186,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onBeforeUnmount, computed, shallowRef } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Picture, Upload, Check } from '@element-plus/icons-vue'
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import { adminActivity } from '../../api'
+import BlockEditor from '../../components/BlockEditor/BlockEditor.vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import '@wangeditor/editor/dist/css/style.css'
 
 const router = useRouter()
 const route = useRoute()
@@ -212,97 +203,14 @@ const submitting = ref(false)
 const formRef = ref<FormInstance>()
 const fileInputRef = ref<HTMLInputElement>()
 const coverImageError = ref(false)
+const activeTab = ref<'detail' | 'scene'>('detail')
 
-// 编辑器相关
-const editorRef = shallowRef<IDomEditor>()
-
-// 工具栏配置 - 类似微信公众号编辑器
-const toolbarConfig: Partial<IToolbarConfig> = {
-  toolbarKeys: [
-    // 标题
-    'headerSelect',
-    '|',
-    // 格式
-    'bold',
-    'italic',
-    'underline',
-    'through',
-    '|',
-    // 颜色
-    'color',
-    'bgColor',
-    '|',
-    // 对齐
-    'justifyLeft',
-    'justifyCenter',
-    'justifyRight',
-    '|',
-    // 列表
-    'bulletedList',
-    'numberedList',
-    '|',
-    // 插入
-    'insertLink',
-    'uploadImage',
-    'insertVideo',
-    'insertTable',
-    'divider',
-    '|',
-    // 操作
-    'undo',
-    'redo',
-    'clearStyle',
-  ],
-}
-
-// 编辑器配置
-const editorConfig: Partial<IEditorConfig> = {
-  placeholder: '请输入活动详情，支持图文混排...\n\n建议：\n1. 使用标题区分不同板块\n2. 插入图片让内容更生动\n3. 适当使用列表让信息更清晰',
-  scroll: true,
-  MENU_CONF: {
-    uploadImage: {
-      async customUpload(file: File, insertFn: any) {
-        try {
-          ElMessage.info('正在上传图片...')
-          const url = await uploadFile(file)
-          insertFn(url, file.name || '图片', url)
-          ElMessage.success('图片插入成功')
-        } catch (error) {
-          console.error(error)
-          ElMessage.error('图片上传失败')
-        }
-      },
-    },
-    insertImage: {
-      parseImageSrc(src: string) {
-        return src
-      }
-    },
-    uploadVideo: {
-      async customUpload(file: File, insertFn: any) {
-        try {
-          ElMessage.info('正在上传视频...')
-          const url = await uploadFile(file)
-          insertFn(url, '', url, '')
-          ElMessage.success('视频插入成功')
-        } catch (error) {
-          console.error(error)
-          ElMessage.error('视频上传失败')
-        }
-      },
-    },
-  },
-}
-
-const handleCreated = (editor: IDomEditor) => {
-  editorRef.value = editor
-}
-
-const formData = reactive({
+const formData = reactive<any>({
   title: '',
   subtitle: '',
   coverImage: '',
-  content: '',
+  detailBlocks: [] as any[],
+  sceneBlocks: [] as any[],
   activityType: 'latest',
   signUpEndTime: '',
   startTime: '',
@@ -351,13 +259,6 @@ onMounted(() => {
   }
 })
 
-onBeforeUnmount(() => {
-  const editor = editorRef.value
-  if (editor) {
-    editor.destroy()
-  }
-})
-
 async function fetchData() {
   loading.value = true
   try {
@@ -365,7 +266,11 @@ async function fetchData() {
     const res = await adminActivity.detail(id)
     if (res.success && res.data) {
       coverImageError.value = false
-      Object.assign(formData, res.data)
+      Object.assign(formData, {
+        ...res.data,
+        detailBlocks: res.data.detailBlocks || [],
+        sceneBlocks: res.data.sceneBlocks || [],
+      })
     }
   } catch (error) {
     console.error(error)
@@ -395,7 +300,12 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    const submitData = { ...formData }
+    const { detailBlocks, sceneBlocks, ...rest } = formData as any
+    const submitData = {
+      ...rest,
+      detailBlocks: detailBlocks || [],
+      sceneBlocks: sceneBlocks || [],
+    }
     let res
     if (isEdit.value) {
       res = await adminActivity.update(Number(route.params.id), submitData)
@@ -558,140 +468,9 @@ async function uploadFile(file: File): Promise<string> {
   font-size: 12px;
 }
 
-// 富文本编辑器样式 - 类似微信公众号编辑器
-.rich-editor-wrapper {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  overflow: hidden;
-  background-color: #fff;
-
-  .editor-toolbar {
-    border-bottom: 1px solid #e0e0e0;
-    background-color: #fafafa;
-  }
-
-  .editor-content {
-    min-height: 500px;
-    max-height: 800px;
-    overflow-y: auto;
-
-    // 自定义编辑区域样式
-    :deep(.w-e-text-container) {
-      background-color: #fff;
-
-      .w-e-text {
-        padding: 20px;
-        font-size: 16px;
-        line-height: 1.8;
-        color: #333;
-
-        // 标题样式
-        h1 {
-          font-size: 24px;
-          font-weight: bold;
-          margin: 24px 0 16px;
-          color: #000;
-        }
-
-        h2 {
-          font-size: 20px;
-          font-weight: bold;
-          margin: 20px 0 14px;
-          color: #111;
-        }
-
-        h3 {
-          font-size: 18px;
-          font-weight: bold;
-          margin: 18px 0 12px;
-          color: #222;
-        }
-
-        h4 {
-          font-size: 16px;
-          font-weight: bold;
-          margin: 16px 0 10px;
-          color: #333;
-        }
-
-        h5 {
-          font-size: 15px;
-          font-weight: bold;
-          margin: 14px 0 8px;
-          color: #444;
-        }
-
-        // 段落样式
-        p {
-          margin: 12px 0;
-          min-height: 1.8em;
-        }
-
-        // 图片样式
-        img {
-          max-width: 100%;
-          height: auto;
-          border-radius: 4px;
-          margin: 16px 0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        // 链接样式
-        a {
-          color: #576b95;
-          text-decoration: none;
-
-          &:hover {
-            text-decoration: underline;
-          }
-        }
-
-        // 列表样式
-        ul, ol {
-          margin: 12px 0;
-          padding-left: 24px;
-        }
-
-        li {
-          margin: 6px 0;
-        }
-
-        // 引用样式
-        blockquote {
-          border-left: 4px solid #576b95;
-          padding: 12px 16px;
-          margin: 16px 0;
-          background-color: #f7f7f7;
-          color: #666;
-          font-style: italic;
-        }
-
-        // 表格样式
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 16px 0;
-
-          th, td {
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            text-align: left;
-          }
-
-          th {
-            background-color: #f5f5f5;
-            font-weight: bold;
-          }
-        }
-
-        // 分割线样式
-        hr {
-          border: none;
-          border-top: 1px solid #e0e0e0;
-          margin: 24px 0;
-        }
-      }
-    }
+.block-tabs {
+  :deep(.el-tabs__header) {
+    margin-bottom: 16px;
   }
 }
 
