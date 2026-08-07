@@ -42,6 +42,7 @@ interface ImageBlock extends BlockBase {
   type: 'image'
   url: string
   caption: string
+  labelPosition?: 'top' | 'middle' | 'bottom'
 }
 
 interface TextBlock extends BlockBase {
