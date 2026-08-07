@@ -21,40 +21,38 @@
       <!-- 活动标题 -->
       <view class="title-section">
         <text class="activity-title">{{ activity.title }}</text>
-        <text v-if="activity.subtitle" class="activity-subtitle">{{ activity.subtitle }}</text>
       </view>
 
       <!-- 信息行 -->
       <view class="info-rows">
         <view class="info-row" v-if="activity.signUpEndTime">
           <view class="info-icon-circle">
-            <text class="info-icon-text">⏰</text>
+            <view class="icon-clock"></view>
           </view>
           <view class="info-text-wrap">
             <text class="info-label">报名截止</text>
             <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD') }}</text>
           </view>
         </view>
-        <view class="info-row-sep" v-if="activity.signUpEndTime"></view>
         <view class="info-row">
           <view class="info-icon-circle">
-            <text class="info-icon-text">📅</text>
+            <view class="icon-calendar"></view>
           </view>
           <view class="info-text-wrap">
             <text class="info-label">活动时间</text>
             <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD') }}</text>
           </view>
         </view>
-        <view class="info-row-sep"></view>
         <view class="info-row">
           <view class="info-icon-circle">
-            <text class="info-icon-text">📍</text>
+            <view class="icon-location"></view>
           </view>
           <view class="info-text-wrap">
             <text class="info-label">活动地址</text>
             <text class="info-value">{{ activity.location || '待定' }}</text>
           </view>
         </view>
+        <view class="info-row-sep"></view>
       </view>
 
       <!-- 报名嘉宾 -->
@@ -79,6 +77,7 @@
           </view>
         </view>
       </view>
+      <view class="section-divider"></view>
 
       <!-- Tab 切换栏 -->
       <view class="tab-bar">
@@ -643,14 +642,120 @@ const onShareAppMessage = () => {
     width: 56rpx;
     height: 56rpx;
     border-radius: 50%;
-    background: rgba(255, 107, 157, 0.12);
+    background: linear-gradient(135deg, #FF6B9D 0%, #FF85A8 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    box-shadow: 0 4rpx 12rpx rgba(255, 107, 157, 0.3);
+  }
 
-    .info-icon-text {
-      font-size: 28rpx;
+  /* ---- 三个纯 CSS 图标（白色，放在粉色渐变圆形内） ---- */
+
+  // 时钟图标
+  .icon-clock {
+    position: relative;
+    width: 22rpx;
+    height: 22rpx;
+    border: 2rpx solid #fff;
+    border-radius: 50%;
+
+    // 短时针 — 指向 10 点钟方向
+    &::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      width: 3rpx;
+      height: 6rpx;
+      margin-left: -1.5rpx;
+      background: #fff;
+      border-radius: 1rpx;
+      transform-origin: bottom center;
+      transform: rotate(-55deg);
+    }
+
+    // 长分针 — 指向 2 点钟方向
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 50%;
+      width: 2rpx;
+      height: 8rpx;
+      margin-left: -1rpx;
+      background: #fff;
+      border-radius: 1rpx;
+      transform-origin: bottom center;
+      transform: rotate(15deg);
+    }
+  }
+
+  // 日历图标
+  .icon-calendar {
+    position: relative;
+    width: 22rpx;
+    height: 20rpx;
+    border: 2rpx solid #fff;
+    border-radius: 0 0 3rpx 3rpx;
+
+    // 顶部装订线
+    &::before {
+      content: '';
+      position: absolute;
+      top: 5rpx;
+      left: -2rpx;
+      right: -2rpx;
+      height: 2rpx;
+      background: #fff;
+    }
+
+    // 日期数字
+    &::after {
+      content: '17';
+      position: absolute;
+      left: 50%;
+      bottom: 1rpx;
+      transform: translateX(-50%);
+      font-size: 9rpx;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1;
+    }
+  }
+
+  // 定位图标 — 水滴形状
+  .icon-location {
+    position: relative;
+    width: 20rpx;
+    height: 20rpx;
+
+    // 水滴主体：正方形旋转 45° + 圆角产生水滴形
+    &::before {
+      content: '';
+      position: absolute;
+      top: 2rpx;
+      left: 2rpx;
+      width: 16rpx;
+      height: 16rpx;
+      background: #fff;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+    }
+
+    // 水滴中心镂空圆点（用背景色模拟镂空）
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      top: 50%;
+      left: 50%;
+      width: 6rpx;
+      height: 6rpx;
+      margin-left: -3rpx;
+      margin-top: -4rpx;
+      background: #FF6B9D;
+      border-radius: 50%;
     }
   }
 
@@ -677,6 +782,12 @@ const onShareAppMessage = () => {
     background: #F0F0F0;
     margin-left: 76rpx;
   }
+}
+
+/* 通用分区下方分割线 */
+.section-divider {
+  height: 12rpx;
+  background: #F8F8F8;
 }
 
 /* ===== 报名嘉宾 ===== */
