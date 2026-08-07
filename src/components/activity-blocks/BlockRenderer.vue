@@ -16,6 +16,14 @@ interface DecorativeTitleBlock extends BlockBase {
   bgColor: string
 }
 
+interface TitleBlock extends BlockBase {
+  type: 'title'
+  mainTitle: string
+  subTitle: string
+  bgColor: string
+  textColor: string
+}
+
 interface ImageTextRowBlock extends BlockBase {
   type: 'image_text_row'
   imageUrl: string
@@ -25,16 +33,17 @@ interface ImageTextRowBlock extends BlockBase {
 
 interface FullImageBlock extends BlockBase {
   type: 'full_image'
-  imageUrl: string
-  labelText: string
+  url: string
+  caption: string
   labelPosition: 'top' | 'middle' | 'bottom'
 }
 
 interface TextBlock extends BlockBase {
   type: 'text'
   content: string
-  alignment: 'left' | 'center' | 'right'
-  fontSize: 'large' | 'medium' | 'small'
+  align: 'left' | 'center' | 'right'
+  color?: string
+  fontSize?: 'large' | 'medium' | 'small'
 }
 
 interface QuoteBlock extends BlockBase {
@@ -69,10 +78,11 @@ interface FullBleedImageBlock extends BlockBase {
 
 interface ImageOverlayBlock extends BlockBase {
   type: 'image_overlay'
-  imageUrl: string
-  overlayText: string
-  overlayPosition: 'top' | 'bottom'
-  overlayBgColor: string
+  url: string
+  text: string
+  position: 'top' | 'center' | 'bottom'
+  textColor: string
+  bgOverlay: string
 }
 
 interface BubbleBlock extends BlockBase {
@@ -98,8 +108,14 @@ interface ContactBlock extends BlockBase {
   source: string
 }
 
+interface DividerBlock extends BlockBase {
+  type: 'divider'
+  style: 'default' | 'colorful'
+}
+
 type Block =
   | DecorativeTitleBlock
+  | TitleBlock
   | ImageTextRowBlock
   | FullImageBlock
   | TextBlock
@@ -112,6 +128,7 @@ type Block =
   | BubbleBlock
   | GalleryBlock
   | ContactBlock
+  | DividerBlock
 
 const props = defineProps<{ block: Block }>()
 
@@ -119,10 +136,6 @@ function imgSrc(url: string) {
   if (!url) return ''
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/static/')) return url
   return getImageUrl(url)
-}
-
-function arrowStyle(color: string) {
-  return { borderTopColor: color, borderBottomColor: color }
 }
 
 const FONT_SIZE_MAP: Record<string, string> = { large: '34rpx', medium: '28rpx', small: '24rpx' }
@@ -136,11 +149,17 @@ const BG_COLOR_MAP: Record<string, string> = {
 <template>
   <view v-if="block">
 
-    <!-- 装饰标题卡片 -->
+    <!-- 装饰标题卡片 (旧版 decorative_title) -->
     <view v-if="block.type === 'decorative_title'" class="block-decorative-title" :style="{ background: BG_COLOR_MAP[block.bgColor] || block.bgColor || BG_COLOR_MAP.purple }">
       <text class="dt-main">{{ block.mainTitle }}</text>
       <text class="dt-sub" :style="{ color: block.subTitleColor || '#FFD700' }">{{ block.subTitle }}</text>
       <text class="dt-footer">{{ block.footerText }}</text>
+    </view>
+
+    <!-- 装饰标题 (新版 title，复用同一套样式) -->
+    <view v-else-if="block.type === 'title'" class="block-decorative-title" :style="{ background: BG_COLOR_MAP[block.bgColor] || block.bgColor || BG_COLOR_MAP.purple }">
+      <text class="dt-main">{{ block.mainTitle }}</text>
+      <text class="dt-sub" :style="{ color: block.textColor || '#FFD700' }">{{ block.subTitle }}</text>
     </view>
 
     <!-- 左图右文 -->
@@ -154,15 +173,15 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     <!-- 全宽图片 -->
     <view v-else-if="block.type === 'full_image'" class="block-full-image">
-      <image class="fi-image" :src="imgSrc(block.imageUrl)" mode="widthFix" />
-      <view v-if="block.labelText" class="fi-label" :class="'fi-label-' + (block.labelPosition || 'bottom')">
-        <text>{{ block.labelText }}</text>
+      <image class="fi-image" :src="imgSrc(block.url)" mode="widthFix" />
+      <view v-if="block.caption" class="fi-label" :class="'fi-label-' + (block.labelPosition || 'bottom')">
+        <text>{{ block.caption }}</text>
       </view>
     </view>
 
     <!-- 纯文本 -->
-    <view v-else-if="block.type === 'text'" class="block-text" :style="{ textAlign: block.alignment || 'left' }">
-      <text class="bt-content" :style="{ fontSize: FONT_SIZE_MAP[block.fontSize] || '28rpx' }">{{ block.content }}</text>
+    <view v-else-if="block.type === 'text'" class="block-text" :style="{ textAlign: block.align || 'left' }">
+      <text class="bt-content" :style="{ fontSize: FONT_SIZE_MAP[block.fontSize || ''] || '28rpx', color: block.color || '#555' }">{{ block.content }}</text>
     </view>
 
     <!-- 引用文字 -->
@@ -203,9 +222,9 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     <!-- 大图+文字叠加 -->
     <view v-else-if="block.type === 'image_overlay'" class="block-image-overlay">
-      <image class="io-image" :src="imgSrc(block.imageUrl)" mode="widthFix" />
-      <view v-if="block.overlayText" class="io-overlay" :class="'io-' + (block.overlayPosition || 'bottom')" :style="{ backgroundColor: block.overlayBgColor || 'rgba(255,107,157,0.85)' }">
-        <text>{{ block.overlayText }}</text>
+      <image class="io-image" :src="imgSrc(block.url)" mode="widthFix" />
+      <view v-if="block.text" class="io-overlay" :class="'io-' + (block.position || 'bottom')" :style="{ backgroundColor: block.bgOverlay || 'rgba(255,107,157,0.85)', color: block.textColor || '#fff' }">
+        <text>{{ block.text }}</text>
       </view>
     </view>
 
@@ -214,19 +233,19 @@ const BG_COLOR_MAP: Record<string, string> = {
       <view class="bb-bubble" :style="{ backgroundColor: block.color || '#FFB74D' }">
         <text class="bb-text">{{ block.text }}</text>
       </view>
-      <view class="bb-arrow" :class="'arrow-' + (block.arrow || 'down')" :style="arrowStyle(block.color || '#FFB74D')"></view>
+      <view
+        class="bb-arrow"
+        :class="'arrow-' + (block.arrow || 'down')"
+        :style="{ borderTopColor: block.color || '#FFB74D', borderBottomColor: block.color || '#FFB74D' }"
+      ></view>
     </view>
 
     <!-- 照片网格 -->
     <view v-else-if="block.type === 'gallery'" class="block-gallery">
       <view class="bg-grid" :style="{ gridTemplateColumns: `repeat(${block.columns || 2}, 1fr)`, gap: (block.gap || 16) + 'rpx' }">
-        <image
-          v-for="(img, i) in block.images"
-          :key="i"
-          class="bg-image"
-          :src="imgSrc(img)"
-          mode="aspectFill"
-        />
+        <view v-for="(img, i) in block.images" :key="i" class="bg-image-wrap">
+          <image class="bg-image" :src="imgSrc(img)" mode="aspectFill" />
+        </view>
       </view>
       <text v-if="block.textOverlay" class="bg-text">{{ block.textOverlay }}</text>
     </view>
@@ -242,11 +261,16 @@ const BG_COLOR_MAP: Record<string, string> = {
       <text v-if="block.source" class="bc-source">{{ block.source }}</text>
     </view>
 
+    <!-- 分割线 -->
+    <view v-else-if="block.type === 'divider'" class="block-divider">
+      <view class="divider-line" :class="'divider-' + (block.style || 'default')"></view>
+    </view>
+
   </view>
 </template>
 
 <style lang="scss" scoped>
-/* ===== 装饰标题卡片 ===== */
+/* ===== 装饰标题卡片 (decorative_title + title) ===== */
 .block-decorative-title {
   border-radius: 20rpx;
   padding: 40rpx 32rpx;
@@ -339,7 +363,6 @@ const BG_COLOR_MAP: Record<string, string> = {
   margin-bottom: 24rpx;
 
   .bt-content {
-    color: #555;
     line-height: 1.8;
   }
 }
@@ -489,7 +512,6 @@ const BG_COLOR_MAP: Record<string, string> = {
 
   .io-overlay {
     padding: 16rpx 24rpx;
-    color: #fff;
     font-size: 28rpx;
 
     &.io-top {
@@ -498,6 +520,14 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     &.io-bottom {
       border-radius: 0 0 12rpx 12rpx;
+    }
+
+    &.io-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 12rpx;
     }
   }
 }
@@ -544,12 +574,12 @@ const BG_COLOR_MAP: Record<string, string> = {
     border-right: 12rpx solid transparent;
 
     &.arrow-down {
-      border-top: 12rpx solid #FFB74D;
+      border-top: 12rpx solid;
     }
 
     &.arrow-up {
       order: -1;
-      border-bottom: 12rpx solid transparent;
+      border-bottom: 12rpx solid;
       margin-bottom: -1rpx;
       border-top: none;
     }
@@ -572,10 +602,21 @@ const BG_COLOR_MAP: Record<string, string> = {
     display: grid;
   }
 
-  .bg-image {
+  .bg-image-wrap {
     width: 100%;
-    aspect-ratio: 1;
+    height: 0;
+    padding-bottom: 100%;
+    position: relative;
     border-radius: 12rpx;
+    overflow: hidden;
+  }
+
+  .bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
 
   .bg-text {
@@ -629,6 +670,25 @@ const BG_COLOR_MAP: Record<string, string> = {
   .bc-source {
     font-size: 22rpx;
     color: #999;
+  }
+}
+
+/* ===== 分割线 ===== */
+.block-divider {
+  margin-bottom: 24rpx;
+
+  .divider-line {
+    height: 2rpx;
+
+    &.divider-default {
+      background: #e0e0e0;
+    }
+
+    &.divider-colorful {
+      height: 4rpx;
+      background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%);
+      border-radius: 2rpx;
+    }
   }
 }
 </style>
