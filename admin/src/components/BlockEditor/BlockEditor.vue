@@ -323,7 +323,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Document, Picture, PictureFilled, ChatDotRound, Grid, Phone, Minus, Trophy,
@@ -350,11 +350,16 @@ const blocks = ref<Block[]>([...props.modelValue])
 const expandedId = ref('')
 const addDialogVisible = ref(false)
 
+let suppressEmit = false
+
 watch(() => props.modelValue, (val) => {
+  suppressEmit = true
   blocks.value = [...val]
-}, { deep: true })
+  nextTick(() => { suppressEmit = false })
+})
 
 watch(blocks, (val) => {
+  if (suppressEmit) return
   emit('update:modelValue', [...val])
 }, { deep: true })
 
