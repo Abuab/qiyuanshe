@@ -101,6 +101,13 @@
             <div v-if="qrCodeUrl" class="qr-section">
               <img :src="qrCodeUrl" alt="TOTP QR Code" class="qr-image" />
               <p class="qr-tip">请使用验证器应用扫描二维码</p>
+              <p class="qr-countdown" :class="{ 'qr-expired': countdownSeconds <= 0 }">
+                二维码有效期剩余 <strong>{{ countdownText }}</strong>
+              </p>
+              <el-button v-if="countdownSeconds <= 0" size="small" type="warning" @click="handleRegenerateQr" style="margin-bottom: 8px">
+                二维码已过期，点击重新生成
+              </el-button>
+              <template v-if="countdownSeconds > 0">
               <el-input
                 v-model="totpCode"
                 maxlength="6"
@@ -115,6 +122,7 @@
               >
                 验证并启用
               </el-button>
+              </template>
             </div>
           </div>
 
@@ -154,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Upload, Check } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
@@ -199,6 +207,40 @@ const qrCodeUrl = ref('')
 const totpCode = ref('')
 const totpLoading = ref(false)
 const totpVerifyLoading = ref(false)
+const QR_TTL = 600 // 二维码有效期 10 分钟
+const countdownSeconds = ref(QR_TTL)
+let countdownTimer: ReturnType<typeof setInterval> | null = null
+
+const countdownText = computed(() => {
+  const m = Math.floor(countdownSeconds.value / 60)
+  const s = countdownSeconds.value % 60
+  return `${m} 分 ${String(s).padStart(2, '0')} 秒`
+})
+
+function startCountdown() {
+  stopCountdown()
+  countdownSeconds.value = QR_TTL
+  countdownTimer = setInterval(() => {
+    countdownSeconds.value--
+    if (countdownSeconds.value <= 0) {
+      stopCountdown()
+    }
+  }, 1000)
+}
+
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+function clearQrCode() {
+  stopCountdown()
+  qrCodeUrl.value = ''
+  totpCode.value = ''
+  countdownSeconds.value = QR_TTL
+}
 
 const disableCode = ref('')
 const disableLoading = ref(false)
@@ -213,6 +255,10 @@ onMounted(() => {
     mfaEnabled.value = userInfo.mfaEnabled || false
     currentMfaType.value = userInfo.mfaType || 'none'
   }
+})
+
+onUnmounted(() => {
+  stopCountdown()
 })
 
 function triggerAvatarUpload() {
@@ -297,7 +343,8 @@ async function handleSetupTotp() {
     const res = await mfaApi.setupTotp()
     if (res.success) {
       qrCodeUrl.value = res.data?.qrCodeUrl || ''
-      ElMessage.success('二维码已生成')
+      startCountdown()
+      ElMessage.success('二维码已生成，有效期 10 分钟')
     } else {
       ElMessage.error(res.message || '生成失败')
     }
@@ -321,16 +368,26 @@ async function handleVerifyTotp() {
       mfaEnabled.value = true
       currentMfaType.value = 'totp'
       adminStore.updateUserInfo({ mfaEnabled: true, mfaType: 'totp' })
-      qrCodeUrl.value = ''
-      totpCode.value = ''
+      clearQrCode()
     } else {
       ElMessage.error(res.message || '验证失败')
     }
   } catch (error: any) {
-    ElMessage.error(error.message || '验证失败')
+    const errMsg = error.message || ''
+    if (errMsg.includes('过期') || errMsg.includes('expired')) {
+      ElMessage.warning('二维码已过期，请重新生成')
+      clearQrCode()
+    } else {
+      ElMessage.error(errMsg || '验证失败')
+    }
   } finally {
     totpVerifyLoading.value = false
   }
+}
+
+async function handleRegenerateQr() {
+  totpCode.value = ''
+  await handleSetupTotp()
 }
 
 async function handleDisableMfa() {
@@ -420,6 +477,17 @@ async function handleDisableMfa() {
       color: #666;
       font-size: 13px;
       margin: 12px 0 0;
+    }
+    .qr-countdown {
+      color: #409eff;
+      font-size: 13px;
+      margin: 8px 0 0;
+      strong {
+        font-weight: 600;
+      }
+      &.qr-expired {
+        color: #e6a23c;
+      }
     }
   }
 }

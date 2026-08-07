@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as speakeasy from 'speakeasy'
@@ -28,7 +28,7 @@ export class MfaService {
 
     this.logger.debug(`[MFA Setup] adminId: ${adminId}, server time: ${new Date().toISOString()}`)
 
-    await this.redisService.set(`mfa:temp:${adminId}`, cleanBase32, 300)
+    await this.redisService.set(`mfa:temp:${adminId}`, cleanBase32, 600)
 
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl)
 
@@ -42,7 +42,7 @@ export class MfaService {
 
     if (!tempSecret) {
       this.logger.log(`[MFA Verify] FAIL: tempSecret expired for adminId=${adminId}`)
-      throw new Error('绑定已过期，请重新发起设置')
+      throw new BadRequestException('绑定已过期，请重新生成二维码')
     }
 
     const token = String(code).trim()
@@ -56,7 +56,7 @@ export class MfaService {
 
     if (!verified) {
       this.logger.log(`[MFA Verify] FAIL: code mismatch for adminId=${adminId}`)
-      throw new Error('验证码错误或已过期')
+      throw new BadRequestException('验证码错误或已过期')
     }
 
     this.logger.log(`[MFA Verify] SUCCESS: adminId=${adminId} MFA enabled`)
@@ -74,7 +74,7 @@ export class MfaService {
   async disableMfa(adminId: number, code: string) {
     const admin = await this.adminRepo.findOne({ where: { id: adminId } })
     if (!admin || !admin.isMfaEnabled) {
-      throw new Error('未启用双因素认证')
+      throw new BadRequestException('未启用双因素认证')
     }
 
     const token = String(code).trim()
@@ -87,7 +87,7 @@ export class MfaService {
 
     if (!verified) {
       this.logger.log(`[MFA Disable] FAIL: code mismatch for adminId=${adminId}`)
-      throw new Error('验证码错误')
+      throw new BadRequestException('验证码错误')
     }
 
     this.logger.log(`[MFA Disable] SUCCESS: adminId=${adminId} MFA disabled`)
