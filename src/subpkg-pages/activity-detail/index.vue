@@ -635,7 +635,7 @@ const onShareAppMessage = () => {
   .info-row {
     display: flex;
     align-items: center;
-    padding: 24rpx 0;
+    padding: 16rpx 0;
   }
 
   .info-icon-circle {
@@ -780,7 +780,7 @@ const onShareAppMessage = () => {
   .info-row-sep {
     height: 1rpx;
     background: #F0F0F0;
-    margin-left: 76rpx;
+    margin-left: 0;
   }
 }
 
