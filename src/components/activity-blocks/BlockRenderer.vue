@@ -75,6 +75,29 @@ interface ImageOverlayBlock extends BlockBase {
   overlayBgColor: string
 }
 
+interface BubbleBlock extends BlockBase {
+  type: 'bubble'
+  text: string
+  color: string
+  arrow: 'down' | 'up' | 'left' | 'right'
+  align: 'left' | 'center' | 'right'
+}
+
+interface GalleryBlock extends BlockBase {
+  type: 'gallery'
+  images: string[]
+  columns: number
+  textOverlay: string
+  gap: number
+}
+
+interface ContactBlock extends BlockBase {
+  type: 'contact'
+  phone: string
+  qrCode: string
+  source: string
+}
+
 type Block =
   | DecorativeTitleBlock
   | ImageTextRowBlock
@@ -86,6 +109,9 @@ type Block =
   | SceneCardBlock
   | FullBleedImageBlock
   | ImageOverlayBlock
+  | BubbleBlock
+  | GalleryBlock
+  | ContactBlock
 
 const props = defineProps<{ block: Block }>()
 
@@ -93,6 +119,11 @@ function imgSrc(url: string) {
   if (!url) return ''
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/static/')) return url
   return getImageUrl(url)
+}
+
+function arrowStyle(color: string) {
+  const dir = color.replace(';', '')
+  return { borderTopColor: dir }
 }
 
 const FONT_SIZE_MAP: Record<string, string> = { large: '34rpx', medium: '28rpx', small: '24rpx' }
@@ -177,6 +208,39 @@ const BG_COLOR_MAP: Record<string, string> = {
       <view v-if="block.overlayText" class="io-overlay" :class="'io-' + (block.overlayPosition || 'bottom')" :style="{ backgroundColor: block.overlayBgColor || 'rgba(255,107,157,0.85)' }">
         <text>{{ block.overlayText }}</text>
       </view>
+    </view>
+
+    <!-- 对话气泡 -->
+    <view v-else-if="block.type === 'bubble'" class="block-bubble" :class="'bubble-align-' + (block.align || 'center')">
+      <view class="bb-bubble" :style="{ backgroundColor: block.color || '#FFB74D' }">
+        <text class="bb-text">{{ block.text }}</text>
+      </view>
+      <view class="bb-arrow" :class="'arrow-' + (block.arrow || 'down')" :style="arrowStyle(block.color || '#FFB74D')"></view>
+    </view>
+
+    <!-- 照片网格 -->
+    <view v-else-if="block.type === 'gallery'" class="block-gallery">
+      <view class="bg-grid" :style="{ gridTemplateColumns: `repeat(${block.columns || 2}, 1fr)`, gap: (block.gap || 16) + 'rpx' }">
+        <image
+          v-for="(img, i) in block.images"
+          :key="i"
+          class="bg-image"
+          :src="imgSrc(img)"
+          mode="aspectFill"
+        />
+      </view>
+      <text v-if="block.textOverlay" class="bg-text">{{ block.textOverlay }}</text>
+    </view>
+
+    <!-- 联系信息 -->
+    <view v-else-if="block.type === 'contact'" class="block-contact">
+      <view class="bc-divider"></view>
+      <view v-if="block.phone" class="bc-phone">
+        <text class="bc-phone-label">预约电话：</text>
+        <text class="bc-phone-number">{{ block.phone }}</text>
+      </view>
+      <image v-if="block.qrCode" class="bc-qrcode" :src="imgSrc(block.qrCode)" mode="aspectFit" />
+      <text v-if="block.source" class="bc-source">{{ block.source }}</text>
     </view>
 
   </view>
@@ -436,6 +500,136 @@ const BG_COLOR_MAP: Record<string, string> = {
     &.io-bottom {
       border-radius: 0 0 12rpx 12rpx;
     }
+  }
+}
+
+/* ===== 对话气泡 ===== */
+.block-bubble {
+  margin-bottom: 24rpx;
+
+  &.bubble-align-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &.bubble-align-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  &.bubble-align-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .bb-bubble {
+    border-radius: 16rpx;
+    padding: 24rpx 32rpx;
+    max-width: 80%;
+
+    .bb-text {
+      color: #fff;
+      font-size: 28rpx;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+  }
+
+  .bb-arrow {
+    width: 0;
+    height: 0;
+    border-left: 12rpx solid transparent;
+    border-right: 12rpx solid transparent;
+
+    &.arrow-down {
+      border-top: 12rpx solid #FFB74D;
+    }
+
+    &.arrow-up {
+      order: -1;
+      border-bottom: 12rpx solid #FFB74D;
+      margin-bottom: -1rpx;
+      border-top: none;
+    }
+
+    &.arrow-left {
+      display: none;
+    }
+
+    &.arrow-right {
+      display: none;
+    }
+  }
+}
+
+/* ===== 照片网格 ===== */
+.block-gallery {
+  margin-bottom: 24rpx;
+
+  .bg-grid {
+    display: grid;
+  }
+
+  .bg-image {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 12rpx;
+  }
+
+  .bg-text {
+    display: block;
+    text-align: center;
+    font-size: 26rpx;
+    color: #999;
+    margin-top: 12rpx;
+  }
+}
+
+/* ===== 联系信息 ===== */
+.block-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24rpx 0;
+  margin-bottom: 24rpx;
+
+  .bc-divider {
+    width: 120rpx;
+    height: 4rpx;
+    border-radius: 2rpx;
+    background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%);
+    margin-bottom: 24rpx;
+  }
+
+  .bc-phone {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20rpx;
+
+    .bc-phone-label {
+      font-size: 28rpx;
+      color: #999;
+    }
+
+    .bc-phone-number {
+      font-size: 36rpx;
+      font-weight: bold;
+      color: #555;
+    }
+  }
+
+  .bc-qrcode {
+    width: 200rpx;
+    height: 200rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .bc-source {
+    font-size: 22rpx;
+    color: #999;
   }
 }
 </style>

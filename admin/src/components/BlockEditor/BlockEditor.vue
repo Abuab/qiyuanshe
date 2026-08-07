@@ -305,7 +305,7 @@
 
     <!-- 添加组件弹窗 -->
     <el-dialog v-model="addDialogVisible" title="选择组件类型" width="480px">
-      <div class="type-grid">
+      <div class="block-editor-type-grid">
         <div
           v-for="t in blockTypes"
           :key="t.type"
@@ -723,9 +723,11 @@ function applyTemplate(type: string) {
     }
   }
 }
+</style>
 
-// 添加组件弹窗 - 8宫格
-.type-grid {
+<!-- 非 scoped 样式：type-grid 在 el-dialog（teleport）中 -->
+<style lang="scss">
+.block-editor-type-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;

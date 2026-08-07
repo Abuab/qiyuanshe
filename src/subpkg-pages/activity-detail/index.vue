@@ -21,6 +21,7 @@
       <!-- 活动标题 -->
       <view class="title-section">
         <text class="activity-title">{{ activity.title }}</text>
+        <text v-if="activity.subtitle" class="activity-subtitle">{{ activity.subtitle }}</text>
       </view>
 
       <!-- 信息行 -->
@@ -710,17 +711,17 @@ const onShareAppMessage = () => {
       background: #fff;
     }
 
-    // 日期数字
+    // 顶部挂钩圆点
     &::after {
-      content: '17';
+      content: '';
       position: absolute;
-      left: 50%;
-      bottom: 1rpx;
-      transform: translateX(-50%);
-      font-size: 9rpx;
-      font-weight: bold;
-      color: #fff;
-      line-height: 1;
+      top: -4rpx;
+      left: 4rpx;
+      width: 4rpx;
+      height: 4rpx;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 10rpx 0 0 #fff;
     }
   }
 
