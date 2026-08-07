@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, ForbiddenException } from '@nestjs/common'
+import { Injectable, OnModuleInit, ForbiddenException, Logger } from '@nestjs/common'
 import { readdirSync, readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { SensitiveWordFilter } from './sensitive-word.filter'
@@ -11,6 +11,7 @@ import { SensitiveWordFilter } from './sensitive-word.filter'
  */
 @Injectable()
 export class ContentFilterService implements OnModuleInit {
+  private readonly logger = new Logger(ContentFilterService.name)
   private filter = new SensitiveWordFilter()
 
   /** 硬编码兜底敏感词库 */
@@ -64,7 +65,7 @@ export class ContentFilterService implements OnModuleInit {
           }
           if (wordSet.size > 0) {
             this.filter.build(Array.from(wordSet))
-            console.log(`[ContentFilterService] 敏感词库加载完成，共 ${wordSet.size} 个词`)
+            this.logger.debug(`敏感词库加载完成，共 ${wordSet.size} 个词`)
             return
           }
         }

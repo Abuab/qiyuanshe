@@ -170,7 +170,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
           }
           if (localWordSet.size > 0) {
             localWords = Array.from(localWordSet)
-            this.logger.log(`本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
+            this.logger.debug(`本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
           }
         }
       }
@@ -208,7 +208,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     if (merged.size > 0) {
       this.bannedKeywords = Array.from(merged)
       this.sensitiveFilter.build(this.bannedKeywords)
-      this.logger.log(`敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}），DFA 已构建`)
+      this.logger.debug(`敏感词库加载完成，共 ${this.bannedKeywords.length} 个词（${remoteWords ? `远程${remoteWords.length}` : '无远程'} + 本地${localWords?.length || 0}），DFA 已构建`)
       return
     }
 

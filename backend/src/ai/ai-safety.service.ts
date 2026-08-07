@@ -315,7 +315,7 @@ export class AiSafetyService implements OnModuleInit {
     if (wordSet.size > 0) {
       this.bigLibFilter.build(Array.from(wordSet))
       this.bigLibLoaded = true
-      this.logger.log(`[Safety] 大词库加载完成，从 ${txtFiles.length} 个文件读取 ${wordSet.size} 个唯一词，DFA 已构建`)
+      this.logger.debug(`[Safety] 大词库加载完成，从 ${txtFiles.length} 个文件读取 ${wordSet.size} 个唯一词，DFA 已构建`)
     }
   }
 

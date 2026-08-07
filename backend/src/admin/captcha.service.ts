@@ -29,7 +29,7 @@ export class CaptchaService {
       }, 5 * 60 * 1000)
 
       this.captchaStore.set(key, { code: captcha.text.toLowerCase(), timer })
-      this.logger.log(`验证码生成成功 key=${key}`)
+      this.logger.debug(`验证码生成成功 key=${key.slice(0, 3)}***`)
 
       return { svg: captcha.data, key }
     } catch (error) {
@@ -43,7 +43,7 @@ export class CaptchaService {
       }, 5 * 60 * 1000)
 
       this.captchaStore.set(key, { code: fallbackCode.toLowerCase(), timer })
-      this.logger.log(`降级验证码生成成功 key=${key}`)
+      this.logger.debug(`降级验证码生成成功 key=${key.slice(0, 3)}***`)
 
       return { svg, key }
     }

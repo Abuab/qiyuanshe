@@ -113,7 +113,7 @@ export class AgreementLogStorageService {
       this.slsStrategy.configure(this.currentConfig)
     }
 
-    this.logger.log(`Config loaded: storageType=${storageType}, localBackup=${localBackup}`)
+    this.logger.debug(`Config loaded: storageType=${storageType}, localBackup=${localBackup}`)
     return this.currentConfig
   }
 

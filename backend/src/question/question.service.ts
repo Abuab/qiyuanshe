@@ -105,7 +105,7 @@ export class QuestionService implements OnModuleInit {
           }
           if (wordSet.size > 0) {
             this.sensitiveFilter.build(Array.from(wordSet))
-            this.logger.log(`敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
+            this.logger.debug(`敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
             return
           }
         }

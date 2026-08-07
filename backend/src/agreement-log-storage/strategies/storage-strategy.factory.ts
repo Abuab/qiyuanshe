@@ -38,7 +38,7 @@ export class StorageStrategyFactory {
       return
     }
     this.activeType = type
-    this.logger.log(`Storage strategy switched to: ${type}`)
+    this.logger.debug(`Storage strategy switched to: ${type}`)
   }
 
   /**
