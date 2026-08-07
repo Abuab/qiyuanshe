@@ -316,6 +316,9 @@ async function fetchData() {
         ...res.data,
         detailBlocks: res.data.detailBlocks || [],
         sceneBlocks: res.data.sceneBlocks || [],
+        // 旧活动可能无以下字段，保留初始默认值
+        compressedCover: res.data.compressedCover || '',
+        headerConfig: res.data.headerConfig || { bgColor: '', tagColor: '', showTags: [] },
       })
     }
   } catch (error) {

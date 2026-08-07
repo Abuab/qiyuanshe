@@ -108,7 +108,7 @@ export const adminActivity = {
     return request.put(`/admin/signups/${id}/cancel`)
   },
 
-  upload(data: FormData): Promise<ApiResponse<{ url: string }>> {
+  upload(data: FormData): Promise<ApiResponse<{ url: string; compressedUrl?: string }>> {
     return request.post('/admin/upload', data)
   },
 }

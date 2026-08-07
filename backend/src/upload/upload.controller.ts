@@ -81,13 +81,6 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    // 静态资源基础 URL：CDN 优先 → STATIC_BASE_URL → API_BASE_URL
-    const cdnDomain = (process.env.CDN_ENABLED === 'true' && process.env.CDN_DOMAIN)
-      ? process.env.CDN_DOMAIN.replace(/\/$/, '')
-      : null
-    const baseUrl = cdnDomain
-      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
-    // 始终返回相对路径，由 resolveAvatarUrl() 在读取时拼接当前域名
     const url = `/uploads/${file.filename}`
     // 记录上传者信息，用于后续追溯
     const uploaderId = req.user?.sub || req.user?.id || null

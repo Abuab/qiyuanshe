@@ -83,11 +83,6 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    const cdnDomain = (process.env.CDN_ENABLED === 'true' && process.env.CDN_DOMAIN)
-      ? process.env.CDN_DOMAIN.replace(/\/$/, '')
-      : null
-    const baseUrl = cdnDomain
-      || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
     const url = `/uploads/${file.filename}`
 
     // 用 sharp 压缩生成 750x400 封面图
