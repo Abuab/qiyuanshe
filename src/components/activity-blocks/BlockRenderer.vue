@@ -38,6 +38,12 @@ interface FullImageBlock extends BlockBase {
   labelPosition: 'top' | 'middle' | 'bottom'
 }
 
+interface ImageBlock extends BlockBase {
+  type: 'image'
+  url: string
+  caption: string
+}
+
 interface TextBlock extends BlockBase {
   type: 'text'
   content: string
@@ -118,6 +124,7 @@ type Block =
   | TitleBlock
   | ImageTextRowBlock
   | FullImageBlock
+  | ImageBlock
   | TextBlock
   | QuoteBlock
   | HighlightTagBlock
@@ -172,7 +179,7 @@ const BG_COLOR_MAP: Record<string, string> = {
     </view>
 
     <!-- 全宽图片 -->
-    <view v-else-if="block.type === 'full_image'" class="block-full-image">
+    <view v-else-if="block.type === 'image' || block.type === 'full_image'" class="block-full-image">
       <image class="fi-image" :src="imgSrc(block.url)" mode="widthFix" />
       <view v-if="block.caption" class="fi-label" :class="'fi-label-' + (block.labelPosition || 'bottom')">
         <text>{{ block.caption }}</text>
