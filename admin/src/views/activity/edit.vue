@@ -53,6 +53,17 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="顶部样式" prop="headerType">
+              <el-radio-group v-model="formData.headerType">
+                <el-radio label="poster">大图海报</el-radio>
+                <el-radio label="info">信息卡片</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item label="活动地点" prop="location">
               <el-input
                 v-model="formData.location"
@@ -212,6 +223,7 @@ const formData = reactive<any>({
   detailBlocks: [] as any[],
   sceneBlocks: [] as any[],
   activityType: 'latest',
+  headerType: 'poster',
   signUpEndTime: '',
   startTime: '',
   endTime: '',

@@ -4,11 +4,13 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Logger,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
+import sharp from 'sharp'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { Result } from '../common/result'
 
@@ -52,6 +54,7 @@ ensureDirectoryExists(certDir)
 @Controller('admin/upload')
 @UseGuards(AdminJwtAuthGuard)
 export class UploadController {
+  private readonly logger = new Logger(UploadController.name)
 
   @Post()
   @UseInterceptors(
@@ -80,7 +83,6 @@ export class UploadController {
     if (!file) {
       return Result.error('请选择要上传的文件')
     }
-    // 静态资源基础 URL：CDN 优先 → STATIC_BASE_URL → API_BASE_URL
     const cdnDomain = (process.env.CDN_ENABLED === 'true' && process.env.CDN_DOMAIN)
       ? process.env.CDN_DOMAIN.replace(/\/$/, '')
       : null
@@ -88,7 +90,23 @@ export class UploadController {
       || (process.env.STATIC_BASE_URL || process.env.API_BASE_URL || '').replace(/\/$/, '')
     const url = `/uploads/${file.filename}`
 
-    return Result.success({ url })
+    // 用 sharp 压缩生成 750x400 封面图
+    let compressedUrl = url
+    try {
+      const ext = extname(file.filename)
+      const baseName = file.filename.replace(ext, '')
+      const compressedFilename = `${baseName}_750x400${ext}`
+      const compressedPath = join(uploadsDir, compressedFilename)
+      await sharp(file.path)
+        .resize(750, 400, { fit: 'cover', position: 'center' })
+        .toFile(compressedPath)
+      compressedUrl = `/uploads/${compressedFilename}`
+      this.logger.log(`Image compressed: ${compressedFilename}`)
+    } catch (e: any) {
+      this.logger.error(`Image compression failed: ${e?.message || e}, fallback to original`)
+    }
+
+    return Result.success({ url, compressedUrl })
   }
 
   @Post('cert')

@@ -10,6 +10,7 @@ export interface Activity {
   detailBlocks?: any[]
   sceneBlocks?: any[]
   activityType: string
+  headerType?: string
   signUpEndTime?: string
   startTime: string
   endTime: string

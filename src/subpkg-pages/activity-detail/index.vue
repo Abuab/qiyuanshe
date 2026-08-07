@@ -10,51 +10,83 @@
     </view>
 
     <scroll-view class="content-scroll" scroll-y enable-flex :scroll-top="scrollToVal" @scroll="onScroll" v-if="activity" :style="{ height: 'calc(100vh - ' + (44 + statusBarHeight) + 'px)' }">
-      <!-- 顶部 Banner 大图（全宽+底部圆角） -->
-      <view class="banner-wrapper">
-        <image class="banner-image" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
-        <view v-if="effectiveStatus !== 1" class="status-tag">
-          {{ getStatusText(effectiveStatus) }}
+      <!-- 顶部区域：info 卡片模式 或 poster 大图模式 -->
+      <template v-if="activity.headerType === 'info'">
+        <!-- 粉色信纸信息卡片 -->
+        <view class="info-card">
+          <view class="ic-pattern-top"></view>
+          <view class="ic-content">
+            <image v-if="activity.coverImage" class="ic-cover" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
+            <text class="ic-title">{{ activity.title }}</text>
+            <text v-if="activity.subtitle" class="ic-subtitle">{{ activity.subtitle }}</text>
+            <view class="ic-divider"></view>
+            <view class="ic-detail-list">
+              <view v-if="activity.signUpEndTime" class="ic-detail-item">
+                <text class="ic-detail-label">报名截止</text>
+                <text class="ic-detail-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD HH:mm') }}</text>
+              </view>
+              <view class="ic-detail-item">
+                <text class="ic-detail-label">活动时间</text>
+                <text class="ic-detail-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}</text>
+              </view>
+              <view class="ic-detail-item">
+                <text class="ic-detail-label">活动地址</text>
+                <text class="ic-detail-value">{{ activity.location || '待定' }}</text>
+              </view>
+            </view>
+            <view v-if="effectiveStatus !== 1" class="ic-status-tag">
+              {{ getStatusText(effectiveStatus) }}
+            </view>
+          </view>
         </view>
-      </view>
+      </template>
+      <template v-else>
+        <!-- 顶部 Banner 大图（全宽+底部圆角） -->
+        <view class="banner-wrapper">
+          <image class="banner-image" :src="getFullImageUrl(activity.coverImage)" mode="aspectFill" />
+          <view v-if="effectiveStatus !== 1" class="status-tag">
+            {{ getStatusText(effectiveStatus) }}
+          </view>
+        </view>
 
-      <!-- 活动标题 -->
-      <view class="title-section">
-        <text class="activity-title">{{ activity.title }}</text>
-        <text v-if="activity.subtitle" class="activity-subtitle">{{ activity.subtitle }}</text>
-      </view>
+        <!-- 活动标题 -->
+        <view class="title-section">
+          <text class="activity-title">{{ activity.title }}</text>
+          <text v-if="activity.subtitle" class="activity-subtitle">{{ activity.subtitle }}</text>
+        </view>
 
-      <!-- 信息行 -->
-      <view class="info-rows">
-        <view class="info-row" v-if="activity.signUpEndTime">
-          <view class="info-icon-circle">
-            <view class="icon-clock"></view>
+        <!-- 信息行 -->
+        <view class="info-rows">
+          <view class="info-row" v-if="activity.signUpEndTime">
+            <view class="info-icon-circle">
+              <view class="icon-clock"></view>
+            </view>
+            <view class="info-text-wrap">
+              <text class="info-label">报名截止</text>
+              <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD HH:mm') }}</text>
+            </view>
           </view>
-          <view class="info-text-wrap">
-            <text class="info-label">报名截止</text>
-            <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD HH:mm') }}</text>
+          <view class="info-row">
+            <view class="info-icon-circle">
+              <view class="icon-calendar"></view>
+            </view>
+            <view class="info-text-wrap">
+              <text class="info-label">活动时间</text>
+              <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}</text>
+            </view>
           </view>
+          <view class="info-row">
+            <view class="info-icon-circle">
+              <view class="icon-location"></view>
+            </view>
+            <view class="info-text-wrap">
+              <text class="info-label">活动地址</text>
+              <text class="info-value">{{ activity.location || '待定' }}</text>
+            </view>
+          </view>
+          <view class="info-row-sep"></view>
         </view>
-        <view class="info-row">
-          <view class="info-icon-circle">
-            <view class="icon-calendar"></view>
-          </view>
-          <view class="info-text-wrap">
-            <text class="info-label">活动时间</text>
-            <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}</text>
-          </view>
-        </view>
-        <view class="info-row">
-          <view class="info-icon-circle">
-            <view class="icon-location"></view>
-          </view>
-          <view class="info-text-wrap">
-            <text class="info-label">活动地址</text>
-            <text class="info-value">{{ activity.location || '待定' }}</text>
-          </view>
-        </view>
-        <view class="info-row-sep"></view>
-      </view>
+      </template>
 
       <!-- 报名嘉宾 -->
       <view v-if="signupAvatars.length > 0" class="guests-section">
@@ -266,6 +298,7 @@ interface Activity {
   content?: string
   detailBlocks?: any[]
   sceneBlocks?: any[]
+  headerType?: string
   activityType: string
   startTime: string
   endTime: string
@@ -605,6 +638,103 @@ const onShareAppMessage = () => {
     font-size: 24rpx;
     padding: 8rpx 16rpx;
     border-bottom-right-radius: 8rpx;
+  }
+}
+
+/* ===== 粉色信纸信息卡片 (headerType === 'info') ===== */
+.info-card {
+  margin: 24rpx 32rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: linear-gradient(160deg, #FFF5F5 0%, #FFECF0 30%, #FCE4EC 60%, #FFF0F3 100%);
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 157, 0.15), 0 2rpx 8rpx rgba(255, 107, 157, 0.08);
+  border: 1rpx solid rgba(255, 107, 157, 0.12);
+
+  .ic-pattern-top {
+    height: 12rpx;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 6rpx,
+      rgba(255, 107, 157, 0.15) 6rpx,
+      rgba(255, 107, 157, 0.15) 8rpx
+    );
+  }
+
+  .ic-content {
+    padding: 28rpx 28rpx 32rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .ic-cover {
+    width: 140rpx;
+    height: 140rpx;
+    border-radius: 50%;
+    border: 4rpx solid #fff;
+    box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.2);
+    margin-bottom: 20rpx;
+  }
+
+  .ic-title {
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .ic-subtitle {
+    font-size: 26rpx;
+    color: #999;
+    text-align: center;
+    margin-top: 8rpx;
+  }
+
+  .ic-divider {
+    width: 80rpx;
+    height: 3rpx;
+    background: linear-gradient(90deg, #FF6B9D, #FF85A8);
+    border-radius: 2rpx;
+    margin: 20rpx 0;
+  }
+
+  .ic-detail-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12rpx;
+  }
+
+  .ic-detail-item {
+    display: flex;
+    align-items: center;
+    padding: 8rpx 16rpx;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12rpx;
+
+    .ic-detail-label {
+      font-size: 24rpx;
+      color: #999;
+      width: 120rpx;
+      flex-shrink: 0;
+    }
+
+    .ic-detail-value {
+      font-size: 26rpx;
+      color: #333;
+      flex: 1;
+    }
+  }
+
+  .ic-status-tag {
+    margin-top: 16rpx;
+    font-size: 24rpx;
+    color: #FF6B9D;
+    background: rgba(255, 107, 157, 0.1);
+    padding: 6rpx 20rpx;
+    border-radius: 20rpx;
   }
 }
 

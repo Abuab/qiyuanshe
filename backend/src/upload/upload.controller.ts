@@ -11,6 +11,7 @@ import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
 import { extname, join } from 'path'
 import { existsSync, mkdirSync } from 'fs'
+import sharp from 'sharp'
 import { Result } from '../common/result'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 
@@ -90,9 +91,26 @@ export class UploadController {
     const url = `/uploads/${file.filename}`
     // 记录上传者信息，用于后续追溯
     const uploaderId = req.user?.sub || req.user?.id || null
-    this.logger.log(`Upload success: ${file.originalname} -> ${url} uploaderId=${uploaderId || 'anonymous'}`)
 
-    return Result.success({ url, uploaderId })
+    // 用 sharp 压缩生成 750x400 封面图
+    let compressedUrl = url
+    try {
+      const ext = extname(file.filename)
+      const baseName = file.filename.replace(ext, '')
+      const compressedFilename = `${baseName}_750x400${ext}`
+      const compressedPath = join(uploadsDir, compressedFilename)
+      await sharp(file.path)
+        .resize(750, 400, { fit: 'cover', position: 'center' })
+        .toFile(compressedPath)
+      compressedUrl = `/uploads/${compressedFilename}`
+      this.logger.log(`Image compressed: ${compressedFilename}`)
+    } catch (e: any) {
+      this.logger.error(`Image compression failed: ${e?.message || e}, fallback to original`)
+    }
+
+    this.logger.log(`Upload success: ${file.originalname} -> ${url} uploaderId=${uploaderId || 'anonymous'} compressedUrl=${compressedUrl}`)
+
+    return Result.success({ url, compressedUrl, uploaderId })
     } catch (error: any) {
       this.logger.error(`Upload error: ${error?.message || error}`)
       return Result.error('文件上传失败: ' + (error?.message || '未知错误'))

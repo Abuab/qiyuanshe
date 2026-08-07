@@ -34,6 +34,9 @@ export class Activity {
   @Column({ type: 'varchar', length: 20, default: 'latest', name: 'activityType' })
   activityType: string
 
+  @Column({ type: 'varchar', length: 20, default: 'poster', name: 'headerType' })
+  headerType: string
+
   @Column({ type: 'datetime', nullable: true, name: 'signUpEndTime' })
   signUpEndTime: Date
 
