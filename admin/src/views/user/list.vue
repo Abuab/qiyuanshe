@@ -27,6 +27,7 @@
                 clearable
                 :prefix-icon="Search"
                 style="width: 180px"
+                @keyup.enter="handleSearch"
               />
             </el-form-item>
             <el-form-item label="性别">

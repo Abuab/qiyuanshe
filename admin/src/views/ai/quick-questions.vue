@@ -8,6 +8,26 @@
       </div>
     </div>
 
+    <!-- 功能说明 -->
+    <el-alert
+      type="info"
+      :closable="false"
+      show-icon
+      style="margin-bottom: 16px"
+    >
+      <template #title>
+        <strong>快捷问题</strong> — AI 智能聊天界面中的预设提问入口
+      </template>
+      <div style="font-size: 13px; color: #606266; line-height: 1.8; margin-top: 4px">
+        用户进入 AI 聊天页面时，系统会展示一组快捷问题供用户点击，
+        避免用户不知道如何开口或重复输入常见问题。
+        每个问题可归类到不同分类（如"脱单攻略""平台介绍"等），
+        并可单独控制启用/禁用、排序权重。<br />
+        <strong>点击次数</strong> 自动统计用户点击偏好，运营可根据数据优化问题列表。
+        小程序端仅展示 <em>已启用</em> 的问题，按排序权重从小到大排列。
+      </div>
+    </el-alert>
+
     <!-- 搜索过滤栏 -->
     <el-card class="filter-card" shadow="never">
       <el-form :inline="true" :model="filters" size="default">

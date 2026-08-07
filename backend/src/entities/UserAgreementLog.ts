@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   Index,
 } from 'typeorm'
 
@@ -50,4 +51,8 @@ export class UserAgreementLog {
 
   @CreateDateColumn()
   createdAt: Date
+
+  /** 最近一次同意/更新协议的时间（再次同意时自动更新） */
+  @UpdateDateColumn()
+  updatedAt: Date
 }

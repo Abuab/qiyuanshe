@@ -248,12 +248,12 @@ export class SlsStorageStrategy implements IAgreementLogStorageStrategy {
     // SLS 不直接支持导出 Buffer；走本地备份或 SLS API 导出
     const { items } = await this.query({ ...filters, page: 1, pageSize: 50000 })
     const BOM = '\uFEFF'
-    const header = '日志ID,用户ID,协议类型,版本,操作,IP地址,UserAgent,存储来源,时间\n'
+    const header = '日志ID,用户ID,协议类型,版本,操作,IP地址,UserAgent,存储来源,首次同意时间,最近更新时间\n'
     const rows = items
       .map((r: any) =>
         [r.id, r.userId, r.agreementType, r.version, r.action,
           r.ipAddress || '', `"${(r.userAgent || '').replace(/"/g, '""')}"`,
-          r.storageSource, r.createdAt,
+          r.storageSource, r.createdAt, r.updatedAt,
         ].join(',')).join('\n')
     return Buffer.from(BOM + header + rows, 'utf-8')
   }

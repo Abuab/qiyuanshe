@@ -94,13 +94,14 @@ export class LocalStorageStrategy implements IAgreementLogStorageStrategy {
     const items = await this.repo.find({ where, order: { createdAt: 'DESC' }, take: 50000 })
 
     const BOM = '\uFEFF'
-    const header = 'ID,用户ID,协议类型,版本,操作,IP地址,UserAgent,存储来源,时间\n'
+    const header = 'ID,用户ID,协议类型,版本,操作,IP地址,UserAgent,存储来源,首次同意时间,最近更新时间\n'
     const rows = items
       .map((r) =>
         [
           r.id, r.userId, r.agreementType, r.version, r.action,
           r.ipAddress || '', `"${(r.userAgent || '').replace(/"/g, '""')}"`,
           r.storageSource, r.createdAt ? beijingISO(r.createdAt) : '',
+          r.updatedAt ? beijingISO(r.updatedAt) : '',
         ].join(','),
       )
       .join('\n')

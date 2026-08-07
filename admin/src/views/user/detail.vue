@@ -44,8 +44,8 @@
             <el-button :type="(user.isVip && (user.vipLevel || 0) > 0) ? 'warning' : 'primary'" @click="handleSetVip">
               {{ (user.isVip && (user.vipLevel || 0) > 0) ? '取消VIP' : '设为VIP' }}
             </el-button>
-            <el-button :type="user.status === 1 ? 'danger' : 'success'" @click="handleToggleStatus">
-              {{ user.status === 1 ? '禁用' : (user.status === 3 ? '启用' : '启用') }}
+            <el-button v-if="user.status !== 4" :type="user.status === 1 ? 'danger' : 'success'" @click="handleToggleStatus">
+              {{ statusToggleLabel }}
             </el-button>
             <el-button v-if="user.status !== 4" type="warning" @click="handleLockUser">锁定</el-button>
             <el-button v-else type="success" @click="handleUnlockUser">解锁</el-button>
@@ -902,8 +902,10 @@
             <el-form-item label="账号状态">
               <el-radio-group v-model="editForm.status">
                 <el-radio :value="1">正常</el-radio>
-                <el-radio :value="0">禁用</el-radio>
-                <el-radio :value="2">待审核</el-radio>
+                <el-radio :value="0">待审核</el-radio>
+                <el-radio :value="2">未完善</el-radio>
+                <el-radio :value="3">已禁用</el-radio>
+                <el-radio :value="4">已锁定</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item label="实名认证">
@@ -1999,12 +2001,32 @@ async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' |
   } catch (e) { if (e !== 'cancel') console.error(e) }
 }
 
+const statusToggleLabel = computed(() => {
+  const s = user.value?.status
+  if (s === 0) return '审核通过'
+  if (s === 1) return '禁用'
+  if (s === 2) return '设为正常'
+  if (s === 3) return '启用'
+  return '启用'
+})
+
 async function handleToggleStatus() {
   if (!user.value) return
-  const action = user.value.status === 1 ? '禁用' : '启用'
+  const s = user.value.status
+  const map: Record<number, { action: string; targetStatus: number }> = {
+    0: { action: '审核通过', targetStatus: 1 },
+    1: { action: '禁用', targetStatus: 3 },
+    2: { action: '设为正常', targetStatus: 1 },
+    3: { action: '启用', targetStatus: 1 },
+  }
+  const { action, targetStatus } = map[s] || { action: '启用', targetStatus: 1 }
   try {
-    await ElMessageBox.confirm(`确定要${action}用户 ${user.value.nickname} 吗？`, `确认${action}`, { type: 'warning' })
-    const res = await adminUsers.updateStatus(user.value.id, user.value.status === 1 ? 3 : 1)
+    await ElMessageBox.confirm(
+      `确定要${action}用户 ${user.value.nickname} 吗？`,
+      `确认${action}`,
+      { type: 'warning' },
+    )
+    const res = await adminUsers.updateStatus(user.value.id, targetStatus)
     if (res.success) { ElMessage.success(`${action}成功`); fetchDetail() }
     else ElMessage.error(res.message || `${action}失败`)
   } catch (e: any) { if (e !== 'cancel') console.error(e) }

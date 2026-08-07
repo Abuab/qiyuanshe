@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   Index,
   ManyToOne,
   JoinColumn,
@@ -41,6 +42,10 @@ export class UserAgreement {
 
   @CreateDateColumn()
   createdAt: Date
+
+  /** 最近一次同意/更新协议的时间（再次同意时自动更新） */
+  @UpdateDateColumn()
+  updatedAt: Date
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })

@@ -273,6 +273,7 @@ export class AgreementLogStorageService {
         phone: u?.phone || '',
         // 统一输出北京时间
         createdAt: item.createdAt ? beijingDateTime(item.createdAt) : '',
+        updatedAt: item.updatedAt ? beijingDateTime(item.updatedAt) : '',
       }
     })
 

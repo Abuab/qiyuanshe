@@ -182,7 +182,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="时间" width="180" />
+        <el-table-column prop="createdAt" label="首次同意时间" width="180" />
+        <el-table-column prop="updatedAt" label="最近更新时间" width="180" />
       </el-table>
 
       <div class="table-footer" style="margin-top: 12px; display: flex; justify-content: flex-end">
