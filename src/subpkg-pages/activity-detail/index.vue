@@ -31,7 +31,7 @@
           </view>
           <view class="info-text-wrap">
             <text class="info-label">报名截止</text>
-            <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD') }}</text>
+            <text class="info-value">{{ formatDate(activity.signUpEndTime, 'YYYY.MM.DD HH:mm') }}</text>
           </view>
         </view>
         <view class="info-row">
@@ -40,7 +40,7 @@
           </view>
           <view class="info-text-wrap">
             <text class="info-label">活动时间</text>
-            <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD') }}</text>
+            <text class="info-value">{{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }} - {{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}</text>
           </view>
         </view>
         <view class="info-row">

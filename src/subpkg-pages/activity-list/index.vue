@@ -60,7 +60,7 @@
 
           <!-- 时间 -->
           <text class="activity-time">
-            活动时间: {{ formatDate(activity.startTime, 'YYYY.MM.DD') }}-{{ formatDate(activity.endTime, 'YYYY.MM.DD') }}
+            活动时间: {{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }}-{{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}
           </text>
         </view>
 
