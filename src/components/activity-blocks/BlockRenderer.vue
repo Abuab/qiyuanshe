@@ -122,8 +122,7 @@ function imgSrc(url: string) {
 }
 
 function arrowStyle(color: string) {
-  const dir = color.replace(';', '')
-  return { borderTopColor: dir }
+  return { borderTopColor: color, borderBottomColor: color }
 }
 
 const FONT_SIZE_MAP: Record<string, string> = { large: '34rpx', medium: '28rpx', small: '24rpx' }
@@ -550,7 +549,7 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     &.arrow-up {
       order: -1;
-      border-bottom: 12rpx solid #FFB74D;
+      border-bottom: 12rpx solid transparent;
       margin-bottom: -1rpx;
       border-top: none;
     }
