@@ -41,27 +41,52 @@
           v-for="activity in activityList"
           :key="activity.id"
           class="activity-card"
+          :class="{ 'activity-card--info': activity.headerType === 'info' }"
           @tap="goToDetail(activity.id)"
         >
-          <!-- 封面图 -->
-          <view class="cover-wrapper">
-            <image
-              class="cover-image"
-              :src="getFullImageUrl(activity.coverImage)"
-              mode="aspectFill"
-            />
-            <view v-if="effectiveStatus(activity) !== 1" class="status-tag">
-              {{ getStatusText(effectiveStatus(activity)) }}
+          <!-- info 卡片模式 -->
+          <template v-if="activity.headerType === 'info'">
+            <view class="info-card-row" :style="{ background: activity.headerConfig?.bgColor || '' }">
+              <image
+                v-if="activity.coverImage"
+                class="info-card-cover"
+                :src="getFullImageUrl(activity.compressedCover || activity.coverImage)"
+                mode="aspectFill"
+              />
+              <view class="info-card-body">
+                <text class="info-card-title">{{ activity.title }}</text>
+                <view v-if="showInfoTag(activity, 'time')" class="info-card-item">
+                  <text class="info-card-label">活动时间</text>
+                  <text class="info-card-value">{{ formatDate(activity.startTime, 'MM.DD HH:mm') }}-{{ formatDate(activity.endTime, 'MM.DD HH:mm') }}</text>
+                </view>
+                <view v-if="showInfoTag(activity, 'location')" class="info-card-item">
+                  <text class="info-card-label">活动地址</text>
+                  <text class="info-card-value">{{ activity.location || '待定' }}</text>
+                </view>
+              </view>
+              <view v-if="effectiveStatus(activity) !== 1" class="info-card-status" :style="{ color: activity.headerConfig?.tagColor || '#FF6B9D', background: (activity.headerConfig?.tagColor || '#FF6B9D') + '1A' }">
+                {{ getStatusText(effectiveStatus(activity)) }}
+              </view>
             </view>
-          </view>
+          </template>
 
-          <!-- 标题 -->
-          <text class="activity-title">{{ activity.title }}</text>
-
-          <!-- 时间 -->
-          <text class="activity-time">
-            活动时间: {{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }}-{{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}
-          </text>
+          <!-- poster 卡片模式 -->
+          <template v-else>
+            <view class="cover-wrapper">
+              <image
+                class="cover-image"
+                :src="getFullImageUrl(activity.compressedCover || activity.coverImage)"
+                mode="aspectFill"
+              />
+              <view v-if="effectiveStatus(activity) !== 1" class="status-tag">
+                {{ getStatusText(effectiveStatus(activity)) }}
+              </view>
+            </view>
+            <text class="activity-title">{{ activity.title }}</text>
+            <text class="activity-time">
+              活动时间: {{ formatDate(activity.startTime, 'YYYY.MM.DD HH:mm') }}-{{ formatDate(activity.endTime, 'YYYY.MM.DD HH:mm') }}
+            </text>
+          </template>
         </view>
 
         <!-- 空状态：活动筹备中占位 -->
@@ -105,10 +130,17 @@ interface Activity {
   id: number
   title: string
   coverImage: string
+  compressedCover?: string
   startTime: string
   endTime: string
   status: number
   activityType: string
+  headerType?: string
+  headerConfig?: Record<string, any>
+  location?: string
+  signUpEndTime?: string
+  maxParticipants?: number
+  currentParticipants?: number
 }
 
 const tabs = [
@@ -130,6 +162,14 @@ const pageSize = 10
 // ===== 回到顶部 =====
 const scrollToVal = ref(0)
 const { showBackTop, onScroll, scrollToTop } = useBackTop()
+
+const defaultShowTags = ['time', 'location']
+
+function showInfoTag(activity: Activity, tag: string): boolean {
+  const tags = activity.headerConfig?.showTags
+  if (!tags || tags.length === 0) return defaultShowTags.includes(tag)
+  return tags.includes(tag)
+}
 
 function getStatusText(status: number) {
   const map: Record<number, string> = {
@@ -437,5 +477,79 @@ onMounted(() => {
 
 .bottom-safe-area {
   height: 40rpx;
+}
+
+/* ===== info 卡片模式 ===== */
+.activity-card--info {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.info-card-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFF0F5 100%);
+  position: relative;
+
+  .info-card-cover {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 12rpx;
+    flex-shrink: 0;
+  }
+
+  .info-card-body {
+    flex: 1;
+    margin-left: 24rpx;
+    overflow: hidden;
+
+    .info-card-title {
+      display: block;
+      font-size: 32rpx;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .info-card-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 6rpx;
+
+      .info-card-label {
+        font-size: 24rpx;
+        color: #999;
+        flex-shrink: 0;
+        margin-right: 12rpx;
+      }
+
+      .info-card-value {
+        font-size: 24rpx;
+        color: #666;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .info-card-status {
+    position: absolute;
+    top: 16rpx;
+    right: 16rpx;
+    font-size: 22rpx;
+    padding: 4rpx 12rpx;
+    border-radius: 8rpx;
+    color: #FF6B9D;
+    background: rgba(255, 107, 157, 0.1);
+  }
 }
 </style>
