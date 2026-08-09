@@ -72,9 +72,21 @@ onShow((options: any) => {
     return
   }
 
-  // 防止快速切回前台时的并发 onShow 处理导致 API 请求堆积
+  // 上一次 onShow 的异步任务未结束时跳过本次，防止快速连切前台导致 API 请求堆积
   if (onShowBusy) return
   onShowBusy = true
+  // 兜底：请求挂起时最多阻塞 10 秒，防止 flag 永久卡死导致热启动同步失效
+  setTimeout(() => { onShowBusy = false }, 10000)
+
+  // 收集本次发起的全部异步任务，全部落定后才复位守卫
+  const tasks: Promise<any>[] = []
+  const release = () => {
+    if (tasks.length === 0) {
+      onShowBusy = false
+      return
+    }
+    Promise.allSettled(tasks).finally(() => { onShowBusy = false })
+  }
 
   // 冷启动首次 onShow：onLaunch 中已加载配置，首页 refreshProfile 已处理用户信息，跳过重复加载
   // 热启动（切回前台）时重新拉取
@@ -84,6 +96,35 @@ onShow((options: any) => {
     // 可保证 status 等字段及时反映后台变更，避免首页 popup 判定滞后）
     const userStore = useUserStore()
     if (userStore.isLoggedIn) {
+      tasks.push(
+        get('/auth/profile').then((res: any) => {
+          if (res?.data) {
+            const p = res.data
+            userStore.updateUserInfo({
+              isVip: p.isVip,
+              vipExpireTime: p.vipExpireTime,
+              vipLevel: p.vipLevel,
+            })
+          }
+        }).catch((err) => { logger.error('[App] 冷启动资料同步失败', err) }),
+      )
+    }
+    release()
+    return
+  }
+
+  // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
+  const systemStore = useSystemStore()
+  tasks.push(
+    systemStore.loadSystemConfig().then(() => {
+      logger.setTag(systemStore.appName)
+    }),
+  )
+
+  // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
+  const userStore = useUserStore()
+  if (userStore.isLoggedIn) {
+    tasks.push(
       get('/auth/profile').then((res: any) => {
         if (res?.data) {
           const p = res.data
@@ -91,34 +132,11 @@ onShow((options: any) => {
             isVip: p.isVip,
             vipExpireTime: p.vipExpireTime,
             vipLevel: p.vipLevel,
+            vipPackageName: p.vipPackageName,
           })
         }
-      }).catch((err) => { logger.error('[App] 冷启动资料同步失败', err) })
-    }
-    onShowBusy = false
-    return
-  }
-
-  // 每次切回前台时重新拉取系统配置（项目名称等可能在后台被修改）
-  const systemStore = useSystemStore()
-  systemStore.loadSystemConfig().then(() => {
-    logger.setTag(systemStore.appName)
-  })
-
-  // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
-  const userStore = useUserStore()
-  if (userStore.isLoggedIn) {
-    get('/auth/profile').then((res: any) => {
-      if (res?.data) {
-        const p = res.data
-        userStore.updateUserInfo({
-          isVip: p.isVip,
-          vipExpireTime: p.vipExpireTime,
-          vipLevel: p.vipLevel,
-          vipPackageName: p.vipPackageName,
-        })
-      }
-    }).catch((err) => { logger.error('[App] 热启动资料同步失败', err) })
+      }).catch((err) => { logger.error('[App] 热启动资料同步失败', err) }),
+    )
   }
 
   // 每次切回应用时重试开启分享菜单
@@ -129,7 +147,7 @@ onShow((options: any) => {
       // ignore
     },
   })
-  onShowBusy = false
+  release()
 })
 
 onHide(() => {
