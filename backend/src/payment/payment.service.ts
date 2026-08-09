@@ -17,8 +17,6 @@ export interface PayParams {
   paySign: string
 }
 
-/** 微信支付回调 IP 段在 isWechatCallbackIp() 中通过环境变量 WX_CALLBACK_IP_WHITELIST 配置 */
-
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name)
@@ -39,12 +37,12 @@ export class PaymentService {
     private readonly dataSource: DataSource,
     private readonly redis: RedisService,
   ) {
-    this.mchId = process.env.WX_MCH_ID || ''
-    this.apiV3Key = process.env.WX_API_V3_KEY || ''
-    this.appId = process.env.WX_APP_ID || ''
-    this.notifyUrl = process.env.WX_NOTIFY_URL || ''
-    this.privateKeyPem = (process.env.WX_PRIVATE_KEY || '').replace(/\\n/g, '\n')
-    this.mchSerialNo = process.env.WX_MCH_SERIAL_NO || ''
+    this.mchId = process.env.WECHAT_MCH_ID || ''
+    this.apiV3Key = process.env.WECHAT_API_V3_KEY || ''
+    this.appId = process.env.WECHAT_APPID || ''
+    this.notifyUrl = process.env.WECHAT_NOTIFY_URL || ''
+    this.privateKeyPem = (process.env.WECHAT_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+    this.mchSerialNo = process.env.WECHAT_MCH_SERIAL_NO || ''
   }
 
   /** 微信支付是否已配置（缺少任一关键参数视为未配置） */
@@ -73,20 +71,6 @@ export class PaymentService {
     const nonceStr = crypto.randomBytes(16).toString('hex')
     const signature = this.signV3(method, url, timestamp, nonceStr, body)
     return `WECHATPAY2-SHA256-RSA2048 mchid="${this.mchId}",nonce_str="${nonceStr}",timestamp="${timestamp}",serial_no="${this.mchSerialNo}",signature="${signature}"`
-  }
-
-  /** APIv2 HMAC-SHA256 签名（仅用于 V2 风格的回调验签） */
-  private signV2(params: Record<string, string>): string {
-    const signStr = Object.keys(params)
-      .filter(k => k !== 'sign' && params[k] !== undefined && params[k] !== '')
-      .sort()
-      .map(k => `${k}=${params[k]}`)
-      .join('&')
-    return crypto
-      .createHmac('sha256', process.env.WX_API_KEY || '')
-      .update(signStr + '&key=' + (process.env.WX_API_KEY || ''))
-      .digest('hex')
-      .toUpperCase()
   }
 
   // ===== 统一下单 =====
@@ -202,8 +186,8 @@ export class PaymentService {
     }
 
     try {
-      // 校验签名：优先 V3 回调头签名，回退 V2 body sign
-      const signValid = await this.verifyNotifySign(data, rawBody, reqHeaders)
+      // 校验签名：仅接受 V3 回调（Wechatpay-* 头 + RSA-SHA256 平台证书验签）
+      const signValid = await this.verifyNotifySign(rawBody, reqHeaders)
       if (!signValid) {
         this.logger.error(`[回调] 签名校验失败: ${out_trade_no}`)
         return this.buildNotifyResponse(false, '签名校验失败')
@@ -291,18 +275,13 @@ export class PaymentService {
     return JSON.stringify({ code: 'FAIL', message: msg })
   }
 
-  // ===== 回调签名校验 =====
-  private async verifyNotifySign(data: any, rawBody?: string, headers?: Record<string, string>): Promise<boolean> {
-    // V3 回调：通过 Wechatpay-* 头校验（RSA-SHA256，使用微信平台证书公钥签名）
+  /** 校验回调签名（仅接受 V3 回调：Wechatpay-* 头 + RSA-SHA256 平台证书验签） */
+  private async verifyNotifySign(rawBody?: string, headers?: Record<string, string>): Promise<boolean> {
     if (headers?.['wechatpay-signature'] && rawBody) {
       return this.verifyV3NotifySign(headers, rawBody)
     }
-    // 降级 V2 风格 XML 回调：使用 body.sign + HMAC-SHA256
-    if (data?.sign) {
-      const received = data.sign
-      const calc = this.signV2({ ...data })
-      return received === calc
-    }
+    // 缺少 V3 签名头或原始 Body → 拒绝（不再接受 V2 风格回调）
+    this.logger.warn('[回调] 缺少 V3 签名头或原始 Body，已拒绝')
     return false
   }
 
@@ -319,7 +298,7 @@ export class PaymentService {
       const message = `${timestamp}\n${nonce}\n${rawBody}\n`
 
       // 使用微信平台证书公钥验签（从环境变量获取，支持多个用分号分隔）
-      const certPems = (process.env.WX_PLATFORM_CERT_PEM || '')
+      const certPems = (process.env.WECHAT_PLATFORM_CERT_PEM || '')
         .replace(/\\n/g, '\n')
         .split(';END CERTIFICATE-----')
         .map(s => s.trim())
@@ -346,9 +325,12 @@ export class PaymentService {
     if (!clientIp) return false
     // 本地开发环境放行
     if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1') return true
-    // 若未配置白名单环境变量，降级放行
-    const whitelistStr = process.env.WX_CALLBACK_IP_WHITELIST
-    if (!whitelistStr) return true
+    // 生产环境 fail-closed：未配置白名单时拒绝所有非本地请求
+    const whitelistStr = process.env.WECHAT_CALLBACK_IP_WHITELIST
+    if (!whitelistStr) {
+      this.logger.error('[安全] 未配置 WECHAT_CALLBACK_IP_WHITELIST，拒绝所有外部回调 IP')
+      return false
+    }
     const entries = whitelistStr.split(',').map(s => s.trim())
     for (const entry of entries) {
       if (entry.includes('/')) {

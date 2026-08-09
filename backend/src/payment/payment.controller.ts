@@ -16,8 +16,12 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { PaymentService } from './payment.service'
 import { CreateOrderDto, QueryOrdersDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards'
+import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { RoleGuard } from '../admin/role.guard'
+import { Roles } from '../admin/roles.decorator'
 import { SystemService } from '../system/system.service'
 import { Result } from '../common/result'
+import { AdminRole } from '../shared/enums'
 
 @Controller('payment')
 export class PaymentController {
@@ -56,9 +60,10 @@ export class PaymentController {
     return this.paymentService.processNotify(data, rawBody, headers)
   }
 
-  /** 模拟支付 - 仅测试环境或 MOCK_PAY_ENABLED=true 时可用 */
+  /** 模拟支付 - 仅管理员 + 测试环境/MOCK_PAY_ENABLED=true 时可用 */
   @Post('mock-pay')
-  @UseGuards(JwtAuthGuard)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
   async mockPay(@Body('orderNo') orderNo: string, @Request() req: any) {
     if (!(await this.systemService.isVipEnabled())) {
       return Result.success(null, '功能维护中，请稍后再试')
