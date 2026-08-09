@@ -206,7 +206,7 @@ async function handleSave() {
   }
 
   :deep(.el-divider__text) {
-    color: #409eff;
+    color: var(--el-color-primary);
     font-weight: 600;
   }
 }

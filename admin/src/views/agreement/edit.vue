@@ -49,7 +49,7 @@
           <div class="preview-header">
             <h4>{{ formData.title || '协议标题' }}</h4>
           </div>
-          <div class="preview-content" v-html="formData.content"></div>
+          <div class="preview-content" v-html="sanitizedContent"></div>
         </div>
       </div>
     </div>
@@ -57,8 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, onMounted } from 'vue'
+import { ref, shallowRef, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import DOMPurify from 'dompurify'
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
@@ -72,6 +73,8 @@ const formData = ref({
   title: '',
   content: '',
 })
+
+const sanitizedContent = computed(() => DOMPurify.sanitize(formData.value.content))
 
 const toolbarConfig: Partial<IToolbarConfig> = {
   excludeKeys: [
@@ -116,7 +119,7 @@ async function loadAgreement() {
       }
     }
   } catch (e: any) {
-    console.error('加载协议失败:', e)
+    if (import.meta.env.DEV) { console.error('加载协议失败:', e) }
     ElMessage.warning('加载协议失败，将使用默认内容')
   }
 }
@@ -144,7 +147,6 @@ async function handleSave() {
     })
     ElMessage.success('保存成功')
   } catch (e: any) {
-    console.error('保存失败:', e)
     ElMessage.error('保存失败')
   } finally {
     saving.value = false
@@ -219,5 +221,63 @@ function handleReset() {
   max-height: 400px;
   overflow-y: auto;
   background: #fff;
+
+  h2 {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin: 24px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: bold;
+    color: #555;
+    margin: 20px 0 10px;
+  }
+
+  p {
+    margin: 12px 0;
+    text-indent: 2em;
+  }
+
+  ul, ol {
+    padding-left: 20px;
+    margin: 12px 0;
+  }
+
+  li {
+    margin-bottom: 4px;
+  }
+
+  blockquote {
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-left: 3px solid #FF6B9D;
+    background: #FFF5F8;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+
+    th, td {
+      border: 1px solid #ebeef5;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f7fa;
+      font-weight: bold;
+      color: #555;
+    }
+  }
 }
 </style>

@@ -184,7 +184,6 @@ async function fetchData() {
       tableData.value = res.data.list || []
     }
   } catch (error) {
-    console.error(error)
     ElMessage.error('获取子账号列表失败')
   } finally {
     loading.value = false

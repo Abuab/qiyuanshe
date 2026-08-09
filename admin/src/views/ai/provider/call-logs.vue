@@ -75,7 +75,7 @@
           <template #default="{ row }">
             <div style="display:flex;flex-direction:column;gap:2px">
               <span style="font-weight:500">{{ row.providerName || '-' }}</span>
-              <span style="font-size:12px;color:#999">{{ row.modelName || '-' }}</span>
+              <span class="text-muted-sm">{{ row.modelName || '-' }}</span>
             </div>
           </template>
         </el-table-column>

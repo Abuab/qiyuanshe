@@ -1,3 +1,14 @@
+// ========== Element Plus 主题变量：品牌粉 ==========
+:root {
+  --el-color-primary: #FF6B9D;
+  --el-color-primary-light-3: #FF85A8;
+  --el-color-primary-light-5: #FFB3CB;
+  --el-color-primary-light-7: #FFD6E3;
+  --el-color-primary-light-8: #FFE4ED;
+  --el-color-primary-light-9: #FFF2F6;
+  --el-color-primary-dark-2: #E85A8A;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -21,16 +32,16 @@ body {
 }
 
 a {
-  color: #409EFF;
+  color: var(--el-color-primary);
   text-decoration: none;
 
   &:hover {
-    color: #66B1FF;
+    color: var(--el-color-primary-light-3);
   }
 }
 
 .text-primary {
-  color: #409EFF;
+  color: var(--el-color-primary);
 }
 
 .text-success {
@@ -50,7 +61,7 @@ a {
 }
 
 .bg-primary {
-  background-color: #409EFF;
+  background-color: var(--el-color-primary);
 }
 
 .bg-success {
@@ -121,12 +132,32 @@ a {
   margin-bottom: 10px;
 }
 
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.mb-12 {
+  margin-bottom: 12px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
 .mb-20 {
   margin-bottom: 20px;
 }
 
 .ml-10 {
   margin-left: 10px;
+}
+
+.ml-12 {
+  margin-left: 12px;
+}
+
+.mr-4 {
+  margin-right: 4px;
 }
 
 .mr-10 {
@@ -155,6 +186,11 @@ a {
 
 .text-sm {
   font-size: 12px;
+}
+
+.text-muted-sm {
+  font-size: 12px;
+  color: #999;
 }
 
 .text-lg {
@@ -221,46 +257,6 @@ a {
 .el-form {
   .el-form-item {
     margin-bottom: 20px;
-  }
-}
-
-.el-button {
-  &.el-button--primary:not(.is-link):not(.is-plain) {
-    background-color: #409EFF;
-    border-color: #409EFF;
-
-    &:hover,
-    &:focus {
-      background-color: #66B1FF;
-      border-color: #66B1FF;
-    }
-
-    &:active {
-      background-color: #3A8EE6;
-      border-color: #3A8EE6;
-    }
-
-    &.is-disabled {
-      background-color: #f5f7fa;
-      border-color: #e4e7ed;
-      color: #c0c4cc;
-    }
-  }
-}
-
-.el-input {
-  .el-input__wrapper {
-    &.is-focus {
-      box-shadow: 0 0 0 1px #409EFF inset;
-    }
-  }
-}
-
-.el-select {
-  .el-input.is-focus {
-    .el-input__wrapper {
-      box-shadow: 0 0 0 1px #409EFF inset !important;
-    }
   }
 }
 

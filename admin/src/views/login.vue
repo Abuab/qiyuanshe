@@ -230,7 +230,7 @@ async function refreshCaptcha() {
       captchaKey.value = data.key
     }
   } catch (error) {
-    console.error('Failed to fetch captcha:', error)
+    if (import.meta.env.DEV) { console.error('Failed to fetch captcha:', error) }
   }
 }
 

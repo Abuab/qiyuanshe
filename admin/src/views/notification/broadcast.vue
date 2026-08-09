@@ -650,7 +650,7 @@ onMounted(() => {
   cursor: pointer;
 
   &:hover {
-    color: #409eff;
+    color: var(--el-color-primary);
   }
 }
 

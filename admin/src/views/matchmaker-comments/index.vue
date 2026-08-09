@@ -151,7 +151,7 @@ async function fetchList() {
     const res = await adminSystem.getMatchmakerComments(pagination.page, pagination.limit)
     list.value = (res.data as any)?.list || []
     pagination.total = (res.data as any)?.total || 0
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   loading.value = false
 }
 
@@ -161,7 +161,7 @@ async function loadMatchmakers() {
     if (res.success && res.data) {
       matchmakerOptions.value = (res.data as any).list || []
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
 }
 
 async function loadInitialUsers() {
@@ -173,7 +173,7 @@ async function loadInitialUsers() {
       userOptions.value = users.map((u: any) => ({ id: u.id, nickname: u.nickname }))
       filteredUserOptions.value = [...userOptions.value]
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   userSearchLoading.value = false
 }
 

@@ -811,8 +811,8 @@ async function uploadFile(file: File): Promise<string> {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
 
   .save-btn {
-    background-color: #409EFF;
-    border-color: #409EFF;
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
     padding: 0 40px;
 
     &:hover {
@@ -852,12 +852,12 @@ async function uploadFile(file: File): Promise<string> {
     text-align: center;
 
     &:hover {
-      border-color: #409EFF;
+      border-color: var(--el-color-primary);
       background-color: #ecf5ff;
     }
 
     &.selected {
-      border-color: #409EFF;
+      border-color: var(--el-color-primary);
       background-color: #ecf5ff;
       box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
     }

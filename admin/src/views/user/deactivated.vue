@@ -117,7 +117,6 @@ const fetchData = async () => {
     tableData.value = data.list || []
     total.value = data.total || 0
   } catch (err: any) {
-    console.error('fetchData error:', err)
     ElMessage.error('加载失败')
   } finally {
     loading.value = false

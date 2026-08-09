@@ -268,7 +268,7 @@ async function fetchList() {
     const res = await adminSystem.getSuccessCases(params)
     list.value = (res.data as any)?.list || []
     pagination.total = (res.data as any)?.total || 0
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   loading.value = false
 }
 

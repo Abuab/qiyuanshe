@@ -385,7 +385,7 @@ function formatNumber(num: number) {
       color: #303133;
 
       &.primary {
-        color: #409eff;
+        color: var(--el-color-primary);
       }
 
       &.danger {
@@ -409,7 +409,7 @@ function formatNumber(num: number) {
 
 .amount {
   font-weight: bold;
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 
 .refund-amount {

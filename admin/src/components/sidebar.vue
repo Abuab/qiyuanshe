@@ -14,12 +14,12 @@
       :router="true"
       class="sidebar-menu"
     >
-      <el-menu-item index="/dashboard">
+      <el-menu-item v-if="canAccess('/dashboard')" index="/dashboard">
         <el-icon><DataAnalysis /></el-icon>
         <template #title>数据看板</template>
       </el-menu-item>
 
-      <el-sub-menu index="/user">
+      <el-sub-menu v-if="canAccess('/user/list')" index="/user">
         <template #title>
           <el-icon><User /></el-icon>
           <span>用户管理</span>
@@ -28,7 +28,7 @@
         <el-menu-item index="/user/deactivated">已注销用户</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="isSuperAdmin" index="/matchmaker">
+      <el-sub-menu v-if="canAccess('/matchmaker')" index="/matchmaker">
         <template #title>
           <el-icon><UserFilled /></el-icon>
           <span>红娘管理</span>
@@ -37,7 +37,7 @@
         <el-menu-item index="/matchmaker-comments">红娘评语</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="canManageQuestion" index="/question">
+      <el-sub-menu v-if="canAccess('/question')" index="/question">
         <template #title>
           <el-icon><QuestionFilled /></el-icon>
           <span>问答管理</span>
@@ -46,14 +46,14 @@
       </el-sub-menu>
 
       <el-menu-item
-        v-if="userInfo?.role === 'super_admin'"
+        v-if="canAccess('/admin-user')"
         index="/admin-user"
       >
         <el-icon><AvatarIcon /></el-icon>
         <template #title>子账号管理</template>
       </el-menu-item>
 
-      <el-sub-menu v-if="canManageAudit" index="/audit">
+      <el-sub-menu v-if="canAccess('/audit')" index="/audit">
         <template #title>
           <el-icon><CircleCheck /></el-icon>
           <span>审核管理</span>
@@ -82,34 +82,37 @@
           <span class="menu-label">车产认证审核</span>
           <span v-if="adminStore.pendingCarCount > 0" class="count-badge">{{ adminStore.pendingCarCount }}</span>
         </el-menu-item>
+        <el-menu-item index="/audit-log">
+          <span class="menu-label">操作审计日志</span>
+        </el-menu-item>
       </el-sub-menu>
 
-      <el-menu-item v-if="canManageAudit" index="/chat/monitor">
+      <el-menu-item v-if="canAccess('/chat')" index="/chat/monitor">
         <el-icon><ChatDotRound /></el-icon>
         <template #title>聊天监控</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/report">
+      <el-menu-item v-if="canAccess('/report')" index="/report">
         <el-icon><Warning /></el-icon>
         <template #title>举报管理</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/feedback">
+      <el-menu-item v-if="canAccess('/feedback')" index="/feedback">
         <el-icon><ChatLineSquare /></el-icon>
         <template #title>问题反馈</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/circles">
+      <el-menu-item v-if="canAccess('/circles')" index="/circles">
         <el-icon><Connection /></el-icon>
         <template #title>圈子管理</template>
       </el-menu-item>
 
-      <el-menu-item v-if="isSuperAdmin" index="/success-cases">
+      <el-menu-item v-if="canAccess('/success-cases')" index="/success-cases">
         <el-icon><Star /></el-icon>
         <template #title>成功案例</template>
       </el-menu-item>
 
-      <el-sub-menu v-if="canManagePayment" index="/payment">
+      <el-sub-menu v-if="canAccess('/payment')" index="/payment">
         <template #title>
           <el-icon><Tickets /></el-icon>
           <span>订单管理</span>
@@ -118,7 +121,7 @@
         <el-menu-item index="/payment/stats">营收统计</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="isSuperAdmin" index="/vip">
+      <el-sub-menu v-if="canAccess('/vip')" index="/vip">
         <template #title>
           <el-icon><Ticket /></el-icon>
           <span>会员管理</span>
@@ -126,7 +129,7 @@
         <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="canManageActivity" index="/activity">
+      <el-sub-menu v-if="canAccess('/activity')" index="/activity">
         <template #title>
           <el-icon><Calendar /></el-icon>
           <span>活动管理</span>
@@ -134,7 +137,7 @@
         <el-menu-item index="/activity/list">活动列表</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="canManagePersonality" index="/personality">
+      <el-sub-menu v-if="canAccess('/personality')" index="/personality">
         <template #title>
           <el-icon><Compass /></el-icon>
           <span>人格测试</span>
@@ -145,7 +148,7 @@
         <el-menu-item index="/personality/stats">测试数据统计</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="canManageGuide" index="/guide">
+      <el-sub-menu v-if="canAccess('/guide')" index="/guide">
         <template #title>
           <el-icon><MagicStick /></el-icon>
           <span>引导文案</span>
@@ -154,7 +157,7 @@
         <el-menu-item index="/guide/copy">文案配置</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu v-if="isSuperAdmin" index="/system">
+      <el-sub-menu v-if="canAccess('/system')" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
           <span>系统配置</span>
@@ -177,7 +180,6 @@
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
         <el-menu-item index="/system/message-template">消息模板</el-menu-item>
         <el-menu-item index="/system/operation-tag">运营标签</el-menu-item>
-        <el-menu-item index="/audit-log">操作审计日志</el-menu-item>
       </el-sub-menu>
     </el-menu>
 
@@ -210,6 +212,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
+import { isRouteAllowed } from '../config/permissions'
 import Avatar from './Avatar.vue'
 import {
   DataAnalysis,
@@ -257,14 +260,10 @@ onUnmounted(() => {
 })
 const activeMenu = computed(() => route.path)
 
-const isSuperAdmin = computed(() => userInfo.value?.role === 'super_admin')
-const canManageAudit = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
-const canManagePayment = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
-const canManageQuestion = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
-const canManageActivity = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker' || userInfo.value?.role === 'operator' || userInfo.value?.role === 'readonly')
-// 人格测试配置：仅超级管理员与红娘可访问
-const canManagePersonality = computed(() => isSuperAdmin.value || userInfo.value?.role === 'matchmaker')
-const canManageGuide = computed(() => isSuperAdmin.value || userInfo.value?.role === 'operator')
+/** 统一菜单显隐判断：复用 permissions.ts 中的路由白名单，与路由守卫保持一致 */
+function canAccess(path: string): boolean {
+  return isRouteAllowed(userInfo.value?.role || '', path)
+}
 
 // 待审核计数轮询
 let pendingCountTimer: ReturnType<typeof setInterval> | null = null

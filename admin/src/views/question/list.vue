@@ -316,7 +316,7 @@ async function handleDeleteAnswerInList(answer: Answer) {
 }
 
 .question-title {
-  color: #409eff;
+  color: var(--el-color-primary);
   cursor: pointer;
   &:hover { text-decoration: underline; }
 }
@@ -332,12 +332,12 @@ async function handleDeleteAnswerInList(answer: Answer) {
 
 .answer-count {
   font-weight: bold;
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 
 .answer-count {
   font-weight: bold;
-  color: #409eff;
+  color: var(--el-color-primary);
   cursor: pointer;
   &:hover { text-decoration: underline; }
 }
@@ -435,7 +435,7 @@ async function handleDeleteAnswerInList(answer: Answer) {
 
 .clickable {
   cursor: pointer;
-  &:hover { color: #409eff; }
+  &:hover { color: var(--el-color-primary); }
 }
 
 .clickable-image {
@@ -445,6 +445,6 @@ async function handleDeleteAnswerInList(answer: Answer) {
 
 .clickable-text {
   cursor: pointer;
-  &:hover { color: #409eff; text-decoration: underline; }
+  &:hover { color: var(--el-color-primary); text-decoration: underline; }
 }
 </style>

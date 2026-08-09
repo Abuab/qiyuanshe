@@ -68,7 +68,7 @@ const avatarStyle = computed(() => {
     }
   }
   return {
-    backgroundColor: '#409eff',
+    backgroundColor: '#FF6B9D',
     color: '#fff',
     fontWeight: 'bold' as const,
   }

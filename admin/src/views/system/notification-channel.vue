@@ -8,7 +8,7 @@
     <!-- 总开关卡片 -->
     <div class="master-switch-card">
       <div class="switch-content">
-        <el-switch v-model="notificationEnabled" active-color="#409EFF" size="large" />
+        <el-switch v-model="notificationEnabled" active-color="#FF6B9D" size="large" />
         <span class="switch-label">启用通知总开关</span>
         <span class="switch-desc">关闭后，所有通道均不会发送通知</span>
         <el-tag :type="notificationEnabled ? 'success' : 'danger'" size="small" effect="dark">
@@ -35,7 +35,7 @@
           <el-switch
             v-model="ch.enabled"
             :disabled="!notificationEnabled"
-            active-color="#409EFF"
+            active-color="#FF6B9D"
             size="small"
             class="channel-switch"
           />
@@ -427,7 +427,7 @@ onMounted(() => {
   flex-direction: column;
 }
 .channel-card:hover {
-  border-color: #409eff;
+  border-color: var(--el-color-primary);
 }
 
 .card-header {
@@ -436,7 +436,7 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 .channel-icon {
-  color: #409eff;
+  color: var(--el-color-primary);
   display: flex;
   align-items: center;
 }
@@ -532,7 +532,7 @@ onMounted(() => {
 }
 .type-count {
   font-size: 12px;
-  color: #409eff;
+  color: var(--el-color-primary);
   font-weight: bold;
   flex-shrink: 0;
 }

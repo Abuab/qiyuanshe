@@ -614,7 +614,7 @@ function getTypeTagType(type: string) {
     cursor: pointer;
     color: #303133;
     &:hover {
-      color: #409eff;
+      color: var(--el-color-primary);
     }
   }
   .submitter-id {
@@ -645,7 +645,7 @@ function getTypeTagType(type: string) {
       color: #606266;
       cursor: help;
       &:hover {
-        color: #409eff;
+        color: var(--el-color-primary);
       }
     }
   }

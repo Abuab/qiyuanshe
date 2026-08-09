@@ -516,7 +516,7 @@ const formatTime = (s: string): string => {
 .stat-num.warning { color: #E6A23C; }
 .stat-num.success { color: #67C23A; }
 .stat-num.danger { color: #F56C6C; }
-.stat-num.info { color: #409EFF; }
+.stat-num.info { color: var(--el-color-primary); }
 .stat-label { font-size: 14px; color: #999; margin-top: 6px; }
 
 .card { background: #fff; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
@@ -543,7 +543,7 @@ const formatTime = (s: string): string => {
   position: relative;
 
   &:hover {
-    border-color: #409EFF;
+    border-color: var(--el-color-primary);
     box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
   }
 }

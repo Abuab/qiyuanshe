@@ -65,7 +65,7 @@
             </el-form-item>
 
             <el-form-item label="首页快捷入口">
-              <div v-for="(name, idx) in basicConfig.quickEntryNames" :key="idx" style="margin-bottom:8px">
+              <div v-for="(name, idx) in basicConfig.quickEntryNames" :key="idx" class="mb-8">
                 <el-input
                   v-model="basicConfig.quickEntryNames[idx]"
                   :placeholder="['红娘评语','最新活动','相亲圈子','我们脱单了'][idx]"
@@ -113,24 +113,24 @@
 
             <el-form-item label="公众号关注提示">
               <el-switch v-model="basicConfig.showOfficialAccountPrompt" active-text="显示" inactive-text="隐藏" />
-              <div class="form-tip" style="margin-left:12px">控制"我的"页面底部和系统消息页顶部的公众号关注提示横幅</div>
+              <div class="form-tip ml-12">控制"我的"页面底部和系统消息页顶部的公众号关注提示横幅</div>
             </el-form-item>
 
             <el-divider content-position="left">功能开关</el-divider>
 
             <el-form-item label="聊天功能">
               <el-switch v-model="basicConfig.chatEnabled" active-text="开启" inactive-text="关闭" />
-              <div class="form-tip" style="margin-left:12px">关闭后所有用户无法发送聊天消息</div>
+              <div class="form-tip ml-12">关闭后所有用户无法发送聊天消息</div>
             </el-form-item>
 
             <el-form-item label="VIP 会员">
               <el-switch v-model="basicConfig.vipEnabled" active-text="开启" inactive-text="关闭" />
-              <div class="form-tip" style="margin-left:12px">VIP 会员页不显示</div>
+              <div class="form-tip ml-12">VIP 会员页不显示</div>
             </el-form-item>
 
             <el-form-item label="去留言按钮">
               <el-switch v-model="basicConfig.leaveMessageEnabled" active-text="开启" inactive-text="关闭" />
-              <div class="form-tip" style="margin-left:12px">互相喜欢页"去留言"按钮显隐</div>
+              <div class="form-tip ml-12">互相喜欢页"去留言"按钮显隐</div>
             </el-form-item>
 
             <el-form-item label="登录页插画">
@@ -169,7 +169,7 @@
             </el-form-item>
             <el-form-item label="最少照片张数阈值">
               <el-input-number v-model="basicConfig.photoGuidanceMinCount" :min="0" :max="10" />
-              <div class="form-tip" style="margin-left:12px">当前用户照片数 ≤ 此值时查看他人照片触发上传引导</div>
+              <div class="form-tip ml-12">当前用户照片数 ≤ 此值时查看他人照片触发上传引导</div>
             </el-form-item>
 
           </el-form>
@@ -367,7 +367,7 @@
             </el-form-item>
 
             <el-divider content-position="left">不合格原因标签</el-divider>
-            <div class="form-tip" style="margin-bottom:12px">配置照片审核不通过的原因标签，小程序端引导页展示</div>
+            <div class="form-tip mb-12">配置照片审核不通过的原因标签，小程序端引导页展示</div>
 
             <el-form-item label="衣着不当">
               <div style="display:flex;align-items:center;gap:12px">
@@ -448,7 +448,7 @@
 
       <el-tab-pane label="爱情语录" name="loveQuotes">
         <el-card class="config-card">
-          <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px">
+          <el-alert type="info" :closable="false" show-icon class="mb-16">
             <template #title>
               配置6条爱情语录，小程序端随机展示，用户可选择一条提交保存。
             </template>
@@ -472,7 +472,7 @@
 
       <el-tab-pane label="健康阈值" name="health">
         <el-card class="config-card">
-          <el-alert type="info" :closable="false" show-icon style="margin-bottom:16px">
+          <el-alert type="info" :closable="false" show-icon class="mb-16">
             <template #title>
               配置平台男女比例健康度告警阈值。当男性占比超过设定阈值时，数据看板将显示相应的告警级别。
             </template>
@@ -897,7 +897,7 @@ async function uploadCertFile(options: any) {
 }
 
 :deep(.el-divider__text) {
-  color: #409eff;
+  color: var(--el-color-primary);
   font-weight: 600;
 }
 

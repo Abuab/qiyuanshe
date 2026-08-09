@@ -348,6 +348,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/guide/copy-detail.vue'),
         meta: { title: '文案详情', requiresAuth: true },
       },
+      // 404 兜底路由，必须放在 children 末尾
+      {
+        path: '/:pathMatch(.*)*',
+        name: 'NotFound',
+        component: () => import('../views/error/not-found.vue'),
+        meta: { title: '页面不存在', requiresAuth: true },
+      },
     ],
   },
 ]
@@ -373,6 +380,13 @@ router.beforeEach((to, from, next) => {
   // 角色-路由权限守卫
   const role = adminStore.userInfo?.role
   if (role && !isRouteAllowed(role, to.path)) {
+    // 防止死循环：如果连 Dashboard 都不让看，说明角色配置异常，直接退出登录
+    if (to.name === 'Dashboard') {
+      ElMessage.warning('无权访问任何页面，请重新登录')
+      adminStore.logout()
+      next({ name: 'Login' })
+      return
+    }
     ElMessage.warning('无权访问该页面')
     next({ name: 'Dashboard' })
     return

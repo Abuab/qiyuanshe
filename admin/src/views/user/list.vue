@@ -99,7 +99,7 @@
               <el-button @click="handleReset">重置</el-button>
               <!-- 高级筛选展开/收起按钮 -->
               <el-button text @click="advancedFilterVisible = !advancedFilterVisible">
-                <el-icon style="margin-right:4px"><Select /></el-icon>
+                <el-icon class="mr-4"><Select /></el-icon>
                 高级筛选 {{ advancedFilterVisible ? '收起' : '展开' }}
               </el-button>
             </el-form-item>
@@ -683,7 +683,7 @@
           </el-image>
           <span style="margin-left:12px;font-size:14px;flex:1">{{ item.nickname }}</span>
           <span style="font-size:12px;color:#999;margin-right:12px">第{{ item.viewCount }}次查看</span>
-          <span style="font-size:12px;color:#999">{{ item.lastViewedAt ? item.lastViewedAt.slice(0,16) : '' }}</span>
+          <span class="text-muted-sm">{{ item.lastViewedAt ? item.lastViewedAt.slice(0,16) : '' }}</span>
         </div>
       </div>
     </el-dialog>
@@ -1168,7 +1168,7 @@
         </el-form-item>
       </el-form>
       <!-- 系统预设标签库 -->
-      <div style="margin-bottom:16px">
+      <div class="mb-16">
         <div style="font-size:13px;color:#909399;margin-bottom:8px">系统标签库（点击添加）</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <el-tag
@@ -1184,7 +1184,7 @@
         </div>
       </div>
       <!-- 当前已选标签 -->
-      <div style="margin-bottom:8px">
+      <div class="mb-8">
         <div style="font-size:13px;color:#909399;margin-bottom:8px">
           已选标签 ({{ tagDraftSelected.length }})
           <el-button type="danger" link size="small" @click="tagDraftSelected = []" style="margin-left:8px">清空</el-button>
@@ -1209,17 +1209,11 @@
     </el-dialog>
 
     <!-- 查看备注弹窗（只读） -->
-    <el-dialog v-model="notesDialogVisible" title="运营备注" width="500px">
-      <div v-if="notesLoading" style="text-align:center;padding:40px 0">
-        <el-icon class="is-loading"><Loading /></el-icon>
-      </div>
-      <div v-else-if="notesContent" style="white-space:pre-wrap;line-height:1.8;color:#333;font-size:14px;padding:8px 0">{{ notesContent }}</div>
-      <div v-else style="text-align:center;color:#c0c4cc;font-size:13px;padding:40px 0">暂无运营备注</div>
-      <template #footer>
-        <el-button @click="notesDialogVisible = false">关闭</el-button>
-        <el-button type="primary" @click="goToDetailForNotes">进入详情编辑</el-button>
-      </template>
-    </el-dialog>
+    <UserNotesDialog
+      v-model="notesDialogVisible"
+      :user-id="notesUserId ?? 0"
+      @goto-detail="handleNotesGotoDetail"
+    />
   </div>
 </template>
 
@@ -1227,13 +1221,14 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, Loading, QuestionFilled } from '@element-plus/icons-vue'
+import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, QuestionFilled } from '@element-plus/icons-vue'
 import { adminUsers, adminPayment } from '../../api'
 import { userPin, vipPackages, VipPackage } from '../../api/vip'
 import { operationTagApi, OperationTag } from '../../api/operation-tag'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
+import UserNotesDialog from './components/UserNotesDialog.vue'
 import type { User, UserFilter } from '../../api/user'
 
 const router = useRouter()
@@ -1521,8 +1516,6 @@ const tagTargetUser = ref<User | null>(null)
 
 // ===== 查看备注弹窗状态 =====
 const notesDialogVisible = ref(false)
-const notesContent = ref('')
-const notesLoading = ref(false)
 const notesUserId = ref<number | null>(null)
 const dialogVersion = ref(0)
 const editingUserId = ref<number | null>(null)
@@ -1905,7 +1898,7 @@ async function loadDicts() {
       }
     }
   } catch (e) {
-    console.error('加载选项字典失败:', e)
+    if (import.meta.env.DEV) { console.error('加载选项字典失败:', e) }
   }
 }
 
@@ -1937,7 +1930,7 @@ async function fetchData() {
     // 累计付费数据异步加载，不阻塞列表展示
     loadPaymentData()
   } catch (error) {
-    console.error('Fetch data error:', error)
+    if (import.meta.env.DEV) { console.error('Fetch data error:', error) }
   } finally {
     loading.value = false
   }
@@ -2062,7 +2055,7 @@ async function handleCreateSubmit() {
         try {
           await adminUsers.addUserPhoto(editingUserId.value!, url)
         } catch (e) {
-          console.error('上传照片失败:', url, e)
+          if (import.meta.env.DEV) { console.error('上传照片失败:', url, e) }
         }
       }
 
@@ -2071,7 +2064,6 @@ async function handleCreateSubmit() {
       editingUserId.value = null
       fetchData()
     } catch (error) {
-      console.error(error)
       ElMessage.error('更新失败')
     } finally {
       editLoading.value = false
@@ -2085,7 +2077,6 @@ async function handleCreateSubmit() {
       createDialogVisible.value = false
       fetchData()
     } catch (error) {
-      console.error(error)
       ElMessage.error('创建失败')
     } finally {
       createLoading.value = false
@@ -2453,7 +2444,6 @@ async function handleToggleStatus(row: User) {
     }
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error(error)
       ElMessage.error(error.message || `${action}失败`)
     }
   }
@@ -2484,7 +2474,6 @@ async function handleVipSubmit() {
       ElMessage.error(res.message || 'VIP设置失败')
     }
   } catch (error: any) {
-    console.error(error)
     ElMessage.error(error.message || 'VIP设置失败')
   }
 }
@@ -2506,7 +2495,6 @@ async function handleNotifySubmit() {
     ElMessage.success('通知已记录，推送服务待接入')
     notifyDialogVisible.value = false
   } catch (error) {
-    console.error(error)
     ElMessage.error('发送通知失败')
   }
 }
@@ -2525,7 +2513,7 @@ async function handleBatchApprove() {
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      if (import.meta.env.DEV) { console.error(error) }
     }
   }
 }
@@ -2545,7 +2533,7 @@ async function handleBatchDisable() {
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      if (import.meta.env.DEV) { console.error(error) }
     }
   }
 }
@@ -2564,7 +2552,7 @@ async function handleBatchLock() {
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      if (import.meta.env.DEV) { console.error(error) }
     }
   }
 }
@@ -2581,7 +2569,6 @@ async function handleLockUser(row: User) {
     fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error(error)
       ElMessage.error(error.message || '操作失败')
     }
   }
@@ -2599,7 +2586,6 @@ async function handleUnlockUser(row: User) {
     fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error(error)
       ElMessage.error(error.message || '操作失败')
     }
   }
@@ -2619,7 +2605,7 @@ async function handleBatchEnable() {
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error(error)
+      if (import.meta.env.DEV) { console.error(error) }
     }
   }
 }
@@ -2635,7 +2621,7 @@ const handleDelete = async (row: User) => {
     ElMessage.success('删除成功')
     fetchData()
   } catch (e: any) {
-    if (e !== 'cancel') console.error(e)
+    if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } }
   }
 }
 
@@ -2652,7 +2638,7 @@ const handleBatchDelete = async () => {
     selectedRows.value = []
     fetchData()
   } catch (e: any) {
-    if (e !== 'cancel') console.error(e)
+    if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } }
   }
 }
 
@@ -2763,7 +2749,6 @@ async function handleDropdownCommand(cmd: string, row: User) {
         fetchData()
       } catch (error: any) {
         if (error !== 'cancel') {
-          console.error(error)
           ElMessage.error(error.message || '操作失败')
         }
       }
@@ -2799,7 +2784,6 @@ async function handleExport() {
       ElMessage.error('导出失败')
     }
   } catch (error) {
-    console.error(error)
     ElMessage.error('导出失败')
   } finally {
     exportLoading.value = false
@@ -2980,31 +2964,16 @@ async function handleListSaveTags() {
 // ===== 查看备注操作函数 =====
 
 /** 打开查看备注弹窗（只读） */
-async function handleViewNotes(row: User) {
+function handleViewNotes(row: User) {
   notesUserId.value = row.id
   notesDialogVisible.value = true
-  notesLoading.value = true
-  notesContent.value = ''
-  try {
-    // TODO: 接入后端备注查询接口 - adminUsers.getRemark(userId)
-    // 当前从用户详情的 adminRemark 字段读取（如有）
-    const detail = await adminUsers.detail(row.id)
-    if (detail.success && detail.data) {
-      notesContent.value = (detail.data as any).adminRemark || ''
-    }
-  } catch {
-    // 后端接口缺失时静默，展示空状态
-    notesContent.value = ''
-  }
-  finally { notesLoading.value = false }
 }
 
 /** 从查看备注弹窗跳转到详情页编辑备注 */
-function goToDetailForNotes() {
-  if (notesUserId.value) {
-    notesDialogVisible.value = false
-    router.push(`/user/detail/${notesUserId.value}`)
-  }
+function handleNotesGotoDetail(userId: number) {
+  if (!userId) return
+  notesDialogVisible.value = false
+  router.push(`/user/detail/${userId}`)
 }
 </script>
 

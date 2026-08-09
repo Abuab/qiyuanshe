@@ -381,8 +381,8 @@ function hasPreviewQrGroupItems(items?: any[]): boolean {
     cursor: pointer;
     transition: outline 0.15s;
 
-    &:hover { outline: 1px dashed #409EFF; }
-    &.preview-block-active { outline: 2px solid #409EFF; }
+    &:hover { outline: 1px dashed var(--el-color-primary); }
+    &.preview-block-active { outline: 2px solid var(--el-color-primary); }
   }
 
   .pb-empty { padding: 32px; text-align: center; color: #c0c4cc; font-size: 14px; }

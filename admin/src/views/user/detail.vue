@@ -130,7 +130,7 @@
               </el-descriptions-item>
             </el-descriptions>
             <!-- 我的特点 -->
-            <h4 class="section-title" style="margin-top:20px">我的特点</h4>
+            <h4 class="section-title mt-20">我的特点</h4>
             <div v-if="hasPersonalityTags" class="personality-section">
               <div v-if="characterTags.length > 0" class="tag-category">
                 <div class="category-title">性格</div>
@@ -156,7 +156,7 @@
             </div>
             <div v-else class="text-content text-muted">暂无</div>
             <!-- 择偶要求 -->
-            <h4 class="section-title" style="margin-top:20px">择偶要求</h4>
+            <h4 class="section-title mt-20">择偶要求</h4>
             <el-descriptions v-if="hasMateRequirement" :column="2" border>
               <el-descriptions-item label="希望TA">{{ (user.hopeTaTags || []).join('、') || '-' }}</el-descriptions-item>
               <el-descriptions-item label="年龄要求">{{ user.partnerAgeRange || '-' }}</el-descriptions-item>
@@ -170,7 +170,7 @@
             <div v-if="user.mateRequirement" class="text-content">{{ user.mateRequirement }}</div>
             <div v-if="!hasMateRequirement && !user.mateRequirement" class="text-content text-muted">暂无择偶要求</div>
             <!-- 红娘评价（内容极少时放在基本资料底部） -->
-            <h4 class="section-title" style="margin-top:20px">红娘评价</h4>
+            <h4 class="section-title mt-20">红娘评价</h4>
             <div v-loading="tabLoading.reviews">
               <el-table :data="reviewList" stripe v-if="reviewList.length > 0" row-key="id">
                 <el-table-column prop="matchmakerName" label="评价红娘" width="120" />
@@ -182,7 +182,7 @@
               <el-empty v-else description="暂无红娘评价" />
             </div>
             <!-- 操作日志（基本资料 Tab 内展示用户关键行为） -->
-            <h4 class="section-title" style="margin-top:20px">操作日志</h4>
+            <h4 class="section-title mt-20">操作日志</h4>
             <div v-loading="tabLoading.opLogs">
               <el-table :data="operationLogs" stripe v-if="operationLogs.length > 0">
                 <el-table-column prop="createdAt" label="时间" width="170">
@@ -199,8 +199,8 @@
             </div>
             <!-- 运营备注（仅管理员可见） -->
             <template v-if="isAdmin">
-            <h4 class="section-title" style="margin-top:20px">运营备注</h4>
-            <el-card shadow="never" style="margin-bottom:12px">
+            <h4 class="section-title mt-20">运营备注</h4>
+            <el-card shadow="never" class="mb-12">
               <div style="display:flex;gap:8px;align-items:flex-start">
                 <el-input
                   v-model="noteForm.content"
@@ -218,7 +218,7 @@
             <div v-if="noteHistory.length > 0">
               <div v-for="(note, idx) in noteHistory" :key="idx" style="padding:10px 0;border-bottom:1px solid #f0f0f0">
                 <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                  <span style="font-size:12px;color:#909399">{{ note.operator }} · {{ formatDate(note.time) }}</span>
+                  <span class="text-muted-sm">{{ note.operator }} · {{ formatDate(note.time) }}</span>
                 </div>
                 <div style="font-size:14px;color:#333;white-space:pre-wrap;line-height:1.6">{{ note.content }}</div>
               </div>
@@ -269,7 +269,7 @@
                   <div style="flex:1;margin-left:12px;overflow:hidden">
                     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
                       <span style="font-weight:500">{{ conv.nickname }}</span>
-                      <span style="font-size:12px;color:#999">{{ formatDate(conv.lastTime) }}</span>
+                      <span class="text-muted-sm">{{ formatDate(conv.lastTime) }}</span>
                     </div>
                     <div style="color:#666;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ conv.messageType === 'image' ? '[图片]' : conv.lastMessage }}</div>
                   </div>
@@ -301,7 +301,7 @@
                   <template #title>
                     我喜欢的（{{ likeData.liked.length }}）
                     <!-- 管理员添加喜欢按钮（solid primary，白色文字清晰可见） -->
-                    <el-button size="small" type="primary" @click.stop="openLikeAddDialog('liked')" style="margin-left:12px">添加</el-button>
+                    <el-button size="small" type="primary" @click.stop="openLikeAddDialog('liked')" class="ml-12">添加</el-button>
                   </template>
                   <div v-if="likeData.liked.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="item in likeData.liked" :key="item.id" class="like-item">
@@ -317,7 +317,7 @@
                 <el-collapse-item name="likedBy">
                   <template #title>
                     喜欢我的（{{ likeData.likedBy.length }}）
-                    <el-button size="small" type="primary" @click.stop="openLikeAddDialog('likedBy')" style="margin-left:12px">添加</el-button>
+                    <el-button size="small" type="primary" @click.stop="openLikeAddDialog('likedBy')" class="ml-12">添加</el-button>
                   </template>
                   <div v-if="likeData.likedBy.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="item in likeData.likedBy" :key="item.id" class="like-item">
@@ -344,7 +344,7 @@
                 <el-collapse-item name="following">
                   <template #title>
                     我关注的（{{ followData.following.length }}）
-                    <el-button size="small" type="primary" @click.stop="openFollowAddDialog('following')" style="margin-left:12px">添加</el-button>
+                    <el-button size="small" type="primary" @click.stop="openFollowAddDialog('following')" class="ml-12">添加</el-button>
                   </template>
                   <div v-if="followData.following.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="f in followData.following" :key="f.id" class="like-item">
@@ -359,7 +359,7 @@
                 <el-collapse-item name="followers">
                   <template #title>
                     关注我的（{{ followData.followers.length }}）
-                    <el-button size="small" type="primary" @click.stop="openFollowAddDialog('followers')" style="margin-left:12px">添加</el-button>
+                    <el-button size="small" type="primary" @click.stop="openFollowAddDialog('followers')" class="ml-12">添加</el-button>
                   </template>
                   <div v-if="followData.followers.length === 0" class="like-empty">暂无记录</div>
                   <div v-for="f in followData.followers" :key="f.id" class="like-item">
@@ -383,7 +383,7 @@
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
                     <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
-                    <span style="font-size:12px;color:#999">第{{ v.viewCount }}次查看</span>
+                    <span class="text-muted-sm">第{{ v.viewCount }}次查看</span>
                   </div>
                 </div>
                 <div style="flex:1">
@@ -394,7 +394,7 @@
                       <template #error><div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><el-icon :size="20"><User /></el-icon></div></template>
                     </el-image>
                     <span style="margin-left:12px;font-size:14px;flex:1">{{ v.nickname }}</span>
-                    <span style="font-size:12px;color:#999">看过{{ v.viewCount }}次</span>
+                    <span class="text-muted-sm">看过{{ v.viewCount }}次</span>
                   </div>
                 </div>
               </div>
@@ -416,7 +416,7 @@
                 </el-descriptions-item>
               </el-descriptions>
               <!-- 审核历史 -->
-              <h4 class="section-title" style="margin-top:20px">审核历史</h4>
+              <h4 class="section-title mt-20">审核历史</h4>
               <el-table :data="auditHistoryList" stripe v-if="auditHistoryList.length > 0">
                 <el-table-column prop="id" label="审核ID" width="80" />
                 <el-table-column label="审核类型" width="100">
@@ -466,7 +466,7 @@
               <el-empty v-else description="暂无举报记录" />
             </div>
             <!-- 拉黑记录 -->
-            <h4 class="section-title" style="margin-top:20px">拉黑记录</h4>
+            <h4 class="section-title mt-20">拉黑记录</h4>
             <div v-loading="tabLoading.blocks">
               <el-table :data="blockList" stripe v-if="blockList.length > 0">
                 <el-table-column prop="id" label="拉黑ID" width="80" />
@@ -492,7 +492,7 @@
           <el-tab-pane label="财务记录" name="finance">
             <div v-loading="tabLoading.finance">
               <!-- 统计卡片：累计消费、订单数、已支付数 -->
-              <div v-if="financeDataLoaded" class="like-stats-row" style="margin-bottom:16px">
+              <div v-if="financeDataLoaded" class="like-stats-row mb-16">
                 <div class="like-stat-card">
                   <div class="like-stat-num">¥{{ financeStats.totalPaid.toFixed(2) }}</div>
                   <div class="like-stat-label">累计消费</div>
@@ -553,9 +553,9 @@
           <!-- Tab 8: 问答（管理员代答，进入待审核走正常审批流程） -->
           <el-tab-pane label="问答" name="answers">
             <div v-loading="tabLoading.answers">
-              <div style="margin-bottom:16px">
+              <div class="mb-16">
                 <el-button type="primary" @click="handleAddAnswer">添加回答</el-button>
-                <span class="text-muted" style="margin-left:12px">管理员代答后进入待审核，通过审批后展示</span>
+                <span class="text-muted ml-12">管理员代答后进入待审核，通过审批后展示</span>
               </div>
               <el-empty v-if="userAnswerList.length === 0" description="暂无问答记录" />
               <el-table v-else :data="userAnswerList" stripe>
@@ -589,18 +589,12 @@
     <el-empty v-else description="用户不存在" />
 
     <!-- VIP弹窗 -->
-    <el-dialog v-model="vipDialogVisible" title="调整VIP等级" width="400px">
-      <el-form :model="vipForm" label-width="100px">
-        <el-form-item label="用户">{{ user?.nickname }}</el-form-item>
-        <el-form-item label="VIP等级" required>
-          <el-select v-model="vipForm.level" style="width:200px">
-            <el-option label="普通用户" :value="0" /><el-option label="会员" :value="1" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="有效期"><el-input-number v-model="vipForm.days" :min="1" :max="3650" /><span class="ml-10">天</span></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="vipDialogVisible = false">取消</el-button><el-button type="primary" @click="handleVipSubmit">确定</el-button></template>
-    </el-dialog>
+    <UserVipDialog
+      v-model="vipDialogVisible"
+      :nickname="user?.nickname || ''"
+      :current-level="user?.vipLevel ?? 0"
+      @submit="handleVipSubmit"
+    />
 
     <!-- 编辑资料弹窗：三栏分区 Tab 布局，避免单屏内容过长 -->
     <el-dialog v-model="editDialogVisible" title="编辑用户资料" width="720px" destroy-on-close>
@@ -924,20 +918,15 @@
     </el-dialog>
 
     <!-- 通知弹窗 -->
-    <el-dialog v-model="notifyDialogVisible" title="发送通知" width="500px">
-      <el-form :model="notifyForm" label-width="80px">
-        <el-form-item label="用户">{{ user?.nickname }}</el-form-item>
-        <el-form-item label="通知标题"><el-input v-model="notifyForm.title" placeholder="可选" /></el-form-item>
-        <el-form-item label="通知内容" required>
-          <el-input v-model="notifyForm.content" type="textarea" :rows="4" placeholder="请输入通知内容..." maxlength="200" show-word-limit />
-        </el-form-item>
-      </el-form>
-      <template #footer><el-button @click="notifyDialogVisible = false">取消</el-button><el-button type="primary" @click="handleNotifySubmit">发送</el-button></template>
-    </el-dialog>
+    <UserNotifyDialog
+      v-model="notifyDialogVisible"
+      :nickname="user?.nickname || ''"
+      @submit="handleNotifySubmit"
+    />
 
     <!-- 标签管理弹窗 -->
     <el-dialog v-model="tagDialogVisible" title="标签管理" width="580px" destroy-on-close>
-      <el-alert type="info" :closable="false" style="margin-bottom:16px">
+      <el-alert type="info" :closable="false" class="mb-16">
         <template #default>
           <span style="font-size:13px;color:#606266">运营标签仅在后台可见，用于运营人员对用户进行分类和筛选，用户端不可见。可自由输入自定义标签或从标签库中选择。</span>
         </template>
@@ -952,7 +941,7 @@
         </el-form-item>
       </el-form>
       <!-- 系统预设标签库 -->
-      <div style="margin-bottom:16px">
+      <div class="mb-16">
         <div style="font-size:13px;color:#909399;margin-bottom:8px">系统标签库（点击添加）</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px">
           <el-tag
@@ -968,7 +957,7 @@
         </div>
       </div>
       <!-- 当前已选标签 -->
-      <div style="margin-bottom:8px">
+      <div class="mb-8">
         <div style="font-size:13px;color:#909399;margin-bottom:8px">
           已选标签 ({{ tagDraftSelected.length }})
           <el-button type="danger" link size="small" @click="tagDraftSelected = []" style="margin-left:8px">清空</el-button>
@@ -1039,7 +1028,7 @@
             />
           </el-select>
         </el-form-item>
-        <div style="font-size:12px;color:#909399">
+        <div class="text-muted-sm">
           将 {{ likeAddType === 'liked' ? '当前用户' : '所选用户' }} 的喜欢关系添加到 {{ likeAddType === 'liked' ? '所选用户' : '当前用户' }}
         </div>
       </el-form>
@@ -1068,7 +1057,7 @@
             />
           </el-select>
         </el-form-item>
-        <div style="font-size:12px;color:#909399">
+        <div class="text-muted-sm">
           {{
             followAddType === 'following'
               ? '所选用户将被添加到当前用户的关注列表'
@@ -1112,6 +1101,8 @@ import { adminSystem } from '../../api/system'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
 import { formatDate } from '../../utils/date'
 import { useAdminStore } from '../../store/admin'
+import UserVipDialog from './components/UserVipDialog.vue'
+import UserNotifyDialog from './components/UserNotifyDialog.vue'
 
 interface UserDetail {
   id: number
@@ -1262,21 +1253,19 @@ function toggleAdminVoicePlay() {
     playPromise.then(() => {
       isAdminVoicePlaying.value = true
     }).catch((err) => {
-      console.error('语音播放失败:', err?.message || err)
+      if (import.meta.env.DEV) { console.error('语音播放失败:', err?.message || err) }
       isAdminVoicePlaying.value = false
     })
   }
   audio.onended = () => { isAdminVoicePlaying.value = false }
   audio.onerror = () => {
-    console.error('音频加载失败')
+    if (import.meta.env.DEV) { console.error('音频加载失败') }
     isAdminVoicePlaying.value = false
   }
 }
 
 const vipDialogVisible = ref(false)
 const notifyDialogVisible = ref(false)
-const vipForm = reactive({ level: 0, days: 30 })
-const notifyForm = reactive({ title: '', content: '' })
 
 // 编辑资料弹窗
 const editDialogVisible = ref(false)
@@ -1699,7 +1688,7 @@ async function loadReports() {
   try {
     const res = await adminUsers.getReports(user.value.id)
     if (res.success) reportList.value = res.data || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.reports = false }
 }
 
@@ -1709,7 +1698,7 @@ async function loadBlocks() {
   try {
     const res = await adminUsers.getBlocks(user.value.id)
     if (res.success) blockList.value = res.data?.list || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.blocks = false }
 }
 
@@ -1719,7 +1708,7 @@ async function loadNotifications() {
   try {
     const res = await adminUsers.getNotifications(user.value.id)
     if (res.success) notificationList.value = res.data?.list || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.notifications = false }
 }
 
@@ -1729,7 +1718,7 @@ async function loadUserAnswers() {
   try {
     const res = await adminUsers.getUserAnswers(user.value.id)
     if (res.success) userAnswerList.value = res.data?.list || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.answers = false }
 }
 
@@ -1741,7 +1730,7 @@ async function handleApproveAnswer(row: any) {
     ElMessage.success('回答审核已通过')
     row.status = 1
   } catch (e) {
-    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+    if (e !== 'cancel') { ElMessage.error('操作失败') }
   } finally {
     answerAuditing[row.id] = false
   }
@@ -1760,7 +1749,7 @@ async function handleRejectAnswer(row: any) {
     ElMessage.success('回答已拒绝')
     row.status = 2
   } catch (e) {
-    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+    if (e !== 'cancel') { ElMessage.error('操作失败') }
   } finally {
     answerAuditing[row.id] = false
   }
@@ -1773,7 +1762,7 @@ async function loadReviews() {
   try {
     const res = await adminUsers.getReviews(user.value.id)
     if (res.success) reviewList.value = res.data || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.reviews = false }
 }
 
@@ -1790,7 +1779,7 @@ async function loadFollowDetail() {
     if (followersRes.success) followData.followers = followersRes.data?.list || []
     if (viewsRes.success) viewData.views = viewsRes.data || []
     if (visitorsRes.success) viewData.visitors = visitorsRes.data || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
 }
 
 /** 互动记录：一次加载关注 + 喜欢 + 浏览数据 */
@@ -1828,7 +1817,7 @@ async function loadFinanceData() {
       financeDataLoaded.value = true
     }
   } catch (e) {
-    console.error('财务记录加载失败:', e)
+    if (import.meta.env.DEV) { console.error('财务记录加载失败:', e) }
     financeOrders.value = []
     financeDataLoaded.value = true // 接口异常也不阻塞页面
   }
@@ -1846,7 +1835,7 @@ async function loadLikesDetail() {
     if (likedRes.success) likeData.liked = likedRes.data?.list || []
     if (likedByRes.success) likeData.likedBy = likedByRes.data?.list || []
     if (mutualRes.success) likeData.mutual = mutualRes.data?.list || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
 }
 
 async function loadLikeUserOptions() {
@@ -1957,7 +1946,7 @@ async function handleRemoveFollow(targetUserId: number, tab: 'following' | 'foll
     } else {
       ElMessage.error(res.message || '操作失败')
     }
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  } catch (e) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 async function handleAddLikeSubmit() {
@@ -1998,7 +1987,7 @@ async function handleRemoveLike(targetUserId: number, tab: 'liked' | 'likedBy' |
     } else {
       ElMessage.error(res.message || '操作失败')
     }
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  } catch (e) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 const statusToggleLabel = computed(() => {
@@ -2029,7 +2018,7 @@ async function handleToggleStatus() {
     const res = await adminUsers.updateStatus(user.value.id, targetStatus)
     if (res.success) { ElMessage.success(`${action}成功`); fetchDetail() }
     else ElMessage.error(res.message || `${action}失败`)
-  } catch (e: any) { if (e !== 'cancel') console.error(e) }
+  } catch (e: any) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 async function handleLockUser() {
@@ -2039,7 +2028,7 @@ async function handleLockUser() {
     const res = await adminUsers.updateStatus(user.value.id, 4)
     if (res.success) { ElMessage.success('锁定成功'); fetchDetail() }
     else ElMessage.error(res.message || '锁定失败')
-  } catch (e: any) { if (e !== 'cancel') console.error(e) }
+  } catch (e: any) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 async function handleUnlockUser() {
@@ -2049,7 +2038,7 @@ async function handleUnlockUser() {
     const res = await adminUsers.updateStatus(user.value.id, 1)
     if (res.success) { ElMessage.success('解锁成功'); fetchDetail() }
     else ElMessage.error(res.message || '解锁失败')
-  } catch (e: any) { if (e !== 'cancel') console.error(e) }
+  } catch (e: any) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 function handleSetVip() {
@@ -2064,7 +2053,7 @@ function handleSetVip() {
       }).catch(() => {})
     return
   }
-  vipForm.level = user.value.vipLevel || 0; vipForm.days = 30; vipDialogVisible.value = true
+  vipDialogVisible.value = true
 }
 
 /** 编辑资料：在当前页打开编辑弹窗，从 user.value 初始化表单 */
@@ -2201,17 +2190,17 @@ async function handleEditSave() {
   finally { editSaving.value = false }
 }
 
-async function handleVipSubmit() {
+async function handleVipSubmit(payload: { level: number; days: number }) {
   if (!user.value) return
   try {
-    const res = await adminUsers.updateVip(user.value.id, { level: vipForm.level, days: vipForm.days } as any)
+    const res = await adminUsers.updateVip(user.value.id, { level: payload.level, days: payload.days } as any)
     if (res.success) { ElMessage.success('VIP设置成功'); vipDialogVisible.value = false; fetchDetail() }
     else ElMessage.error(res.message || 'VIP设置失败')
   } catch (e: any) { ElMessage.error(e.message || 'VIP设置失败') }
 }
 
 function handleSendNotify() {
-  notifyForm.title = ''; notifyForm.content = ''; notifyDialogVisible.value = true
+  notifyDialogVisible.value = true
 }
 
 function handleViewChat() {
@@ -2219,11 +2208,11 @@ function handleViewChat() {
   router.push(`/chat/monitor?userId=${user.value.id}&publicUserId=${user.value.userId}&nickname=${encodeURIComponent(user.value.nickname)}`)
 }
 
-async function handleNotifySubmit() {
-  if (!notifyForm.content.trim()) { ElMessage.warning('请输入通知内容'); return }
+async function handleNotifySubmit(payload: { title: string; content: string }) {
+  if (!payload.content.trim()) { ElMessage.warning('请输入通知内容'); return }
   if (!user.value) return
   try {
-    await adminUsers.sendUserNotification(user.value.id, { title: notifyForm.title || '系统通知', content: notifyForm.content })
+    await adminUsers.sendUserNotification(user.value.id, { title: payload.title || '系统通知', content: payload.content })
     ElMessage.success('通知已发送')
     notifyDialogVisible.value = false
   } catch (e: any) { ElMessage.error(e.message || '发送失败') }
@@ -2248,7 +2237,7 @@ async function handleDeleteReview(row: any) {
     await adminUsers.deleteReview(row.id)
     reviewList.value = reviewList.value.filter((r: any) => r.id !== row.id)
     ElMessage.success('删除成功')
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  } catch (e) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 // Answer CRUD
@@ -2263,7 +2252,7 @@ async function handleAddAnswer() {
       if (res.success && res.data) {
         questionOptions.value = (res.data as any).list || []
       }
-    } catch (e) { console.error(e) }
+    } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   }
   answerDialogVisible.value = true
 }
@@ -2292,7 +2281,7 @@ async function loadPhotos() {
   try {
     const res = await adminUsers.getPhotos(user.value.id)
     if (res.success) userPhotos.value = res.data || []
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.photos = false }
 }
 
@@ -2304,7 +2293,7 @@ async function loadChatConversations() {
     if (res.success && res.data) {
       chatConversations.value = res.data.list || []
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.chat = false }
 }
 
@@ -2324,7 +2313,7 @@ async function loadUserChatMessages() {
     if (res.success && res.data) {
       userChatMessages.value = res.data.list || []
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { userChatMsgLoading.value = false }
 }
 
@@ -2356,7 +2345,6 @@ async function handlePhotoUpload(options: any) {
       }
     }
   } catch (e) {
-    console.error(e)
     ElMessage.error('上传失败')
   }
   photoUploading.value = false
@@ -2369,7 +2357,7 @@ async function handleSetMainPhoto(photoId: number) {
       ElMessage.success('已设为头像')
       loadPhotos()
     }
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
 }
 
 async function handleDeletePhoto(photoId: number) {
@@ -2378,7 +2366,7 @@ async function handleDeletePhoto(photoId: number) {
     await adminUsers.deletePhoto(photoId)
     ElMessage.success('删除成功')
     loadPhotos()
-  } catch (e) { if (e !== 'cancel') console.error(e) }
+  } catch (e) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
 }
 
 function getReportTypeName(type: string) {
@@ -2435,7 +2423,7 @@ async function loadAuditHistory() {
       items.push(...filtered)
     }
     auditHistoryList.value = items
-  } catch (e) { console.error(e) }
+  } catch (e) { if (import.meta.env.DEV) { console.error(e) } }
   finally { tabLoading.audit = false }
 }
 
@@ -2467,7 +2455,7 @@ async function handleAuditPhoto(photoId: number, action: 'approve' | 'reject') {
     }
     loadPhotos()
   } catch (e) {
-    if (e !== 'cancel') { console.error(e); ElMessage.error('操作失败') }
+    if (e !== 'cancel') { ElMessage.error('操作失败') }
   }
 }
 
@@ -2624,10 +2612,10 @@ function getOpLogTypeColor(action: string) {
   .tag-group-inline { padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 4px; }
   .personality-section { padding: 16px; .tag-category { margin-bottom: 16px; .category-title { font-size: 14px; font-weight: 600; color: #606266; margin: 0 0 8px; } } }
   .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 16px; .photo-item { width: 100%; aspect-ratio: 3/4; border-radius: 8px; cursor: pointer; } .photo-card { position: relative; .photo-actions { display: flex; align-items: center; gap: 6px; justify-content: center; padding-top: 6px; } } }
-  .section-title { font-size: 15px; font-weight: 600; color: #303133; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #409eff; }
+  .section-title { font-size: 15px; font-weight: 600; color: #303133; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--el-color-primary); }
 }
-.tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: #409eff; } }
-.link-text { color: #409eff; cursor: pointer; &:hover { text-decoration: underline; } }
+.tab-user-cell { display: flex; align-items: center; gap: 8px; &:hover span { color: var(--el-color-primary); } }
+.link-text { color: var(--el-color-primary); cursor: pointer; &:hover { text-decoration: underline; } }
 .ml-10 { margin-left: 10px; }
 .text-muted { color: #909399; font-size: 13px; }
 
@@ -2665,7 +2653,7 @@ function getOpLogTypeColor(action: string) {
 .like-item-info { flex: 1; margin-left: 12px; min-width: 0; }
 .like-item-name { font-size: 14px; font-weight: 600; color: #333; }
 .like-item-meta { font-size: 12px; color: #999; margin-top: 2px; }
-.like-gender-male { color: #409eff; margin-left: 4px; font-size: 14px; }
+.like-gender-male { color: var(--el-color-primary); margin-left: 4px; font-size: 14px; }
 .like-gender-female { color: #e74c8a; margin-left: 4px; font-size: 14px; }
 .like-item-time { font-size: 12px; color: #999; margin: 0 12px; white-space: nowrap; }
 .like-del-btn { flex-shrink: 0; }

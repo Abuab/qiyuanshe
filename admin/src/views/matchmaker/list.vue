@@ -117,7 +117,6 @@ async function fetchData() {
       tableData.value = (res.data.list || []).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
     }
   } catch (error) {
-    console.error(error)
     ElMessage.error('获取红娘列表失败')
   } finally {
     loading.value = false
@@ -147,7 +146,6 @@ async function confirmDelete() {
     deleteDialogVisible.value = false
     fetchData()
   } catch (error) {
-    console.error(error)
     ElMessage.error('删除失败')
   } finally {
     deleteLoading.value = false
@@ -178,7 +176,6 @@ async function handleMoveUp(row: Matchmaker) {
     ElMessage.success('排序已更新')
     fetchData()
   } catch (error) {
-    console.error(error)
     ElMessage.error('排序更新失败')
   }
 }
@@ -197,7 +194,6 @@ async function handleMoveDown(row: Matchmaker) {
     ElMessage.success('排序已更新')
     fetchData()
   } catch (error) {
-    console.error(error)
     ElMessage.error('排序更新失败')
   }
 }
@@ -229,6 +225,6 @@ async function handleMoveDown(row: Matchmaker) {
 
 .sort-order {
   font-weight: bold;
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 </style>

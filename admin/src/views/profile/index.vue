@@ -479,7 +479,7 @@ async function handleDisableMfa() {
       margin: 12px 0 0;
     }
     .qr-countdown {
-      color: #409eff;
+      color: var(--el-color-primary);
       font-size: 13px;
       margin: 8px 0 0;
       strong {

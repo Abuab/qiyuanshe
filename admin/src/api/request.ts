@@ -65,9 +65,16 @@ instance.interceptors.response.use(
           return Promise.reject(new Error(result?.message || data.message || '未授权'))
         }
 
+        // 已重试过仍 401，避免无限循环
+        if ((config as any)._retry) {
+          handleUnauthorized()
+          return Promise.reject(new Error(result?.message || data.message || '未授权'))
+        }
+
         const newToken = await tryRefreshToken()
         if (newToken) {
           config.headers.Authorization = `Bearer ${newToken}`
+          ;(config as any)._retry = true
           return instance(config)
         }
 
@@ -90,11 +97,25 @@ instance.interceptors.response.use(
       const responseData = data.data || data
 
       if (status === 401) {
+        const originalRequest = error.config
+
+        // refresh 接口本身 401，直接登出（避免死循环）
+        if (originalRequest.url?.includes('/admin/auth/refresh')) {
+          handleUnauthorized()
+          return Promise.reject(error)
+        }
+
+        // 已重试过仍 401，避免无限循环
+        if ((originalRequest as any)._retry) {
+          handleUnauthorized()
+          return Promise.reject(error)
+        }
+
         // 尝试刷新 token，成功则重试原请求
         return tryRefreshToken().then((newToken) => {
           if (newToken) {
-            const originalRequest = error.config
             originalRequest.headers.Authorization = `Bearer ${newToken}`
+            ;(originalRequest as any)._retry = true
             return instance(originalRequest)
           }
           handleUnauthorized()
@@ -141,15 +162,13 @@ function handleUnauthorized() {
     store.$patch({ token: '', userInfo: null })
   })
 
-  ElMessageBox.confirm('登录已过期，请重新登录', '提示', {
+  ElMessageBox.alert('登录已过期，请重新登录', '提示', {
     confirmButtonText: '确定',
-    cancelButtonText: '取消',
     type: 'warning',
   })
     .then(() => {
       router.push({ name: 'Login' })
     })
-    .catch(() => {})
     .finally(() => {
       isUnauthorizedHandling = false
     })

@@ -1016,7 +1016,7 @@ async function handleQrUpload(fileItem: any, blockIndex: number, itemIndex: numb
       }
 
       &.expanded {
-        border-color: #409EFF;
+        border-color: var(--el-color-primary);
       }
 
       .block-card-header {
@@ -1034,7 +1034,7 @@ async function handleQrUpload(fileItem: any, blockIndex: number, itemIndex: numb
           color: #c0c4cc;
 
           &:active { cursor: grabbing; }
-          &:hover { color: #409EFF; }
+          &:hover { color: var(--el-color-primary); }
         }
 
         .block-type-icon {
@@ -1149,8 +1149,8 @@ async function handleQrUpload(fileItem: any, blockIndex: number, itemIndex: numb
       transition: border-color 0.2s, color 0.2s;
 
       &:hover {
-        border-color: #409EFF;
-        color: #409EFF;
+        border-color: var(--el-color-primary);
+        color: var(--el-color-primary);
       }
     }
   }
@@ -1185,12 +1185,12 @@ async function handleQrUpload(fileItem: any, blockIndex: number, itemIndex: numb
     transition: all 0.2s;
 
     &:hover {
-      border-color: #409EFF;
+      border-color: var(--el-color-primary);
       background-color: #ecf5ff;
     }
 
     .type-item-icon {
-      color: #409EFF;
+      color: var(--el-color-primary);
       margin-bottom: 8px;
     }
 

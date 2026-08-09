@@ -186,7 +186,6 @@ async function fetchData() {
       Object.assign(formData, res.data)
     }
   } catch (error) {
-    console.error(error)
     ElMessage.error('获取红娘信息失败')
   } finally {
     loading.value = false
@@ -221,7 +220,6 @@ async function handleSubmit() {
       ElMessage.error(res.message || (isEdit.value ? '更新失败' : '添加失败'))
     }
   } catch (error: any) {
-    console.error(error)
     ElMessage.error(error.message || (isEdit.value ? '更新失败' : '添加失败'))
   } finally {
     submitting.value = false
@@ -253,7 +251,6 @@ async function handleAvatarChange(event: Event) {
     avatarKey.value++
     ElMessage.success('头像上传成功')
   } catch (error) {
-    console.error(error)
     ElMessage.error('头像上传失败')
   } finally {
     if (avatarInputRef.value) {
@@ -272,7 +269,6 @@ async function handleQrcodeChange(event: Event) {
     qrcodeError.value = false
     ElMessage.success('二维码上传成功')
   } catch (error) {
-    console.error(error)
     ElMessage.error('二维码上传失败')
   } finally {
     if (qrcodeInputRef.value) {

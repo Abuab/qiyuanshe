@@ -217,7 +217,7 @@ function getAnswerStatusType(status: number) {
 
 .answer-count {
   font-weight: bold;
-  color: #409eff;
+  color: var(--el-color-primary);
 }
 
 .answer-user {
@@ -225,7 +225,7 @@ function getAnswerStatusType(status: number) {
   align-items: center;
   gap: 8px;
   &:hover .answer-nickname {
-    color: #409eff;
+    color: var(--el-color-primary);
   }
   .answer-nickname {
     font-size: 13px;

@@ -31,7 +31,7 @@
     </div>
 
     <!-- 搜索栏 -->
-    <div class="search-bar" style="margin-bottom:16px">
+    <div class="search-bar mb-16">
       <el-input
         v-model="targetUserIdInput"
         placeholder="输入用户ID后回车"
@@ -42,7 +42,7 @@
         <template #prefix><el-icon><Search /></el-icon></template>
       </el-input>
       <el-button type="primary" size="small" style="margin-left:8px" @click="switchTarget">查看用户</el-button>
-      <el-tag v-if="lockMessage" type="danger" size="small" style="margin-left:12px">{{ lockMessage }}</el-tag>
+      <el-tag v-if="lockMessage" type="danger" size="small" class="ml-12">{{ lockMessage }}</el-tag>
     </div>
 
     <!-- 主体区域 -->
@@ -183,6 +183,11 @@ import { ElMessage } from 'element-plus'
 import { Search, User, ChatDotRound, ArrowLeft, Loading } from '@element-plus/icons-vue'
 import { adminChat, type ChatConversation, type ChatMessageItem } from '../../api/chat'
 import { useAdminStore } from '../../store/admin'
+
+/** 开发环境才输出调试日志，生产构建自动移除 */
+const debug: (...args: any[]) => void = import.meta.env.DEV
+  ? (...args) => console.log(...args)
+  : (..._args) => {}
 
 const route = useRoute()
 const router = useRouter()
@@ -473,7 +478,7 @@ function connectWs() {
 
   const token = adminStore.token
   if (!token) {
-    console.log('[WS] connect failed: no token')
+    debug('[WS] connect failed: no token')
     ElMessage.error('未获取到登录凭证')
     return
   }
@@ -481,34 +486,34 @@ function connectWs() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = location.host
   const url = `${protocol}//${host}/ws/chat`
-  console.log('[WS] connecting to', url, 'at', new Date().toISOString())
+  debug('[WS] connecting to', url, 'at', new Date().toISOString())
 
   const ws = new WebSocket(url)
   wsRef.value = ws
 
   // 修复：5 秒认证超时检测，超时则主动断开并触发重连
   wsAuthTimeout = setTimeout(() => {
-    console.log('[WS] auth timeout after 5s, closing...')
+    debug('[WS] auth timeout after 5s, closing...')
     ws.close()
   }, 5000)
 
   ws.onopen = () => {
-    console.log('[WS] onopen at', new Date().toISOString())
+    debug('[WS] onopen at', new Date().toISOString())
     wsConnected.value = true
     wsReconnectCount = 0 // 修复：连接成功后重置重连计数
     // 发送认证消息
     ws.send(JSON.stringify({ event: 'auth', data: { token, type: 'admin' } }))
-    console.log('[WS] auth message sent')
+    debug('[WS] auth message sent')
   }
 
   ws.onmessage = (event) => {
     try {
       const payload = JSON.parse(event.data)
       const { event: evt, data } = payload
-      console.log('[WS] onmessage event=', evt, 'at', new Date().toISOString())
+      debug('[WS] onmessage event=', evt, 'at', new Date().toISOString())
 
       if (evt === 'auth_success') {
-        console.log('[WS] auth_success, subscribing to targetUserId=', targetUserId.value)
+        debug('[WS] auth_success, subscribing to targetUserId=', targetUserId.value)
         // 修复：清除认证超时定时器
         if (wsAuthTimeout) { clearTimeout(wsAuthTimeout); wsAuthTimeout = null }
         // 订阅目标用户的消息
@@ -517,25 +522,25 @@ function connectWs() {
           data: { targetUserId: targetUserId.value },
         }))
       } else if (evt === 'subscribed') {
-        console.log('[WS] subscribed to userId=', data.targetUserId)
+        debug('[WS] subscribed to userId=', data.targetUserId)
       } else if (evt === 'new_message') {
-        console.log('[WS] new_message from=', data.fromUserId, 'to=', data.toUserId)
+        debug('[WS] new_message from=', data.fromUserId, 'to=', data.toUserId)
         handleWsMessage(data)
       } else if (evt === 'monitor_locked') {
         lockMessage.value = data.message
         ElMessage.warning(data.message)
       } else if (evt === 'auth_error') {
-        console.log('[WS] auth_error:', data.message)
+        debug('[WS] auth_error:', data.message)
         ElMessage.error(data.message || 'WebSocket 认证失败')
         disconnectWs()
       }
     } catch (e) {
-      console.log('[WS] onmessage parse error:', e)
+      debug('[WS] onmessage parse error:', e)
     }
   }
 
   ws.onclose = (event) => {
-    console.log('[WS] onclose code=', event.code, 'reason=', event.reason, 'at', new Date().toISOString())
+    console.warn('[WS] onclose code=', event.code, 'reason=', event.reason, 'at', new Date().toISOString())
     wsConnected.value = false
     wsRef.value = null
     // 清除心跳和超时
@@ -544,28 +549,28 @@ function connectWs() {
     // 修复：自动重连。检查 !wsReconnectTimer 避免与 onerror 重复创建重连定时器导致重试次数重复消耗
     if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
       wsReconnectCount++
-      console.log('[WS] reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      debug('[WS] reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
       wsReconnectTimer = setTimeout(() => {
-        console.log('[WS] reconnecting from onclose...')
+        debug('[WS] reconnecting from onclose...')
         connectWs()
       }, 3000)
     } else if (wsReconnectCount >= WS_MAX_RECONNECT) {
-      console.log('[WS] max reconnect attempts reached, giving up')
+      console.warn('[WS] max reconnect attempts reached, giving up')
       ElMessage.error('WebSocket 连接失败，请检查网络后重新开始监控')
     }
   }
 
   ws.onerror = (event) => {
-    console.log('[WS] onerror at', new Date().toISOString(), event)
+    debug('[WS] onerror at', new Date().toISOString(), event)
     wsConnected.value = false
     // 修复：onerror 中启动重连。虽然规范要求 onerror 后必触发 onclose，但某些边缘情况
     //（如网络完全断开、浏览器休眠）可能导致 onclose 不被调用，在此兜底。
     // 检查 wsReconnectTimer 避免与 onclose 重复创建重连定时器
     if (monitoring.value && wsReconnectCount < WS_MAX_RECONNECT && !wsReconnectTimer) {
       wsReconnectCount++
-      console.log('[WS] onerror reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
+      debug('[WS] onerror reconnect attempt', wsReconnectCount, '/', WS_MAX_RECONNECT, 'in 3000ms')
       wsReconnectTimer = setTimeout(() => {
-        console.log('[WS] reconnecting from onerror...')
+        debug('[WS] reconnecting from onerror...')
         connectWs()
       }, 3000)
     }
@@ -580,7 +585,7 @@ function connectWs() {
 }
 
 function disconnectWs() {
-  console.log('[WS] disconnectWs called')
+  debug('[WS] disconnectWs called')
   // 修复：先阻止重连，防止 ws.close() 触发 onclose 时再次创建重连定时器
   wsReconnectCount = WS_MAX_RECONNECT
   // 修复：清除重连定时器和认证超时
@@ -611,10 +616,10 @@ function handleWsMessage(data: any) {
       // 历史消息加载中？暂存到缓冲区，等加载完成后再合并
       if (messageLoading.value) {
         wsPendingMessages.value.push(data)
-        console.log('[Chat] monitor WS buffered msg id=', data.id, 'pendingCount=', wsPendingMessages.value.length)
+        debug('[Chat] monitor WS buffered msg id=', data.id, 'pendingCount=', wsPendingMessages.value.length)
       } else {
         messages.value.push(data)
-        console.log('[Chat] monitor WS appended msg id=', data.id, 'msgCount=', messages.value.length)
+        debug('[Chat] monitor WS appended msg id=', data.id, 'msgCount=', messages.value.length)
         // 修复：仅当用户未手动上滑时自动滚动到底部
         if (!isUserScrolledUp.value) {
           nextTick(() => scrollToBottom())
@@ -659,7 +664,7 @@ function selectSession(conv: any) {
 async function fetchMessages() {
   if (!activePeer.value || !targetUserId.value) return
   messageLoading.value = true
-  console.log('[Chat] monitor fetchMessages firstLoad userId=', targetUserId.value, 'peerId=', activePeer.value.userId)
+  debug('[Chat] monitor fetchMessages firstLoad userId=', targetUserId.value, 'peerId=', activePeer.value.userId)
   try {
     const res = await adminChat.getMessages(
       targetUserId.value,
@@ -671,10 +676,10 @@ async function fetchMessages() {
     if (res.success && res.data) {
       const list = res.data.list || []
       messages.value = list
-      console.log('[Chat] monitor fetchMessages response listLen=', list.length, 'firstId=', list[0]?.id, 'lastId=', list[list.length - 1]?.id)
+      debug('[Chat] monitor fetchMessages response listLen=', list.length, 'firstId=', list[0]?.id, 'lastId=', list[list.length - 1]?.id)
       // 不足 pageSize 条说明没有更多历史消息
       if (list.length < pageSize) noMoreMessages.value = true
-      console.log('[Chat] monitor fetchMessages noMore=', noMoreMessages.value)
+      debug('[Chat] monitor fetchMessages noMore=', noMoreMessages.value)
 
       // 首次加载：nextTick + 300ms fallback 滚动到底部
       nextTick(() => scrollToBottom())
@@ -695,7 +700,7 @@ async function loadMoreHistory() {
   if (!activePeer.value || !targetUserId.value || messages.value.length === 0) return
   loadingMoreHistory.value = true
   const oldestId = messages.value[0].id
-  console.log('[Chat] monitor loadMoreHistory beforeId=', oldestId, 'currentMsgCount=', messages.value.length)
+  debug('[Chat] monitor loadMoreHistory beforeId=', oldestId, 'currentMsgCount=', messages.value.length)
   try {
     const res = await adminChat.getMessages(
       targetUserId.value,
@@ -706,14 +711,14 @@ async function loadMoreHistory() {
     )
     if (res.success && res.data) {
       const list = res.data.list || []
-      console.log('[Chat] monitor loadMoreHistory response listLen=', list.length)
+      debug('[Chat] monitor loadMoreHistory response listLen=', list.length)
       if (list.length === 0) {
         noMoreMessages.value = true
       } else {
         messages.value = [...list, ...messages.value]
         if (list.length < pageSize) noMoreMessages.value = true
       }
-      console.log('[Chat] monitor loadMoreHistory newTotal=', messages.value.length, 'noMore=', noMoreMessages.value)
+      debug('[Chat] monitor loadMoreHistory newTotal=', messages.value.length, 'noMore=', noMoreMessages.value)
     }
   } catch {
     ElMessage.error('加载失败')
@@ -725,7 +730,7 @@ async function loadMoreHistory() {
 /** 将 WebSocket 缓冲区中的消息合并到消息列表（去重后追加） */
 function flushWsPendingMessages() {
   if (wsPendingMessages.value.length === 0) return
-  console.log('[Chat] monitor flushWsPending flushing', wsPendingMessages.value.length, 'msgs')
+  debug('[Chat] monitor flushWsPending flushing', wsPendingMessages.value.length, 'msgs')
   const pending = wsPendingMessages.value
   wsPendingMessages.value = []
   for (const msg of pending) {
@@ -733,7 +738,7 @@ function flushWsPendingMessages() {
       messages.value.push(msg)
     }
   }
-  console.log('[Chat] monitor flushWsPending done, msgCount=', messages.value.length)
+  debug('[Chat] monitor flushWsPending done, msgCount=', messages.value.length)
   nextTick(() => scrollToBottom())
 }
 
@@ -741,12 +746,12 @@ function flushWsPendingMessages() {
 function scrollToBottom() {
   const now = Date.now()
   if (now - lastScrollToBottomTime < 300) {
-    console.log('[Chat] monitor scrollToBottom throttled, lastCall', now - lastScrollToBottomTime, 'ms ago')
+    debug('[Chat] monitor scrollToBottom throttled, lastCall', now - lastScrollToBottomTime, 'ms ago')
     return
   }
   lastScrollToBottomTime = now
 
-  console.log('[Chat] monitor scrollToBottom executing, msgCount=', messages.value.length)
+  debug('[Chat] monitor scrollToBottom executing, msgCount=', messages.value.length)
   // 修复：滚动到底部时重置上滑标记
   isUserScrolledUp.value = false
   // 锁定 800ms，防止滚动期间的 onMsgScroll 把 isUserScrolledUp 改回 true
@@ -757,11 +762,11 @@ function scrollToBottom() {
       setTimeout(() => {
         const el = msgContainerRef.value
         if (!el) {
-          console.log('[Chat] monitor scrollToBottom el is null, skip')
+          debug('[Chat] monitor scrollToBottom el is null, skip')
           return
         }
         el.scrollTop = el.scrollHeight
-        console.log('[Chat] monitor scrollToBottom scrollTop set to', el.scrollHeight)
+        debug('[Chat] monitor scrollToBottom scrollTop set to', el.scrollHeight)
       }, 100)
     })
   })
@@ -773,12 +778,12 @@ function onMsgScroll() {
   if (!el) return
   // 滚动锁定期间不更新 isUserScrolledUp
   if (Date.now() < scrollLockUntil) {
-    console.log('[Chat] monitor onMsgScroll locked, skip')
+    debug('[Chat] monitor onMsgScroll locked, skip')
     return
   }
   const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
   isUserScrolledUp.value = distanceToBottom > 100
-  console.log('[Chat] monitor onMsgScroll distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
+  debug('[Chat] monitor onMsgScroll distanceToBottom=', distanceToBottom, 'isUserScrolledUp=', isUserScrolledUp.value)
 }
 
 // ===== 代发 =====

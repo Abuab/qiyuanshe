@@ -23,7 +23,7 @@
     </div>
 
     <el-row :gutter="20" class="stats-row">
-      <el-col :span="6">
+      <el-col :xs="12" :lg="6">
         <stats-card
           title="总用户数"
           :value="stats.totalUsers"
@@ -32,7 +32,7 @@
           :change="stats.userGrowth"
         />
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :lg="6">
         <stats-card
           title="今日新增"
           :value="stats.todayNewUsers"
@@ -42,7 +42,7 @@
           :alert="stats.todayGrowth < 0"
         />
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :lg="6">
         <stats-card
           title="付费会员"
           :value="stats.vipUsers"
@@ -52,7 +52,7 @@
           :alert="false"
         />
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :lg="6">
         <stats-card
           title="今日营收"
           :value="stats.todayRevenue"
@@ -66,7 +66,7 @@
     </el-row>
 
     <el-row :gutter="20" class="stats-row">
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="日活(DAU)"
           :value="activeFunnel.dau"
@@ -75,7 +75,7 @@
           color="#409EFF"
         />
       </el-col>
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="周活(WAU)"
           :value="activeFunnel.wau"
@@ -84,7 +84,7 @@
           color="#67C23A"
         />
       </el-col>
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="月活(MAU)"
           :value="activeFunnel.mau"
@@ -93,7 +93,7 @@
           color="#E6A23C"
         />
       </el-col>
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="DAU留存"
           :value="activeFunnel.dauRetention"
@@ -103,7 +103,7 @@
           :alert="activeFunnel.dauRetention < 30"
         />
       </el-col>
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="匹配成功率"
           :value="matchStats.successRate"
@@ -112,7 +112,7 @@
           color="#9B59B6"
         />
       </el-col>
-      <el-col :span="4">
+      <el-col :xs="12" :lg="4">
         <stats-card
           title="今日消息"
           :value="activeFunnel.todayMessages"
@@ -476,7 +476,6 @@ async function fetchDashboardData() {
       funnelRes.status === 'fulfilled' && funnelRes.value.success ? funnelRes.value.data : []
     )
   } catch (error) {
-    console.error('Fetch dashboard data error:', error)
     ElMessage.error('获取数据失败')
   }
 }

@@ -1,8 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import * as sanitizeHtml from 'sanitize-html'
 import { Agreement, AgreementType } from '../entities/Agreement'
 import { CreateAgreementDto, UpdateAgreementDto } from './dto'
+
+/** 协议类文档允许的 HTML 标签和白名单属性 */
+const AGREEMENT_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+    'img', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  ]),
+  allowedAttributes: {
+    ...sanitizeHtml.defaults.allowedAttributes,
+    img: ['src', 'alt', 'width', 'height'],
+  },
+}
+
+function clean(html: string): string {
+  return sanitizeHtml(html, AGREEMENT_SANITIZE_OPTIONS)
+}
 
 @Injectable()
 export class AgreementService {
@@ -40,9 +56,10 @@ export class AgreementService {
       { isActive: 0 },
     )
 
-    // 创建新记录
+    // 创建新记录（content 做 XSS 清洗）
     const agreement = this.agreementRepository.create({
       ...dto,
+      content: clean(dto.content),
       isActive: 1,
     })
 
@@ -56,6 +73,9 @@ export class AgreementService {
     const agreement = await this.agreementRepository.findOne({ where: { id } })
     if (!agreement) {
       throw new NotFoundException('协议不存在')
+    }
+    if (dto.content) {
+      dto.content = clean(dto.content)
     }
     Object.assign(agreement, dto)
     return this.agreementRepository.save(agreement)

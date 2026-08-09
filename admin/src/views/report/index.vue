@@ -229,7 +229,6 @@ async function fetchData() {
       pagination.total = res.data.total || 0
     }
   } catch (error) {
-    console.error(error)
     ElMessage.error('获取举报列表失败')
   } finally {
     loading.value = false
@@ -301,7 +300,6 @@ async function confirmProcess() {
     processDialogVisible.value = false
     fetchData()
   } catch (error) {
-    console.error(error)
     ElMessage.error('处理失败')
   } finally {
     processLoading.value = false

@@ -392,8 +392,8 @@ onMounted(() => {
   align-items: flex-start;
 
   .add-btn {
-    background-color: #409EFF;
-    border-color: #409EFF;
+    background-color: var(--el-color-primary);
+    border-color: var(--el-color-primary);
     color: #fff;
 
     &:hover {
@@ -440,12 +440,12 @@ onMounted(() => {
     text-align: center;
 
     &:hover {
-      border-color: #409EFF;
+      border-color: var(--el-color-primary);
       background-color: #ecf5ff;
     }
 
     &.selected {
-      border-color: #409EFF;
+      border-color: var(--el-color-primary);
       background-color: #ecf5ff;
       box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
     }

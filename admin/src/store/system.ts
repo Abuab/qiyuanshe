@@ -20,7 +20,7 @@ export const useSystemStore = defineStore('system', () => {
         localStorage.setItem(STORAGE_KEY, name)
       }
     } catch (e) {
-      console.error('[systemStore] fetch failed:', e)
+      if (import.meta.env.DEV) { console.error('[systemStore] fetch failed:', e) }
     }
   }
 
