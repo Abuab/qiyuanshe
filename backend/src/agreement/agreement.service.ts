@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import * as sanitizeHtml from 'sanitize-html'
+import sanitizeHtml from 'sanitize-html'
 import { Agreement, AgreementType } from '../entities/Agreement'
 import { CreateAgreementDto, UpdateAgreementDto } from './dto'
 
