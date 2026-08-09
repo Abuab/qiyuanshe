@@ -84,6 +84,13 @@
                 <el-form-item label="文字内容">
                   <el-input v-model="block.content" type="textarea" :rows="3" />
                 </el-form-item>
+                <el-form-item label="字号">
+                  <el-select v-model="block.fontSize" placeholder="默认" clearable style="width: 120px">
+                    <el-option label="大号" value="large" />
+                    <el-option label="中号" value="medium" />
+                    <el-option label="小号" value="small" />
+                  </el-select>
+                </el-form-item>
                 <el-form-item label="对齐方式">
                   <el-radio-group v-model="block.align">
                     <el-radio label="left">左对齐</el-radio>
@@ -93,6 +100,9 @@
                 </el-form-item>
                 <el-form-item label="文字颜色">
                   <el-color-picker v-model="block.color" />
+                </el-form-item>
+                <el-form-item label="加粗">
+                  <el-switch v-model="block.bold" />
                 </el-form-item>
               </template>
 
@@ -253,6 +263,13 @@
                 <el-form-item label="标题">
                   <el-input v-model="block.title" placeholder="如 活动签到" maxlength="20" />
                 </el-form-item>
+                <el-form-item label="版式">
+                  <el-radio-group v-model="block.variant">
+                    <el-radio label="default">默认</el-radio>
+                    <el-radio label="hanging">悬挂圆牌</el-radio>
+                    <el-radio label="badge">黑牌白号</el-radio>
+                  </el-radio-group>
+                </el-form-item>
               </template>
 
               <!-- quote -->
@@ -266,6 +283,12 @@
                     <el-radio label="right">右对齐</el-radio>
                   </el-radio-group>
                 </el-form-item>
+                <el-form-item label="版式">
+                  <el-radio-group v-model="block.variant">
+                    <el-radio label="default">默认</el-radio>
+                    <el-radio label="card">卡片</el-radio>
+                  </el-radio-group>
+                </el-form-item>
               </template>
 
               <!-- highlight_tag -->
@@ -276,6 +299,20 @@
                 <el-form-item label="行内显示">
                   <el-switch v-model="block.inline" />
                   <span class="form-tip-inline">开启后标签不换行，可与其他内容同行</span>
+                </el-form-item>
+                <el-form-item label="样式">
+                  <el-radio-group v-model="block.variant">
+                    <el-radio label="filled">实心</el-radio>
+                    <el-radio label="outline">描边</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="颜色">
+                  <el-select v-model="block.color" placeholder="粉色" clearable style="width: 140px">
+                    <el-option label="粉色" value="pink" />
+                    <el-option label="蓝色" value="blue" />
+                    <el-option label="黄色" value="yellow" />
+                    <el-option label="黑色" value="black" />
+                  </el-select>
                 </el-form-item>
               </template>
 
@@ -383,6 +420,21 @@
                 <el-form-item label="文字叠加">
                   <el-input v-model="block.textOverlay" />
                 </el-form-item>
+                <el-form-item label="相框">
+                  <el-radio-group v-model="block.frame">
+                    <el-radio label="none">无</el-radio>
+                    <el-radio label="polaroid">拍立得</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item v-if="block.frame === 'polaroid'" label="每图小字">
+                  <el-input
+                    :model-value="(block.captions || []).join('\n')"
+                    @update:model-value="(val: string) => block.captions = val.split('\n')"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="每行一条，与图片顺序对应，可留空"
+                  />
+                </el-form-item>
               </template>
 
               <!-- contact -->
@@ -420,6 +472,9 @@
                   <el-radio-group v-model="block.style">
                     <el-radio label="default">默认</el-radio>
                     <el-radio label="colorful">彩色</el-radio>
+                    <el-radio label="dots">圆点行</el-radio>
+                    <el-radio label="end">收尾 END</el-radio>
+                    <el-radio label="dashed">虚线</el-radio>
                   </el-radio-group>
                 </el-form-item>
               </template>
@@ -466,6 +521,82 @@
                     <el-option label="清新绿(mint)" value="mint" />
                     <el-option label="紫粉交替(purple)" value="purple" />
                   </el-select>
+                </el-form-item>
+              </template>
+
+              <!-- info_card -->
+              <template v-if="block.type === 'info_card'">
+                <el-form-item label="圆字标题">
+                  <el-input v-model="block.tabTitle" placeholder="留空则不显示圆字" maxlength="8" show-word-limit />
+                </el-form-item>
+                <el-form-item label="行模式">
+                  <el-radio-group v-model="block.mode">
+                    <el-radio label="numbered">编号行</el-radio>
+                    <el-radio label="label">标签行</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="主题">
+                  <el-select v-model="block.theme" style="width: 100%">
+                    <el-option label="紫色" value="purple" />
+                    <el-option label="粉色" value="pink" />
+                    <el-option label="蓝色" value="blue" />
+                    <el-option label="深色" value="dark" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="信息条目">
+                  <div class="timeline-items">
+                    <div v-for="(item, ii) in block.items" :key="ii" class="timeline-item-row">
+                      <el-input v-model="item.label" placeholder="标签" style="width: 110px" size="small" />
+                      <el-input v-model="item.value" placeholder="内容" style="flex: 1" size="small" />
+                      <el-button size="small" text @click="moveInfoCardItem(index, ii, -1)" :disabled="ii === 0">
+                        <el-icon><Top /></el-icon>
+                      </el-button>
+                      <el-button size="small" text @click="moveInfoCardItem(index, ii, 1)" :disabled="ii === block.items.length - 1">
+                        <el-icon><Bottom /></el-icon>
+                      </el-button>
+                      <el-button size="small" text type="danger" @click="removeInfoCardItem(index, ii)" :disabled="block.items.length <= 1">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </div>
+                  </div>
+                  <el-button size="small" @click="addInfoCardItem(index)" style="margin-top: 8px">
+                    <el-icon><Plus /></el-icon>添加一项
+                  </el-button>
+                </el-form-item>
+              </template>
+
+              <!-- qr_group -->
+              <template v-if="block.type === 'qr_group'">
+                <el-form-item label="标题">
+                  <el-input v-model="block.title" placeholder="如：扫码添加红娘微信报名" />
+                </el-form-item>
+                <el-form-item label="二维码列表">
+                  <div class="timeline-items">
+                    <div v-for="(item, qi) in block.items" :key="qi" class="timeline-item-row">
+                      <el-input v-model="item.name" placeholder="红娘A" style="width: 120px" size="small" />
+                      <div class="upload-row" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+                        <el-image v-if="item.qrCode" :src="item.qrCode" fit="cover" class="thumb-preview" style="width: 40px; height: 40px;" />
+                        <el-upload
+                          action="#"
+                          :auto-upload="false"
+                          :show-file-list="false"
+                          accept="image/*"
+                          :on-change="(file: any) => handleQrUpload(file, index, qi)"
+                        >
+                          <el-button size="small" type="primary">二维码</el-button>
+                        </el-upload>
+                      </div>
+                      <el-button size="small" text type="danger" @click="removeQrGroupItem(index, qi)" :disabled="block.items.length <= 1">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </div>
+                  </div>
+                  <el-button size="small" @click="addQrGroupItem(index)" :disabled="(block.items || []).length >= 4" style="margin-top: 8px">
+                    <el-icon><Plus /></el-icon>添加一项
+                  </el-button>
+                </el-form-item>
+                <el-form-item label="底部提示">
+                  <el-input v-model="block.note" placeholder="如：勿重复添加" />
                 </el-form-item>
               </template>
 
@@ -534,7 +665,7 @@ import {
   Document, Picture, PictureFilled, ChatDotRound, Grid, Phone, Minus, Trophy,
   Plus, Top, Bottom, Edit, Delete, Close,
   Sort, Reading, ChatLineSquare, PriceTag, FullScreen, Crop, Film, StarFilled,
-  Rank, CopyDocument, List, MagicStick,
+  Rank, CopyDocument, List, MagicStick, Tickets,
 } from '@element-plus/icons-vue'
 import { adminActivity } from '../../api'
 
@@ -569,7 +700,7 @@ watch(blocks, (val) => {
   emit('update:modelValue', [...val])
 }, { deep: true })
 
-// 组件类型定义（与 C 端 BlockRenderer.vue 16 种类型对齐）
+// 组件类型定义（与 C 端 BlockRenderer.vue 20 种类型对齐）
 const blockTypes = [
   { type: 'text', label: '文本段落', icon: Document },
   { type: 'image', label: '单张图片', icon: Picture },
@@ -588,6 +719,8 @@ const blockTypes = [
   { type: 'divider', label: '分割线', icon: Minus },
   { type: 'timeline', label: '流程时间轴', icon: List },
   { type: 'circle_title', label: '圆字标题', icon: MagicStick },
+  { type: 'info_card', label: '信息卡', icon: Tickets },
+  { type: 'qr_group', label: '多码报名', icon: Grid },
 ]
 
 const typeIconMap: Record<string, any> = {
@@ -598,6 +731,7 @@ const typeIconMap: Record<string, any> = {
   quote: ChatLineSquare, highlight_tag: PriceTag,
   contact: Phone, divider: Minus,
   timeline: List, circle_title: MagicStick,
+  info_card: Tickets, qr_group: Grid,
 }
 
 const typeLabelMap: Record<string, string> = {
@@ -608,6 +742,7 @@ const typeLabelMap: Record<string, string> = {
   quote: '引用文字', highlight_tag: '高亮标签',
   contact: '联系信息', divider: '分割线',
   timeline: '流程时间轴', circle_title: '圆字标题',
+  info_card: '信息卡', qr_group: '多码报名',
 }
 
 function uuid(): string {
@@ -634,6 +769,8 @@ function getDefaultForType(type: string): Block {
     divider: { style: 'default' },
     timeline: { theme: 'dark', items: [{ badge: 'TOP1', time: '18:00-19:00', text: '现场签到' }] },
     circle_title: { text: '精彩瞬间', palette: 'candy' },
+    info_card: { tabTitle: '活动详情', mode: 'numbered', theme: 'purple', items: [{ label: '活动时间', value: '' }, { label: '活动地点', value: '' }, { label: '参与人数', value: '' }] },
+    qr_group: { title: '扫码添加红娘微信报名', items: [{ name: '红娘A', qrCode: '' }, { name: '红娘B', qrCode: '' }], note: '勿重复添加' },
   }
   return { id, type, ...defaults[type] }
 }
@@ -647,15 +784,17 @@ function getPreview(block: Block): string {
     case 'image_text_row': return block.text ? block.text.slice(0, 15) : '(空)'
     case 'scene_card': return block.innerText ? block.innerText.slice(0, 15) : '(空)'
     case 'bubble': return block.text ? block.text.slice(0, 15) : '(空)'
-    case 'gallery': return `${(block.images || []).length} 张图片`
+    case 'gallery': return `${(block.images || []).length} 张图片${block.frame === 'polaroid' ? ' · 拍立得' : ''}`
     case 'numbered_title': return `#${block.number || '?'} ${block.title || '(空)'}`
     case 'title': case 'decorative_title': return block.mainTitle || '(空)'
-    case 'quote': return block.content ? '「' + block.content.slice(0, 20) + '」' : '(空)'
-    case 'highlight_tag': return block.text ? '#' + block.text.slice(0, 15) : '(空)'
+    case 'quote': return (block.content ? '「' + block.content.slice(0, 20) + '」' : '(空)') + (block.variant === 'card' ? ' · 卡片' : '')
+    case 'highlight_tag': return (block.text ? '#' + block.text.slice(0, 15) : '(空)') + (block.variant === 'outline' ? ' · 描边' : '')
     case 'contact': return block.phone || '(空)'
-    case 'divider': return block.style === 'colorful' ? '彩色分割线' : '默认分割线'
+    case 'divider': return ({ default: '默认分割线', colorful: '彩色分割线', dots: '圆点行', end: '收尾 END', dashed: '虚线' } as Record<string, string>)[block.style || 'default'] || '默认分割线'
     case 'timeline': return `${(block.items || []).length} 个流程节点`
     case 'circle_title': return block.text || '(空)'
+    case 'info_card': return `${(block.items || []).length} 项信息`
+    case 'qr_group': return `${(block.items || []).length} 个二维码`
     default: return ''
   }
 }
@@ -737,7 +876,6 @@ async function handleImageUpload(fileItem: any, blockIndex: number, field: strin
     blocks.value[blockIndex][field] = url
     ElMessage.success('上传成功')
   } catch (e) {
-    console.error(e)
     ElMessage.error('上传失败')
   }
 }
@@ -760,8 +898,7 @@ async function handleGalleryMultiUpload(fileItem: any, blockIndex: number) {
       }
       blocks.value[blockIndex].images.push(url)
       successCount++
-    } catch (e) {
-      console.error(e)
+    } catch (_) {
     }
   }
 
@@ -789,7 +926,6 @@ async function handleSceneImageUpload(fileItem: any, blockIndex: number) {
     blocks.value[blockIndex].innerImages.push(url)
     ElMessage.success('上传成功')
   } catch (e) {
-    console.error(e)
     ElMessage.error('上传失败')
   }
 }
@@ -811,6 +947,50 @@ function moveTimelineItem(blockIndex: number, itemIndex: number, direction: numb
   const item = items[itemIndex]
   items.splice(itemIndex, 1)
   items.splice(newIndex, 0, item)
+}
+
+// info_card 条目操作
+function addInfoCardItem(blockIndex: number) {
+  blocks.value[blockIndex].items.push({ label: '', value: '' })
+}
+
+function removeInfoCardItem(blockIndex: number, itemIndex: number) {
+  if (blocks.value[blockIndex].items.length <= 1) return
+  blocks.value[blockIndex].items.splice(itemIndex, 1)
+}
+
+function moveInfoCardItem(blockIndex: number, itemIndex: number, direction: number) {
+  const items = blocks.value[blockIndex].items
+  const newIndex = itemIndex + direction
+  if (newIndex < 0 || newIndex >= items.length) return
+  const item = items[itemIndex]
+  items.splice(itemIndex, 1)
+  items.splice(newIndex, 0, item)
+}
+
+// qr_group 条目操作
+function addQrGroupItem(blockIndex: number) {
+  if (blocks.value[blockIndex].items.length >= 4) return
+  blocks.value[blockIndex].items.push({ name: '', qrCode: '' })
+}
+
+function removeQrGroupItem(blockIndex: number, itemIndex: number) {
+  if (blocks.value[blockIndex].items.length <= 1) return
+  blocks.value[blockIndex].items.splice(itemIndex, 1)
+}
+
+async function handleQrUpload(fileItem: any, blockIndex: number, itemIndex: number) {
+  const file = fileItem.raw as File
+  if (!file) return
+  if (!validateFileSize(file)) return
+  try {
+    ElMessage.info('正在上传二维码...')
+    const url = await uploadFile(file)
+    blocks.value[blockIndex].items[itemIndex].qrCode = url
+    ElMessage.success('上传成功')
+  } catch (e) {
+    ElMessage.error('上传失败')
+  }
 }
 </script>
 

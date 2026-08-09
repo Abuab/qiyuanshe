@@ -51,24 +51,29 @@ interface TextBlock extends BlockBase {
   align: 'left' | 'center' | 'right'
   color?: string
   fontSize?: 'large' | 'medium' | 'small'
+  bold?: boolean
 }
 
 interface QuoteBlock extends BlockBase {
   type: 'quote'
   content: string
   alignment: 'left' | 'right'
+  variant?: 'card'
 }
 
 interface HighlightTagBlock extends BlockBase {
   type: 'highlight_tag'
   text: string
   inline: boolean
+  variant?: 'filled' | 'outline'
+  color?: string
 }
 
 interface NumberedTitleBlock extends BlockBase {
   type: 'numbered_title'
   number: string
   title: string
+  variant?: 'default' | 'hanging' | 'badge'
 }
 
 interface SceneCardBlock extends BlockBase {
@@ -106,6 +111,8 @@ interface GalleryBlock extends BlockBase {
   columns: number
   textOverlay: string
   gap: number
+  frame?: 'polaroid'
+  captions?: string[]
 }
 
 interface ContactBlock extends BlockBase {
@@ -117,7 +124,7 @@ interface ContactBlock extends BlockBase {
 
 interface DividerBlock extends BlockBase {
   type: 'divider'
-  style: 'default' | 'colorful'
+  style: 'default' | 'colorful' | 'dots' | 'end' | 'dashed'
 }
 
 interface TimelineBlock extends BlockBase {
@@ -130,6 +137,21 @@ interface CircleTitleBlock extends BlockBase {
   type: 'circle_title'
   text: string
   palette: 'candy' | 'mint' | 'purple'
+}
+
+interface InfoCardBlock extends BlockBase {
+  type: 'info_card'
+  tabTitle: string
+  mode: 'numbered' | 'label'
+  theme: 'purple' | 'pink' | 'blue' | 'dark'
+  items: { label: string; value: string }[]
+}
+
+interface QrGroupBlock extends BlockBase {
+  type: 'qr_group'
+  title: string
+  items: { name: string; qrCode: string }[]
+  note: string
 }
 
 type Block =
@@ -151,8 +173,10 @@ type Block =
   | DividerBlock
   | TimelineBlock
   | CircleTitleBlock
+  | InfoCardBlock
+  | QrGroupBlock
 
-const props = defineProps<{ block: Block }>()
+defineProps<{ block: Block }>()
 
 function imgSrc(url: string) {
   if (!url) return ''
@@ -179,6 +203,30 @@ const BG_COLOR_MAP: Record<string, string> = {
   purple: 'linear-gradient(135deg, #B19CD9 0%, #9B7EC4 100%)',
   pink: 'linear-gradient(135deg, #FF6B9D 0%, #FF85A8 100%)',
   blue: 'linear-gradient(135deg, #6BB5FF 0%, #4DA0F0 100%)',
+}
+const TAG_COLORS: Record<string, string> = {
+  pink: '#FF6B9D',
+  blue: '#4DA0F0',
+  yellow: '#F5A623',
+  black: '#222222',
+}
+
+interface InfoCardTheme { bg: string; accent: string; text: string }
+const INFO_CARD_THEMES: Record<string, InfoCardTheme> = {
+  purple: { bg: '#F5F0FC', accent: '#9B7EC4', text: '#7A6A94' },
+  pink: { bg: '#FFF2F6', accent: '#FF6B9D', text: '#8A5568' },
+  blue: { bg: '#EFF6FF', accent: '#4DA0F0', text: '#4A6A8A' },
+  dark: { bg: '#1A1A1A', accent: '#FF6B9D', text: '#FFFFFF' },
+}
+
+function hasInfoCardItems(items?: { label: string; value: string }[]): boolean {
+  if (!items || items.length === 0) return false
+  return items.some((it) => it.label || it.value)
+}
+
+function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
+  if (!items || items.length === 0) return false
+  return items.some((it) => !!it.qrCode)
 }
 </script>
 
@@ -217,28 +265,52 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     <!-- 纯文本 -->
     <view v-else-if="block.type === 'text'" class="block-text" :style="{ textAlign: block.align || 'left' }">
-      <text class="bt-content" :style="{ fontSize: FONT_SIZE_MAP[block.fontSize || ''] || '28rpx', color: block.color || '#555' }">{{ block.content }}</text>
+      <text class="bt-content" :style="{ fontSize: FONT_SIZE_MAP[block.fontSize || ''] || '28rpx', color: block.color || '#555', fontWeight: block.bold ? 'bold' : 'normal' }">{{ block.content }}</text>
     </view>
 
     <!-- 引用文字 -->
-    <view v-else-if="block.type === 'quote'" class="block-quote" :class="'quote-' + (block.alignment || 'left')">
-      <text class="bq-icon">「</text>
-      <text class="bq-text">{{ block.content }}</text>
-      <text class="bq-icon">」</text>
+    <view v-else-if="block.type === 'quote'" class="block-quote" :class="'quote-' + (block.alignment || 'left') + (block.variant === 'card' ? ' qv-card' : '')">
+      <template v-if="block.variant === 'card'">
+        <view class="bq-card-bar"></view>
+        <text class="bq-card-text">{{ block.content }}</text>
+      </template>
+      <template v-else>
+        <text class="bq-icon">「</text>
+        <text class="bq-text">{{ block.content }}</text>
+        <text class="bq-icon">」</text>
+      </template>
     </view>
 
     <!-- 高亮标签 -->
     <view v-else-if="block.type === 'highlight_tag'" class="block-highlight-tag" :class="{ inline: block.inline }">
-      <text class="ht-tag">{{ block.text }}</text>
+      <text class="ht-tag" :class="'ht-' + (block.variant || 'filled')" :style="{
+        backgroundColor: (block.variant !== 'outline') ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : 'transparent',
+        borderColor: block.variant === 'outline' ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : 'transparent',
+        color: block.variant === 'outline' ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : '#fff',
+      }">{{ block.text }}</text>
     </view>
 
     <!-- 编号装饰标题 -->
-    <view v-else-if="block.type === 'numbered_title'" class="block-numbered-title">
-      <view class="nt-bg-blur"></view>
-      <text class="nt-number">{{ block.number }}</text>
-      <text class="nt-slash">/</text>
-      <text class="nt-title">{{ block.title }}</text>
-      <text class="nt-slash">/</text>
+    <view v-else-if="block.type === 'numbered_title'" class="block-numbered-title" :class="'nt-variant-' + (block.variant || 'default')">
+      <!-- default 版式 -->
+      <template v-if="!block.variant || block.variant === 'default'">
+        <view class="nt-bg-blur"></view>
+        <text class="nt-number">{{ block.number }}</text>
+        <text class="nt-slash">/</text>
+        <text class="nt-title">{{ block.title }}</text>
+        <text class="nt-slash">/</text>
+      </template>
+      <!-- hanging 悬挂圆牌 -->
+      <template v-else-if="block.variant === 'hanging'">
+        <view class="nt-hanging-line"></view>
+        <view class="nt-hanging-circle"><text>{{ block.number }}</text></view>
+        <text class="nt-hanging-title">{{ block.title }}</text>
+      </template>
+      <!-- badge 黑牌白号 -->
+      <template v-else-if="block.variant === 'badge'">
+        <view class="nt-badge-block"><text>{{ block.number }}</text></view>
+        <view class="nt-badge-title"><text>{{ block.title }}</text></view>
+      </template>
     </view>
 
     <!-- 场景氛围卡片 -->
@@ -277,10 +349,20 @@ const BG_COLOR_MAP: Record<string, string> = {
     </view>
 
     <!-- 照片网格 -->
-    <view v-else-if="block.type === 'gallery'" class="block-gallery">
+    <view v-else-if="block.type === 'gallery' && block.images && block.images.length > 0" class="block-gallery" :class="{ 'gallery-polaroid': block.frame === 'polaroid' }">
       <view class="bg-grid" :style="{ gridTemplateColumns: `repeat(${block.columns || 2}, 1fr)`, gap: (block.gap || 16) + 'rpx' }">
-        <view v-for="(img, i) in block.images" :key="i" class="bg-image-wrap">
-          <image class="bg-image" :src="imgSrc(img)" mode="aspectFill" />
+        <view
+          v-for="(img, i) in block.images"
+          :key="i"
+          class="bg-image-wrap"
+          :class="{ 'bg-polaroid': block.frame === 'polaroid' }"
+          :style="block.frame === 'polaroid' ? { transform: `rotate(${i % 2 === 0 ? '1.5' : '-1.5'}deg)` } : {}"
+        >
+          <image class="bg-image" :src="imgSrc(img)" mode="aspectFill" :style="block.frame === 'polaroid' ? { borderRadius: '4rpx' } : {}" />
+          <text
+            v-if="block.frame === 'polaroid' && block.captions && block.captions[i]"
+            class="bg-polaroid-caption"
+          >{{ block.captions[i] }}</text>
         </view>
       </view>
       <text v-if="block.textOverlay" class="bg-text">{{ block.textOverlay }}</text>
@@ -299,7 +381,11 @@ const BG_COLOR_MAP: Record<string, string> = {
 
     <!-- 分割线 -->
     <view v-else-if="block.type === 'divider'" class="block-divider">
-      <view class="divider-line" :class="'divider-' + (block.style || 'default')"></view>
+      <view v-if="block.style === 'dots'" class="divider-dots">
+        <view v-for="i in 5" :key="i" class="divider-dot" :class="'divider-dot-' + i"></view>
+      </view>
+      <text v-else-if="block.style === 'end'" class="divider-end">— END —</text>
+      <view v-else class="divider-line" :class="'divider-' + (block.style || 'default')"></view>
     </view>
 
     <!-- 流程时间轴 -->
@@ -315,7 +401,7 @@ const BG_COLOR_MAP: Record<string, string> = {
           <view v-if="idx < block.items.length - 1" class="tl-line" :class="'tl-line-' + (block.theme || 'dark')"></view>
         </view>
         <view class="tl-card" :class="'tl-card-' + (block.theme || 'dark')">
-          <text class="tl-card-time">{{ item.time }}</text>
+          <text class="tl-card-time" v-if="item.time">{{ item.time }}</text>
           <text class="tl-card-text">{{ item.text }}</text>
         </view>
       </view>
@@ -334,6 +420,63 @@ const BG_COLOR_MAP: Record<string, string> = {
         </view>
       </view>
       <view class="ct-deco" :style="{ backgroundColor: ctDecoColor(block.palette) }"></view>
+    </view>
+
+    <!-- 信息卡 -->
+    <view
+      v-else-if="block.type === 'info_card' && hasInfoCardItems(block.items)"
+      class="block-info-card"
+      :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).bg }"
+    >
+      <!-- tabTitle 圆字标题 -->
+      <view v-if="block.tabTitle" class="ic-tab-row">
+        <view
+          v-for="(ch, idx) in (block.tabTitle.length > 8 ? block.tabTitle.slice(0, 8) : block.tabTitle).split('')"
+          :key="idx"
+          class="ic-tab-char"
+          :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }"
+        >
+          <text>{{ ch }}</text>
+        </view>
+      </view>
+      <!-- mode=numbered 编号行 -->
+      <view v-if="block.mode !== 'label'" v-for="(item, idx) in block.items" :key="idx" class="ic-item">
+        <view class="ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">
+          <text>{{ idx + 1 }}</text>
+        </view>
+        <view class="ic-text" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">
+          <text v-if="item.label" class="ic-label">{{ item.label }}</text>
+          <text v-if="item.label && item.value">：</text>
+          <text v-if="item.value">{{ item.value }}</text>
+        </view>
+      </view>
+      <!-- mode=label 标签行 -->
+      <view v-else v-for="(item, idx) in block.items" :key="idx" class="ic-item">
+        <view class="ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">
+          <text>{{ item.label }}</text>
+        </view>
+        <text class="ic-value" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">{{ item.value }}</text>
+      </view>
+    </view>
+
+    <!-- 多码报名卡 -->
+    <view
+      v-else-if="block.type === 'qr_group' && hasQrGroupItems(block.items)"
+      class="block-qr-group"
+    >
+      <text v-if="block.title" class="qg-title">{{ block.title }}</text>
+      <view class="qg-items">
+        <view
+          v-for="(item, idx) in (block.items || []).slice(0, 4)"
+          :key="idx"
+          class="qg-item"
+        >
+          <image v-if="item.qrCode" class="qg-qrcode" :src="imgSrc(item.qrCode)" mode="aspectFit" />
+          <view v-else class="qg-qrcode-empty"></view>
+          <text v-if="item.name" class="qg-name">{{ item.name }}</text>
+        </view>
+      </view>
+      <text v-if="block.note" class="qg-note">{{ block.note }}</text>
     </view>
 
   </view>
@@ -455,6 +598,32 @@ const BG_COLOR_MAP: Record<string, string> = {
 
   &.quote-left { text-align: left; }
   &.quote-right { text-align: right; }
+
+  &.qv-card {
+    display: flex;
+    align-items: flex-start;
+    background: #FFF5F8;
+    border-radius: 12rpx;
+    padding: 28rpx 32rpx;
+    text-align: left;
+  }
+
+  .bq-card-bar {
+    width: 6rpx;
+    min-height: 48rpx;
+    border-radius: 3rpx;
+    background: #FF6B9D;
+    margin-right: 20rpx;
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+
+  .bq-card-text {
+    font-size: 28rpx;
+    color: #555;
+    line-height: 1.8;
+    flex: 1;
+  }
 }
 
 /* ===== 高亮标签 ===== */
@@ -473,6 +642,11 @@ const BG_COLOR_MAP: Record<string, string> = {
     font-size: 26rpx;
     padding: 6rpx 20rpx;
     border-radius: 8rpx;
+
+    &.ht-outline {
+      background: transparent;
+      border: 2rpx solid;
+    }
   }
 }
 
@@ -517,6 +691,77 @@ const BG_COLOR_MAP: Record<string, string> = {
     color: #333;
     position: relative;
     z-index: 1;
+  }
+
+  /* hanging 悬挂圆牌 */
+  &.nt-variant-hanging {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32rpx 0 24rpx;
+    overflow: visible;
+  }
+
+  .nt-hanging-line {
+    width: 2rpx;
+    height: 40rpx;
+    background: #D8A7B1;
+  }
+
+  .nt-hanging-circle {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: 50%;
+    background: #B98A94;
+    color: #fff;
+    font-size: 40rpx;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nt-hanging-title {
+    margin-top: 20rpx;
+    font-size: 34rpx;
+    font-weight: bold;
+    color: #8C6A72;
+    border-bottom: 2rpx solid #B98A94;
+    padding-bottom: 8rpx;
+  }
+
+  /* badge 黑牌白号 */
+  &.nt-variant-badge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32rpx 0 24rpx;
+    overflow: visible;
+  }
+
+  .nt-badge-block {
+    width: 88rpx;
+    height: 88rpx;
+    background: #1A1A1A;
+    border-radius: 12rpx;
+    color: #fff;
+    font-size: 36rpx;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .nt-badge-title {
+    margin-left: 20rpx;
+    border: 2rpx solid #1A1A1A;
+    border-radius: 8rpx;
+    padding: 12rpx 28rpx;
+    background: #fff;
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #1A1A1A;
   }
 }
 
@@ -679,6 +924,24 @@ const BG_COLOR_MAP: Record<string, string> = {
     position: relative;
     border-radius: 12rpx;
     overflow: hidden;
+
+    &.bg-polaroid {
+      background: #FFFFFF;
+      padding: 16rpx 16rpx 0;
+      padding-bottom: 0;
+      border-radius: 8rpx;
+      box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+      height: auto;
+      overflow: visible;
+    }
+  }
+
+  .bg-polaroid-caption {
+    display: block;
+    text-align: center;
+    font-size: 22rpx;
+    color: #999;
+    padding: 12rpx 0;
   }
 
   .bg-image {
@@ -759,6 +1022,40 @@ const BG_COLOR_MAP: Record<string, string> = {
       background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%);
       border-radius: 2rpx;
     }
+
+    &.divider-dashed {
+      height: 2rpx;
+      background: repeating-linear-gradient(90deg, #DDDDDD 0, #DDDDDD 16rpx, transparent 16rpx, transparent 28rpx);
+    }
+  }
+
+  .divider-dots {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20rpx;
+    padding: 16rpx 0;
+  }
+
+  .divider-dot {
+    width: 16rpx;
+    height: 16rpx;
+    border-radius: 50%;
+
+    &.divider-dot-1 { background: #FFD6E4; }
+    &.divider-dot-2 { background: #FFB3C7; }
+    &.divider-dot-3 { background: #FF85A8; }
+    &.divider-dot-4 { background: #FF6B9D; }
+    &.divider-dot-5 { background: #F0447C; }
+  }
+
+  .divider-end {
+    display: block;
+    text-align: center;
+    font-size: 24rpx;
+    color: #BBBBBB;
+    letter-spacing: 8rpx;
+    padding: 16rpx 0;
   }
 }
 
@@ -865,6 +1162,141 @@ const BG_COLOR_MAP: Record<string, string> = {
     height: 4rpx;
     border-radius: 2rpx;
     margin-top: 20rpx;
+  }
+}
+
+/* ===== 信息卡 ===== */
+.block-info-card {
+  border-radius: 16rpx;
+  padding: 32rpx;
+  position: relative;
+  margin-bottom: 24rpx;
+
+  .ic-tab-row {
+    position: absolute;
+    top: -24rpx;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12rpx;
+  }
+
+  .ic-tab-char {
+    width: 48rpx;
+    height: 48rpx;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 24rpx;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ic-item {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 24rpx;
+
+    &:first-child { margin-top: 28rpx; }
+  }
+
+  .ic-num {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 26rpx;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 20rpx;
+    margin-top: 2rpx;
+  }
+
+  .ic-text {
+    font-size: 28rpx;
+    line-height: 1.6;
+
+    .ic-label {
+      font-weight: bold;
+    }
+  }
+
+  .ic-tag {
+    min-width: 150rpx;
+    text-align: center;
+    padding: 8rpx 16rpx;
+    border-radius: 8rpx;
+    color: #fff;
+    font-size: 26rpx;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-right: 20rpx;
+  }
+
+  .ic-value {
+    font-size: 28rpx;
+    line-height: 1.6;
+    flex: 1;
+  }
+}
+
+/* ===== 多码报名卡 ===== */
+.block-qr-group {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 32rpx;
+  border: 1rpx solid #F0F0F0;
+  margin-bottom: 24rpx;
+
+  .qg-title {
+    display: block;
+    text-align: center;
+    font-size: 30rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 24rpx;
+  }
+
+  .qg-items {
+    display: flex;
+    justify-content: space-around;
+  }
+
+  .qg-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .qg-qrcode {
+    width: 180rpx;
+    height: 180rpx;
+  }
+
+  .qg-qrcode-empty {
+    width: 180rpx;
+    height: 180rpx;
+    background: #F5F5F5;
+    border-radius: 8rpx;
+  }
+
+  .qg-name {
+    font-size: 24rpx;
+    color: #555;
+    margin-top: 12rpx;
+    text-align: center;
+  }
+
+  .qg-note {
+    display: block;
+    text-align: center;
+    font-size: 26rpx;
+    color: #FF6B9D;
+    margin-top: 24rpx;
   }
 }
 </style>

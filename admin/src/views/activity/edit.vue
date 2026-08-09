@@ -315,24 +315,14 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ArrowLeft, Picture, Upload, Check, WarningFilled, Files } from '@element-plus/icons-vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { adminActivity } from '../../api'
 import BlockEditor from '../../components/BlockEditor/BlockEditor.vue'
 import BlockPreview from '../../components/BlockEditor/BlockPreview.vue'
-import { ACTIVITY_TEMPLATES, regenerateIds } from './templates'
+import { ACTIVITY_TEMPLATES, regenerateIds, CATEGORY_ORDER, groupTemplatesByCategory } from './templates'
 import type { ActivityTemplate } from './templates'
 
-const CATEGORY_ORDER = ['线下派对', '主题专场', '活动回顾', '线上活动', '极简快速'] as const
-
-const groupedTemplates = computed(() => {
-  const map: Record<string, ActivityTemplate[]> = {}
-  for (const cat of CATEGORY_ORDER) map[cat] = []
-  for (const tmpl of ACTIVITY_TEMPLATES) {
-    if (!map[tmpl.category]) map[tmpl.category] = []
-    map[tmpl.category].push(tmpl)
-  }
-  return map
-})
-import type { FormInstance, FormRules } from 'element-plus'
+const groupedTemplates = computed(() => groupTemplatesByCategory(ACTIVITY_TEMPLATES))
 
 const router = useRouter()
 const route = useRoute()

@@ -25,12 +25,23 @@
             </div>
 
             <!-- 编号装饰标题 -->
-            <div v-else-if="block.type === 'numbered_title'" class="pb-numbered-title">
-              <div class="pb-nt-bg"></div>
-              <span class="pb-nt-number">{{ block.number || '01' }}</span>
-              <span class="pb-nt-slash">/</span>
-              <span class="pb-nt-title">{{ block.title || '(标题)' }}</span>
-              <span class="pb-nt-slash">/</span>
+            <div v-else-if="block.type === 'numbered_title'" class="pb-numbered-title" :class="'pb-nt-variant-' + (block.variant || 'default')">
+              <template v-if="!block.variant || block.variant === 'default'">
+                <div class="pb-nt-bg"></div>
+                <span class="pb-nt-number">{{ block.number || '01' }}</span>
+                <span class="pb-nt-slash">/</span>
+                <span class="pb-nt-title">{{ block.title || '(标题)' }}</span>
+                <span class="pb-nt-slash">/</span>
+              </template>
+              <template v-else-if="block.variant === 'hanging'">
+                <div class="pb-nt-hanging-line"></div>
+                <div class="pb-nt-hanging-circle">{{ block.number || '01' }}</div>
+                <span class="pb-nt-hanging-title">{{ block.title || '(标题)' }}</span>
+              </template>
+              <template v-else-if="block.variant === 'badge'">
+                <div class="pb-nt-badge-block">{{ block.number || '01' }}</div>
+                <div class="pb-nt-badge-title">{{ block.title || '(标题)' }}</div>
+              </template>
             </div>
 
             <!-- 左图右文 -->
@@ -81,19 +92,29 @@
 
             <!-- 纯文本 -->
             <div v-else-if="block.type === 'text'" class="pb-text" :style="{ textAlign: block.align || 'left' }">
-              <span :style="{ fontSize: pbFontSize(block.fontSize), color: block.color || '#555' }">{{ block.content || '(文本内容)' }}</span>
+              <span :style="{ fontSize: pbFontSize(block.fontSize), color: block.color || '#555', fontWeight: block.bold ? 'bold' : 'normal' }">{{ block.content || '(文本内容)' }}</span>
             </div>
 
             <!-- 引用文字 -->
-            <div v-else-if="block.type === 'quote'" class="pb-quote" :class="'pb-quote-' + (block.alignment || 'left')">
-              <span class="pb-bq-icon">「</span>
-              <span class="pb-bq-text">{{ block.content || '(引用内容)' }}</span>
-              <span class="pb-bq-icon">」</span>
+            <div v-else-if="block.type === 'quote'" class="pb-quote" :class="'pb-quote-' + (block.alignment || 'left') + (block.variant === 'card' ? ' pb-qv-card' : '')">
+              <template v-if="block.variant === 'card'">
+                <div class="pb-bq-card-bar"></div>
+                <span class="pb-bq-card-text">{{ block.content || '(引用内容)' }}</span>
+              </template>
+              <template v-else>
+                <span class="pb-bq-icon">「</span>
+                <span class="pb-bq-text">{{ block.content || '(引用内容)' }}</span>
+                <span class="pb-bq-icon">」</span>
+              </template>
             </div>
 
             <!-- 高亮标签 -->
             <div v-else-if="block.type === 'highlight_tag'" class="pb-highlight-tag" :class="{ 'pb-inline': block.inline }">
-              <span class="pb-ht-tag">{{ block.text || '(标签)' }}</span>
+              <span class="pb-ht-tag" :class="{ 'pb-ht-outline': block.variant === 'outline' }" :style="{
+                backgroundColor: block.variant !== 'outline' ? (previewTagColor(block.color)) : 'transparent',
+                borderColor: block.variant === 'outline' ? previewTagColor(block.color) : 'transparent',
+                color: block.variant === 'outline' ? previewTagColor(block.color) : '#fff',
+              }">{{ block.text || '(标签)' }}</span>
             </div>
 
             <!-- 对话气泡 -->
@@ -105,11 +126,21 @@
             </div>
 
             <!-- 照片网格 -->
-            <div v-else-if="block.type === 'gallery'" class="pb-gallery">
+            <div v-else-if="block.type === 'gallery'" class="pb-gallery" :class="{ 'pb-gallery-polaroid': block.frame === 'polaroid' }">
               <div class="pb-bg-grid" :style="{ gridTemplateColumns: `repeat(${block.columns || 2}, 1fr)`, gap: ((block.gap || 16) / 2) + 'px' }">
-                <div v-for="(img, i) in (block.images && block.images.length ? block.images : ['', ''])" :key="i" class="pb-bg-img-wrap">
-                  <img v-if="img" :src="img" class="pb-bg-img" />
-                  <div v-else class="pb-img-placeholder pb-img-square">图</div>
+                <div
+                  v-for="(img, i) in (block.images && block.images.length ? block.images : ['', ''])"
+                  :key="i"
+                  class="pb-bg-img-wrap"
+                  :class="{ 'pb-bg-polaroid': block.frame === 'polaroid' }"
+                  :style="block.frame === 'polaroid' ? { transform: `rotate(${i % 2 === 0 ? '1.5' : '-1.5'}deg)` } : {}"
+                >
+                  <img v-if="img" :src="img" class="pb-bg-img" :style="block.frame === 'polaroid' ? { borderRadius: '2px' } : {}" />
+                  <div v-else class="pb-img-placeholder" :class="block.frame === 'polaroid' ? 'pb-img-square-polaroid' : 'pb-img-square'">图</div>
+                  <div
+                    v-if="block.frame === 'polaroid' && block.captions && block.captions[i]"
+                    class="pb-bg-polaroid-caption"
+                  >{{ block.captions[i] }}</div>
                 </div>
               </div>
               <div v-if="block.textOverlay" class="pb-bg-text">{{ block.textOverlay }}</div>
@@ -128,7 +159,11 @@
 
             <!-- 分割线 -->
             <div v-else-if="block.type === 'divider'" class="pb-divider">
-              <div class="pb-divider-line" :class="'pb-divider-' + (block.style || 'default')"></div>
+              <div v-if="block.style === 'dots'" class="pb-divider-dots">
+                <div v-for="i in 5" :key="i" class="pb-divider-dot" :class="'pb-divider-dot-' + i"></div>
+              </div>
+              <span v-else-if="block.style === 'end'" class="pb-divider-end">— END —</span>
+              <div v-else class="pb-divider-line" :class="'pb-divider-' + (block.style || 'default')"></div>
             </div>
 
             <!-- 流程时间轴 -->
@@ -142,7 +177,7 @@
                   <div v-if="idx < block.items.length - 1" class="pb-tl-line" :class="'pb-tl-line-' + (block.theme || 'dark')"></div>
                 </div>
                 <div class="pb-tl-card" :class="'pb-tl-card-' + (block.theme || 'dark')">
-                  <span class="pb-tl-time">{{ item.time }}</span>
+                  <span v-if="item.time" class="pb-tl-time">{{ item.time }}</span>
                   <span class="pb-tl-text">{{ item.text }}</span>
                 </div>
               </div>
@@ -159,6 +194,52 @@
                 >{{ ch }}</span>
               </div>
               <div class="pb-ct-deco" :style="{ backgroundColor: previewCtDecoColor(block.palette) }"></div>
+            </div>
+
+            <!-- 信息卡 -->
+            <div
+              v-else-if="block.type === 'info_card' && hasPreviewInfoCardItems(block.items)"
+              class="pb-info-card"
+              :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).bg }"
+            >
+              <div v-if="block.tabTitle" class="pb-ic-tab-row">
+                <div
+                  v-for="(ch, idx) in (block.tabTitle.length > 8 ? block.tabTitle.slice(0, 8) : block.tabTitle).split('')"
+                  :key="idx"
+                  class="pb-ic-tab-char"
+                  :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }"
+                >{{ ch }}</div>
+              </div>
+              <!-- mode=numbered -->
+              <div v-if="block.mode !== 'label'" v-for="(item, idx) in (block.items || [])" :key="idx" class="pb-ic-item">
+                <div class="pb-ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ idx + 1 }}</div>
+                <div class="pb-ic-text" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">
+                  <span v-if="item.label" class="pb-ic-label">{{ item.label }}</span>
+                  <span v-if="item.label && item.value">：</span>
+                  <span v-if="item.value">{{ item.value }}</span>
+                </div>
+              </div>
+              <!-- mode=label -->
+              <div v-else v-for="(item, idx) in (block.items || [])" :key="idx" class="pb-ic-item">
+                <div class="pb-ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ item.label }}</div>
+                <span class="pb-ic-value" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">{{ item.value }}</span>
+              </div>
+            </div>
+
+            <!-- 多码报名卡 -->
+            <div
+              v-else-if="block.type === 'qr_group' && hasPreviewQrGroupItems(block.items)"
+              class="pb-qr-group"
+            >
+              <div v-if="block.title" class="pb-qg-title">{{ block.title }}</div>
+              <div class="pb-qg-items">
+                <div v-for="(item, idx) in (block.items || []).slice(0, 4)" :key="idx" class="pb-qg-item">
+                  <img v-if="item.qrCode" :src="item.qrCode" class="pb-qg-qrcode" />
+                  <div v-else class="pb-qg-qrcode-empty"></div>
+                  <span v-if="item.name" class="pb-qg-name">{{ item.name }}</span>
+                </div>
+              </div>
+              <div v-if="block.note" class="pb-qg-note">{{ block.note }}</div>
             </div>
 
             <!-- 未知类型 -->
@@ -224,6 +305,34 @@ function previewCtDecoColor(palette: string): string {
   if (palette === 'mint') return 'rgba(95,191,143,0.4)'
   if (palette === 'purple') return 'rgba(177,156,217,0.4)'
   return 'rgba(126,214,192,0.4)'
+}
+
+const TAG_COLORS: Record<string, string> = {
+  pink: '#FF6B9D',
+  blue: '#4DA0F0',
+  yellow: '#F5A623',
+  black: '#222222',
+}
+
+function previewTagColor(color?: string): string {
+  return TAG_COLORS[color || ''] || TAG_COLORS.pink
+}
+
+const INFO_CARD_THEMES: Record<string, { bg: string; accent: string; text: string }> = {
+  purple: { bg: '#F5F0FC', accent: '#9B7EC4', text: '#7A6A94' },
+  pink: { bg: '#FFF2F6', accent: '#FF6B9D', text: '#8A5568' },
+  blue: { bg: '#EFF6FF', accent: '#4DA0F0', text: '#4A6A8A' },
+  dark: { bg: '#1A1A1A', accent: '#FF6B9D', text: '#FFFFFF' },
+}
+
+function hasPreviewInfoCardItems(items?: any[]): boolean {
+  if (!items || items.length === 0) return false
+  return items.some((it: any) => it.label || it.value)
+}
+
+function hasPreviewQrGroupItems(items?: any[]): boolean {
+  if (!items || items.length === 0) return false
+  return items.some((it: any) => !!it.qrCode)
 }
 </script>
 
@@ -301,6 +410,17 @@ function previewCtDecoColor(palette: string): string {
     .pb-nt-number { font-size: 36px; font-weight: bold; color: #333; position: relative; z-index: 1; }
     .pb-nt-slash { font-size: 14px; color: #999; margin: 0 4px; position: relative; z-index: 1; }
     .pb-nt-title { font-size: 16px; font-weight: bold; color: #333; position: relative; z-index: 1; }
+
+    /* hanging */
+    &.pb-nt-variant-hanging { display: flex; flex-direction: column; align-items: center; padding: 16px 0 12px; overflow: visible; }
+    .pb-nt-hanging-line { width: 1px; height: 20px; background: #D8A7B1; }
+    .pb-nt-hanging-circle { width: 48px; height: 48px; border-radius: 50%; background: #B98A94; color: #fff; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+    .pb-nt-hanging-title { margin-top: 10px; font-size: 17px; font-weight: bold; color: #8C6A72; border-bottom: 1px solid #B98A94; padding-bottom: 4px; }
+
+    /* badge */
+    &.pb-nt-variant-badge { display: flex; justify-content: center; align-items: center; padding: 16px 0 12px; overflow: visible; }
+    .pb-nt-badge-block { width: 44px; height: 44px; background: #1A1A1A; border-radius: 6px; color: #fff; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pb-nt-badge-title { margin-left: 10px; border: 1px solid #1A1A1A; border-radius: 4px; padding: 6px 14px; background: #fff; font-size: 16px; font-weight: bold; color: #1A1A1A; }
   }
 
   /* ========== 左图右文 ========== */
@@ -374,12 +494,21 @@ function previewCtDecoColor(palette: string): string {
     .pb-bq-text { font-size: 13px; color: #999; margin: 0 2px; }
     &.pb-quote-left { text-align: left; }
     &.pb-quote-right { text-align: right; }
+
+    &.pb-qv-card {
+      display: flex; align-items: flex-start; background: #FFF5F8;
+      border-radius: 6px; padding: 14px 16px; text-align: left;
+    }
+    .pb-bq-card-bar { width: 3px; min-height: 24px; border-radius: 2px; background: #FF6B9D; margin-right: 10px; flex-shrink: 0; align-self: stretch; }
+    .pb-bq-card-text { font-size: 14px; color: #555; line-height: 1.8; flex: 1; }
   }
 
   /* ========== 高亮标签 ========== */
   .pb-highlight-tag { margin-bottom: 12px;
     &.pb-inline { display: inline-block; margin-bottom: 0; margin-right: 6px; }
-    .pb-ht-tag { display: inline-block; background: #FF6B9D; color: #fff; font-size: 13px; padding: 3px 10px; border-radius: 4px; }
+    .pb-ht-tag { display: inline-block; background: #FF6B9D; color: #fff; font-size: 13px; padding: 3px 10px; border-radius: 4px;
+      &.pb-ht-outline { background: transparent; border: 1px solid; }
+    }
   }
 
   /* ========== 对话气泡 ========== */
@@ -400,9 +529,13 @@ function previewCtDecoColor(palette: string): string {
   /* ========== 照片网格 ========== */
   .pb-gallery { margin-bottom: 12px;
     .pb-bg-grid { display: grid; }
-    .pb-bg-img-wrap { width: 100%; aspect-ratio: 1; position: relative; border-radius: 6px; overflow: hidden; }
+    .pb-bg-img-wrap { width: 100%; aspect-ratio: 1; position: relative; border-radius: 6px; overflow: hidden;
+      &.pb-bg-polaroid { background: #fff; padding: 8px 8px 0; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); height: auto; aspect-ratio: auto; overflow: visible; }
+    }
     .pb-bg-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     .pb-bg-text { display: block; text-align: center; font-size: 13px; color: #999; margin-top: 6px; }
+    .pb-bg-polaroid-caption { display: block; text-align: center; font-size: 11px; color: #999; padding: 6px 0; }
+    .pb-img-square-polaroid { width: 100%; aspect-ratio: 1; }
   }
 
   /* ========== 联系信息 ========== */
@@ -422,7 +555,18 @@ function previewCtDecoColor(palette: string): string {
     .pb-divider-line { height: 1px;
       &.pb-divider-default { background: #e0e0e0; }
       &.pb-divider-colorful { height: 2px; background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%); border-radius: 1px; }
+      &.pb-divider-dashed { height: 1px; background: repeating-linear-gradient(90deg, #DDD 0, #DDD 8px, transparent 8px, transparent 14px); }
     }
+    .pb-divider-dots { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 8px 0;
+      .pb-divider-dot { width: 8px; height: 8px; border-radius: 50%;
+        &.pb-divider-dot-1 { background: #FFD6E4; }
+        &.pb-divider-dot-2 { background: #FFB3C7; }
+        &.pb-divider-dot-3 { background: #FF85A8; }
+        &.pb-divider-dot-4 { background: #FF6B9D; }
+        &.pb-divider-dot-5 { background: #F0447C; }
+      }
+    }
+    .pb-divider-end { display: block; text-align: center; font-size: 12px; color: #BBB; letter-spacing: 4px; padding: 8px 0; }
   }
 
   /* ========== 流程时间轴 ========== */
@@ -473,6 +617,76 @@ function previewCtDecoColor(palette: string): string {
     }
 
     .pb-ct-deco { width: 60px; height: 2px; border-radius: 1px; margin-top: 10px; }
+  }
+
+  /* ========== 信息卡 375px ========== */
+  .pb-info-card {
+    border-radius: 8px; padding: 16px; position: relative; margin-bottom: 12px;
+
+    .pb-ic-tab-row {
+      position: absolute; top: -12px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 6px;
+    }
+
+    .pb-ic-tab-char {
+      width: 24px; height: 24px; border-radius: 50%;
+      color: #fff; font-size: 12px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .pb-ic-item {
+      display: flex; align-items: flex-start; margin-top: 12px;
+
+      &:first-child { margin-top: 14px; }
+    }
+
+    .pb-ic-num {
+      width: 20px; height: 20px; border-radius: 50%; color: #fff;
+      font-size: 13px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-right: 10px; margin-top: 1px;
+    }
+
+    .pb-ic-text {
+      font-size: 14px; line-height: 1.6;
+      .pb-ic-label { font-weight: bold; }
+    }
+
+    .pb-ic-tag {
+      min-width: 75px; text-align: center; padding: 4px 8px;
+      border-radius: 4px; color: #fff; font-size: 13px;
+      font-weight: bold; flex-shrink: 0; margin-right: 10px;
+    }
+
+    .pb-ic-value { font-size: 14px; line-height: 1.6; flex: 1; }
+  }
+
+  /* ========== 多码报名卡 375px ========== */
+  .pb-qr-group {
+    background: #fff; border-radius: 8px; padding: 16px;
+    border: 1px solid #F0F0F0; margin-bottom: 12px;
+
+    .pb-qg-title {
+      display: block; text-align: center; font-size: 15px;
+      font-weight: bold; color: #333; margin-bottom: 12px;
+    }
+
+    .pb-qg-items { display: flex; justify-content: space-around; }
+
+    .pb-qg-item { display: flex; flex-direction: column; align-items: center; }
+
+    .pb-qg-qrcode { width: 90px; height: 90px; object-fit: contain; }
+
+    .pb-qg-qrcode-empty {
+      width: 90px; height: 90px; background: #F5F5F5; border-radius: 4px;
+    }
+
+    .pb-qg-name { font-size: 12px; color: #555; margin-top: 6px; text-align: center; }
+
+    .pb-qg-note {
+      display: block; text-align: center; font-size: 13px;
+      color: #FF6B9D; margin-top: 12px;
+    }
   }
 }
 </style>

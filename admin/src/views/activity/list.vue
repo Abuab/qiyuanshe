@@ -164,20 +164,10 @@ import { Plus, Picture } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminActivity } from '../../api'
 import { formatDate } from '../../utils/date'
-import { ACTIVITY_TEMPLATES } from './templates'
+import { ACTIVITY_TEMPLATES, CATEGORY_ORDER, groupTemplatesByCategory } from './templates'
 import type { Activity } from '../../api/activity'
 
-const CATEGORY_ORDER = ['线下派对', '主题专场', '活动回顾', '线上活动', '极简快速'] as const
-
-const groupedTemplates = computed(() => {
-  const map: Record<string, typeof ACTIVITY_TEMPLATES> = {}
-  for (const cat of CATEGORY_ORDER) map[cat] = []
-  for (const tmpl of ACTIVITY_TEMPLATES) {
-    if (!map[tmpl.category]) map[tmpl.category] = []
-    map[tmpl.category].push(tmpl)
-  }
-  return map
-})
+const groupedTemplates = computed(() => groupTemplatesByCategory(ACTIVITY_TEMPLATES))
 
 const router = useRouter()
 const adminStore = useAdminStore()

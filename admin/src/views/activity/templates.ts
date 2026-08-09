@@ -478,4 +478,152 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
       { id: '__RS14__', type: 'contact', phone: '【预约/咨询电话】', qrCode: '', source: '【好啦本次活动暂且告一段落啦，下期精彩活动报名中~】' },
     ],
   },
+
+  // ============================================================
+  // 模板 14：剧本杀/桌游专场
+  // ============================================================
+  {
+    key: 'scriptkill',
+    name: '剧本杀/桌游专场',
+    description: '剧本杀/桌游局：悬念海报→编号信息卡→场地种草→多码报名',
+    emoji: '🎭',
+    category: '主题专场',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: false,
+      maxParticipants: 20,
+      titlePlaceholder: '【如：03.06 剧本杀脱单专场】',
+    },
+    detailBlocks: [
+      { id: '__SK01__', type: 'title', mainTitle: '【如：剧本杀脱单专场】', subTitle: '【日期+场馆名】', bgColor: '#1A1A1A', textColor: '#FFFFFF' },
+      { id: '__SK02__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__SK03__', type: 'text', content: '【如：\n人生如戏，全靠演技！\n真假话结合，开始"表演"\n单身的你可以通过推理游戏\n找到和你三观、表达、逻辑相同的异性】', align: 'center', color: '#555555' },
+      { id: '__SK04__', type: 'image', url: '', caption: '【氛围插画，可删】', labelPosition: 'bottom' },
+      { id: '__SK05__', type: 'numbered_title', number: '01', title: '活动详情', variant: 'hanging' },
+      { id: '__SK06__', type: 'info_card', tabTitle: '活动详情', mode: 'numbered', theme: 'purple', items: [
+        { label: '活动时间', value: '【3月6日下午2点】' },
+        { label: '活动地点', value: '【XX推理馆】' },
+        { label: '参与人数', value: '【20人（10男10女）】' },
+        { label: '参与对象', value: '【22-35周岁单身青年】' },
+        { label: '报名方式', value: '【长按识别下方二维码添加红娘微信报名】' },
+      ] },
+      { id: '__SK07__', type: 'numbered_title', number: '02', title: '派对环境', variant: 'hanging' },
+      { id: '__SK08__', type: 'quote', variant: 'card', content: '【场馆介绍，如：XX推理馆——24小时沉浸式推理体验空间，不止剧本杀，桌游、狼人杀也应有尽有！】', alignment: 'left' },
+      { id: '__SK09__', type: 'gallery', images: [], columns: 2, textOverlay: '【场馆环境图】', gap: 16 },
+      { id: '__SK10__', type: 'divider', style: 'dots' },
+      { id: '__SK11__', type: 'numbered_title', number: '03', title: '报名方式', variant: 'hanging' },
+      { id: '__SK12__', type: 'qr_group', title: '添加红娘微信参与报名', items: [
+        { name: '【红娘昵称1】', qrCode: '' },
+        { name: '【红娘昵称2】', qrCode: '' },
+        { name: '【红娘昵称3】', qrCode: '' },
+      ], note: '勿重复添加！！！' },
+      { id: '__SK13__', type: 'text', content: '【如：关于XX相亲——提供一对一情感指导、线上线下特色派对、专业匹配师跟进，让你变好，陪你脱单】', align: 'center', color: '#999999', fontSize: 'small' },
+      { id: '__SK14__', type: 'divider', style: 'end' },
+    ],
+    sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 15：公益联谊/正式活动
+  // ============================================================
+  {
+    key: 'charity',
+    name: '公益联谊/正式活动',
+    description: '公文式正式活动：主视觉→大标题章节（条件/方式/组织/时间/地址/须知）',
+    emoji: '🤝',
+    category: '主题专场',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: true,
+      maxParticipants: 100,
+      titlePlaceholder: '【如：百人青年公益联谊会】',
+    },
+    detailBlocks: [
+      { id: '__GY01__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__GY02__', type: 'text', content: '【如：你的脱单计划实施得怎么样……由XX主办的百人青年公益联谊会即将举办，赶紧来报名吧！】', align: 'center' },
+      { id: '__GY03__', type: 'text', content: '报名条件', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY04__', type: 'text', content: '【如果你满足以下条件，那么恭喜你，可以获得入场券了！\n1、年龄：\n2、\n3、报名信息请确保准确无误】' },
+      { id: '__GY05__', type: 'text', content: '报名方式', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY06__', type: 'text', content: '【1、长按识别下方二维码报名，按要求填写提交即可\n2、报名成功者，活动前1天电话确认信息及注意事项\n3、报名及咨询电话：】' },
+      { id: '__GY07__', type: 'contact', phone: '【咨询电话】', qrCode: '', source: '长按识别二维码进行报名' },
+      { id: '__GY08__', type: 'text', content: '活动组织', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY09__', type: 'text', content: '【主办单位：\n承办单位：\n协办单位：】' },
+      { id: '__GY10__', type: 'text', content: '活动时间', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY11__', type: 'text', content: '【报名时间：\n活动时间：】' },
+      { id: '__GY12__', type: 'text', content: '活动地址', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY13__', type: 'text', content: '【地址：\n出行方式：】', color: '#C0392B' },
+      { id: '__GY14__', type: 'text', content: '注意事项', bold: true, fontSize: 'large', color: '#222222' },
+      { id: '__GY15__', type: 'text', content: '【1、\n2、名额有限，人员满后不再接受报名\n3、本活动属公益活动，不收取任何费用】' },
+      { id: '__GY16__', type: 'divider', style: 'default' },
+    ],
+    sceneBlocks: [
+      { id: '__GYS01__', type: 'gallery', images: [], columns: 2, textOverlay: '【活动现场照片】', gap: 16 },
+      { id: '__GYS02__', type: 'contact', phone: '', qrCode: '', source: '【下期活动报名中~扫码咨询】' },
+    ],
+  },
+
+  // ============================================================
+  // 模板 16：清吧/音乐派对之夜
+  // ============================================================
+  {
+    key: 'barparty',
+    name: '清吧/音乐派对之夜',
+    description: '夜场清吧局：深色信息卡报名 + 活动现场拍立得回顾双 Tab',
+    emoji: '🍸',
+    category: '线下派对',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: true,
+      maxParticipants: 40,
+      titlePlaceholder: '【如：成双成对·遇见倾心音乐派对】',
+    },
+    detailBlocks: [
+      { id: '__BB01__', type: 'title', mainTitle: '【如：成双成对 遇见倾心】', subTitle: '【日期+酒吧名】', bgColor: '#1F1F3A', textColor: '#FFFFFF' },
+      { id: '__BB02__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__BB03__', type: 'text', content: '【如：\n不要做时光的追逐者\n主动去寻找那个TA\n和TA撞个满怀】', align: 'center', color: '#555555' },
+      { id: '__BB04__', type: 'divider', style: 'dashed' },
+      { id: '__BB05__', type: 'info_card', tabTitle: '', mode: 'label', theme: 'dark', items: [
+        { label: '派对地址', value: '【XX清吧/音乐酒吧】' },
+        { label: '参与人数', value: '【40人（20男20女）】' },
+        { label: '参与对象', value: '【22-35周岁单身青年】' },
+        { label: '报名费用', value: '【会员免费/XX元】' },
+      ] },
+      { id: '__BB06__', type: 'qr_group', title: '扫码加红娘立即报名', items: [
+        { name: '【红娘昵称1】', qrCode: '' },
+        { name: '【红娘昵称2】', qrCode: '' },
+      ], note: '' },
+      { id: '__BB07__', type: 'divider', style: 'end' },
+    ],
+    sceneBlocks: [
+      { id: '__BBS01__', type: 'image_overlay', url: '', text: '【如：成双成对 遇见倾心 · 精彩回顾】', position: 'center', textColor: '#FFFFFF', bgOverlay: 'rgba(0,0,0,0.45)' },
+      { id: '__BBS02__', type: 'quote', variant: 'card', content: '【回顾导语，如：这个周末不"剁手"，只牵手~一起在音乐清吧寻找小浪漫】', alignment: 'left' },
+      { id: '__BBS03__', type: 'numbered_title', number: '1', title: '派对布场', variant: 'badge' },
+      { id: '__BBS04__', type: 'gallery', images: [], columns: 2, frame: 'polaroid', captions: ['December', 'luck'], textOverlay: '', gap: 24 },
+      { id: '__BBS05__', type: 'numbered_title', number: '2', title: '嘉宾签到', variant: 'badge' },
+      { id: '__BBS06__', type: 'gallery', images: [], columns: 2, frame: 'polaroid', captions: [], textOverlay: '', gap: 24 },
+      { id: '__BBS07__', type: 'numbered_title', number: '3', title: '破冰互动', variant: 'badge' },
+      { id: '__BBS08__', type: 'gallery', images: [], columns: 2, textOverlay: '', gap: 16 },
+      { id: '__BBS09__', type: 'divider', style: 'dots' },
+      { id: '__BBS10__', type: 'contact', phone: '', qrCode: '', source: '【下期活动报名中~扫码咨询】' },
+    ],
+  },
 ]
+
+/** 模板分组排序（固定） */
+export const CATEGORY_ORDER = ['线下派对', '主题专场', '活动回顾', '线上活动', '极简快速'] as const
+
+/** 按 CATEGORY_ORDER 顺序对模板分组 */
+export function groupTemplatesByCategory(templates: ActivityTemplate[]): Record<string, ActivityTemplate[]> {
+  const grouped: Record<string, ActivityTemplate[]> = {}
+  templates.forEach((t) => {
+    if (!grouped[t.category]) grouped[t.category] = []
+    grouped[t.category].push(t)
+  })
+  return grouped
+}
