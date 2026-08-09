@@ -211,19 +211,23 @@
                 >{{ ch }}</div>
               </div>
               <!-- mode=numbered -->
-              <div v-if="block.mode !== 'label'" v-for="(item, idx) in (block.items || [])" :key="idx" class="pb-ic-item">
-                <div class="pb-ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ idx + 1 }}</div>
-                <div class="pb-ic-text" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">
-                  <span v-if="item.label" class="pb-ic-label">{{ item.label }}</span>
-                  <span v-if="item.label && item.value">：</span>
-                  <span v-if="item.value">{{ item.value }}</span>
+              <template v-if="block.mode !== 'label'">
+                <div v-for="(item, idx) in (block.items || [])" :key="'num-' + idx" class="pb-ic-item">
+                  <div class="pb-ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ idx + 1 }}</div>
+                  <div class="pb-ic-text" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">
+                    <span v-if="item.label" class="pb-ic-label">{{ item.label }}</span>
+                    <span v-if="item.label && item.value">：</span>
+                    <span v-if="item.value">{{ item.value }}</span>
+                  </div>
                 </div>
-              </div>
+              </template>
               <!-- mode=label -->
-              <div v-else v-for="(item, idx) in (block.items || [])" :key="idx" class="pb-ic-item">
-                <div class="pb-ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ item.label }}</div>
-                <span class="pb-ic-value" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">{{ item.value }}</span>
-              </div>
+              <template v-else>
+                <div v-for="(item, idx) in (block.items || [])" :key="'lbl-' + idx" class="pb-ic-item">
+                  <div class="pb-ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ item.label }}</div>
+                  <span class="pb-ic-value" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">{{ item.value }}</span>
+                </div>
+              </template>
             </div>
 
             <!-- 多码报名卡 -->
