@@ -20,6 +20,8 @@ export interface Activity {
   maxParticipants: number
   currentParticipants: number
   status: number
+  showDetailTab?: number
+  showSceneTab?: number
   isActive: number
   sortOrder: number
   createdAt: string
