@@ -214,7 +214,7 @@ export class ActivityService {
 
     return {
       list: activities.map((a) => ({
-        ...a,
+        ...this.applyEndedStatus(a),
         coverImage: resolveStaticUrl(a.coverImage),
       })),
       page,
@@ -230,7 +230,7 @@ export class ActivityService {
       throw new NotFoundException('活动不存在')
     }
     return {
-      ...activity,
+      ...this.applyEndedStatus(activity),
       coverImage: resolveStaticUrl(activity.coverImage),
     }
   }
