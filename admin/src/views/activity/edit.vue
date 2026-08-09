@@ -569,8 +569,8 @@ async function fetchData() {
         // 旧活动可能无以下字段，保留初始默认值
         compressedCover: res.data.compressedCover || '',
         headerConfig: res.data.headerConfig || { bgColor: '', tagColor: '', showTags: [] },
-        showDetailTab: res.data.showDetailTab != null ? res.data.showDetailTab : true,
-        showSceneTab: res.data.showSceneTab != null ? res.data.showSceneTab : false,
+        showDetailTab: res.data.showDetailTab != null ? !!res.data.showDetailTab : true,
+        showSceneTab: res.data.showSceneTab != null ? !!res.data.showSceneTab : false,
       })
     }
   } catch (error) {
