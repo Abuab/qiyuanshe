@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsInt, Min, MaxLength, IsArray } from 'class-validator'
+import { IsString, IsOptional, IsEnum, IsBoolean, IsDateString, IsInt, Min, MaxLength, IsArray } from 'class-validator'
 
 export enum ActivityType {
   LATEST = 'latest',
@@ -51,6 +51,14 @@ export class CreateActivityDto {
 
   @IsOptional()
   headerConfig?: Record<string, any>
+
+  @IsOptional()
+  @IsBoolean()
+  showDetailTab?: boolean
+
+  @IsOptional()
+  @IsBoolean()
+  showSceneTab?: boolean
 
   @IsOptional()
   @IsDateString()

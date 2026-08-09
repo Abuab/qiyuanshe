@@ -43,6 +43,14 @@ export class Activity {
   @Column({ type: 'json', nullable: true, name: 'headerConfig' })
   headerConfig: { bgColor?: string; tagColor?: string; showTags?: string[] } | null
 
+  /** 是否显示「活动详情」Tab（默认 1=显示） */
+  @Column({ type: 'tinyint', default: 1, name: 'showDetailTab' })
+  showDetailTab: number
+
+  /** 是否显示「活动现场」Tab（默认 0=隐藏） */
+  @Column({ type: 'tinyint', default: 0, name: 'showSceneTab' })
+  showSceneTab: number
+
   @Column({ type: 'datetime', nullable: true, name: 'signUpEndTime' })
   signUpEndTime: Date
 

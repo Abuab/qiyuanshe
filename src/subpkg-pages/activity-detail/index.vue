@@ -116,8 +116,8 @@
       </view>
       <view class="section-divider"></view>
 
-      <!-- Tab 切换栏 -->
-      <view class="tab-bar">
+      <!-- Tab 切换栏：双 Tab 场景 -->
+      <view v-if="visibleTabCount === 2" class="tab-bar">
         <view
           class="tab-item"
           :class="{ active: activeTab === 'detail' }"
@@ -136,10 +136,16 @@
         </view>
       </view>
 
+      <!-- 单 Tab 标题栏 -->
+      <view v-if="visibleTabCount === 1" class="single-tab-header">
+        <text class="sth-title">{{ hasDetailTab ? '活动详情' : '活动现场' }}</text>
+        <view class="sth-line"></view>
+      </view>
+
       <!-- Tab 内容区 -->
-      <view class="tab-content" :class="{ 'fade-in': tabAnimating }">
+      <view v-if="visibleTabCount > 0" class="tab-content" :class="{ 'fade-in': tabAnimating }">
         <!-- 活动详情 -->
-        <view v-show="activeTab === 'detail'" class="content-blocks">
+        <view v-show="activeTab === 'detail' && hasDetailTab" class="content-blocks">
           <template v-if="activity.detailBlocks && activity.detailBlocks.length > 0">
             <BlockRenderer
               v-for="block in activity.detailBlocks"
@@ -156,7 +162,7 @@
         </view>
 
         <!-- 活动现场 -->
-        <view v-show="activeTab === 'scene'" class="content-blocks">
+        <view v-show="activeTab === 'scene' && hasSceneTab" class="content-blocks">
           <template v-if="activity.sceneBlocks && activity.sceneBlocks.length > 0">
             <BlockRenderer
               v-for="block in activity.sceneBlocks"
@@ -168,6 +174,12 @@
             <text>暂无内容</text>
           </view>
         </view>
+      </view>
+
+      <!-- 无 Tab 场景：空状态 -->
+      <view v-if="visibleTabCount === 0" class="empty-tabs-state">
+        <view class="ets-icon">📋</view>
+        <text class="ets-text">暂无内容</text>
       </view>
 
       <view class="bottom-safe-area"></view>
@@ -313,6 +325,8 @@ interface Activity {
   currentParticipants: number
   status: number
   signUpEndTime?: string
+  showDetailTab?: boolean
+  showSceneTab?: boolean
 }
 
 const systemStore = useSystemStore()
@@ -362,6 +376,13 @@ const effectiveStatus = computed(() => {
   }
   return a.status
 })
+
+/** 旧数据兼容：showDetailTab 为 null/undefined 时默认 true */
+const hasDetailTab = computed(() => activity.value?.showDetailTab != null ? activity.value.showDetailTab : true)
+/** 旧数据兼容：showSceneTab 为 null/undefined 时默认 false */
+const hasSceneTab = computed(() => activity.value?.showSceneTab != null ? activity.value.showSceneTab : false)
+/** 可见 Tab 数量 */
+const visibleTabCount = computed(() => (hasDetailTab.value ? 1 : 0) + (hasSceneTab.value ? 1 : 0))
 
 /** 富文本内容处理：
  * 1. 把相对图片路径(如 /uploads/xxx.jpg)改写为经后端图片网关访问的完整 URL；
@@ -449,6 +470,15 @@ async function fetchActivityDetail(id: number) {
 
     activity.value = result
     signupAvatars.value = (result.signupAvatars || []).map((a: string) => getFullImageUrl(a))
+
+    // 根据可用 Tab 动态设置初始 activeTab
+    const showD = result.showDetailTab != null ? result.showDetailTab : true
+    const showS = result.showSceneTab != null ? result.showSceneTab : false
+    if (showD) {
+      activeTab.value = 'detail'
+    } else if (showS) {
+      activeTab.value = 'scene'
+    }
   } catch (error) {
     logger.error('获取活动详情失败:', error)
     uni.showToast({ title: '加载失败', icon: 'none' })
@@ -1034,6 +1064,43 @@ const onShareAppMessage = () => {
       border-radius: 3rpx;
       margin-top: 12rpx;
     }
+  }
+}
+
+/* ===== 单 Tab 标题栏 ===== */
+.single-tab-header {
+  background: #fff;
+  padding: 24rpx 32rpx;
+
+  .sth-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #222;
+  }
+
+  .sth-line {
+    height: 1rpx;
+    background: #F0F0F0;
+    margin-top: 16rpx;
+  }
+}
+
+/* ===== 无 Tab 空状态 ===== */
+.empty-tabs-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+
+  .ets-icon {
+    font-size: 64rpx;
+    margin-bottom: 24rpx;
+  }
+
+  .ets-text {
+    font-size: 28rpx;
+    color: #ccc;
   }
 }
 

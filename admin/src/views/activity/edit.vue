@@ -137,6 +137,16 @@
           </el-col>
         </el-row>
 
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="Tab 显示">
+              <el-checkbox v-model="formData.showDetailTab">显示「活动详情」Tab</el-checkbox>
+              <el-checkbox v-model="formData.showSceneTab" style="margin-left: 24px">显示「活动现场」Tab</el-checkbox>
+              <span class="form-tip">控制小程序端 Tab 栏显示</span>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
         <el-form-item label="顶部海报" prop="coverImage">
           <div class="upload-wrapper">
             <el-image
@@ -212,7 +222,13 @@
         <el-tab-pane label="活动详情" name="detail">
           <BlockEditor v-model="formData.detailBlocks" />
         </el-tab-pane>
-        <el-tab-pane label="活动现场" name="scene">
+        <el-tab-pane name="scene">
+          <template #label>
+            <span :class="{ 'tab-label-muted': !formData.showSceneTab }">活动现场</span>
+            <el-tooltip v-if="!formData.showSceneTab" content="当前不会在小程序端显示" placement="top">
+              <el-icon class="tab-hint-icon"><WarningFilled /></el-icon>
+            </el-tooltip>
+          </template>
           <BlockEditor v-model="formData.sceneBlocks" :showTemplate="true" />
         </el-tab-pane>
       </el-tabs>
@@ -232,7 +248,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Picture, Upload, Check } from '@element-plus/icons-vue'
+import { ArrowLeft, Picture, Upload, Check, WarningFilled } from '@element-plus/icons-vue'
 import { adminActivity } from '../../api'
 import BlockEditor from '../../components/BlockEditor/BlockEditor.vue'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -258,6 +274,8 @@ const formData = reactive<any>({
   sceneBlocks: [] as any[],
   activityType: 'latest',
   headerType: 'poster',
+  showDetailTab: true,
+  showSceneTab: false,
   signUpEndTime: '',
   startTime: '',
   endTime: '',
@@ -319,6 +337,8 @@ async function fetchData() {
         // 旧活动可能无以下字段，保留初始默认值
         compressedCover: res.data.compressedCover || '',
         headerConfig: res.data.headerConfig || { bgColor: '', tagColor: '', showTags: [] },
+        showDetailTab: res.data.showDetailTab != null ? res.data.showDetailTab : true,
+        showSceneTab: res.data.showSceneTab != null ? res.data.showSceneTab : false,
       })
     }
   } catch (error) {
@@ -522,6 +542,17 @@ async function uploadFile(file: File): Promise<string> {
   :deep(.el-tabs__header) {
     margin-bottom: 16px;
   }
+}
+
+.tab-label-muted {
+  color: #c0c4cc;
+}
+
+.tab-hint-icon {
+  margin-left: 4px;
+  color: #e6a23c;
+  font-size: 14px;
+  vertical-align: middle;
 }
 
 .action-bar {
