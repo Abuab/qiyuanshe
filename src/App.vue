@@ -15,6 +15,8 @@ const EID_APPID = 'wx0e2cb0b052a91c92'
 
 // 冷启动时 onLaunch 后立刻触发 onShow，首次 show 跳过重复加载
 let isFirstShow = true
+// 防止切回前台时并发 onShow 处理导致 API 请求堆积
+let onShowBusy = false
 
 onLaunch(() => {
   logger.info('App Launch')
@@ -70,6 +72,10 @@ onShow((options: any) => {
     return
   }
 
+  // 防止快速切回前台时的并发 onShow 处理导致 API 请求堆积
+  if (onShowBusy) return
+  onShowBusy = true
+
   // 冷启动首次 onShow：onLaunch 中已加载配置，首页 refreshProfile 已处理用户信息，跳过重复加载
   // 热启动（切回前台）时重新拉取
   if (isFirstShow) {
@@ -89,6 +95,7 @@ onShow((options: any) => {
         }
       }).catch((err) => { logger.error('[App] 冷启动资料同步失败', err) })
     }
+    onShowBusy = false
     return
   }
 
@@ -122,6 +129,7 @@ onShow((options: any) => {
       // ignore
     },
   })
+  onShowBusy = false
 })
 
 onHide(() => {

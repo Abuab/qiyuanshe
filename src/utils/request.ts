@@ -125,6 +125,10 @@ function handleUnauthorized(tokenWasPresent: boolean): void {
   // 场景2：带了 token 但后端返回 401 → token 过期/被撤销/密钥变更
   secureStorage.clearAll()
 
+  // 防止并发 401 推入多个 reLaunch
+  if (isNavigatingToLogin) return
+  isNavigatingToLogin = true
+
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]?.route
   if (currentPage !== 'pages/login/index') {
@@ -135,7 +139,11 @@ function handleUnauthorized(tokenWasPresent: boolean): void {
     })
     setTimeout(() => {
       uni.reLaunch({ url: '/pages/login/index' })
+      // 3秒后重置标记，允许用户返回后再触发
+      setTimeout(() => { isNavigatingToLogin = false }, 3000)
     }, 1500)
+  } else {
+    isNavigatingToLogin = false
   }
 }
 

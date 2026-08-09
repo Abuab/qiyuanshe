@@ -86,6 +86,13 @@ export class AuthController {
     return Result.success(user)
   }
 
+  @Get('validate-sso')
+  @HttpCode(HttpStatus.OK)
+  async validateSso() {
+    // 单点登录态校验（无实际业务逻辑，收到请求即返回成功）
+    return Result.success({ valid: true })
+  }
+
   @Post('feedback')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
