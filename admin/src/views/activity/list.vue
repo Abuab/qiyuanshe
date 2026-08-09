@@ -102,7 +102,7 @@
               size="small"
               @change="(val: number) => handleToggleActive(row, val)"
             />
-            <el-button type="warning" link size="small" @click="handleEnd(row)" :disabled="row.status !== 1">结束</el-button>
+            <el-button type="warning" link size="small" @click="handleEnd(row)" :disabled="row.status !== 1">下架</el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
             <el-button type="success" link size="small" @click="handleViewSignups(row)">报名</el-button>
           </template>
@@ -266,10 +266,10 @@ async function handleToggleActive(row: Activity, val: number) {
 
 async function handleEnd(row: Activity) {
   try {
-    await ElMessageBox.confirm('确定要结束该活动吗？', '确认结束', { type: 'warning' })
+    await ElMessageBox.confirm('确定要下架该活动吗？', '确认下架', { type: 'warning' })
     const res = await adminActivity.updateStatus(row.id, 2)
     if (res.success) {
-      ElMessage.success('活动已结束')
+      ElMessage.success('活动已下架')
       fetchData()
     } else {
       ElMessage.error(res.message || '操作失败')
