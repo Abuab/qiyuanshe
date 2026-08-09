@@ -120,6 +120,18 @@ interface DividerBlock extends BlockBase {
   style: 'default' | 'colorful'
 }
 
+interface TimelineBlock extends BlockBase {
+  type: 'timeline'
+  theme: 'dark' | 'light'
+  items: { badge: string; time: string; text: string }[]
+}
+
+interface CircleTitleBlock extends BlockBase {
+  type: 'circle_title'
+  text: string
+  palette: 'candy' | 'mint' | 'purple'
+}
+
 type Block =
   | DecorativeTitleBlock
   | TitleBlock
@@ -137,6 +149,8 @@ type Block =
   | GalleryBlock
   | ContactBlock
   | DividerBlock
+  | TimelineBlock
+  | CircleTitleBlock
 
 const props = defineProps<{ block: Block }>()
 
@@ -144,6 +158,20 @@ function imgSrc(url: string) {
   if (!url) return ''
   if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/static/')) return url
   return getImageUrl(url)
+}
+
+function ctColor(palette: string, idx: number): string {
+  if (palette === 'mint') return '#5FBF8F'
+  const candy = ['#7ED6C0', '#FFB3C7']
+  const purple = ['#B19CD9', '#FF85A8']
+  const arr = palette === 'purple' ? purple : candy
+  return arr[idx % 2]
+}
+
+function ctDecoColor(palette: string): string {
+  if (palette === 'mint') return 'rgba(95,191,143,0.4)'
+  if (palette === 'purple') return 'rgba(177,156,217,0.4)'
+  return 'rgba(126,214,192,0.4)'
 }
 
 const FONT_SIZE_MAP: Record<string, string> = { large: '34rpx', medium: '28rpx', small: '24rpx' }
@@ -272,6 +300,40 @@ const BG_COLOR_MAP: Record<string, string> = {
     <!-- 分割线 -->
     <view v-else-if="block.type === 'divider'" class="block-divider">
       <view class="divider-line" :class="'divider-' + (block.style || 'default')"></view>
+    </view>
+
+    <!-- 流程时间轴 -->
+    <view v-else-if="block.type === 'timeline' && block.items && block.items.length > 0" class="block-timeline">
+      <view v-for="(item, idx) in block.items" :key="idx" class="tl-item">
+        <view class="tl-badge-wrapper">
+          <view
+            class="tl-badge"
+            :style="{ fontSize: (item.badge || '').length > 4 ? '22rpx' : '26rpx' }"
+          >
+            <text>{{ item.badge }}</text>
+          </view>
+          <view v-if="idx < block.items.length - 1" class="tl-line" :class="'tl-line-' + (block.theme || 'dark')"></view>
+        </view>
+        <view class="tl-card" :class="'tl-card-' + (block.theme || 'dark')">
+          <text class="tl-card-time">{{ item.time }}</text>
+          <text class="tl-card-text">{{ item.text }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 圆字标题 -->
+    <view v-else-if="block.type === 'circle_title' && block.text" class="block-circle-title">
+      <view class="ct-chars">
+        <view
+          v-for="(ch, idx) in block.text.split('')"
+          :key="idx"
+          class="ct-char"
+          :style="{ backgroundColor: ctColor(block.palette, idx) }"
+        >
+          <text>{{ ch }}</text>
+        </view>
+      </view>
+      <view class="ct-deco" :style="{ backgroundColor: ctDecoColor(block.palette) }"></view>
     </view>
 
   </view>
@@ -697,6 +759,112 @@ const BG_COLOR_MAP: Record<string, string> = {
       background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%);
       border-radius: 2rpx;
     }
+  }
+}
+
+/* ===== 流程时间轴 ===== */
+.block-timeline {
+  margin-bottom: 24rpx;
+  padding: 0 16rpx;
+
+  .tl-item {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .tl-badge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .tl-badge {
+    width: 72rpx;
+    height: 72rpx;
+    border-radius: 50%;
+    background: #FF6B9D;
+    color: #fff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .tl-line {
+    width: 4rpx;
+    flex: 1;
+    min-height: 24rpx;
+
+    &.tl-line-dark { background: #FFD6E4; }
+    &.tl-line-light { background: #FFE4EC; }
+  }
+
+  .tl-card {
+    flex: 1;
+    margin-left: 24rpx;
+    border-radius: 16rpx;
+    padding: 28rpx 32rpx;
+    margin-bottom: 8rpx;
+
+    &.tl-card-dark {
+      background: #1A1A1A;
+      .tl-card-time, .tl-card-text { color: #FFFFFF; }
+    }
+
+    &.tl-card-light {
+      background: #FFFFFF;
+      border: 1rpx solid #EEEEEE;
+      .tl-card-time { color: #333333; }
+      .tl-card-text { color: #333333; }
+    }
+
+    .tl-card-time {
+      display: block;
+      font-size: 30rpx;
+      font-weight: bold;
+      margin-bottom: 8rpx;
+    }
+
+    .tl-card-text {
+      display: block;
+      font-size: 28rpx;
+      line-height: 1.6;
+    }
+  }
+}
+
+/* ===== 圆字标题 ===== */
+.block-circle-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32rpx 0 24rpx;
+  margin-bottom: 24rpx;
+
+  .ct-chars {
+    display: flex;
+    gap: 16rpx;
+  }
+
+  .ct-char {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 30rpx;
+    font-weight: bold;
+  }
+
+  .ct-deco {
+    width: 120rpx;
+    height: 4rpx;
+    border-radius: 2rpx;
+    margin-top: 20rpx;
   }
 }
 </style>

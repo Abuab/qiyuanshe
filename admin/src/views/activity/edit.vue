@@ -255,19 +255,22 @@
 
     <!-- 套用模板弹窗（入口 B） -->
     <el-dialog v-model="showTemplatePicker" title="套用模板" width="900px" :close-on-click-modal="false">
-      <div class="template-picker-grid">
-        <div
-          v-for="tmpl in ACTIVITY_TEMPLATES"
-          :key="tmpl.key"
-          class="template-picker-card"
-          :class="{ selected: pickingTemplateKey === tmpl.key }"
-          @click="pickingTemplateKey = tmpl.key"
-        >
-          <div class="tpc-emoji">{{ tmpl.emoji }}</div>
-          <div class="tpc-name">{{ tmpl.name }}</div>
-          <div class="tpc-desc">{{ tmpl.description }}</div>
-          <div class="tpc-composition">{{ getBlockComposition(tmpl) }}</div>
-          <el-tag v-if="tmpl.recommended" type="danger" size="small" class="tpc-tag">推荐</el-tag>
+      <div v-for="cat in CATEGORY_ORDER" :key="cat" class="template-picker-group">
+        <div class="tpg-header">{{ cat }}</div>
+        <div class="template-picker-grid">
+          <div
+            v-for="tmpl in groupedTemplates[cat]"
+            :key="tmpl.key"
+            class="template-picker-card"
+            :class="{ selected: pickingTemplateKey === tmpl.key }"
+            @click="pickingTemplateKey = tmpl.key"
+          >
+            <div class="tpc-emoji">{{ tmpl.emoji }}</div>
+            <div class="tpc-name">{{ tmpl.name }}</div>
+            <div class="tpc-desc">{{ tmpl.description }}</div>
+            <div class="tpc-composition">{{ getBlockComposition(tmpl) }}</div>
+            <el-tag v-if="tmpl.recommended" type="danger" size="small" class="tpc-tag">推荐</el-tag>
+          </div>
         </div>
       </div>
       <!-- 选中模板后展示积木构成清单 -->
@@ -317,6 +320,18 @@ import BlockEditor from '../../components/BlockEditor/BlockEditor.vue'
 import BlockPreview from '../../components/BlockEditor/BlockPreview.vue'
 import { ACTIVITY_TEMPLATES, regenerateIds } from './templates'
 import type { ActivityTemplate } from './templates'
+
+const CATEGORY_ORDER = ['线下派对', '主题专场', '活动回顾', '线上活动', '极简快速'] as const
+
+const groupedTemplates = computed(() => {
+  const map: Record<string, ActivityTemplate[]> = {}
+  for (const cat of CATEGORY_ORDER) map[cat] = []
+  for (const tmpl of ACTIVITY_TEMPLATES) {
+    if (!map[tmpl.category]) map[tmpl.category] = []
+    map[tmpl.category].push(tmpl)
+  }
+  return map
+})
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
@@ -469,6 +484,7 @@ function getBlockComposition(tmpl: ActivityTemplate): string {
     bubble: '气泡', gallery: '图集', image: '图片', full_image: '全宽图',
     full_bleed_image: '出血图', image_overlay: '图文叠加', image_text_row: '左图右文',
     scene_card: '场景卡片', quote: '引用', contact: '联系信息', divider: '分割线',
+    timeline: '流程时间轴', circle_title: '圆字标题',
   }
   const parts = Object.entries(counts).map(([k, v]) => `${labels[k] || k}×${v}`)
   return parts.join(' · ')
@@ -817,6 +833,19 @@ async function uploadFile(file: File): Promise<string> {
 }
 
 /* 模板选择器（入口 B） */
+.template-picker-group {
+  margin-bottom: 20px;
+
+  .tpg-header {
+    font-size: 13px;
+    font-weight: 700;
+    color: #606266;
+    margin-bottom: 10px;
+    padding-left: 4px;
+    letter-spacing: 1px;
+  }
+}
+
 .template-picker-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -131,6 +131,36 @@
               <div class="pb-divider-line" :class="'pb-divider-' + (block.style || 'default')"></div>
             </div>
 
+            <!-- 流程时间轴 -->
+            <div v-else-if="block.type === 'timeline' && block.items && block.items.length > 0" class="pb-timeline">
+              <div v-for="(item, idx) in block.items" :key="idx" class="pb-tl-item">
+                <div class="pb-tl-badge-wrap">
+                  <div
+                    class="pb-tl-badge"
+                    :style="{ fontSize: (item.badge || '').length > 4 ? '11px' : '13px' }"
+                  >{{ item.badge }}</div>
+                  <div v-if="idx < block.items.length - 1" class="pb-tl-line" :class="'pb-tl-line-' + (block.theme || 'dark')"></div>
+                </div>
+                <div class="pb-tl-card" :class="'pb-tl-card-' + (block.theme || 'dark')">
+                  <span class="pb-tl-time">{{ item.time }}</span>
+                  <span class="pb-tl-text">{{ item.text }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 圆字标题 -->
+            <div v-else-if="block.type === 'circle_title' && block.text" class="pb-circle-title">
+              <div class="pb-ct-chars">
+                <span
+                  v-for="(ch, idx) in block.text.split('')"
+                  :key="idx"
+                  class="pb-ct-char"
+                  :style="{ backgroundColor: previewCtColor(block.palette, idx) }"
+                >{{ ch }}</span>
+              </div>
+              <div class="pb-ct-deco" :style="{ backgroundColor: previewCtDecoColor(block.palette) }"></div>
+            </div>
+
             <!-- 未知类型 -->
             <div v-else class="pb-unknown">[{{ block.type }}]</div>
 
@@ -180,6 +210,20 @@ function pbFontSize(fs?: string) {
 function arrowBorderColor(block: Block) {
   const c = block.color || '#FFB74D'
   return { borderTopColor: c, borderBottomColor: c }
+}
+
+function previewCtColor(palette: string, idx: number): string {
+  if (palette === 'mint') return '#5FBF8F'
+  const candy = ['#7ED6C0', '#FFB3C7']
+  const purple = ['#B19CD9', '#FF85A8']
+  const arr = palette === 'purple' ? purple : candy
+  return arr[idx % 2]
+}
+
+function previewCtDecoColor(palette: string): string {
+  if (palette === 'mint') return 'rgba(95,191,143,0.4)'
+  if (palette === 'purple') return 'rgba(177,156,217,0.4)'
+  return 'rgba(126,214,192,0.4)'
 }
 </script>
 
@@ -379,6 +423,56 @@ function arrowBorderColor(block: Block) {
       &.pb-divider-default { background: #e0e0e0; }
       &.pb-divider-colorful { height: 2px; background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%); border-radius: 1px; }
     }
+  }
+
+  /* ========== 流程时间轴 ========== */
+  .pb-timeline {
+    padding: 0 8px; margin-bottom: 12px;
+
+    .pb-tl-item { display: flex; align-items: flex-start; }
+
+    .pb-tl-badge-wrap {
+      display: flex; flex-direction: column; align-items: center; flex-shrink: 0;
+    }
+
+    .pb-tl-badge {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: #FF6B9D; color: #fff; font-weight: bold;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      font-size: 13px;
+    }
+
+    .pb-tl-line {
+      width: 2px; flex: 1; min-height: 12px;
+      &.pb-tl-line-dark { background: #FFD6E4; }
+      &.pb-tl-line-light { background: #FFE4EC; }
+    }
+
+    .pb-tl-card {
+      flex: 1; margin-left: 12px; border-radius: 8px; padding: 14px 16px; margin-bottom: 4px;
+
+      &.pb-tl-card-dark { background: #1A1A1A; .pb-tl-time, .pb-tl-text { color: #FFFFFF; } }
+      &.pb-tl-card-light { background: #FFFFFF; border: 1px solid #EEEEEE; .pb-tl-time { color: #333333; } .pb-tl-text { color: #333333; } }
+
+      .pb-tl-time { display: block; font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+      .pb-tl-text { display: block; font-size: 14px; line-height: 1.6; }
+    }
+  }
+
+  /* ========== 圆字标题 ========== */
+  .pb-circle-title {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 16px 0 12px; margin-bottom: 12px;
+
+    .pb-ct-chars { display: flex; gap: 8px; }
+
+    .pb-ct-char {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px; font-weight: bold;
+    }
+
+    .pb-ct-deco { width: 60px; height: 2px; border-radius: 1px; margin-top: 10px; }
   }
 }
 </style>

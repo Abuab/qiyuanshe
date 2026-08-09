@@ -3,6 +3,7 @@ export interface ActivityTemplate {
   name: string
   description: string
   emoji: string
+  category: '线下派对' | '主题专场' | '活动回顾' | '线上活动' | '极简快速'
   recommended?: boolean
   preset: {
     activityType?: 'latest' | 'online' | 'cp'
@@ -33,6 +34,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '空白活动',
     description: '不套用任何模板，从零开始创建',
     emoji: '📝',
+    category: '极简快速',
     preset: {
       activityType: 'latest',
       headerType: 'poster',
@@ -53,6 +55,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '线下相亲派对',
     description: '标准活动详情：亮点→流程→要求→须知→联系方式',
     emoji: '🎉',
+    category: '线下派对',
     recommended: true,
     preset: {
       activityType: 'latest',
@@ -89,6 +92,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '活动现场回顾',
     description: '编号章节+图文交错，适合活动后复盘展示',
     emoji: '📸',
+    category: '活动回顾',
     preset: {
       activityType: 'latest',
       headerType: 'poster',
@@ -125,6 +129,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '父母牵线交流会',
     description: '父母代相亲专场，信息卡片模式展示',
     emoji: '👨‍👩‍👧',
+    category: '主题专场',
     recommended: true,
     preset: {
       activityType: 'latest',
@@ -162,6 +167,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '场地合作派对',
     description: '强调场地氛围+流程时间轴，适合酒店/餐厅合作场次',
     emoji: '🍷',
+    category: '线下派对',
     preset: {
       activityType: 'latest',
       headerType: 'poster',
@@ -196,6 +202,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '脱单狂欢夜',
     description: '暗色主题+气泡对话+游戏说明，适合夜场/派对',
     emoji: '🌙',
+    category: '线下派对',
     preset: {
       activityType: 'latest',
       headerType: 'poster',
@@ -228,6 +235,7 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
     name: '线上互选 / 一周CP',
     description: '线上活动专属：玩法说明+互选规则+报名入口',
     emoji: '💻',
+    category: '线上活动',
     preset: {
       activityType: 'online',
       headerType: 'info',
@@ -248,5 +256,226 @@ export const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
       { id: '__O09__', type: 'contact', phone: '【客服电话】', qrCode: '', source: '【扫码添加红娘微信报名】' },
     ],
     sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 7：运动主题局
+  // ============================================================
+  {
+    key: 'frisbee',
+    name: '运动主题局',
+    description: '飞盘/羽毛球/徒步等运动交友通用：诗行开场→信息→时间轴流程→报名',
+    emoji: '🥏',
+    category: '线下派对',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: false,
+      maxParticipants: 20,
+      titlePlaceholder: '【如：飞盘单身局·一起流汗一起心动】',
+    },
+    detailBlocks: [
+      { id: '__F01__', type: 'title', mainTitle: '【如：飞盘单身局】', subTitle: '【日期+一句话口号，如：8月27日·不High不归】', bgColor: 'blue', textColor: '#FFFFFF' },
+      { id: '__F02__', type: 'text', content: '【一行一句，如：\n一片飞盘，一双跑鞋\n一身运动服，一片空地\n畅快地跑、跳，不High不归！】', align: 'center', color: '#555555' },
+      { id: '__F03__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__F04__', type: 'highlight_tag', text: '【如：运城首届飞盘单身局终于提上日程！】', inline: false },
+      { id: '__F05__', type: 'text', content: '🕐 活动时间：【X月X日 17:00-19:30】\n📍 活动地点：【XX运动公园】\n👥 活动人数：【14人（男女各7人）】\n💴 活动费用：【会员免费/XX元】', align: 'left', color: '#555555' },
+      { id: '__F06__', type: 'numbered_title', number: '01', title: '活动流程' },
+      { id: '__F07__', type: 'timeline', theme: 'light', items: [
+        { badge: '01', time: '17:00-17:10', text: '破冰热身：上肢 核心 下肢' },
+        { badge: '02', time: '17:10-17:30', text: '互动游戏&自我介绍' },
+        { badge: '03', time: '17:30-18:30', text: '分队 训练 讲规则' },
+        { badge: '04', time: '18:30-19:10', text: '正式比赛&合影' },
+      ] },
+      { id: '__F08__', type: 'numbered_title', number: '02', title: '报名方式' },
+      { id: '__F09__', type: 'contact', phone: '【红娘电话】', qrCode: '', source: '【扫码添加红娘微信报名】' },
+      { id: '__F10__', type: 'divider', style: 'default' },
+      { id: '__F11__', type: 'text', content: '✔ 请穿运动装和运动鞋\n✔ 场地提供饮用水和运动器材\n✔ 如遇雨天活动顺延，将提前通知', align: 'left', color: '#666666' },
+    ],
+    sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 8：露营交友派对
+  // ============================================================
+  {
+    key: 'camping',
+    name: '露营交友派对',
+    description: '露营/户外场景：卖点标签→环境图→须知清单→需求与流程时间轴→报名',
+    emoji: '⛺',
+    category: '线下派对',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: true,
+      maxParticipants: 50,
+      titlePlaceholder: '【如：降暑拾光·露营脱单派对】',
+    },
+    detailBlocks: [
+      { id: '__C01__', type: 'title', mainTitle: '【如：降暑拾光露营派对】', subTitle: '【日期+基地名】', bgColor: '#1a1a2e', textColor: '#FFFFFF' },
+      { id: '__C02__', type: 'text', content: '【如：\n脱单新玩法\n今年的露营在哪儿都是爆点\n人生不妨大胆一点\n去攀一座山，追一个梦，爱一个人】', align: 'center', color: '#555555' },
+      { id: '__C03__', type: 'highlight_tag', text: '【打卡露营大片】', inline: true },
+      { id: '__C04__', type: 'highlight_tag', text: '【看日落赏星空】', inline: true },
+      { id: '__C05__', type: 'highlight_tag', text: '【诚信交友】', inline: true },
+      { id: '__C06__', type: 'gallery', images: [], columns: 2, textOverlay: '【派对环境】', gap: 16 },
+      { id: '__C07__', type: 'numbered_title', number: '01', title: '派对须知' },
+      { id: '__C08__', type: 'text', content: '✔ 导航【XX露营基地】，市区驾车约20分钟\n✔ 主题派对、篝火、露天电影，在郊区体验浪漫气息\n✔ 精致下午茶，气泡水和手冲咖啡可选\n✔ 特色烤肉火锅，不出城市体验户外野奢大餐', align: 'left', color: '#555555' },
+      { id: '__C09__', type: 'numbered_title', number: '02', title: '报名需求' },
+      { id: '__C10__', type: 'timeline', theme: 'dark', items: [
+        { badge: '1', time: '', text: '【20-35周岁，工作稳定】' },
+        { badge: '2', time: '', text: '【人数：50人，男女各25名】' },
+        { badge: '3', time: '', text: '【会员限时免费】' },
+      ] },
+      { id: '__C11__', type: 'numbered_title', number: '03', title: '派对流程' },
+      { id: '__C12__', type: 'timeline', theme: 'dark', items: [
+        { badge: 'TOP1', time: '18:00-19:00', text: '现场签到' },
+        { badge: 'TOP2', time: '19:10-20:30', text: '自我介绍 互动游戏' },
+        { badge: 'TOP3', time: '20:30-21:00', text: '心动交流' },
+      ] },
+      { id: '__C13__', type: 'divider', style: 'colorful' },
+      { id: '__C14__', type: 'contact', phone: '【红娘电话】', qrCode: '', source: '【扫码直接报名】' },
+    ],
+    sceneBlocks: [
+      { id: '__CS01__', type: 'circle_title', text: '精彩瞬间', palette: 'mint' },
+      { id: '__CS02__', type: 'gallery', images: [], columns: 2, textOverlay: '【现场照片】', gap: 16 },
+      { id: '__CS03__', type: 'circle_title', text: '特别鸣谢', palette: 'mint' },
+      { id: '__CS04__', type: 'image', url: '', caption: '【合作场地横幅图】', labelPosition: 'bottom' },
+      { id: '__CS05__', type: 'text', content: '【鸣谢文案，如：本次活动由XX露营基地提供相亲场地】', align: 'center', color: '#555555' },
+      { id: '__CS06__', type: 'contact', phone: '', qrCode: '', source: '【下期精彩活动报名中~扫码咨询】' },
+    ],
+  },
+
+  // ============================================================
+  // 模板 9：商场/商家联名专场
+  // ============================================================
+  {
+    key: 'mall',
+    name: '商场/商家联名专场',
+    description: '与商场/品牌联名：海报头图→详情→多码报名→商家鸣谢',
+    emoji: '🏬',
+    category: '主题专场',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: false,
+      maxParticipants: 40,
+      titlePlaceholder: '【如：怦然的你·心动的我——XX广场联名专场】',
+    },
+    detailBlocks: [
+      { id: '__M01__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__M02__', type: 'text', content: '活动时间：【X月X日下午3点】\n活动地点：【XX广场6楼】\n报名需求：【20-35周岁单身青年，工作收入稳定】', align: 'center', color: '#555555' },
+      { id: '__M03__', type: 'numbered_title', number: '01', title: '报名方式' },
+      { id: '__M04__', type: 'contact', phone: '', qrCode: '', source: '【扫码开启脱单之旅】' },
+      { id: '__M05__', type: 'contact', phone: '【红娘电话】', qrCode: '', source: '【扫码添加红娘老师】' },
+      { id: '__M06__', type: 'divider', style: 'default' },
+      { id: '__M07__', type: 'numbered_title', number: '02', title: '特别鸣谢' },
+      { id: '__M08__', type: 'image', url: '', caption: '【联名商家海报/门头照】', labelPosition: 'bottom' },
+      { id: '__M09__', type: 'text', content: '【鸣谢文案，如：感谢XX广场对本次活动的大力支持！】', align: 'center', color: '#555555' },
+    ],
+    sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 10：节日主题专场
+  // ============================================================
+  {
+    key: 'festival',
+    name: '节日主题专场',
+    description: '七夕/情人节/教师节等节日场次：海报→情书式文案→详情→报名→声明',
+    emoji: '🎋',
+    category: '主题专场',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: false,
+      maxParticipants: 30,
+      titlePlaceholder: '【如：七夕灵感派对·教师节专场】',
+    },
+    detailBlocks: [
+      { id: '__FE01__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__FE02__', type: 'text', content: '【如：\n虽然我不能把一个活生生的TA送到你的身边\n但我可以送你一场浪漫派对，让你遇见爱情】', align: 'center', color: '#555555' },
+      { id: '__FE03__', type: 'highlight_tag', text: '【如：风靡全城的七夕专场，报名开启！】', inline: false },
+      { id: '__FE04__', type: 'text', content: '活动时间：【X月X日】\n活动地址：【保密（报名审核通过后一对一通知）】\n报名需求：【22-38岁单身男女青年】\n活动人数：【30人（男女各15）】', align: 'center', color: '#555555' },
+      { id: '__FE05__', type: 'numbered_title', number: '01', title: '活动流程' },
+      { id: '__FE06__', type: 'timeline', theme: 'dark', items: [
+        { badge: 'TOP1', time: '18:00-19:00', text: '现场签到' },
+        { badge: 'TOP2', time: '19:10-20:30', text: '自我介绍 互动游戏' },
+        { badge: 'TOP3', time: '20:30-21:00', text: '心动交流' },
+      ] },
+      { id: '__FE07__', type: 'numbered_title', number: '02', title: '报名方式' },
+      { id: '__FE08__', type: 'contact', phone: '【红娘电话】', qrCode: '', source: '【扫码报名】' },
+      { id: '__FE09__', type: 'divider', style: 'default' },
+      { id: '__FE10__', type: 'text', content: '【如：栖缘社坚持"真实有效实名靠谱，服务贴心不强求"，每月定期举办1-2场线上/线下交友活动。】\n报名即视为同意活动声明；现场照片仅用于活动回顾，人像将做打码处理。', align: 'left', color: '#999999' },
+    ],
+    sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 11：纯海报极简版
+  // ============================================================
+  {
+    key: 'poster',
+    name: '纯海报极简版',
+    description: '运营已有整套设计稿时最快上线：1-3张整页海报+联系方式，5分钟发一场活动',
+    emoji: '🖼️',
+    category: '极简快速',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: true,
+      showSceneTab: false,
+      maxParticipants: 0,
+      titlePlaceholder: '【活动标题】',
+    },
+    detailBlocks: [
+      { id: '__PO01__', type: 'text', content: '【以下为整页海报区，按顺序上传设计稿即可，建议宽度750px】', align: 'center', color: '#999999', fontSize: 'small' },
+      { id: '__PO02__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__PO03__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__PO04__', type: 'contact', phone: '【咨询电话】', qrCode: '', source: '【扫码咨询/报名】' },
+    ],
+    sceneBlocks: [],
+  },
+
+  // ============================================================
+  // 模板 12：精彩回顾·鸣谢版
+  // ============================================================
+  {
+    key: 'recap2',
+    name: '精彩回顾·鸣谢版',
+    description: '回顾页升级版：圆字章节标题+图文混排+特别鸣谢，适合有合作方的活动复盘',
+    emoji: '🎞️',
+    category: '活动回顾',
+    preset: {
+      activityType: 'latest',
+      headerType: 'poster',
+      showDetailTab: false,
+      showSceneTab: true,
+      maxParticipants: 0,
+      titlePlaceholder: '【如：逃离城市计划·露营派对精彩回顾】',
+    },
+    detailBlocks: [
+      { id: '__RA01__', type: 'text', content: '本活动已结束，欢迎查看下方「活动现场」回顾精彩瞬间~', align: 'center', color: '#999999' },
+      { id: '__RA02__', type: 'contact', phone: '', qrCode: '', source: '【关注我们，获取最新活动信息】' },
+    ],
+    sceneBlocks: [
+      { id: '__RS01__', type: 'circle_title', text: '活动回顾', palette: 'candy' },
+      { id: '__RS02__', type: 'text', content: '【如：\n上周！栖缘社&XX基地举办的\n「逃离城市计划」派对圆满结束\n又一次超员，场面气氛一燃再燃\n快来跟小编一起回顾精彩现场吧】', align: 'center', color: '#666666' },
+      { id: '__RS03__', type: 'text', content: '【如：\n落霞与你，我都不想错过\n今夜星空浩瀚，今夜篝火灿烂\n恋恋夏日，我们尽情投入大自然的怀抱】', align: 'center', color: '#999999' },
+      { id: '__RS04__', type: 'full_bleed_image', imageUrl: '' },
+      { id: '__RS05__', type: 'image_text_row', imageUrl: '', text: '【环节一描述，如：担心社恐？担心氛围？小编提前准备了桌游道具带大家一起互动熟悉】', alignment: 'right' },
+      { id: '__RS06__', type: 'gallery', images: [], columns: 2, textOverlay: '【游戏互动，好感度直线上升~】', gap: 16 },
+      { id: '__RS07__', type: 'circle_title', text: '精彩瞬间', palette: 'mint' },
+      { id: '__RS08__', type: 'gallery', images: [], columns: 3, textOverlay: '', gap: 12 },
+      { id: '__RS09__', type: 'quote', content: '【现场金句或嘉宾反馈】', alignment: 'left' },
+      { id: '__RS10__', type: 'circle_title', text: '特别鸣谢', palette: 'mint' },
+      { id: '__RS11__', type: 'image', url: '', caption: '【合作方横幅图】', labelPosition: 'bottom' },
+      { id: '__RS12__', type: 'text', content: '【鸣谢文案，如：本次活动由XX提供相亲场地\n公司团建/生日派对/求婚结婚\n朋友聚会露营/下午茶/特色火锅】', align: 'center', color: '#555555' },
+      { id: '__RS13__', type: 'divider', style: 'colorful' },
+      { id: '__RS14__', type: 'contact', phone: '【预约/咨询电话】', qrCode: '', source: '【好啦本次活动暂且告一段落啦，下期精彩活动报名中~】' },
+    ],
   },
 ]

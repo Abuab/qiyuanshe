@@ -424,6 +424,51 @@
                 </el-form-item>
               </template>
 
+              <!-- timeline -->
+              <template v-if="block.type === 'timeline'">
+                <el-form-item label="卡片主题">
+                  <el-radio-group v-model="block.theme">
+                    <el-radio label="dark">深色卡片(dark)</el-radio>
+                    <el-radio label="light">浅色卡片(light)</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+                <el-form-item label="流程节点">
+                  <div class="timeline-items">
+                    <div v-for="(item, ti) in block.items" :key="ti" class="timeline-item-row">
+                      <el-input v-model="item.badge" placeholder="TOP1" style="width: 100px" size="small" />
+                      <el-input v-model="item.time" placeholder="18:00-19:00" style="width: 150px" size="small" />
+                      <el-input v-model="item.text" placeholder="现场签到" style="flex: 1" size="small" />
+                      <el-button size="small" text @click="moveTimelineItem(index, ti, -1)" :disabled="ti === 0">
+                        <el-icon><Top /></el-icon>
+                      </el-button>
+                      <el-button size="small" text @click="moveTimelineItem(index, ti, 1)" :disabled="ti === block.items.length - 1">
+                        <el-icon><Bottom /></el-icon>
+                      </el-button>
+                      <el-button size="small" text type="danger" @click="removeTimelineItem(index, ti)" :disabled="block.items.length <= 1">
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </div>
+                  </div>
+                  <el-button size="small" @click="addTimelineItem(index)" style="margin-top: 8px">
+                    <el-icon><Plus /></el-icon>添加一项
+                  </el-button>
+                </el-form-item>
+              </template>
+
+              <!-- circle_title -->
+              <template v-if="block.type === 'circle_title'">
+                <el-form-item label="标题文字">
+                  <el-input v-model="block.text" placeholder="如：精彩瞬间" maxlength="8" show-word-limit />
+                </el-form-item>
+                <el-form-item label="配色方案">
+                  <el-select v-model="block.palette" style="width: 100%">
+                    <el-option label="糖果交替(candy)" value="candy" />
+                    <el-option label="清新绿(mint)" value="mint" />
+                    <el-option label="紫粉交替(purple)" value="purple" />
+                  </el-select>
+                </el-form-item>
+              </template>
+
               <!-- title -->
               <template v-if="block.type === 'title'">
                 <el-form-item label="主标题">
@@ -489,7 +534,7 @@ import {
   Document, Picture, PictureFilled, ChatDotRound, Grid, Phone, Minus, Trophy,
   Plus, Top, Bottom, Edit, Delete, Close,
   Sort, Reading, ChatLineSquare, PriceTag, FullScreen, Crop, Film, StarFilled,
-  Rank, CopyDocument,
+  Rank, CopyDocument, List, MagicStick,
 } from '@element-plus/icons-vue'
 import { adminActivity } from '../../api'
 
@@ -541,6 +586,8 @@ const blockTypes = [
   { type: 'highlight_tag', label: '高亮标签', icon: PriceTag },
   { type: 'contact', label: '联系信息', icon: Phone },
   { type: 'divider', label: '分割线', icon: Minus },
+  { type: 'timeline', label: '流程时间轴', icon: List },
+  { type: 'circle_title', label: '圆字标题', icon: MagicStick },
 ]
 
 const typeIconMap: Record<string, any> = {
@@ -550,6 +597,7 @@ const typeIconMap: Record<string, any> = {
   title: Trophy, decorative_title: StarFilled,
   quote: ChatLineSquare, highlight_tag: PriceTag,
   contact: Phone, divider: Minus,
+  timeline: List, circle_title: MagicStick,
 }
 
 const typeLabelMap: Record<string, string> = {
@@ -559,6 +607,7 @@ const typeLabelMap: Record<string, string> = {
   title: '装饰标题', decorative_title: '装饰标题(旧)',
   quote: '引用文字', highlight_tag: '高亮标签',
   contact: '联系信息', divider: '分割线',
+  timeline: '流程时间轴', circle_title: '圆字标题',
 }
 
 function uuid(): string {
@@ -583,6 +632,8 @@ function getDefaultForType(type: string): Block {
     highlight_tag: { text: '', inline: false },
     contact: { phone: '', qrCode: '', source: '' },
     divider: { style: 'default' },
+    timeline: { theme: 'dark', items: [{ badge: 'TOP1', time: '18:00-19:00', text: '现场签到' }] },
+    circle_title: { text: '精彩瞬间', palette: 'candy' },
   }
   return { id, type, ...defaults[type] }
 }
@@ -603,6 +654,8 @@ function getPreview(block: Block): string {
     case 'highlight_tag': return block.text ? '#' + block.text.slice(0, 15) : '(空)'
     case 'contact': return block.phone || '(空)'
     case 'divider': return block.style === 'colorful' ? '彩色分割线' : '默认分割线'
+    case 'timeline': return `${(block.items || []).length} 个流程节点`
+    case 'circle_title': return block.text || '(空)'
     default: return ''
   }
 }
@@ -739,6 +792,25 @@ async function handleSceneImageUpload(fileItem: any, blockIndex: number) {
     console.error(e)
     ElMessage.error('上传失败')
   }
+}
+
+// timeline 节点操作
+function addTimelineItem(blockIndex: number) {
+  blocks.value[blockIndex].items.push({ badge: '', time: '', text: '' })
+}
+
+function removeTimelineItem(blockIndex: number, itemIndex: number) {
+  if (blocks.value[blockIndex].items.length <= 1) return
+  blocks.value[blockIndex].items.splice(itemIndex, 1)
+}
+
+function moveTimelineItem(blockIndex: number, itemIndex: number, direction: number) {
+  const items = blocks.value[blockIndex].items
+  const newIndex = itemIndex + direction
+  if (newIndex < 0 || newIndex >= items.length) return
+  const item = items[itemIndex]
+  items.splice(itemIndex, 1)
+  items.splice(newIndex, 0, item)
 }
 </script>
 
@@ -900,6 +972,16 @@ async function handleSceneImageUpload(fileItem: any, blockIndex: number) {
         border-color: #409EFF;
         color: #409EFF;
       }
+    }
+  }
+
+  .timeline-items {
+    width: 100%;
+    .timeline-item-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
     }
   }
 }
