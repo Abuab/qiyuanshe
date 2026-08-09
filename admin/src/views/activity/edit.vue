@@ -584,7 +584,7 @@ async function handleSubmit() {
   }
 
   // 保存前质检
-  qualityCheckBeforeSave()
+  if (!qualityCheckBeforeSave()) return
 
   submitting.value = true
   try {
