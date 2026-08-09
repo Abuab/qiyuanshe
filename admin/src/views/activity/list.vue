@@ -35,10 +35,39 @@
           <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-      <el-button v-if="!isReadonly" type="primary" class="add-btn" @click="handleAdd">
+      <el-button v-if="!isReadonly" type="primary" class="add-btn" @click="showTemplateDialog = true">
         <el-icon><Plus /></el-icon>添加活动
       </el-button>
     </div>
+
+    <!-- 模板选择器弹窗（入口 A） -->
+    <el-dialog v-model="showTemplateDialog" title="选择活动模板" width="900px" :close-on-click-modal="false">
+      <div class="template-grid">
+        <div
+          v-for="tmpl in ACTIVITY_TEMPLATES"
+          :key="tmpl.key"
+          class="template-card"
+          :class="{ selected: selectedTemplateKey === tmpl.key }"
+          @click="selectedTemplateKey = tmpl.key"
+        >
+          <div class="tc-emoji">{{ tmpl.emoji }}</div>
+          <div class="tc-body">
+            <div class="tc-name">
+              {{ tmpl.name }}
+              <el-tag v-if="tmpl.recommended" type="danger" size="small" class="tc-tag">推荐</el-tag>
+            </div>
+            <div class="tc-desc">{{ tmpl.description }}</div>
+            <div class="tc-composition">{{ getComposition(tmpl) }}</div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="startCreate('blank')">空白创建</el-button>
+        <el-button type="primary" @click="startCreate(selectedTemplateKey)" :disabled="!selectedTemplateKey">
+          使用模板
+        </el-button>
+      </template>
+    </el-dialog>
 
     <div class="card">
       <el-table v-loading="loading" :data="activityList" stripe>
@@ -132,6 +161,7 @@ import { Plus, Picture } from '@element-plus/icons-vue'
 import { useAdminStore } from '../../store/admin'
 import { adminActivity } from '../../api'
 import { formatDate } from '../../utils/date'
+import { ACTIVITY_TEMPLATES } from './templates'
 import type { Activity } from '../../api/activity'
 
 const router = useRouter()
@@ -140,6 +170,25 @@ const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
 const loading = ref(false)
 const activityList = ref<Activity[]>([])
 const total = ref(0)
+
+// 模板选择器
+const showTemplateDialog = ref(false)
+const selectedTemplateKey = ref('')
+
+function getComposition(tmpl: any): string {
+  const all = [...(tmpl.detailBlocks || []), ...(tmpl.sceneBlocks || [])]
+  if (all.length === 0) return '空白模板'
+  const counts: Record<string, number> = {}
+  all.forEach((b: any) => { counts[b.type] = (counts[b.type] || 0) + 1 })
+  const labels: Record<string, string> = {
+    title: '标题', text: '文本', numbered_title: '编号章节', highlight_tag: '标签',
+    bubble: '气泡', gallery: '图集', image: '图片', full_image: '全宽图',
+    full_bleed_image: '出血图', image_overlay: '图文叠加', image_text_row: '左图右文',
+    scene_card: '场景卡片', quote: '引用', contact: '联系信息', divider: '分割线',
+  }
+  const parts = Object.entries(counts).map(([k, v]) => `${labels[k] || k}×${v}`)
+  return parts.join(' · ')
+}
 
 const filterForm = reactive({
   keyword: '',
@@ -233,8 +282,14 @@ function handleCurrentChange() {
   fetchData()
 }
 
-function handleAdd() {
-  router.push('/activity/edit')
+function startCreate(templateKey: string) {
+  showTemplateDialog.value = false
+  selectedTemplateKey.value = ''
+  if (templateKey === 'blank') {
+    router.push('/activity/edit')
+  } else {
+    router.push(`/activity/edit?template=${templateKey}`)
+  }
 }
 
 function handleEdit(row: Activity) {
@@ -346,5 +401,67 @@ onMounted(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 模板选择器卡片网格 */
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  .template-card {
+    border: 2px solid #e4e7ed;
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    &:hover {
+      border-color: #409EFF;
+      background-color: #ecf5ff;
+    }
+
+    &.selected {
+      border-color: #409EFF;
+      background-color: #ecf5ff;
+      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+    }
+
+    .tc-emoji {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    .tc-body {
+      .tc-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 6px;
+
+        .tc-tag {
+          margin-left: 6px;
+          vertical-align: middle;
+        }
+      }
+
+      .tc-desc {
+        font-size: 13px;
+        color: #909399;
+        line-height: 1.4;
+      }
+
+      .tc-composition {
+        margin-top: 8px;
+        font-size: 11px;
+        color: #b0b0b0;
+        line-height: 1.3;
+      }
+    }
+  }
 }
 </style>

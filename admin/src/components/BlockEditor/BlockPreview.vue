@@ -1,0 +1,384 @@
+<!-- 手机预览框：复刻 C 端 BlockRenderer.vue 视觉效果（375px ≈ 750rpx） -->
+<template>
+  <div class="block-preview">
+    <div class="preview-phone">
+      <!-- 模拟顶部状态栏 -->
+      <div class="phone-top-bar">{{ previewTitle }}</div>
+      <div class="phone-screen">
+        <!-- 积木列表 -->
+        <template v-if="blocks.length > 0">
+          <div
+            v-for="block in blocks"
+            :key="block.id"
+            class="preview-block"
+            :class="{ 'preview-block-active': activeBlockId === block.id }"
+            @click="$emit('selectBlock', block.id)"
+          >
+
+            <!-- 装饰标题 (title + decorative_title) -->
+            <div v-if="block.type === 'title' || block.type === 'decorative_title'" class="pb-decorative-title" :style="titleBgStyle(block)">
+              <div class="pb-dt-main">{{ block.mainTitle || '(主标题)' }}</div>
+              <div class="pb-dt-sub" :style="{ color: block.type === 'title' ? (block.textColor || '#FFD700') : (block.subTitleColor || '#FFD700') }">
+                {{ block.type === 'title' ? (block.subTitle || '(副标题)') : (block.subTitle || '') }}
+              </div>
+              <div v-if="block.type === 'decorative_title' && block.footerText" class="pb-dt-footer">{{ block.footerText }}</div>
+            </div>
+
+            <!-- 编号装饰标题 -->
+            <div v-else-if="block.type === 'numbered_title'" class="pb-numbered-title">
+              <div class="pb-nt-bg"></div>
+              <span class="pb-nt-number">{{ block.number || '01' }}</span>
+              <span class="pb-nt-slash">/</span>
+              <span class="pb-nt-title">{{ block.title || '(标题)' }}</span>
+              <span class="pb-nt-slash">/</span>
+            </div>
+
+            <!-- 左图右文 -->
+            <div v-else-if="block.type === 'image_text_row'" class="pb-image-text-row">
+              <div class="pb-itr-img">
+                <div v-if="!block.imageUrl" class="pb-img-placeholder">图</div>
+                <img v-else :src="block.imageUrl" />
+              </div>
+              <div class="pb-itr-divider"></div>
+              <div class="pb-itr-text" :style="{ textAlign: block.alignment || 'right' }">
+                {{ block.text || '(文字内容)' }}
+              </div>
+            </div>
+
+            <!-- 全宽图片 (image + full_image) -->
+            <div v-else-if="block.type === 'image' || block.type === 'full_image'" class="pb-full-image">
+              <div v-if="!block.url" class="pb-img-placeholder pb-img-large">点击上传图片</div>
+              <img v-else :src="block.url" />
+              <div v-if="block.caption" class="pb-fi-label" :class="'pb-fi-' + (block.labelPosition || 'bottom')">
+                {{ block.caption }}
+              </div>
+            </div>
+
+            <!-- 全宽出血图 -->
+            <div v-else-if="block.type === 'full_bleed_image'" class="pb-full-bleed">
+              <div v-if="!block.imageUrl" class="pb-img-placeholder pb-img-full">全宽图片</div>
+              <img v-else :src="block.imageUrl" />
+            </div>
+
+            <!-- 图文叠加 -->
+            <div v-else-if="block.type === 'image_overlay'" class="pb-image-overlay">
+              <div v-if="!block.url" class="pb-img-placeholder pb-img-large">点击上传图片</div>
+              <img v-else :src="block.url" />
+              <div v-if="block.text" class="pb-io-overlay" :class="'pb-io-' + (block.position || 'bottom')" :style="{ backgroundColor: block.bgOverlay || 'rgba(255,107,157,0.85)', color: block.textColor || '#fff' }">
+                {{ block.text }}
+              </div>
+            </div>
+
+            <!-- 场景氛围卡片 -->
+            <div v-else-if="block.type === 'scene_card'" class="pb-scene-card" :style="block.bgImage ? { backgroundImage: 'url(' + block.bgImage + ')' } : {}">
+              <div class="pb-sc-overlay">
+                <div class="pb-sc-text">{{ block.innerText || '(场景描述文字)' }}</div>
+                <div v-if="block.innerImages && block.innerImages.length" class="pb-sc-images">
+                  <img v-for="(img, i) in block.innerImages" :key="i" :src="img" class="pb-sc-img" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 纯文本 -->
+            <div v-else-if="block.type === 'text'" class="pb-text" :style="{ textAlign: block.align || 'left' }">
+              <span :style="{ fontSize: pbFontSize(block.fontSize), color: block.color || '#555' }">{{ block.content || '(文本内容)' }}</span>
+            </div>
+
+            <!-- 引用文字 -->
+            <div v-else-if="block.type === 'quote'" class="pb-quote" :class="'pb-quote-' + (block.alignment || 'left')">
+              <span class="pb-bq-icon">「</span>
+              <span class="pb-bq-text">{{ block.content || '(引用内容)' }}</span>
+              <span class="pb-bq-icon">」</span>
+            </div>
+
+            <!-- 高亮标签 -->
+            <div v-else-if="block.type === 'highlight_tag'" class="pb-highlight-tag" :class="{ 'pb-inline': block.inline }">
+              <span class="pb-ht-tag">{{ block.text || '(标签)' }}</span>
+            </div>
+
+            <!-- 对话气泡 -->
+            <div v-else-if="block.type === 'bubble'" class="pb-bubble" :class="'pb-bubble-' + (block.align || 'center')">
+              <div class="pb-bb-bubble" :style="{ backgroundColor: block.color || '#FFB74D' }">
+                <span class="pb-bb-text">{{ block.text || '(气泡文字)' }}</span>
+              </div>
+              <div class="pb-bb-arrow" :class="'pb-arrow-' + (block.arrow || 'down')" :style="arrowBorderColor(block)"></div>
+            </div>
+
+            <!-- 照片网格 -->
+            <div v-else-if="block.type === 'gallery'" class="pb-gallery">
+              <div class="pb-bg-grid" :style="{ gridTemplateColumns: `repeat(${block.columns || 2}, 1fr)`, gap: ((block.gap || 16) / 2) + 'px' }">
+                <div v-for="(img, i) in (block.images && block.images.length ? block.images : ['', ''])" :key="i" class="pb-bg-img-wrap">
+                  <img v-if="img" :src="img" class="pb-bg-img" />
+                  <div v-else class="pb-img-placeholder pb-img-square">图</div>
+                </div>
+              </div>
+              <div v-if="block.textOverlay" class="pb-bg-text">{{ block.textOverlay }}</div>
+            </div>
+
+            <!-- 联系信息 -->
+            <div v-else-if="block.type === 'contact'" class="pb-contact">
+              <div class="pb-bc-divider"></div>
+              <div v-if="block.phone" class="pb-bc-phone">
+                <span class="pb-bc-label">预约电话：</span>
+                <span class="pb-bc-number">{{ block.phone }}</span>
+              </div>
+              <img v-if="block.qrCode" :src="block.qrCode" class="pb-bc-qrcode" />
+              <div v-if="block.source" class="pb-bc-source">{{ block.source }}</div>
+            </div>
+
+            <!-- 分割线 -->
+            <div v-else-if="block.type === 'divider'" class="pb-divider">
+              <div class="pb-divider-line" :class="'pb-divider-' + (block.style || 'default')"></div>
+            </div>
+
+            <!-- 未知类型 -->
+            <div v-else class="pb-unknown">[{{ block.type }}]</div>
+
+          </div>
+        </template>
+        <div v-else class="pb-empty">暂无内容</div>
+        <div class="pb-bottom-safe"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+interface Block {
+  id: string
+  type: string
+  [key: string]: any
+}
+
+const props = defineProps<{
+  blocks: Block[]
+  activeBlockId?: string
+  previewTitle?: string
+}>()
+
+defineEmits<{
+  selectBlock: [id: string]
+}>()
+
+const BG_COLOR_MAP: Record<string, string> = {
+  purple: 'linear-gradient(135deg, #B19CD9 0%, #9B7EC4 100%)',
+  pink: 'linear-gradient(135deg, #FF6B9D 0%, #FF85A8 100%)',
+  blue: 'linear-gradient(135deg, #6BB5FF 0%, #4DA0F0 100%)',
+}
+
+function titleBgStyle(block: Block) {
+  const c = block.bgColor || 'pink'
+  const bg = BG_COLOR_MAP[c] || c
+  return { background: bg }
+}
+
+function pbFontSize(fs?: string) {
+  const map: Record<string, string> = { large: '17px', medium: '14px', small: '12px' }
+  return map[fs || ''] || '14px'
+}
+
+function arrowBorderColor(block: Block) {
+  const c = block.color || '#FFB74D'
+  return { borderTopColor: c, borderBottomColor: c }
+}
+</script>
+
+<style lang="scss" scoped>
+.block-preview {
+  .preview-phone {
+    width: 375px;
+    border-radius: 30px;
+    border: 2px solid #e0e0e0;
+    overflow: hidden;
+    background: #f5f5f5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    position: sticky;
+    top: 20px;
+
+    .phone-top-bar {
+      background: #fff;
+      text-align: center;
+      padding: 10px 0 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 1px solid #eee;
+    }
+
+    .phone-screen {
+      padding: 0 16px;
+      background: #fff;
+      min-height: 500px;
+    }
+  }
+
+  .preview-block {
+    cursor: pointer;
+    transition: outline 0.15s;
+
+    &:hover { outline: 1px dashed #409EFF; }
+    &.preview-block-active { outline: 2px solid #409EFF; }
+  }
+
+  .pb-empty { padding: 32px; text-align: center; color: #c0c4cc; font-size: 14px; }
+  .pb-bottom-safe { height: 24px; }
+  .pb-unknown { padding: 8px; font-size: 12px; color: #c0c4cc; }
+
+  /* placeholder */
+  .pb-img-placeholder {
+    background: #f0f0f0; border: 1px dashed #d0d0d0; display: flex;
+    align-items: center; justify-content: center;
+    color: #bbb; font-size: 13px; border-radius: 6px;
+    &.pb-img-large { height: 150px; }
+    &.pb-img-full { height: 140px; border-radius: 0; }
+    &.pb-img-square { width: 100%; aspect-ratio: 1; }
+  }
+
+  /* ========== 装饰标题 ========== */
+  .pb-decorative-title {
+    border-radius: 10px; padding: 18px 16px; margin-bottom: 12px;
+    color: #fff; text-align: center;
+    .pb-dt-main { display: block; font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+    .pb-dt-sub { display: block; font-size: 17px; font-weight: bold; margin-bottom: 8px; }
+    .pb-dt-footer { display: block; font-size: 12px; opacity: 0.9; }
+  }
+
+  /* ========== 编号装饰标题 ========== */
+  .pb-numbered-title {
+    position: relative; text-align: center;
+    padding: 24px 0 12px; margin-bottom: 12px; overflow: hidden;
+    .pb-nt-bg {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px; height: 80px;
+      background: radial-gradient(ellipse, rgba(255,107,157,0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .pb-nt-number { font-size: 36px; font-weight: bold; color: #333; position: relative; z-index: 1; }
+    .pb-nt-slash { font-size: 14px; color: #999; margin: 0 4px; position: relative; z-index: 1; }
+    .pb-nt-title { font-size: 16px; font-weight: bold; color: #333; position: relative; z-index: 1; }
+  }
+
+  /* ========== 左图右文 ========== */
+  .pb-image-text-row {
+    display: flex; align-items: center; padding: 12px 0; margin-bottom: 12px;
+    .pb-itr-img {
+      width: 40%; height: 100px; flex-shrink: 0; border-radius: 6px; overflow: hidden;
+      img { width: 100%; height: 100%; object-fit: cover; }
+    }
+    .pb-itr-divider {
+      width: 3px; height: 60px;
+      background: linear-gradient(180deg, #FF6B9D 0%, rgba(255,107,157,0.2) 100%);
+      border-radius: 2px; margin: 0 12px; flex-shrink: 0;
+    }
+    .pb-itr-text { flex: 1; font-size: 14px; color: #333; line-height: 1.6; }
+  }
+
+  /* ========== 全宽图片 ========== */
+  .pb-full-image {
+    position: relative; margin-bottom: 12px;
+    img { width: 100%; border-radius: 6px; display: block; }
+    .pb-fi-label {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      background: #FF6B9D; color: #fff; font-size: 12px;
+      padding: 4px 12px; border-radius: 10px;
+      &.pb-fi-top { top: 8px; }
+      &.pb-fi-middle { top: 50%; transform: translate(-50%, -50%); }
+      &.pb-fi-bottom { bottom: 8px; }
+    }
+  }
+
+  /* ========== 全宽出血图 ========== */
+  .pb-full-bleed {
+    margin: 0 -16px 12px;
+    img { width: 100%; display: block; }
+  }
+
+  /* ========== 图文叠加 ========== */
+  .pb-image-overlay {
+    position: relative; margin-bottom: 12px;
+    img { width: 100%; border-radius: 6px; display: block; }
+    .pb-io-overlay {
+      padding: 8px 12px; font-size: 14px;
+      &.pb-io-top { border-radius: 6px 6px 0 0; }
+      &.pb-io-bottom { border-radius: 0 0 6px 6px; }
+      &.pb-io-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 6px; }
+    }
+  }
+
+  /* ========== 场景氛围卡片 ========== */
+  .pb-scene-card {
+    border-radius: 10px; overflow: hidden; margin-bottom: 12px;
+    background-size: cover; background-position: center; background-color: #ddd;
+    min-height: 200px;
+    .pb-sc-overlay {
+      background: rgba(0,0,0,0.3); min-height: 200px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .pb-sc-text { color: #fff; font-size: 14px; line-height: 1.6; text-align: center; }
+    .pb-sc-images { display: flex; gap: 8px; margin-top: 12px; }
+    .pb-sc-img { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
+  }
+
+  /* ========== 纯文本 ========== */
+  .pb-text { padding: 4px 0; margin-bottom: 12px; line-height: 1.8; white-space: pre-wrap; }
+
+  /* ========== 引用 ========== */
+  .pb-quote { padding: 8px 0; margin-bottom: 12px;
+    .pb-bq-icon { font-size: 12px; color: #ccc; }
+    .pb-bq-text { font-size: 13px; color: #999; margin: 0 2px; }
+    &.pb-quote-left { text-align: left; }
+    &.pb-quote-right { text-align: right; }
+  }
+
+  /* ========== 高亮标签 ========== */
+  .pb-highlight-tag { margin-bottom: 12px;
+    &.pb-inline { display: inline-block; margin-bottom: 0; margin-right: 6px; }
+    .pb-ht-tag { display: inline-block; background: #FF6B9D; color: #fff; font-size: 13px; padding: 3px 10px; border-radius: 4px; }
+  }
+
+  /* ========== 对话气泡 ========== */
+  .pb-bubble { margin-bottom: 12px;
+    &.pb-bubble-left { display: flex; flex-direction: column; align-items: flex-start; }
+    &.pb-bubble-center { display: flex; flex-direction: column; align-items: center; }
+    &.pb-bubble-right { display: flex; flex-direction: column; align-items: flex-end; }
+    .pb-bb-bubble { border-radius: 8px; padding: 12px 16px; max-width: 80%;
+      .pb-bb-text { color: #fff; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+    }
+    .pb-bb-arrow { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+      &.pb-arrow-down { border-top: 6px solid; }
+      &.pb-arrow-up { order: -1; border-bottom: 6px solid; border-top: none; }
+      &.pb-arrow-left, &.pb-arrow-right { display: none; }
+    }
+  }
+
+  /* ========== 照片网格 ========== */
+  .pb-gallery { margin-bottom: 12px;
+    .pb-bg-grid { display: grid; }
+    .pb-bg-img-wrap { width: 100%; aspect-ratio: 1; position: relative; border-radius: 6px; overflow: hidden; }
+    .pb-bg-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .pb-bg-text { display: block; text-align: center; font-size: 13px; color: #999; margin-top: 6px; }
+  }
+
+  /* ========== 联系信息 ========== */
+  .pb-contact {
+    display: flex; flex-direction: column; align-items: center; padding: 12px 0; margin-bottom: 12px;
+    .pb-bc-divider { width: 60px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%); margin-bottom: 12px; }
+    .pb-bc-phone { display: flex; align-items: center; margin-bottom: 10px;
+      .pb-bc-label { font-size: 14px; color: #999; }
+      .pb-bc-number { font-size: 18px; font-weight: bold; color: #555; }
+    }
+    .pb-bc-qrcode { width: 100px; height: 100px; margin-bottom: 8px; object-fit: contain; }
+    .pb-bc-source { font-size: 11px; color: #999; }
+  }
+
+  /* ========== 分割线 ========== */
+  .pb-divider { margin-bottom: 12px;
+    .pb-divider-line { height: 1px;
+      &.pb-divider-default { background: #e0e0e0; }
+      &.pb-divider-colorful { height: 2px; background: linear-gradient(90deg, #81C784 0%, #FFD54F 100%); border-radius: 1px; }
+    }
+  }
+}
+</style>
