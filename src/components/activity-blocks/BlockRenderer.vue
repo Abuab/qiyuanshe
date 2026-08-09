@@ -358,11 +358,16 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
           :class="{ 'bg-polaroid': block.frame === 'polaroid' }"
           :style="block.frame === 'polaroid' ? { transform: `rotate(${i % 2 === 0 ? '1.5' : '-1.5'}deg)` } : {}"
         >
-          <image class="bg-image" :src="imgSrc(img)" mode="aspectFill" :style="block.frame === 'polaroid' ? { borderRadius: '4rpx' } : {}" />
-          <text
-            v-if="block.frame === 'polaroid' && block.captions && block.captions[i]"
-            class="bg-polaroid-caption"
-          >{{ block.captions[i] }}</text>
+          <template v-if="block.frame === 'polaroid'">
+            <view class="bg-polaroid-inner">
+              <image class="bg-image" :src="imgSrc(img)" mode="aspectFill" />
+            </view>
+            <text
+              v-if="block.captions && block.captions[i]"
+              class="bg-polaroid-caption"
+            >{{ block.captions[i] }}</text>
+          </template>
+          <image v-else class="bg-image" :src="imgSrc(img)" mode="aspectFill" />
         </view>
       </view>
       <text v-if="block.textOverlay" class="bg-text">{{ block.textOverlay }}</text>
@@ -440,7 +445,7 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
         </view>
       </view>
       <!-- mode=numbered 编号行 -->
-      <view v-if="block.mode !== 'label'" v-for="(item, idx) in block.items" :key="idx" class="ic-item">
+      <view v-if="block.mode !== 'label'" v-for="(item, idx) in block.items" :key="'ic-n-' + idx" class="ic-item">
         <view class="ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">
           <text>{{ idx + 1 }}</text>
         </view>
@@ -451,7 +456,7 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
         </view>
       </view>
       <!-- mode=label 标签行 -->
-      <view v-else v-for="(item, idx) in block.items" :key="idx" class="ic-item">
+      <view v-else v-for="(item, idx) in block.items" :key="'ic-t-' + idx" class="ic-item">
         <view class="ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">
           <text>{{ item.label }}</text>
         </view>
@@ -607,6 +612,7 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
     padding: 28rpx 32rpx;
     text-align: left;
   }
+  &.qv-card.quote-right { text-align: right; }
 
   .bq-card-bar {
     width: 6rpx;
@@ -928,12 +934,20 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
     &.bg-polaroid {
       background: #FFFFFF;
       padding: 16rpx 16rpx 0;
-      padding-bottom: 0;
       border-radius: 8rpx;
       box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
       height: auto;
       overflow: visible;
     }
+  }
+
+  .bg-polaroid-inner {
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    position: relative;
+    border-radius: 4rpx;
+    overflow: hidden;
   }
 
   .bg-polaroid-caption {

@@ -135,12 +135,20 @@
                   :class="{ 'pb-bg-polaroid': block.frame === 'polaroid' }"
                   :style="block.frame === 'polaroid' ? { transform: `rotate(${i % 2 === 0 ? '1.5' : '-1.5'}deg)` } : {}"
                 >
-                  <img v-if="img" :src="img" class="pb-bg-img" :style="block.frame === 'polaroid' ? { borderRadius: '2px' } : {}" />
-                  <div v-else class="pb-img-placeholder" :class="block.frame === 'polaroid' ? 'pb-img-square-polaroid' : 'pb-img-square'">图</div>
-                  <div
-                    v-if="block.frame === 'polaroid' && block.captions && block.captions[i]"
-                    class="pb-bg-polaroid-caption"
-                  >{{ block.captions[i] }}</div>
+                  <template v-if="block.frame === 'polaroid'">
+                    <div class="pb-bg-polaroid-inner">
+                      <img v-if="img" :src="img" class="pb-bg-img" />
+                      <div v-else class="pb-img-placeholder pb-img-square-polaroid">图</div>
+                    </div>
+                    <div
+                      v-if="block.captions && block.captions[i]"
+                      class="pb-bg-polaroid-caption"
+                    >{{ block.captions[i] }}</div>
+                  </template>
+                  <template v-else>
+                    <img v-if="img" :src="img" class="pb-bg-img" />
+                    <div v-else class="pb-img-placeholder pb-img-square">图</div>
+                  </template>
                 </div>
               </div>
               <div v-if="block.textOverlay" class="pb-bg-text">{{ block.textOverlay }}</div>
@@ -212,7 +220,7 @@
               </div>
               <!-- mode=numbered -->
               <template v-if="block.mode !== 'label'">
-                <div v-for="(item, idx) in (block.items || [])" :key="'num-' + idx" class="pb-ic-item">
+                <div v-for="(item, idx) in (block.items || [])" :key="'ic-n-' + idx" class="pb-ic-item">
                   <div class="pb-ic-num" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ idx + 1 }}</div>
                   <div class="pb-ic-text" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">
                     <span v-if="item.label" class="pb-ic-label">{{ item.label }}</span>
@@ -223,7 +231,7 @@
               </template>
               <!-- mode=label -->
               <template v-else>
-                <div v-for="(item, idx) in (block.items || [])" :key="'lbl-' + idx" class="pb-ic-item">
+                <div v-for="(item, idx) in (block.items || [])" :key="'ic-t-' + idx" class="pb-ic-item">
                   <div class="pb-ic-tag" :style="{ backgroundColor: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).accent }">{{ item.label }}</div>
                   <span class="pb-ic-value" :style="{ color: (INFO_CARD_THEMES[block.theme] || INFO_CARD_THEMES.purple).text }">{{ item.value }}</span>
                 </div>
@@ -503,6 +511,7 @@ function hasPreviewQrGroupItems(items?: any[]): boolean {
       display: flex; align-items: flex-start; background: #FFF5F8;
       border-radius: 6px; padding: 14px 16px; text-align: left;
     }
+    &.pb-qv-card.pb-quote-right { text-align: right; }
     .pb-bq-card-bar { width: 3px; min-height: 24px; border-radius: 2px; background: #FF6B9D; margin-right: 10px; flex-shrink: 0; align-self: stretch; }
     .pb-bq-card-text { font-size: 14px; color: #555; line-height: 1.8; flex: 1; }
   }
@@ -536,6 +545,7 @@ function hasPreviewQrGroupItems(items?: any[]): boolean {
     .pb-bg-img-wrap { width: 100%; aspect-ratio: 1; position: relative; border-radius: 6px; overflow: hidden;
       &.pb-bg-polaroid { background: #fff; padding: 8px 8px 0; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); height: auto; aspect-ratio: auto; overflow: visible; }
     }
+    .pb-bg-polaroid-inner { width: 100%; aspect-ratio: 1; position: relative; border-radius: 2px; overflow: hidden; }
     .pb-bg-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
     .pb-bg-text { display: block; text-align: center; font-size: 13px; color: #999; margin-top: 6px; }
     .pb-bg-polaroid-caption { display: block; text-align: center; font-size: 11px; color: #999; padding: 6px 0; }
