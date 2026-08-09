@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm'
 
 @Entity('activities')
@@ -86,4 +87,7 @@ export class Activity {
 
   @UpdateDateColumn({ name: 'updatedAt' })
   updatedAt: Date
+
+  @DeleteDateColumn({ name: 'deletedAt', nullable: true })
+  deletedAt: Date | null
 }

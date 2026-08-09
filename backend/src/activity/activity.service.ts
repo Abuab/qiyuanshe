@@ -28,6 +28,12 @@ export class ActivityService {
     private readonly dataSource: DataSource,
   ) {}
 
+  /** 过滤掉小程序端不需要的内部字段 */
+  private filterPublicFields<T extends Record<string, any>>(activity: T): Omit<T, 'creatorId' | 'updatedAt' | 'isActive' | 'sortOrder' | 'deletedAt'> {
+    const { creatorId, updatedAt, isActive, sortOrder, deletedAt, ...rest } = activity as any
+    return rest
+  }
+
   /** 进行中(1)但已过截止时间的活动，读取时自动视为「已结束」(2) */
   private applyEndedStatus<T extends { status?: number; endTime?: Date }>(activity: T): T {
     if (
@@ -65,7 +71,8 @@ export class ActivityService {
           ...a,
           // 将相对路径转为小程序可直接加载的完整 URL
           coverImage: resolveStaticUrl(a.coverImage),
-        })),
+        }))
+        .map((a) => this.filterPublicFields(a)),
       page,
       limit,
       total,
@@ -89,12 +96,12 @@ export class ActivityService {
       .limit(10)
       .getRawMany()
 
-    return this.applyEndedStatus({
+    return this.filterPublicFields(this.applyEndedStatus({
       ...activity,
       // 将相对路径转为小程序可直接加载的完整 URL
       coverImage: resolveStaticUrl(activity.coverImage),
       signupAvatars: signups.map(s => s.avatar).filter(Boolean),
-    })
+    }))
   }
 
   // 小程序端 - 报名
@@ -269,14 +276,19 @@ export class ActivityService {
     return { success: true }
   }
 
-  // 后台管理 - 删除活动
+  // 后台管理 - 删除活动（软删除）
   async delete(id: number) {
     const activity = await this.activityRepository.findOne({ where: { id } })
     if (!activity) {
       throw new NotFoundException('活动不存在')
     }
 
-    await this.activityRepository.delete(id)
+    // 软删除：使用事务确保 isActive 标记与 deletedAt 时间戳原子写入
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(Activity, id, { isActive: 0 } as any)
+      await manager.softDelete(Activity, id)
+    })
+
     return { success: true }
   }
 
