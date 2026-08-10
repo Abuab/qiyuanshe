@@ -6,6 +6,7 @@ import { UserAuth } from '../entities/UserAuth'
 import { RealNameIdentity } from '../entities/RealNameIdentity'
 import { SystemService } from '../system/system.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
+import { CryptoService } from '../common/crypto.service'
 import * as crypto from 'crypto'
 import {
   callFaceIdApi,
@@ -36,6 +37,7 @@ export class EidAuthService {
     private readonly systemService?: SystemService,
     @Optional()
     private readonly notifyChannelService?: NotifyChannelService,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   /**
@@ -151,15 +153,18 @@ export class EidAuthService {
                 }
               }
 
-              // 写入 real_name_identities
+              // 写入 real_name_identities（加密存储）
+              const encryptedName = this.cryptoService.encrypt(identityInfo!.realName)
+              const encryptedIdCard = this.cryptoService.encrypt(identityInfo!.idCard)
+
               const existingIdentity = await txnManager
                 .createQueryBuilder(RealNameIdentity, 'rni')
                 .where('rni.userId = :userId', { userId })
                 .getOne()
               if (existingIdentity) {
                 await txnManager.update(RealNameIdentity, existingIdentity.id, {
-                  realName: identityInfo!.realName,
-                  idCard: identityInfo!.idCard,
+                  realName: encryptedName,
+                  idCard: encryptedIdCard,
                   idCardHash,
                   eidBizSeqNo: user.eidBizSeqNo,
                   verifiedAt: now,
@@ -168,8 +173,8 @@ export class EidAuthService {
               } else {
                 await txnManager.insert(RealNameIdentity, {
                   userId,
-                  realName: identityInfo!.realName,
-                  idCard: identityInfo!.idCard,
+                  realName: encryptedName,
+                  idCard: encryptedIdCard,
                   idCardHash,
                   eidBizSeqNo: user.eidBizSeqNo || '',
                   verifiedAt: now,
@@ -177,14 +182,14 @@ export class EidAuthService {
                 })
               }
 
-              // 写入 user_auths
+              // 写入 user_auths（加密存储 authData 中的敏感字段）
               const existingAuth = await txnManager.findOne(UserAuth, {
                 where: { userId, authType: 'realname' },
               })
               if (existingAuth) {
                 existingAuth.authData = {
-                  realName: identityInfo!.realName,
-                  idCard: identityInfo!.idCard,
+                  realName: encryptedName,
+                  idCard: encryptedIdCard,
                 }
                 existingAuth.status = 1
                 await txnManager.save(existingAuth)
@@ -194,8 +199,8 @@ export class EidAuthService {
                   authType: 'realname',
                   status: 1,
                   authData: {
-                    realName: identityInfo!.realName,
-                    idCard: identityInfo!.idCard,
+                    realName: encryptedName,
+                    idCard: encryptedIdCard,
                   },
                 })
                 await txnManager.save(newAuth)
@@ -308,6 +313,7 @@ export class EidAuthService {
       .getMany()
 
     // 兜底检查 user_auths 表（兼容旧数据迁移前已认证的用户，同时校验姓名+身份证号）
+    // 此兜底需要比对明文：先尝试解密 authData 字段（加密后的数据），解密失败则当明文处理
     let fallbackDuplicateUserId: number | null = null
     if (identities.length === 0) {
       try {
@@ -324,7 +330,8 @@ export class EidAuthService {
           if (typeof authData === 'string') {
             try { authData = JSON.parse(authData) } catch { continue }
           }
-          const rawIdCard = authData?.idCard
+          // 尝试解密（兼容加密/明文混合存储）
+          const rawIdCard = this.tryDecryptIdentity(authData?.idCard || '')
           if (rawIdCard && String(rawIdCard).trim() === idCardTrim) {
             fallbackDuplicateUserId = row.ua_userId
             break
@@ -332,15 +339,14 @@ export class EidAuthService {
         }
 
         // 如果身份证号匹配没找到，再在上述 user_auths 结果中做姓名+身份证联合匹配
-        // （防止 idCard 格式不一致导致 hash 不匹配的情况）
         if (!fallbackDuplicateUserId && realNameTrim) {
           for (const row of legacyAuth) {
             let authData: any = row.ua_authData
             if (typeof authData === 'string') {
               try { authData = JSON.parse(authData) } catch { continue }
             }
-            const rawName = (authData?.realName || '').trim().replace(/\s+/g, '')
-            const rawId = (authData?.idCard || '').trim()
+            const rawName = this.tryDecryptIdentity(authData?.realName || '').trim().replace(/\s+/g, '')
+            const rawId = this.tryDecryptIdentity(authData?.idCard || '').trim()
             if (rawName === realNameTrim && rawId === idCardTrim) {
               fallbackDuplicateUserId = row.ua_userId
               break
@@ -354,7 +360,7 @@ export class EidAuthService {
 
     // 如果 real_name_identities 和 user_auths 都没找到匹配，但有姓名和身份证号，
     // 再在 real_name_identities 中按身份证号哈希以外的维度做兜底查询
-    // （兼容 idCard 存储时的空格/大小写差异）
+    // （兼容 idCard 存储时的空格/大小写差异；兼容加密/明文混合存储）
     if (identities.length === 0 && !fallbackDuplicateUserId && realNameTrim) {
       try {
         const allIdentities = await this.entityManager
@@ -365,8 +371,8 @@ export class EidAuthService {
           .getMany()
 
         for (const idt of allIdentities) {
-          const idtName = (idt.realName || '').trim().replace(/\s+/g, '')
-          const idtIdCard = (idt.idCard || '').trim()
+          const idtName = this.tryDecryptIdentity(idt.realName || '').trim().replace(/\s+/g, '')
+          const idtIdCard = this.tryDecryptIdentity(idt.idCard || '').trim()
           if (idtName === realNameTrim && idtIdCard === idCardTrim) {
             // 找到了姓名+身份证完全匹配的记录，补充到 identities 列表中
             identities.push(idt)
@@ -473,12 +479,16 @@ export class EidAuthService {
       return { success: false, message: '该身份证仍绑定在其他激活账号上' }
     }
 
-    // 将历史身份信息写入当前用户
+    // 解密历史身份信息（兼容加密/明文混合存储）
+    const decryptedName = this.tryDecryptIdentity(historicIdentity.realName)
+    const decryptedIdCard = this.tryDecryptIdentity(historicIdentity.idCard)
+
+    // 将历史身份信息写入当前用户（syncIdentityRecords 内部会重新加密）
     const now = new Date()
     await this.syncIdentityRecords({
       userId,
-      realName: historicIdentity.realName,
-      idCard: historicIdentity.idCard,
+      realName: decryptedName,
+      idCard: decryptedIdCard,
       eidBizSeqNo: `reauth_${Date.now()}`,
       verifiedAt: now,
       status: 0,
@@ -510,6 +520,7 @@ export class EidAuthService {
 
   /**
    * 写入/同步实名身份信息到 user_auths 和 real_name_identities 表。
+   * 传入明文，内部自动加密后存储。
    * 解决 handleCallback 回调先于前端回调抵达时"已标记 DONE 但缺少身份记录"的问题。
    */
   private async syncIdentityRecords(params: {
@@ -522,12 +533,16 @@ export class EidAuthService {
   }): Promise<void> {
     const { userId, realName, idCard, eidBizSeqNo, verifiedAt, status = 0 } = params
 
-    // 1. 写入 UserAuth 实名认证记录
+    // 加密敏感字段
+    const encryptedName = this.cryptoService.encrypt(realName)
+    const encryptedIdCard = this.cryptoService.encrypt(idCard)
+
+    // 1. 写入 UserAuth 实名认证记录（加密存储）
     const existingAuth = await this.userAuthRepo.findOne({
       where: { userId, authType: 'realname' },
     })
     if (existingAuth) {
-      existingAuth.authData = { realName, idCard }
+      existingAuth.authData = { realName: encryptedName, idCard: encryptedIdCard }
       existingAuth.status = 1
       await this.userAuthRepo.save(existingAuth)
     } else {
@@ -536,12 +551,12 @@ export class EidAuthService {
           userId,
           authType: 'realname',
           status: 1,
-          authData: { realName, idCard },
+          authData: { realName: encryptedName, idCard: encryptedIdCard },
         }),
       )
     }
 
-    // 2. 写入 real_name_identities 表
+    // 2. 写入 real_name_identities 表（加密存储）
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
     const existingIdentity = await this.entityManager
       .createQueryBuilder(RealNameIdentity, 'rni')
@@ -549,8 +564,8 @@ export class EidAuthService {
       .getOne()
     if (existingIdentity) {
       await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
-        realName,
-        idCard,
+        realName: encryptedName,
+        idCard: encryptedIdCard,
         idCardHash,
         eidBizSeqNo: eidBizSeqNo ?? existingIdentity.eidBizSeqNo,
         verifiedAt: verifiedAt ?? existingIdentity.verifiedAt,
@@ -559,14 +574,28 @@ export class EidAuthService {
     } else {
       await this.entityManager.insert(RealNameIdentity, {
         userId,
-        realName,
-        idCard,
+        realName: encryptedName,
+        idCard: encryptedIdCard,
         idCardHash,
         eidBizSeqNo: eidBizSeqNo || '',
         verifiedAt: verifiedAt || new Date(),
         status,
       })
     }
+  }
+
+  /**
+   * 尝试解密身份字段值（兼容加密/明文混合存储的过渡期）。
+   * - 若值为密文格式 → 解密后返回明文
+   * - 若值为明文 → 直接返回
+   * - 若值为空 → 返回空字符串
+   */
+  private tryDecryptIdentity(value: string): string {
+    if (!value) return ''
+    if (this.cryptoService.isEncrypted(value)) {
+      return this.cryptoService.decrypt(value)
+    }
+    return value
   }
 
   /**

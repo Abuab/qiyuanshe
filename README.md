@@ -355,6 +355,12 @@ REDIS_DB=0
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 
+# ============ 敏感数据加密密钥 ============
+# 实名身份信息加密密钥（AES-256-GCM，必须配置！）
+# 生成命令：openssl rand -hex 32
+# 不配置此密钥将导致实名字段无法加密存储，系统在 production 模式下会中止启动
+IDENTITY_ENCRYPTION_KEY=openssl_rand_hex_32_output
+
 # 静态资源 URL 前缀（CDN）
 STATIC_BASE_URL=https://yourdomain.com
 
@@ -434,6 +440,10 @@ JWT_SECRET=和主目录 .env 中 JWT_SECRET 保持一致
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
 WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
+
+# 实名身份加密密钥（必须！）
+# 生成命令：openssl rand -hex 32
+IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
 ```
 
 > **注意**：Docker Compose 启动时会通过 `environment` 注入变量覆盖这些值，此文件是备用/手动启动时使用。
@@ -745,6 +755,9 @@ JWT_EXPIRES_IN=7d
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
 WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
+
+# 实名身份加密密钥（必须！openssl rand -hex 32 生成）
+IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
 
 # 静态资源
 STATIC_BASE_URL=https://yourdomain.com

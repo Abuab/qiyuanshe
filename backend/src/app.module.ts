@@ -85,6 +85,7 @@ import { CosModule } from './cos/cos.module'
 import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
 import { ContentFilterService } from './common/content-filter.service'
+import { CryptoService } from './common/crypto.service'
 import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 
@@ -182,7 +183,7 @@ import { WinstonLoggerModule } from './common/logger/winston-logger.module'
     WinstonLoggerModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService, DatabaseIndexService, ContentFilterService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
-  exports: [TypeOrmModule, RedisService, ContentFilterService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
+  providers: [RedisService, DatabaseIndexService, ContentFilterService, CryptoService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
+  exports: [TypeOrmModule, RedisService, ContentFilterService, CryptoService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}

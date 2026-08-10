@@ -4,6 +4,7 @@ import { ContentFilterService } from '../common/content-filter.service'
 import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm'
 import { User, UserPhoto } from '../entities'
 import { Follow } from '../entities/Follow'
+import { UserBlock } from '../entities/UserBlock'
 import { ProfileVisit } from '../entities/ProfileVisit'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
 import { AuditLog } from '../entities/AuditLog'
@@ -69,6 +70,8 @@ export class UserService {
     private readonly userPhotoRepository: Repository<UserPhoto>,
     @InjectRepository(Follow)
     private readonly followRepository: Repository<Follow>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
     @InjectRepository(ProfileVisit)
       private readonly visitRepository: Repository<ProfileVisit>,
       @InjectRepository(MatchmakerComment)
@@ -157,6 +160,18 @@ export class UserService {
       .where('user.status = :status', { status: 1 })
       .andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
       .andWhere('user.id != :adminId', { adminId: 1 })
+
+    // ===== 拉黑过滤 =====
+    if (currentUserId) {
+      queryBuilder.andWhere(
+        `user.id NOT IN (SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :filterBlockerId)`,
+        { filterBlockerId: currentUserId },
+      )
+      queryBuilder.andWhere(
+        `user.id NOT IN (SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :filterBlockedId)`,
+        { filterBlockedId: currentUserId },
+      )
+    }
 
     // 性别筛选：显式 dto.gender 优先；未显式指定时才按当前用户性别自动互推（男→女，女→男）
     let genderApplied = false
@@ -333,6 +348,8 @@ export class UserService {
       matchmakerReviews: { id: number; content: string; matchmakerName: string; createdAt: Date }[]
       isFollowed: boolean
       isSelf: boolean
+      isBlockedByTarget: boolean
+      hasBlocked: boolean
       introText: string
       displayName: string
     }
@@ -388,6 +405,8 @@ export class UserService {
 
     let isFollowed = false
     let isSelf = false
+    let isBlockedByTarget = false
+    let hasBlocked = false
 
     if (currentUserId) {
       isSelf = currentUserId === id
@@ -405,6 +424,18 @@ export class UserService {
           where: { userId: currentUserId, targetUserId: id },
         })
         isFollowed = !!follow
+
+        // ===== 拉黑状态检查 =====
+        const [blockedByTarget, blockedByMe] = await Promise.all([
+          this.blockRepository.findOne({
+            where: { blockerId: id, blockedUserId: currentUserId },
+          }),
+          this.blockRepository.findOne({
+            where: { blockerId: currentUserId, blockedUserId: id },
+          }),
+        ])
+        isBlockedByTarget = !!blockedByTarget
+        hasBlocked = !!blockedByMe
       }
     }
 
@@ -453,6 +484,8 @@ export class UserService {
         matchmakerReviews,
         isFollowed,
         isSelf,
+        isBlockedByTarget,
+        hasBlocked,
         introText: await this.buildUserIntroText(user),
       },
     }
@@ -465,6 +498,17 @@ export class UserService {
 
     // 使用事务：同时检查、创建关注记录
     await this.followRepository.manager.transaction(async (manager) => {
+      // ===== 拉黑检查：双向阻断 =====
+      const blockExists = await manager.findOne(UserBlock, {
+        where: [
+          { blockerId: userId, blockedUserId: targetUserId },
+          { blockerId: targetUserId, blockedUserId: userId },
+        ],
+      })
+      if (blockExists) {
+        throw new UnauthorizedException('无法关注该用户')
+      }
+
       const targetUser = await manager.findOne(User, {
         where: { id: targetUserId, status: 1, isDeleted: 0 },
       })
@@ -1162,8 +1206,8 @@ export class UserService {
       { sql: 'DELETE FROM user_tag_selections WHERE userId = ?', desc: 'user_tag_selections' },
       // 协议
       { sql: 'DELETE FROM user_agreements WHERE userId = ?', desc: 'user_agreements' },
-      // VIP
-      { sql: 'DELETE FROM vip_orders WHERE userId = ?', desc: 'vip_orders' },
+      // VIP — 软删除保留订单记录，满足财务对账/税务核查/退款纠纷追溯需求
+      { sql: 'UPDATE vip_orders SET isDeleted = 1 WHERE userId = ?', desc: 'vip_orders' },
       // 置顶
       { sql: 'DELETE FROM user_top_records WHERE userId = ?', desc: 'user_top_records' },
       { sql: 'DELETE FROM user_top_card_quotas WHERE userId = ?', desc: 'user_top_card_quotas' },
@@ -1238,15 +1282,32 @@ export class UserService {
     }
   }
 
-  async deactivateAccount(userId: number): Promise<void> {
+  async deactivateAccount(userId: number, reason: 'self' | 'revoke' = 'self'): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (!user) throw new NotFoundException('用户不存在')
+    if (user.isDeleted === 1) return // 已注销，幂等
+
+    const oldPhone = user.phone
     user.isDeleted = 1
     user.status = 0
-    user.deleteReason = '用户自行注销'
+    user.deleteReason = reason === 'revoke' ? '撤回协议同意' : '用户自行注销'
     user.phone = null          // 释放手机号，避免跨账号唯一索引冲突
     user.tokenVersion += 1     // 使所有已签发的 access token 立即失效
     await this.userRepository.save(user)
+
+    // 写入审计日志
+    await this.auditLogRepository.save({
+      targetType: 'user_cancel',
+      targetId: userId,
+      action: reason === 'revoke' ? 'REVOKE_AGREEMENT' : 'DEACTIVATE',
+      reason: reason === 'revoke' ? '撤回协议同意导致注销' : '用户自行注销（deactivate）',
+      content: JSON.stringify({
+        nickname: user.nickname,
+        phone: oldPhone,
+        deactivatedAt: beijingISO(),
+      }),
+    })
+
     // 同步清理关联数据，避免未清理完就被用户重新注册导致旧数据残留
     await this.cleanupDeletedUserData(userId)
   }
@@ -1415,8 +1476,8 @@ export class UserService {
       })
     } else if (action === 'revoke') {
       // 撤回同意协议：与注销账户走相同逻辑，彻底清除用户数据并从推荐列表移除
-      await this.deactivateAccount(userId)
-      // deactivateAccount 不处理协议字段，此处补充清空
+      await this.deactivateAccount(userId, 'revoke')
+      // deactivateAccount 已含审计日志，此处补充清空协议字段
       await this.userRepository.update(userId, { protocolAgreedAt: null })
     }
   }

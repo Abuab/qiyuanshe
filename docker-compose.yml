@@ -142,6 +142,8 @@ services:
       TZ: Asia/Shanghai
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）
       CORS_ORIGINS: ${CORS_ORIGINS:-https://your-production-domain.com}
+      # 实名身份信息加密密钥（AES-256-GCM，64 位十六进制；openssl rand -hex 32 生成）
+      IDENTITY_ENCRYPTION_KEY: ${IDENTITY_ENCRYPTION_KEY:-}
       # 堆上限 768MB（容器 mem_limit 1280m，预留 512MB 给堆外内存和 Buffer）
       NODE_OPTIONS: --max-old-space-size=768 --heapsnapshot-near-heap-limit=2
     volumes:
