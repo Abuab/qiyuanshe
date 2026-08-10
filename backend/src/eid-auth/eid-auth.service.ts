@@ -459,11 +459,11 @@ export class EidAuthService {
   ): Promise<{ success: boolean; message: string }> {
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
 
-    // 查找历史记录
+    // 查找历史记录（含已注销用户：cleanupDeletedUserData 会设 status=1，但仍需在此处匹配以完成二次认证）
     const historicIdentity = await this.entityManager
       .createQueryBuilder(RealNameIdentity, 'rni')
       .where('rni.idCardHash = :hash', { hash: idCardHash })
-      .andWhere('rni.status = 0')
+      .andWhere('rni.status IN (:...statuses)', { statuses: [0, 1] })
       .andWhere('rni.userId != :userId', { userId })
       .getOne()
 
