@@ -16,7 +16,21 @@ import { diskStorage } from 'multer'
 import { extname } from 'path'
 import { PropertyAuthService } from './property-auth.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
+import { RoleGuard } from '../admin/role.guard'
+import { Roles } from '../admin/roles.decorator'
+import { AdminRole } from '../shared/enums'
 import { Result } from '../common/result'
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/bmp',
+]
+
+const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
 
 const uploadStorage = diskStorage({
   destination: './uploads',
@@ -48,7 +62,18 @@ export class PropertyAuthController {
   /** 小程序：提交房产认证（含图片上传） */
   @Post('submit')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file', { storage: uploadStorage }))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: uploadStorage,
+    limits: { fileSize: 1024 * 1024 * 5 },
+    fileFilter: (_req, file, cb) => {
+      const ext = extname(file.originalname || '').toLowerCase()
+      if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
+        cb(null, true)
+      } else {
+        cb(new Error('只允许上传图片文件 (jpg, png, gif, webp, bmp)'), false)
+      }
+    },
+  }))
   async submit(
     @Request() req: any,
     @UploadedFile() file: any,
@@ -68,6 +93,8 @@ export class PropertyAuthController {
 
   /** 管理后台：分页查询 */
   @Get('admin/list')
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async adminList(
     @Query('page') page: string,
     @Query('pageSize') pageSize: string,
@@ -79,6 +106,8 @@ export class PropertyAuthController {
 
   /** 管理后台：审核 */
   @Post('admin/audit')
+  @UseGuards(AdminJwtAuthGuard, RoleGuard)
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async adminAudit(
     @Body() body: { id: number; status: number; rejectReason?: string },
   ) {

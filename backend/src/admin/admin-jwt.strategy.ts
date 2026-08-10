@@ -36,18 +36,24 @@ export class AdminJwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
       throw new UnauthorizedException('无效的管理员令牌')
     }
 
-    // 检查 tokenVersion（如果 payload 中包含）
-    if (payload.tokenVersion !== undefined) {
-      const adminUser = await this.adminAccountService.findById(payload.sub)
-      if (!adminUser || adminUser.tokenVersion !== payload.tokenVersion) {
-        throw new UnauthorizedException('令牌已失效，请重新登录')
-      }
+    // 始终从 DB 读取最新状态：禁用/降权即时生效
+    const adminUser = await this.adminAccountService.findById(payload.sub)
+    if (!adminUser) {
+      throw new UnauthorizedException('管理员账号不存在')
+    }
+
+    if (adminUser.status !== 1) {
+      throw new UnauthorizedException('管理员账号已被禁用')
+    }
+
+    if (payload.tokenVersion !== undefined && adminUser.tokenVersion !== payload.tokenVersion) {
+      throw new UnauthorizedException('令牌已失效，请重新登录')
     }
 
     return {
       id: payload.sub,
       username: payload.username,
-      role: payload.role,
+      role: adminUser.role,
       isAdmin: 1,
     }
   }

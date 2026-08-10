@@ -13,6 +13,7 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -89,6 +90,25 @@ export class AdminUserController {
     return Result.success(users)
   }
 
+  /** 流失风险用户（静态路由，必须在 @Get(':id') 之前） */
+  @Get('churn-risk')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+  async getChurnRiskUsers(@Query('days') days: number = 14, @Query('limit') limit: number = 50) {
+    const users = await this.userScoreService.getChurnRiskUsers(days, limit)
+    return Result.success(users.map(u => ({
+      ...u,
+      tier: this.userScoreService.getUserTier(u.profileScore || 0),
+    })))
+  }
+
+  /** 评分分布（静态路由，必须在 @Get(':id') 之前） */
+  @Get('score-distribution')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
+  async getScoreDistribution() {
+    const data = await this.userScoreService.getScoreDistribution()
+    return Result.success(data)
+  }
+
   /** 获取用户财务记录（VIP订单等） */
   @Get(':id/orders')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
@@ -120,12 +140,6 @@ export class AdminUserController {
   ) {
     await this.userService.updateVip(id, body.level, body.days, body.packageName)
     return Result.success(null, 'VIP设置成功')
-  }
-
-  @Post(':id/reset-password')
-  async resetPassword(@Param('id', ParseIntPipe) id: number) {
-    await this.userService.resetPassword(id)
-    return Result.success(null, '密码重置成功')
   }
 
   @Post(':id/notify')
@@ -175,24 +189,33 @@ export class AdminUserController {
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
-    await this.userService.softDelete(id)
-    return Result.success(null, '用户已删除')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const adminId = req.user?.id
+    const deleted = await this.userService.softDelete(id, adminId)
+    if (!deleted) {
+      throw new NotFoundException('用户不存在或已注销')
+    }
+    return Result.success(null, '用户已注销')
   }
 
   @Post('batch-delete')
-  async batchDelete(@Body() body: { ids: number[] }) {
-    await this.userService.batchSoftDelete(body.ids)
-    return Result.success(null, '批量删除成功')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
+  async batchDelete(@Body() body: { ids: number[] }, @Request() req: any) {
+    const adminId = req.user?.id
+    await this.userService.batchSoftDelete(body.ids, adminId)
+    return Result.success(null, '批量注销成功')
   }
 
   @Put(':id/restore')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async restoreUser(@Param('id', ParseIntPipe) id: number) {
     await this.userService.restoreUser(id)
     return Result.success(null, '用户已恢复')
   }
 
   @Delete(':id/permanent')
+  @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async permanentDelete(@Param('id', ParseIntPipe) id: number) {
     await this.userService.permanentDelete(id)
     return Result.success(null, '用户已彻底删除')
@@ -436,22 +459,5 @@ export class AdminUserController {
     const score = await this.userScoreService.calculateScore(id)
     await this.userService.updateUser(id, { profileScore: score })
     return Result.success({ score, tier: this.userScoreService.getUserTier(score) }, '评分已更新')
-  }
-
-  @Get('churn-risk')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
-  async getChurnRiskUsers(@Query('days') days: number = 14, @Query('limit') limit: number = 50) {
-    const users = await this.userScoreService.getChurnRiskUsers(days, limit)
-    return Result.success(users.map(u => ({
-      ...u,
-      tier: this.userScoreService.getUserTier(u.profileScore || 0),
-    })))
-  }
-
-  @Get('score-distribution')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
-  async getScoreDistribution() {
-    const data = await this.userScoreService.getScoreDistribution()
-    return Result.success(data)
   }
 }

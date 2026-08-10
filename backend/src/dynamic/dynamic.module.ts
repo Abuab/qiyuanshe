@@ -9,13 +9,14 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Matchmaker } from '../entities/Matchmaker'
+import { UserBlock } from '../entities/UserBlock'
 import { DynamicController } from './dynamic.controller'
 import { DynamicService } from './dynamic.service'
 import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Dynamic, DynamicLike, User, UserPhoto, Follow, MatchRecord, Matchmaker]),
+    TypeOrmModule.forFeature([Dynamic, DynamicLike, User, UserPhoto, Follow, MatchRecord, Matchmaker, UserBlock]),
     JwtModule.register({
       secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },

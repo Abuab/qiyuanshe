@@ -146,7 +146,7 @@ const handleSizeChange = () => {
 const handleRestore = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确认恢复用户「${row.nickname}」的账号吗？恢复后用户可正常登录使用。`,
+      `确认恢复用户「${row.nickname}」的账号吗？\n\n注意：恢复的是空账号，注销时清除的个人数据（照片、动态、聊天记录、实名信息等）不可找回，用户需重新完善资料并重新同意协议。`,
       '恢复确认',
       { confirmButtonText: '确认恢复', cancelButtonText: '取消', type: 'warning' },
     )

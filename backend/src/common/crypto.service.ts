@@ -137,6 +137,22 @@ export class CryptoService implements OnModuleInit {
   }
 
   /**
+   * 尝试解密身份字段值（兼容加密/明文混合存储的过渡期）。
+   * - 若值为密文格式 → 解密后返回明文
+   * - 若值为明文 → 直接返回
+   * - 若值为空 → 返回空字符串
+   *
+   * 供所有读取 realName/idCard 的消费方统一复用，避免各处重复实现。
+   */
+  tryDecryptIdentity(value: string): string {
+    if (!value) return ''
+    if (this.isEncrypted(value)) {
+      return this.decrypt(value)
+    }
+    return value
+  }
+
+  /**
    * 判断当前值是否已是密文格式（启发式：base64url 长度 > 32 且不含明文特征字符）。
    * 用于存量数据迁移时的兼容性判断。
    */

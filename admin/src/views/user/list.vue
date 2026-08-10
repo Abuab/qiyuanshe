@@ -230,7 +230,7 @@
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
         <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
         <el-button size="small" type="info" @click="handleRecalculateScores" :loading="scoresLoading">批量重算评分</el-button>
-        <el-button size="small" type="danger" @click="handleBatchDelete">批量注销</el-button>
+        <el-button v-if="canCancelUser" size="small" type="danger" @click="handleBatchDelete">批量注销</el-button>
         <el-button size="small" @click="clearSelection">取消选择</el-button>
       </div>
 
@@ -573,7 +573,7 @@
                   <!-- 运营操作：打标签 + 查看备注 -->
                   <el-dropdown-item command="tag">打标签</el-dropdown-item>
                   <el-dropdown-item command="viewNotes">查看备注</el-dropdown-item>
-                  <el-dropdown-item command="cancel" divided>注销账号</el-dropdown-item>
+                  <el-dropdown-item v-if="canCancelUser" command="cancel" divided>注销账号</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -1236,6 +1236,7 @@ import type { User, UserFilter } from '../../api/user'
 const router = useRouter()
 const adminStore = useAdminStore()
 const isReadonly = computed(() => adminStore.userInfo?.role === 'readonly')
+const canCancelUser = computed(() => adminStore.userInfo?.role === 'super_admin' || adminStore.userInfo?.role === 'operator')
 const loading = ref(false)
 const exportLoading = ref(false)
 const scoresLoading = ref(false)

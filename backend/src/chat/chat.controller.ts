@@ -10,6 +10,8 @@ import {
   UseGuards,
   Request,
   ParseIntPipe,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common'
 import { ChatService } from './chat.service'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
@@ -68,6 +70,15 @@ export class ChatController {
     return {
       success: true,
     }
+  }
+
+  @Delete('messages/:id')
+  async deleteMessage(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+    const affected = await this.chatService.deleteMessage(req.user.id, id)
+    if (!affected) {
+      throw new HttpException('消息不存在', HttpStatus.NOT_FOUND)
+    }
+    return { success: true }
   }
 
   @Delete('conversations/:userId')

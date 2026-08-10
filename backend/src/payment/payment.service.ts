@@ -193,7 +193,7 @@ export class PaymentService {
         return this.buildNotifyResponse(false, '签名校验失败')
       }
 
-      const order = await this.orderRepository.findOne({ where: { orderNo: out_trade_no } })
+      const order = await this.orderRepository.findOne({ where: { orderNo: out_trade_no, isDeleted: 0 } })
       if (!order) {
         this.logger.error(`[回调] 订单不存在: ${out_trade_no}`)
         return this.buildNotifyResponse(false, '订单不存在')
@@ -364,7 +364,7 @@ export class PaymentService {
     await queryRunner.startTransaction()
 
     try {
-      const order = await queryRunner.manager.findOne(VipOrder, { where: { orderNo, userId, status: 0 } })
+      const order = await queryRunner.manager.findOne(VipOrder, { where: { orderNo, userId, status: 0, isDeleted: 0 } })
       if (!order) throw new NotFoundException('订单不存在或已处理')
 
       const pkg = await this.packageRepository.findOne({ where: { id: order.packageId! } })
@@ -405,7 +405,7 @@ export class PaymentService {
   async getOrders(userId: number, page = 1, limit = 20) {
     const skip = (page - 1) * limit
     const [orders, total] = await this.orderRepository.findAndCount({
-      where: { userId },
+      where: { userId, isDeleted: 0 },
       relations: ['package'],
       order: { createdAt: 'DESC' },
       skip,

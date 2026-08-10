@@ -5,6 +5,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
+import { UserBlock } from '../entities/UserBlock'
 import { AuditLog } from '../entities/AuditLog'
 import { SendMessageDto, QueryMessagesDto, QueryConversationsDto, PollMessagesDto } from './dto'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
@@ -257,6 +258,8 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     private readonly messageRepository: Repository<ChatMessage>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
     @Optional()
     @InjectRepository(AuditLog)
     private readonly auditLogRepository?: Repository<AuditLog>,
@@ -284,6 +287,20 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
 
     if (userId === toUserId) {
       throw new ForbiddenException('不能给自己发送消息')
+    }
+
+    // ===== 拉黑检查：双向阻断，任一方向存在拉黑关系则禁止发送消息 =====
+    const blockExists = await this.blockRepository.findOne({
+      where: [
+        { blockerId: userId, blockedUserId: toUserId },
+        { blockerId: toUserId, blockedUserId: userId },
+      ],
+    })
+    if (blockExists) {
+      if (blockExists.blockerId === userId) {
+        throw new ForbiddenException('你已拉黑对方，无法发送消息')
+      }
+      throw new ForbiddenException('对方已开启屏蔽，消息无法送达')
     }
 
     const targetUser = await this.userRepository.findOne({
@@ -446,8 +463,8 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     }
 
     const whereConditions: any[] = [
-      { fromUserId: userId, toUserId },
-      { fromUserId: toUserId, toUserId: userId },
+      { fromUserId: userId, toUserId, deletedBySender: 0 },
+      { fromUserId: toUserId, toUserId: userId, deletedByReceiver: 0 },
     ]
 
     let list: ChatMessage[]
@@ -512,8 +529,8 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     // MySQL 查询：只查 ID 大于 afterId 的增量消息
     const messages = await this.messageRepository.find({
       where: [
-        { fromUserId: userId, toUserId, id: MoreThan(afterId) },
-        { fromUserId: toUserId, toUserId: userId, id: MoreThan(afterId) },
+        { fromUserId: userId, toUserId, id: MoreThan(afterId), deletedBySender: 0 },
+        { fromUserId: toUserId, toUserId: userId, id: MoreThan(afterId), deletedByReceiver: 0 },
       ],
       order: { createdAt: 'ASC', id: 'ASC' },
       relations: ['fromUser', 'toUser'],
@@ -539,11 +556,21 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     const { page, limit } = dto
     const skip = (page - 1) * limit
 
-    // 子查询：每个聊天对象的最新一条消息 ID
+    // 子查询：每个聊天对象的最新一条消息 ID（排除拉黑用户）
     const latestIds = this.messageRepository
       .createQueryBuilder('m')
       .select('MAX(m.id)', 'maxId')
-      .where('m.fromUserId = :uid OR m.toUserId = :uid', { uid: userId })
+      .where('(m.fromUserId = :uid OR m.toUserId = :uid)', { uid: userId })
+      .andWhere(
+        `(CASE WHEN m.fromUserId = :uid3 THEN m.toUserId ELSE m.fromUserId END) NOT IN ` +
+        `(SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :uid3)`,
+        { uid3: userId },
+      )
+      .andWhere(
+        `(CASE WHEN m.fromUserId = :uid4 THEN m.toUserId ELSE m.fromUserId END) NOT IN ` +
+        `(SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :uid4)`,
+        { uid4: userId },
+      )
       .groupBy('CASE WHEN m.fromUserId = :uid2 THEN m.toUserId ELSE m.fromUserId END')
       .setParameter('uid2', userId)
 
@@ -617,6 +644,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       )
       .andWhere('other.id != :userId', { userId })
       .andWhere('other.isDeleted = :isDeleted', { isDeleted: 0 })
+      .andWhere(
+        `other.id NOT IN (SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :uid7)`,
+        { uid7: userId },
+      )
+      .andWhere(
+        `other.id NOT IN (SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :uid8)`,
+        { uid8: userId },
+      )
       .getCount()
 
     return { list: result, total }
@@ -635,28 +670,41 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     )
   }
 
-  // TODO: 如需软删除需新增 ChatMessage.isDeleted 字段（当前实体无此字段，暂保留物理删除）
-  async deleteConversation(userId: number, targetUserId: number): Promise<void> {
-    await this.messageRepository.delete({
-      fromUserId: userId,
-      toUserId: targetUserId,
-    })
-
-    await this.messageRepository.delete({
-      fromUserId: targetUserId,
-      toUserId: userId,
-    })
+  // 软删除：发送方删除 → 设置 deletedBySender = 1，仅发送方本人可删
+  async deleteMessage(userId: number, messageId: number): Promise<boolean> {
+    const result = await this.messageRepository.update(
+      { id: messageId, fromUserId: userId },
+      { deletedBySender: 1 },
+    )
+    return (result.affected || 0) > 0
   }
 
-  // TODO: 如需软删除需新增 ChatMessage.isDeleted 字段，此处改为 update 设置 isDeleted=1
-  async clearAllConversations(userId: number): Promise<void> {
-    await this.messageRepository.delete({
-      fromUserId: userId,
-    })
+  // 软删除：删除与某用户的全部对话
+  // - 我发出的消息 → deletedBySender = 1
+  // - 我收到的消息 → deletedByReceiver = 1
+  async deleteConversation(userId: number, targetUserId: number): Promise<void> {
+    await this.messageRepository.update(
+      { fromUserId: userId, toUserId: targetUserId },
+      { deletedBySender: 1 },
+    )
 
-    await this.messageRepository.delete({
-      toUserId: userId,
-    })
+    await this.messageRepository.update(
+      { fromUserId: targetUserId, toUserId: userId },
+      { deletedByReceiver: 1 },
+    )
+  }
+
+  // 软删除：清空所有对话
+  async clearAllConversations(userId: number): Promise<void> {
+    await this.messageRepository.update(
+      { fromUserId: userId },
+      { deletedBySender: 1 },
+    )
+
+    await this.messageRepository.update(
+      { toUserId: userId },
+      { deletedByReceiver: 1 },
+    )
   }
 
   private async checkUserVipStatus(userId: number): Promise<boolean> {

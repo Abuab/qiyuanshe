@@ -6,10 +6,12 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  Unique,
 } from 'typeorm'
 import { User } from './User'
 
 @Entity('user_blocks')
+@Unique(['blockerId', 'blockedUserId'])
 export class UserBlock {
   @PrimaryGeneratedColumn()
   id: number

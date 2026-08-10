@@ -454,6 +454,15 @@ export class RecommendService {
     // 排除自己
     if (currentUserId) {
       qb.andWhere('user.id != :selfId', { selfId: currentUserId })
+      // ===== 拉黑过滤 =====
+      qb.andWhere(
+        `user.id NOT IN (SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :pinBlockerId)`,
+        { pinBlockerId: currentUserId },
+      )
+      qb.andWhere(
+        `user.id NOT IN (SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :pinBlockedId)`,
+        { pinBlockedId: currentUserId },
+      )
     }
 
     // 置顶用户跳过曝光池和常规筛选条件（运营手动选择，应全量可见）
@@ -505,6 +514,15 @@ export class RecommendService {
 
     if (currentUserId) {
       qb.andWhere('user.id != :selfId', { selfId: currentUserId })
+      // ===== 拉黑过滤：排除已被当前用户拉黑和已拉黑当前用户的用户 =====
+      qb.andWhere(
+        `user.id NOT IN (SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :blockerId)`,
+        { blockerId: currentUserId },
+      )
+      qb.andWhere(
+        `user.id NOT IN (SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :blockedId)`,
+        { blockedId: currentUserId },
+      )
     }
 
     if (Number.isFinite(targetGender) && targetGender >= 1 && targetGender <= 2) {

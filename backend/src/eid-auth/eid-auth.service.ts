@@ -331,7 +331,7 @@ export class EidAuthService {
             try { authData = JSON.parse(authData) } catch { continue }
           }
           // 尝试解密（兼容加密/明文混合存储）
-          const rawIdCard = this.tryDecryptIdentity(authData?.idCard || '')
+          const rawIdCard = this.cryptoService.tryDecryptIdentity(authData?.idCard || '')
           if (rawIdCard && String(rawIdCard).trim() === idCardTrim) {
             fallbackDuplicateUserId = row.ua_userId
             break
@@ -345,8 +345,8 @@ export class EidAuthService {
             if (typeof authData === 'string') {
               try { authData = JSON.parse(authData) } catch { continue }
             }
-            const rawName = this.tryDecryptIdentity(authData?.realName || '').trim().replace(/\s+/g, '')
-            const rawId = this.tryDecryptIdentity(authData?.idCard || '').trim()
+            const rawName = this.cryptoService.tryDecryptIdentity(authData?.realName || '').trim().replace(/\s+/g, '')
+            const rawId = this.cryptoService.tryDecryptIdentity(authData?.idCard || '').trim()
             if (rawName === realNameTrim && rawId === idCardTrim) {
               fallbackDuplicateUserId = row.ua_userId
               break
@@ -371,8 +371,8 @@ export class EidAuthService {
           .getMany()
 
         for (const idt of allIdentities) {
-          const idtName = this.tryDecryptIdentity(idt.realName || '').trim().replace(/\s+/g, '')
-          const idtIdCard = this.tryDecryptIdentity(idt.idCard || '').trim()
+          const idtName = this.cryptoService.tryDecryptIdentity(idt.realName || '').trim().replace(/\s+/g, '')
+          const idtIdCard = this.cryptoService.tryDecryptIdentity(idt.idCard || '').trim()
           if (idtName === realNameTrim && idtIdCard === idCardTrim) {
             // 找到了姓名+身份证完全匹配的记录，补充到 identities 列表中
             identities.push(idt)
@@ -480,8 +480,8 @@ export class EidAuthService {
     }
 
     // 解密历史身份信息（兼容加密/明文混合存储）
-    const decryptedName = this.tryDecryptIdentity(historicIdentity.realName)
-    const decryptedIdCard = this.tryDecryptIdentity(historicIdentity.idCard)
+    const decryptedName = this.cryptoService.tryDecryptIdentity(historicIdentity.realName)
+    const decryptedIdCard = this.cryptoService.tryDecryptIdentity(historicIdentity.idCard)
 
     // 将历史身份信息写入当前用户（syncIdentityRecords 内部会重新加密）
     const now = new Date()
@@ -582,20 +582,6 @@ export class EidAuthService {
         status,
       })
     }
-  }
-
-  /**
-   * 尝试解密身份字段值（兼容加密/明文混合存储的过渡期）。
-   * - 若值为密文格式 → 解密后返回明文
-   * - 若值为明文 → 直接返回
-   * - 若值为空 → 返回空字符串
-   */
-  private tryDecryptIdentity(value: string): string {
-    if (!value) return ''
-    if (this.cryptoService.isEncrypted(value)) {
-      return this.cryptoService.decrypt(value)
-    }
-    return value
   }
 
   /**

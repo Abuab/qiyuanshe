@@ -16,6 +16,9 @@ import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
 import { RedisService } from '../common/redis.service'
 import { AdminMessageTemplateService } from './message-template.service'
+import { UserService } from '../user/user.service'
+import { SystemConfig } from '../entities/SystemConfig'
+import { beijingISO } from '../common/utils/date-utils'
 import * as bcrypt from 'bcrypt'
 
 interface UserFilter {
@@ -76,6 +79,9 @@ export class AdminUserService {
     @InjectRepository(RealNameIdentity)
     private readonly realNameIdentityRepo: Repository<RealNameIdentity>,
     private readonly templateService: AdminMessageTemplateService,
+    private readonly userService: UserService,
+    @InjectRepository(SystemConfig)
+    private readonly configRepo: Repository<SystemConfig>,
   ) {}
   private readonly logger = new Logger(AdminUserService.name)
 
@@ -557,12 +563,6 @@ export class AdminUserService {
     return result.join('')
   }
 
-  async resetPassword(id: number) {
-    const password = this.generateRandomPassword()
-    const hashedPassword = await bcrypt.hash(password, 10)
-    await this.userRepository.update(id, { password: hashedPassword })
-  }
-
   async sendNotification(userId: number, title: string, content: string, templateId?: number) {
     await this.notificationRepository.save(
       this.notificationRepository.create({
@@ -688,15 +688,84 @@ export class AdminUserService {
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
-  async softDelete(id: number) {
-    await this.userRepository.update(id, { isDeleted: 1 })
-    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+  async softDelete(id: number, adminId?: number): Promise<boolean> {
+    const user = await this.userRepository.findOne({ where: { id, isDeleted: 0 } })
+    if (!user) return false
+
+    const oldPhone = user.phone
+    user.isDeleted = 1
+    user.status = 0
+    user.deleteReason = '管理员代注销'
+    user.phone = null
+    user.tokenVersion += 1
+    await this.userRepository.save(user)
+
+    // 写入审计日志
+    await this.auditLogRepository.save({
+      targetType: 'user_cancel',
+      targetId: id,
+      action: 'ADMIN_DELETE',
+      reason: '管理员代注销',
+      content: JSON.stringify({
+        nickname: user.nickname,
+        phone: oldPhone,
+        deletedAt: beijingISO(),
+        operatedBy: adminId || null,
+      }),
+    })
+
+    // 清理关联数据
+    try {
+      await this.userService.cleanupDeletedUserData(id)
+    } catch (err: any) {
+      this.logger.warn(`管理员注销用户 ${id} 清理关联数据失败: ${err?.message || err}`)
+    }
+
+    // 清除推荐缓存
     this.redis.delByPattern('v3:rec:*').catch(() => {})
+    return true
   }
 
-  async batchSoftDelete(ids: number[]) {
-    await this.userRepository.update(ids, { isDeleted: 1 })
-    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+  async batchSoftDelete(ids: number[], adminId?: number) {
+    const users = await this.userRepository.find({
+      where: ids.map(id => ({ id, isDeleted: 0 })),
+    })
+    if (users.length === 0) return
+
+    const beijingTime = beijingISO()
+
+    for (const user of users) {
+      const oldPhone = user.phone
+      user.isDeleted = 1
+      user.status = 0
+      user.deleteReason = '管理员代注销'
+      user.phone = null
+      user.tokenVersion += 1
+      await this.userRepository.save(user)
+
+      // 审计日志
+      await this.auditLogRepository.save({
+        targetType: 'user_cancel',
+        targetId: user.id,
+        action: 'ADMIN_DELETE',
+        reason: '管理员代注销',
+        content: JSON.stringify({
+          nickname: user.nickname,
+          phone: oldPhone,
+          deletedAt: beijingTime,
+          operatedBy: adminId || null,
+        }),
+      })
+
+      // 清理关联数据（每个用户独立执行，一个失败不影响其他）
+      try {
+        await this.userService.cleanupDeletedUserData(user.id)
+      } catch (err: any) {
+        this.logger.warn(`批量注销用户 ${user.id} 清理关联数据失败: ${err?.message || err}`)
+      }
+    }
+
+    // 清除推荐缓存
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
@@ -743,20 +812,36 @@ export class AdminUserService {
   async restoreUser(id: number) {
     const user = await this.userRepository.findOne({ where: { id, isDeleted: 1 } })
     if (!user) throw new NotFoundException('用户不存在或未注销')
+
+    // 按注册模式决定恢复后的状态
+    let restoredStatus = 2 // auto 模式：可直接使用
+    try {
+      const config = await this.configRepo.findOne({ where: { configKey: 'basic.registrationMode' } })
+      if (config?.configValue === 'review') {
+        restoredStatus = 0 // review 模式：待审核
+      }
+    } catch (_) { /* fall through to default */ }
+
     user.isDeleted = 0
-    user.status = 1
+    user.status = restoredStatus
     user.deleteReason = null
     await this.userRepository.save(user)
     // 清除推荐缓存：恢复的用户应立即出现在推荐列表中
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
-  /** 彻底删除用户（物理删除） */
+  /** 彻底删除用户（物理删除），兜底清理关联数据 */
   async permanentDelete(id: number) {
     const user = await this.userRepository.findOne({ where: { id, isDeleted: 1 } })
     if (!user) throw new NotFoundException('用户不存在或未注销')
+    // 兜底清理：覆盖历史遗留的、注销时未清理数据的账号
+    try {
+      await this.userService.cleanupDeletedUserData(id)
+    } catch (err: any) {
+      this.logger.warn(`永久删除用户 ${id} 清理关联数据失败: ${err?.message || err}`)
+    }
     await this.userRepository.remove(user)
-    // 清除推荐缓存：已删除用户应立即从推荐列表中移除
+    // 清除推荐缓存
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 

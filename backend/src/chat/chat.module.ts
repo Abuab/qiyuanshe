@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { jwtConfig } from '../config/jwt'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { ChatMessage, User, AuditLog } from '../entities'
+import { ChatMessage, User, AuditLog, UserBlock } from '../entities'
 import { ChatMonitorSession } from '../entities/ChatMonitorSession'
 import { ChatOperationLog } from '../entities/ChatOperationLog'
 import { ChatController } from './chat.controller'
@@ -18,6 +18,7 @@ import { ChatMonitorService } from './chat-monitor.service'
       ChatMonitorSession,
       ChatOperationLog,
       AuditLog,
+      UserBlock,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,

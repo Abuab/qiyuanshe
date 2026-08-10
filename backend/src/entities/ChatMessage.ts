@@ -31,6 +31,14 @@ export class ChatMessage {
   @Column({ type: 'tinyint', default: 0 })
   isRead: number
 
+  /** 软删除：发送方是否已删除（1=已删除，0=未删除） */
+  @Column({ type: 'tinyint', default: 0 })
+  deletedBySender: number
+
+  /** 软删除：接收方是否已删除（1=已删除，0=未删除） */
+  @Column({ type: 'tinyint', default: 0 })
+  deletedByReceiver: number
+
   /** 是否代发消息：0=否, 1=是 */
   @Column({ type: 'tinyint', default: 0 })
   isProxy: number

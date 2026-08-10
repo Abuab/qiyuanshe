@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
@@ -8,6 +8,7 @@ import { Matchmaker } from '../entities/Matchmaker'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
+import { UserBlock } from '../entities/UserBlock'
 import { SystemService } from '../system/system.service'
 import { DynamicType } from '../shared/enums'
 import { resolveAvatarUrl } from '../common/image-url'
@@ -29,6 +30,8 @@ export class DynamicService {
     private readonly matchRecordRepository: Repository<MatchRecord>,
     @InjectRepository(Matchmaker)
     private readonly matchmakerRepository: Repository<Matchmaker>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
   ) {}
@@ -459,6 +462,20 @@ export class DynamicService {
   }
 
   async toggleLike(dynamicId: number, userId: number) {
+    // ===== 拉黑检查：动态作者与当前用户之间不能存在拉黑关系 =====
+    const dynamic = await this.dynamicRepository.findOne({ where: { id: dynamicId }, select: ['userId'] })
+    if (dynamic) {
+      const blockExists = await this.blockRepository.findOne({
+        where: [
+          { blockerId: userId, blockedUserId: dynamic.userId },
+          { blockerId: dynamic.userId, blockedUserId: userId },
+        ],
+      })
+      if (blockExists) {
+        throw new ForbiddenException('无法操作')
+      }
+    }
+
     const existing = await this.dynamicLikeRepository.findOne({
       where: { dynamicId, userId },
     })

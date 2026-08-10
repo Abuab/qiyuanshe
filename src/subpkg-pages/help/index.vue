@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { put } from '@/utils/request'
+import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
@@ -72,7 +72,7 @@ async function showDeactivateConfirm() {
   })
   if (res.confirm) {
     try {
-      await put('/users/deactivate')
+      await post('/users/cancel')
       uni.showToast({ title: '账户已注销', icon: 'none' })
       userStore.logout()
       setTimeout(() => {

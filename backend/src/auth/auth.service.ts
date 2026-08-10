@@ -15,6 +15,7 @@ import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
 import { ContentFilterService } from '../common/content-filter.service'
 import { RedisService } from '../common/redis.service'
+import { CryptoService } from '../common/crypto.service'
 
 import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
@@ -58,6 +59,7 @@ export class AuthService {
     private readonly entityManager: EntityManager,
     private readonly contentFilter: ContentFilterService,
     private readonly redis: RedisService,
+    private readonly cryptoService: CryptoService,
   ) {}
   private readonly logger = new Logger(AuthService.name)
 
@@ -451,7 +453,7 @@ export class AuthService {
         order: { createdAt: 'DESC' },
       })
       const authData = authRecord?.authData || {}
-      let realName = authData.realName || authData.name || ''
+      let realName = this.cryptoService.tryDecryptIdentity(authData.realName || authData.name || '')
 
       // 2. 如果 user_auths 中没找到，查询新的 real_name_identities 表（仅 status=0 有效记录）
       if (!realName) {
@@ -464,7 +466,7 @@ export class AuthService {
           .orderBy('rni.createdAt', 'DESC')
           .getRawOne()
         if (identityRecord?.realName) {
-          realName = identityRecord.realName
+          realName = this.cryptoService.tryDecryptIdentity(identityRecord.realName)
         }
       }
       ;(profile as any).realName = realName

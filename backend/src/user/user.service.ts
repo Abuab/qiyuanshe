@@ -1281,7 +1281,9 @@ export class UserService {
     }
   }
 
-  async deactivateAccount(userId: number, reason: 'self' | 'revoke' = 'self'): Promise<void> {
+  /** 注销账号（含审计日志），统一入口。
+   *  reason: 'self' = 小程序端自行注销, 'revoke' = 撤回协议同意导致注销 */
+  async cancelAccount(userId: number, reason: 'self' | 'revoke' = 'self'): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (!user) throw new NotFoundException('用户不存在')
     if (user.isDeleted === 1) return // 已注销，幂等
@@ -1290,37 +1292,6 @@ export class UserService {
     user.isDeleted = 1
     user.status = 0
     user.deleteReason = reason === 'revoke' ? '撤回协议同意' : '用户自行注销'
-    user.phone = null          // 释放手机号，避免跨账号唯一索引冲突
-    user.tokenVersion += 1     // 使所有已签发的 access token 立即失效
-    await this.userRepository.save(user)
-
-    // 写入审计日志
-    await this.auditLogRepository.save({
-      targetType: 'user_cancel',
-      targetId: userId,
-      action: reason === 'revoke' ? 'REVOKE_AGREEMENT' : 'DEACTIVATE',
-      reason: reason === 'revoke' ? '撤回协议同意导致注销' : '用户自行注销（deactivate）',
-      content: JSON.stringify({
-        nickname: user.nickname,
-        phone: oldPhone,
-        deactivatedAt: beijingISO(),
-      }),
-    })
-
-    // 同步清理关联数据，避免未清理完就被用户重新注册导致旧数据残留
-    await this.cleanupDeletedUserData(userId)
-  }
-
-  /** 注销账号（含审计日志） */
-  async cancelAccount(userId: number): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } })
-    if (!user) throw new NotFoundException('用户不存在')
-    if (user.isDeleted === 1) return // 已注销，幂等
-
-    const oldPhone = user.phone // 留作审计日志
-    user.isDeleted = 1
-    user.status = 0
-    user.deleteReason = '用户自行注销'
     user.phone = null          // 释放手机号
     user.tokenVersion += 1     // 使所有已签发 token 失效
     await this.userRepository.save(user)
@@ -1329,8 +1300,8 @@ export class UserService {
     await this.auditLogRepository.save({
       targetType: 'user_cancel',
       targetId: userId,
-      action: 'CANCEL',
-      reason: '用户主动注销',
+      action: reason === 'revoke' ? 'REVOKE_AGREEMENT' : 'CANCEL',
+      reason: reason === 'revoke' ? '撤回协议同意导致注销' : '用户主动注销',
       content: JSON.stringify({
         nickname: user.nickname,
         phone: oldPhone,
@@ -1475,8 +1446,8 @@ export class UserService {
       })
     } else if (action === 'revoke') {
       // 撤回同意协议：与注销账户走相同逻辑，彻底清除用户数据并从推荐列表移除
-      await this.deactivateAccount(userId, 'revoke')
-      // deactivateAccount 已含审计日志，此处补充清空协议字段
+      await this.cancelAccount(userId, 'revoke')
+      // cancelAccount 已含审计日志，此处补充清空协议字段
       await this.userRepository.update(userId, { protocolAgreedAt: null })
     }
   }

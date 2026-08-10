@@ -385,13 +385,6 @@ export class UserController {
 
   // ===== 注销账户 =====
 
-  @Put('deactivate')
-  @UseGuards(JwtAuthGuard)
-  async deactivateAccount(@Request() req: any) {
-    await this.userService.deactivateAccount(req.user.id)
-    return Result.success(null, '账户已注销')
-  }
-
   @Post('cancel')
   @UseGuards(JwtAuthGuard)
   async cancelAccount(@Request() req: any) {
@@ -605,6 +598,17 @@ export class UserController {
       if (userId === targetUserId) return Result.serverError('不能喜欢自己')
 
       await this.followRepo.manager.transaction(async (manager) => {
+        // ===== 拉黑检查：双向阻断 =====
+        const blockExists = await manager.findOne(UserBlock, {
+          where: [
+            { blockerId: userId, blockedUserId: targetUserId },
+            { blockerId: targetUserId, blockedUserId: userId },
+          ],
+        })
+        if (blockExists) {
+          throw new ForbiddenException('无法操作')
+        }
+
         const existing = await manager.findOne(Follow, { where: { userId, targetUserId } })
         if (existing) return
         const follow = manager.create(Follow, { userId, targetUserId })
@@ -657,8 +661,16 @@ export class UserController {
       if (blockerId === blockedUserId) return Result.serverError('不能拉黑自己')
       const exists = await this.blockRepo.findOne({ where: { blockerId, blockedUserId } })
       if (exists) return Result.success(null, '已拉黑')
-      const block = this.blockRepo.create({ blockerId, blockedUserId })
-      await this.blockRepo.save(block)
+
+      // 事务：创建拉黑记录 + 双向取关
+      await this.blockRepo.manager.transaction(async (manager) => {
+        const block = manager.create(UserBlock, { blockerId, blockedUserId })
+        await manager.save(block)
+        // 双向删除关注关系
+        await manager.delete(Follow, { userId: blockerId, targetUserId: blockedUserId })
+        await manager.delete(Follow, { userId: blockedUserId, targetUserId: blockerId })
+      })
+
       return Result.success(null, '已拉黑')
     } catch (error: any) {
       this.logger.error('blockUser error:', error?.message || error)

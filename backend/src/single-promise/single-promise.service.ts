@@ -5,6 +5,7 @@ import { SinglePromise } from '../entities/SinglePromise'
 import { UserAuth } from '../entities/UserAuth'
 import { User } from '../entities/User'
 import { RealNameIdentity } from '../entities/RealNameIdentity'
+import { CryptoService } from '../common/crypto.service'
 
 // E证通认证状态常量
 const EID_STATUS_DONE = 2
@@ -19,6 +20,7 @@ export class SinglePromiseService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly entityManager: EntityManager,
+    private readonly cryptoService: CryptoService,
   ) {}
 
   /** 获取用户当前单身承诺状态 */
@@ -33,7 +35,7 @@ export class SinglePromiseService {
     return {
       exists: true,
       id: record.id,
-      realName: record.realName,
+      realName: this.cryptoService.tryDecryptIdentity(record.realName),
       signatureUrl: record.signatureUrl,
       status: record.status,
       rejectReason: record.rejectReason,
@@ -53,7 +55,7 @@ export class SinglePromiseService {
     let realName = ''
     if (authRecord) {
       const authData = authRecord.authData || {}
-      realName = authData.realName || authData.name || ''
+      realName = this.cryptoService.tryDecryptIdentity(authData.realName || authData.name || '')
     } else {
       // 兼容历史数据：检查 E证通认证状态
       const user = await this.userRepo.findOne({ where: { id: userId } })
@@ -73,7 +75,7 @@ export class SinglePromiseService {
         .orderBy('rni.createdAt', 'DESC')
         .getOne()
       if (identityRecord?.realName) {
-        realName = identityRecord.realName
+        realName = this.cryptoService.tryDecryptIdentity(identityRecord.realName)
       }
     }
 

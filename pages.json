@@ -179,13 +179,6 @@
           }
         },
         {
-          "path": "dynamic-detail/index",
-          "style": {
-            "navigationBarTitleText": "动态详情",
-            "navigationStyle": "custom"
-          }
-        },
-        {
           "path": "my-answers/index",
           "style": {
             "navigationBarTitleText": "我的回答",
@@ -397,10 +390,6 @@
         {
           "path": "daily-recommend/daily-recommend",
           "style": { "navigationBarTitleText": "每日缘分" }
-        },
-        {
-          "path": "ai-match-report/ai-match-report",
-          "style": { "navigationBarTitleText": "AI 匹配报告" }
         },
         {
           "path": "ai-quiz/ai-quiz",
