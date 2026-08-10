@@ -16,6 +16,7 @@ function getJwtSecret(): string {
   }
 
   _jwtSecret = crypto.randomBytes(32).toString('hex')
+  // 使用 console.warn — 模块加载阶段 NestJS Logger 尚不可用
   console.warn('[SECURITY WARNING] JWT_SECRET is not set. Using a randomly generated temporary key. This will cause all tokens to become invalid on server restart. DO NOT use in production!')
   return _jwtSecret
 }
@@ -33,6 +34,7 @@ function getAdminJwtSecret(): string {
   }
 
   _adminJwtSecret = crypto.randomBytes(32).toString('hex')
+  // 使用 console.warn — 模块加载阶段 NestJS Logger 尚不可用
   console.warn('[SECURITY WARNING] ADMIN_JWT_SECRET is not set. Using a randomly generated temporary key. This will cause all admin tokens to become invalid on server restart. DO NOT use in production!')
   return _adminJwtSecret
 }

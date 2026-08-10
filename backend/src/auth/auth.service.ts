@@ -88,6 +88,7 @@ export class AuthService {
   private resetReactivatedUser(user: User): void {
     user.isDeleted = 0
     user.deleteReason = null
+    user.tokenVersion += 1     // 使注销前签发的旧 refreshToken 失效
     user.unionId = null       // 清除旧 unionId，避免微信账号主体变更后冲突
     user.nickname = `昵称${user.userId}`
     user.avatar = ''
@@ -144,6 +145,8 @@ export class AuthService {
     user.mfaSecret = null
     user.isMfaEnabled = false
     user.mfaType = 'none'
+    user.showBasicProfile = true     // 隐私：默认显示基本资料
+    user.delegateToPlatform = false  // 隐私：不委托平台（仅红娘可操作）
   }
 
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
@@ -158,8 +161,9 @@ export class AuthService {
       where: { openid: session.openid },
     })
     if (user && user.isDeleted === 1) {
+      const preservedStatus = [3, 4].includes(user.status) ? user.status : null
       this.resetReactivatedUser(user)
-      user.status = await this.getNewUserStatus()
+      user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
       await this.userRepository.save(user)
       await this.userService.cleanupDeletedUserData(user.id)
       this.clearRateLimitKeys(user.id)
@@ -280,8 +284,9 @@ export class AuthService {
       })
       if (deletedUser) {
         user = deletedUser
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
         this.resetReactivatedUser(user)
-        user.status = await this.getNewUserStatus()
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
         user.phone = phoneData.purePhoneNumber
         await this.userRepository.save(user)
         await this.userService.cleanupDeletedUserData(user.id)
@@ -383,6 +388,11 @@ export class AuthService {
 
       if (!user || user.status === 0 || user.status === 3) {
         throw new UnauthorizedException('用户不存在或已被禁用')
+      }
+
+      // 验证 tokenVersion：注销/改密后旧 refreshToken 立即失效
+      if (payload.tokenVersion !== undefined && user.tokenVersion !== payload.tokenVersion) {
+        throw new UnauthorizedException('令牌已失效，请重新登录')
       }
 
       return this.generateToken(user)
@@ -520,6 +530,7 @@ export class AuthService {
         sub: user.id,
         openid: user.openid,
         type: 'refresh',
+        tokenVersion: user.tokenVersion,
       },
       {
         expiresIn: refreshExpiry,

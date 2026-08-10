@@ -1169,78 +1169,79 @@ export class UserService {
 
   /** 清理已注销用户的关联数据（问答、报名、关注、喜欢等） */
   public async cleanupDeletedUserData(userId: number): Promise<void> {
-    const tables = [
+    // 每个表显式声明 SQL 和参数；2 个 ? 的绑定 [userId, userId]，1 个 ? 的绑定 [userId]
+    const tables: { sql: string; desc: string; params: (userId: number) => any[] }[] = [
       // 关注关系（我关注的 + 关注我的）
-      { sql: 'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?', desc: 'follows' },
+      { sql: 'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?', desc: 'follows', params: (id) => [id, id] },
       // 问答
-      { sql: 'DELETE FROM answer_likes WHERE userId = ?', desc: 'answer_likes' },
-      { sql: `DELETE al FROM answer_likes al INNER JOIN question_answers qa ON al.answerId = qa.id WHERE qa.userId = ?`, desc: 'answer_likes_on_own_answers' },
-      { sql: 'DELETE FROM question_answers WHERE userId = ?', desc: 'question_answers' },
+      { sql: 'DELETE FROM answer_likes WHERE userId = ?', desc: 'answer_likes', params: (id) => [id] },
+      { sql: `DELETE al FROM answer_likes al INNER JOIN question_answers qa ON al.answerId = qa.id WHERE qa.userId = ?`, desc: 'answer_likes_on_own_answers', params: (id) => [id] },
+      { sql: 'DELETE FROM question_answers WHERE userId = ?', desc: 'question_answers', params: (id) => [id] },
       // 动态
-      { sql: 'DELETE FROM dynamic_likes WHERE userId = ?', desc: 'dynamic_likes' },
-      { sql: `DELETE dl FROM dynamic_likes dl INNER JOIN dynamics d ON dl.dynamicId = d.id WHERE d.userId = ?`, desc: 'dynamic_likes_on_own' },
-      { sql: 'DELETE FROM dynamics WHERE userId = ?', desc: 'dynamics' },
+      { sql: 'DELETE FROM dynamic_likes WHERE userId = ?', desc: 'dynamic_likes', params: (id) => [id] },
+      { sql: `DELETE dl FROM dynamic_likes dl INNER JOIN dynamics d ON dl.dynamicId = d.id WHERE d.userId = ?`, desc: 'dynamic_likes_on_own', params: (id) => [id] },
+      { sql: 'DELETE FROM dynamics WHERE userId = ?', desc: 'dynamics', params: (id) => [id] },
       // 活动报名
-      { sql: 'DELETE FROM activity_signups WHERE userId = ?', desc: 'activity_signups' },
+      { sql: 'DELETE FROM activity_signups WHERE userId = ?', desc: 'activity_signups', params: (id) => [id] },
       // 照片
-      { sql: 'DELETE FROM user_photos WHERE userId = ?', desc: 'user_photos' },
+      { sql: 'DELETE FROM user_photos WHERE userId = ?', desc: 'user_photos', params: (id) => [id] },
       // 浏览记录
-      { sql: 'DELETE FROM profile_visits WHERE user_id = ? OR visitor_user_id = ?', desc: 'profile_visits' },
+      { sql: 'DELETE FROM profile_visits WHERE user_id = ? OR visitor_user_id = ?', desc: 'profile_visits', params: (id) => [id, id] },
       // 聊天消息
-      { sql: 'DELETE FROM chat_messages WHERE fromUserId = ? OR toUserId = ?', desc: 'chat_messages' },
+      { sql: 'DELETE FROM chat_messages WHERE fromUserId = ? OR toUserId = ?', desc: 'chat_messages', params: (id) => [id, id] },
       // 匹配记录
-      { sql: 'DELETE FROM match_records WHERE userId = ? OR matchedUserId = ?', desc: 'match_records' },
+      { sql: 'DELETE FROM match_records WHERE userId = ? OR matchedUserId = ?', desc: 'match_records', params: (id) => [id, id] },
       // 圈子
-      { sql: 'DELETE FROM circle_members WHERE userId = ?', desc: 'circle_members' },
+      { sql: 'DELETE FROM circle_members WHERE userId = ?', desc: 'circle_members', params: (id) => [id] },
       // 拉黑
-      { sql: 'DELETE FROM user_blocks WHERE blockerId = ? OR blockedUserId = ?', desc: 'user_blocks' },
+      { sql: 'DELETE FROM user_blocks WHERE blockerId = ? OR blockedUserId = ?', desc: 'user_blocks', params: (id) => [id, id] },
       // 红娘评价
-      { sql: 'DELETE FROM matchmaker_reviews WHERE userId = ?', desc: 'matchmaker_reviews' },
+      { sql: 'DELETE FROM matchmaker_reviews WHERE userId = ?', desc: 'matchmaker_reviews', params: (id) => [id] },
       // 反馈
-      { sql: 'DELETE FROM feedbacks WHERE userId = ?', desc: 'feedbacks' },
+      { sql: 'DELETE FROM feedbacks WHERE userId = ?', desc: 'feedbacks', params: (id) => [id] },
       // 通知
-      { sql: 'DELETE FROM user_notifications WHERE userId = ?', desc: 'user_notifications' },
+      { sql: 'DELETE FROM user_notifications WHERE userId = ?', desc: 'user_notifications', params: (id) => [id] },
       // 认证
-      { sql: 'DELETE FROM user_auths WHERE userId = ?', desc: 'user_auths' },
+      { sql: 'DELETE FROM user_auths WHERE userId = ?', desc: 'user_auths', params: (id) => [id] },
       // 标签
-      { sql: 'DELETE FROM user_tag_selections WHERE userId = ?', desc: 'user_tag_selections' },
+      { sql: 'DELETE FROM user_tag_selections WHERE userId = ?', desc: 'user_tag_selections', params: (id) => [id] },
       // 协议
-      { sql: 'DELETE FROM user_agreements WHERE userId = ?', desc: 'user_agreements' },
+      { sql: 'DELETE FROM user_agreements WHERE userId = ?', desc: 'user_agreements', params: (id) => [id] },
       // VIP — 软删除保留订单记录，满足财务对账/税务核查/退款纠纷追溯需求
-      { sql: 'UPDATE vip_orders SET isDeleted = 1 WHERE userId = ?', desc: 'vip_orders' },
+      { sql: 'UPDATE vip_orders SET isDeleted = 1 WHERE userId = ?', desc: 'vip_orders', params: (id) => [id] },
       // 置顶
-      { sql: 'DELETE FROM user_top_records WHERE userId = ?', desc: 'user_top_records' },
-      { sql: 'DELETE FROM user_top_card_quotas WHERE userId = ?', desc: 'user_top_card_quotas' },
+      { sql: 'DELETE FROM user_top_records WHERE userId = ?', desc: 'user_top_records', params: (id) => [id] },
+      { sql: 'DELETE FROM user_top_card_quotas WHERE userId = ?', desc: 'user_top_card_quotas', params: (id) => [id] },
       // 红线
-      { sql: 'DELETE FROM user_red_line_quotas WHERE userId = ?', desc: 'user_red_line_quotas' },
-      { sql: 'DELETE FROM user_red_line_usage_records WHERE userId = ? OR targetUserId = ?', desc: 'user_red_line_usage_records' },
-      { sql: 'DELETE FROM red_line_usages WHERE userId = ? OR targetUserId = ?', desc: 'red_line_usages' },
+      { sql: 'DELETE FROM user_red_line_quotas WHERE userId = ?', desc: 'user_red_line_quotas', params: (id) => [id] },
+      { sql: 'DELETE FROM user_red_line_usage_records WHERE userId = ? OR targetUserId = ?', desc: 'user_red_line_usage_records', params: (id) => [id, id] },
+      { sql: 'DELETE FROM red_line_usages WHERE userId = ? OR targetUserId = ?', desc: 'red_line_usages', params: (id) => [id, id] },
       // AI
-      { sql: 'DELETE FROM ai_user_profiles WHERE userId = ?', desc: 'ai_user_profiles' },
-      { sql: 'DELETE FROM ai_call_logs WHERE userId = ?', desc: 'ai_call_logs' },
+      { sql: 'DELETE FROM ai_user_profiles WHERE userId = ?', desc: 'ai_user_profiles', params: (id) => [id] },
+      { sql: 'DELETE FROM ai_call_logs WHERE userId = ?', desc: 'ai_call_logs', params: (id) => [id] },
       // 承诺
-      { sql: 'DELETE FROM single_promises WHERE userId = ?', desc: 'single_promises' },
+      { sql: 'DELETE FROM single_promises WHERE userId = ?', desc: 'single_promises', params: (id) => [id] },
       // 人格测试
-      { sql: 'DELETE FROM personality_answer_records WHERE userId = ?', desc: 'personality_answer_records' },
-      { sql: 'DELETE FROM personality_results WHERE userId = ?', desc: 'personality_results' },
+      { sql: 'DELETE FROM personality_answer_records WHERE userId = ?', desc: 'personality_answer_records', params: (id) => [id] },
+      { sql: 'DELETE FROM personality_results WHERE userId = ?', desc: 'personality_results', params: (id) => [id] },
       // AI问答报告
-      { sql: 'DELETE FROM ai_fun_quiz_reports WHERE userId = ?', desc: 'ai_fun_quiz_reports' },
+      { sql: 'DELETE FROM ai_fun_quiz_reports WHERE userId = ?', desc: 'ai_fun_quiz_reports', params: (id) => [id] },
       // 快问
-      { sql: 'DELETE FROM quick_questions WHERE userId = ?', desc: 'quick_questions' },
+      { sql: 'DELETE FROM quick_questions WHERE userId = ?', desc: 'quick_questions', params: (id) => [id] },
       // 红娘评语
-      { sql: 'DELETE FROM matchmaker_comments WHERE userId = ?', desc: 'matchmaker_comments' },
+      { sql: 'DELETE FROM matchmaker_comments WHERE userId = ?', desc: 'matchmaker_comments', params: (id) => [id] },
       // 圈子帖子
-      { sql: 'DELETE FROM circle_posts WHERE userId = ?', desc: 'circle_posts' },
+      { sql: 'DELETE FROM circle_posts WHERE userId = ?', desc: 'circle_posts', params: (id) => [id] },
       // AI缘分匹配报告
-      { sql: 'DELETE FROM ai_match_reports WHERE userId = ? OR targetUserId = ?', desc: 'ai_match_reports' },
+      { sql: 'DELETE FROM ai_match_reports WHERE userId = ? OR targetUserId = ?', desc: 'ai_match_reports', params: (id) => [id, id] },
       // 审核日志（用户提交的审核记录）
-      { sql: 'DELETE FROM audit_logs WHERE submitterId = ? OR (targetType IN (\'voice\',\'avatar\',\'user\',\'user_cancel\') AND targetId = ?)', desc: 'audit_logs' },
+      { sql: 'DELETE FROM audit_logs WHERE submitterId = ? OR (targetType IN (\'voice\',\'avatar\',\'user\',\'user_cancel\') AND targetId = ?)', desc: 'audit_logs', params: (id) => [id, id] },
       // 举报记录
-      { sql: 'DELETE FROM reports WHERE reporterId = ? OR (type = \'user\' AND targetId = ?)', desc: 'reports' },
+      { sql: 'DELETE FROM reports WHERE reporterId = ? OR (type = \'user\' AND targetId = ?)', desc: 'reports', params: (id) => [id, id] },
       // 协议操作日志
-      { sql: 'DELETE FROM user_agreement_logs WHERE userId = ?', desc: 'user_agreement_logs' },
+      { sql: 'DELETE FROM user_agreement_logs WHERE userId = ?', desc: 'user_agreement_logs', params: (id) => [id] },
       // AI提供商调用日志
-      { sql: 'DELETE FROM ai_provider_call_logs WHERE userId = ?', desc: 'ai_provider_call_logs' },
+      { sql: 'DELETE FROM ai_provider_call_logs WHERE userId = ?', desc: 'ai_provider_call_logs', params: (id) => [id] },
     ]
 
     // 逐表清理：每个表独立执行，一个失败不影响其他表
@@ -1248,11 +1249,9 @@ export class UserService {
     await queryRunner.connect()
     let failedTables: string[] = []
 
-    for (const { sql, desc } of tables) {
+    for (const { sql, desc, params } of tables) {
       try {
-        const params = sql.split('?').length - 1
-        const values = params === 2 ? [userId, userId] : [userId]
-        await queryRunner.query(sql, values)
+        await queryRunner.query(sql, params(userId))
       } catch (err: any) {
         this.logger.warn(`用户 ${userId} 清理 ${desc} 失败: ${err?.message || err}`)
         failedTables.push(desc)

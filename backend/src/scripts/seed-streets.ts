@@ -12,6 +12,7 @@
  *   npm run seed:streets
  */
 import { DataSource } from 'typeorm'
+import { Logger } from '@nestjs/common'
 import { AddressRegion } from '../entities/AddressRegion'
 import { join } from 'path'
 
@@ -19,15 +20,17 @@ import { join } from 'path'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 require('dotenv').config({ path: join(__dirname, '..', '..', '.env') })
 
-async function main() {
-  // 加载 china-division 街道数据
+const logger = new Logger('seed-streets')
+
+async function seed() {
+  // 动态 require china-division（避免构建时因 ts-node 解析问题失败）
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const data = require('china-division') as {
     streets: { code: string; name: string; areaCode: string; cityCode: string; provinceCode: string }[]
   }
 
   if (!data.streets || data.streets.length === 0) {
-    console.error('china-division 包未提供 streets 数据')
+    logger.error('china-division 包未提供 streets 数据')
     process.exit(1)
   }
 
@@ -44,15 +47,15 @@ async function main() {
   })
 
   await ds.initialize()
-  console.log('数据库连接成功')
+  logger.log('数据库连接成功')
 
   const repo = ds.getRepository(AddressRegion)
 
   // 先检查是否已有街道数据（DB 中 level=4 为街道）
   const existingCount = await repo.count({ where: { level: 4 } })
   if (existingCount > 0) {
-    console.log(`address_region 表中已有 ${existingCount} 条 level=4 街道数据，跳过导入。`)
-    console.log('如需强制重新导入，请先执行：DELETE FROM address_region WHERE level = 4')
+    logger.log(`address_region 表中已有 ${existingCount} 条 level=4 街道数据，跳过导入。`)
+    logger.log('如需强制重新导入，请先执行：DELETE FROM address_region WHERE level = 4')
     await ds.destroy()
     process.exit(0)
   }
@@ -81,7 +84,7 @@ async function main() {
       inserted += batch.length
     } catch (err) {
       // 部分重复可能仍导致批次失败，回退逐条插入
-      console.warn(`批量插入失败 (offset=${i})，尝试逐条插入...`)
+      logger.warn(`批量插入失败 (offset=${i})，尝试逐条插入...`)
       let batchInserted = 0
       for (const s of batch) {
         try {
@@ -101,15 +104,15 @@ async function main() {
 
     // 进度输出
     if ((i + BATCH_SIZE) % 5000 === 0 || i + BATCH_SIZE >= streets.length) {
-      console.log(`进度: ${Math.min(i + BATCH_SIZE, streets.length)} / ${streets.length}`)
+      logger.log(`进度: ${Math.min(i + BATCH_SIZE, streets.length)} / ${streets.length}`)
     }
   }
 
-  console.log(`\n导入完成: 插入 ${inserted} 条, 跳过 ${skipped} 条`)
+  logger.log(`导入完成: 插入 ${inserted} 条, 跳过 ${skipped} 条`)
   await ds.destroy()
 }
 
-main().catch((err) => {
-  console.error('种子脚本执行失败:', err)
+seed().catch((err) => {
+  logger.error('种子脚本执行失败:', err)
   process.exit(1)
 })

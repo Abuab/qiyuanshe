@@ -13,6 +13,7 @@
  *   在 package.json 中添加 "seed:quick-questions": "npx ts-node src/database/seeds/SeedQuickQuestions.ts"
  */
 import { DataSource } from 'typeorm'
+import { Logger } from '@nestjs/common'
 import { join } from 'path'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -57,6 +58,8 @@ const PRESET_DATA: { category: { name: string; sort: number }; questions: { cont
   },
 ]
 
+const logger = new Logger('SeedQuickQuestions')
+
 async function main() {
   const ds = new DataSource({
     type: 'mysql',
@@ -69,7 +72,7 @@ async function main() {
   })
 
   await ds.initialize()
-  console.log('数据库已连接，开始初始化快捷问题预设数据...\n')
+  logger.log('数据库已连接，开始初始化快捷问题预设数据...\n')
 
   let catCount = 0
   let qCount = 0
@@ -91,11 +94,11 @@ async function main() {
       )
       categoryId = catResult.insertId
       catCount++
-      console.log(`  [新增分类] ${preset.category.name}`)
+      logger.log(`  [新增分类] ${preset.category.name}`)
     }
 
     if (!categoryId) {
-      console.warn(`  [跳过] 分类 ${preset.category.name} 创建失败`)
+      logger.warn(`  [跳过] 分类 ${preset.category.name} 创建失败`)
       continue
     }
 
@@ -113,15 +116,15 @@ async function main() {
         [q.content, categoryId, q.sort],
       )
       qCount++
-      console.log(`    [新增问题] [${preset.category.name}] ${q.content}`)
+      logger.log(`    [新增问题] [${preset.category.name}] ${q.content}`)
     }
   }
 
-  console.log(`\n初始化完成：新增 ${catCount} 个分类，${qCount} 个快捷问题`)
+  logger.log(`初始化完成：新增 ${catCount} 个分类，${qCount} 个快捷问题`)
   await ds.destroy()
 }
 
 main().catch((err) => {
-  console.error('种子数据初始化失败：', err)
+  logger.error('种子数据初始化失败：', err)
   process.exit(1)
 })

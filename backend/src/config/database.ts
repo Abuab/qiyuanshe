@@ -7,6 +7,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => {
   // 生产环境强制禁止 DB_SYNC，防止误操作删表改表
   if (isProduction && dbSync) {
     const msg = '[FATAL] 生产环境禁止设置 DB_SYNC=true！TypeORM synchronize 可能删除或修改数据库列，请立即关闭此选项后重启服务。'
+    // 使用 console.error — 模块加载阶段 NestJS Logger 尚不可用，必须立即输出并中止进程
     console.error(msg)
     throw new Error(msg)
   }

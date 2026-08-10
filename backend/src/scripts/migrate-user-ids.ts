@@ -1,8 +1,11 @@
 import { NestFactory } from '@nestjs/core'
+import { Logger } from '@nestjs/common'
 import { AppModule } from '../app.module'
 import { UserService } from '../user/user.service'
 import { Repository } from 'typeorm'
 import { User } from '../entities/User'
+
+const logger = new Logger('migrate-user-ids')
 
 async function migrate() {
   const app = await NestFactory.createApplicationContext(AppModule)
@@ -10,7 +13,7 @@ async function migrate() {
   const userService = app.get(UserService)
 
   const users = await userRepo.find({ where: { userId: null as any } })
-  console.log(`共有 ${users.length} 个用户需要生成 userId`)
+  logger.log(`共有 ${users.length} 个用户需要生成 userId`)
 
   let generated = 0
   let nicknameUpdated = 0
@@ -33,11 +36,11 @@ async function migrate() {
     generated++
   }
 
-  console.log(`迁移完成：共处理 ${users.length} 个用户，生成 ${generated} 个 userId，更新 ${nicknameUpdated} 个 nickname`)
+  logger.log(`迁移完成：共处理 ${users.length} 个用户，生成 ${generated} 个 userId，更新 ${nicknameUpdated} 个 nickname`)
   await app.close()
 }
 
 migrate().catch((err) => {
-  console.error('迁移失败:', err)
+  logger.error('迁移失败:', err)
   process.exit(1)
 })
