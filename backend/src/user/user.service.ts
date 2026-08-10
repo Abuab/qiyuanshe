@@ -1226,8 +1226,6 @@ export class UserService {
       { sql: 'DELETE FROM personality_results WHERE userId = ?', desc: 'personality_results', params: (id) => [id] },
       // AI问答报告
       { sql: 'DELETE FROM ai_fun_quiz_reports WHERE userId = ?', desc: 'ai_fun_quiz_reports', params: (id) => [id] },
-      // 快问
-      { sql: 'DELETE FROM quick_questions WHERE userId = ?', desc: 'quick_questions', params: (id) => [id] },
       // 红娘评语
       { sql: 'DELETE FROM matchmaker_comments WHERE userId = ?', desc: 'matchmaker_comments', params: (id) => [id] },
       // 圈子帖子
