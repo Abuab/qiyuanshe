@@ -49,7 +49,7 @@
       </view>
 
       <view v-if="!loading && list.length === 0" class="empty-tip">
-        <text class="empty-icon">📋</text>
+        <view class="ico ico-clipboard ico-xl empty-icon"></view>
         <text class="empty-text">暂无待审核内容</text>
       </view>
 
@@ -157,6 +157,7 @@ import { ref, computed, onMounted } from 'vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
 
@@ -409,7 +410,7 @@ const handleBatchReject = async () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 

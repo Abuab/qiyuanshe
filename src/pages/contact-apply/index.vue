@@ -50,7 +50,7 @@
       <!-- ===== 交换成功后去聊天 ===== -->
       <view v-if="showSuccess" class="success-section">
         <view class="success-card">
-          <text class="success-icon">🎉</text>
+          <view class="ico ico-check ico-xl success-icon"></view>
           <text class="success-title">联系方式已解锁</text>
           <text class="success-desc">你现在可以与 {{ targetNickname }} 自由聊天了</text>
           <view v-if="unlockedContact" class="success-contact">
@@ -71,7 +71,7 @@
       <!-- ===== 红线不足提示区 ===== -->
       <view v-if="showInsufficient" class="insufficient-section">
         <view class="insufficient-line1">
-          <text class="heart-icon">❤️</text>
+          <view class="ico ico-heart ico-md heart-icon"></view>
           <text class="insufficient-text">
             你的{{ systemStore.redLineTerm }}不足，无法与 {{ targetNickname }} 交换联系方式，你可以联系红娘进行牵线
           </text>
@@ -141,6 +141,7 @@ import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -379,7 +380,7 @@ const goToUserDetail = () => {
 
 // ===== 返回 =====
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 onMounted(() => {
@@ -573,7 +574,6 @@ onMounted(() => {
 }
 
 .success-icon {
-  font-size: 80rpx;
   margin-bottom: 20rpx;
 }
 
@@ -665,7 +665,6 @@ onMounted(() => {
 }
 
 .heart-icon {
-  font-size: 36rpx;
   flex-shrink: 0;
 }
 

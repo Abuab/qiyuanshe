@@ -72,8 +72,7 @@ const currentTab = ref(0)
 const list = ref<Visitor[]>([])
 const newLikeCount = ref(0)
 const isRefreshing = ref(false)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 function switchTab(index: number) {
   if (currentTab.value === index) return

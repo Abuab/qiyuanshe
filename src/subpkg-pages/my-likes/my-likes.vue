@@ -81,12 +81,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -110,8 +112,7 @@ const isRefreshing = ref(false)
 const statusBarHeight = ref(0)
 // nav-level1 (88rpx ≈ 44px) + nav-level2 (88rpx ≈ 44px)
 const navBarHeightPx = 88
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 const emptyText = computed(() => {
   const texts = ['还没有喜欢的人哦', '暂时没有人喜欢你', '还没有互相喜欢的人']
@@ -119,7 +120,7 @@ const emptyText = computed(() => {
 })
 
 function goBack() {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 function switchTab(index: number) {
@@ -185,6 +186,10 @@ onMounted(() => {
     currentTab.value = 2
   }
   if (userStore.isLoggedIn) loadData()
+})
+
+onShow(() => {
+  loadData()
 })
 </script>
 

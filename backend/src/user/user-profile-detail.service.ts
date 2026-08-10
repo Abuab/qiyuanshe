@@ -4,6 +4,7 @@ import { Repository } from 'typeorm'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
+import { UserBlock } from '../entities/UserBlock'
 import { UserAuth } from '../entities/UserAuth'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { AiUserProfile, ProfileStatus } from '../entities/AiUserProfile'
@@ -61,6 +62,8 @@ export class UserProfileDetailService {
     private readonly answerRepo: Repository<QuestionAnswer>,
     @InjectRepository(MatchmakerComment)
     private readonly matchmakerCommentRepo: Repository<MatchmakerComment>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepo: Repository<UserBlock>,
     @InjectRepository(SinglePromise)
     private readonly singlePromiseRepo: Repository<SinglePromise>,
     @InjectRepository(ProfileVisit)
@@ -155,6 +158,18 @@ export class UserProfileDetailService {
     const aiMatchEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.MATCH)
     const aiFunQuizEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.FUN_QUIZ)
     const aiProfileGenEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.PROFILE_GEN)
+
+    // 拉黑状态（双向检查）
+    let hasBlocked = false
+    let isBlockedByTarget = false
+    if (currentUserId && !isSelf) {
+      const [blockRecord, blockedByRecord] = await Promise.all([
+        this.blockRepo.findOne({ where: { blockerId: currentUserId, blockedUserId: userId } }),
+        this.blockRepo.findOne({ where: { blockerId: userId, blockedUserId: currentUserId } }),
+      ])
+      hasBlocked = !!blockRecord
+      isBlockedByTarget = !!blockedByRecord
+    }
 
     // 加载当前用户的已审核通过照片数量（用于判断是否触发上传引导）
     let myPhotoCount = 1  // 至少1张头像
@@ -255,6 +270,8 @@ export class UserProfileDetailService {
         rating: c.rating,
         createdAt: c.createdAt ? beijingISO(c.createdAt) : '',
       })),
+      hasBlocked,
+      isBlockedByTarget,
     }
   }
 

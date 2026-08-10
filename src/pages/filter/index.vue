@@ -23,6 +23,7 @@ import FilterPanel from '@/components/filter-panel/filter-panel.vue'
 import CityPicker from '@/components/city-picker/city-picker.vue'
 import { useFilterStore, FilterData } from '@/store/filter'
 import { ref, onMounted } from 'vue'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const filterStore = useFilterStore()
 const panelRef = ref<InstanceType<typeof FilterPanel>>()
@@ -62,7 +63,7 @@ const handleConfirm = (data: FilterData) => {
       channel.emit('filterConfirm', data)
     }
   }
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const handleReset = () => {
@@ -78,7 +79,7 @@ const handleReset = () => {
       channel.emit('filterReset')
     }
   }
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 

@@ -126,13 +126,6 @@ export class RecommendService {
     const pageNum = Math.max(1, Number(page) || 1)
     const pageSize = Math.max(1, Math.min(100, Number(limit) || 10))
 
-    // 1. 尝试从 Redis 读取分页缓存
-    const cacheKey = this.buildListCacheKey(city, pageNum, pageSize, targetGender, currentUserId, filters)
-    const cached = await this.redis.get(cacheKey)
-    if (cached) {
-      return JSON.parse(cached)
-    }
-
     // 2. 构建基础查询（曝光池 + 城市 + 性别 + 筛选）
     // tab=verified → 强制实名筛选（isRealName 可能为 null/undefined/falsy）
     const effectiveFilters = { ...filters }
@@ -140,6 +133,14 @@ export class RecommendService {
     if (filters?.tab === 'verified' && isRealNameMissing) {
       effectiveFilters.isRealName = 1
     }
+
+    // 1. 尝试从 Redis 读取分页缓存（使用 effectiveFilters 确保与查询一致）
+    const cacheKey = this.buildListCacheKey(city, pageNum, pageSize, targetGender, currentUserId, effectiveFilters)
+    const cached = await this.redis.get(cacheKey)
+    if (cached) {
+      return JSON.parse(cached)
+    }
+
     const baseQb = this.buildBaseQuery(city, targetGender, currentUserId, effectiveFilters)
 
     // 3. 取置顶用户（自然混排在前，前端无感知）
@@ -317,6 +318,14 @@ export class RecommendService {
     // 直接删除该用户的推荐分缓存
     await this.redis.del(`recommend:score:${userId}`)
     // 列表缓存靠 CACHE_TTL.recommendList (10分钟) 自然过期，不再主动清除
+  }
+
+  /**
+   * 清除指定用户（作为浏览者）的所有推荐列表缓存
+   * 拉黑/取消拉黑后调用，确保推荐列表立即排除/恢复被拉黑用户
+   */
+  async clearListCachesForUser(userId: number): Promise<void> {
+    await this.redis.delByPattern(`v${CACHE_VERSION}:rec:*:u${userId}:*`)
   }
 
   /**

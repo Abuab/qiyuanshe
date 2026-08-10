@@ -343,8 +343,7 @@ const scrollViewStyle = computed(() => {
 })
 
 // 一键回到顶部 & 固定标签栏
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 // 当前登录用户的照片数量（用于判断是否模糊）
 const myPhotoCount = ref(0)
@@ -666,6 +665,9 @@ onMounted(() => {
   if (userStore.isLoggedIn) fetchMyPhotoCount()
 })
 
+// 避免 onMounted 和 onShow 首次双重加载
+let isFirstShow = true
+
 // 监听来自首页"媒妁之言"跳转的红娘区切换（通过 globalData 传参）
 onShow(() => {
   const app = getApp()
@@ -675,6 +677,12 @@ onShow(() => {
   }
   // 刷新照片计数，防止用户上传照片后返回模糊状态未更新（仅登录用户）
   if (userStore.isLoggedIn) fetchMyPhotoCount()
+  // 从其他页面返回时刷新动态列表（首次 onShow 与 onMounted 重复，跳过）
+  if (isFirstShow) {
+    isFirstShow = false
+  } else {
+    fetchList(true)
+  }
 })
 </script>
 

@@ -503,21 +503,21 @@ const customConfig = reactive({
   bannerUrl: '',
   suitableTitle: '哪些人适合1对1定制服务',
   suitableList: [
-    { icon: '💼', name: '工作繁忙', desc: '没时间自己筛选', color: '#FFF0F3' },
-    { icon: '🎯', name: '目标明确', desc: '想找特定类型', color: '#F0F0FF' },
-    { icon: '🔒', name: '注重隐私', desc: '不愿公开信息', color: '#FFF8E1' },
-    { icon: '⚡', name: '追求效率', desc: '希望快速脱单', color: '#E8F5E9' },
+    { icon: '', name: '工作繁忙', desc: '没时间自己筛选', color: '#FFF0F3' },
+    { icon: '', name: '目标明确', desc: '想找特定类型', color: '#F0F0FF' },
+    { icon: '', name: '注重隐私', desc: '不愿公开信息', color: '#FFF8E1' },
+    { icon: '', name: '追求效率', desc: '希望快速脱单', color: '#E8F5E9' },
   ] as SuitableItem[],
   serviceTitle: '专属服务 助你脱单',
   serviceList: [
-    { icon: '🎯', name: '精准1对1匹配', desc: '红娘根据您的条件精准筛选推荐', color: '#FFF0F3' },
-    { icon: '💌', name: '红娘主动推荐', desc: '专业红娘主动为您匹配合适人选', color: '#F0F0FF' },
-    { icon: '👑', name: '开放隐藏会员', desc: '解锁隐藏优质会员资料查看权限', color: '#FFF8E1' },
-    { icon: '⭐', name: '优先优质配对', desc: '平台优先推荐优质匹配对象', color: '#E8F5E9' },
-    { icon: '💡', name: '情感指导服务', desc: '专业情感顾问一对一指导', color: '#FCE4EC' },
-    { icon: '📸', name: '个人形象提升', desc: '专业团队帮您打造最佳形象', color: '#E3F2FD' },
-    { icon: '🤝', name: '线下约见服务', desc: '协助安排安全舒适的线下见面', color: '#FFF3E0' },
-    { icon: '📊', name: '及时反馈结果', desc: '定期反馈匹配进展和优化建议', color: '#F3E5F5' },
+    { icon: '', name: '精准1对1匹配', desc: '红娘根据您的条件精准筛选推荐', color: '#FFF0F3' },
+    { icon: '', name: '红娘主动推荐', desc: '专业红娘主动为您匹配合适人选', color: '#F0F0FF' },
+    { icon: '', name: '开放隐藏会员', desc: '解锁隐藏优质会员资料查看权限', color: '#FFF8E1' },
+    { icon: '', name: '优先优质配对', desc: '平台优先推荐优质匹配对象', color: '#E8F5E9' },
+    { icon: '', name: '情感指导服务', desc: '专业情感顾问一对一指导', color: '#FCE4EC' },
+    { icon: '', name: '个人形象提升', desc: '专业团队帮您打造最佳形象', color: '#E3F2FD' },
+    { icon: '', name: '线下约见服务', desc: '协助安排安全舒适的线下见面', color: '#FFF3E0' },
+    { icon: '', name: '及时反馈结果', desc: '定期反馈匹配进展和优化建议', color: '#F3E5F5' },
   ] as ServiceItem[],
 })
 
@@ -526,10 +526,10 @@ const aboutConfig = reactive({
   bannerUrl: '',
   title: '平台特点',
   features: [
-    { icon: '👥', name: '真实海量本地用户', desc: '严格审核机制，确保用户真实可靠', color: '#FFF0F3' },
-    { icon: '🤝', name: '靠谱本地服务团队', desc: '专业红娘团队，深耕本地婚恋市场', color: '#F0F0FF' },
-    { icon: '💍', name: '匹配资源丰富脱单效率高', desc: '海量优质资源，智能匹配快速脱单', color: '#FFF8E1' },
-    { icon: '👑', name: '私人定制专享红娘服务', desc: '一对一专属服务，全程陪伴指导', color: '#E8F5E9' },
+    { icon: '', name: '真实海量本地用户', desc: '严格审核机制，确保用户真实可靠', color: '#FFF0F3' },
+    { icon: '', name: '靠谱本地服务团队', desc: '专业红娘团队，深耕本地婚恋市场', color: '#F0F0FF' },
+    { icon: '', name: '匹配资源丰富脱单效率高', desc: '海量优质资源，智能匹配快速脱单', color: '#FFF8E1' },
+    { icon: '', name: '私人定制专享红娘服务', desc: '一对一专属服务，全程陪伴指导', color: '#E8F5E9' },
   ] as FeatureItem[],
 })
 

@@ -165,6 +165,7 @@ onUnhandledRejection((res: { reason: string }) => {
 
 <style lang="scss">
 @import './styles/variables.scss';
+@import './styles/icons.css';
 
 page {
   height: 100%;

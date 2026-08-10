@@ -25,7 +25,7 @@
       </view>
 
       <view v-if="!loading && messageList.length === 0" class="empty-tip">
-        <text class="empty-icon">📭</text>
+        <view class="ico ico-mailbox ico-xl empty-icon"></view>
         <text class="empty-text">暂无消息</text>
       </view>
 
@@ -39,7 +39,7 @@
         <view v-if="item.type === 'systemAggregate'" class="system-message aggregate">
           <view class="system-icon pink-heart-icon">
             <image v-if="systemNotifyIcon" :src="systemNotifyIcon" mode="aspectFit" class="system-icon-img" />
-            <text v-else>💕</text>
+            <view v-else class="ico ico-heart-pink ico-md"></view>
           </view>
           <view class="message-content">
             <view class="message-header">
@@ -143,8 +143,7 @@ const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 // ===== 回到顶部 =====
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 // 系统通知图标（后台可配置）
 const systemNotifyIcon = computed(() => {
@@ -387,7 +386,6 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .empty-icon {
-  font-size: 120rpx;
   margin-bottom: 20rpx;
 }
 

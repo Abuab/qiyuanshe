@@ -17,7 +17,7 @@
       <!-- ========== Logo 区 ========== -->
       <view class="logo-area">
         <view class="logo-wrap">
-          <text class="logo-icon">☁</text>
+          <view class="ico ico-cloud ico-xl logo-icon"></view>
         </view>
       </view>
 
@@ -73,6 +73,7 @@
 import { ref, onMounted } from 'vue'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
@@ -85,7 +86,7 @@ onMounted(() => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 // ========== 协议 ==========

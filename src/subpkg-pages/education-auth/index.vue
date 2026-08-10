@@ -76,7 +76,7 @@
             <view class="sample-box">
               <view class="sample-badge"><text class="sample-badge-text">示例</text></view>
               <view class="sample-cert">
-                <view class="sample-emblem"><text class="sample-emblem-text">🎓</text></view>
+                <view class="sample-emblem"><view class="ico ico-graduation ico-lg"></view></view>
                 <view class="sample-line sample-line--title" />
                 <view class="sample-line" />
                 <view class="sample-line sample-line--short" />
@@ -528,9 +528,6 @@ function handleSubmit() {
   align-items: center;
   justify-content: center;
   margin-bottom: 16rpx;
-}
-.sample-emblem-text {
-  font-size: 30rpx;
 }
 .sample-line {
   width: 100%;

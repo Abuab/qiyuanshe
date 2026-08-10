@@ -80,6 +80,7 @@
 import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
+import { safeNavigateBack } from '@/utils/navigate'
 
 interface UserInfo {
   id: number
@@ -108,7 +109,7 @@ function getTags(user: UserInfo): string[] {
 }
 
 function goBack() {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 async function fetchData() {

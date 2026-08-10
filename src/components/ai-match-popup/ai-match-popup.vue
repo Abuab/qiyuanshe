@@ -18,7 +18,7 @@
 
       <!-- 无资格 -->
       <view v-else-if="status === 'ineligible'" class="ineligible-block">
-        <text class="large-emoji">🔒</text>
+        <view class="ico ico-lock ico-xl large-emoji"></view>
         <text class="block-title">{{ ineligibleTitle }}</text>
         <view v-if="errorReasons.length" class="reasons-list">
           <view v-for="(r, i) in errorReasons" :key="i" class="reason-item">
@@ -38,7 +38,7 @@
 
       <!-- 错误 -->
       <view v-else-if="status === 'error'" class="error-block">
-        <text class="large-emoji">😵</text>
+        <text class="large-emoji">出错啦</text>
         <text class="block-title">{{ errorMsg }}</text>
         <view class="block-btn" @tap="retry">
           <text>重试</text>
@@ -91,13 +91,13 @@
 
             <!-- AI 分析文字 -->
             <view v-if="report.analysis" class="analysis-block">
-              <text class="analysis-label">✨ AI 分析</text>
+              <text class="analysis-label">AI 分析</text>
               <text class="analysis-text">{{ report.analysis }}</text>
             </view>
 
             <!-- 建议 -->
             <view v-if="report.advice?.length" class="advice-block">
-              <text class="advice-label">💡 相处建议</text>
+              <text class="advice-label">相处建议</text>
               <view v-for="(adv, i) in report.advice" :key="i" class="advice-item">
                 <text class="advice-num">{{ i + 1 }}</text>
                 <text class="advice-text">{{ adv }}</text>
@@ -106,14 +106,14 @@
 
             <!-- 内容审核中 -->
             <view v-if="report.reviewStatus === 'pending'" class="review-notice">
-              <text>⏳ 内容审核中，审核通过后展示</text>
+              <text>内容审核中，审核通过后展示</text>
             </view>
           </view>
         </view>
 
         <view class="panel-footer">
           <view class="footer-btn chat-btn" @tap="goToUserDetail">
-            <text>查看详情 👤</text>
+            <text>查看详情</text>
           </view>
           <view class="footer-btn close-footer" @tap="close">
             <text>收起</text>
@@ -351,7 +351,7 @@ $pink-border: #FFE4E9;
   display: flex; flex-direction: column; align-items: center;
   padding: 80rpx 48rpx 100rpx; text-align: center;
 }
-.large-emoji { font-size: 72rpx; margin-bottom: 24rpx; }
+.large-emoji { display:flex;align-items:center;justify-content:center; margin-bottom: 24rpx; }
 .block-title { font-size: 30rpx; color: #1A1A1A; font-weight: bold; margin-bottom: 12rpx; line-height: 1.5; }
 .block-desc { font-size: 26rpx; color: #999; margin-bottom: 40rpx; max-width: 100%; word-break: break-word; }
 .block-btn {

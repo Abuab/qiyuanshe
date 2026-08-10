@@ -88,6 +88,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import type { MatchmakerData } from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
 
@@ -138,7 +139,7 @@ const loadSettings = async () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 /** 两个开关点击均弹窗提示 */

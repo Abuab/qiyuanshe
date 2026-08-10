@@ -91,6 +91,7 @@ import { post } from '@/utils/request'
 import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -107,7 +108,7 @@ onMounted(() => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 const goToBlockList = () => {

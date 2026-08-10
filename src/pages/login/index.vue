@@ -91,6 +91,7 @@ import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
 import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
+import { safeNavigateBack } from '@/utils/navigate'
 interface LoginResult {
   user: any
   tokens: { accessToken: string; refreshToken: string; expiresIn: number }
@@ -314,12 +315,7 @@ const handleLoginSuccess = () => {
     uni.switchTab({ url: '/pages/my/index' })
     return
   }
-  const pages = getCurrentPages()
-  if (pages.length > 1) {
-    uni.navigateBack()
-  } else {
-    uni.switchTab({ url: '/pages/index/index' })
-  }
+  safeNavigateBack()
 }
 </script>
 

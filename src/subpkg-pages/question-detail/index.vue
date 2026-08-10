@@ -138,8 +138,7 @@ const statusBarHeight = ref(20)
 const navInnerHeight = 44
 
 // ===== 回到顶部 =====
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()

@@ -55,13 +55,13 @@ import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { get, put } from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const { appName } = storeToRefs(systemStore)
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 const quotes = ref<string[]>([])
 const currentIndex = ref(0)
 
@@ -115,7 +115,7 @@ const handleSubmit = async () => {
     await put('/users/profile', { loveQuote: currentQuote.value })
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
-      uni.navigateBack()
+      safeNavigateBack()
     }, 1500)
   } catch {
     uni.showToast({ title: '保存失败，请重试', icon: 'none' })
@@ -123,7 +123,7 @@ const handleSubmit = async () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 loadQuotes()

@@ -160,8 +160,7 @@ const statusBarHeight = ref(0)
 const pageSize = 10
 
 // ===== 回到顶部 =====
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 const defaultShowTags = ['time', 'location']
 

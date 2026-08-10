@@ -43,7 +43,7 @@
 
         <!-- 空状态 -->
         <view v-if="!loading && messages.length === 0" class="empty-state">
-          <text class="empty-emoji">💬</text>
+          <view class="ico ico-bubble ico-xl empty-emoji"></view>
           <text class="empty-text">还没有消息，主动打个招呼吧~</text>
         </view>
 
@@ -127,7 +127,7 @@
     <view class="input-area" :style="{ paddingBottom: (keyboardHeight + safeAreaBottom) + 'px' }">
       <!-- 防骗横幅 -->
       <view v-if="showFraudBanner" class="fraud-banner">
-        <text class="fraud-text">⚠️ 请勿轻信转账、投资、借款等要求</text>
+        <view class="ico ico-exclamation ico-sm" style="display:inline-block;margin-right:6rpx;vertical-align:middle;"></view><text class="fraud-text">请勿轻信转账、投资、借款等要求</text>
         <view class="fraud-close" @tap="showFraudBanner = false">
           <text>✕</text>
         </view>
@@ -136,7 +136,7 @@
       <view class="input-row">
         <!-- AI帮回 -->
         <view v-if="systemStore.isAiFeatureEnabled('chat_skill')" class="ai-btn" @tap="openAiSkillPanel">
-          <text class="ai-btn-icon">✨</text>
+          <view class="ico ico-sparkle ico-sm ai-btn-icon"></view>
           <text class="ai-btn-text">AI帮回</text>
         </view>
 

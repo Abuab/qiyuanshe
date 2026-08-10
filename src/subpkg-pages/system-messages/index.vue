@@ -12,7 +12,7 @@
     <!-- 公众号关注横幅 -->
     <view v-if="systemStore.showOfficialAccountPrompt && !bannerClosed" class="oa-banner">
       <view class="oa-banner-left">
-        <text class="oa-warn-icon">❗</text>
+        <view class="ico ico-exclamation ico-sm oa-warn-icon"></view>
         <text class="oa-banner-text">关注服务号，接受消息提醒，不错过每次缘分！</text>
       </view>
       <view class="oa-banner-right">
@@ -40,7 +40,7 @@
       <view v-if="loading" class="loading-tip"><text>加载中...</text></view>
 
       <view v-if="!loading && list.length === 0" class="empty-tip">
-        <text class="empty-icon">📭</text>
+        <view class="ico ico-mailbox ico-xl empty-icon"></view>
         <text class="empty-text">暂无系统消息</text>
       </view>
 
@@ -98,8 +98,7 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const bannerClosed = ref(false)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
@@ -257,7 +256,7 @@ const formatTime = (timeStr: string) => {
 .oa-banner-left {
   display: flex; align-items: center; flex: 1; min-width: 0;
 }
-.oa-warn-icon { font-size: 32rpx; margin-right: 12rpx; flex-shrink: 0; }
+.oa-warn-icon { display:flex;align-items:center; margin-right: 12rpx; flex-shrink: 0; }
 .oa-banner-text {
   font-size: 24rpx; color: #F57F17; line-height: 1.4;
   flex: 1; min-width: 0;
@@ -290,7 +289,7 @@ const formatTime = (timeStr: string) => {
   text { font-size: 26rpx; color: #BDBDBD; }
 }
 .empty-tip { flex-direction: column; align-items: center; }
-.empty-icon { font-size: 80rpx; margin-bottom: 20rpx; }
+.empty-icon { margin-bottom: 20rpx; }
 
 .msg-item {
   width: calc(100% - 48rpx);

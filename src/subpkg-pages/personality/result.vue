@@ -39,7 +39,7 @@
         <view class="radar-wrap">
           <canvas canvas-id="radarCanvas" id="radarCanvas" class="radar-canvas" />
           <view v-if="isGuest" class="radar-lock-hint">
-            <text class="lock-emoji">🔒</text>
+            <view class="ico ico-lock ico-lg lock-emoji"></view>
             <text class="lock-text">登录后解锁完整四维画像</text>
           </view>
         </view>
@@ -57,7 +57,7 @@
                 :style="{ width: (isGuest && idx >= unlockedDims ? 50 : d.radar) + '%' }"
               />
             </view>
-            <text v-if="isGuest && idx >= unlockedDims" class="dim-label locked">🔒 登录解锁</text>
+            <text v-if="isGuest && idx >= unlockedDims" class="dim-label locked">登录解锁</text>
             <text v-else class="dim-label">{{ d.chosenLabel }}</text>
           </view>
         </view>
@@ -77,7 +77,7 @@
         <view class="ai-card">
           <view class="ai-head" @tap="toggleAi">
             <view class="ai-head-left">
-              <text class="ai-star">✦</text>
+              <view class="ico ico-star ico-sm ai-star"></view>
               <text class="ai-title">AI 深度解读</text>
             </view>
             <uni-icons :type="aiExpanded ? 'up' : 'down'" size="32rpx" color="#ff6b9d" />
@@ -523,7 +523,7 @@ function goBack() {
 
 .ai-head { display: flex; align-items: center; justify-content: space-between; }
 .ai-head-left { display: flex; align-items: center; }
-.ai-star { color: #ff6b9d; font-size: 32rpx; margin-right: 12rpx; }
+.ai-star { margin-right: 12rpx; }
 .ai-title { font-size: 32rpx; font-weight: 600; color: #333; }
 .ai-body { margin-top: 24rpx; }
 .ai-loading { padding: 40rpx 0; display: flex; justify-content: center; }

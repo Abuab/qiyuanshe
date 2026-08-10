@@ -218,7 +218,7 @@
           </view>
           <view v-if="profileData.aboutMe.aiProfileText" class="ai-profile-block">
             <view class="ai-label">
-              <text class="ai-dot">✨</text>
+              <view class="ico ico-sparkle ico-sm ai-dot"></view>
               <text class="ai-label-text">AI印象</text>
             </view>
             <text class="ai-text">{{ profileData.aboutMe.aiProfileText }}</text>
@@ -228,7 +228,8 @@
             <text class="character-line">{{ characterText }}</text>
           </view>
           <view v-if="profileData.top.isSelf && profileData.showAiProfileGenEntry" class="ai-profile-gen-entry" @tap="refreshProfileGen">
-            <text class="gen-entry-text">{{ profileData.aboutMe.aiProfileText ? '✨ 刷新AI印象' : '✨ 生成AI印象' }}</text>
+            <view class="ico ico-sparkle ico-sm" style="display:inline-block;margin-right:8rpx;vertical-align:middle;"></view>
+            <text class="gen-entry-text">{{ profileData.aboutMe.aiProfileText ? '刷新AI印象' : '生成AI印象' }}</text>
             <text class="gen-entry-arrow">→</text>
           </view>
           <view v-else-if="!profileData.aboutMe.tags?.length && !profileData.aboutMe.aiProfileText" class="empty-hint">
@@ -239,7 +240,7 @@
         <!-- ========== AI缘分分析入口 ========== -->
         <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openAiMatch">
           <view class="ai-entry-content">
-            <text class="ai-entry-emoji">💞</text>
+            <view class="ico ico-heart-pink ico-lg ai-entry-emoji"></view>
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI缘分分析</text>
               <text class="ai-entry-desc">测测你们缘分契合度</text>
@@ -251,7 +252,7 @@
         <!-- ========== AI趣味测试入口 ========== -->
         <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openFunQuiz">
           <view class="ai-entry-content">
-            <text class="ai-entry-emoji">🔮</text>
+            <view class="ico ico-crystal-ball ico-lg ai-entry-emoji"></view>
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI趣味测试</text>
               <text class="ai-entry-desc">看星座生肖契合密码</text>
@@ -263,7 +264,7 @@
         <!-- ========== AI红娘说（双方均已测试人格才展示） ========== -->
         <view v-if="matchAdviceEligible && !profileData.top.isSelf" class="ai-entry-card" @tap="openMatchAdvice">
           <view class="ai-entry-content">
-            <text class="ai-entry-emoji">✦</text>
+            <view class="ico ico-star ico-lg ai-entry-emoji"></view>
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI红娘说</text>
               <text class="ai-entry-desc">看看你们的性格契合分析</text>
@@ -308,7 +309,7 @@
           </view>
           <view v-if="profileData.hopeTa.aiHopeText" class="ai-hope-block">
             <view class="ai-label">
-              <text class="ai-dot">✨</text>
+              <view class="ico ico-sparkle ico-sm ai-dot"></view>
               <text class="ai-label-text">AI期望解读</text>
             </view>
             <text class="ai-text">{{ profileData.hopeTa.aiHopeText }}</text>
@@ -340,7 +341,7 @@
           <view v-for="(item, idx) in profileData.answers" :key="idx" class="qa-item">
             <!-- 问题气泡（左：红心头像） -->
             <view class="qa-row qa-question-row">
-              <view class="qa-avatar qa-question-avatar">❤️</view>
+              <view class="qa-avatar qa-question-avatar"><view class="ico ico-heart ico-md"></view></view>
               <view class="qa-bubble qa-bubble-question">
                 <text>{{ item.question }}</text>
               </view>
@@ -651,7 +652,7 @@
               <view class="funquiz-body-inner">
                 <view class="fq-result-header">
                   <text class="fq-zodiac">{{ funQuizResult.userZodiac }} · {{ funQuizResult.userConstellation }}</text>
-                  <text class="fq-vs">💞</text>
+                  <view class="ico ico-heart-pink ico-md fq-vs"></view>
                   <text class="fq-zodiac">{{ funQuizResult.taZodiac }} · {{ funQuizResult.taConstellation }}</text>
                 </view>
                 <view class="fq-keywords">
@@ -784,8 +785,7 @@ const selectedMatchmaker = ref<any>(null)
 const followLoading = ref(false)
 
 // ===== 回到顶部 =====
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 // ===== 照片 =====
 const activePhotoIndex = ref(0)
@@ -1009,6 +1009,10 @@ onMounted(async () => {
 onShow(() => {
   if (userId.value && isLoggedIn.value && profileData.value) {
     refreshFollowStatus()
+    refreshBlockStatus()
+    // NOTE: 联系状态（想认识Ta按钮的 canContact / alreadyContacted）目前无法刷新，
+    // 因为后端 UserProfileDetailService.buildBottomBar() 未使用 alreadyContacted 参数。
+    // 如需修复，需后端支持轻量级判断用户是否已申请联系目标用户的接口。
   }
 })
 
@@ -1021,19 +1025,26 @@ const refreshFollowStatus = async () => {
   } catch { /* ignore */ }
 }
 
+const refreshBlockStatus = async () => {
+  try {
+    const res = await request({ url: `/users/${userId.value}`, method: 'GET' })
+    if (res) {
+      isBlocked.value = !!(res as any).hasBlocked
+    }
+  } catch { /* ignore */ }
+}
+
 const fetchProfileDetail = async () => {
   loading.value = true
   try {
-    const res = await request({ url: `/users/${userId.value}/detail`, method: 'GET' })
+    const res: any = await request({ url: `/users/${userId.value}/detail`, method: 'GET' })
     profileData.value = res
     if (profileData.value) {
       profileData.value.top.avatar = getFullImageUrl(profileData.value.top.avatar) || defaultAvatar.value
       profileData.value.top.backgroundPhoto = getFullImageUrl(profileData.value.top.backgroundPhoto) || ''
     }
-    // 检查是否已拉黑
-    if (isLoggedIn.value) {
-      checkBlockStatus()
-    }
+    // 从详情 API 响应中读取拉黑状态（由后端 UserProfileDetailService 保证）
+    isBlocked.value = !!(res as any).hasBlocked
     // 检查 AI红娘说 入口是否可展示（双方均已测试人格）
     checkMatchAdviceEligibility()
     // 加载人格标签 + 浏览者未测引导
@@ -1043,14 +1054,6 @@ const fetchProfileDetail = async () => {
   } finally {
     loading.value = false
   }
-}
-
-const checkBlockStatus = async () => {
-  try {
-    const res: any = await request({ url: '/users/my-blocks', method: 'GET' })
-    const blocks = Array.isArray(res) ? res : (res?.list || res?.data?.list || [])
-    isBlocked.value = blocks.some((b: any) => b.blockedUserId === userId.value || b.id === userId.value || b.userId === userId.value)
-  } catch { /* ignore */ }
 }
 
 const { matchmakerList, fetchList: fetchMatchmakerList } = useMatchmakerList()
@@ -1865,9 +1868,7 @@ $text-hint: #999999;
   font-size: 18rpx; color: #999; line-height: 1;
 }
 
-.follow-ico {
-  font-size: 40rpx; line-height: 1; color: #FF6B6B;
-}
+.follow-ico { font-size: 40rpx; line-height: 1; color: #FF6B6B; }
 
 .follow-btn.liked {
   animation: heartBounce 300ms ease;
@@ -2100,7 +2101,7 @@ $text-hint: #999999;
 
 .ai-entry-content { display: flex; align-items: center; gap: 20rpx; }
 
-.ai-entry-emoji { font-size: 40rpx; }
+.ai-entry-emoji { display: flex; align-items: center; }
 
 .ai-entry-icon-img { width: 48rpx; height: 48rpx; }
 
@@ -2509,7 +2510,7 @@ $text-hint: #999999;
 
 .fq-zodiac { font-size: 26rpx; color: #666; }
 
-.fq-vs { font-size: 32rpx; flex-shrink: 0; }
+.fq-vs { flex-shrink: 0; display: flex; align-items: center; }
 
 .fq-keywords { display: flex; flex-wrap: wrap; justify-content: center; gap: 16rpx; padding-bottom: 28rpx; }
 

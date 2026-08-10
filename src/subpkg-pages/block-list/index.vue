@@ -65,6 +65,7 @@ import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
 
@@ -81,8 +82,7 @@ const list = ref<BlockItem[]>([])
 const loading = ref(true)
 const statusBarHeight = ref(20)
 const navTopPx = ref(0)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
@@ -144,7 +144,7 @@ const goToUserDetail = (userId: number) => {
 }
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 </script>
 

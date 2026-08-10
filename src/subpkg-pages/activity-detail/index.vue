@@ -97,7 +97,7 @@
         <view class="guests-header">
           <text class="guests-title">报名嘉宾</text>
           <view class="guests-count">
-            <text class="fire-icon">🔥</text>
+            <view class="ico ico-fire ico-sm fire-icon"></view>
             <text class="guests-count-text">{{ activity.currentParticipants }}人已报名</text>
           </view>
         </view>
@@ -178,7 +178,7 @@
 
       <!-- 无 Tab 场景：空状态 -->
       <view v-if="visibleTabCount === 0" class="empty-tabs-state">
-        <view class="ets-icon">📋</view>
+        <view class="ico ico-clipboard ico-xl ets-icon"></view>
         <text class="ets-text">暂无内容</text>
       </view>
 
@@ -342,8 +342,7 @@ const activeTab = ref<'detail' | 'scene'>('detail')
 const tabAnimating = ref(false)
 
 // ===== 回到顶部 =====
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 
 const selectedMatchmaker = ref({

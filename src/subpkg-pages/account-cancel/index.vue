@@ -93,6 +93,7 @@ import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
+import { safeNavigateBack } from '@/utils/navigate'
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
@@ -105,7 +106,7 @@ onMounted(() => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 // ========== 复选框状态 ==========

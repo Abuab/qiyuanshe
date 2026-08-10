@@ -8,7 +8,7 @@
         <!-- 装饰元素 -->
         <text class="pcp-deco pcp-deco-x">×</text>
         <view class="pcp-deco pcp-deco-diamond" />
-        <text class="pcp-deco pcp-deco-star">✦</text>
+        <view class="pcp-deco pcp-deco-star ico ico-star ico-sm"></view>
         <view class="pcp-deco pcp-deco-ring" />
 
         <!-- 头像区（有真实头像时展示） -->
@@ -156,9 +156,6 @@ const handleGoProfile = () => {
 .pcp-deco-star {
   top: 15%;
   right: 15%;
-  font-size: 18px;
-  color: #fbbf24;
-  line-height: 1;
 }
 
 .pcp-deco-ring {

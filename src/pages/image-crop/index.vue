@@ -76,6 +76,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { getAndClearCropImageData } from '@/utils/crop-bridge'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const statusBarHeight = ref(20)
 const safeBottom = ref(0)
@@ -187,8 +188,8 @@ onMounted(() => {
 })
 
 // ====== 按钮 ======
-const handleCancel = () => uni.navigateBack({ delta: 1 })
-const handleReselect = () => uni.navigateBack({ delta: 1 })
+const handleCancel = () => safeNavigateBack()
+const handleReselect = () => safeNavigateBack()
 
 const handleConfirm = () => {
   if (!imageSrc.value) return
@@ -224,7 +225,7 @@ const handleConfirm = () => {
             }
           } catch (_) {}
           uni.$emit('IMAGE_CROPPED', { path: res.tempFilePath })
-          uni.navigateBack({ delta: 1 })
+          safeNavigateBack()
         },
         fail: (err: any) => {
           uni.hideLoading()

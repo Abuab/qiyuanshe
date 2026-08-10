@@ -199,7 +199,7 @@ onMounted(async () => {
       showCancel: false,
       confirmText: '知道了',
       success: () => {
-        uni.navigateBack()
+        safeNavigateBack()
       },
     })
     return

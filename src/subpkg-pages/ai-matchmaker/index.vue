@@ -29,7 +29,7 @@
         <view id="msg-top" class="msg-top-spacer" />
         <!-- 欢迎语 -->
         <view v-if="messages.length === 0" class="welcome-block">
-          <text class="welcome-emoji">💝</text>
+          <view class="ico ico-heart-pink ico-xl welcome-emoji"></view>
           <text class="welcome-title">Hi~ 我是你的AI红娘</text>
           <text class="welcome-desc">恋爱困惑、约会建议、相处技巧...尽管问我</text>
         </view>
@@ -155,6 +155,7 @@ import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
@@ -223,7 +224,7 @@ const handleBack = () => {
   if (pages.length <= 1) {
     uni.switchTab({ url: '/pages/index/index' })
   } else {
-    uni.navigateBack()
+    safeNavigateBack()
   }
 }
 

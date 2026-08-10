@@ -16,7 +16,7 @@
           <view class="header">
             <text class="name">{{ item.matchmaker?.name || '红娘' }}</text>
             <view class="stars">
-              <text v-for="i in 5" :key="i" :class="i <= item.rating ? 'star on' : 'star'">★</text>
+              <view v-for="i in 5" :key="i" :class="'ico ico-star-gold ico-sm star ' + (i <= item.rating ? 'on' : '')"></view>
             </view>
           </view>
           <text class="text">{{ item.content }}</text>
@@ -45,8 +45,7 @@ const entryName = computed(() => systemStore.quickEntryNames?.[0] || '红娘评�
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 const loading = ref(true)
 const comments = ref<any[]>([])
 

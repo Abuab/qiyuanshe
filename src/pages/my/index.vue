@@ -45,7 +45,7 @@
                 mode="aspectFit"
                 @tap.stop="copyUserId"
               />
-              <text v-else class="copy-text" @tap.stop="copyUserId">📋</text>
+              <view v-else class="ico ico-clipboard ico-sm copy-icon-box" @tap.stop="copyUserId"></view>
             </view>
           </view>
           <view class="edit-btn" @tap.stop="goToEditProfile">
@@ -137,25 +137,25 @@
         <!-- AI助手展开面板 -->
         <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
           <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="ai-sub-item" @tap="goToAiMatchmaker">
-            <text class="ai-sub-star">✦</text>
+            <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">AI 红娘</text>
             <text class="ai-sub-desc">智能匹配缘分</text>
             <text class="arrow">></text>
           </view>
           <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-sub-item" @tap="goToAiQuiz">
-            <text class="ai-sub-star">✦</text>
+            <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">AI 情感问答</text>
             <text class="ai-sub-desc">解答情感困惑</text>
             <text class="arrow">></text>
           </view>
           <view v-if="isLoggedIn && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-sub-item" @tap="goToAiImpression">
-            <text class="ai-sub-star">✦</text>
+            <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">AI 个人印象</text>
             <text class="ai-sub-desc">{{ aiProfileText ? '已生成' : '生成魅力印象' }}</text>
             <text class="arrow">></text>
           </view>
           <view v-if="showAiPersonalityEntry" class="ai-sub-item" @tap="goToAiPersonality">
-            <text class="ai-sub-star">✦</text>
+            <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">{{ aiPersonalityCopy.label }}</text>
             <text class="ai-sub-desc">{{ personalityTested ? aiPersonalityCopy.descTested : aiPersonalityCopy.descUntested }}</text>
             <text class="arrow">></text>
@@ -734,13 +734,13 @@ const handleToolClick = (key: string) => {
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = [
-  { key: 'myPhotos',    label: '我的相册', iconName: 'icon-image', emoji: '🖼' },
-  { key: 'loveQuotes',  label: '爱情语录', iconName: 'icon-list-heart', emoji: '💌' },
-  { key: 'myLikes',     label: '我的喜欢', iconName: 'icon-heart', emoji: '❤️' },
-  { key: 'privacy',     label: '隐私设置', iconName: 'icon-shield-warning', emoji: '🔒' },
-  { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '📝' },
-  { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '📄' },
-  { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '🛡' },
+  { key: 'myPhotos',    label: '我的相册', iconName: 'icon-image', emoji: '' },
+  { key: 'loveQuotes',  label: '爱情语录', iconName: 'icon-list-heart', emoji: '' },
+  { key: 'myLikes',     label: '我的喜欢', iconName: 'icon-heart', emoji: '' },
+  { key: 'privacy',     label: '隐私设置', iconName: 'icon-shield-warning', emoji: '' },
+  { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '' },
+  { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '' },
+  { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '' },
   { key: 'dummy',       label: '',        iconName: '', emoji: '',      placeholder: true },
 ]
 </script>
@@ -894,6 +894,11 @@ const toolGrid7 = [
 .copy-text {
   font-size: 22rpx;
   color: #999;
+}
+
+.copy-icon-box {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .edit-btn {
@@ -1160,8 +1165,6 @@ const toolGrid7 = [
 }
 
 .ai-sub-star {
-  font-size: 36rpx;
-  color: #FF6B9D;
   margin-right: 8rpx;
   flex-shrink: 0;
 }

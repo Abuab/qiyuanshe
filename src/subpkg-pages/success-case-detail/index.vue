@@ -42,8 +42,7 @@ const item = ref<any>(null)
 const coverUrl = computed(() => getFullImageUrl(item.value?.cover))
 const photoUrls = computed(() => (item.value?.photos || []).map((p: string) => getFullImageUrl(p)))
 
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo()

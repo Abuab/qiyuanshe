@@ -168,8 +168,7 @@ const loadingMore = ref(false)
 const noMore = ref(false)
 const isRefreshing = ref(false)
 
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo()

@@ -31,11 +31,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { useUserStore } from '@/store/user'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
 
@@ -44,8 +46,7 @@ const loading = ref(true)
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44) // 88rpx ≈ 44px on 2x screen
 
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
@@ -53,6 +54,10 @@ onMounted(() => {
   // 88rpx 转 px: rpx = screenWidth/750, 88 * screenWidth / 750
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 
+  if (userStore.isLoggedIn) fetchAnswers()
+})
+
+onShow(() => {
   if (userStore.isLoggedIn) fetchAnswers()
 })
 
@@ -75,7 +80,7 @@ const goToDetail = (item: any) => {
 }
 
 const handleBack = () => {
-  uni.navigateBack({ delta: 1 })
+  safeNavigateBack()
 }
 </script>
 

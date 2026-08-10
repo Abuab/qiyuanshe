@@ -21,7 +21,7 @@
 
       <!-- 次数用完 -->
       <view v-else-if="status === 'exhausted'" class="exhausted-state">
-        <text class="large-emoji">🔒</text>
+        <view class="ico ico-lock ico-xl large-emoji"></view>
         <text class="exhausted-title">今日次数已用完</text>
         <text class="exhausted-desc">开通会员解锁每日50次AI帮回</text>
         <view class="vip-btn" @tap="goVip">
@@ -64,7 +64,7 @@
           </view>
         </view>
         <view class="safe-hint">
-          <text>💡 请文明交流，注意个人信息安全</text>
+          <text>请文明交流，注意个人信息安全</text>
         </view>
       </scroll-view>
     </view>
@@ -232,7 +232,7 @@ $blue: #4A90E2;
   display: flex; flex-direction: column; align-items: center;
   padding: 60rpx 48rpx 80rpx; text-align: center;
 }
-.large-emoji { font-size: 72rpx; margin-bottom: 24rpx; }
+.large-emoji { display:flex;align-items:center;justify-content:center; margin-bottom: 24rpx; }
 .exhausted-title { font-size: 30rpx; color: #1A1A1A; font-weight: bold; margin-bottom: 10rpx; }
 .exhausted-desc { font-size: 26rpx; color: #999; margin-bottom: 36rpx; }
 .vip-btn, .retry-btn {

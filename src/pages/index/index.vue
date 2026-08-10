@@ -312,6 +312,7 @@ const showLoveIntent = ref(false)
 const pageSize = 10
 const isEmptyFromFilter = ref(false)
 const activeFilterData = ref<FilterData | null>(null)
+let isFirstShow = true
 
 // 当前登录用户自己的照片数量（-1=未获取），控制首页缩略图模糊逻辑
 const myPhotoCount = ref(-1)
@@ -656,6 +657,12 @@ onShow(() => {
   loadFloatConfig()
   // 弱网恢复后补报离线埋点队列
   flushReportQueue()
+  // 从其他页面返回时重新拉取用户列表（首次显示由 onMounted 负责，避免重复加载）
+  if (!isFirstShow) {
+    loadUserList(true)
+  } else {
+    isFirstShow = false
+  }
 })
 
 const onShareAppMessage = () => {

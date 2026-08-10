@@ -113,8 +113,7 @@ const followerPage = ref(1)
 const followingNoMore = ref(false)
 const followerNoMore = ref(false)
 
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 const followEmptyIcon = computed(() => icons.value?.page?.followEmptyIcon || '')
 

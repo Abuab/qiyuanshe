@@ -112,8 +112,7 @@ const viewPage = ref(1)
 const visitorPage = ref(1)
 const viewNoMore = ref(false)
 const visitorNoMore = ref(false)
-const scrollToVal = ref(0)
-const { showBackTop, onScroll, scrollToTop } = useBackTop()
+const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onLoad((options: any) => {
   if (!requireLogin()) return

@@ -180,20 +180,24 @@ export interface UserProfileDetailResponse {
   showAiProfileGenEntry: boolean
   /** 照片列表（含权限控制） */
   photos: PhotoItem[]
-  /** 当前登录用户照片数量（用于判断上传引导） */
-  myPhotoCount: number
-  /** 照片引导提示文案配置 */
-  photoGuidance: PhotoGuidanceConfig
+  /** 我的照片数量 */
+  myPhotoCount?: number
+  /** 照片引导配置 */
+  photoGuidance?: PhotoGuidanceConfig
   /** 爱情语录 */
   loveQuote?: string
   /** 问答列表 */
   answers?: UserAnswerItem[]
-  /** 性格标签原始数据 */
-  personalityTags?: any
-  /** 希望TA标签原始数据 */
-  hopeTaTags?: any
-  /** 红娘评语列表 */
+  /** 个性标签 */
+  personalityTags?: string[]
+  /** 期望标签 */
+  hopeTaTags?: string[]
+  /** 红娘评价 */
   matchmakerReviews?: MatchmakerReviewItem[]
+  /** 当前用户是否已拉黑目标用户 */
+  hasBlocked?: boolean
+  /** 目标用户是否拉黑了当前用户 */
+  isBlockedByTarget?: boolean
 }
 
 /** 用户问答项 */

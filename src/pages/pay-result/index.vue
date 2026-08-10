@@ -15,7 +15,7 @@
 
       <view v-else class="fail-section">
         <view class="icon-wrapper fail">
-          <text class="icon">✕</text>
+          <view class="ico ico-cross ico-xl icon"></view>
         </view>
         <text class="result-title">支付失败</text>
         <text class="result-desc">{{ failReason || '支付过程中出现问题' }}</text>

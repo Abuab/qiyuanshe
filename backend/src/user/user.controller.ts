@@ -41,6 +41,7 @@ import { normalizeImageUrl, resolveAvatarUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { RedisService } from '../common/redis.service'
+import { RecommendService } from './recommend.service'
 
 /** 限流：照片每天最多 50 张 */
 const PHOTO_RATE_LIMIT_MAX = 50
@@ -67,6 +68,7 @@ export class UserController {
     private readonly dynamicService: DynamicService,
     private readonly notifyService: NotifyChannelService,
     private readonly redisService?: RedisService,
+    private readonly recommendService?: RecommendService,
   ) {}
 
   @Get('recommend')
@@ -660,7 +662,11 @@ export class UserController {
       const blockerId = req.user.id
       if (blockerId === blockedUserId) return Result.serverError('不能拉黑自己')
       const exists = await this.blockRepo.findOne({ where: { blockerId, blockedUserId } })
-      if (exists) return Result.success(null, '已拉黑')
+      if (exists) {
+        // 即使拉黑记录已存在，也清除推荐缓存（兼容修复前已有记录但缓存未失效的情况）
+        await this.recommendService?.clearListCachesForUser(blockerId)
+        return Result.success(null, '已拉黑')
+      }
 
       // 事务：创建拉黑记录 + 双向取关
       await this.blockRepo.manager.transaction(async (manager) => {
@@ -670,6 +676,9 @@ export class UserController {
         await manager.delete(Follow, { userId: blockerId, targetUserId: blockedUserId })
         await manager.delete(Follow, { userId: blockedUserId, targetUserId: blockerId })
       })
+
+      // 清除推荐列表缓存，确保被拉黑用户立即从推荐流中消失
+      await this.recommendService?.clearListCachesForUser(blockerId)
 
       return Result.success(null, '已拉黑')
     } catch (error: any) {
@@ -687,6 +696,8 @@ export class UserController {
     try {
       const blockerId = req.user.id
       await this.blockRepo.delete({ blockerId, blockedUserId })
+      // 清除推荐列表缓存，确保取消拉黑后用户可重新出现在推荐流
+      await this.recommendService?.clearListCachesForUser(blockerId)
       return Result.success(null, '已移出黑名单')
     } catch (error: any) {
       return Result.serverError('操作失败: ' + (error?.message || ''))

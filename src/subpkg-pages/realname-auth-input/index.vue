@@ -132,6 +132,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
 import { get, post, put } from '@/utils/request'
+import { safeNavigateBack } from '@/utils/navigate'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { useUserStore } from '@/store/user'
 // @ts-ignore 腾讯云 E证通 SDK 无类型声明
@@ -216,7 +217,7 @@ onShow(() => {
 })
 
 const handleBack = () => {
-  uni.navigateBack()
+  safeNavigateBack()
 }
 
 // ========== 表单 ==========
@@ -376,7 +377,7 @@ async function handleSubmit() {
             uni.showToast({ title: '认证完成', icon: 'success' })
             // 二次认证成功，刷新用户信息并返回
             userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
-            uni.navigateBack()
+            safeNavigateBack()
           } else {
             uni.showModal({
               title: '提示',

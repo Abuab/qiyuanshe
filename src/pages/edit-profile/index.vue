@@ -603,6 +603,7 @@ import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { requireLogin } from '@/utils/auth'
 import { setCropImageData } from '@/utils/crop-bridge'
 import { logger } from '@/utils/logger'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 import CityPicker from '@/components/city-picker/city-picker.vue'
@@ -1769,7 +1770,7 @@ const handleSave = async () => {
     })
     uni.showToast({ title: '保存成功', icon: 'success' })
     setTimeout(() => {
-      uni.navigateBack({ delta: 1 })
+      safeNavigateBack()
     }, 1200)
   } catch (err: unknown) {
     const error = err as Error
@@ -1784,7 +1785,7 @@ const handleSave = async () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack({ delta: 1 })
+  safeNavigateBack()
 }
 
 onUnmounted(() => {

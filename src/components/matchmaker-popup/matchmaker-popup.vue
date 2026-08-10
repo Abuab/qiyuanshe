@@ -37,7 +37,7 @@
             :src="pageIcons.copyIcon"
             mode="aspectFit"
           />
-          <text v-else class="wechat-copy-emoji">📋</text>
+          <view v-else class="ico ico-clipboard ico-sm wechat-copy-icon"></view>
         </view>
 
         <!-- 二维码区 -->
@@ -61,7 +61,7 @@
             :src="pageIcons.saveIcon"
             mode="aspectFit"
           />
-          <text v-else class="save-icon-emoji">⬇️</text>
+          <view v-else class="ico ico-download ico-sm save-icon-img"></view>
           <text class="save-text">或保存图片到相册</text>
         </view>
       </view>

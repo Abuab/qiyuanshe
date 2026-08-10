@@ -34,6 +34,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
+import { safeNavigateBack } from '@/utils/navigate'
 
 const store = useUserStore()
 const isLoggedIn = computed(() => store.isLoggedIn)
@@ -101,7 +102,7 @@ const handleLogout = () => {
 }
 
 const handleBack = () => {
-  uni.navigateBack({ delta: 1 })
+  safeNavigateBack()
 }
 </script>
 
