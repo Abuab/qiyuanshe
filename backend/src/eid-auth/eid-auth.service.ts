@@ -33,11 +33,11 @@ export class EidAuthService {
     @InjectRepository(UserAuth)
     private readonly userAuthRepo: Repository<UserAuth>,
     private readonly entityManager: EntityManager,
+    private readonly cryptoService: CryptoService,
     @Optional()
     private readonly systemService?: SystemService,
     @Optional()
     private readonly notifyChannelService?: NotifyChannelService,
-    private readonly cryptoService: CryptoService,
   ) {}
 
   /**
