@@ -230,6 +230,7 @@
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
         <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
         <el-button size="small" type="info" @click="handleRecalculateScores" :loading="scoresLoading">批量重算评分</el-button>
+        <el-button size="small" type="danger" @click="handleBatchDelete">批量注销</el-button>
         <el-button size="small" @click="clearSelection">取消选择</el-button>
       </div>
 
@@ -572,6 +573,7 @@
                   <!-- 运营操作：打标签 + 查看备注 -->
                   <el-dropdown-item command="tag">打标签</el-dropdown-item>
                   <el-dropdown-item command="viewNotes">查看备注</el-dropdown-item>
+                  <el-dropdown-item command="cancel" divided>注销账号</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -2613,12 +2615,12 @@ async function handleBatchEnable() {
 const handleDelete = async (row: User) => {
   try {
     await ElMessageBox.confirm(
-      `确定删除用户 "${row.nickname}"？数据仍保留，仅后台不显示。`,
-      '确认删除',
-      { type: 'warning' }
+      `确定注销用户「${row.nickname}」吗？此操作将清除其所有个人数据（照片、动态、聊天记录等），释放手机号，立即使其登录态失效。注销后用户可重新注册（全新账号）。`,
+      '确认注销',
+      { type: 'warning', confirmButtonText: '确认注销' }
     )
     await adminUsers.delete(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success('注销成功')
     fetchData()
   } catch (e: any) {
     if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } }
@@ -2629,12 +2631,12 @@ const handleBatchDelete = async () => {
   if (selectedRows.value.length === 0) return
   try {
     await ElMessageBox.confirm(
-      `确定删除 ${selectedRows.value.length} 个用户？`,
-      '确认批量删除',
-      { type: 'warning' }
+      `确定批量注销 ${selectedRows.value.length} 个用户吗？此操作将清除其所有个人数据，释放手机号，立即失效登录态。注销后用户可重新注册（全新账号）。`,
+      '确认批量注销',
+      { type: 'warning', confirmButtonText: '确认注销' }
     )
     await adminUsers.batchDelete(selectedRows.value.map(r => r.id))
-    ElMessage.success('批量删除成功')
+    ElMessage.success('批量注销成功')
     selectedRows.value = []
     fetchData()
   } catch (e: any) {
@@ -2756,6 +2758,7 @@ async function handleDropdownCommand(cmd: string, row: User) {
     case 'notify': handleSendNotify(row); break
     case 'tag': handleOpenTagDialog(row); break
     case 'viewNotes': handleViewNotes(row); break
+    case 'cancel': handleDelete(row); break
   }
 }
 
