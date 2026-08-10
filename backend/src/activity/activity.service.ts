@@ -35,14 +35,14 @@ export class ActivityService {
   }
 
   /** 进行中(1)但已过截止时间的活动，读取时自动视为「已结束」(2) */
-  private applyEndedStatus<T extends { status?: number; endTime?: Date }>(activity: T): T {
+  private applyEndedStatus<T extends { status?: number; endTime?: Date; isActive?: number }>(activity: T): T {
     if (
       activity &&
       activity.status === 1 &&
       activity.endTime &&
       new Date(activity.endTime).getTime() < Date.now()
     ) {
-      return { ...activity, status: 2 }
+      return { ...activity, status: 2, isActive: 0 }
     }
     return activity
   }
