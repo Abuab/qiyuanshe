@@ -49,7 +49,13 @@
         </el-table-column>
         <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
         <el-table-column prop="content" label="内容" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="useCount" label="使用次数" width="90" align="center" sortable="custom" />
+        <el-table-column prop="useCount" label="使用次数" width="100" align="center" sortable="custom">
+          <template #header>
+            <el-tooltip content="统计收到该模板消息的总人数" placement="top">
+              <span>使用次数 <el-icon style="font-size:12px;vertical-align:middle"><QuestionFilled /></el-icon></span>
+            </el-tooltip>
+          </template>
+        </el-table-column>
         <el-table-column prop="lastUsedAt" label="最近使用" width="160" sortable="custom">
           <template #default="{ row }">
             {{ row.lastUsedAt ? formatTime(row.lastUsedAt) : '-' }}
@@ -162,7 +168,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete } from '@element-plus/icons-vue'
+import { Plus, Delete, QuestionFilled } from '@element-plus/icons-vue'
 import { messageTemplateApi, type MessageTemplate } from '../../api/message-template'
 
 const loading = ref(false)

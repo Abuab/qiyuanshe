@@ -633,6 +633,22 @@
         <el-form-item label="用户">
           <span>{{ currentUser?.nickname }}</span>
         </el-form-item>
+        <el-form-item label="消息模板">
+          <el-select
+            v-model="notifyForm.templateId"
+            placeholder="选择模板（可选）"
+            clearable
+            style="width: 100%"
+            @change="onNotifyTemplateSelect"
+          >
+            <el-option
+              v-for="tpl in templateList"
+              :key="tpl.id"
+              :label="`[${categoryLabel(tpl.category)}] ${tpl.name}`"
+              :value="tpl.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="通知内容" required>
           <el-input
             v-model="notifyForm.content"
@@ -655,6 +671,22 @@
       <el-form label-width="100px">
         <el-form-item label="已选用户">
           <span>{{ selectedRows.length }} 人</span>
+        </el-form-item>
+        <el-form-item label="消息模板">
+          <el-select
+            v-model="notifyBatchTemplateId"
+            placeholder="选择模板（可选）"
+            clearable
+            style="width: 100%"
+            @change="onBatchNotifyTemplateSelect"
+          >
+            <el-option
+              v-for="tpl in templateList"
+              :key="tpl.id"
+              :label="`[${categoryLabel(tpl.category)}] ${tpl.name}`"
+              :value="tpl.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="通知内容" required>
           <el-input
@@ -1230,6 +1262,7 @@ import { operationTagApi, OperationTag } from '../../api/operation-tag'
 import { useAdminStore } from '../../store/admin'
 import { adminSystem } from '../../api/system'
 import { formatDate } from '../../utils/date'
+import { messageTemplateApi } from '../../api/message-template'
 import UserNotesDialog from './components/UserNotesDialog.vue'
 import type { User, UserFilter } from '../../api/user'
 
@@ -1695,7 +1728,44 @@ function onVipPackageChange(packageId: number | null) {
 
 const notifyForm = reactive({
   content: '',
+  title: '',
+  templateId: undefined as number | undefined,
 })
+
+// ===== 模板选择 =====
+const templateList = ref<any[]>([]) // 所有发送弹窗共享模板列表
+
+function categoryLabel(cat: string) {
+  const map: Record<string, string> = { notification: '系统', greeting: '欢迎', reminder: '提醒', marketing: '营销' }
+  return map[cat] || cat
+}
+
+async function loadTemplates() {
+  try {
+    const res = await messageTemplateApi.getSelectable()
+    templateList.value = (res as any)?.data || res || []
+  } catch { /* 忽略加载失败 */ }
+}
+
+function onNotifyTemplateSelect(templateId: number | undefined) {
+  notifyForm.templateId = templateId
+  if (!templateId) return
+  const tpl = templateList.value.find(t => t.id === templateId)
+  if (tpl) {
+    notifyForm.title = tpl.title || ''
+    notifyForm.content = tpl.content || ''
+  }
+}
+
+function onBatchNotifyTemplateSelect(templateId: number | undefined) {
+  notifyBatchTemplateId.value = templateId
+  if (!templateId) return
+  // 批量发送无 title，仅填充 content
+  const tpl = templateList.value.find(t => t.id === templateId)
+  if (tpl) {
+    notifyBatchContent.value = tpl.content || ''
+  }
+}
 
 const createFormRef = ref()
 const createLoading = ref(false)
@@ -1871,6 +1941,7 @@ onMounted(() => {
   loadColumnPrefs() // 从 localStorage 恢复列偏好
   fetchData()
   loadDicts()
+  loadTemplates()
   loadHometownProvinces()
   loadResidenceProvinces()
   fetchVipPackages()
@@ -2484,6 +2555,8 @@ async function handleVipSubmit() {
 function handleSendNotify(row: User) {
   currentUser.value = row
   notifyForm.content = ''
+  notifyForm.title = ''
+  notifyForm.templateId = undefined
   notifyDialogVisible.value = true
 }
 
@@ -2494,8 +2567,13 @@ async function handleNotifySubmit() {
   }
   if (!currentUser.value) return
   try {
-    await adminUsers.sendNotification(currentUser.value.id, notifyForm.content)
-    ElMessage.success('通知已记录，推送服务待接入')
+    await adminUsers.sendNotification(
+      currentUser.value.id,
+      notifyForm.content,
+      notifyForm.title || undefined,
+      notifyForm.templateId,
+    )
+    ElMessage.success('通知已发送')
     notifyDialogVisible.value = false
   } catch (error) {
     ElMessage.error('发送通知失败')
@@ -2672,11 +2750,13 @@ async function handleRecalculateScores() {
 // 批量发送通知
 const notifyBatchDialogVisible = ref(false)
 const notifyBatchContent = ref('')
+const notifyBatchTemplateId = ref<number | undefined>(undefined)
 const notifyBatchLoading = ref(false)
 
 function handleBatchSendNotify() {
   if (selectedRows.value.length === 0) return
   notifyBatchContent.value = ''
+  notifyBatchTemplateId.value = undefined
   notifyBatchDialogVisible.value = true
 }
 
@@ -2705,6 +2785,10 @@ async function handleBatchNotifySubmit() {
     }
   } finally {
     notifyBatchLoading.value = false
+  }
+  // 批量发送：模板使用次数只记一次
+  if (successCount > 0 && notifyBatchTemplateId.value) {
+    messageTemplateApi.recordUsage(notifyBatchTemplateId.value).catch(() => {})
   }
   if (successCount > 0) {
     ElMessage.success(`通知已发送：${successCount} 人成功${failCount > 0 ? '，' + failCount + ' 人失败' : ''}`)

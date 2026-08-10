@@ -564,6 +564,20 @@ export class AdminUserService {
   }
 
   async sendNotification(userId: number, title: string, content: string, templateId?: number) {
+    // 使用模板时，对占位符做替换
+    if (templateId) {
+      const template = await this.templateService.detail(templateId)
+      if (template) {
+        const user = await this.userRepository.findOne({ where: { id: userId }, select: ['id', 'nickname', 'userId'] })
+        const userData: Record<string, string> = {
+          nickname: user?.nickname || '',
+          userid: user?.userId || '',
+        }
+        // 前端传的标题/内容来自模板填充，后端再做一次替换确保 {nickname} 被替换
+        title = this.templateService.resolvePlaceholders(title || template.title, userData)
+        content = this.templateService.resolvePlaceholders(content || template.content, userData)
+      }
+    }
     await this.notificationRepository.save(
       this.notificationRepository.create({
         userId,

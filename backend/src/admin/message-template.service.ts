@@ -73,4 +73,11 @@ export class AdminMessageTemplateService {
       select: ['id', 'name', 'title', 'content', 'category', 'placeholders'],
     })
   }
+
+  /** 对模板内容做占位符替换（{nickname} 等），传入用户数据 map */
+  resolvePlaceholders(template: string, userData: Record<string, string>): string {
+    return template.replace(/\{(\w+)\}/g, (match, key) => {
+      return userData[key] ?? match
+    })
+  }
 }

@@ -23,6 +23,23 @@
               </el-radio-group>
             </el-form-item>
 
+            <el-form-item label="消息模板">
+              <el-select
+                v-model="selectedTemplateId"
+                placeholder="选择模板（可选）"
+                clearable
+                style="width: 100%"
+                @change="onTemplateSelect"
+              >
+                <el-option
+                  v-for="tpl in templateList"
+                  :key="tpl.id"
+                  :label="`[${categoryLabel(tpl.category)}] ${tpl.name}`"
+                  :value="tpl.id"
+                />
+              </el-select>
+            </el-form-item>
+
             <el-form-item label="消息标题" prop="title">
               <el-input
                 v-model="form.title"
@@ -270,6 +287,7 @@ import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
 import { Search, ArrowRight, Close, InfoFilled } from '@element-plus/icons-vue'
 import request from '../../api/request'
 import { adminUsers } from '../../api/user'
+import { messageTemplateApi } from '../../api/message-template'
 
 interface FormData {
   title: string
@@ -283,6 +301,8 @@ const resultVisible = ref(false)
 const resultSuccess = ref(false)
 const resultMsg = ref('')
 const sendMode = ref('all')
+const selectedTemplateId = ref<number | undefined>(undefined)
+const templateList = ref<any[]>([])
 
 const form = reactive<FormData>({
   title: '',
@@ -410,6 +430,9 @@ async function handleSend() {
     if (sendMode.value === 'selected' && rightList.value.length > 0) {
       payload.targetUserIds = rightList.value.map(u => u.id)
     }
+    if (selectedTemplateId.value) {
+      payload.templateId = selectedTemplateId.value
+    }
 
     const res: any = await request({
       url: '/admin/user-profiles/notifications/broadcast',
@@ -437,7 +460,30 @@ async function handleSend() {
 function handleReset() {
   form.title = ''
   form.content = ''
+  selectedTemplateId.value = undefined
   formRef.value?.resetFields()
+}
+
+// ===== 模板选择 =====
+function categoryLabel(cat: string) {
+  const map: Record<string, string> = { notification: '系统', greeting: '欢迎', reminder: '提醒', marketing: '营销' }
+  return map[cat] || cat
+}
+
+async function loadTemplates() {
+  try {
+    const res = await messageTemplateApi.getSelectable()
+    templateList.value = (res as any)?.data || res || []
+  } catch { /* 加载失败不影响页面使用 */ }
+}
+
+function onTemplateSelect(templateId: number | undefined) {
+  if (!templateId) return
+  const tpl = templateList.value.find(t => t.id === templateId)
+  if (tpl) {
+    form.title = tpl.title || ''
+    form.content = tpl.content || ''
+  }
 }
 
 // ===== 发送日志 =====
@@ -474,6 +520,7 @@ function formatDate(dateStr: string) {
 
 onMounted(() => {
   loadLogs()
+  loadTemplates()
 })
 </script>
 

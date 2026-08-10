@@ -161,8 +161,8 @@ export const adminUsers = {
     return request.get('/admin/users/export', { params: queryParams })
   },
 
-  sendNotification(id: number, content: string): Promise<ApiResponse> {
-    return request.post(`/admin/users/${id}/notify`, { content })
+  sendNotification(id: number, content: string, title?: string, templateId?: number): Promise<ApiResponse> {
+    return request.post(`/admin/users/${id}/notify`, { content, title, templateId })
   },
 
   // 用户详情页扩展接口

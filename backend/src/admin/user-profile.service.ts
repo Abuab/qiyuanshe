@@ -220,6 +220,19 @@ export class UserProfileService {
   }
 
   async sendNotification(userId: number, title: string, content: string, senderType = 'admin', senderId?: number, templateId?: number) {
+    // 使用模板时，对占位符做替换
+    if (templateId) {
+      const template = await this.templateService.detail(templateId)
+      if (template) {
+        const user = await this.userRepository.findOne({ where: { id: userId }, select: ['id', 'nickname', 'userId'] })
+        const userData: Record<string, string> = {
+          nickname: user?.nickname || '',
+          userid: user?.userId || '',
+        }
+        title = this.templateService.resolvePlaceholders(title || template.title, userData)
+        content = this.templateService.resolvePlaceholders(content || template.content, userData)
+      }
+    }
     const notification = this.notificationRepository.create({
       userId,
       title,
@@ -318,25 +331,37 @@ export class UserProfileService {
     const BATCH_SIZE = 500
     let totalSent = 0
 
+    // 使用模板时，提前加载模板内容（模板详情查询一次即可）
+    let templateTitle = title
+    let templateContent = content
+    if (templateId) {
+      const tmpl = await this.templateService.detail(templateId)
+      if (tmpl) {
+        templateTitle = tmpl.title
+        templateContent = tmpl.content
+      }
+    }
+
     if (targetUserIds && targetUserIds.length > 0) {
       // 指定用户：直接按 ID 列表分批查询
       for (let i = 0; i < targetUserIds.length; i += BATCH_SIZE) {
         const batch = targetUserIds.slice(i, i + BATCH_SIZE)
         const users = await this.userRepository.find({
           where: batch.map(id => ({ id, isDeleted: 0 } as any)),
-          select: ['id'],
+          select: ['id', 'nickname', 'userId'],
         })
         if (users.length === 0) continue
 
-        const notifications = users.map(u =>
-          this.notificationRepository.create({
+        const notifications = users.map(u => {
+          const userData: Record<string, string> = { nickname: u.nickname || '', userid: u.userId || '' }
+          return this.notificationRepository.create({
             userId: u.id,
-            title,
-            content,
+            title: templateId ? this.templateService.resolvePlaceholders(title || templateTitle, userData) : title,
+            content: templateId ? this.templateService.resolvePlaceholders(content || templateContent, userData) : content,
             senderType: 'admin',
             senderId,
-          }),
-        )
+          })
+        })
         await this.notificationRepository.save(notifications)
         totalSent += notifications.length
       }
@@ -346,22 +371,23 @@ export class UserProfileService {
       while (true) {
         const users = await this.userRepository.find({
           where: { isDeleted: 0 },
-          select: ['id'],
+          select: ['id', 'nickname', 'userId'],
           order: { id: 'ASC' },
           skip: offset,
           take: BATCH_SIZE,
         })
         if (users.length === 0) break
 
-        const notifications = users.map(u =>
-          this.notificationRepository.create({
+        const notifications = users.map(u => {
+          const userData: Record<string, string> = { nickname: u.nickname || '', userid: u.userId || '' }
+          return this.notificationRepository.create({
             userId: u.id,
-            title,
-            content,
+            title: templateId ? this.templateService.resolvePlaceholders(title || templateTitle, userData) : title,
+            content: templateId ? this.templateService.resolvePlaceholders(content || templateContent, userData) : content,
             senderType: 'admin',
             senderId,
-          }),
-        )
+          })
+        })
         await this.notificationRepository.save(notifications)
         totalSent += notifications.length
 

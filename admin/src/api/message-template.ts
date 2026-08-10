@@ -47,4 +47,9 @@ export const messageTemplateApi = {
   remove(id: number): Promise<ApiResponse> {
     return request.delete(`/admin/message-templates/${id}`)
   },
+
+  /** 批量/群发场景下，一次性记录模板使用次数 */
+  recordUsage(id: number): Promise<ApiResponse> {
+    return request.post(`/admin/message-templates/${id}/record-usage`)
+  },
 }

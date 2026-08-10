@@ -46,6 +46,13 @@ export class AdminMessageTemplateController {
     return Result.success(list)
   }
 
+  /** 批量/群发场景下，前端调用此接口一次性记录模板使用次数 */
+  @Post(':id/record-usage')
+  async recordUsage(@Param('id', ParseIntPipe) id: number) {
+    await this.templateService.recordUsage(id)
+    return Result.success(null, '已记录')
+  }
+
   @Get(':id')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async detail(@Param('id', ParseIntPipe) id: number) {
