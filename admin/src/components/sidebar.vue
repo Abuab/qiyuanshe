@@ -245,8 +245,10 @@ const appNameShort = computed(() => systemStore.appName.charAt(0))
 const isCollapsed = computed(() => adminStore.isCollapsed)
 const userInfo = computed(() => adminStore.userInfo)
 
-onMounted(() => {
+onMounted(async () => {
   systemStore.fetchSystemConfig()
+  // 提前检查并刷新 token，避免 fetchPendingAuditCount 首次 401 产生日志告警
+  await adminStore.ensureToken()
   adminStore.fetchPendingAuditCount()
   // 每 60 秒轮询一次审核计数
   pendingCountTimer = setInterval(() => adminStore.fetchPendingAuditCount(), 60000)

@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import router from '../router'
 import { adminAudit } from '../api/audit'
 import { adminAuth } from '../api/auth'
+import { tryRefreshToken } from '../api/request'
 
 export interface AdminUser {
   id: number
@@ -45,6 +46,29 @@ export const useAdminStore = defineStore('admin', () => {
       } catch {
         localStorage.removeItem('admin_user')
       }
+    }
+  }
+
+  /**
+   * 确保 accessToken 有效：如果即将过期（5 分钟内），提前刷新
+   * 避免首次 API 请求返回 401 产生日志告警
+   */
+  async function ensureToken() {
+    if (!token.value) return
+    try {
+      const payloadBase64 = token.value.split('.')[1]
+      if (!payloadBase64) return
+      const payload = JSON.parse(atob(payloadBase64))
+      const now = Math.floor(Date.now() / 1000)
+      // 如果 token 在 5 分钟内过期，提前刷新
+      if (payload.exp && payload.exp - now < 300) {
+        const newToken = await tryRefreshToken()
+        if (newToken) {
+          token.value = newToken
+        }
+      }
+    } catch {
+      // 解码失败（非标准 JWT），忽略
     }
   }
 
@@ -195,6 +219,7 @@ export const useAdminStore = defineStore('admin', () => {
     isLoggedIn,
     isImpersonating,
     initApp,
+    ensureToken,
     login,
     mfaLoginVerify,
     logout,

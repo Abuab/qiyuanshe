@@ -175,7 +175,7 @@ function handleUnauthorized() {
 }
 
 /** 尝试用 refreshToken 刷新 accessToken，返回新 token 或 null */
-async function tryRefreshToken(): Promise<string | null> {
+export async function tryRefreshToken(): Promise<string | null> {
   if (isRefreshing && refreshPromise) {
     return refreshPromise
   }
