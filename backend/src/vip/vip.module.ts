@@ -14,6 +14,7 @@ import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
 import { SystemModule } from '../system/system.module'
+import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SystemModule } from '../system/system.module'
     ]),
     ScheduleModule.forRoot(),
     forwardRef(() => SystemModule),
+    UserModule,
   ],
   controllers: [VipController],
   providers: [VipService, VipScheduler, RedisService],

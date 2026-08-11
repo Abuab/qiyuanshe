@@ -10,6 +10,7 @@ import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
+import { RecommendService } from '../user/recommend.service'
 
 export const RED_LINE_TERM_DEFAULT = '红线'
 
@@ -50,6 +51,7 @@ export class VipService {
     private readonly configRepo: Repository<SystemConfig>,
     private readonly redis: RedisService,
     private readonly dataSource: DataSource,
+    private readonly recommendService: RecommendService,
   ) {}
 
   // ========================================================================
@@ -434,9 +436,9 @@ export class VipService {
       await this.userRepo.save(user)
     }
 
-    // 清除缓存
+    // 清除缓存：置顶/取消置顶后推荐列表需立即反映
     await this.redis.del(`recommend:score:${userId}`)
-    this.redis.delByPattern('v3:rec:*').catch(() => {})
+    await this.recommendService.clearAllListCaches()
 
     return { success: true, pinnedUntil: topEndTime }
   }
