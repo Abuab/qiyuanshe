@@ -30,7 +30,7 @@ import { UserModule } from '../user/user.module'
     ]),
     ScheduleModule.forRoot(),
     forwardRef(() => SystemModule),
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   controllers: [VipController],
   providers: [VipService, VipScheduler, RedisService],
