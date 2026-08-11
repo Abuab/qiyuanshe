@@ -138,6 +138,8 @@ services:
       # 服务端口
       PORT: 3000
       NODE_ENV: production
+      # 小程序版本号（读取 .env 的 VITE_APP_VERSION，通过 /api/system/config 返回给前端）
+      VITE_APP_VERSION: ${VITE_APP_VERSION:-}
       # 容器时区（北京时间）：影响 NestJS Logger 时间戳、Date.toString、toLocaleString 等
       TZ: Asia/Shanghai
       # CORS 允许的前端域名（生产环境必须替换为实际域名，通过 .env 覆盖）

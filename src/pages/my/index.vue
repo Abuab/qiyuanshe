@@ -1313,7 +1313,7 @@ const toolGrid7 = [
 }
 
 .footer-version {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #aaa;
   margin-top: 6rpx;
   font-weight: normal;
