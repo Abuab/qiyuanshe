@@ -199,8 +199,11 @@
 
       <!-- ========== 底部陪伴信息（仅登录后显示） ========== -->
       <view v-if="isLoggedIn" class="footer-info">
-        <text class="footer-heart-uni">♥</text>
-        <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
+        <view class="footer-row">
+          <text class="footer-heart-uni">♥</text>
+          <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
+        </view>
+        <text class="footer-version">v{{ appVersion }}</text>
       </view>
       <view class="bottom-safe-area"></view>
     </scroll-view>
@@ -447,6 +450,7 @@ const isLoggedIn = computed(() => userStore.isLoggedIn)
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
 const appName = computed(() => systemStore.appName || '缘来是你')
+const appVersion = computed(() => import.meta.env.VITE_APP_VERSION || '')
 
 // 6位数字用户ID（用于展示 ID:123456）
 const formattedUserId = computed(() => {
@@ -1292,9 +1296,14 @@ const toolGrid7 = [
 // ========== 底部信息 ==========
 .footer-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   padding: 32rpx 0 8rpx;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
 }
 
 .footer-heart-uni {
@@ -1307,6 +1316,13 @@ const toolGrid7 = [
 .footer-text {
   font-size: 24rpx;
   color: #999;
+}
+
+.footer-version {
+  font-size: 20rpx;
+  color: #aaa;
+  margin-top: 6rpx;
+  font-weight: normal;
 }
 
 .bottom-safe-area {
