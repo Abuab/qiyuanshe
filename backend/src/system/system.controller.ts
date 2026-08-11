@@ -70,6 +70,7 @@ export class PublicSystemController {
         latitude: parseFloat(configs.storeCert?.latitude) || 0,
         longitude: parseFloat(configs.storeCert?.longitude) || 0,
       },
+      appVersion: process.env.VITE_APP_VERSION || '',
     }
 
     return Result.success(result)

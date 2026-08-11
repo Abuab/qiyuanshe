@@ -56,6 +56,7 @@ interface SystemConfig {
     latitude: number
     longitude: number
   }
+  appVersion: string
 }
 
 const DEFAULT_ICONS: IconConfig = {
@@ -94,6 +95,7 @@ export const useSystemStore = defineStore('system', () => {
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
   const storeCert = ref<{ name: string; address: string; latitude: number; longitude: number }>({ name: '', address: '', latitude: 0, longitude: 0 })
+  const appVersion = ref<string>('')
   /** AI功能开关配置 */
   const aiMasterEnabled = ref<boolean>(true)
   const aiFeatures = ref<Record<string, boolean>>({})
@@ -133,6 +135,7 @@ export const useSystemStore = defineStore('system', () => {
           defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
           leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
           storeCert.value = res.storeCert ?? storeCert.value
+          appVersion.value = res.appVersion ?? appVersion.value
           icons.value = res.icons ?? DEFAULT_ICONS
           saveToStorage()
           initialLoadDone = true
@@ -287,6 +290,7 @@ export const useSystemStore = defineStore('system', () => {
     defaultAvatar,
     leaveMessageEnabled,
     storeCert,
+    appVersion,
     icons,
     dicts,
     loadSystemConfig,
