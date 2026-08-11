@@ -97,7 +97,7 @@
         <view class="guests-header">
           <text class="guests-title">报名嘉宾</text>
           <view class="guests-count">
-            <view class="ico ico-fire ico-sm fire-icon"></view>
+            <text class="fire-icon">🔥</text>
             <text class="guests-count-text">{{ activity.currentParticipants }}人已报名</text>
           </view>
         </view>
@@ -1220,10 +1220,11 @@ const onShareAppMessage = () => {
   .bottom-right {
     display: flex;
     align-items: center;
+    justify-content: center;
     height: 100%;
 
     .signup-btn {
-      width: 240rpx;
+      width: 510rpx;
       height: 72rpx;
       background: linear-gradient(135deg, #FF6B9D 0%, #FF85A8 100%);
       color: #fff;
@@ -1240,7 +1241,7 @@ const onShareAppMessage = () => {
       }
 
       &.ended {
-        width: 440rpx;
+        width: 510rpx;
         background: #ccc;
         color: #fff;
         font-size: 26rpx;

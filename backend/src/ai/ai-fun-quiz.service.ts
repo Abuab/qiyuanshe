@@ -262,6 +262,8 @@ export class AiFunQuizService {
     // 5. 构建 Prompt
     const user = await this.userRepo.findOne({ where: { id: userId } })
     const userAge = user?.birthYear ? new Date().getFullYear() - user.birthYear : 0
+    const taYear = input.taBirthDay ? parseInt(input.taBirthDay.split('-')[0], 10) : 0
+    const taAge = taYear > 0 ? new Date().getFullYear() - taYear : 0
 
     const prompt = buildFunQuizPrompt({
       userZodiac,
@@ -271,7 +273,7 @@ export class AiFunQuizService {
       userConstDate: getConstellationDateRange(userConstellation),
       taConstDate: getConstellationDateRange(taConstellation),
       userAge,
-      taAge: 0, // 未知对方年龄
+      taAge,
     })
 
     // 6. 创建 AI 调用日志

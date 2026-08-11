@@ -466,39 +466,46 @@ const wrapText = (ctx: any, text: string, maxWidth: number, maxLines: number): s
   return lines
 }
 
+/** 绘制圆角矩形路径（兼容旧版 Canvas API） */
+function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath()
+  ctx.moveTo(x + r, y)
+  ctx.arc(x + w - r, y + r, r, -Math.PI / 2, 0)
+  ctx.arc(x + w - r, y + h - r, r, 0, Math.PI / 2)
+  ctx.arc(x + r, y + h - r, r, Math.PI / 2, Math.PI)
+  ctx.arc(x + r, y + r, r, Math.PI, (Math.PI * 3) / 2)
+  ctx.closePath()
+}
+
 /** 底部小程序码 */
 const drawQRCode = async (ctx: any, template: PosterTemplate) => {
   const qrSize = 180
   const qrX = canvasWidth - PADDING - qrSize
   const qrY = canvasHeight - qrSize - 100
 
-  // 小程序码白色背景 + 边框
-  ctx.setFillStyle('#FFFFFF')
-  ctx.setStrokeStyle(template.tagColor)
-  ctx.setLineWidth(3)
-  ctx.beginPath()
-  ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
-  ctx.fill()
-  ctx.stroke()
-
   // 加载真实小程序码：扫码直达该用户详情页（后端优先返回微信小程序码，失败回退链接二维码）
-  // 注意：必须显式拼接 /api 前缀，因为 getBaseUrl() 在某些环境下可能不含 /api，
-  // 导致 uni.downloadFile 请求的 URL 缺失 /api 路径前缀而 404
   const qrCodeUrl = `${getServerBaseUrl()}/api/personality/user-share-qr?userId=${userId.value}`
 
   try {
     const tempFilePath = await downloadImage(qrCodeUrl)
-    ctx.save()
-    ctx.beginPath()
-    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
-    ctx.clip()
+
+    // 先画白色圆角矩形背景
+    ctx.setFillStyle('#FFFFFF')
+    roundRect(ctx, qrX, qrY, qrSize, qrSize, 12)
+    ctx.fill()
+
+    // 再画边框
+    ctx.setStrokeStyle(template.tagColor)
+    ctx.setLineWidth(3)
+    roundRect(ctx, qrX, qrY, qrSize, qrSize, 12)
+    ctx.stroke()
+
+    // 最后画小程序码图片（不使用 clip，直接绘制）
     ctx.drawImage(tempFilePath, qrX, qrY, qrSize, qrSize)
-    ctx.restore()
   } catch (_) {
     // 加载失败：显示灰色占位
     ctx.setFillStyle('#F5F5F5')
-    ctx.beginPath()
-    ctx.roundRect?.(qrX, qrY, qrSize, qrSize, 12)
+    roundRect(ctx, qrX, qrY, qrSize, qrSize, 12)
     ctx.fill()
     ctx.setFillStyle('#CCCCCC')
     ctx.setFontSize(16)

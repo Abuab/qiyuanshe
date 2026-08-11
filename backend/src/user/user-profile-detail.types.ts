@@ -40,6 +40,10 @@ export interface BasicInfoSection {
   education: string
   /** 生日（不含年份，展示用） */
   birthDay: string
+  /** 出生月份 (1-12)，用于趣味测试等场景 */
+  birthMonth?: number
+  /** 出生日期中的日 (1-31)，用于趣味测试等场景 */
+  birthDayOfMonth?: number
   /** 生肖 */
   zodiac: string
   /** 星座 */

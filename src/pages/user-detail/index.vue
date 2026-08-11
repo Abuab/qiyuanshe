@@ -240,7 +240,7 @@
         <!-- ========== AI缘分分析入口 ========== -->
         <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openAiMatch">
           <view class="ai-entry-content">
-            <view class="ico ico-heart-pink ico-lg ai-entry-emoji"></view>
+            <text class="ai-entry-emoji">💗</text>
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI缘分分析</text>
               <text class="ai-entry-desc">测测你们缘分契合度</text>
@@ -252,7 +252,7 @@
         <!-- ========== AI趣味测试入口 ========== -->
         <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openFunQuiz">
           <view class="ai-entry-content">
-            <view class="ico ico-crystal-ball ico-lg ai-entry-emoji"></view>
+            <text class="ai-entry-emoji">🔮</text>
             <view class="ai-entry-info">
               <text class="ai-entry-title">AI趣味测试</text>
               <text class="ai-entry-desc">看星座生肖契合密码</text>
@@ -1504,17 +1504,27 @@ const extractBirthYear = (birthDay?: string): number | null => {
   return match ? parseInt(match[1], 10) : null
 }
 
+/** 拼接完整生日 YYYY-MM-DD，缺失的月份/日期默认为 01 */
+function padZero(n?: number | null): string {
+  if (!n) return '01'
+  return String(n).padStart(2, '0')
+}
+
 const openFunQuiz = () => {
   if (!isLoggedIn.value) {
     goToLogin()
     return
   }
   funQuizResult.value = null
-  const myBirthYear = userStore.userInfo?.birthYear
-  funQuizBirthday.value.userBirthDay = myBirthYear ? `${myBirthYear}-01-01` : ''
-  const taBirthDay = profileData.value?.basicInfo?.birthDay
-  const taYear = extractBirthYear(taBirthDay)
-  funQuizBirthday.value.taBirthDay = taYear ? `${taYear}-01-01` : ''
+  // 当前用户：取 store 中完整年月日
+  const myY = userStore.userInfo?.birthYear
+  const myM = userStore.userInfo?.birthMonth
+  const myD = userStore.userInfo?.birthDay
+  funQuizBirthday.value.userBirthDay = myY ? `${myY}-${padZero(myM)}-${padZero(myD)}` : ''
+  // 目标用户：取详情接口中的完整年月日
+  const bi = profileData.value?.basicInfo
+  const taYear = bi?.birthDay ? extractBirthYear(bi.birthDay) : null
+  funQuizBirthday.value.taBirthDay = taYear ? `${taYear}-${padZero(bi?.birthMonth)}-${padZero(bi?.birthDayOfMonth)}` : ''
   showFunQuizPopup.value = true
 }
 
@@ -1543,11 +1553,13 @@ const submitFunQuiz = async () => {
 
 const retryFunQuiz = () => {
   funQuizResult.value = null
-  const myBirthYear = userStore.userInfo?.birthYear
-  funQuizBirthday.value.userBirthDay = myBirthYear ? `${myBirthYear}-01-01` : ''
-  const taBirthDay2 = profileData.value?.basicInfo?.birthDay
-  const taYear2 = extractBirthYear(taBirthDay2)
-  funQuizBirthday.value.taBirthDay = taYear2 ? `${taYear2}-01-01` : ''
+  const myY = userStore.userInfo?.birthYear
+  const myM = userStore.userInfo?.birthMonth
+  const myD = userStore.userInfo?.birthDay
+  funQuizBirthday.value.userBirthDay = myY ? `${myY}-${padZero(myM)}-${padZero(myD)}` : ''
+  const bi = profileData.value?.basicInfo
+  const taYear = bi?.birthDay ? extractBirthYear(bi.birthDay) : null
+  funQuizBirthday.value.taBirthDay = taYear ? `${taYear}-${padZero(bi?.birthMonth)}-${padZero(bi?.birthDayOfMonth)}` : ''
 }
 
 const profileGenLoading = ref(false)

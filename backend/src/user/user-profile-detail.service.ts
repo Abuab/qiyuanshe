@@ -306,6 +306,8 @@ export class UserProfileDetailService {
       weight: user.weight || 0,
       education: user.education || '',
       birthDay: user.birthYear ? `${user.birthYear}年` : '',
+      birthMonth: user.birthMonth ?? undefined,
+      birthDayOfMonth: user.birthDay ?? undefined,
       zodiac: user.zodiac || '',
       constellation: user.constellation || '',
       occupation: user.occupation || '',
