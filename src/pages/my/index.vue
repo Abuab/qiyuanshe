@@ -75,7 +75,7 @@
       </view>
     </view>
 
-    <view class="scroll-wrap">
+    <view class="scroll-wrap" :style="{ top: topPinkHeight + 'px' }">
     <scroll-view
       class="content-scroll"
       scroll-y
@@ -203,7 +203,7 @@
           <text class="footer-heart-uni">♥</text>
           <text class="footer-text">{{ appName }}已经陪伴您{{ daysSinceCreation }}天</text>
         </view>
-        <text class="footer-version">v{{ appVersion }}</text>
+        <text class="footer-version">{{ appVersion }}</text>
       </view>
       <view class="bottom-safe-area"></view>
     </scroll-view>
@@ -379,9 +379,26 @@ const vipCardTexts = computed(() => {
 const currentCarouselIdx = ref(0)
 let carouselTimer: ReturnType<typeof setInterval> | null = null
 
+// 顶部粉色区域的实际高度（用于绝对定位 scroll-view）
+const topPinkHeight = ref(0)
+
+// 测量顶部粉色区域高度，确保 scroll-view 获得精确的剩余空间
+const measureTopPinkHeight = () => {
+  const query = uni.createSelectorQuery()
+  query.select('.top-pink-area').boundingClientRect((rect: any) => {
+    if (rect && rect.height > 0) {
+      topPinkHeight.value = rect.height
+    }
+  }).exec()
+}
+
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
+  // 估算顶部区域高度，设置 scroll-wrap 初始 top 值（避免初始渲染时位置错乱）
+  const winInfo = uni.getSystemInfoSync()
+  const rpxRatio = (winInfo.screenWidth || 390) / 750
+  topPinkHeight.value = statusBarHeight.value + (88 + 250) * rpxRatio
   loadStats()
   // 启动会员卡片轮播（3秒切换一次）
   if (vipCardTexts.value.length > 1) {
@@ -392,6 +409,8 @@ onMounted(() => {
   // 启动陪伴天数计算（每60分钟更新一次，跨天即可更新）
   calcDays()
   _daysTimer = setInterval(calcDays, 60 * 60 * 1000)
+  // 延迟测量顶部区域实际高度，精确定位 scroll-view
+  setTimeout(measureTopPinkHeight, 150)
 })
 
 onShow(() => {
@@ -415,6 +434,8 @@ onShow(() => {
     if (showProfilePopup.value) {
       calcProfileProgress()
     }
+    // 刷新完成后重新计算陪伴天数（首次挂载时用户数据可能尚未加载）
+    calcDays()
   })
   systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新开关状态
   loadAiProfileText()
@@ -753,13 +774,11 @@ const toolGrid7 = [
 .my-page {
   height: 100vh;
   background-color: #FFF8FA;
-  display: flex;
-  flex-direction: column;
+  position: relative;
 }
 
 // ========== 顶部粉色区域 ==========
 .top-pink-area {
-  flex-shrink: 0;
   background: linear-gradient(180deg, #FFE4EC 0%, #FFF0F5 40%, #FFF8FA 75%, #FFF8FA 100%);
 }
 
@@ -965,13 +984,15 @@ const toolGrid7 = [
 
 // ========== 内容滚动区 ==========
 .scroll-wrap {
-  flex: 1;
-  min-height: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  // top 由 JS 动态设置（测量 .top-pink-area 实际高度）
   overflow: hidden;
 }
 .content-scroll {
   height: 100%;
-  width: 100%;
   background-color: #FFF8FA;
 }
 
