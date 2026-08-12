@@ -58,14 +58,14 @@
         <el-table-column label="用户" min-width="150">
           <template #default="{ row }">
             <div class="user-info">
-              <el-image :src="row.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%">
+              <el-image :src="row.userAvatar" fit="cover" style="width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0">
                 <template #error>
                   <div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#f5f5f5;border-radius:50%">
                     <el-icon :size="16"><User /></el-icon>
                   </div>
                 </template>
               </el-image>
-              <span>{{ row.userNickname || '-' }}</span>
+              <span class="user-name">{{ row.userNickname || '-' }}</span>
             </div>
           </template>
         </el-table-column>
@@ -345,6 +345,13 @@ function getStatusTagType(status: number) {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.user-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .amount {

@@ -292,5 +292,16 @@ async function handleDelete(id: number) {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+
+  :deep(.el-avatar) {
+    flex-shrink: 0;
+  }
+
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 </style>
