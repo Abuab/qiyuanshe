@@ -16,9 +16,12 @@
  *   从项目根目录 backend/.env 或系统环境变量读取
  */
 
-const crypto = require('crypto')
-const fs = require('fs')
-const path = require('path')
+import crypto from 'crypto'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 12
