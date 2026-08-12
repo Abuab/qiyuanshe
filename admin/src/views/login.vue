@@ -106,15 +106,14 @@
                 maxlength="6"
                 placeholder="6位验证码"
                 size="large"
-                @keyup.enter="handleMfaSubmit"
               />
             </el-form-item>
             <el-button
               type="primary"
               size="large"
               :loading="mfaLoading"
+              native-type="submit"
               class="login-button"
-              @click="handleMfaSubmit"
             >
               {{ mfaLoading ? '验证中...' : '验证并登录' }}
             </el-button>
@@ -266,6 +265,9 @@ function handleBackToLogin() {
 }
 
 async function handleMfaSubmit() {
+  // 防重：验证进行中时跳过，避免 Enter/点击重复触发
+  if (mfaLoading.value) return
+
   if (!mfaCode.value) {
     ElMessage.warning('请输入验证码')
     return
