@@ -227,8 +227,10 @@ services:
     networks:
       - lingtong_network
     depends_on:
-      - api
-      - admin
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_healthy
     environment:
       TZ: Asia/Shanghai
     healthcheck:
