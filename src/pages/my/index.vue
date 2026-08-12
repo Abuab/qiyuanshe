@@ -42,14 +42,7 @@
             <view class="profile-id-row">
               <text class="id-badge">ID</text>
               <text class="id-number">{{ formattedUserId }}</text>
-              <image
-                v-if="pageIcons.copy"
-                class="copy-icon"
-                :src="pageIcons.copy"
-                mode="aspectFit"
-                @tap.stop="copyUserId"
-              />
-              <view v-else class="ico ico-clipboard ico-sm copy-icon-box" @tap.stop="copyUserId"></view>
+              <AppIcon name="icon-fuzhi" size="28" color="#999999" @tap.stop="copyUserId" />
             </view>
           </view>
           <view class="edit-btn" @tap.stop="goToEditProfile">

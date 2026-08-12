@@ -189,7 +189,7 @@
     <view v-if="activity" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <view class="bottom-left">
         <button class="action-btn share-btn" open-type="share">
-          <text class="action-icon action-icon-share">↗</text>
+          <AppIcon name="icon-share" size="44" color="#666666" />
           <text class="action-text">分享</text>
         </button>
         <view class="action-btn" @tap="showMatchmakerPopup">
@@ -294,6 +294,7 @@
 import { ref, computed, onMounted } from 'vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import BlockRenderer from '@/components/activity-blocks/BlockRenderer.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'

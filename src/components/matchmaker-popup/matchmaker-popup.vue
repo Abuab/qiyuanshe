@@ -31,13 +31,7 @@
         <!-- 微信号 + 复制图标 -->
         <view class="wechat-row" @tap="copyWechat">
           <text class="wechat-text">微信：{{ matchmaker.wechat }}</text>
-          <image
-            v-if="pageIcons.copyIcon"
-            class="wechat-copy-icon"
-            :src="pageIcons.copyIcon"
-            mode="aspectFit"
-          />
-          <view v-else class="ico ico-clipboard ico-sm wechat-copy-icon"></view>
+          <AppIcon name="icon-fuzhi" size="32" color="#666666" />
         </view>
 
         <!-- 二维码区 -->
@@ -81,6 +75,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'

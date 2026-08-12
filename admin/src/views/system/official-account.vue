@@ -10,13 +10,22 @@
       <el-form label-width="120px">
         <el-form-item label="当前二维码">
           <div class="qrcode-preview">
-            <img
-              v-if="qrcodeUrl"
+            <el-image
+              v-if="qrcodeUrl && !qrcodeError"
               :src="qrcodeUrl"
-              class="qrcode-img"
-              alt="公众号二维码"
-            />
-            <div v-else class="qrcode-empty">
+              style="width: 240px; height: 240px"
+              fit="contain"
+              @error="qrcodeError = true"
+              @load="qrcodeError = false"
+            >
+              <template #error>
+                <div></div>
+              </template>
+            </el-image>
+            <div v-if="qrcodeError" class="qrcode-broken">
+              <span class="broken-text">图片加载失败，请重新上传</span>
+            </div>
+            <div v-if="!qrcodeUrl" class="qrcode-empty">
               <el-icon :size="48"><PictureFilled /></el-icon>
               <p>暂未设置二维码</p>
             </div>
@@ -25,14 +34,15 @@
 
         <el-form-item label="更换二维码">
           <el-upload
-            :auto-upload="false"
+            action="#"
+            :http-request="handleUpload"
             :show-file-list="false"
-            :on-change="handleFileChange"
             accept="image/jpeg,image/png"
+            :before-upload="beforeUpload"
           >
             <el-button type="primary">
               <el-icon class="el-icon--left"><Upload /></el-icon>
-              选择图片
+              选择图片并上传
             </el-button>
           </el-upload>
           <div class="upload-tip">
@@ -40,28 +50,8 @@
           </div>
         </el-form-item>
 
-        <el-form-item v-if="previewUrl">
-          <div class="file-preview">
-            <img
-              :src="previewUrl"
-              class="qrcode-img"
-              alt="预览"
-            />
-            <div class="file-name">{{ selectedFile?.name }}</div>
-          </div>
-        </el-form-item>
-
-        <el-form-item>
+        <el-form-item v-if="qrcodeUrl">
           <el-button
-            type="primary"
-            :loading="uploading"
-            :disabled="!selectedFile"
-            @click="handleUpload"
-          >
-            {{ uploading ? '上传中...' : '确认上传' }}
-          </el-button>
-          <el-button
-            v-if="qrcodeUrl"
             type="danger"
             plain
             :loading="deleting"
@@ -82,9 +72,7 @@ import { Upload, PictureFilled } from '@element-plus/icons-vue'
 import { adminSystem } from '../../api/system'
 
 const qrcodeUrl = ref('')
-const selectedFile = ref<File | null>(null)
-const previewUrl = ref('')
-const uploading = ref(false)
+const qrcodeError = ref(false)
 const deleting = ref(false)
 
 const fetchQrcode = async () => {
@@ -93,68 +81,42 @@ const fetchQrcode = async () => {
     if (res.success && res.data) {
       qrcodeUrl.value = res.data
     }
+    qrcodeError.value = false
   } catch {
     // ignore
   }
 }
 
-const handleFileChange = (uploadFile: any) => {
-  const file = uploadFile.raw as File
-  if (!file) return
-
-  // 格式校验
+const beforeUpload = (file: File) => {
   const allowedTypes = ['image/jpeg', 'image/png']
   if (!allowedTypes.includes(file.type)) {
     ElMessage.error('仅支持 JPG / PNG 格式的图片')
-    return
+    return false
   }
-
-  // 大小校验
   const maxSize = 2 * 1024 * 1024
   if (file.size > maxSize) {
     ElMessage.error('图片大小不能超过 2MB')
-    return
+    return false
   }
-
-  // 释放旧的 blob URL
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
-
-  selectedFile.value = file
-  previewUrl.value = URL.createObjectURL(file)
+  return true
 }
 
-const handleUpload = async () => {
-  if (!selectedFile.value) return
-  uploading.value = true
+const handleUpload = async (options: any) => {
+  const formData = new FormData()
+  formData.append('file', options.file)
   try {
-    // 1. 上传图片
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
     const uploadRes = await adminSystem.upload(formData)
-
     if (!uploadRes.success || !uploadRes.data?.url) {
       ElMessage.error(uploadRes.message || '图片上传失败')
       return
     }
-
-    // 2. 保存配置
+    // 保存到系统配置
     await adminSystem.updateConfig('officialAccountQrcode', uploadRes.data.url)
-
-    // 加时间戳打破 img 缓存
     qrcodeUrl.value = uploadRes.data.url + '?t=' + Date.now()
-    selectedFile.value = null
-    // 释放 blob URL
-    if (previewUrl.value) {
-      URL.revokeObjectURL(previewUrl.value)
-    }
-    previewUrl.value = ''
+    qrcodeError.value = false
     ElMessage.success('二维码已更新')
   } catch (e: any) {
     ElMessage.error(e?.message || '上传失败')
-  } finally {
-    uploading.value = false
   }
 }
 
@@ -171,6 +133,7 @@ const handleDelete = async () => {
   try {
     await adminSystem.updateConfig('officialAccountQrcode', '')
     qrcodeUrl.value = ''
+    qrcodeError.value = false
     ElMessage.success('二维码已删除')
   } catch (e: any) {
     ElMessage.error(e?.message || '删除失败')
@@ -218,27 +181,25 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.qrcode-img {
+.qrcode-broken {
   width: 240px;
   height: 240px;
-  object-fit: contain;
+  border: 1px dashed #e6a23c;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.broken-text {
+  font-size: 13px;
+  color: #e6a23c;
 }
 
 .upload-tip {
   margin-top: 8px;
   font-size: 12px;
   color: #999;
-}
-
-.file-preview {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.file-name {
-  margin-top: 8px;
-  font-size: 13px;
-  color: #666;
 }
 </style>
