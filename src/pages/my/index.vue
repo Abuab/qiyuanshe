@@ -182,10 +182,7 @@
 
       <!-- ========== 公众号关注 ========== -->
       <view v-if="isLoggedIn && systemStore.showOfficialAccountPrompt" class="oa-card" @tap="handleOfficialAccount">
-        <view class="oa-avatar red-ring-heart">
-          <image v-if="pageIcons.oaHeart" class="oa-avatar-img" :src="pageIcons.oaHeart" mode="aspectFit" />
-          <uni-icons v-else type="heart-filled" size="36rpx" color="#FF6B6B"></uni-icons>
-        </view>
+        <image class="oa-avatar-icon" src="/static/chat-heart.png" mode="aspectFit" />
         <view class="oa-info">
           <text class="oa-name">{{ appName }}公众号</text>
           <text class="oa-desc">关注后可获得账号消息通知等全功能体验</text>
@@ -1250,25 +1247,11 @@ const toolGrid7 = [
   border-radius: 16rpx;
 }
 
-.oa-avatar {
+.oa-avatar-icon {
   width: 60rpx;
   height: 60rpx;
-  border-radius: 50%;
   flex-shrink: 0;
   margin-right: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &.red-ring-heart {
-    background: #fff;
-    border: 3rpx solid #FF6B6B;
-  }
-}
-
-.oa-avatar-img {
-  width: 36rpx;
-  height: 36rpx;
 }
 
 .footer-heart-circle {

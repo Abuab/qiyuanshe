@@ -10,19 +10,12 @@
       <el-form label-width="120px">
         <el-form-item label="当前二维码">
           <div class="qrcode-preview">
-            <el-image
+            <img
               v-if="qrcodeUrl"
               :src="qrcodeUrl"
-              style="width: 240px; height: 240px"
-              fit="contain"
-            >
-              <template #error>
-                <div class="image-error">
-                  <el-icon><PictureFilled /></el-icon>
-                  <span>加载失败</span>
-                </div>
-              </template>
-            </el-image>
+              class="qrcode-img"
+              alt="公众号二维码"
+            />
             <div v-else class="qrcode-empty">
               <el-icon :size="48"><PictureFilled /></el-icon>
               <p>暂未设置二维码</p>
@@ -47,14 +40,14 @@
           </div>
         </el-form-item>
 
-        <el-form-item v-if="selectedFile">
+        <el-form-item v-if="previewUrl">
           <div class="file-preview">
-            <el-image
+            <img
               :src="previewUrl"
-              style="width: 240px; height: 240px"
-              fit="contain"
+              class="qrcode-img"
+              alt="预览"
             />
-            <div class="file-name">{{ selectedFile.name }}</div>
+            <div class="file-name">{{ selectedFile?.name }}</div>
           </div>
         </el-form-item>
 
@@ -123,6 +116,11 @@ const handleFileChange = (uploadFile: any) => {
     return
   }
 
+  // 释放旧的 blob URL
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+
   selectedFile.value = file
   previewUrl.value = URL.createObjectURL(file)
 }
@@ -144,8 +142,13 @@ const handleUpload = async () => {
     // 2. 保存配置
     await adminSystem.updateConfig('officialAccountQrcode', uploadRes.data.url)
 
-    qrcodeUrl.value = uploadRes.data.url
+    // 加时间戳打破 img 缓存
+    qrcodeUrl.value = uploadRes.data.url + '?t=' + Date.now()
     selectedFile.value = null
+    // 释放 blob URL
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value)
+    }
     previewUrl.value = ''
     ElMessage.success('二维码已更新')
   } catch (e: any) {
@@ -215,16 +218,10 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.image-error {
+.qrcode-img {
   width: 240px;
   height: 240px;
-  border: 1px dashed #dcdfe6;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #c0c4cc;
+  object-fit: contain;
 }
 
 .upload-tip {
