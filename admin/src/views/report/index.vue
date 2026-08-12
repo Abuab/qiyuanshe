@@ -28,7 +28,8 @@
             <el-select v-model="filterForm.reason" placeholder="全部" clearable style="width: 130px">
               <el-option label="全部" value="" />
               <el-option label="骚扰" value="harassment" />
-              <el-option label="诈骗" value="fraud" />
+              <el-option label="诈骗钱财" value="fraud" />
+              <el-option label="酒托/饭托" value="bar_fraud" />
               <el-option label="虚假资料" value="fake_info" />
               <el-option label="辱骂" value="abuse" />
               <el-option label="其他" value="other" />
@@ -327,7 +328,8 @@ function getTypeTagType(type?: string) {
 function getReasonName(reason?: string) {
   const map: Record<string, string> = {
     harassment: '骚扰',
-    fraud: '诈骗',
+    fraud: '诈骗钱财',
+    bar_fraud: '酒托/饭托',
     fake_info: '虚假资料',
     abuse: '辱骂',
     other: '其他',

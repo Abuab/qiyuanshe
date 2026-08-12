@@ -16,6 +16,7 @@ export enum ReportType {
 export enum ReportReason {
   HARASSMENT = 'harassment',
   FRAUD = 'fraud',
+  BAR_FRAUD = 'bar_fraud',
   FAKE_INFO = 'fake_info',
   ABUSE = 'abuse',
   OTHER = 'other',

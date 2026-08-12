@@ -899,7 +899,7 @@ const reportReasons = [
   { label: '其他', value: 'other' },
   { label: '色情相关', value: 'porn' },
   { label: '头像/资料虚假', value: 'fake_info' },
-  { label: '酒托/饭托', value: 'fraud' },
+  { label: '酒托/饭托', value: 'bar_fraud' },
   { label: '诈骗钱财', value: 'fraud' },
 ]
 const selectedReportReasons = ref<string[]>([])

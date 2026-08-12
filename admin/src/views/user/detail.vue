@@ -2374,7 +2374,7 @@ function getReportTypeName(type: string) {
   return map[type] || type
 }
 function getReportReasonName(reason: string) {
-  const map: Record<string, string> = { harassment: '骚扰', fraud: '诈骗', fake_info: '虚假信息', abuse: '不当内容', other: '其他' }
+  const map: Record<string, string> = { harassment: '骚扰', fraud: '诈骗钱财', bar_fraud: '酒托/饭托', fake_info: '虚假信息', abuse: '不当内容', other: '其他' }
   return map[reason] || reason
 }
 function getReportStatusName(status: number) { return { 0: '待处理', 1: '已处理', 2: '已驳回' }[status] || '未知' }

@@ -10,7 +10,7 @@ export interface ReportItem {
   targetPublicId?: string
   targetNickname?: string
   type: 'user' | 'content' | 'photo'
-  reason: 'harassment' | 'fraud' | 'fake_info' | 'abuse' | 'other'
+  reason: 'harassment' | 'fraud' | 'bar_fraud' | 'fake_info' | 'abuse' | 'other'
   description?: string
   evidence?: string
   status: number
