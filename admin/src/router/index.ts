@@ -102,6 +102,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '系统配置', requiresAuth: true },
       },
       {
+        path: '/system/official-account',
+        name: 'OfficialAccount',
+        component: () => import('../views/system/official-account.vue'),
+        meta: { title: '公众号设置', requiresAuth: true },
+      },
+      {
         path: '/system/store-cert',
         name: 'StoreCertConfig',
         component: () => import('../views/system/store-cert.vue'),

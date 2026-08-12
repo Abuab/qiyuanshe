@@ -3,7 +3,11 @@
     <!-- 顶部固定导航 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-inner">
+        <view class="nav-left" @tap="goHome">
+          <AppIcon name="icon-home" size="44" color="#333333" />
+        </view>
         <text class="nav-title">个人中心</text>
+        <view class="nav-right" />
       </view>
     </view>
 
@@ -236,6 +240,13 @@
       :next-step-url="profileNextStepUrl"
     />
 
+    <!-- 关注公众号弹窗 -->
+    <OfficialAccountPopup
+      :show="showOaPopup"
+      :qrcode-url="systemStore.officialAccountQrcode"
+      @update:show="showOaPopup = $event"
+    />
+
   </view>
 </template>
 
@@ -249,6 +260,7 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import FeedbackPopup from '@/components/feedback-popup/feedback-popup.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
+import OfficialAccountPopup from '@/components/OfficialAccountPopup/OfficialAccountPopup.vue'
 import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 import { getFullImageUrl } from '@/utils/common'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
@@ -443,6 +455,11 @@ const onAvatarError = () => {
 }
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
+
+const goHome = () => {
+  uni.switchTab({ url: '/pages/index/index' })
+}
+
 const userInfo = computed(() => userStore.userInfo)
 const isVipValid = computed(() => userStore.isVipValid)
 const appName = computed(() => systemStore.appName || '缘来是你')
@@ -508,9 +525,9 @@ const copyUserId = () => {
 }
 
 const handleOfficialAccount = () => {
-  // 跳转公众号关注引导页（小程序需关联公众号后使用 official-account 组件）
-  uni.showToast({ title: '请前往微信搜索并关注公众号', icon: 'none' })
+  showOaPopup.value = true
 }
+const showOaPopup = ref(false)
 
 const showComingSoon = () => {
   uni.showToast({ title: '该功能正在开发中', icon: 'none' })
@@ -770,8 +787,16 @@ const toolGrid7 = [
 .nav-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   height: 88rpx;
+}
+
+.nav-left,
+.nav-right {
+  width: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-title {

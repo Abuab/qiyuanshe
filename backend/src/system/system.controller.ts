@@ -59,6 +59,8 @@ export class PublicSystemController {
       // 功能开关
       chatEnabled: configs.basic?.chatEnabled !== false,
       vipEnabled: configs.basic?.vipEnabled !== false,
+      // 公众号二维码（管理员可通过后台更换）
+      officialAccountQrcode: configs.basic?.officialAccountQrcode || '',
       // 默认头像（管理后台可配置，为空则前端使用内置默认图）
       defaultAvatar: configs.basic?.defaultAvatar || '',
       // 留言功能开关（我的喜欢-互相喜欢 去留言按钮）

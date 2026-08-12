@@ -5,12 +5,7 @@
       <!-- 第一级：标题 -->
       <view class="nav-level1">
         <view class="nav-left" @tap="goHome">
-          <image
-            class="home-icon-img"
-            :src="dynamicHomeIcon"
-            mode="aspectFit"
-            @error="handleImageError"
-          />
+          <AppIcon name="icon-home" size="44" color="#333333" />
         </view>
         <text class="nav-title">动态</text>
         <view class="nav-right" />
@@ -266,6 +261,7 @@ import { useImageFallback } from '@/composables/useImageFallback'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { useIcon } from '@/composables/useIcon'
@@ -324,11 +320,6 @@ const oppositeGender = computed(() => {
   if (myGender === 2) return 1 // 女性 → 只看男性
   if (myGender === 1) return 2 // 男性 → 只看女性
   return 0 // 未设置性别 → 不过滤
-})
-
-// 动态页左上角返回主页图标（后台可配置）
-const dynamicHomeIcon = computed(() => {
-  return getPageIcon('dynamicHome') || '/static/icons/icon-home.png'
 })
 
 // 红娘牵线眼睛图标（后台可配置）
@@ -721,13 +712,8 @@ onShow(() => {
   align-items: center;
 }
 
-.home-icon-img {
-  width: 44rpx;
-  height: 44rpx;
-}
-
 .nav-right {
-  width: 80rpx;
+  width: 88rpx;
 }
 
 .nav-title {

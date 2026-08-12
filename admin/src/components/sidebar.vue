@@ -163,6 +163,7 @@
           <span>系统配置</span>
         </template>
         <el-menu-item index="/system/config">基础配置</el-menu-item>
+        <el-menu-item index="/system/official-account">公众号设置</el-menu-item>
         <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
         <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
         <el-menu-item index="/notification/broadcast">群发消息</el-menu-item>

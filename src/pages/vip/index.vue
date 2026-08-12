@@ -4,7 +4,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <!-- 第一级：当前页面标题 + 返回 -->
       <view class="nav-level1">
-        <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
+        <view class="nav-left" @tap="handleBack"><AppIcon name="icon-home" size="44" color="#333333" /></view>
         <text class="nav-title">{{ currentTabLabel }}</text>
         <view class="nav-right"></view>
       </view>
@@ -306,6 +306,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { get, post, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -714,12 +715,6 @@ onShow(() => {
   align-items: center;
 }
 
-.back-icon {
-  font-size: 18px;
-  color: #333;
-  font-weight: bold;
-}
-
 // 第二级：Tab 切换行
 .nav-level2 {
   display: flex;
@@ -769,7 +764,7 @@ onShow(() => {
 // ===== 内容区 =====
 .tab-content {
   flex: 1;
-  overflow: hidden;
+  overflow: visible;
 }
 
 // ===== VIP 会员 - 头部特权 =====

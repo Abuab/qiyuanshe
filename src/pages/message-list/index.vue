@@ -2,7 +2,7 @@
   <view class="message-page">
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <AppIcon name="icon-home" size="44" color="#333333" />
       </view>
       <view class="nav-title">消息列表</view>
       <view class="nav-right" />
@@ -95,6 +95,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -356,11 +357,6 @@ function isImagePreview(item: UserMessage): boolean {
 .nav-left {
   display: flex;
   align-items: center;
-}
-
-.back-icon {
-  font-size: 40rpx;
-  color: #333;
 }
 
 .nav-title {
