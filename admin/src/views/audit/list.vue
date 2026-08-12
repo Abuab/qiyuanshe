@@ -66,23 +66,25 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="提交人" width="160">
+        <el-table-column label="提交人" width="180">
           <template #default="{ row }">
             <div class="submitter" v-if="row.submitter">
               <el-image
                 :src="row.submitter.avatar"
                 fit="cover"
-                style="width: 36px; height: 36px; border-radius: 50%; cursor: pointer"
+                class="submitter-avatar"
                 @click="goUserDetail(row.submitter.id)"
               >
                 <template #error>
-                  <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border-radius: 50%">
+                  <div class="submitter-avatar-fallback">
                     <el-icon :size="18"><User /></el-icon>
                   </div>
                 </template>
               </el-image>
-              <span class="submitter-nickname" @click="goUserDetail(row.submitter.id)">{{ row.submitter.nickname }}</span>
-              <span class="submitter-id">ID: {{ row.submitter.userId ?? row.submitterId }}</span>
+              <div class="submitter-info">
+                <span class="submitter-nickname" @click="goUserDetail(row.submitter.id)">{{ row.submitter.nickname }}</span>
+                <span class="submitter-id">ID: {{ row.submitter.userId ?? row.submitterId }}</span>
+              </div>
             </div>
             <span v-else class="text-muted">系统提交</span>
           </template>
@@ -610,9 +612,38 @@ function getTypeTagType(type: string) {
   align-items: center;
   gap: 8px;
 
+  .submitter-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .submitter-avatar-fallback {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f5f5;
+    border-radius: 50%;
+  }
+
+  .submitter-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+  }
+
   .submitter-nickname {
     cursor: pointer;
     color: #303133;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     &:hover {
       color: var(--el-color-primary);
     }
@@ -620,6 +651,9 @@ function getTypeTagType(type: string) {
   .submitter-id {
     font-size: 11px;
     color: #909399;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

@@ -725,9 +725,9 @@ onUnmounted(() => {
   width: 36px; height: 36px; border-radius: 50%;
   background: #f5f5f5; display: flex; align-items: center; justify-content: center;
 }
-.user-text { display: flex; flex-direction: column; }
-.user-name { font-size: 13px; color: #303133; font-weight: 500; }
-.user-id { font-size: 11px; color: #909399; }
+.user-text { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.user-name { font-size: 13px; color: #303133; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-id { font-size: 11px; color: #909399; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .wait-normal { color: #E6A23C; }
 .wait-overdue { color: #F56C6C; font-weight: bold; }

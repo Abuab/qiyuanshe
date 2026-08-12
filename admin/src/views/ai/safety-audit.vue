@@ -524,9 +524,9 @@ const formatTime = (s: string): string => {
 .batch-bar { padding: 8px 0 16px; display: flex; gap: 12px; }
 
 // ===== 用户信息 =====
-.user-cell { display: flex; flex-direction: column; gap: 2px; }
-.user-name { font-size: 13px; color: #333; }
-.user-id { font-size: 11px; color: #999; }
+.user-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.user-name { font-size: 13px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-id { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .safe-text { color: #67C23A; font-size: 12px; }
 
