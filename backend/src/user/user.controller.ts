@@ -369,8 +369,9 @@ export class UserController {
     @Request() req: any,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
+    @Query('type') type?: string,
   ) {
-    return this.userService.getMyVisitorsWithCount(req.user.id, page, limit)
+    return this.userService.getMyVisitorsWithCount(req.user.id, page, limit, type)
   }
 
   // ===== 我看过谁（浏览记录） =====

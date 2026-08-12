@@ -1092,13 +1092,16 @@ export class UserService {
   }
 
   // ===== 谁看过我（访客列表，去重+计数） =====
+  // type='like' 时仅返回也喜欢（关注）了当前用户的访客
   async getMyVisitorsWithCount(
     userId: number,
     page: number = 1,
     limit: number = 20,
+    type?: string,
   ): Promise<PaginatedResult<any>> {
     const pageNum = Math.max(1, parseInt(page as any) || 1)
     const pageSize = Math.max(1, Math.min(100, parseInt(limit as any) || 20))
+    const onlyLike = type === 'like'
 
     const subQuery = this.visitRepository
       .createQueryBuilder('v')
@@ -1110,9 +1113,15 @@ export class UserService {
       .andWhere('v.visitorUserId != :selfId', { selfId: userId })
       .andWhere('u.isDeleted = :isDel', { isDel: 0 })
       .andWhere('u.status = :status', { status: 1 })
-      .groupBy('v.visitorUserId')
 
-    const total = await this.visitRepository
+    if (onlyLike) {
+      subQuery
+        .innerJoin('follows', 'f', 'f.user_id = v.visitorUserId AND f.target_user_id = v.userId')
+    }
+
+    subQuery.groupBy('v.visitorUserId')
+
+    const totalQuery = this.visitRepository
       .createQueryBuilder('v')
       .select('COUNT(DISTINCT v.visitorUserId)', 'cnt')
       .innerJoin('v.visitorUser', 'u')
@@ -1120,6 +1129,13 @@ export class UserService {
       .andWhere('v.visitorUserId != :selfId2', { selfId2: userId })
       .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
       .andWhere('u.status = :status2', { status2: 1 })
+
+    if (onlyLike) {
+      totalQuery
+        .innerJoin('follows', 'f', 'f.user_id = v.visitorUserId AND f.target_user_id = v.userId')
+    }
+
+    const total = await totalQuery
       .getRawOne()
       .then(r => Number(r?.cnt) || 0)
 

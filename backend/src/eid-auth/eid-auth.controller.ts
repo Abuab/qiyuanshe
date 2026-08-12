@@ -1,8 +1,10 @@
 import {
   Controller,
+  Get,
   Post,
   Put,
   Body,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common'
@@ -62,6 +64,17 @@ export class EidAuthController {
     }
   }
 
+  /** 查询当前用户认证结果 —— GET（query 参数，兼容 E证通回调后小程序页面调用） */
+  @Get('result')
+  @UseGuards(JwtAuthGuard)
+  async resultGet(
+    @Request() req: any,
+    @Query('realName') realName?: string,
+    @Query('idCard') idCard?: string,
+  ) {
+    return this.doResult(req, realName, idCard)
+  }
+
   /** 查询当前用户认证结果（仅返回状态，不返回身份信息） */
   @Post('result')
   @UseGuards(JwtAuthGuard)
@@ -69,6 +82,14 @@ export class EidAuthController {
     @Request() req: any,
     @Body('realName') realName?: string,
     @Body('idCard') idCard?: string,
+  ) {
+    return this.doResult(req, realName, idCard)
+  }
+
+  private async doResult(
+    req: any,
+    realName?: string,
+    idCard?: string,
   ) {
     const userId = req.user.id || req.user.sub
     try {
