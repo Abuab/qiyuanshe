@@ -42,7 +42,9 @@
             <view class="profile-id-row">
               <text class="id-badge">ID</text>
               <text class="id-number">{{ formattedUserId }}</text>
-              <AppIcon name="icon-fuzhi" size="28" color="#999999" @tap.stop="copyUserId" />
+              <view class="copy-icon-wrap" @tap.stop="copyUserId">
+                <AppIcon name="icon-fuzhi" size="28" color="#999999" />
+              </view>
             </view>
           </view>
           <view class="edit-btn" @tap.stop="goToEditProfile">
@@ -233,7 +235,7 @@
     <!-- 关注公众号弹窗 -->
     <OfficialAccountPopup
       :show="showOaPopup"
-      :qrcode-url="systemStore.officialAccountQrcode"
+      :qrcode-url="oaQrcodeUrl"
       @update:show="showOaPopup = $event"
     />
 
@@ -518,6 +520,10 @@ const handleOfficialAccount = () => {
   showOaPopup.value = true
 }
 const showOaPopup = ref(false)
+
+const oaQrcodeUrl = computed(() => {
+  return getFullImageUrl(systemStore.officialAccountQrcode)
+})
 
 const showComingSoon = () => {
   uni.showToast({ title: '该功能正在开发中', icon: 'none' })
@@ -897,6 +903,13 @@ const toolGrid7 = [
 .id-number {
   font-size: 26rpx;
   color: #666;
+}
+
+.copy-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx;
 }
 
 .copy-icon {

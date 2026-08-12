@@ -15,9 +15,9 @@
         <!-- 二维码区域 -->
         <view class="oa-qrcode-wrap">
           <image
-            v-if="qrcodeUrl"
+            v-if="fullQrcodeUrl"
             class="oa-qrcode"
-            :src="qrcodeUrl"
+            :src="fullQrcodeUrl"
             mode="aspectFit"
             show-menu-by-longpress
             @error="onQrcodeError"
@@ -74,8 +74,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
+import { getFullImageUrl } from '@/utils/common'
 
 interface Props {
   show: boolean
@@ -94,6 +95,12 @@ const emit = defineEmits<Emits>()
 
 const visible = ref(false)
 const qrcodeError = ref(false)
+
+const fullQrcodeUrl = computed(() => {
+  if (!props.qrcodeUrl) return ''
+  // 已是完整 URL 直接返回，否则走 COS 网关转换
+  return props.qrcodeUrl.startsWith('http') ? props.qrcodeUrl : getFullImageUrl(props.qrcodeUrl)
+})
 
 watch(() => props.show, (val) => {
   visible.value = val

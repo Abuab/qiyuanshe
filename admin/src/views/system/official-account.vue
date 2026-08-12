@@ -77,7 +77,7 @@ const deleting = ref(false)
 
 const fetchQrcode = async () => {
   try {
-    const res = await adminSystem.getConfigByKey('officialAccountQrcode')
+    const res = await adminSystem.getConfigByKey('basic.officialAccountQrcode')
     if (res.success && res.data) {
       qrcodeUrl.value = res.data
     }
@@ -111,7 +111,7 @@ const handleUpload = async (options: any) => {
       return
     }
     // 保存到系统配置
-    await adminSystem.updateConfig('officialAccountQrcode', uploadRes.data.url)
+    await adminSystem.updateConfig('basic.officialAccountQrcode', uploadRes.data.url)
     qrcodeUrl.value = uploadRes.data.url + '?t=' + Date.now()
     qrcodeError.value = false
     ElMessage.success('二维码已更新')
@@ -131,7 +131,7 @@ const handleDelete = async () => {
 
   deleting.value = true
   try {
-    await adminSystem.updateConfig('officialAccountQrcode', '')
+    await adminSystem.updateConfig('basic.officialAccountQrcode', '')
     qrcodeUrl.value = ''
     qrcodeError.value = false
     ElMessage.success('二维码已删除')

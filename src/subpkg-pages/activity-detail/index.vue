@@ -189,7 +189,7 @@
     <view v-if="activity" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <view class="bottom-left">
         <button class="action-btn share-btn" open-type="share">
-          <AppIcon name="icon-share" size="44" color="#666666" />
+          <text class="action-icon action-icon-share">↗</text>
           <text class="action-text">分享</text>
         </button>
         <view class="action-btn" @tap="showMatchmakerPopup">

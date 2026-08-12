@@ -23,7 +23,7 @@
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
           <view v-if="user.isRealName" class="real-name-badge">
-            <image v-if="realNameIcon" class="real-name-icon-img" :src="realNameIcon" mode="aspectFit" />
+            <AppIcon name="icon-shimingrenzheng" size="24" color="#FF6B6B" />
             <text>已实名</text>
           </view>
         </view>
@@ -81,10 +81,10 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
-import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 
@@ -129,13 +129,8 @@ const emit = defineEmits<{
   (e: 'click', user: UserCardData): void
 }>()
 
-const { getPageIcon } = useIcon()
 const avatarError = ref(false)
 const photoFailedMap = ref<Record<string, true>>({})
-
-const realNameIcon = computed(() => {
-  return getPageIcon('realNameIcon') || ''
-})
 
 const computedSecondLine = computed(() => {
   const parts: string[] = []
