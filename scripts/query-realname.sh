@@ -38,7 +38,8 @@ if [ ! -f "$DECRYPT_SCRIPT" ]; then
 fi
 
 # ----- MySQL 连接配置（通过 Docker 容器） -----
-MYSQL_CMD="docker exec -i lingtong_mysql mysql -uroot -plingtong_root_2024_secure lingtong_match"
+# 使用 MYSQL_PWD 环境变量传递密码，避免命令行密码触发 "Using a password" warning 污染输出
+MYSQL_CMD="docker exec -e MYSQL_PWD=lingtong_root_2024_secure -i lingtong_mysql mysql -uroot lingtong_match"
 
 # ----- 辅助函数：执行 SQL（格式化表格输出） -----
 run_sql() {
