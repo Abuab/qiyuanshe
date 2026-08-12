@@ -516,8 +516,10 @@ const copyUserId = () => {
   })
 }
 
-const handleOfficialAccount = () => {
+const handleOfficialAccount = async () => {
   showOaPopup.value = true
+  // 打开弹窗时重新拉取系统配置，确保二维码是最新的（避免使用启动时缓存的旧值）
+  await systemStore.loadSystemConfig()
 }
 const showOaPopup = ref(false)
 
