@@ -640,9 +640,9 @@ function updateGenderChart(data: any[] = []) {
       formatter: '{b}: {c} ({d}%)',
     },
     legend: {
-      orient: 'vertical',
-      left: 'left',
-      bottom: 'middle',
+      orient: 'horizontal',
+      left: 'center',
+      bottom: 0,
     },
     series: [
       {
@@ -700,9 +700,9 @@ function updateAgeChart(data: any[] = []) {
       formatter: '{b}: {c} ({d}%)',
     },
     legend: {
-      orient: 'vertical',
-      left: 'left',
-      bottom: 'middle',
+      orient: 'horizontal',
+      left: 'center',
+      bottom: 0,
     },
     series: [
       {

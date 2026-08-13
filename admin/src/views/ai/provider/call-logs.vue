@@ -47,7 +47,7 @@
           <template #default="{ row }">
             <div class="expand-content">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item label="Provider">{{ row.providerName || '-' }}</el-descriptions-item>
+                <el-descriptions-item label="服务商">{{ row.providerName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="模型">{{ row.modelName || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="请求摘要">{{ row.requestSummary || '-' }}</el-descriptions-item>
                 <el-descriptions-item label="响应摘要">{{ row.responseSummary || '-' }}</el-descriptions-item>
@@ -71,7 +71,7 @@
             {{ callTypeMap[row.callType] || row.callType }}
           </template>
         </el-table-column>
-        <el-table-column label="Provider/模型" min-width="160">
+        <el-table-column label="服务商/模型" min-width="160">
           <template #default="{ row }">
             <div style="display:flex;flex-direction:column;gap:2px">
               <span style="font-weight:500">{{ row.providerName || '-' }}</span>
@@ -239,7 +239,7 @@ async function onExport() {
       return
     }
     // 生成 CSV
-    const headers = ['ID', 'Provider', '模型', '用户昵称', '用户ID', '功能类型', '输入Token', '输出Token', '总Token', '耗时ms', '状态', '时间', '错误信息']
+    const headers = ['ID', '服务商', '模型', '用户昵称', '用户ID', '功能类型', '输入Token', '输出Token', '总Token', '耗时ms', '状态', '时间', '错误信息']
     const rows = items.map((r: LogItem) => [
       r.id,
       r.providerName || '-',

@@ -3,6 +3,7 @@
     <div class="header-left">
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
+        <el-breadcrumb-item v-if="parentTitle">{{ parentTitle }}</el-breadcrumb-item>
         <el-breadcrumb-item v-if="currentRoute.meta.title">
           {{ currentRoute.meta.title }}
         </el-breadcrumb-item>
@@ -84,6 +85,63 @@ const adminStore = useAdminStore()
 
 const currentRoute = computed(() => route)
 const userInfo = computed(() => adminStore.userInfo)
+
+// 路由路径 → 父级菜单名（用于面包屑展示父级层级）
+const MENU_PARENT_MAP: Record<string, string> = {
+  '/user/list': '用户管理',
+  '/user/deactivated': '用户管理',
+  '/user/detail': '用户管理',
+  '/system/operation-tag': '用户管理',
+  '/audit/list': '审核管理',
+  '/audit/queue': '审核管理',
+  '/single-promise': '审核管理',
+  '/education-auth': '审核管理',
+  '/property-auth': '审核管理',
+  '/car-auth': '审核管理',
+  '/audit-log': '审核管理',
+  '/matchmaker/list': '红娘管理',
+  '/matchmaker/edit': '红娘管理',
+  '/matchmaker-comments': '红娘管理',
+  '/question/list': '问答管理',
+  '/question/edit': '问答管理',
+  '/question/detail': '问答管理',
+  '/activity/list': '活动管理',
+  '/activity/edit': '活动管理',
+  '/activity/signups': '活动管理',
+  '/payment/list': '订单管理',
+  '/payment/stats': '订单管理',
+  '/vip/packages': '会员管理',
+  '/personality/questions': '人格测试',
+  '/personality/types': '人格测试',
+  '/personality/dimensions': '人格测试',
+  '/personality/stats': '人格测试',
+  '/guide/floating-button': '引导文案',
+  '/guide/copy': '引导文案',
+  '/system/ai-switch': 'AI 管理',
+  '/ai/safety-audit': 'AI 管理',
+  '/ai/provider': 'AI 管理',
+  '/ai/call-logs': 'AI 管理',
+  '/ai/quick-questions': 'AI 管理',
+  '/ai/prompt-templates': 'AI 管理',
+  '/system/quota': 'AI 管理',
+  '/store-cert-mgmt': '到店认证',
+  '/system/store-cert': '到店认证',
+  '/system/config': '系统配置',
+  '/system/official-account': '系统配置',
+  '/agreement': '系统配置',
+  '/agreement-log-storage': '系统配置',
+  '/system/dict': '系统配置',
+  '/system/notification-channel': '系统配置',
+  '/system/notification-log': '系统配置',
+}
+
+const parentTitle = computed(() => {
+  const path = route.path
+  for (const [prefix, title] of Object.entries(MENU_PARENT_MAP)) {
+    if (path === prefix || path.startsWith(prefix + '/')) return title
+  }
+  return ''
+})
 
 const searchKeyword = ref('')
 const searchResults = ref<any[]>([])

@@ -1,12 +1,12 @@
-// ========== Element Plus 主题变量：品牌粉 ==========
+// ========== Element Plus 主题变量：深玫红（更沉稳的品牌色） ==========
 :root {
-  --el-color-primary: #FF6B9D;
-  --el-color-primary-light-3: #FF85A8;
-  --el-color-primary-light-5: #FFB3CB;
-  --el-color-primary-light-7: #FFD6E3;
-  --el-color-primary-light-8: #FFE4ED;
-  --el-color-primary-light-9: #FFF2F6;
-  --el-color-primary-dark-2: #E85A8A;
+  --el-color-primary: #D6457B;
+  --el-color-primary-light-3: #E27DA3;
+  --el-color-primary-light-5: #EBA2BD;
+  --el-color-primary-light-7: #F3C7D7;
+  --el-color-primary-light-8: #F7DAE4;
+  --el-color-primary-light-9: #FBECF1;
+  --el-color-primary-dark-2: #AB3762;
 }
 
 * {
@@ -95,6 +95,11 @@ a {
     font-weight: bold;
     color: #333;
   }
+}
+
+/* 统一各页面标题字号：覆盖各 vue 组件 scoped 样式中散落的 18/22/24px 覆盖 */
+.page-title {
+  font-size: 20px !important;
 }
 
 .card {

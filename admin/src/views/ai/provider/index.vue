@@ -2,7 +2,7 @@
   <div class="ai-provider-page">
     <!-- 页头 -->
     <div class="page-header">
-      <h2 class="page-title">AI Provider 管理</h2>
+      <h2 class="page-title">AI 服务商管理</h2>
       <div class="header-actions">
         <el-select
           v-model="currentStrategy"
@@ -18,7 +18,7 @@
           活跃: {{ activeProviderName }}
         </el-tag>
         <el-button :loading="seedLoading" @click="onSeedFromEnv">从 .env 同步</el-button>
-        <el-button type="primary" :icon="Plus" @click="openCreate">添加 Provider</el-button>
+        <el-button type="primary" :icon="Plus" @click="openCreate">添加服务商</el-button>
       </div>
     </div>
 
@@ -27,7 +27,7 @@
       <el-col :span="8">
         <el-card shadow="never">
           <div class="summary-item">
-            <span class="summary-label">启用 Provider</span>
+            <span class="summary-label">启用服务商</span>
             <span class="summary-val">{{ enabledCount }} / {{ providers.length }}</span>
           </div>
         </el-card>
@@ -56,7 +56,7 @@
     <el-card shadow="never" class="table-card">
       <template #header>
         <div class="card-header-row">
-          <span>Provider 列表</span>
+          <span>服务商列表</span>
           <el-button text :icon="Refresh" @click="fetchProviders">刷新</el-button>
         </div>
       </template>
@@ -128,7 +128,7 @@
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
             <el-button link type="success" size="small" @click="onTestConnection(row)">测试</el-button>
-            <el-popconfirm title="确定删除此 Provider？" @confirm="onDelete(row)">
+            <el-popconfirm title="确定删除此服务商？" @confirm="onDelete(row)">
               <template #reference>
                 <el-button link type="danger" size="small">删除</el-button>
               </template>
@@ -137,7 +137,7 @@
         </el-table-column>
         <template #empty>
           <div style="padding: 40px 0; text-align: center; color: #909399;">
-            <p style="font-size: 16px; margin-bottom: 12px;">暂无 Provider 配置</p>
+            <p style="font-size: 16px; margin-bottom: 12px;">暂无服务商配置</p>
             <p style="font-size: 13px; margin-bottom: 8px;">确保服务器 <code>.env</code> 文件中已配置真实 API Key，然后点击「从 .env 同步」</p>
             <el-button type="primary" size="small" :loading="seedLoading" @click="onSeedFromEnv">
               立即从 .env 同步
@@ -263,7 +263,7 @@ const testResult = ref('')
 const testResultType = ref<'success' | 'error'>('success')
 const formRef = ref<FormInstance>()
 
-const dialogTitle = computed(() => (isEdit.value ? '编辑 Provider' : '添加 Provider'))
+const dialogTitle = computed(() => (isEdit.value ? '编辑服务商' : '添加服务商'))
 
 const form = ref({
   providerKey: '',
@@ -326,10 +326,10 @@ async function onSubmit() {
       const data: Record<string, any> = { ...form.value }
       if (!data.apiKey) delete data.apiKey
       await aiProviderApi.update(editId.value, data)
-      ElMessage.success('Provider 已更新')
+      ElMessage.success('服务商已更新')
     } else {
       await aiProviderApi.create(form.value)
-      ElMessage.success('Provider 已添加')
+      ElMessage.success('服务商已添加')
     }
     dialogVisible.value = false
     await fetchProviders()

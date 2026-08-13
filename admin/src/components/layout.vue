@@ -47,7 +47,6 @@ const isCollapsed = computed(() => adminStore.isCollapsed)
   background-color: #f5f7fa;
   padding: 20px;
   overflow-y: auto;
-  min-width: 960px;
   overflow-x: auto;
 }
 </style>

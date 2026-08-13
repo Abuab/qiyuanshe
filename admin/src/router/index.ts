@@ -189,7 +189,7 @@ const routes: RouteRecordRaw[] = [
         path: '/ai/provider',
         name: 'AiProvider',
         component: () => import('../views/ai/provider/index.vue'),
-        meta: { title: 'AI Provider管理', requiresAuth: true },
+        meta: { title: 'AI 服务商管理', requiresAuth: true },
       },
       {
         path: '/ai/call-logs',

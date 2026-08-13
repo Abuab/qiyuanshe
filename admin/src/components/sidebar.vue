@@ -10,7 +10,7 @@
       :collapse="isCollapsed"
       background-color="#304156"
       text-color="#bfcbd9"
-      active-text-color="#FF6B9D"
+      active-text-color="#FFA8BF"
       :router="true"
       class="sidebar-menu"
     >
@@ -27,23 +27,6 @@
         <el-menu-item index="/user/list">用户列表</el-menu-item>
         <el-menu-item index="/user/deactivated">已注销用户</el-menu-item>
         <el-menu-item v-if="canAccess('/system/operation-tag')" index="/system/operation-tag">运营标签</el-menu-item>
-      </el-sub-menu>
-
-      <el-sub-menu v-if="canAccess('/matchmaker')" index="/matchmaker">
-        <template #title>
-          <el-icon><UserFilled /></el-icon>
-          <span>红娘管理</span>
-        </template>
-        <el-menu-item index="/matchmaker/list">红娘列表</el-menu-item>
-        <el-menu-item index="/matchmaker-comments">红娘评语</el-menu-item>
-      </el-sub-menu>
-
-      <el-sub-menu v-if="canAccess('/question')" index="/question">
-        <template #title>
-          <el-icon><QuestionFilled /></el-icon>
-          <span>问答管理</span>
-        </template>
-        <el-menu-item index="/question/list">问答列表</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/audit')" index="/audit">
@@ -80,6 +63,15 @@
         </el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu v-if="canAccess('/matchmaker')" index="/matchmaker">
+        <template #title>
+          <el-icon><UserFilled /></el-icon>
+          <span>红娘管理</span>
+        </template>
+        <el-menu-item index="/matchmaker/list">红娘列表</el-menu-item>
+        <el-menu-item index="/matchmaker-comments">红娘评语</el-menu-item>
+      </el-sub-menu>
+
       <el-menu-item v-if="canAccess('/chat')" index="/chat/monitor">
         <el-icon><ChatDotRound /></el-icon>
         <template #title>聊天监控</template>
@@ -95,15 +87,34 @@
         <template #title>问题反馈</template>
       </el-menu-item>
 
+      <el-sub-menu v-if="canAccess('/question')" index="/question">
+        <template #title>
+          <el-icon><QuestionFilled /></el-icon>
+          <span>问答管理</span>
+        </template>
+        <el-menu-item index="/question/list">问答列表</el-menu-item>
+      </el-sub-menu>
+
       <el-menu-item v-if="canAccess('/circles')" index="/circles">
         <el-icon><Connection /></el-icon>
-        <template #title>圈子管理</template>
+        <template #title>
+          <span>圈子管理</span>
+          <span v-if="adminStore.pendingCirclePostCount > 0" class="count-badge title-badge">{{ adminStore.pendingCirclePostCount }}</span>
+        </template>
       </el-menu-item>
 
       <el-menu-item v-if="canAccess('/success-cases')" index="/success-cases">
         <el-icon><Star /></el-icon>
         <template #title>成功案例</template>
       </el-menu-item>
+
+      <el-sub-menu v-if="canAccess('/activity')" index="/activity">
+        <template #title>
+          <el-icon><Calendar /></el-icon>
+          <span>活动管理</span>
+        </template>
+        <el-menu-item index="/activity/list">活动列表</el-menu-item>
+      </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/payment')" index="/payment">
         <template #title>
@@ -120,14 +131,6 @@
           <span>会员管理</span>
         </template>
         <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
-      </el-sub-menu>
-
-      <el-sub-menu v-if="canAccess('/activity')" index="/activity">
-        <template #title>
-          <el-icon><Calendar /></el-icon>
-          <span>活动管理</span>
-        </template>
-        <el-menu-item index="/activity/list">活动列表</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/personality')" index="/personality">
@@ -168,7 +171,7 @@
         </template>
         <el-menu-item index="/system/ai-switch">AI 功能开关</el-menu-item>
         <el-menu-item index="/ai/safety-audit">内容安全审核</el-menu-item>
-        <el-menu-item index="/ai/provider">AI Provider 管理</el-menu-item>
+        <el-menu-item index="/ai/provider">AI 服务商管理</el-menu-item>
         <el-menu-item index="/ai/call-logs">AI 调用日志</el-menu-item>
         <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
         <el-menu-item index="/ai/prompt-templates">AI Prompt 配置</el-menu-item>
@@ -330,7 +333,7 @@ function handleLogout() {
 
 .logo-area {
   height: 60px;
-  background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+  background: linear-gradient(135deg, #D6457B, #E27DA3);
   display: flex;
   align-items: center;
   justify-content: center;
