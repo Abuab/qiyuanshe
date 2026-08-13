@@ -21,7 +21,7 @@
       :refresher-triggered="refreshing"
     >
       <!-- 关注公众号提示栏 -->
-      <view v-if="userStore.isLoggedIn" class="oa-tip-bar">
+      <view class="oa-tip-bar">
         <view class="oa-tip-icon">
           <text class="oa-tip-exclaim">!</text>
         </view>
