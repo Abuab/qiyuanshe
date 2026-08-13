@@ -57,15 +57,19 @@
         @longpress="onLongPress(item)"
       >
         <view class="msg-item-head">
-          <view class="unread-dot" />
-          <text class="msg-title">{{ item.title }}</text>
+          <view class="dot-placeholder">
+            <view v-if="item.isRead === 0" class="unread-dot" />
+          </view>
+          <text class="msg-title">{{ resolveTemplate(item.title) }}</text>
           <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
         </view>
-        <text class="msg-content">{{ item.content }}</text>
+        <text class="msg-content">{{ resolveTemplate(item.content) }}</text>
       </view>
 
       <view v-if="!loading && noMore && list.length > 0" class="no-more">
-        <text>没有更多了</text>
+        <view class="no-more-line" />
+        <text class="no-more-text">没有更多了</text>
+        <view class="no-more-line" />
       </view>
     </scroll-view>
     <BackTop :show="showBackTop" @click="scrollToTop" />
@@ -169,16 +173,30 @@ const handleBack = () => {
   safeNavigateBack()
 }
 
-const markRead = async (item: NotifyItem) => {
+const markRead = (item: NotifyItem) => {
   if (item.isRead === 1) return
-  try {
-    await request({
-      url: `/notifications/${item.id}/read`,
-      method: 'PUT',
-    })
-    item.isRead = 1
-    messageStore.refreshUnread()
-  } catch { /* silent */ }
+  // 视觉立即降级，再异步同步后端
+  item.isRead = 1
+  messageStore.refreshUnread()
+  request({
+    url: `/notifications/${item.id}/read`,
+    method: 'PUT',
+  }).catch(() => { /* silent */ })
+}
+
+/**
+ * 渲染前替换模板变量，避免 {days} 等原始占位符直接展示给用户。
+ * {days}/{activity} 当前后端未提供实际数据源，统一使用兜底文案。
+ */
+const resolveTemplate = (text: string) => {
+  if (!text) return ''
+  const nickname = userStore.userInfo?.nickname?.trim() || ''
+  const values: Record<string, string> = {
+    nickname: nickname || '亲爱的用户',
+    days: '即将',
+    activity: '最新活动',
+  }
+  return text.replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match)
 }
 
 const maybeShowDeleteHint = () => {
@@ -244,23 +262,24 @@ const hideBanner = () => {
 
 const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
-  const date = new Date(timeStr)
   const now = new Date()
-  const pad = (n: number) => (n < 10 ? '0' + n : String(n))
-  const hhmm = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+  const msgDate = new Date(timeStr)
+  const diffDays = Math.floor((now.getTime() - msgDate.getTime()) / (1000 * 60 * 60 * 24))
 
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-  const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
-  const diffDays = Math.round((startOfToday - startOfTarget) / 86400000)
+  const hours = String(msgDate.getHours()).padStart(2, '0')
+  const minutes = String(msgDate.getMinutes()).padStart(2, '0')
+  const month = String(msgDate.getMonth() + 1).padStart(2, '0')
+  const day = String(msgDate.getDate()).padStart(2, '0')
+  const year = msgDate.getFullYear()
 
-  if (diffDays === 0) return hhmm
-  if (diffDays === 1) return `昨天 ${hhmm}`
-
-  const md = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-  if (date.getFullYear() < now.getFullYear()) {
-    return `${date.getFullYear()}-${md} ${hhmm}`
+  if (diffDays === 0) return `${hours}:${minutes}`
+  if (diffDays === 1) return `昨天 ${hours}:${minutes}`
+  if (diffDays < 7) {
+    const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+    return `${weekDays[msgDate.getDay()]} ${hours}:${minutes}`
   }
-  return `${md} ${hhmm}`
+  if (year === now.getFullYear()) return `${month}-${day} ${hours}:${minutes}`
+  return `${year}-${month}-${day}`
 }
 </script>
 
@@ -328,7 +347,7 @@ const formatTime = (timeStr: string) => {
   flex: 1; min-height: 0;
 }
 
-.loading-tip, .empty-tip, .no-more {
+.loading-tip, .empty-tip {
   display: flex; justify-content: center; padding: 60rpx 0;
   text { font-size: 26rpx; color: #BDBDBD; }
 }
@@ -347,11 +366,12 @@ const formatTime = (timeStr: string) => {
 
 .msg-item {
   width: calc(100% - 48rpx);
-  margin: 0 auto 24rpx;
-  background: #fff; border-radius: 16rpx;
-  padding: 28rpx 32rpx;
+  margin: 0 auto 20rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 24rpx 32rpx;
   position: relative;
-  &.unread { background: #FFF0F5; }
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   &.deleting {
     opacity: 0;
     transition: opacity 0.2s ease;
@@ -365,40 +385,55 @@ const formatTime = (timeStr: string) => {
   align-items: center;
   margin-bottom: 12rpx;
 }
-.unread-dot {
-  width: 16rpx; height: 16rpx;
-  border-radius: 50%;
-  background: transparent;
+.dot-placeholder {
+  width: 20rpx;
+  height: 12rpx;
   flex-shrink: 0;
-  margin-right: 12rpx;
 }
-.msg-item.unread .unread-dot {
+.unread-dot {
+  width: 12rpx; height: 12rpx;
+  border-radius: 50%;
   background: #FF4D4F;
 }
 .msg-title {
   flex: 1;
   min-width: 0;
-  font-size: 30rpx;
+  font-size: 32rpx;
   font-weight: 400;
-  color: #1A1A1A;
+  color: #999999;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .msg-item.unread .msg-title {
   font-weight: 600;
+  color: #333333;
 }
 .msg-time {
-  font-size: 24rpx; color: #999; flex-shrink: 0;
+  font-size: 24rpx; color: #bbbbbb; flex-shrink: 0;
   margin-left: 16rpx;
 }
 .msg-content {
-  margin-left: 28rpx;
-  font-size: 26rpx; color: #666; line-height: 1.5;
+  margin-left: 20rpx;
+  font-size: 28rpx; color: #bbbbbb; line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
-.no-more { padding: 40rpx 0; }
+.msg-item.unread .msg-content {
+  color: #666666;
+}
+.no-more {
+  display: flex; align-items: center; justify-content: center;
+  padding: 40rpx 0;
+}
+.no-more-line {
+  width: 80rpx; height: 1rpx;
+  background: #e0e0e0;
+}
+.no-more-text {
+  margin: 0 16rpx;
+  font-size: 24rpx; color: #cccccc;
+}
 </style>
