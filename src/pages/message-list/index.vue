@@ -84,7 +84,11 @@
             <text>{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</text>
           </view>
           <!-- 删除按钮 -->
-          <view class="delete-btn" @tap.stop="confirmDelete(item)">
+          <view
+            class="delete-btn"
+            :style="item.unreadCount > 0 ? 'right: 60rpx' : ''"
+            @tap.stop="confirmDelete(item)"
+          >
             <text>删除</text>
           </view>
         </view>

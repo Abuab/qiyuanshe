@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onUnload } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
@@ -99,6 +99,10 @@ onMounted(() => {
 
 onShow(() => {
   if (userStore.isLoggedIn) fetchList(true)
+})
+
+onUnload(() => {
+  messageStore.refreshUnread()
 })
 
 const fetchList = async (isRefresh = false) => {
@@ -160,15 +164,29 @@ const handleBack = () => {
   safeNavigateBack()
 }
 
-const markRead = (item: NotifyItem) => {
+const markRead = async (item: NotifyItem) => {
   if (item.isRead === 1) return
-  // 视觉立即降级，再异步同步后端
+
+  const originalIsRead = item.isRead
   item.isRead = 1
-  messageStore.refreshUnread()
-  request({
-    url: `/notifications/${item.id}/read`,
-    method: 'PUT',
-  }).catch(() => { /* silent */ })
+
+  // 本地乐观更新全局未读数（仅减1），避免频繁请求
+  const currentUnread = messageStore.unreadCount
+  if (currentUnread > 0) {
+    messageStore.setUnreadCount(currentUnread - 1)
+  }
+
+  try {
+    await request({
+      url: `/notifications/${item.id}/read`,
+      method: 'PUT',
+    })
+  } catch {
+    // 后端失败：回滚前端状态
+    item.isRead = originalIsRead
+    messageStore.setUnreadCount(currentUnread)
+    uni.showToast({ title: '标记已读失败', icon: 'none' })
+  }
 }
 
 /**
@@ -180,7 +198,7 @@ const resolveTemplate = (text: string) => {
   const nickname = userStore.userInfo?.nickname?.trim() || ''
   const values: Record<string, string> = {
     nickname: nickname || '亲爱的用户',
-    days: '即将',
+    days: '3',
     activity: '最新活动',
   }
   return text.replace(/\{(\w+)\}/g, (match, key) => values[key] ?? match)
