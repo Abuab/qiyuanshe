@@ -241,13 +241,18 @@ const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
   const now = new Date()
   const msgDate = new Date(timeStr)
-  const diffDays = Math.floor((now.getTime() - msgDate.getTime()) / (1000 * 60 * 60 * 24))
+  const pad = (n: number) => String(n).padStart(2, '0')
 
-  const hours = String(msgDate.getHours()).padStart(2, '0')
-  const minutes = String(msgDate.getMinutes()).padStart(2, '0')
-  const month = String(msgDate.getMonth() + 1).padStart(2, '0')
-  const day = String(msgDate.getDate()).padStart(2, '0')
+  const hours = pad(msgDate.getHours())
+  const minutes = pad(msgDate.getMinutes())
+  const month = pad(msgDate.getMonth() + 1)
+  const day = pad(msgDate.getDate())
   const year = msgDate.getFullYear()
+
+  // 按「日历日」计算天数差，避免跨午夜时把昨天误判为今天
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfTarget = new Date(msgDate.getFullYear(), msgDate.getMonth(), msgDate.getDate()).getTime()
+  const diffDays = Math.round((startOfToday - startOfTarget) / 86400000)
 
   if (diffDays === 0) return `${hours}:${minutes}`
   if (diffDays === 1) return `昨天 ${hours}:${minutes}`
@@ -339,7 +344,7 @@ const formatTime = (timeStr: string) => {
 .msg-title {
   flex: 1;
   min-width: 0;
-  font-size: 32rpx;
+  font-size: 30rpx;
   font-weight: 400;
   color: #999999;
   overflow: hidden;
@@ -356,7 +361,7 @@ const formatTime = (timeStr: string) => {
 }
 .msg-content {
   margin-left: 20rpx;
-  font-size: 28rpx; color: #bbbbbb; line-height: 1.6;
+  font-size: 26rpx; color: #bbbbbb; line-height: 1.6;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
