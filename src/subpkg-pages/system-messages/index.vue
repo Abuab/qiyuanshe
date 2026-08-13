@@ -43,22 +43,25 @@
         <text class="empty-text">暂时没有系统通知～</text>
       </view>
 
+      <view v-if="showDeleteHint" class="delete-hint">
+        <text>长按消息可删除</text>
+      </view>
+
       <view
         v-for="item in list"
         :key="item.id"
         class="msg-item"
-        :class="{ unread: item.isRead === 0 }"
+        :class="{ unread: item.isRead === 0, deleting: deletingId === item.id }"
+        hover-class="msg-item-hover"
         @tap="markRead(item)"
+        @longpress="onLongPress(item)"
       >
         <view class="msg-item-head">
+          <view class="unread-dot" />
           <text class="msg-title">{{ item.title }}</text>
-          <view class="msg-head-right">
-            <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
-            <view class="delete-btn" @tap.stop="confirmDelete(item)">✕</view>
-          </view>
+          <text class="msg-time">{{ formatTime(item.createdAt) }}</text>
         </view>
         <text class="msg-content">{{ item.content }}</text>
-        <view v-if="item.isRead === 0" class="unread-dot" />
       </view>
 
       <view v-if="!loading && noMore && list.length > 0" class="no-more">
@@ -97,6 +100,8 @@ const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
 const bannerClosed = ref(false)
+const showDeleteHint = ref(false)
+const deletingId = ref<number | null>(null)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
@@ -138,6 +143,7 @@ const fetchList = async (isRefresh = false) => {
     } else {
       list.value.push(...items)
     }
+    maybeShowDeleteHint()
     if (items.length < 20) noMore.value = true
     page.value++
   } catch (e: any) {
@@ -172,27 +178,55 @@ const markRead = async (item: NotifyItem) => {
   } catch { /* silent */ }
 }
 
-const confirmDelete = (item: NotifyItem) => {
-  uni.showModal({
-    title: '删除消息',
-    content: '确定要删除这条系统消息吗？',
-    confirmText: '删除',
-    confirmColor: '#FF6B9D',
-    success: async (res) => {
-      if (res.confirm) {
-        try {
-          await request({
-            url: `/notifications/${item.id}`,
-            method: 'DELETE',
-          })
-          list.value = list.value.filter(m => m.id !== item.id)
-          uni.showToast({ title: '已删除', icon: 'success' })
-        } catch {
-          uni.showToast({ title: '删除失败', icon: 'none' })
-        }
-      }
+const maybeShowDeleteHint = () => {
+  if (list.value.length === 0) return
+  if (uni.getStorageSync('hasShownDeleteHint') === true) return
+  uni.setStorageSync('hasShownDeleteHint', true)
+  showDeleteHint.value = true
+  setTimeout(() => {
+    showDeleteHint.value = false
+  }, 2000)
+}
+
+const onLongPress = (item: NotifyItem) => {
+  uni.showActionSheet({
+    itemList: ['删除该消息'],
+    itemColor: '#FF4D4F',
+    success: (res) => {
+      if (res.tapIndex === 0) confirmDelete(item)
     },
   })
+}
+
+const confirmDelete = (item: NotifyItem) => {
+  uni.showModal({
+    title: '确认删除',
+    content: '删除后无法恢复，是否确认删除这条消息？',
+    confirmText: '删除',
+    confirmColor: '#FF4D4F',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) deleteMessage(item)
+    },
+  })
+}
+
+const deleteMessage = async (item: NotifyItem) => {
+  try {
+    await request({
+      url: `/notifications/${item.id}`,
+      method: 'DELETE',
+    })
+    deletingId.value = item.id
+    setTimeout(() => {
+      const idx = list.value.findIndex(m => m.id === item.id)
+      if (idx > -1) list.value.splice(idx, 1)
+      deletingId.value = null
+      uni.showToast({ title: '已删除', icon: 'success' })
+    }, 200)
+  } catch {
+    uni.showToast({ title: '删除失败', icon: 'none' })
+  }
 }
 
 const handleFollowOA = () => {
@@ -209,13 +243,21 @@ const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
   const date = new Date(timeStr)
   const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  if (diff < 60000) return '刚刚'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  return `${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`
+  const pad = (n: number) => (n < 10 ? '0' + n : String(n))
+  const hhmm = `${pad(date.getHours())}:${pad(date.getMinutes())}`
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const diffDays = Math.round((startOfToday - startOfTarget) / 86400000)
+
+  if (diffDays === 0) return hhmm
+  if (diffDays === 1) return `昨天 ${hhmm}`
+
+  const md = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+  if (date.getFullYear() < now.getFullYear()) {
+    return `${date.getFullYear()}-${md} ${hhmm}`
+  }
+  return `${md} ${hhmm}`
 }
 </script>
 
@@ -290,43 +332,70 @@ const formatTime = (timeStr: string) => {
 .empty-tip { flex-direction: column; align-items: center; }
 .empty-icon { margin-bottom: 20rpx; }
 
-.msg-item {
+.delete-hint {
   width: calc(100% - 48rpx);
   margin: 0 auto 12rpx;
+  padding: 12rpx 0;
+  border-radius: 12rpx;
+  background: rgba(0, 0, 0, 0.04);
+  text-align: center;
+  text { font-size: 22rpx; color: #999; }
+}
+
+.msg-item {
+  width: calc(100% - 48rpx);
+  margin: 0 auto 24rpx;
   background: #fff; border-radius: 16rpx;
-  padding: 24rpx 28rpx;
+  padding: 28rpx 32rpx;
   position: relative;
   &.unread { background: #FFF0F5; }
+  &.deleting {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+}
+.msg-item-hover {
+  opacity: 0.9;
 }
 .msg-item-head {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  align-items: center;
   margin-bottom: 12rpx;
 }
+.unread-dot {
+  width: 16rpx; height: 16rpx;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  margin-right: 12rpx;
+}
+.msg-item.unread .unread-dot {
+  background: #FF4D4F;
+}
 .msg-title {
-  font-size: 30rpx; font-weight: 600; color: #1A1A1A;
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  font-weight: 400;
+  color: #1A1A1A;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.msg-item.unread .msg-title {
+  font-weight: 600;
 }
 .msg-time {
-  font-size: 22rpx; color: #999; flex-shrink: 0;
-}
-.msg-head-right {
-  display: flex; align-items: center; flex-shrink: 0; margin-left: 16rpx;
+  font-size: 24rpx; color: #999; flex-shrink: 0;
+  margin-left: 16rpx;
 }
 .msg-content {
+  margin-left: 28rpx;
   font-size: 26rpx; color: #666; line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-}
-.unread-dot {
-  position: absolute; top: 28rpx; left: 12rpx;
-  width: 12rpx; height: 12rpx; border-radius: 50%; background: #FF4D4F;
-}
-.delete-btn {
-  font-size: 22rpx; color: #CCC;
-  padding: 0 8rpx;
-  flex-shrink: 0;
-  margin-left: 12rpx;
 }
 .no-more { padding: 40rpx 0; }
 </style>
