@@ -498,6 +498,7 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .message-preview {
+  display: block;
   font-size: 26rpx;
   color: #666;
   overflow: hidden;
