@@ -197,6 +197,7 @@ import request, { getServerBaseUrl } from '@/utils/request'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useMessageStore } from '@/store/message'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 import { getFullImageUrl } from '@/utils/common'
@@ -219,6 +220,7 @@ interface ChatMessage {
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const messageStore = useMessageStore()
 const toUserId = ref(0)
 const nickname = ref('')
 const avatar = ref('')
@@ -631,7 +633,7 @@ const reportUser = () => {
 const markAsRead = async () => {
   try {
     await request({ url: `/chat/messages/${toUserId.value}/read`, method: 'PUT' })
-    uni.$emit('tabbar:refreshUnread')
+    messageStore.refreshUnread()
   } catch (e) {
     logger.error('markAsRead failed:', e)
   }

@@ -118,6 +118,7 @@ import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useMessageStore } from '@/store/message'
 import { icons } from '@/config/icons'
 import { getFullImageUrl } from '@/utils/common'
 import { logger } from '@/utils/logger'
@@ -151,6 +152,7 @@ interface UserMessage {
 type MessageItem = SystemAggregate | UserMessage
 
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 const statusBarHeight = ref(0)
 
 // ===== 关注公众号弹窗 =====
@@ -232,7 +234,7 @@ const fetchConversations = async (isRefresh = false) => {
 
     // 更新未读数
     const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
-    uni.setStorageSync('unreadMessageCount', totalUnread)
+    messageStore.setUnreadCount(totalUnread)
 
     // 合并：系统消息入口在前，聊天在后
     const mergedList: MessageItem[] = [systemAggregate, ...chatList]

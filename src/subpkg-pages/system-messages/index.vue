@@ -79,6 +79,7 @@ import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { useMessageStore } from '@/store/message'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { logger } from '@/utils/logger'
@@ -93,6 +94,7 @@ interface NotifyItem {
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
+const messageStore = useMessageStore()
 const statusBarHeight = ref(0)
 const list = ref<NotifyItem[]>([])
 const loading = ref(false)
@@ -175,6 +177,7 @@ const markRead = async (item: NotifyItem) => {
       method: 'PUT',
     })
     item.isRead = 1
+    messageStore.refreshUnread()
   } catch { /* silent */ }
 }
 

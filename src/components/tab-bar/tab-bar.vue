@@ -30,8 +30,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { storeToRefs } from 'pinia'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
+import { useMessageStore } from '@/store/message'
 
 interface TabItem {
   label: string
@@ -52,9 +54,10 @@ const tabs: TabItem[] = [
 ]
 
 const userStore = useUserStore()
+const messageStore = useMessageStore()
+const { unreadCount } = storeToRefs(messageStore)
 
 const currentPath = ref('/pages/index/index')
-const unreadCount = ref(0)
 const safeAreaBottom = ref(0)
 const iconErrorMap = ref<Record<string, boolean>>({})
 
@@ -91,8 +94,7 @@ const switchTab = (pagePath: string) => {
 }
 
 const loadUnreadCount = () => {
-  const messageCount = uni.getStorageSync('unreadMessageCount')
-  unreadCount.value = messageCount || 0
+  messageStore.setUnreadCount(Number(uni.getStorageSync('unreadMessageCount')) || 0)
 }
 
 onMounted(() => {
@@ -112,8 +114,7 @@ onShow(() => {
 
 defineExpose({
   updateUnreadCount: (count: number) => {
-    unreadCount.value = count
-    uni.setStorageSync('unreadMessageCount', count)
+    messageStore.setUnreadCount(count)
   },
 })
 </script>
