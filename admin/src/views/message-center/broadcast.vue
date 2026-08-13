@@ -241,31 +241,55 @@
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="title" label="消息标题" min-width="150" show-overflow-tooltip />
             <el-table-column prop="content" label="消息内容" min-width="200" show-overflow-tooltip />
-            <el-table-column label="发送范围" min-width="180">
+            <el-table-column label="发送范围" min-width="200">
               <template #default="{ row }">
-                <el-tag v-if="!row.targetUserIds" type="primary" size="small">全部用户</el-tag>
+                <!-- 全部用户 -->
+                <el-popover
+                  v-if="!row.targetUserIds"
+                  trigger="hover"
+                  placement="top"
+                  :width="200"
+                >
+                  <template #reference>
+                    <el-tag type="primary" size="small" class="scope-tag">全部用户</el-tag>
+                  </template>
+                  <div class="scope-popover-text">发送给全部活跃用户</div>
+                </el-popover>
+
+                <!-- 指定用户 -->
                 <template v-else>
-                  <el-tag size="small" class="user-tag">
-                    {{ row.targetUserIds.length }} 位用户
-                    <el-popover
-                      trigger="hover"
-                      placement="top"
-                      :width="220"
-                    >
-                      <template #reference>
-                        <el-icon class="info-icon"><InfoFilled /></el-icon>
-                      </template>
-                      <div class="user-popover-list">
+                  <el-popover
+                    trigger="hover"
+                    placement="top"
+                    :width="220"
+                  >
+                    <template #reference>
+                      <el-tag
+                        type="success"
+                        size="small"
+                        class="scope-tag scope-tag-clickable"
+                        @click="openReceiverDialog(row)"
+                      >
+                        指定用户 ({{ receiverCount(row) }}人)
+                      </el-tag>
+                    </template>
+                    <div class="user-popover-list">
+                      <template v-if="row.targetUsers && row.targetUsers.length">
                         <div
-                          v-for="u in row.targetUsers"
+                          v-for="u in (row.targetUsers.length > 5 ? row.targetUsers.slice(0, 5) : row.targetUsers)"
                           :key="u.id"
                           class="user-popover-item"
                         >
                           ID:{{ u.id }} {{ u.nickname }}
                         </div>
-                      </div>
-                    </el-popover>
-                  </el-tag>
+                        <div v-if="row.targetUsers.length > 5" class="user-popover-more">
+                          等 {{ row.targetUsers.length - 5 }} 人
+                        </div>
+                      </template>
+                      <div v-else class="user-popover-empty">指定用户，暂无详情</div>
+                    </div>
+                    <div class="user-popover-footer">点击查看完整接收人列表</div>
+                  </el-popover>
                 </template>
               </template>
             </el-table-column>
@@ -293,6 +317,51 @@
             />
           </div>
         </el-card>
+
+        <!-- 接收用户列表弹窗 -->
+        <el-dialog
+          v-model="receiverDialogVisible"
+          width="500px"
+          :close-on-click-modal="false"
+        >
+          <template #header>
+            <span>接收用户列表（共 {{ receiverList.length }} 人）</span>
+          </template>
+          <el-input
+            v-model="receiverKeyword"
+            placeholder="搜索昵称/ID"
+            clearable
+            style="margin-bottom: 12px;"
+            @input="onReceiverSearch"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
+          <el-table v-if="filteredReceiverList.length > 0" :data="pagedReceiverList">
+            <el-table-column label="用户" min-width="200">
+              <template #default="{ row }">
+                <div class="receiver-user-cell">
+                  <el-avatar :size="32" :src="row.avatar" />
+                  <span>{{ row.nickname }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="用户ID" width="120">
+              <template #default="{ row }">ID:{{ row.id }}</template>
+            </el-table-column>
+          </el-table>
+          <div v-else class="receiver-empty">暂无接收用户详情</div>
+          <div class="receiver-pagination" v-if="filteredReceiverList.length > receiverPageSize">
+            <el-pagination
+              v-model:current-page="receiverPage"
+              :page-size="receiverPageSize"
+              :total="filteredReceiverList.length"
+              layout="prev, pager, next"
+              small
+            />
+          </div>
+        </el-dialog>
       </el-tab-pane>
 
       <!-- ======================== 消息模板 ======================== -->
@@ -472,9 +541,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
-import { Search, ArrowRight, Close, InfoFilled, Plus, Delete, QuestionFilled } from '@element-plus/icons-vue'
+import { Search, ArrowRight, Close, Plus, Delete, QuestionFilled } from '@element-plus/icons-vue'
 import request from '../../api/request'
 import { adminUsers } from '../../api/user'
 import { messageTemplateApi, type MessageTemplate } from '../../api/message-template'
@@ -725,6 +794,43 @@ function formatDate(dateStr: string) {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
+
+// ===== 接收用户列表（发送日志弹窗） =====
+const receiverDialogVisible = ref(false)
+const receiverList = ref<any[]>([])
+const receiverKeyword = ref('')
+const receiverPage = ref(1)
+const receiverPageSize = 10
+
+function receiverCount(row: any): number {
+  return row.targetUserIds?.length || row.totalSent || 0
+}
+
+function openReceiverDialog(row: any) {
+  receiverList.value = row.targetUsers || []
+  receiverKeyword.value = ''
+  receiverPage.value = 1
+  receiverDialogVisible.value = true
+}
+
+function onReceiverSearch() {
+  receiverPage.value = 1
+}
+
+const filteredReceiverList = computed(() => {
+  const kw = receiverKeyword.value.trim().toLowerCase()
+  if (!kw) return receiverList.value
+  return receiverList.value.filter((u: any) => {
+    const idStr = String(u.id ?? '')
+    const nick = String(u.nickname ?? '').toLowerCase()
+    return idStr.includes(kw) || nick.includes(kw)
+  })
+})
+
+const pagedReceiverList = computed(() => {
+  const start = (receiverPage.value - 1) * receiverPageSize
+  return filteredReceiverList.value.slice(start, start + receiverPageSize)
+})
 
 // ===== 消息模板 =====
 const tplLoading = ref(false)
@@ -1096,22 +1202,21 @@ onMounted(() => {
   font-size: 13px;
 }
 
-// 发送日志 - 用户标签 popover
-.user-tag {
+// 发送日志 - 发送范围标签与 popover
+.scope-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  cursor: default;
 }
 
-.info-icon {
-  font-size: 14px;
-  color: #909399;
+.scope-tag-clickable {
   cursor: pointer;
+}
 
-  &:hover {
-    color: var(--el-color-primary);
-  }
+.scope-popover-text {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
 }
 
 .user-popover-list {
@@ -1128,6 +1233,46 @@ onMounted(() => {
   &:last-child {
     border-bottom: none;
   }
+}
+
+.user-popover-more {
+  padding: 4px 0;
+  font-size: 12px;
+  color: #909399;
+}
+
+.user-popover-empty {
+  padding: 4px 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+.user-popover-footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #ebeef5;
+  font-size: 12px;
+  color: #909399;
+}
+
+// 接收用户列表弹窗
+.receiver-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.receiver-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: #909399;
+  font-size: 13px;
+}
+
+.receiver-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 // 消息模板
