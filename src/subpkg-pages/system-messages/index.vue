@@ -9,22 +9,6 @@
       <view class="nav-right" />
     </view>
 
-    <!-- 公众号关注横幅 -->
-    <view v-if="systemStore.showOfficialAccountPrompt && !bannerClosed" class="oa-banner">
-      <view class="oa-banner-left">
-        <view class="ico ico-exclamation ico-sm oa-warn-icon"></view>
-        <text class="oa-banner-text">关注服务号，接受消息提醒，不错过每次缘分！</text>
-      </view>
-      <view class="oa-banner-right">
-        <view class="oa-follow-btn" @tap.stop="handleFollowOA">
-          <text>立即关注</text>
-        </view>
-        <view class="oa-banner-close" @tap.stop="hideBanner">
-          <text>✕</text>
-        </view>
-      </view>
-    </view>
-
     <!-- 消息列表 -->
     <scroll-view
       class="msg-scroll"
@@ -81,7 +65,6 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
-import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import { useMessageStore } from '@/store/message'
 import BackTop from '@/components/back-top/back-top.vue'
@@ -96,7 +79,6 @@ interface NotifyItem {
   createdAt: string
 }
 
-const systemStore = useSystemStore()
 const userStore = useUserStore()
 const messageStore = useMessageStore()
 const statusBarHeight = ref(0)
@@ -105,7 +87,6 @@ const loading = ref(false)
 const refreshing = ref(false)
 const noMore = ref(false)
 const page = ref(1)
-const bannerClosed = ref(false)
 const showDeleteHint = ref(false)
 const deletingId = ref<number | null>(null)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
@@ -113,8 +94,6 @@ const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  // 检查本地是否已关闭过横幅
-  bannerClosed.value = uni.getStorageSync('oa_banner_closed') === true
   if (userStore.isLoggedIn) fetchList()
 })
 
@@ -123,6 +102,12 @@ onShow(() => {
 })
 
 const fetchList = async (isRefresh = false) => {
+  // 游客态：不发起认证请求，保持「暂时没有系统通知～」空态，避免 401 触发登录跳转
+  if (!userStore.isLoggedIn) {
+    loading.value = false
+    refreshing.value = false
+    return
+  }
   if (loading.value) return
   if (isRefresh) {
     page.value = 1
@@ -135,6 +120,8 @@ const fetchList = async (isRefresh = false) => {
       method: 'GET',
       data: { page: page.value, limit: 20 },
     })
+    // 请求返回时已退出登录：丢弃结果，避免写脏数据
+    if (!userStore.isLoggedIn) return
     const data = res?.data || res || {}
     const items: NotifyItem[] = (data.list || []).map((n: any) => ({
       id: n.id,
@@ -250,16 +237,6 @@ const deleteMessage = async (item: NotifyItem) => {
   }
 }
 
-const handleFollowOA = () => {
-  // 跳转公众号关注引导（小程序需关联公众号后使用 official-account 组件）
-  uni.showToast({ title: '请前往微信搜索并关注公众号', icon: 'none' })
-}
-
-const hideBanner = () => {
-  bannerClosed.value = true
-  uni.setStorageSync('oa_banner_closed', true)
-}
-
 const formatTime = (timeStr: string) => {
   if (!timeStr) return ''
   const now = new Date()
@@ -305,42 +282,6 @@ const formatTime = (timeStr: string) => {
   font-size: 34rpx; color: #333;
 }
 .nav-right { width: 80rpx; flex-shrink: 0; }
-
-// ==================== 公众号关注横幅 ====================
-.oa-banner {
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  margin: 20rpx 24rpx;
-  padding: 18rpx 24rpx;
-  background: #FFF8E1;
-  border-radius: 16rpx;
-  border: 1rpx solid #FFE082;
-}
-.oa-banner-left {
-  display: flex; align-items: center; flex: 1; min-width: 0;
-}
-.oa-warn-icon { display:flex;align-items:center; margin-right: 12rpx; flex-shrink: 0; }
-.oa-banner-text {
-  font-size: 24rpx; color: #F57F17; line-height: 1.4;
-  flex: 1; min-width: 0;
-}
-.oa-banner-right {
-  display: flex; align-items: center; flex-shrink: 0; margin-left: 16rpx;
-}
-.oa-follow-btn {
-  border: 2rpx solid #FF6B8A;
-  border-radius: 24rpx;
-  padding: 8rpx 24rpx;
-  text {
-    font-size: 24rpx; color: #FF6B8A; font-weight: 500;
-  }
-}
-.oa-banner-close {
-  width: 44rpx; height: 44rpx;
-  display: flex; align-items: center; justify-content: center;
-  margin-left: 12rpx;
-  text { font-size: 28rpx; color: #999; }
-}
 
 // ==================== 消息列表 ====================
 .msg-scroll {

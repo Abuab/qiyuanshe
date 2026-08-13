@@ -112,6 +112,7 @@ const isVipValid = computed(() => {
 
     secureStorage.clearAll()
     try { uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL) } catch (_) { /* ignore */ }
+    try { uni.removeStorageSync('unreadMessageCount') } catch (_) { /* ignore */ }
 
     uni.reLaunch({
       url: '/pages/index/index'

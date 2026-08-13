@@ -15,7 +15,7 @@
             mode="aspectFit"
             @error="onIconError(tab.name)"
           ></image>
-          <view v-if="tab.name === 'message' && unreadCount > 0" class="badge">
+          <view v-if="tab.name === 'message' && userStore.isLoggedIn && unreadCount > 0" class="badge">
             {{ unreadCount > 99 ? '99+' : unreadCount }}
           </view>
         </view>

@@ -21,7 +21,7 @@
       :refresher-triggered="refreshing"
     >
       <!-- 关注公众号提示栏 -->
-      <view class="oa-tip-bar">
+      <view v-if="userStore.isLoggedIn" class="oa-tip-bar">
         <view class="oa-tip-icon">
           <text class="oa-tip-exclaim">!</text>
         </view>
@@ -176,18 +176,32 @@ const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  if (userStore.isLoggedIn) {
-    fetchConversations()
-  }
+  fetchConversations()
 })
 
 onShow(() => {
-  if (userStore.isLoggedIn) {
-    fetchConversations(true)
-  }
+  fetchConversations(true)
+})
+
+const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggregate => ({
+  id: -1,
+  type: 'systemAggregate',
+  content: lastNotify
+    ? `[${lastNotify.title || '系统消息'}] ${lastNotify.content || ''}`
+    : '',
+  createdAt: lastNotify?.createdAt || new Date().toISOString(),
+  unreadCount,
 })
 
 const fetchConversations = async (isRefresh = false) => {
+  // 游客态：不发起认证请求，仅展示系统消息入口，避免「暂无消息」空态或 401 触发登录跳转
+  if (!userStore.isLoggedIn) {
+    messageList.value = [buildSystemAggregate(null, 0)]
+    loading.value = false
+    refreshing.value = false
+    return
+  }
+
   if (fetchLock) return
   fetchLock = true
   try {
@@ -212,6 +226,9 @@ const fetchConversations = async (isRefresh = false) => {
       }).catch(() => ({ data: { list: [], unreadCount: 0 } })),
     ])
 
+    // 请求返回时已退出登录：丢弃结果，避免向全局未读数/列表写入脏数据
+    if (!userStore.isLoggedIn) return
+
     const chatList = ((chatRes as any).list || []).map((item: any) => ({
       ...item,
       type: 'user' as const,
@@ -222,15 +239,7 @@ const fetchConversations = async (isRefresh = false) => {
     const lastNotify = (notifyData.list && notifyData.list.length > 0) ? notifyData.list[0] : null
 
     // 构建聚合的系统消息入口
-    const systemAggregate: SystemAggregate | null = {
-      id: -1,
-      type: 'systemAggregate' as const,
-      content: lastNotify
-        ? `[${lastNotify.title || '系统消息'}] ${lastNotify.content || ''}`
-        : '',
-      createdAt: lastNotify?.createdAt || new Date().toISOString(),
-      unreadCount: notifyUnread,
-    }
+    const systemAggregate = buildSystemAggregate(lastNotify, notifyUnread)
 
     // 更新未读数
     const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
