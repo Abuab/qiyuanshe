@@ -138,12 +138,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '通知日志', requiresAuth: true },
       },
       {
-        path: '/system/message-template',
-        name: 'MessageTemplate',
-        component: () => import('../views/system/message-template.vue'),
-        meta: { title: '消息模板', requiresAuth: true },
-      },
-      {
         path: '/system/operation-tag',
         name: 'OperationTag',
         component: () => import('../views/system/operation-tag.vue'),
@@ -244,12 +238,6 @@ const routes: RouteRecordRaw[] = [
         name: 'AdminProfile',
         component: () => import('../views/profile/index.vue'),
         meta: { title: '个人中心', requiresAuth: true },
-      },
-      {
-        path: '/notification/broadcast',
-        name: 'NotificationBroadcast',
-        component: () => import('../views/notification/broadcast.vue'),
-        meta: { title: '群发消息', requiresAuth: true },
       },
       {
         path: '/admin-user',

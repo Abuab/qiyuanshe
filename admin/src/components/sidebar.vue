@@ -26,6 +26,7 @@
         </template>
         <el-menu-item index="/user/list">用户列表</el-menu-item>
         <el-menu-item index="/user/deactivated">已注销用户</el-menu-item>
+        <el-menu-item v-if="canAccess('/system/operation-tag')" index="/system/operation-tag">运营标签</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/matchmaker')" index="/matchmaker">
@@ -44,14 +45,6 @@
         </template>
         <el-menu-item index="/question/list">问答列表</el-menu-item>
       </el-sub-menu>
-
-      <el-menu-item
-        v-if="canAccess('/admin-user')"
-        index="/admin-user"
-      >
-        <el-icon><AvatarIcon /></el-icon>
-        <template #title>子账号管理</template>
-      </el-menu-item>
 
       <el-sub-menu v-if="canAccess('/audit')" index="/audit">
         <template #title>
@@ -158,12 +151,41 @@
       </el-sub-menu>
 
       <el-menu-item
-        v-if="canAccess('/notification/broadcast') || canAccess('/system/message-template')"
+        v-if="canAccess('/message-center/broadcast')"
         index="/message-center/broadcast"
       >
         <el-icon><Promotion /></el-icon>
         <template #title>消息群发</template>
       </el-menu-item>
+
+      <el-sub-menu
+        v-if="canAccess('/system/ai-switch') || canAccess('/ai/safety-audit') || canAccess('/ai/provider') || canAccess('/ai/call-logs') || canAccess('/ai/quick-questions') || canAccess('/ai/prompt-templates') || canAccess('/system/quota')"
+        index="/ai"
+      >
+        <template #title>
+          <el-icon><Cpu /></el-icon>
+          <span>AI 管理</span>
+        </template>
+        <el-menu-item index="/system/ai-switch">AI 功能开关</el-menu-item>
+        <el-menu-item index="/ai/safety-audit">内容安全审核</el-menu-item>
+        <el-menu-item index="/ai/provider">AI Provider 管理</el-menu-item>
+        <el-menu-item index="/ai/call-logs">AI 调用日志</el-menu-item>
+        <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
+        <el-menu-item index="/ai/prompt-templates">AI Prompt 配置</el-menu-item>
+        <el-menu-item index="/system/quota">用量限额</el-menu-item>
+      </el-sub-menu>
+
+      <el-sub-menu
+        v-if="canAccess('/store-cert-mgmt') || canAccess('/system/store-cert')"
+        index="/store-cert"
+      >
+        <template #title>
+          <el-icon><Shop /></el-icon>
+          <span>到店认证</span>
+        </template>
+        <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
+        <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
+      </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/system')" index="/system">
         <template #title>
@@ -172,24 +194,20 @@
         </template>
         <el-menu-item index="/system/config">基础配置</el-menu-item>
         <el-menu-item index="/system/official-account">公众号设置</el-menu-item>
-        <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
-        <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
-        <el-menu-item index="/notification/broadcast">群发消息</el-menu-item>
         <el-menu-item index="/agreement">协议管理</el-menu-item>
         <el-menu-item index="/agreement-log-storage">同意记录存储配置</el-menu-item>
         <el-menu-item index="/system/dict">选项配置</el-menu-item>
-        <el-menu-item index="/system/ai-switch">AI功能开关</el-menu-item>
-        <el-menu-item index="/ai/safety-audit">内容安全审核</el-menu-item>
-        <el-menu-item index="/ai/provider">AI Provider管理</el-menu-item>
-        <el-menu-item index="/ai/call-logs">AI调用日志</el-menu-item>
-        <el-menu-item index="/ai/quick-questions">快捷问题管理</el-menu-item>
-        <el-menu-item index="/ai/prompt-templates">AI Prompt配置</el-menu-item>
-        <el-menu-item index="/system/quota">用量限额</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
-        <el-menu-item index="/system/message-template">消息模板</el-menu-item>
-        <el-menu-item index="/system/operation-tag">运营标签</el-menu-item>
       </el-sub-menu>
+
+      <el-menu-item
+        v-if="canAccess('/admin-user')"
+        index="/admin-user"
+      >
+        <el-icon><AvatarIcon /></el-icon>
+        <template #title>子账号管理</template>
+      </el-menu-item>
     </el-menu>
 
     <div class="sidebar-footer">
@@ -242,6 +260,8 @@ import {
   Compass,
   MagicStick,
   Promotion,
+  Cpu,
+  Shop,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
