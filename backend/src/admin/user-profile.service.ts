@@ -14,6 +14,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { BroadcastLog } from '../entities/BroadcastLog'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { AdminMessageTemplateService } from './message-template.service'
+import { resolveAvatarUrl } from '../common/image-url'
 
 @Injectable()
 export class UserProfileService {
@@ -432,15 +433,19 @@ export class UserProfileService {
       }
     }
 
-    // 批量查询用户昵称
-    let userMap: Record<number, string> = {}
+    // 批量查询用户昵称、公开 6 位 ID 与头像
+    const userMap: Record<number, { userId: string; nickname: string; avatar: string }> = {}
     if (allUserIds.size > 0) {
       const users = await this.userRepository.find({
         where: { id: In(Array.from(allUserIds)) },
-        select: ['id', 'nickname'],
+        select: ['id', 'userId', 'nickname', 'avatar'],
       })
       for (const u of users) {
-        userMap[u.id] = u.nickname
+        userMap[u.id] = {
+          userId: u.userId || '',
+          nickname: u.nickname || '未知用户',
+          avatar: resolveAvatarUrl(u.avatar),
+        }
       }
     }
 
@@ -448,7 +453,15 @@ export class UserProfileService {
     const enrichedList = list.map(log => ({
       ...log,
       targetUsers: log.targetUserIds
-        ? log.targetUserIds.map(id => ({ id, nickname: userMap[id] || '未知用户' }))
+        ? log.targetUserIds.map(id => {
+            const u = userMap[id]
+            return {
+              id,
+              userId: u?.userId || '',
+              nickname: u?.nickname || '未知用户',
+              avatar: u?.avatar || '',
+            }
+          })
         : null,
     }))
 

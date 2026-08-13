@@ -280,7 +280,7 @@
                           :key="u.id"
                           class="user-popover-item"
                         >
-                          ID:{{ u.id }} {{ u.nickname }}
+                          ID:{{ u.userId || u.id }} {{ u.nickname }}
                         </div>
                         <div v-if="row.targetUsers.length > 5" class="user-popover-more">
                           等 {{ row.targetUsers.length - 5 }} 人
@@ -348,7 +348,7 @@
               </template>
             </el-table-column>
             <el-table-column label="用户ID" width="120">
-              <template #default="{ row }">ID:{{ row.id }}</template>
+              <template #default="{ row }">ID:{{ row.userId || row.id }}</template>
             </el-table-column>
           </el-table>
           <div v-else class="receiver-empty">暂无接收用户详情</div>
@@ -821,7 +821,7 @@ const filteredReceiverList = computed(() => {
   const kw = receiverKeyword.value.trim().toLowerCase()
   if (!kw) return receiverList.value
   return receiverList.value.filter((u: any) => {
-    const idStr = String(u.id ?? '')
+    const idStr = String(u.userId ?? u.id ?? '')
     const nick = String(u.nickname ?? '').toLowerCase()
     return idStr.includes(kw) || nick.includes(kw)
   })
