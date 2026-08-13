@@ -157,6 +157,14 @@
         <el-menu-item index="/guide/copy">文案配置</el-menu-item>
       </el-sub-menu>
 
+      <el-menu-item
+        v-if="canAccess('/notification/broadcast') || canAccess('/system/message-template')"
+        index="/message-center/broadcast"
+      >
+        <el-icon><Promotion /></el-icon>
+        <template #title>消息群发</template>
+      </el-menu-item>
+
       <el-sub-menu v-if="canAccess('/system')" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
@@ -233,6 +241,7 @@ import {
   ChatLineSquare,
   Compass,
   MagicStick,
+  Promotion,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

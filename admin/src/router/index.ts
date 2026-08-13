@@ -30,6 +30,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '数据看板', requiresAuth: true },
       },
       {
+        path: '/message-center/broadcast',
+        name: 'MessageCenterBroadcast',
+        component: () => import('../views/message-center/broadcast.vue'),
+        meta: { title: '消息群发', requiresAuth: true },
+      },
+      {
         path: '/user/list',
         name: 'UserList',
         component: () => import('../views/user/list.vue'),
