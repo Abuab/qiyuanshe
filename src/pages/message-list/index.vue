@@ -58,7 +58,10 @@
                 <view class="official-tag"><text>官方</text></view>
               </view>
             </view>
-            <text class="message-preview">{{ item.content }}</text>
+            <view class="message-preview system-preview">
+              <text class="preview-prefix">[{{ item.prefix || '系统消息' }}]</text>
+              <text class="preview-body">{{ item.body || item.content }}</text>
+            </view>
           </view>
           <view v-if="item.unreadCount > 0" class="unread-badge">
             <text>{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</text>
@@ -136,6 +139,8 @@ interface SystemAggregate {
   id: number
   type: 'systemAggregate'
   content: string
+  prefix: string
+  body: string
   createdAt: string
   unreadCount: number
 }
@@ -187,15 +192,19 @@ onShow(() => {
   fetchConversations(true)
 })
 
-const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggregate => ({
-  id: -1,
-  type: 'systemAggregate',
-  content: lastNotify
-    ? `[${lastNotify.title || '系统消息'}] ${lastNotify.content || ''}`
-    : '',
-  createdAt: lastNotify?.createdAt || new Date().toISOString(),
-  unreadCount,
-})
+const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggregate => {
+  const prefix = lastNotify?.title || '系统消息'
+  const body = lastNotify?.content || ''
+  return {
+    id: -1,
+    type: 'systemAggregate',
+    content: body,
+    prefix,
+    body,
+    createdAt: lastNotify?.createdAt || new Date().toISOString(),
+    unreadCount,
+  }
+}
 
 const fetchConversations = async (isRefresh = false) => {
   // 游客态：不发起认证请求，仅展示系统消息入口，避免「暂无消息」空态或 401 触发登录跳转
@@ -519,6 +528,27 @@ function isImagePreview(item: UserMessage): boolean {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// 系统消息聚合入口：前缀与内容分开展示，形成视觉层级
+.system-preview {
+  display: flex;
+  align-items: baseline;
+
+  .preview-prefix {
+    color: #333333;
+    font-weight: 600;
+    margin-right: 8rpx;
+    flex-shrink: 0;
+  }
+
+  .preview-body {
+    color: #666666;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .unread-badge {

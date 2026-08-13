@@ -738,7 +738,10 @@ async function loadTemplates() {
   try {
     const res = await messageTemplateApi.getSelectable()
     templateList.value = (res as any)?.data || res || []
-  } catch { /* 加载失败不影响页面使用 */ }
+  } catch (e) {
+    ElMessage.warning('模板加载失败，请刷新页面重试')
+    console.error('loadTemplates error:', e)
+  }
 }
 
 function onTemplateSelect(templateId: number | undefined) {
@@ -753,9 +756,14 @@ function onTemplateSelect(templateId: number | undefined) {
 
 // 增强 B：手动编辑标题/内容时标记
 function onManualEdit() {
-  if (selectedTemplateId.value) {
-    templateEdited.value = true
+  if (!selectedTemplateId.value) {
+    templateEdited.value = false
+    return
   }
+  const tpl = templateList.value.find(t => t.id === selectedTemplateId.value)
+  if (!tpl) return
+  // 只有当当前内容不等于原始模板内容时才标记为已编辑
+  templateEdited.value = form.title !== (tpl.title || '') || form.content !== (tpl.content || '')
 }
 
 // 增强 A：切换到消息模板 Tab
