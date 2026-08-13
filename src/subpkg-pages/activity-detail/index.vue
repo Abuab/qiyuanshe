@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-back" @tap="goBack">
-        <text class="nav-back-icon">←</text>
+        <text class="nav-back-icon iconfont icon-back"></text>
       </view>
       <text class="nav-title">活动详情</text>
       <view class="nav-placeholder"></view>
@@ -639,7 +639,7 @@ const onShareAppMessage = () => {
     justify-content: center;
 
     .nav-back-icon {
-      font-size: 52rpx;
+      font-size: 40rpx;
       color: #333;
       line-height: 1;
     }
@@ -657,7 +657,9 @@ const onShareAppMessage = () => {
 }
 
 /* 内容滚动区 */
-.content-scroll { }
+.content-scroll {
+  background-color: #FEF9F9;
+}
 
 /* ===== Banner 大图（全宽 + 底部圆角） ===== */
 .banner-wrapper {
@@ -1148,11 +1150,6 @@ const onShareAppMessage = () => {
   }
 }
 
-/* 底部安全区 */
-.bottom-safe-area {
-  height: env(safe-area-inset-bottom);
-}
-
 /* ===== 底部固定操作栏 ===== */
 .bottom-bar {
   position: fixed;
@@ -1161,7 +1158,6 @@ const onShareAppMessage = () => {
   right: 0;
   height: 110rpx;
   background-color: #fff;
-  border-top: 1rpx solid #eee;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1374,6 +1370,7 @@ const onShareAppMessage = () => {
 }
 
 .bottom-safe-area {
-  height: 40rpx;
+  height: calc(140rpx + env(safe-area-inset-bottom));
+  background-color: #FEF9F9;
 }
 </style>

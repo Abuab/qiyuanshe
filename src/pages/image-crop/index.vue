@@ -4,7 +4,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleCancel">
-          <text class="back-arrow">←</text>
+          <text class="back-arrow iconfont icon-back"></text>
         </view>
         <text class="nav-title">裁剪头像</text>
         <view class="nav-right">

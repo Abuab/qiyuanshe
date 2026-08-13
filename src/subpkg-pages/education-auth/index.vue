@@ -4,7 +4,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar" :style="{ height: navBarHeightPx + 'px' }">
         <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">‹</text>
+          <text class="back-icon iconfont icon-back"></text>
         </view>
         <text class="nav-title">学历认证</text>
         <view class="nav-right" />

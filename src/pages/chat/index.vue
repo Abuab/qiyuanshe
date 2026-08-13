@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon iconfont icon-back"></text>
       </view>
       <view class="nav-title-wrap">
         <text class="nav-title">{{ nickname }}</text>

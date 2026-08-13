@@ -4,7 +4,7 @@
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-inner">
         <view class="nav-back" @tap="handleBack">
-          <text class="back-arrow">←</text>
+          <text class="back-arrow iconfont icon-back"></text>
         </view>
         <text class="nav-title">想认识Ta</text>
         <view class="nav-placeholder" />

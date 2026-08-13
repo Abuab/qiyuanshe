@@ -3,7 +3,7 @@
     <!-- 自定义导航栏（含状态栏占位） -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <text class="back-btn" @tap="handleBack">←</text>
+        <text class="back-btn iconfont icon-back" @tap="handleBack"></text>
         <text class="nav-title">我的回答</text>
         <text class="nav-placeholder"></text>
       </view>
@@ -110,7 +110,7 @@ const handleBack = () => {
 
 .back-btn {
   font-size: 36rpx;
-  color: #FF6B9D;
+  color: #333;
   font-weight: bold;
   width: 80rpx;
 }

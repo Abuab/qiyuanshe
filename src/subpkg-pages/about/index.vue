@@ -2,7 +2,7 @@
   <view class="page">
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
+        <view class="nav-left" @tap="handleBack"><text class="back-icon iconfont icon-back"></text></view>
         <text class="nav-title">关于我们</text>
         <view class="nav-right"></view>
       </view>

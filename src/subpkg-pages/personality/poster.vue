@@ -2,7 +2,7 @@
   <view class="pposter-page">
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-inner">
-        <view class="nav-left" @tap="goBack"><text class="back-icon">←</text></view>
+        <view class="nav-left" @tap="goBack"><text class="back-icon iconfont icon-back"></text></view>
         <text class="nav-title">分享我的性格</text>
         <view class="nav-right" />
       </view>

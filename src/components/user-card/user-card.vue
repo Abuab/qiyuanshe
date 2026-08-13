@@ -23,7 +23,7 @@
             {{ user.gender === 1 ? '♂男' : '♀女' }}
           </text>
           <view v-if="user.isRealName" class="real-name-badge">
-            <AppIcon name="icon-shimingrenzheng" size="24" color="#FF6B6B" />
+            <AppIcon name="icon-shimingrenzheng" size="20" color="#FFFFFF" />
             <text>已实名</text>
           </view>
         </view>
@@ -344,12 +344,13 @@ const onLike = async () => {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 2rpx 10rpx;
+  gap: 2rpx;
+  padding: 2rpx 4rpx;
   font-size: 20rpx;
-  color: #1890ff;
-  background-color: #e6f7ff;
-  border-radius: 20rpx;
-  line-height: 1.6;
+  color: #fff;
+  background-color: #4d9fff;
+  border-radius: 10rpx;
+  line-height: 1.4;
   margin-left: 6rpx;
 }
 

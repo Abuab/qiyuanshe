@@ -4,7 +4,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
         <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">{{ '<' }}</text>
+          <text class="back-icon iconfont icon-back"></text>
         </view>
         <text class="nav-title">单身承诺</text>
         <view class="nav-right" />

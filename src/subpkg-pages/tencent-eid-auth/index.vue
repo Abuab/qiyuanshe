@@ -3,7 +3,7 @@
     <!-- 自定义导航栏 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <text class="nav-back" @tap="handleBack">←</text>
+        <text class="nav-back iconfont icon-back" @tap="handleBack"></text>
         <text class="nav-title">腾讯云E证通授权</text>
         <text class="nav-placeholder"></text>
       </view>

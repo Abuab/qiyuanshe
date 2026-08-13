@@ -20,6 +20,17 @@
       @refresherrefresh="onRefresh"
       :refresher-triggered="refreshing"
     >
+      <!-- 关注公众号提示栏 -->
+      <view class="oa-tip-bar">
+        <view class="oa-tip-icon">
+          <text class="oa-tip-exclaim">!</text>
+        </view>
+        <text class="oa-tip-text">关注服务号，接受消息提醒，不错过每次缘分！</text>
+        <view class="oa-tip-btn" @tap="handleOfficialAccount">
+          <text>立即关注</text>
+        </view>
+      </view>
+
       <view v-if="loading" class="loading-tip">
         <text>加载中...</text>
       </view>
@@ -38,8 +49,7 @@
         <!-- 系统消息聚合入口 -->
         <view v-if="item.type === 'systemAggregate'" class="system-message aggregate">
           <view class="system-icon pink-heart-icon">
-            <image v-if="systemNotifyIcon" :src="systemNotifyIcon" mode="aspectFit" class="system-icon-img" />
-            <view v-else class="ico ico-heart-pink ico-md"></view>
+            <image src="/static/chat-heart.png" mode="aspectFit" class="system-icon-img" />
           </view>
           <view class="message-content">
             <view class="message-header">
@@ -47,7 +57,6 @@
                 <text class="message-title">系统消息</text>
                 <view class="official-tag"><text>官方</text></view>
               </view>
-              <text class="message-time">{{ formatTime(item.createdAt) }}</text>
             </view>
             <text class="message-preview">{{ item.content }}</text>
           </view>
@@ -82,7 +91,9 @@
       </view>
 
       <view v-if="!loading && noMore && messageList.length > 0" class="no-more-tip">
-        <text>没有更多了</text>
+        <view class="no-more-line"></view>
+        <text>仅展示最近2个月的消息</text>
+        <view class="no-more-line"></view>
       </view>
     </scroll-view>
 
@@ -90,6 +101,12 @@
   </view>
 
   <tab-bar />
+
+  <OfficialAccountPopup
+    :show="showOaPopup"
+    :qrcode-url="oaQrcodeUrl"
+    @update:show="showOaPopup = $event"
+  />
 </template>
 
 <script setup lang="ts">
@@ -106,7 +123,7 @@ import { getFullImageUrl } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
-import { useIcon } from '@/composables/useIcon'
+import OfficialAccountPopup from '@/components/OfficialAccountPopup/OfficialAccountPopup.vue'
 
 const systemStore = useSystemStore()
 
@@ -134,8 +151,16 @@ interface UserMessage {
 type MessageItem = SystemAggregate | UserMessage
 
 const userStore = useUserStore()
-const { getPageIcon } = useIcon()
 const statusBarHeight = ref(0)
+
+// ===== 关注公众号弹窗 =====
+const showOaPopup = ref(false)
+const oaQrcodeUrl = computed(() => getFullImageUrl(systemStore.officialAccountQrcode))
+
+const handleOfficialAccount = async () => {
+  showOaPopup.value = true
+  await systemStore.loadSystemConfig()
+}
 const messageList = ref<MessageItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
@@ -145,11 +170,6 @@ let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 // ===== 回到顶部 =====
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
-
-// 系统通知图标（后台可配置）
-const systemNotifyIcon = computed(() => {
-  return getPageIcon('systemNotify') || ''
-})
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
@@ -205,7 +225,7 @@ const fetchConversations = async (isRefresh = false) => {
       type: 'systemAggregate' as const,
       content: lastNotify
         ? `[${lastNotify.title || '系统消息'}] ${lastNotify.content || ''}`
-        : '暂无系统消息',
+        : '',
       createdAt: lastNotify?.createdAt || new Date().toISOString(),
       unreadCount: notifyUnread,
     }
@@ -372,8 +392,7 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .loading-tip,
-.empty-tip,
-.no-more-tip {
+.empty-tip {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -391,7 +410,6 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .message-item {
-  background-color: #fff;
   margin-bottom: 2rpx;
 }
 
@@ -404,12 +422,13 @@ function isImagePreview(item: UserMessage): boolean {
 
 .user-message {
   position: relative;
+  background-color: #fff;
 }
 
 .system-icon {
   width: 96rpx;
   height: 96rpx;
-  background-color: #E3F2FD;
+  background-color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -417,18 +436,14 @@ function isImagePreview(item: UserMessage): boolean {
   margin-right: 20rpx;
   flex-shrink: 0;
 
-  &.pink-heart-icon {
-    background-color: #FFE4EC;
-  }
-
   text {
     font-size: 48rpx;
   }
 }
 
 .system-icon-img {
-  width: 48rpx;
-  height: 48rpx;
+  width: 60rpx;
+  height: 60rpx;
 }
 
 .user-avatar {
@@ -460,14 +475,13 @@ function isImagePreview(item: UserMessage): boolean {
 .official-tag {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 6rpx;
-  padding: 3rpx 4rpx;
+  background: #FF6B8A;
+  border-radius: 8rpx;
+  padding: 2rpx 6rpx;
 
   text {
-    font-size: 18rpx;
+    font-size: 20rpx;
     color: #fff;
-    font-weight: 500;
     line-height: 1;
   }
 }
@@ -524,8 +538,74 @@ function isImagePreview(item: UserMessage): boolean {
 }
 
 .no-more-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 32rpx 0;
-  font-size: 24rpx;
-  color: #999;
+  font-size: 20rpx;
+  color: #BBBBBB;
+}
+
+.no-more-line {
+  width: 140rpx;
+  height: 2rpx;
+  background: #E0E0E0;
+  margin: 0 28rpx;
+}
+
+// ===== 关注公众号提示栏 =====
+.oa-tip-bar {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  margin: 20rpx 24rpx;
+  padding: 0 24rpx;
+  background: #FFF;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.oa-tip-icon {
+  width: 24rpx;
+  height: 24rpx;
+  background-color: #FF6B9D;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.oa-tip-exclaim {
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.oa-tip-text {
+  flex: 1;
+  min-width: 0;
+  margin-left: 12rpx;
+  margin-right: 16rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+  color: #333333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oa-tip-btn {
+  flex-shrink: 0;
+  border: 2rpx solid #FF6B9D;
+  border-radius: 24rpx;
+  padding: 8rpx 20rpx;
+  line-height: 1;
+
+  text {
+    font-size: 24rpx;
+    color: #FF6B9D;
+  }
 }
 </style>

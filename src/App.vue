@@ -166,6 +166,12 @@ onUnhandledRejection((res: { reason: string }) => {
 <style lang="scss">
 @import './styles/variables.scss';
 @import './styles/icons.css';
+@import '@/static/fonts/iconfont-base64.css';
+
+.icon-back {
+  font-weight: bold;
+  -webkit-text-stroke: 1rpx currentColor;
+}
 
 page {
   height: 100%;

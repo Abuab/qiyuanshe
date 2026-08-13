@@ -2,7 +2,7 @@
   <view class="audit-page">
     <view class="nav-bar">
       <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon iconfont icon-back"></text>
       </view>
       <view class="nav-title">内容审核</view>
       <view class="nav-right"></view>

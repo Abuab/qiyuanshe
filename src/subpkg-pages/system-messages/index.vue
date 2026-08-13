@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon iconfont icon-back"></text>
       </view>
       <view class="nav-title">系统消息</view>
       <view class="nav-right" />
@@ -40,8 +40,7 @@
       <view v-if="loading" class="loading-tip"><text>加载中...</text></view>
 
       <view v-if="!loading && list.length === 0" class="empty-tip">
-        <view class="ico ico-mailbox ico-xl empty-icon"></view>
-        <text class="empty-text">暂无系统消息</text>
+        <text class="empty-text">暂时没有系统通知～</text>
       </view>
 
       <view
@@ -224,7 +223,7 @@ const formatTime = (timeStr: string) => {
 .sys-msg-page {
   width: 100vw; height: 100vh;
   display: flex; flex-direction: column;
-  background: #F5F5F5;
+  background: #FFF8FA;
 }
 
 // ==================== 导航栏 ====================
@@ -232,7 +231,7 @@ const formatTime = (timeStr: string) => {
   flex-shrink: 0;
   display: flex; align-items: center;
   height: 88rpx; padding: 0 32rpx; box-sizing: content-box;
-  background: linear-gradient(135deg, #FFB3C6, #FFD1DC);
+  background: #FFF8FA;
   z-index: 100;
 }
 .nav-left { width: 80rpx; flex-shrink: 0; }

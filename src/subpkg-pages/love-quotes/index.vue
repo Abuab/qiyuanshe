@@ -3,7 +3,7 @@
     <!-- 导航栏 — 白底深色，与 about/my-follows 统一的 nav 风格 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <view class="nav-left" @tap="handleBack"><text class="back-icon">←</text></view>
+        <view class="nav-left" @tap="handleBack"><text class="back-icon iconfont icon-back"></text></view>
         <text class="nav-title">{{ appName }}</text>
         <view class="nav-right"></view>
       </view>

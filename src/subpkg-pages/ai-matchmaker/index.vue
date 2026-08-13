@@ -3,7 +3,7 @@
     <!-- 自定义导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon iconfont icon-back"></text>
       </view>
       <view class="nav-title">AI 红娘</view>
       <view class="nav-right" />

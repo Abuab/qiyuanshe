@@ -7,7 +7,7 @@
     <view class="nav-fixed-card" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-inner">
         <view class="nav-left" @tap="handleBack">
-          <text class="back-icon">←</text>
+          <text class="back-icon iconfont icon-back"></text>
         </view>
         <text class="nav-title">问答列表</text>
         <view class="nav-right" />

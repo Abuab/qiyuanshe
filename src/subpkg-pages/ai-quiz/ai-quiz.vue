@@ -3,7 +3,7 @@
     <!-- 顶部标题栏 -->
     <view class="title-bar" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="title-left" @tap="handleBack">
-        <text class="back-icon">←</text>
+        <text class="back-icon iconfont icon-back"></text>
       </view>
       <text class="title-text">AI 情感助手</text>
       <view class="title-right" />

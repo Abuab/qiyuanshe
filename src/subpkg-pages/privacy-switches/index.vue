@@ -3,7 +3,7 @@
     <!-- 导航栏 -->
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-bar">
-        <text class="back-btn" @tap="handleBack">←</text>
+        <text class="back-btn iconfont icon-back" @tap="handleBack"></text>
         <text class="nav-title">隐私设置</text>
         <text class="nav-placeholder"></text>
       </view>
@@ -216,7 +216,7 @@ const onSelectMatchmaker = (matchmaker: any) => {
 
 .back-btn {
   font-size: 36rpx;
-  color: #FF6B9D;
+  color: #333;
   font-weight: bold;
   width: 80rpx;
 }

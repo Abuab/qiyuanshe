@@ -3,7 +3,7 @@
     <view class="nav-wrap" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="nav-level1">
         <view class="nav-left" @tap="goBack">
-          <text class="back-icon">←</text>
+          <text class="back-icon iconfont icon-back"></text>
         </view>
         <text class="nav-title">人格测试</text>
         <view class="nav-right" />

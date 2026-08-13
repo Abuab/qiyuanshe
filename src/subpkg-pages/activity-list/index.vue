@@ -3,7 +3,7 @@
     <!-- 顶部导航栏 -->
     <view class="nav-bar" :style="{ paddingTop: statusBarHeight + 'px', height: (44 + statusBarHeight) + 'px' }">
       <view class="nav-back" @tap="goBack">
-        <text class="nav-back-icon">←</text>
+        <text class="nav-back-icon iconfont icon-back"></text>
       </view>
       <text class="nav-title">活动</text>
       <view class="nav-placeholder"></view>
