@@ -59,7 +59,6 @@
               </view>
             </view>
             <view class="message-preview system-preview">
-              <text class="preview-prefix">[{{ item.prefix || '系统消息' }}]</text>
               <text class="preview-body">{{ item.body || item.content }}</text>
             </view>
           </view>
@@ -139,7 +138,6 @@ interface SystemAggregate {
   id: number
   type: 'systemAggregate'
   content: string
-  prefix: string
   body: string
   createdAt: string
   unreadCount: number
@@ -193,13 +191,11 @@ onShow(() => {
 })
 
 const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggregate => {
-  const prefix = lastNotify?.title || '系统消息'
   const body = lastNotify?.content || ''
   return {
     id: -1,
     type: 'systemAggregate',
     content: body,
-    prefix,
     body,
     createdAt: lastNotify?.createdAt || new Date().toISOString(),
     unreadCount,
@@ -251,12 +247,12 @@ const fetchConversations = async (isRefresh = false) => {
     const notifyUnread = notifyData.unreadCount || 0
     const lastNotify = (notifyData.list && notifyData.list.length > 0) ? notifyData.list[0] : null
 
-    // 构建聚合的系统消息入口
-    const systemAggregate = buildSystemAggregate(lastNotify, notifyUnread)
-
     // 更新未读数
     const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
     messageStore.setUnreadCount(totalUnread)
+
+    // 构建聚合的系统消息入口
+    const systemAggregate = buildSystemAggregate(lastNotify, notifyUnread)
 
     // 合并：系统消息入口在前，聊天在后
     const mergedList: MessageItem[] = [systemAggregate, ...chatList]
@@ -530,17 +526,10 @@ function isImagePreview(item: UserMessage): boolean {
   white-space: nowrap;
 }
 
-// 系统消息聚合入口：前缀与内容分开展示，形成视觉层级
+// 系统消息聚合入口：预览内容
 .system-preview {
   display: flex;
   align-items: baseline;
-
-  .preview-prefix {
-    color: #333333;
-    font-weight: 600;
-    margin-right: 8rpx;
-    flex-shrink: 0;
-  }
 
   .preview-body {
     color: #666666;
