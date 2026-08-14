@@ -28,6 +28,9 @@ const LAST_MSG_TTL = 86400
 const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_SEC = 60
 
+/** 会话列表仅展示最近 60 天的消息 */
+const CONVERSATION_WINDOW_DAYS = 60
+
 
 
 /** 默认限额（数据库无配置时回退） */
@@ -555,12 +558,14 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   ): Promise<{ list: any[]; total: number }> {
     const { page, limit } = dto
     const skip = (page - 1) * limit
+    const since = new Date(Date.now() - CONVERSATION_WINDOW_DAYS * 24 * 60 * 60 * 1000)
 
     // 子查询：每个聊天对象的最新一条消息 ID（排除拉黑用户）
     const latestIds = this.messageRepository
       .createQueryBuilder('m')
       .select('MAX(m.id)', 'maxId')
       .where('(m.fromUserId = :uid OR m.toUserId = :uid)', { uid: userId })
+      .andWhere('m.createdAt >= :since', { since })
       .andWhere(
         `(CASE WHEN m.fromUserId = :uid3 THEN m.toUserId ELSE m.fromUserId END) NOT IN ` +
         `(SELECT ub.blockedUserId FROM user_blocks ub WHERE ub.blockerId = :uid3)`,
@@ -638,9 +643,10 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         `other.id IN (
           SELECT DISTINCT CASE WHEN msg1.fromUserId = :uid6 THEN msg1.toUserId ELSE msg1.fromUserId END
           FROM chat_messages msg1
-          WHERE msg1.fromUserId = :uid6 OR msg1.toUserId = :uid6
+          WHERE (msg1.fromUserId = :uid6 OR msg1.toUserId = :uid6)
+            AND msg1.createdAt >= :since
         )`,
-        { uid6: userId },
+        { uid6: userId, since },
       )
       .andWhere('other.id != :userId', { userId })
       .andWhere('other.isDeleted = :isDeleted', { isDeleted: 0 })
