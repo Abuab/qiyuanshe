@@ -20,6 +20,7 @@ export interface AuditLogFilter {
   action?: string
   module?: string
   adminId?: string
+  adminUsername?: string
   startDate?: string
   endDate?: string
 }

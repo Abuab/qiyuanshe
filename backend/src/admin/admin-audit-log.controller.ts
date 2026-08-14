@@ -23,6 +23,7 @@ export class AdminAuditLogController {
     @Query('action') action?: string,
     @Query('module') module?: string,
     @Query('adminId') adminId?: string,
+    @Query('adminUsername') adminUsername?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
@@ -36,6 +37,9 @@ export class AdminAuditLogController {
     }
     if (adminId) {
       where.adminId = parseInt(adminId, 10)
+    }
+    if (adminUsername) {
+      where.adminUsername = adminUsername
     }
     if (startDate && endDate) {
       where.createdAt = Between(new Date(startDate), new Date(endDate + 'T23:59:59'))

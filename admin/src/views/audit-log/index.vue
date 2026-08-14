@@ -9,21 +9,35 @@
       <div class="filter-bar">
         <el-form :inline="true" :model="filterForm">
           <el-form-item label="操作模块">
-            <el-select v-model="filterForm.module" placeholder="全部" clearable style="width: 150px">
+            <el-select v-model="filterForm.module" placeholder="全部" clearable filterable style="width: 150px">
+              <el-option label="登录认证" value="auth" />
               <el-option label="用户管理" value="users" />
+              <el-option label="用户资料" value="user-profiles" />
               <el-option label="审核管理" value="audit" />
-              <el-option label="订单管理" value="payment" />
-              <el-option label="问答管理" value="questions" />
-              <el-option label="活动管理" value="activities" />
-              <el-option label="系统配置" value="system" />
+              <el-option label="单身承诺审核" value="single-promise/admin" />
+              <el-option label="红娘管理" value="matchmakers" />
+              <el-option label="红娘评价" value="matchmaker-comments" />
+              <el-option label="聊天监控" value="chat" />
               <el-option label="举报管理" value="reports" />
               <el-option label="反馈管理" value="feedbacks" />
-              <el-option label="红娘管理" value="matchmakers" />
+              <el-option label="问答管理" value="questions" />
               <el-option label="圈子管理" value="circles" />
-              <el-option label="子账号管理" value="admin-users" />
+              <el-option label="成功案例" value="success-cases" />
+              <el-option label="活动管理" value="activities" />
+              <el-option label="订单管理" value="payment" />
               <el-option label="VIP管理" value="vip-packages" />
+              <el-option label="VIP配置" value="vip-config" />
+              <el-option label="人格测试" value="personality" />
+              <el-option label="引导文案" value="guide" />
               <el-option label="AI管理" value="ai" />
-              <el-option label="聊天监控" value="chat" />
+              <el-option label="AI快捷提问" value="quick-questions" />
+              <el-option label="到店认证" value="store-cert" />
+              <el-option label="系统配置" value="system" />
+              <el-option label="协议日志存储" value="agreement-log-storage" />
+              <el-option label="文件上传" value="upload" />
+              <el-option label="MFA认证" value="mfa" />
+              <el-option label="个人资料" value="profile" />
+              <el-option label="子账号管理" value="admin-users" />
             </el-select>
           </el-form-item>
           <el-form-item label="操作类型">
@@ -33,6 +47,9 @@
               <el-option label="删除" value="删除" />
               <el-option label="查询" value="查询" />
             </el-select>
+          </el-form-item>
+          <el-form-item label="操作人">
+            <el-input v-model="filterForm.adminUsername" placeholder="用户名" clearable style="width: 140px" @keyup.enter="handleSearch" />
           </el-form-item>
           <el-form-item label="时间范围">
             <el-date-picker
@@ -56,7 +73,8 @@
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="adminUsername" label="操作人" width="120" />
-        <el-table-column prop="action" label="操作" min-width="180" />
+        <el-table-column prop="module" label="操作模块" width="130" show-overflow-tooltip />
+        <el-table-column prop="action" label="操作" min-width="100" />
         <el-table-column prop="method" label="方法" width="80">
           <template #default="{ row }">
             <el-tag
@@ -67,7 +85,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="url" label="接口路径" min-width="240" show-overflow-tooltip />
+        <el-table-column prop="detail" label="操作详情" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="url" label="接口路径" min-width="220" show-overflow-tooltip />
         <el-table-column prop="ip" label="IP" min-width="140" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="操作时间" width="180">
           <template #default="{ row }">
@@ -105,6 +124,7 @@ const dateRange = ref<[string, string] | null>(null)
 const filterForm = reactive({
   module: '',
   action: '',
+  adminUsername: '',
 })
 
 const pagination = reactive({
@@ -131,6 +151,7 @@ async function fetchData() {
     }
     if (filterForm.module) params.module = filterForm.module
     if (filterForm.action) params.action = filterForm.action
+    if (filterForm.adminUsername) params.adminUsername = filterForm.adminUsername
     if (dateRange.value) {
       params.startDate = dateRange.value[0]
       params.endDate = dateRange.value[1]
@@ -154,6 +175,7 @@ function handleSearch() {
 function handleReset() {
   filterForm.module = ''
   filterForm.action = ''
+  filterForm.adminUsername = ''
   dateRange.value = null
   pagination.page = 1
   fetchData()

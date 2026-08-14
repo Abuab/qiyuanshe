@@ -46,11 +46,11 @@ const AUDIT_ROUTE_PREFIXES = [
 
 /** 从路径中提取模块名（兼容 /admin/xxx 和 /single-promise/admin 两种格式） */
 function extractModule(url: string): string {
-  // 先尝试 /admin/xxx 格式
-  let match = url.match(/\/admin\/([^\/\?]+)/)
+  // 先匹配 /single-promise/admin 格式，避免被 /admin/ 通用规则误匹配
+  let match = url.match(/\/(single-promise\/admin)/)
   if (match) return match[1]
-  // 再尝试 /single-promise/admin 格式
-  match = url.match(/\/(single-promise\/admin)/)
+  // 再匹配 /admin/xxx 格式
+  match = url.match(/\/admin\/([^\/\?]+)/)
   if (match) return match[1]
   return 'unknown'
 }
@@ -65,6 +65,47 @@ function actionLabel(method: string): string {
   }
 }
 
+/** 提取客户端真实 IP（优先 X-Forwarded-For 首个，兼容反向代理） */
+function getClientIp(request: any): string {
+  const xff = request.headers?.['x-forwarded-for']
+  if (xff) {
+    const first = String(xff).split(',')[0]?.trim()
+    if (first) return first
+  }
+  const realIp = request.headers?.['x-real-ip']
+  if (realIp) return String(realIp)
+  return request.ip || request.connection?.remoteAddress || request.socket?.remoteAddress || ''
+}
+
+/** 仅允许写入审计详情的 ID 类字段（避免密码/token 等敏感信息入库） */
+const DETAIL_ID_FIELDS = [
+  'id', 'userId', 'adminId', 'targetId', 'orderId', 'activityId',
+  'questionId', 'circleId', 'postId', 'commentId', 'matchmakerId',
+  'reportId', 'feedbackId',
+]
+
+/** 从请求中提取操作对象 ID 作为审计详情（只取 ID 类字段，不落敏感数据） */
+function extractDetail(request: any): string {
+  const parts: string[] = []
+  const paramId = request.params?.id
+  const hasParamId = paramId !== undefined && paramId !== null && paramId !== ''
+  if (hasParamId) {
+    parts.push(`id=${paramId}`)
+  }
+  const body = request.body
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    for (const key of DETAIL_ID_FIELDS) {
+      // 路径参数已有 id 时，跳过 body 里的 id，避免重复
+      if (key === 'id' && hasParamId) continue
+      const value = body[key]
+      if (value !== undefined && value !== null && value !== '') {
+        parts.push(`${key}=${value}`)
+      }
+    }
+  }
+  return parts.join(' ')
+}
+
 @Injectable()
 export class AdminAuditInterceptor implements NestInterceptor {
   constructor(
@@ -74,7 +115,9 @@ export class AdminAuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest()
-    const url = request.url || ''
+    const rawUrl = request.url || ''
+    // 去掉全局前缀 /api（若有），用业务路径匹配审计白名单
+    const url = rawUrl.replace(/^\/api(?=\/)/, '')
     const method = request.method || ''
 
     // 只记录写操作（POST/PUT/DELETE），跳过轮询接口
@@ -87,7 +130,8 @@ export class AdminAuditInterceptor implements NestInterceptor {
     const adminId = adminUser?.id || 0
     const adminUsername = adminUser?.username || 'unknown'
     const module = extractModule(url)
-    const ip = request.ip || request.connection?.remoteAddress || ''
+    const ip = getClientIp(request)
+    const detail = extractDetail(request)
 
     return next.handle().pipe(
       tap(() => {
@@ -100,6 +144,7 @@ export class AdminAuditInterceptor implements NestInterceptor {
             method: method.toUpperCase(),
             url: url.substring(0, 500),
             ip,
+            detail: detail || null,
           })
           this.auditRepo.save(log).catch(() => {
             // 日志记录失败不阻塞主流程

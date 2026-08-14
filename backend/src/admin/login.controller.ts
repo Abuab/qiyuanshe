@@ -65,11 +65,35 @@ export class AdminLoginController {
   ) {}
 
   /** 写入审计日志（fire-and-forget，失败不阻塞主流程） */
-  private audit(action: string, module: string, adminId: number, adminUsername: string, detail?: string) {
+  private audit(action: string, module: string, adminId: number, adminUsername: string, detail?: string, req?: any) {
     try {
-      const log = this.auditRepo.create({ adminId, adminUsername, action, module, method: 'POST', detail: detail || null })
+      const rawUrl = req?.originalUrl || req?.url || ''
+      const url = rawUrl.replace(/^\/api(?=\/)/, '').substring(0, 500)
+      const log = this.auditRepo.create({
+        adminId,
+        adminUsername,
+        action,
+        module,
+        method: 'POST',
+        detail: detail || null,
+        url: url || null,
+        ip: this.getClientIp(req),
+      })
       this.auditRepo.save(log).catch(() => {})
     } catch {}
+  }
+
+  /** 提取客户端真实 IP（优先 X-Forwarded-For 首个，兼容反向代理） */
+  private getClientIp(req?: any): string {
+    if (!req) return ''
+    const xff = req.headers?.['x-forwarded-for']
+    if (xff) {
+      const first = String(xff).split(',')[0]?.trim()
+      if (first) return first
+    }
+    const realIp = req.headers?.['x-real-ip']
+    if (realIp) return String(realIp)
+    return req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || ''
   }
 
   /** 生成管理员 token 对（accessToken + refreshToken） */
@@ -143,7 +167,7 @@ export class AdminLoginController {
   @Post('login')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async login(@Body() dto: LoginDto) {
+  async login(@Body() dto: LoginDto, @Req() req: any) {
     const { username, password, captcha, captchaKey } = dto
 
     if (!captcha) {
@@ -156,7 +180,7 @@ export class AdminLoginController {
 
     const attemptRecord = await this.getLoginAttempt(username)
     if (attemptRecord.blockUntil > Date.now()) {
-      this.audit('登录', 'auth', 0, username, '登录被拒绝: 账号已锁定')
+      this.audit('登录', 'auth', 0, username, '登录被拒绝: 账号已锁定', req)
       return { success: false, message: '登录尝试次数过多，请15分钟后再试' }
     }
 
@@ -172,10 +196,10 @@ export class AdminLoginController {
       if (attemptRecord.count >= MAX_LOGIN_ATTEMPTS) {
         attemptRecord.blockUntil = Date.now() + LOGIN_BLOCK_DURATION_MS
         attemptRecord.count = 0
-        this.audit('登录', 'auth', 0, username, `登录失败锁定: 已尝试${MAX_LOGIN_ATTEMPTS}次以上，锁定15分钟`)
+        this.audit('登录', 'auth', 0, username, `登录失败锁定: 已尝试${MAX_LOGIN_ATTEMPTS}次以上，锁定15分钟`, req)
       }
       await this.setLoginAttempt(username, attemptRecord)
-      this.audit('登录', 'auth', 0, username, '登录失败: 用户名或密码错误')
+      this.audit('登录', 'auth', 0, username, '登录失败: 用户名或密码错误', req)
       return { success: false, message: '用户名或密码错误' }
     }
 
@@ -212,7 +236,7 @@ export class AdminLoginController {
 
     const permissions = this.getPermissionsByRole(adminUser.role)
 
-    this.audit('登录', 'auth', adminUser.id, adminUser.username, '登录成功')
+    this.audit('登录', 'auth', adminUser.id, adminUser.username, '登录成功', req)
 
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
   }
@@ -220,7 +244,7 @@ export class AdminLoginController {
   @Post('mfa/login-verify')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async mfaLoginVerify(@Body() dto: MfaLoginVerifyDto) {
+  async mfaLoginVerify(@Body() dto: MfaLoginVerifyDto, @Req() req: any) {
     const { tempToken, code } = dto
 
     let payload: any
@@ -238,7 +262,7 @@ export class AdminLoginController {
 
     const valid = await this.mfaService.verifyLoginMfa(payload.adminId, code)
     if (!valid) {
-      this.audit('MFA验证', 'auth', payload.adminId, 'unknown', 'MFA验证失败: 验证码错误')
+      this.audit('MFA验证', 'auth', payload.adminId, 'unknown', 'MFA验证失败: 验证码错误', req)
       return { success: false, message: '验证码错误' }
     }
 
@@ -261,7 +285,7 @@ export class AdminLoginController {
 
     const permissions = this.getPermissionsByRole(adminUser.role)
 
-    this.audit('MFA登录', 'auth', adminUser.id, adminUser.username, 'MFA验证通过，登录成功')
+    this.audit('MFA登录', 'auth', adminUser.id, adminUser.username, 'MFA验证通过，登录成功', req)
 
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken, user, permissions }
   }
@@ -269,7 +293,7 @@ export class AdminLoginController {
   // ===== Token 刷新 =====
 
   @Post('auth/refresh')
-  async refreshToken(@Body() dto: { refreshToken: string }) {
+  async refreshToken(@Body() dto: { refreshToken: string }, @Req() req: any) {
     const { refreshToken } = dto
     if (!refreshToken) {
       return { success: false, message: '缺少 refreshToken' }
@@ -297,7 +321,7 @@ export class AdminLoginController {
     }
 
     const tokens = this.generateTokens(adminUser)
-    this.audit('刷新令牌', 'auth', adminUser.id, adminUser.username, 'Token刷新成功')
+    this.audit('刷新令牌', 'auth', adminUser.id, adminUser.username, 'Token刷新成功', req)
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken }
   }
 
@@ -354,6 +378,7 @@ export class AdminLoginController {
       operator?.id || 0,
       operator?.username || 'unknown',
       `模拟登录子账号: ${target.username}(${target.nickname || target.username})`,
+      req,
     )
 
     const tokens = this.generateTokens(target)
