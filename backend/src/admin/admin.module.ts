@@ -52,7 +52,6 @@ import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { RedLineUsage } from '../entities/RedLineUsage'
 import { AuditLog } from '../entities/AuditLog'
 import { SystemConfig } from '../entities/SystemConfig'
-import { CirclePost } from '../entities/CirclePost'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
 import { Dynamic } from '../entities/Dynamic'
@@ -119,7 +118,6 @@ import { AdminOperationTagService } from './operation-tag.service'
       ChatMessage,
       ChatMonitorSession,
       ChatOperationLog,
-      CirclePost,
       UserAuth,
       SinglePromise,
       Dynamic,

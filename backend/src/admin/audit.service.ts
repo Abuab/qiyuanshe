@@ -6,7 +6,6 @@ import { UserPhoto } from '../entities/UserPhoto'
 import { User } from '../entities/User'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { normalizeImageUrl, resolveStaticUrl } from '../common/image-url'
-import { CirclePost } from '../entities/CirclePost'
 import { Dynamic } from '../entities/Dynamic'
 import { UserAuth } from '../entities/UserAuth'
 import { SinglePromise } from '../entities/SinglePromise'
@@ -33,8 +32,6 @@ export class AdminAuditService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepository: Repository<QuestionAnswer>,
-    @InjectRepository(CirclePost)
-    private readonly circlePostRepository: Repository<CirclePost>,
     @InjectRepository(UserAuth)
     private readonly userAuthRepository: Repository<UserAuth>,
     @InjectRepository(SinglePromise)
@@ -134,24 +131,25 @@ export class AdminAuditService {
   }
 
   async getPendingCount() {
-    const [profileCount, circlePostCount, educationCount, propertyCount, carCount, singlePromiseCount] = await Promise.all([
+    const [profileCount, educationCount, propertyCount, carCount, singlePromiseCount] = await Promise.all([
       this.auditLogRepository.count({ where: { action: 'PENDING' } }),
-      this.circlePostRepository.count({ where: { status: 0 } }),
       this.userAuthRepository.count({ where: { authType: 'education', status: 0 } }),
       this.userAuthRepository.count({ where: { authType: 'property', status: 0 } }),
       this.userAuthRepository.count({ where: { authType: 'car', status: 0 } }),
       this.singlePromiseRepository.count({ where: { status: 0 } }),
     ])
-    // 「审核管理」徽标 = 资料审核 + 学历/房产/车产认证 + 单身承诺，任一子菜单有待审核都计入
-    const profileTotal = profileCount + educationCount + propertyCount + carCount + singlePromiseCount
+    // 认证类合计（学历/房产/车产/单身承诺），供「认证管理」父级徽标使用
+    const authTotal = educationCount + propertyCount + carCount + singlePromiseCount
     return {
-      profile: profileTotal,
+      // 「审核管理」徽标 = 仅资料审核，不含认证类
+      profile: profileCount,
+      // 「认证管理」父级徽标 = 各认证子模块合计
+      auth: authTotal,
       education: educationCount,
       property: propertyCount,
       car: carCount,
       singlePromise: singlePromiseCount,
-      circlePost: circlePostCount,
-      total: profileTotal + circlePostCount,
+      total: profileCount + authTotal,
     }
   }
 

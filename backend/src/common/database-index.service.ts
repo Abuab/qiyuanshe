@@ -137,13 +137,6 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
         sql: `CREATE INDEX idx_dynamic_type_time ON dynamics (type, createdAt DESC)`,
       },
 
-      // ========== circle_posts：圈子帖子列表 ==========
-      // getPosts(): WHERE circleId=? AND status=1 ORDER BY createdAt DESC
-      {
-        name: 'idx_circle_posts_list',
-        sql: `CREATE INDEX idx_circle_posts_list ON circle_posts (circleId, status, createdAt DESC)`,
-      },
-
       // ========== circle_members：圈子成员排序 ==========
       // getCircleUsers(): WHERE circleId=? ORDER BY sortOrder ASC
       {

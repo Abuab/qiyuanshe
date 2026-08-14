@@ -51,6 +51,7 @@
         <template #title>
           <el-icon><Stamp /></el-icon>
           <span>认证管理</span>
+          <span v-if="adminStore.pendingAuthCount > 0" class="count-badge title-badge">{{ adminStore.pendingAuthCount }}</span>
         </template>
         <el-menu-item index="/single-promise">
           <span class="menu-label">单身承诺审核</span>
@@ -112,10 +113,7 @@
 
       <el-menu-item v-if="canAccess('/circles')" index="/circles">
         <el-icon><Connection /></el-icon>
-        <template #title>
-          <span>圈子管理</span>
-          <span v-if="adminStore.pendingCirclePostCount > 0" class="count-badge title-badge">{{ adminStore.pendingCirclePostCount }}</span>
-        </template>
+        <template #title>圈子管理</template>
       </el-menu-item>
 
       <el-menu-item v-if="canAccess('/success-cases')" index="/success-cases">

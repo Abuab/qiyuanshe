@@ -22,12 +22,13 @@ export const useAdminStore = defineStore('admin', () => {
   const isCollapsed = ref(false)
   // 审核管理（资料/照片等）待审核数
   const pendingAuditCount = ref(0)
+  // 认证管理父级待审核合计（学历/房产/车产/单身承诺）
+  const pendingAuthCount = ref(0)
   // 各子模块待审核数
   const pendingSinglePromiseCount = ref(0)
   const pendingEducationCount = ref(0)
   const pendingPropertyCount = ref(0)
   const pendingCarCount = ref(0)
-  const pendingCirclePostCount = ref(0)
 
   const isLoggedIn = computed(() => !!token.value)
   const isImpersonating = computed(() => !!sessionStorage.getItem('admin_original_session'))
@@ -194,14 +195,15 @@ export const useAdminStore = defineStore('admin', () => {
       const res = await adminAudit.pendingCount()
       const data = res.data
       if (data) {
-        // 父级徽标 = 全部待审核
-        pendingAuditCount.value = data.total ?? 0
+        // 审核管理徽标 = 仅资料审核
+        pendingAuditCount.value = data.profile ?? 0
+        // 认证管理父级徽标 = 各认证子模块合计
+        pendingAuthCount.value = data.auth ?? 0
         // 各子模块徽标
         pendingSinglePromiseCount.value = data.singlePromise ?? 0
         pendingEducationCount.value = data.education ?? 0
         pendingPropertyCount.value = data.property ?? 0
         pendingCarCount.value = data.car ?? 0
-        pendingCirclePostCount.value = data.circlePost ?? 0
       }
     } catch { /* ignore */ }
   }
@@ -211,11 +213,11 @@ export const useAdminStore = defineStore('admin', () => {
     userInfo,
     isCollapsed,
     pendingAuditCount,
+    pendingAuthCount,
     pendingSinglePromiseCount,
     pendingEducationCount,
     pendingPropertyCount,
     pendingCarCount,
-    pendingCirclePostCount,
     isLoggedIn,
     isImpersonating,
     initApp,

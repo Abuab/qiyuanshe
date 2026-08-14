@@ -1244,8 +1244,6 @@ export class UserService {
       { sql: 'DELETE FROM ai_fun_quiz_reports WHERE userId = ?', desc: 'ai_fun_quiz_reports', params: (id) => [id] },
       // 红娘评语
       { sql: 'DELETE FROM matchmaker_comments WHERE userId = ?', desc: 'matchmaker_comments', params: (id) => [id] },
-      // 圈子帖子
-      { sql: 'DELETE FROM circle_posts WHERE userId = ?', desc: 'circle_posts', params: (id) => [id] },
       // AI缘分匹配报告
       { sql: 'DELETE FROM ai_match_reports WHERE userId = ? OR targetUserId = ?', desc: 'ai_match_reports', params: (id) => [id, id] },
       // 审核日志（用户提交的审核记录）
