@@ -131,7 +131,8 @@ export class AdminAuditInterceptor implements NestInterceptor {
     const adminUsername = adminUser?.username || 'unknown'
     const module = extractModule(url)
     const ip = getClientIp(request)
-    const detail = extractDetail(request)
+    // 优先使用 controller 预置的可读详情（如删除红娘时记录姓名），否则回退到 ID 提取
+    const detail = (request as any).auditDetail || extractDetail(request)
 
     return next.handle().pipe(
       tap(() => {

@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   Body,
+  Req,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common'
@@ -55,7 +56,10 @@ export class AdminMatchmakerController {
   }
 
   @Delete(':id')
-  async delete(@Param('id', ParseIntPipe) id: number) {
+  async delete(@Param('id', ParseIntPipe) id: number, @Req() req: any) {
+    // 删除前预置可读审计详情，供操作审计日志展示红娘姓名（硬删除后无法反查）
+    const matchmaker = await this.matchmakerService.detail(id)
+    req.auditDetail = matchmaker ? `name=${matchmaker.name} id=${id}` : `id=${id}`
     await this.matchmakerService.delete(id)
     return Result.success(null, '删除成功')
   }

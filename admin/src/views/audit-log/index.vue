@@ -73,9 +73,13 @@
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="adminUsername" label="操作人" width="120" />
-        <el-table-column prop="module" label="操作模块" width="130" show-overflow-tooltip />
+        <el-table-column label="操作模块" width="130" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ moduleLabel(row.module) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="action" label="操作" min-width="100" />
-        <el-table-column prop="method" label="方法" width="80">
+        <el-table-column prop="method" label="方法" width="100">
           <template #default="{ row }">
             <el-tag
               :type="methodTagType(row.method)"
@@ -140,6 +144,41 @@ function methodTagType(method: string): '' | 'success' | 'danger' | 'warning' | 
     case 'GET': return 'info'
     default: return ''
   }
+}
+
+const moduleLabels: Record<string, string> = {
+  auth: '登录认证',
+  users: '用户管理',
+  'user-profiles': '用户资料',
+  audit: '审核管理',
+  'single-promise/admin': '单身承诺审核',
+  matchmakers: '红娘管理',
+  'matchmaker-comments': '红娘评价',
+  chat: '聊天监控',
+  reports: '举报管理',
+  feedbacks: '反馈管理',
+  questions: '问答管理',
+  circles: '圈子管理',
+  'success-cases': '成功案例',
+  activities: '活动管理',
+  payment: '订单管理',
+  'vip-packages': 'VIP管理',
+  'vip-config': 'VIP配置',
+  personality: '人格测试',
+  guide: '引导文案',
+  ai: 'AI管理',
+  'quick-questions': 'AI快捷提问',
+  'store-cert': '到店认证',
+  system: '系统配置',
+  'agreement-log-storage': '协议日志存储',
+  upload: '文件上传',
+  mfa: 'MFA认证',
+  profile: '个人资料',
+  'admin-users': '子账号管理',
+}
+
+function moduleLabel(module: string): string {
+  return moduleLabels[module] || module || '-'
 }
 
 async function fetchData() {
