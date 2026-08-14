@@ -42,6 +42,16 @@
         <el-menu-item index="/audit/queue">
           <span class="menu-label">人工审核队列</span>
         </el-menu-item>
+      </el-sub-menu>
+
+      <el-sub-menu
+        v-if="canAccess('/single-promise') || canAccess('/education-auth') || canAccess('/property-auth') || canAccess('/car-auth') || canAccess('/store-cert-mgmt')"
+        index="/auth"
+      >
+        <template #title>
+          <el-icon><Stamp /></el-icon>
+          <span>认证管理</span>
+        </template>
         <el-menu-item index="/single-promise">
           <span class="menu-label">单身承诺审核</span>
           <span v-if="adminStore.pendingSinglePromiseCount > 0" class="count-badge">{{ adminStore.pendingSinglePromiseCount }}</span>
@@ -58,10 +68,15 @@
           <span class="menu-label">车产认证审核</span>
           <span v-if="adminStore.pendingCarCount > 0" class="count-badge">{{ adminStore.pendingCarCount }}</span>
         </el-menu-item>
-        <el-menu-item index="/audit-log">
-          <span class="menu-label">操作审计日志</span>
+        <el-menu-item v-if="canAccess('/store-cert-mgmt')" index="/store-cert-mgmt">
+          <span class="menu-label">到店认证管理</span>
         </el-menu-item>
       </el-sub-menu>
+
+      <el-menu-item v-if="canAccess('/audit-log')" index="/audit-log">
+        <el-icon><Document /></el-icon>
+        <template #title>操作审计日志</template>
+      </el-menu-item>
 
       <el-sub-menu v-if="canAccess('/matchmaker')" index="/matchmaker">
         <template #title>
@@ -123,14 +138,7 @@
         </template>
         <el-menu-item index="/payment/list">订单列表</el-menu-item>
         <el-menu-item index="/payment/stats">营收统计</el-menu-item>
-      </el-sub-menu>
-
-      <el-sub-menu v-if="canAccess('/vip')" index="/vip">
-        <template #title>
-          <el-icon><Ticket /></el-icon>
-          <span>会员管理</span>
-        </template>
-        <el-menu-item index="/vip/packages">套餐管理</el-menu-item>
+        <el-menu-item v-if="canAccess('/vip/packages')" index="/vip/packages">套餐管理</el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="canAccess('/personality')" index="/personality">
@@ -178,18 +186,6 @@
         <el-menu-item index="/system/quota">用量限额</el-menu-item>
       </el-sub-menu>
 
-      <el-sub-menu
-        v-if="canAccess('/store-cert-mgmt') || canAccess('/system/store-cert')"
-        index="/store-cert"
-      >
-        <template #title>
-          <el-icon><Shop /></el-icon>
-          <span>到店认证</span>
-        </template>
-        <el-menu-item index="/store-cert-mgmt">到店认证管理</el-menu-item>
-        <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
-      </el-sub-menu>
-
       <el-sub-menu v-if="canAccess('/system')" index="/system">
         <template #title>
           <el-icon><Setting /></el-icon>
@@ -202,6 +198,7 @@
         <el-menu-item index="/system/dict">选项配置</el-menu-item>
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
+        <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
       </el-sub-menu>
 
       <el-menu-item
@@ -258,13 +255,13 @@ import {
   Connection,
   Star,
   ChatDotRound,
-  Ticket,
   ChatLineSquare,
   Compass,
   MagicStick,
   Promotion,
   Cpu,
-  Shop,
+  Stamp,
+  Document,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

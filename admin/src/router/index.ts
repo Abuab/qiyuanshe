@@ -87,7 +87,7 @@ const routes: RouteRecordRaw[] = [
         path: '/audit/list',
         name: 'AuditList',
         component: () => import('../views/audit/list.vue'),
-        meta: { title: '审核管理', requiresAuth: true },
+        meta: { title: '审核列表', requiresAuth: true },
       },
       {
         path: '/payment/list',
@@ -105,7 +105,7 @@ const routes: RouteRecordRaw[] = [
         path: '/system/config',
         name: 'SystemConfig',
         component: () => import('../views/system/config.vue'),
-        meta: { title: '系统配置', requiresAuth: true },
+        meta: { title: '基础配置', requiresAuth: true },
       },
       {
         path: '/system/official-account',
