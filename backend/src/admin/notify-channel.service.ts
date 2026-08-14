@@ -19,6 +19,8 @@ export interface NotifyOptions {
   userId?: number
   userNickname?: string
   source?: string
+  auditStatus?: number
+  adminName?: string
 }
 
 @Injectable()
@@ -34,12 +36,12 @@ export class NotifyChannelService {
 
   /** 发送审核通知 - 向所有已配置 webhook 的通道发送，并记录日志 */
   async sendAuditNotify(opts: NotifyOptions) {
-    const { type, content, userId, userNickname, source } = opts
+    const { type, content, userId, userNickname, source, auditStatus, adminName } = opts
     const config = await this.getNotifyConfig()
 
     if (!config || !config.enabled) {
       this.logger.log('通知通道未启用，跳过发送')
-      await this.writeLog(type, '', false, '通知通道未启用', userId, userNickname, source || type, content)
+      await this.writeLog(type, '', false, '通知通道未启用', userId, userNickname, source || type, content, auditStatus, adminName)
       return
     }
 
@@ -48,7 +50,7 @@ export class NotifyChannelService {
     const types = config.notifyTypes || []
     if (types.length > 0 && !types.includes(type) && !types.includes(source || '')) {
       this.logger.log(`通知类型 ${type}(source=${source}) 未在配置中勾选，跳过发送`)
-      await this.writeLog(type, '', false, `通知类型 ${type}(source=${source}) 未勾选`, userId, userNickname, source || type, content)
+      await this.writeLog(type, '', false, `通知类型 ${type}(source=${source}) 未勾选`, userId, userNickname, source || type, content, auditStatus, adminName)
       return
     }
 
@@ -66,7 +68,7 @@ export class NotifyChannelService {
 
     if (channels.length === 0) {
       this.logger.warn('通知通道已启用但所有通道均未配置Webhook地址')
-      await this.writeLog(type, '', false, '未配置任何 Webhook 地址', userId, userNickname, source || type, content)
+      await this.writeLog(type, '', false, '未配置任何 Webhook 地址', userId, userNickname, source || type, content, auditStatus, adminName)
       return
     }
 
@@ -76,10 +78,10 @@ export class NotifyChannelService {
       try {
         await this.sendWebhook(ch.url, message)
         this.logger.log(`通知已发送: type=${type}, channel=${ch.name}`)
-        await this.writeLog(type, ch.name, true, '', userId, userNickname, source || type, content)
+        await this.writeLog(type, ch.name, true, '', userId, userNickname, source || type, content, auditStatus, adminName)
       } catch (e: any) {
         this.logger.error(`通知发送失败[${ch.name}]: ${e.message}`)
-        await this.writeLog(type, ch.name, false, e.message, userId, userNickname, source || type, content)
+        await this.writeLog(type, ch.name, false, e.message, userId, userNickname, source || type, content, auditStatus, adminName)
       }
     }
   }
@@ -120,6 +122,8 @@ export class NotifyChannelService {
     userNickname?: string,
     source?: string,
     content?: string,
+    auditStatus?: number,
+    adminName?: string,
   ) {
     try {
       const log = this.notifyLogRepository.create({
@@ -131,6 +135,8 @@ export class NotifyChannelService {
         userNickname: userNickname || null,
         source: source || notifyType,
         content: content || null,
+        auditStatus: auditStatus ?? null,
+        adminName: adminName || null,
       })
       await this.notifyLogRepository.save(log)
     } catch (e: any) {

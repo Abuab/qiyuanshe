@@ -223,6 +223,27 @@ CREATE TABLE IF NOT EXISTS `audit_logs` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='审核日志表';
 
 -- =============================================
+-- 通知日志表
+-- =============================================
+CREATE TABLE IF NOT EXISTS `notify_logs` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `notifyType` VARCHAR(30) NOT NULL COMMENT '通知类型: photo | user | report',
+  `channel` VARCHAR(30) NOT NULL COMMENT '通知通道: wecom | feishu | dingtalk',
+  `success` TINYINT NOT NULL DEFAULT 1 COMMENT '是否成功: 1=成功 0=失败',
+  `errorMessage` TEXT NULL COMMENT '失败原因',
+  `userId` INT NULL COMMENT '用户ID',
+  `userNickname` VARCHAR(100) NULL COMMENT '用户昵称',
+  `source` VARCHAR(50) NOT NULL COMMENT '触发来源: photo_upload | photo_audit | profile_edit | post_publish',
+  `content` VARCHAR(500) NULL COMMENT '消息内容摘要',
+  `auditStatus` TINYINT NULL COMMENT '审核结果: 1=通过 2=拒绝（仅审核结果通知有值）',
+  `adminName` VARCHAR(100) NULL COMMENT '处理人（审核管理员用户名）',
+  `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_notifyType` (`notifyType`),
+  KEY `idx_userId` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='通知发送日志表';
+
+-- =============================================
 -- 系统配置表
 -- =============================================
 CREATE TABLE IF NOT EXISTS `system_configs` (

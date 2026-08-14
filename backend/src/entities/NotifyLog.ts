@@ -45,6 +45,14 @@ export class NotifyLog {
   @Column({ type: 'varchar', length: 500, nullable: true })
   content: string
 
+  /** 审核结果: 1=通过 2=拒绝（仅审核结果通知有值） */
+  @Column({ type: 'tinyint', nullable: true })
+  auditStatus: number
+
+  /** 处理人（审核管理员用户名） */
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  adminName: string
+
   @CreateDateColumn()
   createdAt: Date
 }

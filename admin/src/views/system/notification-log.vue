@@ -209,6 +209,12 @@
           </el-descriptions-item>
           <el-descriptions-item label="通道">{{ channelName(detailDrawer.data.channel) }}</el-descriptions-item>
           <el-descriptions-item label="来源">{{ sourceName(detailDrawer.data.source || detailDrawer.data.notifyType) }}</el-descriptions-item>
+          <el-descriptions-item label="审核结果">
+            <el-tag v-if="detailDrawer.data.auditStatus === 1" type="success" size="small">通过</el-tag>
+            <el-tag v-else-if="detailDrawer.data.auditStatus === 2" type="danger" size="small">拒绝</el-tag>
+            <span v-else class="text-muted">-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="处理人">{{ detailDrawer.data.adminName || '-' }}</el-descriptions-item>
           <el-descriptions-item label="用户">{{ detailDrawer.data.userNickname || '未知用户' }}</el-descriptions-item>
           <el-descriptions-item label="消息内容">
             <div class="detail-content">{{ detailDrawer.data.content || '-' }}</div>

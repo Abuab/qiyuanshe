@@ -7,6 +7,7 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from './admin-jwt.guard'
 import { RoleGuard } from './role.guard'
@@ -34,6 +35,18 @@ export class AdminAuditController {
     private readonly notifyService: NotifyChannelService,
   ) {}
 
+  private targetTypeLabel(targetType: string): string {
+    switch (targetType) {
+      case 'avatar': return '头像'
+      case 'photo': return '图片'
+      case 'user': return '资料修改'
+      case 'user_create': return '用户创建'
+      case 'answer': return '回答'
+      case 'voice': return '语音'
+      default: return '内容'
+    }
+  }
+
   @Get('list')
   async list(@Query() filter: AuditFilter) {
     const result = await this.auditService.list(filter)
@@ -49,6 +62,7 @@ export class AdminAuditController {
   @Post(':id/approve')
   async approve(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
     @Body('reason') reason?: string,
   ) {
     await this.auditService.approve(id, reason)
@@ -71,12 +85,15 @@ export class AdminAuditController {
       // voice 类型不发送审核通过/拒绝通知（仅 user.service 中提交时发送 voice_upload 通知）
       if (audit.targetType !== 'voice') {
         const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
+        const adminName = req.user?.username || ''
         this.notifyService.sendAuditNotify({
           type: notifyType,
-          content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已通过，审核ID: ${id}`,
+          content: `${this.targetTypeLabel(audit.targetType)}审核已通过，审核ID: ${id}，对象ID: ${audit.targetId}，处理人: ${adminName || '未知'}`,
           userId: notifyUserId,
           userNickname: notifyNickname,
           source: `${audit.targetType}_audit`,
+          auditStatus: 1,
+          adminName,
         }).catch(() => {})
       }
     }
@@ -86,6 +103,7 @@ export class AdminAuditController {
   @Post(':id/reject')
   async reject(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
     @Body('reason') reason: string,
   ) {
     await this.auditService.reject(id, reason)
@@ -108,12 +126,15 @@ export class AdminAuditController {
       // voice 类型不发送审核通过/拒绝通知
       if (audit.targetType !== 'voice') {
         const notifyType = audit.targetType === 'avatar' ? 'photo' : audit.targetType
+        const adminName = req.user?.username || ''
         this.notifyService.sendAuditNotify({
           type: notifyType,
-          content: `有一条${audit.targetType === 'avatar' ? '头像' : audit.targetType === 'photo' ? '图片' : '内容'}审核已被拒绝${reason ? `，原因：${reason}` : ''}，审核ID: ${id}`,
+          content: `${this.targetTypeLabel(audit.targetType)}审核已被拒绝，原因: ${reason || '未填写'}，审核ID: ${id}，对象ID: ${audit.targetId}，处理人: ${adminName || '未知'}`,
           userId: notifyUserId,
           userNickname: notifyNickname,
           source: `${audit.targetType}_audit`,
+          auditStatus: 2,
+          adminName,
         }).catch(() => {})
       }
     }
