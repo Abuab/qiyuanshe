@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common'
 import { AuditService } from './audit.service'
 import {
-  AuditPhotoDto,
   AuditTextDto,
   QueryPendingAuditDto,
   ApproveAuditDto,
@@ -23,11 +22,6 @@ import { AdminGuard } from '../auth/guards/admin.guard'
 @Controller('audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
-
-  @Post('photo')
-  async auditPhoto(@Body() dto: AuditPhotoDto) {
-    return this.auditService.auditPhoto(dto)
-  }
 
   @Post('text')
   @UseGuards(JwtAuthGuard)

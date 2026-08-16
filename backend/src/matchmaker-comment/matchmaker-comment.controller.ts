@@ -9,10 +9,8 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
-  Request,
   BadRequestException,
 } from '@nestjs/common'
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
@@ -36,33 +34,6 @@ export class MatchmakerCommentController {
   async getList() {
     const list = await this.commentService.getList()
     return Result.success(list)
-  }
-
-  // 红娘给会员写评语（需红娘角色）
-  @UseGuards(JwtAuthGuard)
-  @Post()
-  async create(
-    @Request() req: any,
-    @Body() body: { userId: number; content: string; rating: number },
-  ) {
-    if (body.content && body.content.length > 500) {
-      throw new BadRequestException('评语不能超过500字')
-    }
-    const comment = await this.commentService.create({
-      matchmakerId: req.user.id,
-      userId: body.userId,
-      content: body.content,
-      rating: body.rating ?? 5,
-    })
-    return Result.success(comment)
-  }
-
-  // 删除评语
-  @UseGuards(JwtAuthGuard)
-  @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    await this.commentService.remove(id)
-    return Result.success(null, '删除成功')
   }
 }
 

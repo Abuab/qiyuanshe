@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, Optional, Logger } from '@nestjs/common'
+import { Injectable, BadRequestException, Optional, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, In } from 'typeorm'
+import { Repository } from 'typeorm'
 import { AuditLog } from '../entities/AuditLog'
 import { UserPhoto } from '../entities/UserPhoto'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
@@ -10,7 +10,6 @@ import { TencentCloudModerationProvider } from './providers/tencent-cloud-modera
 import { SystemService } from '../system/system.service'
 import { beijingISO } from '../common/utils/date-utils'
 import {
-  AuditPhotoDto,
   AuditTextDto,
   QueryPendingAuditDto,
   ApproveAuditDto,
@@ -179,76 +178,6 @@ export class AuditService {
       return await this.systemService.getConfig(key)
     } catch {
       return null
-    }
-  }
-
-  async auditPhoto(dto: AuditPhotoDto): Promise<{ success: boolean; status: number; message: string }> {
-    const { photoId, photoUrl, userId } = dto
-
-    const photo = await this.photoRepository.findOne({
-      where: { id: photoId, userId },
-    })
-
-    if (!photo) {
-      throw new NotFoundException('照片不存在')
-    }
-
-    try {
-      const result = await this.moderationProvider.moderateImage(photoUrl)
-
-      let auditStatus: number
-      let aiResult = 'Normal'
-      let aiSuggestion = 'Pass'
-
-      if (result.result === 'pass') {
-        auditStatus = AuditStatus.APPROVED
-        aiResult = result.evilLabel || 'Normal'
-        aiSuggestion = 'Pass'
-      } else if (result.result === 'reject') {
-        auditStatus = AuditStatus.REJECTED
-        aiResult = result.evilLabel || 'Blocked'
-        aiSuggestion = 'Block'
-      } else {
-        auditStatus = AuditStatus.PENDING
-        aiResult = result.evilLabel || 'Review'
-        aiSuggestion = 'Review'
-      }
-
-      await this.photoRepository.update({ id: photoId }, { auditStatus })
-
-      const log = this.auditLogRepository.create({
-        action: `PHOTO_${aiSuggestion.toUpperCase()}`,
-        targetType: 'photo',
-        targetId: photoId,
-        reason: JSON.stringify({
-          aiResult,
-          evilLabel: result.evilLabel,
-          evilType: result.evilType,
-        }),
-      })
-      await this.auditLogRepository.save(log)
-
-      // 审核结果为 review 且人工审核开启时，发送 webhook 通知
-      if (aiSuggestion === 'Review') {
-        const manualReviewEnabled = await this.getConfigValue('audit.manualReviewEnabled')
-        if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
-          this.notifyWebhook('photo_upload', {
-            userId,
-            photoUrl,
-            content: photoUrl,
-            time: beijingISO(),
-          }).catch(() => {})
-        }
-      }
-
-      return {
-        success: true,
-        status: auditStatus,
-        message: aiSuggestion === 'Block' ? '图片违规，已被拒绝' : aiSuggestion === 'Review' ? '需要人工复核' : '审核通过',
-      }
-    } catch (error) {
-      this.logger.error('Photo audit error:', error)
-      throw new BadRequestException('图片审核失败')
     }
   }
 

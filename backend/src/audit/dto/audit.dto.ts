@@ -12,19 +12,6 @@ export enum AuditStatus {
   REJECTED = 2,
 }
 
-export class AuditPhotoDto {
-  @IsNumber()
-  @Type(() => Number)
-  photoId: number
-
-  @IsString()
-  photoUrl: string
-
-  @IsNumber()
-  @Type(() => Number)
-  userId: number
-}
-
 export class AuditTextDto {
   @IsString()
   @MaxLength(1000, { message: '审核文本不能超过1000字' })
