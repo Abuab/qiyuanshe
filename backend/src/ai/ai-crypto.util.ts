@@ -2,7 +2,7 @@
  * AI Provider 加密工具
  *
  * API_KEY 必须 AES-256-CBC 加密存储
- * 密钥从环境变量 AI_ENCRYPT_KEY 读取，未配置则使用默认值（仅开发环境）
+ * 密钥从环境变量 AI_ENCRYPT_KEY 读取，未配置则抛错（禁止使用默认密钥）
  */
 import * as crypto from 'crypto'
 
@@ -10,7 +10,10 @@ const ALGORITHM = 'aes-256-cbc'
 const IV_LENGTH = 16
 
 function getEncryptKey(): Buffer {
-  const key = process.env.AI_ENCRYPT_KEY || 'qiyuanshe-ai-encrypt-key-32bytes!'
+  const key = process.env.AI_ENCRYPT_KEY
+  if (!key) {
+    throw new Error('AI_ENCRYPT_KEY environment variable is required for AI provider API key encryption.')
+  }
   return crypto.scryptSync(key, 'qiyuanshe-salt', 32)
 }
 

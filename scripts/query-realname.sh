@@ -38,8 +38,15 @@ if [ ! -f "$DECRYPT_SCRIPT" ]; then
 fi
 
 # ----- MySQL 连接配置（通过 Docker 容器） -----
+# 密码从环境变量 MYSQL_ROOT_PASSWORD 读取，避免硬编码到脚本
 # 使用 MYSQL_PWD 环境变量传递密码，避免命令行密码触发 "Using a password" warning 污染输出
-MYSQL_CMD="docker exec -e MYSQL_PWD=lingtong_root_2024_secure -i lingtong_mysql mysql -uroot lingtong_match"
+MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-}"
+if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+    echo "[ERROR] 未设置 MYSQL_ROOT_PASSWORD 环境变量" >&2
+    echo "用法: MYSQL_ROOT_PASSWORD=<MySQL root 密码> bash $0 <命令> [参数]" >&2
+    exit 1
+fi
+MYSQL_CMD="docker exec -e MYSQL_PWD=$MYSQL_ROOT_PASSWORD -i lingtong_mysql mysql -uroot lingtong_match"
 
 # ----- 辅助函数：执行 SQL（格式化表格输出） -----
 run_sql() {

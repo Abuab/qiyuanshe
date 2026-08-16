@@ -16,35 +16,35 @@ import {
 } from './agreement-log-storage.types'
 
 /**
- * AES 简单加解密（生产环境建议使用更安全的密钥管理方案）
+ * AES 加解密（用于 SLS AccessKeySecret 的加密存储）
+ * 密钥从环境变量 SLS_STORAGE_ENCRYPTION_KEY 读取，未配置则抛错
  */
-const AES_KEY = process.env.SLS_STORAGE_ENCRYPTION_KEY || 'qiyuanshe-match-sls-key-2024!!'
+function getAesKey(): Buffer {
+  const key = process.env.SLS_STORAGE_ENCRYPTION_KEY
+  if (!key) {
+    throw new Error('SLS_STORAGE_ENCRYPTION_KEY environment variable is required for SLS credential encryption.')
+  }
+  return Buffer.from(key.padEnd(32, '0').slice(0, 32))
+}
 
 function encryptAes(plain: string): string {
-  try {
-    const crypto = require('crypto')
-    const iv = crypto.randomBytes(16)
-    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(AES_KEY.padEnd(32, '0').slice(0, 32)), iv)
-    let encrypted = cipher.update(plain, 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-    return iv.toString('hex') + ':' + encrypted
-  } catch {
-    return Buffer.from(plain).toString('base64')
-  }
+  const crypto = require('crypto')
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv('aes-256-cbc', getAesKey(), iv)
+  let encrypted = cipher.update(plain, 'utf8', 'hex')
+  encrypted += cipher.final('hex')
+  return iv.toString('hex') + ':' + encrypted
 }
 
 function decryptAes(encrypted: string): string {
-  try {
-    const crypto = require('crypto')
-    const [ivHex, encData] = encrypted.split(':')
-    if (!ivHex || !encData) return Buffer.from(encrypted, 'base64').toString('utf8')
-    const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(AES_KEY.padEnd(32, '0').slice(0, 32)), Buffer.from(ivHex, 'hex'))
-    let decrypted = decipher.update(encData, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
-  } catch {
-    return Buffer.from(encrypted, 'base64').toString('utf8')
-  }
+  const [ivHex, encData] = encrypted.split(':')
+  // 兼容旧数据：无 iv 前缀的视为 Base64 明文
+  if (!ivHex || !encData) return Buffer.from(encrypted, 'base64').toString('utf8')
+  const crypto = require('crypto')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', getAesKey(), Buffer.from(ivHex, 'hex'))
+  let decrypted = decipher.update(encData, 'hex', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
 }
 
 /**
