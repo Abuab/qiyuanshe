@@ -57,6 +57,7 @@ export class VipController {
   @Put('orders/:orderNo/pay')
   @UseGuards(JwtAuthGuard)
   async payOrder(
+    @Request() req: any,
     @Param('orderNo') orderNo: string,
     @Body('transactionId') transactionId?: string,
   ) {
@@ -69,7 +70,7 @@ export class VipController {
     }
     try {
       const result = await this.vipService.handlePaymentSuccess(
-        orderNo, transactionId,
+        orderNo, transactionId, req.user.id,
       )
       return Result.success(result, '支付成功，会员已激活')
     } catch (error: any) {

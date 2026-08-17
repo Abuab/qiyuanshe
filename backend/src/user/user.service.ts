@@ -803,7 +803,7 @@ export class UserService {
   }
 
   /** 编辑个人资料 */
-  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<User> {
+  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<Partial<User>> {
     const user = await this.userRepository.findOne({
       where: { id: userId, isDeleted: 0 },
     })
@@ -944,7 +944,19 @@ export class UserService {
     // 清除推荐缓存：资料变更可能影响推荐排序和筛选结果
     try { await this.recommendService.invalidateUserCache(userId) } catch (_) {}
     try { await this.recommendService.clearAllListCaches() } catch (_) {}
-    return user
+    // 返回脱敏后的用户信息，不泄露密码哈希、MFA 密钥、微信标识、手机号等敏感字段
+    const safeUser = { ...user } as Partial<User>
+    delete safeUser.password
+    delete safeUser.mfaSecret
+    delete safeUser.openid
+    delete safeUser.unionId
+    delete safeUser.phone
+    delete safeUser.eidBizSeqNo
+    delete safeUser.tokenVersion
+    delete safeUser.adminRemark
+    delete safeUser.deleteReason
+    delete safeUser.manualBoostScore
+    return safeUser
   }
 
   /** 检测是否为微信临时路径（仅小程序本地有效，不可持久化） */

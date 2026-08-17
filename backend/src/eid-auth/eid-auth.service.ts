@@ -298,8 +298,6 @@ export class EidAuthService {
     reason?: string
     message?: string
     duplicateUserId?: number
-    identities?: RealNameIdentity[]
-    relatedUsers?: User[]
   }> {
     const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
     const idCardTrim = idCard.trim()
@@ -386,7 +384,7 @@ export class EidAuthService {
 
     // 合并 real_name_identities 和 user_auths 兜底结果
     if (identities.length === 0 && !fallbackDuplicateUserId) {
-      return { canProceed: true, identities: [], relatedUsers: [] }
+      return { canProceed: true }
     }
 
     // 构建关联用户 ID 列表（real_name_identities + user_auths 兜底）
@@ -419,8 +417,6 @@ export class EidAuthService {
         reason: 'duplicate_active',
         message: `该身份证已绑定其他账号（${activeNickname}），如有疑问请联系客服`,
         duplicateUserId: activeUsers[0].id,
-        identities,
-        relatedUsers,
       }
     }
 
@@ -431,8 +427,6 @@ export class EidAuthService {
         canProceed: false,
         reason: 'duplicate_active',
         message: '该身份证已绑定其他账号，如有疑问请联系客服',
-        identities,
-        relatedUsers,
       }
     }
     if (identities.length >= 1) {
@@ -444,8 +438,6 @@ export class EidAuthService {
       canProceed: false,
       reason: 'requires_reauth',
       message: '检测到您之前已完成实名认证，重新验证需支付 1 元',
-      identities,
-      relatedUsers,
     }
   }
 

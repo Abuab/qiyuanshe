@@ -20,7 +20,11 @@ export class AdminAccountService {
   }
 
   async list() {
-    return this.repo.find({ order: { createdAt: 'DESC' } })
+    // 仅返回子账号管理所需字段，避免泄露 password / mfaSecret / tokenVersion 等敏感字段
+    return this.repo.find({
+      select: ['id', 'username', 'nickname', 'role', 'status', 'isMfaEnabled', 'createdAt', 'updatedAt'],
+      order: { createdAt: 'DESC' },
+    })
   }
 
   async findById(id: number) {

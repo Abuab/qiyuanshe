@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Matchmaker } from '../entities/Matchmaker'
-import { CreateMatchmakerDto, UpdateMatchmakerDto } from './dto'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 export interface MatchmakerListItem {
@@ -57,34 +56,5 @@ export class MatchmakerService {
     }
 
     return matchmaker
-  }
-
-  async create(dto: CreateMatchmakerDto): Promise<Matchmaker> {
-    const matchmaker = this.matchmakerRepository.create({
-      ...dto,
-      isActive: dto.isActive ?? 1,
-      sortOrder: dto.sortOrder ?? 0,
-    })
-
-    return this.matchmakerRepository.save(matchmaker)
-  }
-
-  async update(id: number, dto: UpdateMatchmakerDto): Promise<Matchmaker> {
-    const matchmaker = await this.findOne(id)
-
-    Object.assign(matchmaker, dto)
-
-    return this.matchmakerRepository.save(matchmaker)
-  }
-
-  async remove(id: number): Promise<void> {
-    const matchmaker = await this.findOne(id)
-    await this.matchmakerRepository.remove(matchmaker)
-  }
-
-  async updateSortOrder(id: number, sortOrder: number): Promise<Matchmaker> {
-    const matchmaker = await this.findOne(id)
-    matchmaker.sortOrder = sortOrder
-    return this.matchmakerRepository.save(matchmaker)
   }
 }

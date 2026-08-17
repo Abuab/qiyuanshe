@@ -8,7 +8,7 @@ import { AdminUser, AdminRole } from '../entities/AdminUser'
 /**
  * 应用启动自动初始化管理员账号
  * - 若 admin_users 表为空，使用环境变量 ADMIN_DEFAULT_PASSWORD 或随机生成密码
- * - 随机生成的密码在启动日志中输出
+ * - 随机生成的密码仅在非生产环境输出到启动日志（生产环境脱敏，避免明文泄露）
  * - 若已存在管理员则跳过
  */
 @Injectable()
@@ -40,7 +40,11 @@ export class AdminSeederService implements OnApplicationBootstrap {
       this.logger.warn(`========================================`)
       this.logger.warn(`[AdminSeeder] 已创建默认超级管理员账号`)
       this.logger.warn(`  用户名: admin`)
-      this.logger.warn(`  密码:   ${password}  (来源: ${source})`)
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.warn(`  密码:   ***（已脱敏，来源: ${source}；如为随机生成请通过 ADMIN_DEFAULT_PASSWORD 环境变量重新指定并重启）`)
+      } else {
+        this.logger.warn(`  密码:   ${password}  (来源: ${source})`)
+      }
       this.logger.warn(`  请登录后立即修改密码！`)
       this.logger.warn(`========================================`)
     } catch (e) {

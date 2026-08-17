@@ -21,7 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
-import { extname, join } from 'path'
+import { join } from 'path'
 import { UserService } from './user.service'
 import { UserProfileDetailService } from './user-profile-detail.service'
 import { FilterUsersDto } from './dto'
@@ -49,6 +49,22 @@ const PHOTO_RATE_LIMIT_MAX = 50
 const AVATAR_RATE_LIMIT_MAX = 10
 /** 限流窗口：24 小时 */
 const RATE_LIMIT_WINDOW_SEC = 86400
+
+/** 语音上传：MIME → 扩展名白名单（不信任客户端 originalname 的扩展名，防止上传脚本文件） */
+const VOICE_MIME_EXT: Record<string, string> = {
+  'audio/mpeg': '.mp3',
+  'audio/mp3': '.mp3',
+  'audio/wav': '.wav',
+  'audio/x-wav': '.wav',
+  'audio/x-m4a': '.m4a',
+  'audio/m4a': '.m4a',
+  'audio/mp4': '.m4a',
+  'audio/aac': '.aac',
+  'audio/x-aac': '.aac',
+  'audio/aacp': '.aac',
+  'audio/webm': '.webm',
+  'audio/ogg': '.ogg',
+}
 
 @Controller('users')
 export class UserController {
@@ -508,29 +524,15 @@ export class UserController {
         destination: join(process.cwd(), 'uploads'),
         filename: (_req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-          cb(null, `voice-${uniqueSuffix}${extname(file.originalname) || '.mp3'}`)
+          const ext = VOICE_MIME_EXT[file.mimetype] || '.mp3'
+          cb(null, `voice-${uniqueSuffix}${ext}`)
         },
       }),
       limits: {
         fileSize: 1024 * 1024 * 2, // 2MB
       },
       fileFilter: (_req, file, cb) => {
-        const allowedMime = [
-          'audio/mpeg',
-          'audio/mp3',
-          'audio/wav',
-          'audio/x-wav',
-          'audio/x-m4a',
-          'audio/m4a',
-          'audio/mp4',
-          'audio/aac',
-          'audio/x-aac',
-          'audio/aacp',
-          'audio/webm',
-          'audio/ogg',
-          'application/octet-stream',
-        ]
-        if (allowedMime.includes(file.mimetype)) {
+        if (VOICE_MIME_EXT[file.mimetype]) {
           cb(null, true)
         } else {
           cb(new Error('只允许上传语音文件'), false)

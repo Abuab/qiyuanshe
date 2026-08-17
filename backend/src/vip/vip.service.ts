@@ -108,7 +108,7 @@ export class VipService {
    * 支付成功回调（模拟微信支付回调）
    * 真实环境：由 /payment/notify 调用此方法
    */
-  async handlePaymentSuccess(orderNo: string, transactionId?: string) {
+  async handlePaymentSuccess(orderNo: string, transactionId: string | undefined, userId: number) {
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
@@ -119,6 +119,7 @@ export class VipService {
         relations: ['package'],
       })
       if (!order) throw new Error('订单不存在')
+      if (order.userId !== userId) throw new Error('无权操作该订单')
       if (order.status === 1) {
         await queryRunner.rollbackTransaction()
         return { success: true, message: '已处理' }
