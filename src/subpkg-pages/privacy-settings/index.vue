@@ -143,14 +143,19 @@ const confirmDeactivate = async () => {
       version: '1.0',
       action: 'revoke',
     })
-    // 立即清除所有持久化数据（防止 App 被关闭后下次打开仍读到旧缓存）
-    secureStorage.clearAll()
+    // 立即清除 store 内存 + 持久化数据（避免时序窗口内请求不带 token 被误判未登录）
+    userStore.clearLoginState()
     secureStorage.revokeAllAgreements()
     try {
       uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL)
     } catch (_) { /* ignore */ }
+    try {
+      uni.removeStorageSync('unreadMessageCount')
+    } catch (_) { /* ignore */ }
     uni.showToast({ title: '已撤回同意', icon: 'success' })
-    setTimeout(() => { userStore.logout() }, 1200)
+    setTimeout(() => {
+      uni.reLaunch({ url: '/pages/index/index' })
+    }, 1200)
   } catch (err: any) {
     logger.error('[agreement] 协议撤回上报失败:', err?.message || err)
     uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })

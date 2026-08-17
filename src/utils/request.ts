@@ -124,6 +124,13 @@ function handleUnauthorized(tokenWasPresent: boolean): void {
 
   // 场景2：带了 token 但后端返回 401 → token 过期/被撤销/密钥变更
   secureStorage.clearAll()
+  // 同步清空 Pinia store 内存中的登录态，避免 storage 已空但页面仍显示已登录
+  // （动态 import 规避 store/user.ts ↔ 本文件的循环依赖）
+  import('../store/user')
+    .then(({ useUserStore }) => {
+      useUserStore().clearLoginState()
+    })
+    .catch(() => { /* 忽略 */ })
 
   // 防止并发 401 推入多个 reLaunch
   if (isNavigatingToLogin) return

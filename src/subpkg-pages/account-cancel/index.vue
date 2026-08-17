@@ -158,15 +158,11 @@ const submitCancel = async () => {
 
       // 1.5秒后清除登录态并跳转
       setTimeout(() => {
-        // 清除 Pinia store 响应式状态
+        // 清空 Pinia store 内存与本地存储登录态（token/userInfo/isVip/isProfileComplete）
         const userStore = useUserStore()
-        userStore.token = ''
-        userStore.userInfo = null
-        userStore.isVip = false
-        userStore.vipExpireTime = ''
+        userStore.clearLoginState()
 
-        // 彻底清除所有持久化数据（secureStorage + 协议 + phone credential）
-        secureStorage.clearAll()
+        // 彻底清除协议同意标记与 phone credential
         secureStorage.revokeAllAgreements()
         try {
           uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL)

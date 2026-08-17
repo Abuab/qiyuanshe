@@ -103,7 +103,8 @@ const isVipValid = computed(() => {
     uni.setStorageSync(STORAGE_KEY.PHONE_CREDENTIAL, isProfileComplete.value ? '1' : '0')
   }
 
-  const logout = () => {
+  /** 清空内存与本地存储的登录态（不触发页面跳转，供 401 处理等场景复用） */
+  const clearLoginState = () => {
     token.value = ''
     userInfo.value = null
     isVip.value = false
@@ -111,6 +112,10 @@ const isVipValid = computed(() => {
     isProfileComplete.value = true
 
     secureStorage.clearAll()
+  }
+
+  const logout = () => {
+    clearLoginState()
     try { uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL) } catch (_) { /* ignore */ }
     try { uni.removeStorageSync('unreadMessageCount') } catch (_) { /* ignore */ }
 
@@ -257,6 +262,7 @@ const isVipValid = computed(() => {
     displayAvatar,
     login,
     logout,
+    clearLoginState,
     updateUserInfo,
     updateProfile,
     refreshProfile,
