@@ -72,6 +72,11 @@ export class CircleService {
       validQb.andWhere('user.gender = :gender', { gender: targetGender })
     }
 
+    // 排除当前登录用户自己（与首页 buildBaseQuery 的 user.id != :selfId 一致）
+    if (currentUserId) {
+      validQb.andWhere('user.id != :selfId', { selfId: currentUserId })
+    }
+
     const validUsers = await validQb.getMany()
     const validIdSet = new Set(validUsers.map(u => u.id))
     const validOrderedIds = memberUserIds.filter(id => validIdSet.has(id))
