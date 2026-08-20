@@ -53,6 +53,7 @@
         :users="userList"
         :loading-more="loadingMore"
         :no-more="noMore"
+        :my-photo-count="myPhotoCount"
         @user-click="goToUserDetail"
       >
         <template #empty>
@@ -131,12 +132,25 @@ const loadingMore = ref(false)
 const noMore = ref(false)
 const isRefreshing = ref(false)
 
+// 当前登录用户自己的照片数量（-1=未获取），控制圈子缩略图模糊逻辑（与首页一致）
+const myPhotoCount = ref(-1)
+
+const fetchMyPhotoCount = async () => {
+  try {
+    const res: any = await get('/users/photos')
+    myPhotoCount.value = (res?.list?.length || 0) + 1  // +1 计入头像
+  } catch {
+    myPhotoCount.value = 1  // 至少1张头像
+  }
+}
+
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
+  if (userStore.isLoggedIn) fetchMyPhotoCount()
   await loadCircles()
 })
 

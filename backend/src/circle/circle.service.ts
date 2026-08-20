@@ -43,16 +43,47 @@ export class CircleService {
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
     })
 
-    const total = members.length
-
-    // 第二步：分页取 userIds
-    const pagedUserIds = members.slice((page - 1) * limit, page * limit).map(m => m.userId)
-
-    if (pagedUserIds.length === 0) {
-      return { list: [], total }
+    if (members.length === 0) {
+      return { list: [], total: 0, page, limit }
     }
 
-    // 第三步：查询用户（保持 sortOrder 顺序）
+    const memberUserIds = members.map(m => m.userId)
+
+    // 第二步：按当前用户性别做互推过滤（男→女，女→男；未登录不限制），与首页用户列表一致
+    let targetGender: number | undefined
+    if (currentUserId) {
+      const currentUser = await this.userRepo.findOne({
+        where: { id: currentUserId },
+        select: ['gender'],
+      })
+      if (currentUser?.gender === 1) targetGender = 2
+      else if (currentUser?.gender === 2) targetGender = 1
+    }
+
+    // 第三步：过滤出有效成员（status=1、isDeleted=0，且满足性别互推），保持成员 sortOrder 顺序
+    const validQb = this.userRepo
+      .createQueryBuilder('user')
+      .select('user.id')
+      .where('user.id IN (:...ids)', { ids: memberUserIds })
+      .andWhere('user.status = 1')
+      .andWhere('user.isDeleted = 0')
+
+    if (targetGender !== undefined) {
+      validQb.andWhere('user.gender = :gender', { gender: targetGender })
+    }
+
+    const validUsers = await validQb.getMany()
+    const validIdSet = new Set(validUsers.map(u => u.id))
+    const validOrderedIds = memberUserIds.filter(id => validIdSet.has(id))
+
+    const total = validOrderedIds.length
+    const pagedUserIds = validOrderedIds.slice((page - 1) * limit, page * limit)
+
+    if (pagedUserIds.length === 0) {
+      return { list: [], total, page, limit }
+    }
+
+    // 第四步：查询用户完整信息（保持 sortOrder 顺序）
     const users = await this.userRepo
       .createQueryBuilder('user')
       .where('user.id IN (:...ids)', { ids: pagedUserIds })
