@@ -11,15 +11,14 @@ import {
 import { UseGuards, Inject, forwardRef, OnModuleDestroy } from '@nestjs/common'
 import { Server, WebSocket } from 'ws'
 import { JwtService } from '@nestjs/jwt'
-import { jwtConfig, adminJwtConfig } from '../config/jwt'
+import { adminJwtConfig } from '../config/jwt'
 import { ChatMonitorService } from './chat-monitor.service'
 
 /** WebSocket 认证信息 */
 interface WsAuth {
-  /** 'admin' | 'user' */
-  type: 'admin' | 'user'
+  type: 'admin'
   userId: number
-  /** 运营人员昵称（仅 admin） */
+  /** 运营人员昵称 */
   nickname?: string
 }
 
@@ -30,7 +29,7 @@ interface AuthenticatedWs extends WebSocket {
 }
 
 /**
- * 聊天监控 WebSocket 网关（纯 WebSocket 协议，兼容 uni-app uni.connectSocket）
+ * 聊天监控 WebSocket 网关（仅管理后台使用，纯 WebSocket 协议）
  *
  * 协议设计：
  *   客户端发送:  JSON  { "event": "事件名", "data": { ... } }
@@ -48,9 +47,6 @@ interface AuthenticatedWs extends WebSocket {
 export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy {
   @WebSocketServer()
   private server: Server
-
-  /** userId → WebSocket 连接集合 */
-  private userSockets = new Map<number, Set<AuthenticatedWs>>()
 
   /** adminUserId → WebSocket */
   private adminSockets = new Map<number, AuthenticatedWs>()
@@ -83,7 +79,6 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
 
   onModuleDestroy() {
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval)
-    this.userSockets.clear()
     this.adminSockets.clear()
     this.monitorSubscriptions.clear()
   }
@@ -103,33 +98,18 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
   @SubscribeMessage('auth')
   async handleAuth(
     @ConnectedSocket() client: AuthenticatedWs,
-    @MessageBody() payload: { token: string; type?: 'admin' | 'user' },
+    @MessageBody() payload: { token: string },
   ) {
     try {
       const token = payload?.token
       if (!token) throw new Error('missing token')
 
-      let auth: WsAuth
-
-      if (payload?.type === 'admin') {
-        // 管理后台 JWT
-        const decoded = this.jwtService.verify(token, {
-          secret: adminJwtConfig.secret,
-        })
-        auth = { type: 'admin', userId: decoded.sub, nickname: decoded.nickname }
-        this.adminSockets.set(decoded.sub, client)
-      } else {
-        // 用户端 JWT
-        const decoded = this.jwtService.verify(token, {
-          secret: jwtConfig.secret,
-        })
-        auth = { type: 'user', userId: decoded.sub }
-
-        if (!this.userSockets.has(decoded.sub)) {
-          this.userSockets.set(decoded.sub, new Set())
-        }
-        this.userSockets.get(decoded.sub)!.add(client)
-      }
+      // 仅接受管理后台 JWT（C 端已改 HTTP 轮询，不再连接 WebSocket）
+      const decoded = this.jwtService.verify(token, {
+        secret: adminJwtConfig.secret,
+      })
+      const auth: WsAuth = { type: 'admin', userId: decoded.sub, nickname: decoded.nickname }
+      this.adminSockets.set(decoded.sub, client)
 
       client.auth = auth
       this.sendTo(client, 'auth_success', { userId: auth.userId, type: auth.type })
@@ -211,34 +191,6 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
     }
   }
 
-  /** 推送新消息给指定用户（消息接收方实时接收） */
-  notifyUser(userId: number, messageData: any) {
-    const userSockets = this.userSockets.get(userId)
-    if (!userSockets || userSockets.size === 0) return
-    const payload = JSON.stringify({ event: 'new_message', data: messageData })
-    for (const ws of userSockets) {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload)
-      } else {
-        // 顺带清理已关闭/关闭中的僵尸 socket，防止 Set 单调增长
-        userSockets.delete(ws)
-      }
-    }
-    if (userSockets.size === 0) this.userSockets.delete(userId)
-  }
-
-  /** 推送会话更新事件给指定用户（新会话、未读数变更等） */
-  notifyConversationUpdate(userId: number, data: any) {
-    const userSockets = this.userSockets.get(userId)
-    if (!userSockets || userSockets.size === 0) return
-    const payload = JSON.stringify({ event: 'conversation_update', data })
-    for (const ws of userSockets) {
-      if (ws.readyState === WebSocket.OPEN) ws.send(payload)
-      else userSockets.delete(ws)
-    }
-    if (userSockets.size === 0) this.userSockets.delete(userId)
-  }
-
   // ==================== 工具方法 ====================
 
   private requireAdmin(client: AuthenticatedWs): WsAuth | null {
@@ -261,21 +213,13 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
 
   private cleanup(client: AuthenticatedWs) {
     if (!client.auth) return
-    const { userId, type } = client.auth
+    const { userId } = client.auth
 
-    if (type === 'user') {
-      const sockets = this.userSockets.get(userId)
-      if (sockets) {
-        sockets.delete(client)
-        if (sockets.size === 0) this.userSockets.delete(userId)
-      }
-    } else if (type === 'admin') {
-      this.adminSockets.delete(userId)
-      // 清理该管理员的所有订阅
-      for (const [targetUserId, adminIds] of this.monitorSubscriptions) {
-        adminIds.delete(userId)
-        if (adminIds.size === 0) this.monitorSubscriptions.delete(targetUserId)
-      }
+    this.adminSockets.delete(userId)
+    // 清理该管理员的所有订阅
+    for (const [targetUserId, adminIds] of this.monitorSubscriptions) {
+      adminIds.delete(userId)
+      if (adminIds.size === 0) this.monitorSubscriptions.delete(targetUserId)
     }
   }
 }

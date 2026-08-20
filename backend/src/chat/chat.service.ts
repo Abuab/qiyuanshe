@@ -405,30 +405,6 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       })
     }
 
-    // 通知消息接收方用户（实时推送）
-    if (this.monitorGateway) {
-      this.monitorGateway.notifyUser(toUserId, {
-        id: saved.id,
-        fromUserId: saved.fromUserId,
-        toUserId: saved.toUserId,
-        content: saved.content,
-        type: saved.type,
-        isMine: false,
-        isRead: saved.isRead,
-        isProxy: saved.isProxy,
-        proxyName: saved.proxyName || null,
-        createdAt: saved.createdAt ? beijingISO(saved.createdAt) : null,
-      })
-    }
-
-    // 通知接收方会话更新（用于聊天列表未读数变更）
-    if (this.monitorGateway) {
-      this.monitorGateway.notifyConversationUpdate(toUserId, {
-        fromUserId: userId,
-        unreadCount: 1,
-      })
-    }
-
     // 非VIP用户发送成功后更新缓存计数，避免并发绕过限制
     if (!isVip) {
       const today = beijingISO().split('T')[0]

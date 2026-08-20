@@ -162,22 +162,6 @@ export class ChatMonitorService {
       logContent,
     )
 
-    // 通知消息接收方用户（实时推送）
-    if (this.monitorGateway) {
-      this.monitorGateway.notifyUser(toUserId, {
-        id: saved.id,
-        fromUserId: saved.fromUserId,
-        toUserId: saved.toUserId,
-        content: saved.content,
-        type: saved.type,
-        isMine: false,
-        isRead: saved.isRead,
-        isProxy: saved.isProxy,
-        proxyName: saved.proxyName || null,
-        createdAt: saved.createdAt ? beijingISO(saved.createdAt) : null,
-      })
-    }
-
     return saved
   }
 
