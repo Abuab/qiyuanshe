@@ -276,8 +276,8 @@ npm run dev
 # 数据库配置
 #=========================================
 MYSQL_ROOT_PASSWORD=your_mysql_root_password
-MYSQL_DATABASE=qiyuanshe
-MYSQL_USER=qiyuanshe_user
+MYSQL_DATABASE=lingtong_match
+MYSQL_USER=lingtong
 MYSQL_PASSWORD=your_mysql_password
 
 #=========================================
@@ -341,9 +341,9 @@ PORT=3000
 # 数据库配置
 DB_HOST=localhost
 DB_PORT=3306
-DB_USERNAME=qiyuanshe_user
+DB_USERNAME=lingtong
 DB_PASSWORD=your_mysql_password
-DB_DATABASE=qiyuanshe
+DB_DATABASE=lingtong_match
 
 # Redis配置
 REDIS_HOST=localhost
@@ -1609,7 +1609,7 @@ docker compose up -d
 
 # 重新初始化数据
 sleep 30
-docker compose exec -T mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" qiyuanshe < docker/mysql/init.sql
+docker compose exec -T mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" lingtong_match < docker/mysql/init.sql
 ```
 
 ## 开发指南
@@ -1872,7 +1872,7 @@ node -e "const bcrypt = require('bcrypt'); bcrypt.hash('你的新密码', 10).th
 **步骤 2：进入 MySQL 更新密码**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE qiyuanshe; UPDATE admin_user SET password='上面复制的hash值' WHERE username='admin';"
+docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE admin_user SET password='上面复制的hash值' WHERE username='admin';"
 ```
 
 > **注意**：将 `-p` 后的密码替换为你的 MySQL root 密码。
@@ -1890,7 +1890,7 @@ docker exec -it lingtong_mysql mysql -u root -p -e "USE qiyuanshe; UPDATE admin_
 **步骤 1：数据库直接禁用 MFA**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE qiyuanshe; UPDATE admin_user SET is_mfa_enabled = false, mfa_type = 'none', mfa_secret = NULL WHERE id = 1;"
+docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_match; UPDATE admin_user SET is_mfa_enabled = false, mfa_type = 'none', mfa_secret = NULL WHERE id = 1;"
 ```
 
 > **注意**：
@@ -1919,7 +1919,7 @@ docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE qiyuanshe;
 **Q: 如何查看管理员 ID？**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE qiyuanshe; SELECT id, username, is_mfa_enabled FROM admin_user;"
+docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; SELECT id, username, is_mfa_enabled FROM admin_user;"
 ```
 
 ---

@@ -152,11 +152,26 @@ build_and_start() {
         cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
     fi
 
+    # 从零部署时校验完整建表结构是否已生成（init.sql 只覆盖部分表）
+    if [ ! -f "docker/mysql/schema.sql" ]; then
+        log_warning "========================================================="
+        log_warning "  docker/mysql/schema.sql 不存在！"
+        log_warning "  首次部署（空数据库）将缺少大量表，应用可能启动失败。"
+        log_warning "  请在本地执行: bash scripts/generate-schema.sh"
+        log_warning "  生成后将 docker/mysql/schema.sql 提交到 git 再部署。"
+        log_warning "========================================================="
+    fi
+
     # 停止现有容器（保留数据卷）
     docker compose down --remove-orphans 2>/dev/null || true
 
-    # 构建并启动容器
-    docker compose up -d --build
+    # 构建并启动容器（无证书时跳过 nginx，避免因缺证书反复崩溃）
+    if [ -f "docker/nginx/ssl/fullchain.pem" ] && [ -f "docker/nginx/ssl/privkey.pem" ]; then
+        docker compose up -d --build
+    else
+        log_warning "未检测到 SSL 证书，跳过 nginx 启动（先启动 mysql/redis/api/admin）"
+        docker compose up -d --build mysql redis api admin
+    fi
 
     log_success "容器启动成功"
 }

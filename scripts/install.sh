@@ -227,9 +227,20 @@ start_services() {
         cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
     fi
 
-    # 构建并启动容器
-    log_info "构建并启动容器（首次构建可能需要几分钟）..."
-    docker compose up -d --build
+    # 构建并启动容器（首次部署无证书时先跳过 nginx，避免因缺证书反复崩溃）
+    if [ -f "docker/nginx/ssl/fullchain.pem" ] && [ -f "docker/nginx/ssl/privkey.pem" ]; then
+        log_info "检测到 SSL 证书，构建并启动全部容器（首次构建可能需要几分钟）..."
+        docker compose up -d --build
+    else
+        log_info "未检测到 SSL 证书，先启动非 nginx 服务（首次构建可能需要几分钟）..."
+        docker compose up -d --build mysql redis api admin
+        log_warning "========================================================="
+        log_warning "  SSL 证书尚未申请，nginx 暂未启动。"
+        log_warning "  请先确保域名已解析到本服务器 IP，然后执行："
+        log_warning "    bash scripts/setup-ssl.sh apply"
+        log_warning "    bash scripts/setup-ssl.sh setup-renewal"
+        log_warning "========================================================="
+    fi
 
     log_success "容器启动完成"
 }

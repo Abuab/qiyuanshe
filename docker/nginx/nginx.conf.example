@@ -1,5 +1,5 @@
-# 栖缘社 Nginx 反向代理配置（生产环境）
-# 域名: yourdomain.com
+# 栖缘社 Nginx 反向代理配置（生产环境模板）
+# 域名: yourdomain.com（部署前将下方两处 server_name 替换为你的实际域名）
 
 user nginx;
 worker_processes auto;
@@ -16,10 +16,22 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for" '
-                    '$request_time $upstream_response_time';
+    # JSON 结构化日志格式（ELK / 日志平台友好）
+    log_format main escape=json '{'
+        '"timestamp":"$time_iso8601",'
+        '"remote_addr":"$remote_addr",'
+        '"real_ip":"$http_x_forwarded_for",'
+        '"method":"$request_method",'
+        '"uri":"$request_uri",'
+        '"status":$status,'
+        '"body_bytes":$body_bytes_sent,'
+        '"referer":"$http_referer",'
+        '"user_agent":"$http_user_agent",'
+        '"request_time":$request_time,'
+        '"upstream_time":"$upstream_response_time",'
+        '"upstream_addr":"$upstream_addr",'
+        '"host":"$host"'
+        '}';
 
     access_log /var/log/nginx/access.log main;
 
@@ -63,7 +75,7 @@ http {
     # ==================== HTTP (80) ====================
     # 仅用于：1) 重定向到 HTTPS  2) Let's Encrypt 验证
     server {
-        listen 80;
+        listen 80 default_server;
         server_name yourdomain.com;
 
         # Let's Encrypt ACME 验证目录
@@ -88,7 +100,8 @@ http {
 
     # ==================== HTTPS (443) ====================
     server {
-        listen 443 ssl http2;
+        listen 443 ssl default_server;
+        http2 on;
         server_name yourdomain.com;
 
         # SSL 证书配置
@@ -110,6 +123,8 @@ http {
         add_header X-Frame-Options "SAMEORIGIN" always;
         add_header X-Content-Type-Options "nosniff" always;
         add_header X-XSS-Protection "1; mode=block" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
 
         # Let's Encrypt ACME 验证目录（renew 时使用 webroot 模式）
         location /.well-known/acme-challenge/ {
@@ -175,6 +190,11 @@ http {
             add_header Pragma "no-cache" always;
             expires -1;
 
+            # Proxy buffer 配置 — 避免大响应写入磁盘临时文件
+            proxy_buffer_size 128k;
+            proxy_buffers 8 256k;
+            proxy_busy_buffers_size 256k;
+
             proxy_connect_timeout 60s;
             proxy_send_timeout 60s;
             proxy_read_timeout 60s;
@@ -202,6 +222,9 @@ http {
             add_header Cache-Control "no-cache" always;
             expires -1;
 
+            # 图片响应体较大，关闭缓冲流式传输，避免写入磁盘临时文件
+            proxy_buffering off;
+
             proxy_connect_timeout 60s;
             proxy_send_timeout 60s;
             proxy_read_timeout 60s;
@@ -222,9 +245,12 @@ http {
             # 超长缓存 — 图片文件名含时间戳，永不重复
             expires 365d;
             add_header Cache-Control "public, max-age=31536000, immutable";
+
+            # 图片静态文件较大，关闭缓冲流式传输，避免写入磁盘临时文件
+            proxy_buffering off;
         }
 
-        # ============ WebSocket 实时通信代理 ============
+        # ============ WebSocket 实时通信代理（管理后台聊天监控）============
         location /ws/chat {
             proxy_pass http://api_upstream/ws/chat;
             proxy_http_version 1.1;
@@ -251,6 +277,11 @@ http {
             # Vite 构建产物路径含 hash，可长期缓存
             expires 365d;
             add_header Cache-Control "public, max-age=31536000, immutable";
+
+            # JS/CSS 需要 gzip 压缩，保留缓冲但增大 buffer，避免写入磁盘临时文件
+            proxy_buffer_size 128k;
+            proxy_buffers 8 256k;
+            proxy_busy_buffers_size 256k;
         }
 
         # ============ 管理后台（SPA 入口）============
@@ -261,6 +292,9 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+
+            # SPA CSP: 仅允许本站资源 + API 连接
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
         }
     }
 }
