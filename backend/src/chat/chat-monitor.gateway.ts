@@ -6,9 +6,8 @@ import {
   OnGatewayDisconnect,
   ConnectedSocket,
   MessageBody,
-  WsException,
 } from '@nestjs/websockets'
-import { UseGuards, Inject, forwardRef, OnModuleDestroy } from '@nestjs/common'
+import { Inject, forwardRef, OnModuleDestroy } from '@nestjs/common'
 import { Server, WebSocket } from 'ws'
 import { JwtService } from '@nestjs/jwt'
 import { adminJwtConfig } from '../config/jwt'
@@ -18,8 +17,6 @@ import { ChatMonitorService } from './chat-monitor.service'
 interface WsAuth {
   type: 'admin'
   userId: number
-  /** 运营人员昵称 */
-  nickname?: string
 }
 
 /** 自定义 WebSocket 扩展 */
@@ -108,7 +105,7 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
       const decoded = this.jwtService.verify(token, {
         secret: adminJwtConfig.secret,
       })
-      const auth: WsAuth = { type: 'admin', userId: decoded.sub, nickname: decoded.nickname }
+      const auth: WsAuth = { type: 'admin', userId: decoded.sub }
       this.adminSockets.set(decoded.sub, client)
 
       client.auth = auth

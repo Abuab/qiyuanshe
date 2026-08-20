@@ -1,12 +1,11 @@
 import { Injectable, Logger, ForbiddenException, Optional, Inject, forwardRef } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, MoreThanOrEqual } from 'typeorm'
+import { Repository } from 'typeorm'
 import { ChatMonitorSession, MonitorStatus } from '../entities/ChatMonitorSession'
 import { ChatOperationLog, ChatOpAction } from '../entities/ChatOperationLog'
 import { ChatMessage } from '../entities/ChatMessage'
 import { ChatService } from './chat.service'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
-import { beijingISO } from '../common/utils/date-utils'
 
 const MONITOR_TIMEOUT_MS = 30 * 60 * 1000 // 30 分钟超时
 
