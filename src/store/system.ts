@@ -57,7 +57,7 @@ interface SystemConfig {
     latitude: number
     longitude: number
   }
-  appVersion: string
+  appVersion?: string
 }
 
 const DEFAULT_ICONS: IconConfig = {

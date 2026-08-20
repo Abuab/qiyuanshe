@@ -174,7 +174,7 @@ const filteredTemplates = computed(() => {
 onMounted(async () => {
   const pages = getCurrentPages()
   const currentPage = pages[pages.length - 1]
-  const options = (currentPage as Record<string, unknown>)?.options || {}
+  const options = (currentPage as Record<string, any>)?.options || {}
 
   if (options.userId) {
     userId.value = parseInt(String(options.userId))
@@ -212,37 +212,17 @@ const generatePoster = async (template: PosterTemplate) => {
 
     const userData = await fetchUserData()
 
-    const ctx = uni.createCanvasContext(canvasId) as CanvasRenderingContext2D & {
-      setFillStyle: (c: string) => void
-      setStrokeStyle: (c: string) => void
-      setFontSize: (n: number) => void
-      fillText: (t: string, x: number, y: number) => void
-      strokeRect: (x: number, y: number, w: number, h: number) => void
-      fillRect: (x: number, y: number, w: number, h: number) => void
-      save: () => void
-      restore: () => void
-      beginPath: () => void
-      moveTo: (x: number, y: number) => void
-      lineTo: (x: number, y: number) => void
-      stroke: () => void
-      clip: () => void
-      arc: (x: number, y: number, r: number, s: number, e: number, ccw?: boolean) => void
-      drawImage: (src: string, x: number, y: number, w: number, h: number) => void
-      measureText: (t: string) => { width: number }
-      closePath: () => void
-      setLineWidth: (n: number) => void
-      draw: (reserve?: boolean, cb?: () => void) => void
-    }
+    const ctx = uni.createCanvasContext(canvasId) as any
 
     // 1. 白色背景
     ctx.setFillStyle('#FFFFFF')
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
     // 2. 圆形头像
-    await drawAvatar(ctx, userData.avatar)
+    await drawAvatar(ctx, userData.avatar as string)
 
     // 3. 昵称
-    drawNickname(ctx, userData.nickname, template)
+    drawNickname(ctx, userData.nickname as string, template)
 
     // 4. 分隔线（昵称下方）
     ctx.beginPath()

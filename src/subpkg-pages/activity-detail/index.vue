@@ -346,7 +346,17 @@ const tabAnimating = ref(false)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 
-const selectedMatchmaker = ref({
+interface MatchmakerSelection {
+  id: number
+  name: string
+  avatar: string
+  title: string
+  wechat: string
+  phone?: string
+  qrCode: string
+}
+
+const selectedMatchmaker = ref<MatchmakerSelection>({
   id: 1,
   name: '红娘老师',
   avatar: icons.common.defaultAvatar,

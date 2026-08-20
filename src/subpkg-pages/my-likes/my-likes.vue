@@ -83,6 +83,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
+import { icons } from '@/config/icons'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'

@@ -131,7 +131,7 @@ const fetchRegions = async (parentId: number) => {
   if (isLoading.value) return []
   isLoading.value = true
   try {
-    const res = await request({ url: '/region', method: 'GET', data: { parentId } })
+    const res: any = await request({ url: '/region', method: 'GET', data: { parentId } })
     return (res.list || res.data || res || []) as RegionItem[]
   } catch (e) {
     logger.error('fetch regions error', e)

@@ -221,7 +221,7 @@ const fetchList = async (isRefresh = false) => {
 
     loading.value = true
 
-    const res = await request({
+    const res: any = await request({
       url: '/audit/pending',
       method: 'GET',
       data: {

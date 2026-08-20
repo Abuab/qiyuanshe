@@ -124,7 +124,7 @@ const fetchQuestions = async (isRefresh = false) => {
       noMore.value = false
     }
     loading.value = true
-    const res = await request({
+    const res: any = await request({
       url: '/questions',
       method: 'GET',
       data: { page: page.value, limit },

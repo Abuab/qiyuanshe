@@ -53,7 +53,7 @@ onMounted(() => {
 
 const fetchQuestions = async () => {
   try {
-    const res = await request({
+    const res: any = await request({
       url: '/questions',
       method: 'GET',
       data: {

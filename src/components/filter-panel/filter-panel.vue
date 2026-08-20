@@ -229,7 +229,7 @@ interface FilterData {
 }
 
 interface Props {
-  show: boolean
+  show?: boolean
   initialData?: FilterData
   /** 当前首页排序标签（活跃/精选/实名/最新） */
   sortTab?: string

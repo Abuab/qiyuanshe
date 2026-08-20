@@ -284,9 +284,9 @@ function hasQrGroupItems(items?: { qrCode: string }[]): boolean {
     <!-- 高亮标签 -->
     <view v-else-if="block.type === 'highlight_tag'" class="block-highlight-tag" :class="{ inline: block.inline }">
       <text class="ht-tag" :class="'ht-' + (block.variant || 'filled')" :style="{
-        backgroundColor: (block.variant !== 'outline') ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : 'transparent',
-        borderColor: block.variant === 'outline' ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : 'transparent',
-        color: block.variant === 'outline' ? (TAG_COLORS[block.color] || TAG_COLORS.pink) : '#fff',
+        backgroundColor: (block.variant !== 'outline') ? (TAG_COLORS[block.color!] || TAG_COLORS.pink) : 'transparent',
+        borderColor: block.variant === 'outline' ? (TAG_COLORS[block.color!] || TAG_COLORS.pink) : 'transparent',
+        color: block.variant === 'outline' ? (TAG_COLORS[block.color!] || TAG_COLORS.pink) : '#fff',
       }">{{ block.text }}</text>
     </view>
 

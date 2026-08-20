@@ -66,7 +66,7 @@ const fetchOrderDetail = async () => {
   if (!orderNo.value) return
 
   try {
-    const res = await request({
+    const res: any = await request({
       url: `/payment/orders/${orderNo.value}`,
       method: 'GET',
     })
