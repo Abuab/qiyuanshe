@@ -1049,7 +1049,6 @@ export class UserService {
       .where('v.visitorUserId = :userId', { userId })
       .andWhere('v.userId != :selfId', { selfId: userId })
       .andWhere('u.isDeleted = :isDel', { isDel: 0 })
-      .andWhere('u.status = :status', { status: 1 })
       .groupBy('v.userId')
 
     const total = await this.visitRepository
@@ -1059,7 +1058,6 @@ export class UserService {
       .where('v.visitorUserId = :userId', { userId })
       .andWhere('v.userId != :selfId2', { selfId2: userId })
       .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
-      .andWhere('u.status = :status2', { status2: 1 })
       .getRawOne()
       .then(r => Number(r?.cnt) || 0)
 
@@ -1082,7 +1080,6 @@ export class UserService {
         .createQueryBuilder('u')
         .where('u.id IN (:...ids)', { ids: userIds })
         .andWhere('u.isDeleted = :isDel', { isDel: 0 })
-        .andWhere('u.status = :status', { status: 1 })
         .getMany()
       for (const u of users) usersMap.set(Number(u.id), u)
     }

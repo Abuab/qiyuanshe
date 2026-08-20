@@ -42,6 +42,13 @@ http {
     # 对 /api/cos/image 接口限流，每个 IP 每秒最多 20 个请求，突发 30 个
     limit_req_zone $binary_remote_addr zone=cos_img:10m rate=20r/s;
 
+    # ============ 管理后台敏感接口限流（防暴力破解） ============
+    # 登录/重置密码：每个 IP 每分钟最多 30 次，突发 5 次
+    limit_req_zone $binary_remote_addr zone=admin_auth:10m rate=30r/m;
+
+    # 封禁已知暴力破解来源 IP（示例，可按需移除）
+    deny 1.202.114.133;
+
     # 上游服务器定义
     upstream api_upstream {
         server api:3000;
@@ -116,6 +123,38 @@ http {
             default_type text/plain;
             add_header Cache-Control "no-cache" always;
             return 200 "8b8202fc0267d399ba8cd6b52473dd79";
+        }
+
+        # ============ 管理后台登录接口限流（防爆破） ============
+        location = /api/admin/login {
+            limit_req zone=admin_auth burst=5 nodelay;
+            limit_req_status 429;
+            proxy_pass http://api_upstream/api/admin/login;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Connection "";
+            add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            add_header Pragma "no-cache" always;
+            expires -1;
+        }
+
+        # ============ 管理后台重置密码接口限流（防爆破） ============
+        location = /api/admin/reset-password {
+            limit_req zone=admin_auth burst=5 nodelay;
+            limit_req_status 429;
+            proxy_pass http://api_upstream/api/admin/reset-password;
+            proxy_http_version 1.1;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Connection "";
+            add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+            add_header Pragma "no-cache" always;
+            expires -1;
         }
 
         # ============ API 代理（CDN 不应缓存 API 响应）============
