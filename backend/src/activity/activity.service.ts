@@ -96,10 +96,18 @@ export class ActivityService {
       .limit(10)
       .getRawMany()
 
+    // 报名人数以真实报名记录为准（排除已取消），避免冗余字段 currentParticipants 统计失真
+    const currentParticipants = await this.signupRepository
+      .createQueryBuilder('signup')
+      .where('signup.activityId = :activityId', { activityId: id })
+      .andWhere('signup.status != :cancelled', { cancelled: 2 })
+      .getCount()
+
     return this.filterPublicFields(this.applyEndedStatus({
       ...activity,
       // 将相对路径转为小程序可直接加载的完整 URL
       coverImage: resolveStaticUrl(activity.coverImage),
+      currentParticipants,
       signupAvatars: signups.map(s => s.avatar).filter(Boolean),
     }))
   }

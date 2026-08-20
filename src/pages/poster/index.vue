@@ -366,7 +366,7 @@ const drawUserInfo = (ctx: any, userData: Record<string, unknown>, template: Pos
 
   // 左列
   const leftItems: InfoRow[] = [
-    { label: 'ID', value: `:${userData.id || '---'}` },
+    { label: 'ID', value: `:${userData.userId || '---'}` },
     { label: '婚况', value: `:${userData.maritalStatus as string || '---'}` },
     { label: '年龄', value: `:${userData.age ? (userData.age as number) + '岁' : '---'}` },
     { label: '职业', value: `:${(userData.occupation as string) || '---'}` },

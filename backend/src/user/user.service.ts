@@ -966,12 +966,16 @@ export class UserService {
     return /^https?:\/\/tmp\//.test(url)
   }
 
-  async getVoiceIntro(userId: number) {
+  async getVoiceIntro(userId: number, currentUserId?: number) {
     const user = await this.userRepository.findOne({
       where: { id: userId, isDeleted: 0 },
       select: ['id', 'voiceUrl', 'voiceDuration', 'voiceAuditStatus'],
     })
     if (!user || !user.voiceUrl) return null
+    // 未审核通过(0审核中/2拒绝)的语音不对他人展示，仅本人可查看（审核中提示）
+    if (user.voiceAuditStatus !== 1 && currentUserId !== userId) {
+      return null
+    }
     return {
       voiceUrl: resolveStaticUrl(user.voiceUrl),
       duration: user.voiceDuration || 0,
@@ -1124,7 +1128,6 @@ export class UserService {
       .where('v.userId = :userId', { userId })
       .andWhere('v.visitorUserId != :selfId', { selfId: userId })
       .andWhere('u.isDeleted = :isDel', { isDel: 0 })
-      .andWhere('u.status = :status', { status: 1 })
 
     if (onlyLike) {
       subQuery
@@ -1140,7 +1143,6 @@ export class UserService {
       .where('v.userId = :userId', { userId })
       .andWhere('v.visitorUserId != :selfId2', { selfId2: userId })
       .andWhere('u.isDeleted = :isDel2', { isDel2: 0 })
-      .andWhere('u.status = :status2', { status2: 1 })
 
     if (onlyLike) {
       totalQuery
@@ -1170,7 +1172,6 @@ export class UserService {
         .createQueryBuilder('u')
         .where('u.id IN (:...ids)', { ids: userIds })
         .andWhere('u.isDeleted = :isDel', { isDel: 0 })
-        .andWhere('u.status = :status', { status: 1 })
         .getMany()
       for (const u of users) usersMap.set(Number(u.id), u)
     }

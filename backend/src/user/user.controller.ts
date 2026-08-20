@@ -553,8 +553,9 @@ export class UserController {
 
   /** 获取用户语音介绍 */
   @Get(':id/voice-intro')
-  async getVoiceIntro(@Param('id', ParseIntPipe) id: number) {
-    const data = await this.userService.getVoiceIntro(id)
+  @UseGuards(OptionalJwtAuthGuard)
+  async getVoiceIntro(@Param('id', ParseIntPipe) id: number, @Request() req?: any) {
+    const data = await this.userService.getVoiceIntro(id, req?.user?.id)
     return Result.success(data)
   }
 

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
 import { NotifyLog } from '../entities/NotifyLog'
+import { User } from '../entities/User'
 
 interface NotifyConfig {
   enabled?: boolean
@@ -32,6 +33,8 @@ export class NotifyChannelService {
     private readonly configRepository: Repository<SystemConfig>,
     @InjectRepository(NotifyLog)
     private readonly notifyLogRepository: Repository<NotifyLog>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   /** 发送审核通知 - 向所有已配置 webhook 的通道发送，并记录日志 */
@@ -72,9 +75,20 @@ export class NotifyChannelService {
       return
     }
 
+    // 查询 6 位业务 userId 用于通知展示（userId 参数是数据库自增主键）
+    let displayUserId = ''
+    if (userId) {
+      try {
+        const u = await this.userRepository.findOne({ where: { id: userId }, select: ['userId'] })
+        displayUserId = u?.userId || ''
+      } catch {
+        displayUserId = ''
+      }
+    }
+
     // 向每个通道发送通知
     for (const ch of channels) {
-      const message = this.buildMessage(ch.name, type, content, userId, userNickname)
+      const message = this.buildMessage(ch.name, type, content, userId, userNickname, displayUserId)
       try {
         await this.sendWebhook(ch.url, message)
         this.logger.log(`通知已发送: type=${type}, channel=${ch.name}`)
@@ -174,7 +188,7 @@ export class NotifyChannelService {
     }
   }
 
-  private buildMessage(channel: string, type: string, content: string, userId?: number, userNickname?: string): any {
+  private buildMessage(channel: string, type: string, content: string, userId?: number, userNickname?: string, displayUserId?: string): any {
     const typeLabel: Record<string, string> = {
       photo: '图片审核',
       avatar: '头像审核',
@@ -185,7 +199,9 @@ export class NotifyChannelService {
       answer: '回答审核',
     }
     const title = `【审核通知】${typeLabel[type] || type}`
-    const userInfo = userId ? `\n用户ID：${userId}${userNickname ? `（${userNickname}）` : ''}` : ''
+    // 优先展示 6 位业务 userId，查询失败时回退到自增主键
+    const displayId = displayUserId || (userId ? String(userId) : '')
+    const userInfo = displayId ? `\n用户ID：${displayId}${userNickname ? `（${userNickname}）` : ''}` : ''
     const fullContent = content + userInfo
 
     switch (channel) {
