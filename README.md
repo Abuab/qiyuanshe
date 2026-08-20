@@ -464,21 +464,25 @@ server_name yourdomain.com;   # 改为你的实际域名
 
 > `docker/nginx/nginx.conf` 已被 `.gitignore` 忽略，git pull 不会覆盖你已配置的版本。
 
-### 第五步：构建并启动所有服务
+### 第五步：首次启动（无证书时先跳过 nginx）
+
+首次部署还没有 SSL 证书，直接 `docker compose up -d --build` 会让 nginx 因缺少证书反复失败。请先只启动非 nginx 服务：
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build mysql redis api admin
 ```
 
-等待约 1-2 分钟所有服务启动完成。
+等待约 1-2 分钟服务启动完成。
 
 ```bash
-# 查看服务状态（所有容器 state 应为 Up 且 healthy）
+# 查看服务状态（mysql/redis/api/admin 应为 Up 且 healthy）
 docker compose ps
 
 # 查看日志（如有异常）
-docker compose logs -f
+docker compose logs -f api
 ```
+
+> 也可以直接执行 `sudo bash scripts/install.sh`，脚本会自动判断：有证书则全量启动，无证书则跳过 nginx。
 
 ### 第六步：申请 SSL 证书
 
