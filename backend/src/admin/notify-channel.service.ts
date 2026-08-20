@@ -301,8 +301,26 @@ export class NotifyChannelService {
       throw new Error(`通道 ${log.channel} 未配置 Webhook 地址`)
     }
 
+    // 查询 6 位业务 userId 用于通知展示（log.userId 是数据库自增主键）
+    let displayUserId = ''
+    if (log.userId) {
+      try {
+        const u = await this.userRepository.findOne({ where: { id: log.userId }, select: ['userId'] })
+        displayUserId = u?.userId || ''
+      } catch {
+        displayUserId = ''
+      }
+    }
+
     // 重新构建并发送消息
-    const message = this.buildMessage(log.channel, log.notifyType, log.content || '')
+    const message = this.buildMessage(
+      log.channel,
+      log.notifyType,
+      log.content || '',
+      log.userId ?? undefined,
+      log.userNickname ?? undefined,
+      displayUserId,
+    )
     await this.sendWebhook(url, message)
 
     // 更新日志状态为成功
