@@ -217,7 +217,7 @@ health_check() {
     # 检查 API
     log_info "检查 API 服务..."
     for i in {1..30}; do
-        if curl -sf http://localhost:3000/health &> /dev/null; then
+        if docker compose exec -T api curl -sf http://localhost:3000/api/health &> /dev/null; then
             log_success "API 服务运行正常"
             break
         fi
@@ -241,9 +241,8 @@ show_result() {
     echo "============================================="
     echo "           访问地址："
     echo "============================================="
-    echo -e "API 服务:   ${GREEN}http://localhost:3000${NC}"
-    echo -e "管理后台:   ${GREEN}http://localhost:3001${NC}"
-    echo -e "健康检查:   ${GREEN}http://localhost:3000/health${NC}"
+    echo -e "管理后台:   ${GREEN}http://localhost:3001${NC}（本机直连）"
+    echo -e "健康检查:   ${GREEN}docker compose exec -T api curl http://localhost:3000/api/health${NC}"
 
     if [ -n "$SERVER_HOST" ]; then
         echo ""

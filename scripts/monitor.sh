@@ -172,10 +172,10 @@ check_api() {
     echo "           API 响应时间检查"
     echo "============================================="
 
-    local api_url="http://localhost:3000/health"
+    local api_url="http://localhost:3000/api/health"
     local start_time=$(date +%s%3N)
 
-    local response=$(curl -s -o /dev/null -w "%{http_code}" "$api_url" 2>/dev/null || echo "000")
+    local response=$(cd "$PROJECT_DIR" && docker compose exec -T api curl -s -o /dev/null -w "%{http_code}" "$api_url" 2>/dev/null || echo "000")
     local end_time=$(date +%s%3N)
     local response_time=$((end_time - start_time))
 

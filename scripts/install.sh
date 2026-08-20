@@ -253,7 +253,7 @@ wait_for_services() {
     local waited=0
 
     while [ $waited -lt $max_wait ]; do
-        if curl -sf http://localhost:3000/health &>/dev/null; then
+        if docker compose exec -T api curl -sf http://localhost:3000/api/health &>/dev/null; then
             log_success "API 服务已就绪"
             break
         fi
@@ -274,9 +274,9 @@ show_result() {
     echo "============================================="
     echo ""
     echo "访问地址:"
-    echo -e "  API 服务:   ${GREEN}http://localhost:3000${NC}"
-    echo -e "  管理后台:   ${GREEN}http://localhost:3001${NC}"
-    echo -e "  健康检查:   ${GREEN}http://localhost:3000/health${NC}"
+    echo -e "  管理后台:   ${GREEN}http://localhost:3001${NC}（本机直连）"
+    echo -e "  对外入口:   ${GREEN}https://<你的域名>${NC}（经 Nginx 反向代理）"
+    echo -e "  健康检查:   ${GREEN}docker compose exec -T api curl http://localhost:3000/api/health${NC}"
     echo ""
     echo "默认账号:"
     echo "  用户名: admin"
