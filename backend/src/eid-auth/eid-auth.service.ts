@@ -273,7 +273,7 @@ export class EidAuthService {
     }
     const user = await this.userRepo.findOne({ where: { eidBizSeqNo: eidToken } })
     if (!user) {
-      this.logger.warn(`回调未匹配到用户，token=${eidToken}`)
+      this.logger.warn(`回调未匹配到用户，token=${eidToken.slice(0, 8)}...`)
       return { ok: false }
     }
     // 以权威查询结果为准

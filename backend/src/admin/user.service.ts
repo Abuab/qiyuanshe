@@ -502,7 +502,8 @@ export class AdminUserService {
       }
     }
 
-    const { password, ...safeUser } = user
+    // 剥离密码、MFA 密钥、微信标识、E证通流水号等敏感字段，避免后台接口泄露
+    const { password, mfaSecret, tokenVersion, eidBizSeqNo, unionId, ...safeUser } = user
     return {
       ...safeUser,
       userId: user.userId || '',

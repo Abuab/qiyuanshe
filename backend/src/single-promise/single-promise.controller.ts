@@ -57,7 +57,8 @@ export class SinglePromiseController {
       limits: { fileSize: 1024 * 1024 * 2 }, // 签名图片限制 2MB
       fileFilter: (_req, file, cb) => {
         const ext = extname(file.originalname).toLowerCase()
-        if (['.png', '.jpg', '.jpeg'].includes(ext)) {
+        const isImage = ['image/jpeg', 'image/png'].includes(file.mimetype)
+        if (isImage && ['.png', '.jpg', '.jpeg'].includes(ext)) {
           cb(null, true)
         } else {
           cb(new Error('只允许上传 png/jpg 格式'), false)
