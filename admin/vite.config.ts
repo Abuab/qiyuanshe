@@ -26,6 +26,14 @@ export default defineConfig({
       },
     },
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        // 使用 Sass 新版 API，消除 legacy-js-api 弃用警告（sass >= 1.80 / vite >= 5.4.4）
+        api: 'modern',
+      },
+    },
+  },
   build: {
     outDir: 'dist',
     sourcemap: false,
