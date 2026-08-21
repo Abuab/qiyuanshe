@@ -17,8 +17,7 @@
       "@/*": ["src/*"]
     },
     "types": [
-      "@dcloudio/types",
-      "@types/qrcode"
+      "@dcloudio/types"
     ]
   },
   "include": [

@@ -17,9 +17,7 @@
     "@dcloudio/uni-mp-weixin": "3.0.0-4020920240930001",
     "@dcloudio/uni-ui": "^1.5.6",
     "dayjs": "^1.11.10",
-    "html2canvas": "^1.4.1",
     "pinia": "^2.1.7",
-    "qrcode": "^1.5.3",
     "vue": "^3.4.21"
   },
   "devDependencies": {
@@ -27,8 +25,6 @@
     "@dcloudio/uni-automator": "3.0.0-4020920240930001",
     "@dcloudio/uni-cli-shared": "3.0.0-4020920240930001",
     "@dcloudio/vite-plugin-uni": "3.0.0-4020920240930001",
-    "@types/html2canvas": "^1.0.0",
-    "@types/qrcode": "^1.5.5",
     "@vue/runtime-core": "^3.4.21",
     "sass": "^1.72.0",
     "typescript": "^5.4.2",
