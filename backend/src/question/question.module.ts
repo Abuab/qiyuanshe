@@ -5,6 +5,7 @@ import {
   QuestionAnswer,
   User,
   AnswerLike,
+  AuditLog,
 } from '../entities'
 import { QuestionController, AnswerController } from './question.controller'
 import { QuestionService } from './question.service'
@@ -18,6 +19,7 @@ import { AdminModule } from '../admin/admin.module'
       QuestionAnswer,
       User,
       AnswerLike,
+      AuditLog,
     ]),
     DynamicModule,
     AdminModule,

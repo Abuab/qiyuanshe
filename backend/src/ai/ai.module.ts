@@ -12,6 +12,8 @@ import { AiProviderConfig } from '../entities/AiProviderConfig'
 import { AiProviderCallLog } from '../entities/AiProviderCallLog'
 import { AiProviderBalance } from '../entities/AiProviderBalance'
 import { User } from '../entities/User'
+import { AuditLog } from '../entities/AuditLog'
+import { UserNotification } from '../entities/UserNotification'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { ChatMessage } from '../entities/ChatMessage'
@@ -61,6 +63,7 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
       AiProviderConfig, AiProviderCallLog, AiProviderBalance,
       User, UserTagSelection, QuestionAnswer, ChatMessage,
       PersonalityResult, PersonalityType,
+      AuditLog, UserNotification,
     ]),
     QuickQuestionModule,
   ],

@@ -81,12 +81,10 @@ import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
 import { CosModule } from './cos/cos.module'
-import { RedisService } from './common/redis.service'
 import { DatabaseIndexService } from './common/database-index.service'
-import { ContentFilterService } from './common/content-filter.service'
-import { CryptoService } from './common/crypto.service'
 import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
+import { CommonModule } from './common/common.module'
 
 @Global()
 @Module({
@@ -179,9 +177,10 @@ import { WinstonLoggerModule } from './common/logger/winston-logger.module'
     GuideCopyModule,
     CosModule,
     WinstonLoggerModule,
+    CommonModule,
   ],
   controllers: [HealthController],
-  providers: [RedisService, DatabaseIndexService, ContentFilterService, CryptoService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
-  exports: [TypeOrmModule, RedisService, ContentFilterService, CryptoService, AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
+  providers: [DatabaseIndexService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
+  exports: [AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
 })
 export class AppModule {}

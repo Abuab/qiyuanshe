@@ -9,6 +9,8 @@ import { AiMatchReport } from '../entities/AiMatchReport'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { UserAgreement } from '../entities/UserAgreement'
 import { MatchmakerComment } from '../entities/MatchmakerComment'
+import { MatchRecord } from '../entities/MatchRecord'
+import { SinglePromise } from '../entities/SinglePromise'
 import { UserController } from './user.controller'
 import { UserService } from './user.service'
 import { UserProfileDetailService } from './user-profile-detail.service'
@@ -28,6 +30,7 @@ import { RedisService } from '../common/redis.service'
       User, UserPhoto, Follow, Report, UserNotification,
       UserAuth, UserTagSelection, AiUserProfile, AiMatchReport,
       QuestionAnswer, ProfileVisit, UserBlock, AuditLog, MatchmakerComment, UserAgreement,
+      MatchRecord, SinglePromise,
     ]),
     SystemModule, DynamicModule, forwardRef(() => AdminModule), AiModule, AgreementLogStorageModule,
     PersonalityTestModule,
