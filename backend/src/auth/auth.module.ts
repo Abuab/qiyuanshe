@@ -13,7 +13,6 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { jwtConfig } from '../config/jwt'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 import { UserModule } from '../user/user.module'
-import { RedisService } from '../common/redis.service'
 
 @Module({
   imports: [
@@ -27,7 +26,7 @@ import { RedisService } from '../common/redis.service'
     UserModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RedisService],
+  providers: [AuthService, JwtStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

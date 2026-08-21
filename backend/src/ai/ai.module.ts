@@ -50,7 +50,6 @@ import { AiFunQuizController } from './ai-fun-quiz.controller'
 import { AiProfileGenController } from './ai-profile-gen.controller'
 import { AiPersonalityController } from './ai-personality.controller'
 import { AdminAiPromptController } from './admin-ai-prompt.controller'
-import { RedisService } from '../common/redis.service'
 import { SystemService } from '../system/system.service'
 import { QuickQuestionModule } from '../quick-question/quick-question.module'
 
@@ -82,7 +81,7 @@ import { QuickQuestionModule } from '../quick-question/quick-question.module'
     AiPersonalityService, AiPromptTemplateService,
     AiProviderConfigService, AiProviderSelector, AiProviderBalanceService,
     AiProviderStatsService, AiProviderScheduler, AiProviderSeeder,
-    RedisService, SystemService,
+    SystemService,
   ],
   exports: [
     AiConfigService, AiRateLimitService, AiQuotaService, AiProviderConfigService, AiProviderSelector,

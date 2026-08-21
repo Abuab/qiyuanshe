@@ -12,7 +12,6 @@ import { UserTopCardQuota } from '../entities/UserTopCardQuota'
 import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
-import { RedisService } from '../common/redis.service'
 import { SystemModule } from '../system/system.module'
 import { UserModule } from '../user/user.module'
 
@@ -33,7 +32,7 @@ import { UserModule } from '../user/user.module'
     forwardRef(() => UserModule),
   ],
   controllers: [VipController],
-  providers: [VipService, VipScheduler, RedisService],
+  providers: [VipService, VipScheduler],
   exports: [VipService],
 })
 export class VipModule {}

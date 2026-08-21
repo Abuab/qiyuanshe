@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { ConfigModule } from '@nestjs/config'
@@ -86,7 +86,6 @@ import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 import { CommonModule } from './common/common.module'
 
-@Global()
 @Module({
   imports: [
     ThrottlerModule.forRoot([{
@@ -181,6 +180,6 @@ import { CommonModule } from './common/common.module'
   ],
   controllers: [HealthController],
   providers: [DatabaseIndexService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
-  exports: [AuthModule, UserModule, MatchmakerModule, PosterModule, QuestionModule, PaymentModule, ChatModule, AuditModule, AdminModule, SystemModule, AgreementModule, AgreementLogStorageModule],
+  exports: [],
 })
 export class AppModule {}

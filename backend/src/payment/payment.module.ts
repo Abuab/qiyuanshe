@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { VipOrder, VipPackage, User, AuditLog } from '../entities'
 import { PaymentController } from './payment.controller'
 import { PaymentService } from './payment.service'
-import { RedisService } from '../common/redis.service'
 import { SystemModule } from '../system/system.module'
 
 @Module({
@@ -17,7 +16,7 @@ import { SystemModule } from '../system/system.module'
     SystemModule,
   ],
   controllers: [PaymentController],
-  providers: [PaymentService, RedisService],
+  providers: [PaymentService],
   exports: [PaymentService],
 })
 export class PaymentModule {}

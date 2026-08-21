@@ -22,7 +22,6 @@ import { AdminModule } from '../admin/admin.module'
 import { AiModule } from '../ai/ai.module'
 import { AgreementLogStorageModule } from '../agreement-log-storage/agreement-log-storage.module'
 import { PersonalityTestModule } from '../personality-test/personality-test.module'
-import { RedisService } from '../common/redis.service'
 
 @Module({
   imports: [
@@ -36,7 +35,7 @@ import { RedisService } from '../common/redis.service'
     PersonalityTestModule,
   ],
   controllers: [UserController, UserNotificationController],
-  providers: [UserService, UserProfileDetailService, RecommendService, RedisService],
+  providers: [UserService, UserProfileDetailService, RecommendService],
   exports: [UserService, RecommendService],
 })
 export class UserModule {}

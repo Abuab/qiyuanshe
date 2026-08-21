@@ -9,6 +9,8 @@ import { ChatController } from './chat.controller'
 import { ChatService } from './chat.service'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
 import { ChatMonitorService } from './chat-monitor.service'
+import { AuditModule } from '../audit/audit.module'
+import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { ChatMonitorService } from './chat-monitor.service'
       secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
     }),
+    AuditModule,
+    SystemModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatMonitorGateway, ChatMonitorService],

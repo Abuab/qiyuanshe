@@ -71,7 +71,7 @@ import { VipPackageService } from './vip-package.service'
 import { VipService } from '../vip/vip.service'
 import { DynamicModule as AppDynamicModule } from '../dynamic/dynamic.module'
 import { NotifyChannelService } from './notify-channel.service'
-import { RedisService } from '../common/redis.service'
+import { ChatModule } from '../chat/chat.module'
 import { NotifyLog } from '../entities/NotifyLog'
 import { AiFeatureSwitchLog } from '../entities/AiFeatureSwitchLog'
 import { Feedback } from '../entities/Feedback'
@@ -142,6 +142,7 @@ import { AdminOperationTagService } from './operation-tag.service'
     AppDynamicModule,
     AiModule,
     forwardRef(() => UserModule),
+    forwardRef(() => ChatModule),
   ],
   controllers: [
     AdminUserController,
@@ -187,7 +188,6 @@ import { AdminOperationTagService } from './operation-tag.service'
     NotifyChannelService,
     VipPackageService,
     VipService,
-    RedisService,
     AdminSeederService,
     AdminAuditInterceptor,
     UserScoreService,

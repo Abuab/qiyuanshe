@@ -11,6 +11,8 @@ import { QuestionController, AnswerController } from './question.controller'
 import { QuestionService } from './question.service'
 import { DynamicModule } from '../dynamic/dynamic.module'
 import { AdminModule } from '../admin/admin.module'
+import { AuditModule } from '../audit/audit.module'
+import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { AdminModule } from '../admin/admin.module'
     ]),
     DynamicModule,
     AdminModule,
+    AuditModule,
+    SystemModule,
   ],
   controllers: [QuestionController, AnswerController],
   providers: [QuestionService],
