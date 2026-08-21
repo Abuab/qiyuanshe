@@ -277,9 +277,13 @@ onMounted(async () => {
   systemStore.fetchSystemConfig()
   // 提前检查并刷新 token，避免 fetchPendingAuditCount 首次 401 产生日志告警
   await adminStore.ensureToken()
-  adminStore.fetchPendingAuditCount()
-  // 每 60 秒轮询一次审核计数
-  pendingCountTimer = setInterval(() => adminStore.fetchPendingAuditCount(), 60000)
+  // 仅对拥有审核路由权限的角色（超管/运营）轮询待审核数，
+  // 避免红娘、只读账号触发 pending-count 接口产生 403 日志噪音
+  if (isRouteAllowed(userInfo.value?.role || '', '/audit')) {
+    adminStore.fetchPendingAuditCount()
+    // 每 60 秒轮询一次审核计数
+    pendingCountTimer = setInterval(() => adminStore.fetchPendingAuditCount(), 60000)
+  }
 })
 
 onUnmounted(() => {
