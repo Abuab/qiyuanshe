@@ -5,26 +5,27 @@ export class AddRefreshTokenVersion1756000000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 刷新令牌版本：仅用于 refresh token 单次轮换，独立于 tokenVersion（幂等，存在则跳过）
-    if (!(await this.hasColumn(queryRunner, 'users', 'refresh_token_version'))) {
+    // 注意：与 tokenVersion 列命名保持一致（camelCase，未显式指定 name）
+    if (!(await this.hasColumn(queryRunner, 'users', 'refreshTokenVersion'))) {
       await queryRunner.query(
-        'ALTER TABLE `users` ADD COLUMN `refresh_token_version` int NOT NULL DEFAULT 0',
+        'ALTER TABLE `users` ADD COLUMN `refreshTokenVersion` int NOT NULL DEFAULT 0',
       )
     }
-    if (!(await this.hasColumn(queryRunner, 'admin_users', 'refresh_token_version'))) {
+    if (!(await this.hasColumn(queryRunner, 'admin_users', 'refreshTokenVersion'))) {
       await queryRunner.query(
-        'ALTER TABLE `admin_users` ADD COLUMN `refresh_token_version` int NOT NULL DEFAULT 0',
+        'ALTER TABLE `admin_users` ADD COLUMN `refreshTokenVersion` int NOT NULL DEFAULT 0',
       )
     }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    if (await this.hasColumn(queryRunner, 'admin_users', 'refresh_token_version')) {
+    if (await this.hasColumn(queryRunner, 'admin_users', 'refreshTokenVersion')) {
       await queryRunner.query(
-        'ALTER TABLE `admin_users` DROP COLUMN `refresh_token_version`',
+        'ALTER TABLE `admin_users` DROP COLUMN `refreshTokenVersion`',
       )
     }
-    if (await this.hasColumn(queryRunner, 'users', 'refresh_token_version')) {
-      await queryRunner.query('ALTER TABLE `users` DROP COLUMN `refresh_token_version`')
+    if (await this.hasColumn(queryRunner, 'users', 'refreshTokenVersion')) {
+      await queryRunner.query('ALTER TABLE `users` DROP COLUMN `refreshTokenVersion`')
     }
   }
 
