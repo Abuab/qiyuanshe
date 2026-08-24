@@ -99,6 +99,10 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_DATABASE: ${MYSQL_DATABASE:-lingtong_match}
       DB_SYNC: ${DB_SYNC:-false}
+      # 数据库连接池参数（可通过根目录 .env 覆盖，默认值适配 MySQL max_connections=150）
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_ACQUIRE_TIMEOUT: ${DB_ACQUIRE_TIMEOUT:-10000}
+      DB_IDLE_TIMEOUT: ${DB_IDLE_TIMEOUT:-60000}
       # Redis 配置
       REDIS_HOST: redis
       REDIS_PORT: 6379
