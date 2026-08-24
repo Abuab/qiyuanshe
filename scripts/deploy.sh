@@ -242,11 +242,11 @@ show_result() {
     echo -e "管理后台:   ${GREEN}http://localhost:3001${NC}（本机直连）"
     echo -e "健康检查:   ${GREEN}docker compose exec -T api curl http://localhost:3000/api/health${NC}"
 
-    if [ -n "$SERVER_HOST" ]; then
+    if [ -n "$DOMAIN" ]; then
         echo ""
         echo -e "外部访问:"
-        echo -e "API 服务:   ${GREEN}https://api.${SERVER_HOST}${NC}"
-        echo -e "管理后台:   ${GREEN}https://admin.${SERVER_HOST}${NC}"
+        echo -e "管理后台:   ${GREEN}https://${DOMAIN}${NC}"
+        echo -e "API 服务:   ${GREEN}https://${DOMAIN}/api${NC}"
     fi
 
     echo ""

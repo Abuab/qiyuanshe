@@ -75,7 +75,7 @@ backup_database() {
         --events \
         --master-data=2 \
         --flush-logs \
-        lingtong_match > "$backup_file" 2>/dev/null; then
+        "${MYSQL_DATABASE:-lingtong_match}" > "$backup_file" 2>/dev/null; then
 
         # 压缩备份文件
         if gzip -9 "$backup_file"; then

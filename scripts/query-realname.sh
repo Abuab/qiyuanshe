@@ -37,16 +37,23 @@ if [ ! -f "$DECRYPT_SCRIPT" ]; then
     exit 1
 fi
 
+# ----- 自动加载项目根目录 .env（避免每次手动设置 MYSQL_ROOT_PASSWORD） -----
+if [ -f "$PROJECT_DIR/.env" ]; then
+    set -a
+    source "$PROJECT_DIR/.env"
+    set +a
+fi
+
 # ----- MySQL 连接配置（通过 Docker 容器） -----
-# 密码从环境变量 MYSQL_ROOT_PASSWORD 读取，避免硬编码到脚本
+# 密码从 .env 的 MYSQL_ROOT_PASSWORD 读取（上方已自动 source）
 # 使用 MYSQL_PWD 环境变量传递密码，避免命令行密码触发 "Using a password" warning 污染输出
 MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-}"
 if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
-    echo "[ERROR] 未设置 MYSQL_ROOT_PASSWORD 环境变量" >&2
-    echo "用法: MYSQL_ROOT_PASSWORD=<MySQL root 密码> bash $0 <命令> [参数]" >&2
+    echo "[ERROR] 未设置 MYSQL_ROOT_PASSWORD（请在项目根目录 .env 中配置 MYSQL_ROOT_PASSWORD）" >&2
     exit 1
 fi
-MYSQL_CMD="docker exec -e MYSQL_PWD=$MYSQL_ROOT_PASSWORD -i lingtong_mysql mysql -uroot lingtong_match"
+DB_NAME="${MYSQL_DATABASE:-lingtong_match}"
+MYSQL_CMD="docker exec -e MYSQL_PWD=$MYSQL_ROOT_PASSWORD -i lingtong_mysql mysql -uroot $DB_NAME"
 
 # ----- 辅助函数：执行 SQL（格式化表格输出） -----
 run_sql() {
