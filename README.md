@@ -373,7 +373,7 @@ docker compose logs -f api
 
 > 也可以直接执行 `sudo bash scripts/install.sh`，脚本会自动判断：有证书则全量启动，无证书则跳过 nginx。
 
-### 第六步：申请 SSL 证书
+### 第五步：申请 SSL 证书
 
 ```bash
 # 运行证书申请脚本
@@ -386,7 +386,7 @@ docker compose logs -f api
 3. 将证书复制到 `docker/nginx/ssl/`
 4. 重启 nginx 容器，SSL 生效
 
-### 第七步：配置证书自动续期
+### 第六步：配置证书自动续期
 
 ```bash
 ./scripts/setup-ssl.sh setup-renewal
@@ -403,7 +403,7 @@ docker compose logs -f api
 sudo certbot renew --dry-run
 ```
 
-### 第八步：验证部署
+### 第七步：验证部署
 
 ```bash
 # 验证 HTTPS
