@@ -8,10 +8,8 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
 import { get } from '@/utils/request'
+import { EID_APPID } from '@/config/constants'
 import MatchModal from '@/components/MatchModal/MatchModal.vue'
-
-// eID 数字身份小程序 appId（用于识别从 E证通返回的场景）
-const EID_APPID = 'wx0e2cb0b052a91c92'
 
 // 冷启动时 onLaunch 后立刻触发 onShow，首次 show 跳过重复加载
 let isFirstShow = true
@@ -85,7 +83,7 @@ onShow((options: any) => {
       onShowBusy = false
       return
     }
-    Promise.allSettled(tasks).finally(() => { onShowBusy = false })
+    Promise.all(tasks.map((t) => t.catch(() => undefined))).then(() => { onShowBusy = false })
   }
 
   // 冷启动首次 onShow：onLaunch 中已加载配置，首页 refreshProfile 已处理用户信息，跳过重复加载

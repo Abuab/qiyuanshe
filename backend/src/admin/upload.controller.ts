@@ -46,10 +46,8 @@ const ensureDirectoryExists = (dir: string) => {
 }
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
-const certDir = join(uploadsDir, 'cert')
 
 ensureDirectoryExists(uploadsDir)
-ensureDirectoryExists(certDir)
 
 @Controller('admin/upload')
 @UseGuards(AdminJwtAuthGuard)
@@ -102,37 +100,5 @@ export class UploadController {
     }
 
     return Result.success({ url, compressedUrl })
-  }
-
-  @Post('cert')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: certDir,
-        filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-          cb(null, `cert-${uniqueSuffix}${extname(file.originalname)}`)
-        },
-      }),
-      limits: {
-        fileSize: 1024 * 1024 * 5,
-      },
-      fileFilter: (req, file, cb) => {
-        const ext = extname(file.originalname).toLowerCase()
-        if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
-          cb(null, true)
-        } else {
-          cb(new Error('只允许上传图片文件 (jpg, png, gif, webp, bmp)'), false)
-        }
-      },
-    }),
-  )
-  async uploadCert(@UploadedFile() file: UploadedFile) {
-    if (!file) {
-      return Result.error('请选择要上传的文件')
-    }
-    const path = `/uploads/cert/${file.filename}`
-
-    return Result.success({ path })
   }
 }

@@ -46,10 +46,6 @@ export const adminSystem = {
     return request.post('/admin/upload', data)
   },
 
-  uploadCert(data: FormData): Promise<ApiResponse<{ path: string }>> {
-    return request.post('/admin/upload/cert', data)
-  },
-
   resetPassword(data: { username: string; newPassword: string; adminKey: string }): Promise<ApiResponse> {
     return request.post('/admin/reset-password', data)
   },

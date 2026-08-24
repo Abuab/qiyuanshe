@@ -53,7 +53,7 @@ export class CryptoService implements OnModuleInit {
         '  实名身份信息（realName / idCard）将无法加密存储。\n' +
         '  请执行以下命令生成密钥并注入环境变量：\n' +
         '    openssl rand -hex 32\n' +
-        '  然后将其写入 backend/.env：\n' +
+        '  然后将其写入项目根目录 .env：\n' +
         '    IDENTITY_ENCRYPTION_KEY=<生成的64位十六进制字符串>\n' +
         '========================================================'
       if (process.env.NODE_ENV === 'production') {
@@ -165,5 +165,34 @@ export class CryptoService implements OnModuleInit {
     if (/^[\u4e00-\u9fff·\dXx*]+$/.test(value)) return false
     // base64url 特征：只含 A-Za-z0-9-_=
     return /^[A-Za-z0-9\-_=]+$/.test(value)
+  }
+
+  /**
+   * 身份证号哈希：HMAC-SHA256 加盐（pepper 复用 IDENTITY_ENCRYPTION_KEY）。
+   *
+   * 背景：身份证号（18 位，末位为校验位）熵值较低，无盐 SHA256 易被离线彩虹表/暴力枚举还原，
+   * 故引入服务端 pepper（HMAC 密钥）加固。
+   *
+   * 未配置 IDENTITY_ENCRYPTION_KEY 时退回无盐 SHA256（仅本地开发/测试环境）。
+   */
+  hashIdCard(idCard: string): string {
+    const trimmed = (idCard || '').trim()
+    if (this.key.length === 32) {
+      return crypto.createHmac('sha256', this.key).update(trimmed, 'utf8').digest('hex')
+    }
+    return crypto.createHash('sha256').update(trimmed, 'utf8').digest('hex')
+  }
+
+  /**
+   * 返回身份证号的「当前哈希」与「旧版无盐 SHA256 哈希」。
+   * 用于兼容存量数据：历史记录为无盐 SHA256，新记录为 HMAC-SHA256，
+   * 查询时需同时匹配两种哈希，避免加固后漏检历史重复身份证号。
+   */
+  idCardHashes(idCard: string): { current: string; legacy: string } {
+    const trimmed = (idCard || '').trim()
+    return {
+      current: this.hashIdCard(trimmed),
+      legacy: crypto.createHash('sha256').update(trimmed, 'utf8').digest('hex'),
+    }
   }
 }

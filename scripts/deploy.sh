@@ -89,17 +89,15 @@ load_env() {
     fi
 
     # 检查实名身份加密密钥
-    if [ -f backend/.env ]; then
-        if grep -q '^IDENTITY_ENCRYPTION_KEY=$' backend/.env 2>/dev/null || ! grep -q '^IDENTITY_ENCRYPTION_KEY=' backend/.env 2>/dev/null; then
-            log_error "========================================================="
-            log_error "  IDENTITY_ENCRYPTION_KEY 未配置！"
-            log_error "  实名身份信息（realName / idCard）将无法加密存储。"
-            log_error "  请执行以下命令生成密钥并写入 backend/.env："
-            log_error "    KEY=\$(openssl rand -hex 32)"
-            log_error "    echo \"IDENTITY_ENCRYPTION_KEY=\$KEY\" >> backend/.env"
-            log_error "========================================================="
-            exit 1
-        fi
+    if grep -q '^IDENTITY_ENCRYPTION_KEY=$' .env 2>/dev/null || ! grep -q '^IDENTITY_ENCRYPTION_KEY=' .env 2>/dev/null; then
+        log_error "========================================================="
+        log_error "  IDENTITY_ENCRYPTION_KEY 未配置！"
+        log_error "  实名身份信息（realName / idCard）将无法加密存储。"
+        log_error "  请执行以下命令生成密钥并写入 .env："
+        log_error "    KEY=\$(openssl rand -hex 32)"
+        log_error "    echo \"IDENTITY_ENCRYPTION_KEY=\$KEY\" >> .env"
+        log_error "========================================================="
+        exit 1
     fi
 }
 

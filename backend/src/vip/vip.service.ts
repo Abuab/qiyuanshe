@@ -501,45 +501,62 @@ export class VipService {
     const contact = targetUser.wechat || targetUser.phone
     if (!contact) throw new Error('该用户暂未填写联系方式')
 
-    // 2. 校验是否已经解锁过（同一对用户不重复扣减）
-    const already = await this.redLineUsageRepo.findOne({
-      where: { userId, targetUserId },
-    })
-    if (already) {
+    // 以下「扣额度 + 写使用记录」为多表写，须在同一事务内完成；
+    // 并对额度行加悲观写锁，串行化并发请求，防止重复扣减
+    const queryRunner = this.dataSource.createQueryRunner()
+    await queryRunner.connect()
+    await queryRunner.startTransaction()
+
+    try {
+      // 1. 悲观锁锁定额度行，串行化并发扣减（FOR UPDATE）
+      const quota = await queryRunner.manager.findOne(UserRedLineQuota, {
+        where: { userId, isDeleted: 0 },
+        lock: { mode: 'pessimistic_write' },
+      })
+      if (!quota || quota.usedCount >= quota.totalQuota) {
+        const term = await this.getRedLineTerm()
+        throw new Error(`${term}已用完，请购买会员获取更多${term}`)
+      }
+
+      // 2. 加锁后检查是否已解锁（并发请求此时已串行化，结果可靠）
+      const already = await queryRunner.manager.findOne(RedLineUsage, {
+        where: { userId, targetUserId },
+      })
+      if (already) {
+        await queryRunner.rollbackTransaction()
+        return {
+          success: true,
+          contact,
+          note: '您已解锁过该用户的联系方式',
+          alreadyUnlocked: true,
+        }
+      }
+
+      // 3. 扣除额度
+      quota.usedCount += 1
+      await queryRunner.manager.save(quota)
+
+      // 4. 记录使用
+      const usage = queryRunner.manager.create(RedLineUsage, {
+        userId,
+        targetUserId,
+        unlockedContact: contact,
+        quotaId: quota.id,
+      })
+      await queryRunner.manager.save(usage)
+
+      await queryRunner.commitTransaction()
+
       return {
         success: true,
         contact,
-        note: '您已解锁过该用户的联系方式',
-        alreadyUnlocked: true,
+        remaining: quota.totalQuota - quota.usedCount,
       }
-    }
-
-    // 3. 校验红线索额度
-    const quota = await this.redLineQuotaRepo.findOne({
-      where: { userId, isDeleted: 0 },
-    })
-    if (!quota || quota.usedCount >= quota.totalQuota) {
-      const term = await this.getRedLineTerm()
-      throw new Error(`${term}已用完，请购买会员获取更多${term}`)
-    }
-
-    // 4. 扣除额度
-    quota.usedCount += 1
-    await this.redLineQuotaRepo.save(quota)
-
-    // 5. 记录使用
-    const usage = this.redLineUsageRepo.create({
-      userId,
-      targetUserId,
-      unlockedContact: contact,
-      quotaId: quota.id,
-    })
-    await this.redLineUsageRepo.save(usage)
-
-    return {
-      success: true,
-      contact,
-      remaining: quota.totalQuota - quota.usedCount,
+    } catch (e) {
+      await queryRunner.rollbackTransaction()
+      throw e
+    } finally {
+      await queryRunner.release()
     }
   }
 

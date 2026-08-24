@@ -42,8 +42,8 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 
-# 创建上传目录和日志目录（包括 cert 子目录）
-RUN mkdir -p /app/uploads/cert /app/logs && \
+# 创建上传目录和日志目录
+RUN mkdir -p /app/uploads /app/logs && \
     chown -R nestjs:nodejs /app/uploads /app/logs
 
 # 复制启动脚本（必须以 root 运行，脚本内部切换到 nestjs）

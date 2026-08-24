@@ -43,6 +43,12 @@ async function bootstrap() {
       loggerService.error('FATAL: CORS_ORIGINS environment variable must be set in production')
       process.exit(1)
     }
+    // 生产环境禁止通配符：`*` 与 credentials: true 组合会反射任意 Origin 并携带凭证，
+    // 导致任意网站可带凭证发起跨域请求
+    if (corsOrigins.split(',').some(s => s.trim() === '*')) {
+      loggerService.error('FATAL: CORS_ORIGINS must not contain "*" in production (conflicts with credentials: true)')
+      process.exit(1)
+    }
   }
 
   const allowedOrigins = process.env.CORS_ORIGINS

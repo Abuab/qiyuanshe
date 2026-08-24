@@ -122,15 +122,16 @@ export class EidAuthService {
           // FOR UPDATE 间隙锁防止两个用户并发使用同一身份证号通过认证
           await this.entityManager.transaction(async (txnManager) => {
             if (hasIdentity) {
-              const idCardHash = crypto
-                .createHash('sha256')
-                .update(identityInfo!.idCard.trim())
-                .digest('hex')
+              const { current: idCardHash, legacy: legacyIdCardHash } =
+                this.cryptoService.idCardHashes(identityInfo!.idCard)
 
               // SELECT ... FOR UPDATE：锁住 idCardHash 索引间隙，阻止并发插入相同哈希
+              // 同时匹配新版 HMAC 哈希与旧版无盐 SHA256 哈希（兼容存量数据）
               const existingRecords = await txnManager
                 .createQueryBuilder(RealNameIdentity, 'rni')
-                .where('rni.idCardHash = :hash', { hash: idCardHash })
+                .where('rni.idCardHash IN (:...hashes)', {
+                  hashes: [idCardHash, legacyIdCardHash],
+                })
                 .andWhere('rni.userId != :userId', { userId })
                 .setLock('pessimistic_write')
                 .getMany()
@@ -299,14 +300,18 @@ export class EidAuthService {
     message?: string
     duplicateUserId?: number
   }> {
-    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+    const { current: idCardHash, legacy: legacyIdCardHash } =
+      this.cryptoService.idCardHashes(idCard)
     const idCardTrim = idCard.trim()
     const realNameTrim = (realName || '').trim().replace(/\s+/g, '')
 
     // 查找使用相同身份证号的所有记录（排除本人）
+    // 同时匹配新版 HMAC 哈希与旧版无盐 SHA256 哈希（兼容存量数据）
     const identities = await this.entityManager
       .createQueryBuilder(RealNameIdentity, 'rni')
-      .where('rni.idCardHash = :hash', { hash: idCardHash })
+      .where('rni.idCardHash IN (:...hashes)', {
+        hashes: [idCardHash, legacyIdCardHash],
+      })
       .andWhere('rni.userId != :userId', { userId })
       .getMany()
 
@@ -449,12 +454,16 @@ export class EidAuthService {
     userId: number,
     idCard: string,
   ): Promise<{ success: boolean; message: string }> {
-    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
+    const { current: idCardHash, legacy: legacyIdCardHash } =
+      this.cryptoService.idCardHashes(idCard)
 
     // 查找历史记录（含已注销用户：cleanupDeletedUserData 会设 status=1，但仍需在此处匹配以完成二次认证）
+    // 同时匹配新版 HMAC 哈希与旧版无盐 SHA256 哈希（兼容存量数据）
     const historicIdentity = await this.entityManager
       .createQueryBuilder(RealNameIdentity, 'rni')
-      .where('rni.idCardHash = :hash', { hash: idCardHash })
+      .where('rni.idCardHash IN (:...hashes)', {
+        hashes: [idCardHash, legacyIdCardHash],
+      })
       .andWhere('rni.status IN (:...statuses)', { statuses: [0, 1] })
       .andWhere('rni.userId != :userId', { userId })
       .getOne()
@@ -475,22 +484,23 @@ export class EidAuthService {
     const decryptedName = this.cryptoService.tryDecryptIdentity(historicIdentity.realName)
     const decryptedIdCard = this.cryptoService.tryDecryptIdentity(historicIdentity.idCard)
 
-    // 将历史身份信息写入当前用户（syncIdentityRecords 内部会重新加密）
+    // 将历史身份信息写入当前用户 + 更新认证状态，同一事务保证一致性
     const now = new Date()
-    await this.syncIdentityRecords({
-      userId,
-      realName: decryptedName,
-      idCard: decryptedIdCard,
-      eidBizSeqNo: `reauth_${Date.now()}`,
-      verifiedAt: now,
-      status: 0,
-    })
+    await this.entityManager.transaction(async (manager) => {
+      await this.syncIdentityRecords({
+        userId,
+        realName: decryptedName,
+        idCard: decryptedIdCard,
+        eidBizSeqNo: `reauth_${Date.now()}`,
+        verifiedAt: now,
+        status: 0,
+      }, manager)
 
-    // 更新 users 表认证状态
-    await this.userRepo.update(userId, {
-      eidCertStatus: EID_STATUS.DONE,
-      eidCertTime: now,
-      isRealName: 1,
+      await manager.update(User, userId, {
+        eidCertStatus: EID_STATUS.DONE,
+        eidCertTime: now,
+        isRealName: 1,
+      })
     })
 
     this.logger.log(`用户 ${userId} 二次认证成功，复用历史身份记录 ${historicIdentity.id}`)
@@ -515,31 +525,36 @@ export class EidAuthService {
    * 传入明文，内部自动加密后存储。
    * 解决 handleCallback 回调先于前端回调抵达时"已标记 DONE 但缺少身份记录"的问题。
    */
-  private async syncIdentityRecords(params: {
-    userId: number
-    realName: string
-    idCard: string
-    eidBizSeqNo?: string
-    verifiedAt?: Date
-    status?: number
-  }): Promise<void> {
+  private async syncIdentityRecords(
+    params: {
+      userId: number
+      realName: string
+      idCard: string
+      eidBizSeqNo?: string
+      verifiedAt?: Date
+      status?: number
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
     const { userId, realName, idCard, eidBizSeqNo, verifiedAt, status = 0 } = params
+    const em = manager || this.entityManager
+    const uaRepo = em.getRepository(UserAuth)
 
     // 加密敏感字段
     const encryptedName = this.cryptoService.encrypt(realName)
     const encryptedIdCard = this.cryptoService.encrypt(idCard)
 
     // 1. 写入 UserAuth 实名认证记录（加密存储）
-    const existingAuth = await this.userAuthRepo.findOne({
+    const existingAuth = await uaRepo.findOne({
       where: { userId, authType: 'realname' },
     })
     if (existingAuth) {
       existingAuth.authData = { realName: encryptedName, idCard: encryptedIdCard }
       existingAuth.status = 1
-      await this.userAuthRepo.save(existingAuth)
+      await uaRepo.save(existingAuth)
     } else {
-      await this.userAuthRepo.save(
-        this.userAuthRepo.create({
+      await uaRepo.save(
+        uaRepo.create({
           userId,
           authType: 'realname',
           status: 1,
@@ -549,13 +564,13 @@ export class EidAuthService {
     }
 
     // 2. 写入 real_name_identities 表（加密存储）
-    const idCardHash = crypto.createHash('sha256').update(idCard.trim()).digest('hex')
-    const existingIdentity = await this.entityManager
+    const idCardHash = this.cryptoService.hashIdCard(idCard)
+    const existingIdentity = await em
       .createQueryBuilder(RealNameIdentity, 'rni')
       .where('rni.userId = :userId', { userId })
       .getOne()
     if (existingIdentity) {
-      await this.entityManager.update(RealNameIdentity, existingIdentity.id, {
+      await em.update(RealNameIdentity, existingIdentity.id, {
         realName: encryptedName,
         idCard: encryptedIdCard,
         idCardHash,
@@ -564,7 +579,7 @@ export class EidAuthService {
         status,
       })
     } else {
-      await this.entityManager.insert(RealNameIdentity, {
+      await em.insert(RealNameIdentity, {
         userId,
         realName: encryptedName,
         idCard: encryptedIdCard,

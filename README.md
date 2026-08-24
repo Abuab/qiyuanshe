@@ -130,7 +130,7 @@ qiyuanshe/
 │   ├── monitor.sh            # 监控告警
 │   └── install.sh            # 环境安装
 │
-├── .env.example              # 环境变量示例（主目录）
+├── .env.example              # 环境变量示例（唯一配置源）
 ├── docker-compose.yml        # 服务编排
 └── README.md
 ```
@@ -233,13 +233,8 @@ cd qiyuanshe
 #### 2. 配置环境变量
 
 ```bash
-# 复制主目录环境变量配置
 cp .env.example .env
-
-# 复制后端环境变量配置
-cd backend
-cp .env.example .env
-cd ..
+vim .env   # 按需修改数据库、Redis、微信等配置
 ```
 
 #### 3. 启动数据库服务
@@ -267,115 +262,26 @@ npm run dev
 
 ## 环境变量配置
 
-### 主目录 `.env`（Docker Compose 使用）
+项目只维护一份环境变量文件 `.env`（示例为 `.env.example`），Docker Compose 部署与本地/手动部署共用。
 
-此文件用于配置 Docker 容器所需的基础设施服务。
-
-```env
-#=========================================
-# 数据库配置
-#=========================================
-MYSQL_ROOT_PASSWORD=your_mysql_root_password
-MYSQL_DATABASE=lingtong_match
-MYSQL_USER=lingtong
-MYSQL_PASSWORD=your_mysql_password
-
-#=========================================
-# Redis 配置
-#=========================================
-REDIS_PASSWORD=your_redis_password
-
-#=========================================
-# JWT 配置
-#=========================================
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-JWT_EXPIRES_IN=7d
-
-#=========================================
-# 微信小程序配置
-#=========================================
-WECHAT_APPID=your_wechat_appid
-WECHAT_SECRET=your_wechat_secret
-
-#=========================================
-# 微信支付配置
-#=========================================
-WECHAT_MCH_ID=your_merchant_id
-WECHAT_API_V3_KEY=your_api_v3_key
-WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
-
-#=========================================
-# 腾讯云配置（内容审核）
-#=========================================
-TENCENT_SECRET_ID=your_secret_id
-TENCENT_SECRET_KEY=your_secret_key
-
-#=========================================
-# OSS + CDN 配置（可选）
-#=========================================
-# 上传策略：local = 服务器本地 / oss = 对象存储
-UPLOAD_STRATEGY=local
-
-# 静态资源 CDN 域名
-CDN_DOMAIN=https://cdn.yourdomain.com
-CDN_ENABLED=false
-STATIC_BASE_URL=https://yourdomain.com
-
-# 阿里云 OSS
-OSS_ENDPOINT=https://oss-cn-hangzhou.aliyuncs.com
-OSS_BUCKET=your-bucket-name
-OSS_ACCESS_KEY_ID=your-key
-OSS_ACCESS_KEY_SECRET=your-secret
-OSS_UPLOAD_PREFIX=uploads/
+```bash
+cp .env.example .env
+vim .env
 ```
 
-### 后端 `backend/.env`（应用直接使用）
+- **Docker Compose 部署**：compose 通过 `env_file` 将 `.env` 注入 api 容器，并用 `environment` 块覆盖容器网络专用值（`DB_HOST=mysql`、`REDIS_HOST=redis` 等）。
+- **本地/手动部署**：NestJS 应用直接读取项目根目录 `.env`，此时需将 `DB_HOST` / `REDIS_HOST` 指向 `localhost`（或本机 MySQL/Redis 地址）。
 
-此文件用于 NestJS 应用直接连接数据库和 Redis。
+完整变量清单与注释见 `.env.example`。上线前务必修改以下关键项（随机串用 `openssl rand -hex 32` 生成）：
 
-```env
-# 应用配置
-NODE_ENV=development
-PORT=3000
-
-# 数据库配置
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=lingtong
-DB_PASSWORD=your_mysql_password
-DB_DATABASE=lingtong_match
-
-# Redis配置
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=your_redis_password
-REDIS_DB=0
-
-# JWT配置
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-JWT_EXPIRES_IN=7d
-
-# ============ 敏感数据加密密钥 ============
-# 实名身份信息加密密钥（AES-256-GCM，必须配置！）
-# 生成命令：openssl rand -hex 32
-# 不配置此密钥将导致实名字段无法加密存储，系统在 production 模式下会中止启动
-IDENTITY_ENCRYPTION_KEY=openssl_rand_hex_32_output
-
-# 静态资源 URL 前缀（CDN）
-STATIC_BASE_URL=https://yourdomain.com
-
-# 微信配置
-WECHAT_APPID=your_wechat_appid
-WECHAT_SECRET=your_wechat_secret
-WECHAT_MCH_ID=your_merchant_id
-WECHAT_APIKEY=your_apikey
-WECHAT_NOTIFY_URL=http://localhost:3000/api/payment/notify
-```
-
-**注意**：
-- 主目录 `.env` 用于 Docker Compose 启动容器时传入环境变量
-- 后端 `backend/.env` 用于本地开发时应用直接读取
-- 两者用途不同，不是冗余配置
+| 类别 | 变量 |
+|------|------|
+| 数据库/Redis 密码 | `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD`、`REDIS_PASSWORD` |
+| JWT 密钥 | `JWT_SECRET`、`ADMIN_JWT_SECRET`、`JWT_MFA_SECRET` |
+| 加密/重置密钥 | `IDENTITY_ENCRYPTION_KEY`、`AI_ENCRYPT_KEY`、`ADMIN_RESET_KEY` |
+| 微信小程序 | `WECHAT_APPID`、`WECHAT_SECRET` |
+| 微信支付 V3 | `WECHAT_MCH_ID`、`WECHAT_API_V3_KEY`、`WECHAT_PRIVATE_KEY`、`WECHAT_MCH_SERIAL_NO` |
+| 域名/证书 | `DOMAIN`、`CORS_ORIGINS`、`SSL_EMAIL` |
 
 ## 生产部署（完整步骤）
 
@@ -388,67 +294,50 @@ git clone https://github.com/Abuab/qiyuanshe.git /opt/lingtong
 cd /opt/lingtong
 ```
 
-### 第二步：配置主目录 `.env`
+### 第二步：配置 `.env`
 
 ```bash
 cp .env.example .env
 vim .env
 ```
 
-需要修改的配置项（其余保持默认或按需调整）：
+需要修改的配置项（其余保持默认或按需调整，随机串用 `openssl rand -hex 32` 生成）：
 
 ```env
-# 数据库 — 务必修改密码
+# 数据库 / Redis — 务必修改密码
 MYSQL_ROOT_PASSWORD=your_strong_mysql_password
 MYSQL_PASSWORD=your_strong_mysql_password
-
-# Redis — 务必修改密码
 REDIS_PASSWORD=your_strong_redis_password
 
-# JWT — 务必修改为随机字符串（至少 32 位）
-JWT_SECRET=your-random-32-char-jwt-secret
+# JWT — 务必修改为随机字符串
+JWT_SECRET=your-random-jwt-secret
 ADMIN_JWT_SECRET=your-random-admin-jwt-secret
 
 # 微信小程序（必须填写真实值）
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
 
-# 腾讯云审核
-TENCENT_SECRET_ID=你的腾讯云SecretId
-TENCENT_SECRET_KEY=你的腾讯云SecretKey
+# 微信支付 V3
+WECHAT_MCH_ID=你的商户号
+WECHAT_API_V3_KEY=你的APIv3密钥
+WECHAT_PRIVATE_KEY=你的商户API私钥
+WECHAT_MCH_SERIAL_NO=你的证书序列号
+
+# 以下密钥未设置会导致启动失败或相关功能不可用
+JWT_MFA_SECRET=<64位十六进制字符串>
+IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
+AI_ENCRYPT_KEY=<64位十六进制字符串>
+ADMIN_RESET_KEY=<64位十六进制字符串>
+
+# 建议设置：默认管理员初始密码（未设置则启动时随机生成）
+ADMIN_DEFAULT_PASSWORD=<你的强密码>
 
 # 域名
 DOMAIN=yourdomain.com
-API_BASE_URL=https://yourdomain.com
-ADMIN_BASE_URL=https://yourdomain.com
+CORS_ORIGINS=https://yourdomain.com
 ```
 
-### 第三步：配置后端 `backend/.env`
-
-```bash
-cp backend/.env.example backend/.env
-vim backend/.env
-```
-
-需要修改：
-
-```env
-NODE_ENV=production
-DB_PASSWORD=和主目录 .env 中 MYSQL_PASSWORD 保持一致
-REDIS_PASSWORD=和主目录 .env 中 REDIS_PASSWORD 保持一致
-JWT_SECRET=和主目录 .env 中 JWT_SECRET 保持一致
-WECHAT_APPID=你的微信AppID
-WECHAT_SECRET=你的微信AppSecret
-WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
-
-# 实名身份加密密钥（必须！）
-# 生成命令：openssl rand -hex 32
-IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
-```
-
-> **注意**：Docker Compose 启动时会通过 `environment` 注入变量覆盖这些值，此文件是备用/手动启动时使用。
-
-### 第四步：配置 Nginx（Docker 容器内）
+### 第三步：配置 Nginx（Docker 容器内）
 
 ```bash
 cp docker/nginx/nginx.conf.example docker/nginx/nginx.conf
@@ -464,7 +353,7 @@ server_name yourdomain.com;   # 改为你的实际域名
 
 > `docker/nginx/nginx.conf` 已被 `.gitignore` 忽略，git pull 不会覆盖你已配置的版本。
 
-### 第五步：首次启动（无证书时先跳过 nginx）
+### 第四步：首次启动（无证书时先跳过 nginx）
 
 首次部署还没有 SSL 证书，直接 `docker compose up -d --build` 会让 nginx 因缺少证书反复失败。请先只启动非 nginx 服务：
 
@@ -527,7 +416,7 @@ curl https://yourdomain.com/api/health
 # https://yourdomain.com
 ```
 
-### 第九步：配置开机自启
+### 第八步：配置开机自启
 
 ```bash
 sudo tee /etc/systemd/system/lingtong.service > /dev/null << 'EOF'
@@ -695,80 +584,65 @@ sudo chown -R $USER:$USER /opt/lingtong
 cd /opt/lingtong
 ```
 
-**配置主目录 `.env`（后端运行时参考）：**
+**配置 `.env`（唯一环境变量文件）：**
 
 ```bash
 cp .env.example .env
 vim .env
 ```
 
-```env
-# 数据库
-MYSQL_ROOT_PASSWORD=your_root_password
-MYSQL_DATABASE=lingtong_match
-MYSQL_USER=lingtong
-MYSQL_PASSWORD=your_mysql_password
-
-# Redis
-REDIS_PASSWORD=your_redis_password
-
-# JWT
-JWT_SECRET=生成一个至少32位的随机字符串
-ADMIN_JWT_SECRET=生成另一个不同的随机字符串
-
-# 微信
-WECHAT_APPID=你的微信小程序AppID
-WECHAT_SECRET=你的微信小程序AppSecret
-
-# 域名
-DOMAIN=yourdomain.com
-API_BASE_URL=https://yourdomain.com
-ADMIN_BASE_URL=https://yourdomain.com
-STATIC_BASE_URL=https://yourdomain.com
-```
-
-**配置后端专用 `backend/.env`：**
-
-```bash
-cp backend/.env.example backend/.env
-vim backend/.env
-```
+手动部署时需特别注意：将数据库/Redis 连接指向本机，并填写所有密钥。
 
 ```env
 NODE_ENV=production
 PORT=3000
 
-# 数据库（连接本地）
+# 数据库（连接本机）
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_USERNAME=lingtong
 DB_PASSWORD=your_mysql_password
 DB_DATABASE=lingtong_match
 
-# Redis（连接本地）
+# Redis（连接本机）
 REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 REDIS_DB=0
 
-# JWT
-JWT_SECRET=和主目录 .env 相同的 JWT_SECRET
-JWT_EXPIRES_IN=7d
+# JWT（openssl rand -hex 32 生成）
+JWT_SECRET=<64位十六进制字符串>
+ADMIN_JWT_SECRET=<64位十六进制字符串，与 JWT_SECRET 不同>
+JWT_MFA_SECRET=<64位十六进制字符串>
 
-# 微信
+# 微信小程序
 WECHAT_APPID=你的微信AppID
 WECHAT_SECRET=你的微信AppSecret
+
+# 微信支付 V3
+WECHAT_MCH_ID=你的商户号
+WECHAT_API_V3_KEY=你的APIv3密钥
+WECHAT_PRIVATE_KEY=你的商户API私钥
+WECHAT_MCH_SERIAL_NO=你的证书序列号
 WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 
-# 实名身份加密密钥（必须！openssl rand -hex 32 生成）
+# 加密密钥（openssl rand -hex 32 生成）
 IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
+AI_ENCRYPT_KEY=<64位十六进制字符串>
+ADMIN_RESET_KEY=<64位十六进制字符串>
+
+# 默认管理员初始密码（未设置则首次启动随机生成）
+ADMIN_DEFAULT_PASSWORD=<你的强密码>
 
 # 静态资源
 STATIC_BASE_URL=https://yourdomain.com
 
-# 腾讯云审核
+# 腾讯云
 TENCENT_SECRET_ID=你的SecretId
 TENCENT_SECRET_KEY=你的SecretKey
+TC_SECRET_ID=你的SecretId
+TC_SECRET_KEY=你的SecretKey
+TC_REGION=ap-guangzhou
 
 # CORS 允许的域名
 CORS_ORIGINS=https://yourdomain.com,http://localhost:5173
@@ -1153,10 +1027,15 @@ cd /opt/lingtong && npm run build:mp-weixin
 | 健康检查 | https://yourdomain.com/api/health | 服务状态检查 |
 
 ### 默认管理员账号
-- 用户名: `admin`
-- 密码: `123456`
 
-**重要提示**: 生产环境请立即修改默认密码！
+首次启动时（`admin_users` 表为空）系统会自动创建默认超级管理员 `admin`：
+
+- 用户名：`admin`
+- 初始密码：取环境变量 `ADMIN_DEFAULT_PASSWORD` 的值；若未设置则随机生成 16 位密码。
+  - 随机生成的密码在**非生产环境**会打印到后端启动日志中；
+  - **生产环境**随机密码会被脱敏（`***`），因此生产环境务必在 `.env` 中显式设置 `ADMIN_DEFAULT_PASSWORD`，否则可能无法获取初始密码。
+
+**重要提示**：登录后请立即修改默认密码！
 
 ## API 文档
 
@@ -1237,7 +1116,7 @@ sudo bash scripts/install.sh
 **执行内容**：
 1. 自动检测操作系统（Ubuntu 20.04+ / CentOS 7+）
 2. 安装 Docker + Docker Compose
-3. 创建 backups / logs / certs / docker/nginx/ssl 等目录
+3. 创建 backups / logs / docker/nginx/ssl 等目录
 4. 从 `.env.example` 生成 `.env`，并自动填入随机密码
 
 > 注：`.env` 中的微信/腾讯云配置项仍需手动填写。
@@ -1807,7 +1686,8 @@ docker exec lingtong_mysql sh -c 'mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "SELECT
 
 - **审核通知**：用户内容命中敏感词或 AI 审核拦截时，推送至 Webhook
 - **AI Provider 余额**：AI 服务商余额低于设定阈值时，每天定时检查并通知
-- 告警通道配置在 `.env` 中：`WECHAT_WEBHOOK_URL` / `FEISHU_WEBHOOK_URL` / `DINGTALK_WEBHOOK_URL`
+- 后端审核/AI 告警的 Webhook 通道在**管理后台**配置（存数据库，由 `notify-channel.service.ts` 驱动）；
+  `WECHAT_WEBHOOK_URL` / `DINGTALK_WEBHOOK_URL` 仅由 `scripts/monitor.sh`（系统资源监控脚本）读取。
 
 ### 无监控时的应急检查
 

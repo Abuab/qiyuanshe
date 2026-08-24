@@ -253,50 +253,12 @@
               />
             </el-form-item>
 
-            <el-form-item label="证书文件">
-              <div class="cert-upload">
-                <div class="cert-item">
-                  <span class="cert-label">apiclient_cert.pem:</span>
-                  <el-upload
-                    action="#"
-                    :http-request="uploadCertFile"
-                    :data="{ type: 'cert' }"
-                    :show-file-list="false"
-                  >
-                    <el-button size="small">上传证书</el-button>
-                  </el-upload>
-                  <span v-if="paymentConfig.certPath" class="cert-status">
-                    <el-icon color="#67C23A"><Check /></el-icon> 已上传
-                  </span>
-                </div>
-                <div class="cert-item">
-                  <span class="cert-label">apiclient_key.pem:</span>
-                  <el-upload
-                    action="#"
-                    :http-request="uploadCertFile"
-                    :data="{ type: 'key' }"
-                    :show-file-list="false"
-                  >
-                    <el-button size="small">上传私钥</el-button>
-                  </el-upload>
-                  <span v-if="paymentConfig.keyPath" class="cert-status">
-                    <el-icon color="#67C23A"><Check /></el-icon> 已上传
-                  </span>
-                </div>
-              </div>
-            </el-form-item>
-
             <el-form-item label="支付回调URL">
               <el-input
                 :model-value="paymentConfig.notifyUrl"
                 disabled
               />
               <div class="form-tip">自动拼接为：https://api.xxx.com/payment/notify</div>
-            </el-form-item>
-
-            <el-form-item label="测试模式">
-              <el-switch v-model="paymentConfig.testMode" />
-              <div class="form-tip">启用后使用微信支付沙箱环境</div>
             </el-form-item>
           </el-form>
         </el-card>
@@ -513,7 +475,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Check } from '@element-plus/icons-vue'
 import { system, adminSystem } from '../../api'
 import { useSystemStore } from '../../store/system'
 
@@ -557,10 +518,7 @@ const shareConfig = reactive({
 const paymentConfig = reactive({
   wechatMchId: '',
   wechatApiV3Key: '',
-  certPath: '',
-  keyPath: '',
   notifyUrl: 'https://api.xxx.com/payment/notify',
-  testMode: false,
 })
 
 const auditConfig = reactive({
@@ -757,25 +715,7 @@ async function uploadShareImage(options: any) {
     ElMessage.error('上传失败')
   }
 }
-
-async function uploadCertFile(options: any) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  formData.append('type', options.data.type)
-  try {
-    const res = await adminSystem.uploadCert(formData)
-    if (res.success && res.data?.path) {
-      if (options.data.type === 'cert') {
-        paymentConfig.certPath = res.data.path
-      } else {
-        paymentConfig.keyPath = res.data.path
-      }
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}</script>
+</script>
 
 <style scoped lang="scss">
 .system-config {
@@ -857,32 +797,6 @@ async function uploadCertFile(options: any) {
       height: 96px;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
-    }
-  }
-
-  .cert-upload {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    .cert-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-
-      .cert-label {
-        width: 160px;
-        font-size: 14px;
-        color: #606266;
-      }
-
-      .cert-status {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 12px;
-        color: #67c23a;
-      }
     }
   }
 

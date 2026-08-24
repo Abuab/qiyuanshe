@@ -17,7 +17,7 @@ import { Logger } from '@nestjs/common'
 import { join } from 'path'
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config({ path: join(__dirname, '..', '..', '..', '.env') })
+require('dotenv').config({ path: join(__dirname, '..', '..', '..', '..', '.env') })
 
 // 预设分类及其快捷问题
 const PRESET_DATA: { category: { name: string; sort: number }; questions: { content: string; sort: number }[] }[] = [

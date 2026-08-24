@@ -316,10 +316,7 @@ INSERT INTO `system_configs` (`configKey`, `configValue`, `description`) VALUES
 -- 支付配置
 ('payment:wechatMchId', '', '微信支付商户号'),
 ('payment:wechatApiV3Key', '', 'API v3密钥'),
-('payment:certPath', '', '证书路径'),
-('payment:keyPath', '', '私钥路径'),
 ('payment:notifyUrl', 'https://api.lingtong.com/payment/notify', '支付回调URL'),
-('payment:testMode', 'false', '测试模式'),
 
 -- 审核配置
 ('audit:tencentSecretId', '', '腾讯云SecretId'),

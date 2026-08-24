@@ -36,7 +36,6 @@ function isAllowedOrigin(url: string): boolean {
  * 优先级：build-time VITE_API_BASE_URL > storage 缓存（须过白名单） > 此常量
  */
 const DEFAULT_BASE_URL = 'http://localhost:3000/api'
-const DEFAULT_SERVER_URL = 'http://localhost:3000'
 
 function resolveBaseUrl(): string {
   // 第 1 优先级：build-time 环境变量（由 Vite define 注入，不可被运行时篡改）

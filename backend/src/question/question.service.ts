@@ -170,15 +170,23 @@ export class QuestionService implements OnModuleInit {
 
     if (questions.length === 0) return []
 
-    // 批量查询每个问题的回答用户头像
+    // 批量查询所有问题的高赞回答（消除 N+1），再按问题分组取前 3 个
+    const questionIds = questions.map((q) => q.id)
+    const allAnswers = await this.answerRepository.find({
+      where: { questionId: In(questionIds), status: 1 },
+      relations: ['user'],
+      order: { likeCount: 'DESC' },
+    })
+    const answersByQuestion = new Map<number, QuestionAnswer[]>()
+    for (const a of allAnswers) {
+      const list = answersByQuestion.get(a.questionId) || []
+      if (list.length < 3) list.push(a)
+      answersByQuestion.set(a.questionId, list)
+    }
+
     const result: HotQuestionWithAvatars[] = []
     for (const q of questions) {
-      const answers = await this.answerRepository.find({
-        where: { questionId: q.id, status: 1 },
-        relations: ['user'],
-        order: { likeCount: 'DESC' },
-        take: 3,
-      })
+      const answers = answersByQuestion.get(q.id) || []
       const avatarList = answers
         .map((a) => resolveAvatarUrl(a.user?.avatar))
         .filter((url) => url && url.length > 0)

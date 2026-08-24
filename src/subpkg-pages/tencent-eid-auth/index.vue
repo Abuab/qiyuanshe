@@ -74,6 +74,7 @@ import { ref, onMounted } from 'vue'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { safeNavigateBack } from '@/utils/navigate'
+import { EID_APPID } from '@/config/constants'
 
 // ========== 导航相关 ==========
 const statusBarHeight = ref(20)
@@ -113,7 +114,7 @@ const closeJumpPopup = () => {
 const handleJump = () => {
   closeJumpPopup()
   // 腾讯 E证通 小程序 appId
-  const eidAppId = 'wx0e2cb0b052a91c92'
+  const eidAppId = EID_APPID
   if (!eidAppId) {
     showToast('E证通服务暂未配置，请联系管理员')
     return

@@ -7,8 +7,8 @@ set -e
 # 避免 bind mount 覆盖目录后 EACCES 崩溃
 # ============================================
 
-# 创建上传子目录（cert 用于管理后台证书上传）
-mkdir -p /app/uploads/cert /app/logs
+# 创建上传/日志子目录
+mkdir -p /app/uploads /app/logs
 
 # 授权给 nestjs 用户（uid 1001, gid 1001）
 chown -R 1001:1001 /app/uploads /app/logs 2>/dev/null || true

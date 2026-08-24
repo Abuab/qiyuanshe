@@ -2,6 +2,7 @@ import * as crypto from 'crypto'
 
 let _jwtSecret: string
 let _adminJwtSecret: string
+let _mfaJwtSecret: string
 
 function getJwtSecret(): string {
   if (_jwtSecret) return _jwtSecret
@@ -39,6 +40,24 @@ function getAdminJwtSecret(): string {
   return _adminJwtSecret
 }
 
+function getMfaJwtSecret(): string {
+  if (_mfaJwtSecret) return _mfaJwtSecret
+
+  if (process.env.JWT_MFA_SECRET) {
+    _mfaJwtSecret = process.env.JWT_MFA_SECRET
+    return _mfaJwtSecret
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_MFA_SECRET environment variable is required for security in production. Please set a strong random secret different from JWT_SECRET and ADMIN_JWT_SECRET.')
+  }
+
+  _mfaJwtSecret = crypto.randomBytes(32).toString('hex')
+  // 使用 console.warn — 模块加载阶段 NestJS Logger 尚不可用
+  console.warn('[SECURITY WARNING] JWT_MFA_SECRET is not set. Using a randomly generated temporary key. This will cause MFA temp tokens to become invalid on server restart. DO NOT use in production!')
+  return _mfaJwtSecret
+}
+
 /** 将 expiresIn 字符串（如 '30m' / '7d' / '3600s'）转为秒数 */
 export function parseExpirySeconds(expiry: string): number {
   const match = expiry.match(/^(\d+)(s|m|h|d)$/)
@@ -67,4 +86,8 @@ export const adminJwtConfig = {
   expiresIn: process.env.ADMIN_JWT_EXPIRES_IN || '24h',
   /** admin refreshToken 有效期，默认 7 天 */
   refreshTokenExpiresIn: process.env.ADMIN_REFRESH_TOKEN_EXPIRES_IN || '7d',
+}
+
+export const mfaJwtConfig = {
+  get secret() { return getMfaJwtSecret() },
 }

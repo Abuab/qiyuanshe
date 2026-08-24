@@ -13,7 +13,7 @@
  *
  * 环境变量：
  *   IDENTITY_ENCRYPTION_KEY — 64位十六进制 AES-256-GCM 密钥
- *   从项目根目录 backend/.env 或系统环境变量读取
+ *   从项目根目录 .env 或系统环境变量读取
  */
 
 import crypto from 'crypto'
@@ -32,8 +32,8 @@ function loadKey() {
   // 先尝试环境变量
   let keyHex = process.env.IDENTITY_ENCRYPTION_KEY
   if (!keyHex) {
-    // 尝试从 backend/.env 读取
-    const envPath = path.resolve(__dirname, '..', 'backend', '.env')
+    // 尝试从项目根目录 .env 读取
+    const envPath = path.resolve(__dirname, '..', '.env')
     try {
       const content = fs.readFileSync(envPath, 'utf-8')
       const match = content.match(/^IDENTITY_ENCRYPTION_KEY=(.+)$/m)

@@ -11,7 +11,7 @@ import { MfaService } from './mfa.service'
 import { AdminAccountService } from './admin-account.service'
 import { RedisService } from '../common/redis.service'
 import { AdminAuditLog } from '../entities/AdminAuditLog'
-import { adminJwtConfig } from '../config/jwt'
+import { adminJwtConfig, mfaJwtConfig } from '../config/jwt'
 import { AdminRole } from '../shared/enums'
 import { resolveAvatarUrl } from '../common/image-url'
 
@@ -209,7 +209,7 @@ export class AdminLoginController {
       const tempToken = this.jwtService.sign(
         { adminId: adminUser.id, type: 'mfa_temp' },
         {
-          secret: process.env.JWT_MFA_SECRET || adminJwtConfig.secret,
+          secret: mfaJwtConfig.secret,
           expiresIn: '5m',
         },
       )
@@ -250,7 +250,7 @@ export class AdminLoginController {
     let payload: any
     try {
       payload = this.jwtService.verify(tempToken, {
-        secret: process.env.JWT_MFA_SECRET || adminJwtConfig.secret,
+        secret: mfaJwtConfig.secret,
       })
     } catch {
       return { success: false, message: '临时令牌已过期，请重新登录' }

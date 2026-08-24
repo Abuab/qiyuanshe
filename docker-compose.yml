@@ -90,7 +90,7 @@ services:
         max-size: "10m"
         max-file: "3"
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       # 数据库配置
       DB_HOST: mysql
@@ -120,8 +120,6 @@ services:
       # 微信支付配置
       WECHAT_MCH_ID: ${WECHAT_MCH_ID:-}
       WECHAT_API_V3_KEY: ${WECHAT_API_V3_KEY:-}
-      WECHAT_CERT_PATH: /app/certs/apiclient_cert.pem
-      WECHAT_KEY_PATH: /app/certs/apiclient_key.pem
       WECHAT_PRIVATE_KEY: ${WECHAT_PRIVATE_KEY:-}
       WECHAT_MCH_SERIAL_NO: ${WECHAT_MCH_SERIAL_NO:-}
       WECHAT_NOTIFY_URL: ${WECHAT_NOTIFY_URL:-}
@@ -157,8 +155,6 @@ services:
       - ./data/uploads:/app/uploads
       # 日志目录
       - ./data/logs/app:/app/logs
-      # 支付证书目录
-      - ./certs:/app/certs:ro
       # 敏感词库目录（51K 开源词库，聊天与 AI 内容审核共用；只读挂载，随 git 更新）
       - ./config:/app/config:ro
     networks:

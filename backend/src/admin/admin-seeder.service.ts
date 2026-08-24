@@ -36,14 +36,17 @@ export class AdminSeederService implements OnApplicationBootstrap {
         status: 1,
       }))
 
-      const source = process.env.ADMIN_DEFAULT_PASSWORD ? '环境变量 ADMIN_DEFAULT_PASSWORD' : '随机生成'
+      const isRandomPassword = !process.env.ADMIN_DEFAULT_PASSWORD
+      const source = isRandomPassword ? '随机生成' : '环境变量 ADMIN_DEFAULT_PASSWORD'
       this.logger.warn(`========================================`)
       this.logger.warn(`[AdminSeeder] 已创建默认超级管理员账号`)
       this.logger.warn(`  用户名: admin`)
-      if (process.env.NODE_ENV === 'production') {
+      // 仅在「非生产 + 随机生成」时输出明文密码（随机密码无其他获取途径）；
+      // 生产环境与环境变量指定密码均脱敏，避免明文进入日志采集链路
+      if (process.env.NODE_ENV === 'production' || !isRandomPassword) {
         this.logger.warn(`  密码:   ***（已脱敏，来源: ${source}；如为随机生成请通过 ADMIN_DEFAULT_PASSWORD 环境变量重新指定并重启）`)
       } else {
-        this.logger.warn(`  密码:   ${password}  (来源: ${source})`)
+        this.logger.warn(`  密码:   ${password}  (来源: ${source}；随机生成，请登录后立即修改)`)
       }
       this.logger.warn(`  请登录后立即修改密码！`)
       this.logger.warn(`========================================`)

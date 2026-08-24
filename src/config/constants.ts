@@ -18,3 +18,10 @@ export const STORAGE_KEY = {
   PRIVACY_AGREED_AT: 'privacy_agreed_at',
   AGREEMENT_CONTENT: 'agreement_content',
 } as const
+
+// ================================================================
+// 第三方小程序 AppId
+// ================================================================
+
+/** 腾讯 E证通（eID 数字身份）小程序 AppId：用于跳转核身小程序，以及识别从核身返回的场景 */
+export const EID_APPID = 'wx0e2cb0b052a91c92'

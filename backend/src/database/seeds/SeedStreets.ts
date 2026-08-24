@@ -18,7 +18,7 @@ import { join } from 'path'
 
 // 加载 .env 文件（独立脚本不在 NestJS 上下文中运行）
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config({ path: join(__dirname, '..', '..', '..', '.env') })
+require('dotenv').config({ path: join(__dirname, '..', '..', '..', '..', '.env') })
 
 const logger = new Logger('SeedStreets')
 

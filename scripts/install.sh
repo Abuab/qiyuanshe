@@ -140,13 +140,12 @@ create_directories() {
     # 创建必要目录
     mkdir -p backups
     mkdir -p logs
-    mkdir -p certs
     mkdir -p docker/mysql
     mkdir -p docker/nginx/ssl
     mkdir -p scripts
 
     # 设置权限
-    chmod 755 backups logs certs docker docker/mysql docker/nginx docker/nginx/ssl scripts
+    chmod 755 backups logs docker docker/mysql docker/nginx docker/nginx/ssl scripts
 
     log_success "目录结构创建完成"
 }
@@ -185,7 +184,8 @@ generate_env() {
     echo "  - 微信小程序配置 (WECHAT_APPID, WECHAT_SECRET)"
     echo "  - 微信支付配置 (WECHAT_MCH_ID, WECHAT_API_V3_KEY)"
     echo "  - 腾讯云配置 (TENCENT_SECRET_ID, TENCENT_SECRET_KEY)"
-    echo "  - 服务器域名 (SERVER_HOST)"
+    echo "  - 加密密钥 (IDENTITY_ENCRYPTION_KEY, AI_ENCRYPT_KEY)"
+    echo "  - 服务器域名 (DOMAIN)"
 }
 
 # 设置脚本权限
