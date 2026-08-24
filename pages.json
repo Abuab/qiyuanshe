@@ -428,7 +428,7 @@
   ],
   "preloadRule": {
     "pages/index/index": {
-      "network": "all",
+      "network": "wifi",
       "packages": ["subpkg-pages"]
     }
   },
