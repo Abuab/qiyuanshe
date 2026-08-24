@@ -9,14 +9,25 @@ function getToken(): string {
 }
 
 /**
- * 域名白名单：仅允许 HTTPS 协议的生产域名 + 开发环境 localhost/127.0.0.1
+ * 从 URL 提取主机名（不含协议 / 端口 / 路径）
  */
-const ALLOWED_DOMAINS = [
-  'date.arvine.cn',
-]
+function extractHostname(url: string): string {
+  if (!url) return ''
+  return url.replace(/^https?:\/\//, '').split('/')[0].split(':')[0]
+}
+
+/**
+ * 域名白名单：从构建变量 VITE_API_BASE_URL 派生生产域名。
+ * 开发环境 localhost / 127.0.0.1 在 isAllowedOrigin 中单独放行。
+ * 从构建变量派生（而非硬编码），避免换域名部署时白名单失效。
+ */
+const BUILD_API_HOSTNAME = extractHostname(
+  (import.meta as unknown as Record<string, Record<string, string>>).env?.VITE_API_BASE_URL || '',
+)
+const ALLOWED_DOMAINS = BUILD_API_HOSTNAME ? [BUILD_API_HOSTNAME] : []
 
 function isAllowedOrigin(url: string): boolean {
-  // 允许开发环境 localhost / 127.0.0.1（仅 HTTP/HTTPS 均可）
+  // 允许开发环境 localhost / 127.0.0.1（HTTP/HTTPS 均可）
   if (/^https?:\/\/localhost(:\d+)?(\/|$)/.test(url)) return true
   if (/^https?:\/\/127\.0\.0\.1(:\d+)?(\/|$)/.test(url)) return true
 
@@ -27,8 +38,7 @@ function isAllowedOrigin(url: string): boolean {
   if (/^https:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(url)) return false
 
   // 域名白名单校验
-  const hostname = url.replace(/^https?:\/\//, '').split('/')[0].split(':')[0]
-  return ALLOWED_DOMAINS.includes(hostname)
+  return ALLOWED_DOMAINS.includes(extractHostname(url))
 }
 
 /**
