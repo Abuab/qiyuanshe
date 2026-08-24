@@ -390,7 +390,7 @@ async function toggleAi() {
 async function loadInterpretation() {
   aiLoading.value = true
   try {
-    interpretation.value = (await get('/ai/personality/interpretation')) as any
+    interpretation.value = (await get('/ai/personality/interpretation', undefined, undefined, 60000)) as any
   } catch (e: any) {
     uni.showToast({ title: e?.message || 'AI 解读暂不可用', icon: 'none' })
   } finally {

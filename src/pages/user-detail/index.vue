@@ -1566,7 +1566,7 @@ const profileGenLoading = ref(false)
 const refreshProfileGen = async () => {
   profileGenLoading.value = true
   try {
-    const res: any = await request({ url: '/ai/profile-gen/refresh', method: 'POST' })
+    const res: any = await request({ url: '/ai/profile-gen/refresh', method: 'POST', timeout: 60000 })
     if (res?.personaText) {
       profileData.value.aboutMe.aiProfileText = res.personaText
     }

@@ -207,14 +207,14 @@ const loadReport = async () => {
   status.value = 'loading'
   try {
     // 先查已有的报告
-    const existing = await request({ url: `/ai/match/report/${props.targetUserId}`, method: 'GET' })
+    const existing = await request({ url: `/ai/match/report/${props.targetUserId}`, method: 'GET', timeout: 60000 })
     if (existing && (existing as any).overallScore !== undefined) {
       report.value = existing as AiMatchReport
       status.value = 'done'
       return
     }
     // 生成
-    const res = await request({ url: `/ai/match/analyze/${props.targetUserId}`, method: 'POST' })
+    const res = await request({ url: `/ai/match/analyze/${props.targetUserId}`, method: 'POST', timeout: 60000 })
     if (res && (res as any).overallScore !== undefined) {
       report.value = res as AiMatchReport
       status.value = 'done'

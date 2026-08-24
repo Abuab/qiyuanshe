@@ -52,7 +52,7 @@ function resolveBaseUrl(): string {
 }
 
 const BASE_URL = resolveBaseUrl()
-const TIMEOUT = 5000
+const TIMEOUT = 15000
 const MAX_RETRIES = 1
 
 export const getBaseUrl = (): string => resolveBaseUrl()
@@ -219,6 +219,7 @@ function handle401AndRetry(
   data: Record<string, unknown>,
   header: Record<string, string>,
   retryCount: number,
+  timeout: number,
   hadToken: boolean,
   resolve: (value: any) => void,
   reject: (reason: any) => void,
@@ -232,7 +233,7 @@ function handle401AndRetry(
   // 如果正在刷新 token，加入等待队列
   if (isRefreshing) {
     refreshSubscribers.push((newToken: string) => {
-      retryRequest(fullUrl, method, data, header, retryCount, newToken, resolve, reject)
+      retryRequest(fullUrl, method, data, header, retryCount, timeout, newToken, resolve, reject)
     })
     return
   }
@@ -241,7 +242,7 @@ function handle401AndRetry(
   tryRefreshToken().then((newToken) => {
     if (newToken) {
       onTokenRefreshed(newToken)
-      retryRequest(fullUrl, method, data, header, retryCount, newToken, resolve, reject)
+      retryRequest(fullUrl, method, data, header, retryCount, timeout, newToken, resolve, reject)
     } else {
       onRefreshFailed()
       handleUnauthorized(true)
@@ -258,6 +259,7 @@ function retryRequest(
   data: Record<string, unknown>,
   header: Record<string, string>,
   retryCount: number,
+  timeout: number,
   newToken: string,
   resolve: (value: any) => void,
   reject: (reason: any) => void,
@@ -273,7 +275,7 @@ function retryRequest(
     method: method as any,
     data,
     header: retryHeader,
-    timeout: TIMEOUT,
+    timeout,
     success: (res: any) => {
       const response = res as UniApp.RequestSuccessCallbackResult
       const statusCode = response.statusCode
@@ -354,7 +356,7 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
           return
         }
         if (statusCode === 401) {
-          handle401AndRetry(fullUrl, method, data, header, retryCount, !!token, resolve, reject)
+          handle401AndRetry(fullUrl, method, data, header, retryCount, requestTimeout, !!token, resolve, reject)
           return
         }
 
@@ -435,34 +437,39 @@ export const get = <T = unknown>(
   url: string,
   data?: Record<string, unknown>,
   header?: Record<string, string>,
-): Promise<T> => request<T>({ url, method: 'GET', data, header })
+  timeout?: number,
+): Promise<T> => request<T>({ url, method: 'GET', data, header, timeout })
 
 /** POST 请求 */
 export const post = <T = unknown>(
   url: string,
   data?: Record<string, unknown>,
   header?: Record<string, string>,
-): Promise<T> => request<T>({ url, method: 'POST', data, header })
+  timeout?: number,
+): Promise<T> => request<T>({ url, method: 'POST', data, header, timeout })
 
 /** PUT 请求 */
 export const put = <T = unknown>(
   url: string,
   data?: Record<string, unknown>,
   header?: Record<string, string>,
-): Promise<T> => request<T>({ url, method: 'PUT', data, header })
+  timeout?: number,
+): Promise<T> => request<T>({ url, method: 'PUT', data, header, timeout })
 
 /** DELETE 请求 */
 export const del = <T = unknown>(
   url: string,
   data?: Record<string, unknown>,
   header?: Record<string, string>,
-): Promise<T> => request<T>({ url, method: 'DELETE', data, header })
+  timeout?: number,
+): Promise<T> => request<T>({ url, method: 'DELETE', data, header, timeout })
 
 /** PATCH 请求 */
 export const patch = <T = unknown>(
   url: string,
   data?: Record<string, unknown>,
   header?: Record<string, string>,
-): Promise<T> => request<T>({ url, method: 'PATCH', data, header })
+  timeout?: number,
+): Promise<T> => request<T>({ url, method: 'PATCH', data, header, timeout })
 
 export default request

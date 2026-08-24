@@ -102,7 +102,7 @@ const handleBack = () => safeNavigateBack()
 async function nextQuestion() {
   try {
     loadingFailed.value = false
-    const res: any = await request({ url: '/ai/fun-quiz', method: 'POST' })
+    const res: any = await request({ url: '/ai/fun-quiz', method: 'POST', timeout: 60000 })
     const question = res?.question || res
     if (question && typeof question === 'string') {
       messages.value.push({ type: 'ai', content: question })
