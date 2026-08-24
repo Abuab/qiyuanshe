@@ -28,8 +28,6 @@ export const databaseConfig = (): TypeOrmModuleOptions => {
     extra: {
       // 连接池最大连接数（建议 ≤ MySQL max_connections，本部署为 150）
       connectionLimit: parseInt(process.env.DB_POOL_SIZE, 10) || 20,
-      // 获取连接超时（毫秒）：排队超时即抛错，避免请求无限挂起
-      acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT, 10) || 10000,
       // 空闲连接回收（毫秒）：避免长时间闲置占用连接
       idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT, 10) || 60000,
       // 达到连接上限时排队等待（false 则立即抛错）
