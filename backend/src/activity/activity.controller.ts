@@ -17,7 +17,7 @@ import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
 import { ActivityService } from './activity.service'
-import { CreateActivityDto, UpdateActivityDto } from './dto'
+import { CreateActivityDto, UpdateActivityDto, SignupActivityDto } from './dto'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 
@@ -51,7 +51,7 @@ export class ActivityController {
   async signup(
     @Param('id', ParseIntPipe) id: number,
     @Request() req,
-    @Body() data: { realName?: string; phone?: string; remark?: string },
+    @Body() data: SignupActivityDto,
   ) {
     try {
       const userId = req.user.id

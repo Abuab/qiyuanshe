@@ -171,10 +171,10 @@ const refreshCertResult = async () => {
   if (querying.value) return
   querying.value = true
   try {
-    const res: any = await get('/eid-auth/result', {
+    const res: any = await post('/eid-auth/result', {
       realName: realName.value.trim(),
       idCard: idCard.value.trim(),
-    } as Record<string, unknown>)
+    })
     const d = res?.data || res
     const status = d && typeof d.status === 'number' ? d.status : 0
     certStatus.value = status

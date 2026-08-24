@@ -64,6 +64,14 @@ export class AuthController {
     return Result.success(tokens)
   }
 
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async logout(@Request() req: any) {
+    await this.authService.logout(req.user.id)
+    return Result.success(null, '已退出登录')
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(@Request() req) {
@@ -84,13 +92,6 @@ export class AuthController {
   async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
     const user = await this.authService.updateProfile(req.user.id, dto)
     return Result.success(user)
-  }
-
-  @Get('validate-sso')
-  @HttpCode(HttpStatus.OK)
-  async validateSso() {
-    // 单点登录态校验（无实际业务逻辑，收到请求即返回成功）
-    return Result.success({ valid: true })
   }
 
   @Post('feedback')

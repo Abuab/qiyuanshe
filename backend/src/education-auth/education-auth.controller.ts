@@ -23,6 +23,7 @@ import { Roles } from '../admin/roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 import { EducationAuthService } from './education-auth.service'
+import { SubmitEducationAuthDto, AuditEducationAuthDto } from './dto'
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
 if (!existsSync(uploadsDir)) {
@@ -73,7 +74,7 @@ export class EducationAuthController {
   async submit(
     @Request() req: any,
     @UploadedFile() file: any,
-    @Body() body: { school?: string; degree?: string },
+    @Body() body: SubmitEducationAuthDto,
   ) {
     const userId = req.user.id || req.user.sub
     const school = (body.school || '').trim()
@@ -115,7 +116,7 @@ export class EducationAuthController {
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async audit(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { status: number; rejectReason?: string },
+    @Body() body: AuditEducationAuthDto,
   ) {
     const data = await this.service.audit(id, body)
     return Result.success(data)

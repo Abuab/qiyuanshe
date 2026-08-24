@@ -42,6 +42,10 @@ export class AdminUser {
   @Column({ type: 'int', default: 0 })
   tokenVersion: number
 
+  // 刷新令牌版本：仅用于 refresh token 单次轮换，独立于 tokenVersion，避免刷新时误伤 access token
+  @Column({ type: 'int', default: 0 })
+  refreshTokenVersion: number
+
   @Column({ type: 'varchar', length: 500, default: '' })
   avatar: string
 

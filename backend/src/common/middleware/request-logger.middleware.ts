@@ -26,9 +26,9 @@ export class RequestLoggerMiddleware implements NestMiddleware {
     const start = Date.now()
     const { method, ip } = req
 
-    // 脱敏：移除 URL 中的 token / access_token 等敏感参数
+    // 脱敏：移除 URL 中的 token / 身份证号 / 姓名 等敏感参数（防止 PII 泄漏进日志）
     const sanitizedUrl = req.originalUrl.replace(
-      /([?&])(token|access_token|secret|signature)=[^&]*/gi,
+      /([?&])(token|access_token|secret|signature|idcard|realname)=[^&]*/gi,
       '$1$2=***',
     )
 

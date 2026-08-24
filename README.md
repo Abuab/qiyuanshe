@@ -115,7 +115,10 @@ qiyuanshe/
 │
 ├── docker/                   # Docker 配置文件
 │   ├── mysql/
-│   │   ├── init.sql          # 数据库初始化
+│   │   ├── schema.sql        # 完整建表结构（由 generate-schema.sh 从 Entity 生成，权威 schema）
+│   │   ├── init.sql          # 生产种子数据（仅 INSERT：系统配置 + 数据字典）
+│   │   ├── demo-data.sql     # 演示数据（可选，默认不挂载到初始化流程）
+│   │   ├── migration_*.sql   # 一次性数据迁移脚本（历史遗留，可选）
 │   │   └── my.cnf            # MySQL 配置
 │   └── nginx/
 │       ├── nginx.conf.example # Nginx 配置模板（复制为 nginx.conf 后修改）
@@ -123,12 +126,16 @@ qiyuanshe/
 │       └── certbot/          # Certbot 验证目录
 │
 ├── scripts/                  # 运维脚本
+│   ├── install.sh            # 一键环境安装
 │   ├── deploy.sh             # 一键部署
 │   ├── setup-ssl.sh          # SSL 证书申请 & 自动续期
 │   ├── backup.sh             # 数据库备份
+│   ├── restore.sh            # 数据库恢复
 │   ├── cleanup.sh            # 日志清理
 │   ├── monitor.sh            # 监控告警
-│   └── install.sh            # 环境安装
+│   ├── generate-schema.sh    # 从 Entity 生成 schema.sql
+│   ├── query-realname.sh     # 实名信息查询（解密）
+│   └── decrypt-identity.js   # 实名信息解密工具
 │
 ├── .env.example              # 环境变量示例（唯一配置源）
 ├── docker-compose.yml        # 服务编排
@@ -543,13 +550,23 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-**导入表结构（TypeORM synchronize 会自动建表，也可手动执行 init.sql）：**
+**导入表结构与种子数据：**
+
+手动部署不会经过 Docker 的 `docker-entrypoint-initdb.d` 初始化流程，需按顺序手动导入：
 
 ```bash
-# 方式一：让 NestJS 自动建表（synchronize: true，推荐）
-# 方式二：手动导入 SQL
+# 1. 导入完整建表结构（权威 schema）
+sudo mysql -u root -p lingtong_match < docker/mysql/schema.sql
+
+# 2. 导入生产种子数据（系统配置 + 数据字典）
 sudo mysql -u root -p lingtong_match < docker/mysql/init.sql
+
+# 3.（可选）如需演示数据（示例红娘 / 热门问题 / 举报 / 演示用户）
+# sudo mysql -u root -p lingtong_match < docker/mysql/demo-data.sql
 ```
+
+> 说明：生产环境请保持 `DB_SYNC=false`（切勿开启 synchronize 自动建表）。
+> 表结构由 `schema.sql` 创建，应用启动时会再执行 migration 补齐增量变更。
 
 ### 第四步：安装 Redis 7.x
 
@@ -1213,9 +1230,40 @@ bash scripts/backup.sh
 
 ---
 
-### `scripts/cleanup.sh` — 日志清理
+### `scripts/restore.sh` — 数据库恢复
 
-**用途**：清理应用日志、Nginx 日志、Docker 容器日志，释放磁盘空间。
+**用途**：从 `backup.sh` 生成的 `.sql.gz` 备份文件恢复数据库。
+
+**用法**：
+
+```bash
+# 列出可用备份
+bash scripts/restore.sh
+
+# 恢复到指定备份（--yes 跳过确认，用于自动化 / 恢复演练）
+bash scripts/restore.sh backups/lingtong_20260825_020000.sql.gz --yes
+```
+
+**执行内容**：
+1. 检查备份文件是否存在、MySQL 容器是否运行
+2. 解压备份并通过 `mysql` 导入 `lingtong_match` 库
+3. 恢复前会提示确认（除非加 `--yes`），恢复会覆盖现有数据
+
+**依赖环境变量**：
+
+| 变量 | 说明 |
+|------|------|
+| `MYSQL_ROOT_PASSWORD` | 数据库 root 密码 |
+| `MYSQL_DATABASE` | 目标库名（默认 `lingtong_match`） |
+| `BACKUP_PATH` | 备份目录（默认 `./backups`） |
+
+> 提示：建议定期做恢复演练（对 `backups/` 内最新备份加 `--yes` 导入到测试库），验证备份确实可用。
+
+---
+
+### `scripts/cleanup.sh` — 日志与 Docker 资源清理
+
+**用途**：清理应用日志、Nginx 日志、MySQL 慢查询日志，并回收未使用的 Docker 镜像/卷/网络/构建缓存。
 
 **用法**：
 
@@ -1229,13 +1277,19 @@ bash scripts/cleanup.sh
 
 **执行内容**：
 1. 删除超过 7 天的应用日志（`logs/*.log`）
-2. 清空所有 Docker 容器的内部日志（`docker inspect --LogPath`）
-3. 删除空的日志目录
+2. 清空 Nginx 日志（`data/logs/nginx/*.log`，用 `: >` 覆写后执行 `nginx -s reopen`，避免产生稀疏文件）
+3. 轮转 MySQL 慢查询日志（`rename + FLUSH`，同样避免 truncate 稀疏文件问题）
+4. 清理 Docker 未使用的镜像/卷/网络/构建缓存
+5. 清理项目临时文件（`*.tmp`、`__pycache__` 等）
+6.（可选）`CLEANUP_NPM_CACHE=true` 时清理 npm 缓存
 
 **日志保留策略**：
-- 应用日志：保留 7 天
-- Docker 容器日志：每次执行清空（容器内日志）
-- Nginx 日志：跟随系统 `/var/log/nginx/`，由 logrotate 管理
+- 应用日志：保留 7 天（`APP_LOG_RETENTION_DAYS`）
+- Nginx 日志：每次执行清空（路径 `data/logs/nginx/`，与 compose 挂载一致）
+- MySQL 慢查询日志：每次执行轮转（`/var/lib/mysql/slow.log`）
+- Docker 容器日志：由 `docker-compose.yml` 中 `max-size: 10m / max-file: 3` 管理，脚本不手动截断
+
+> 依赖 `MYSQL_ROOT_PASSWORD`（慢查询日志轮转用），脚本会从项目根目录 `.env` 自动读取。
 
 ---
 
@@ -1480,20 +1534,25 @@ lsof -i :443
 
 ### 4. 重新初始化数据库
 
+> 警告：此操作会**清空全部数据且不可恢复**，执行前务必先备份（`bash scripts/backup.sh`）。
+
 ```bash
 # 停止服务
 docker compose down
 
-# 删除数据卷（注意：会删除所有数据）
+# 删除数据卷（会删除所有数据）
 docker compose down -v
 
-# 重新启动
+# 重新启动。mysql 数据卷为空时，容器首次初始化会自动按顺序执行
+# 01-schema.sql（建表）+ 02-seed.sql（生产种子数据），无需手动导入。
 docker compose up -d
 
-# 重新初始化数据
-sleep 30
-docker compose exec -T mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" lingtong_match < docker/mysql/init.sql
+# 等待 mysql 变为 healthy 后再启动 api（compose 已配置 depends_on，自动等待）
+docker compose ps
 ```
+
+> 说明：`docker compose down -v` 后重新 `up -d`，MySQL 的 `docker-entrypoint-initdb.d`
+> 初始化脚本仅在**数据卷首次为空**时执行一次，表结构与种子数据会自动就绪。
 
 ## 开发指南
 
@@ -1756,7 +1815,7 @@ node -e "const bcrypt = require('bcrypt'); bcrypt.hash('你的新密码', 10).th
 **步骤 2：进入 MySQL 更新密码**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE admin_user SET password='上面复制的hash值' WHERE username='admin';"
+docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE admin_users SET password='上面复制的hash值' WHERE username='admin';"
 ```
 
 > **注意**：将 `-p` 后的密码替换为你的 MySQL root 密码。
@@ -1774,12 +1833,12 @@ docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE a
 **步骤 1：数据库直接禁用 MFA**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_match; UPDATE admin_user SET is_mfa_enabled = false, mfa_type = 'none', mfa_secret = NULL WHERE id = 1;"
+docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_match; UPDATE admin_users SET isMfaEnabled = 0, mfaSecret = NULL WHERE id = 1;"
 ```
 
 > **注意**：
 > - 将 `your_password` 替换为你的 MySQL root 密码
-> - 将 `id = 1` 替换为实际的管理员 ID（如果不确定，先执行 `SELECT id, username FROM admin_user;` 查看）
+> - 将 `id = 1` 替换为实际的管理员 ID（如果不确定，先执行 `SELECT id, username FROM admin_users;` 查看）
 
 **步骤 2：重新登录**
 
@@ -1803,16 +1862,16 @@ docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_m
 **Q: 如何查看管理员 ID？**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; SELECT id, username, is_mfa_enabled FROM admin_user;"
+docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; SELECT id, username, isMfaEnabled FROM admin_users;"
 ```
 
 ---
 
 ## License
 
-MIT License
+本项目采用 [MIT License](LICENSE) 开源协议，完整授权条款见根目录 [LICENSE](LICENSE) 文件。
 
 ---
 
-*文档版本: v2.2*
-*最后更新: 2026-08-04*
+*文档版本: v2.3*
+*最后更新: 2026-08-25*

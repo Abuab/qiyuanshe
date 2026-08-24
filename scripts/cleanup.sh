@@ -36,11 +36,20 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # 清理配置
 APP_LOG_RETENTION_DAYS=7
-NGINX_LOG_RETENTION_DAYS=30
 LOG_FILE="${PROJECT_DIR}/logs/cleanup.log"
 
 # 创建必要目录
 mkdir -p "$(dirname "$LOG_FILE")"
+
+# 加载项目根目录 .env（读取 MYSQL_ROOT_PASSWORD 等，用于容器内日志轮转）
+load_env() {
+    if [ -f "${PROJECT_DIR}/.env" ]; then
+        set -a
+        # shellcheck disable=SC1091
+        source "${PROJECT_DIR}/.env"
+        set +a
+    fi
+}
 
 # 清理应用日志
 cleanup_app_logs() {
@@ -75,31 +84,72 @@ cleanup_app_logs() {
 
 # 清理 Nginx 日志
 cleanup_nginx_logs() {
-    log_info "清理 Nginx 日志（保留 ${NGINX_LOG_RETENTION_DAYS} 天）..."
+    log_info "清理 Nginx 日志..."
 
-    local nginx_logs_dir="${PROJECT_DIR}/docker/nginx"
-    local deleted_count=0
+    # nginx 日志通过 bind mount 持久化到宿主机 data/logs/nginx（与容器内 /var/log/nginx 一致）
+    local nginx_logs_dir="${PROJECT_DIR}/data/logs/nginx"
+    local cleared_count=0
 
     if [ -d "$nginx_logs_dir" ]; then
         while IFS= read -r file; do
             if [ -n "$file" ] && [ -f "$file" ]; then
-                : > "$file" 2>/dev/null && log_info "已清空: $file" || true
-                deleted_count=$((deleted_count + 1))
+                if : > "$file" 2>/dev/null; then
+                    log_info "已清空: $file"
+                    cleared_count=$((cleared_count + 1))
+                fi
             fi
         done < <(find "$nginx_logs_dir" -name "*.log" -type f 2>/dev/null)
     fi
 
-    # 尝试清理 Docker 中的 Nginx 日志
+    # 通知 nginx 重新打开日志文件，避免 truncate 后文件句柄偏移错位产生稀疏文件
     if docker ps --format '{{.Names}}' | grep -q "^lingtong_nginx$"; then
-        docker exec lingtong_nginx sh -c 'find /var/log/nginx -name "*.log" -type f -exec truncate -s 0 {} \;' 2>/dev/null || true
-        log_info "已清空 Docker Nginx 日志"
+        docker exec lingtong_nginx nginx -s reopen 2>/dev/null || true
     fi
 
-    if [ $deleted_count -gt 0 ]; then
-        log_success "已清理 $deleted_count 个 Nginx 日志文件"
+    if [ $cleared_count -gt 0 ]; then
+        log_success "已清空 $cleared_count 个 Nginx 日志文件"
     else
         log_info "没有需要清理的 Nginx 日志"
     fi
+}
+
+# 轮转 MySQL 慢查询日志（rename + FLUSH，避免 truncate 产生稀疏文件）
+cleanup_mysql_logs() {
+    log_info "轮转 MySQL 慢查询日志..."
+
+    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_mysql$"; then
+        log_info "MySQL 容器未运行，跳过慢查询日志轮转"
+        return 0
+    fi
+
+    # MYSQL_PWD 通过 -e 注入，避免密码出现在命令行/进程列表
+    # 退出码约定：0=已轮转，2=无慢查询日志（跳过），其它=轮转失败
+    local rc=0
+    if docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:-}" lingtong_mysql sh -c '
+        SLOW=/var/lib/mysql/slow.log
+        if [ ! -f "$SLOW" ]; then
+            exit 2
+        fi
+        mv "$SLOW" "$SLOW.1" 2>/dev/null || exit 1
+        if mysqladmin -uroot flush-logs >/dev/null 2>&1; then
+            rm -f "$SLOW.1" 2>/dev/null || true
+            exit 0
+        else
+            # flush 失败则恢复原名，避免 mysqld 继续写入已改名文件
+            mv "$SLOW.1" "$SLOW" 2>/dev/null || true
+            exit 1
+        fi
+    '; then
+        rc=0
+    else
+        rc=$?
+    fi
+
+    case $rc in
+        0) log_success "已轮转 MySQL 慢查询日志" ;;
+        2) log_info "MySQL 慢查询日志不存在，跳过轮转" ;;
+        *) log_warning "MySQL 慢查询日志轮转失败（可能 MySQL 未就绪或密码错误）" ;;
+    esac
 }
 
 # 清理 Docker 未使用的镜像
@@ -222,11 +272,17 @@ main() {
     echo "============================================="
     echo ""
 
+    # 加载 .env（读取 MYSQL_ROOT_PASSWORD 等）
+    load_env
+
     # 清理应用日志
     cleanup_app_logs
 
     # 清理 Nginx 日志
     cleanup_nginx_logs
+
+    # 轮转 MySQL 慢查询日志
+    cleanup_mysql_logs
 
     # 清理 Docker 资源
     cleanup_docker_images

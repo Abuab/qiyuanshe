@@ -502,8 +502,8 @@ export class AdminUserService {
       }
     }
 
-    // 剥离密码、MFA 密钥、微信标识、E证通流水号等敏感字段，避免后台接口泄露
-    const { password, mfaSecret, tokenVersion, eidBizSeqNo, unionId, ...safeUser } = user
+    // 剥离密码、MFA 密钥、微信标识、E证通流水号、令牌版本号等敏感字段，避免后台接口泄露
+    const { password, mfaSecret, tokenVersion, refreshTokenVersion, eidBizSeqNo, unionId, ...safeUser } = user
     return {
       ...safeUser,
       userId: user.userId || '',
@@ -713,6 +713,7 @@ export class AdminUserService {
     user.deleteReason = '管理员代注销'
     user.phone = null
     user.tokenVersion += 1
+    user.refreshTokenVersion += 1
     await this.userRepository.save(user)
 
     // 写入审计日志
@@ -756,6 +757,7 @@ export class AdminUserService {
       user.deleteReason = '管理员代注销'
       user.phone = null
       user.tokenVersion += 1
+      user.refreshTokenVersion += 1
       await this.userRepository.save(user)
 
       // 审计日志
@@ -867,14 +869,14 @@ export class AdminUserService {
   private async generateUserId(): Promise<string> {
     const MAX_RETRIES = 10
     for (let i = 0; i < MAX_RETRIES; i++) {
-      const num = Math.floor(Math.random() * 900000) + 100000
+      const num = crypto.randomInt(100000, 1000000)
       const userId = String(num)
       const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
       if (!exists) return userId
     }
     // 6位池接近耗尽，扩展到7位
     for (let i = 0; i < MAX_RETRIES; i++) {
-      const num = Math.floor(Math.random() * 9000000) + 1000000
+      const num = crypto.randomInt(1000000, 10000000)
       const userId = String(num)
       const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
       if (!exists) return userId

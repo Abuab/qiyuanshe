@@ -55,6 +55,9 @@ export class ForgotPasswordController {
 
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10)
     await this.adminRepo.update(admin.id, { password: hashedPassword })
+    // 重置密码后使该管理员所有已签发 token 失效（accessToken 与 refreshToken 均失效），强制重新登录
+    await this.adminRepo.increment({ id: admin.id }, 'tokenVersion', 1)
+    await this.adminRepo.increment({ id: admin.id }, 'refreshTokenVersion', 1)
 
     return Result.success(null, '密码已重置')
   }

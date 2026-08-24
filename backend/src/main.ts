@@ -20,6 +20,8 @@ async function bootstrap() {
   const winstonLoggerService = new WinstonLoggerService()
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    // 捕获原始请求体（req.rawBody），供微信支付 V3 回调验签使用
+    rawBody: true,
     // 使用 Winston 替换 NestJS 内置 Logger，同时保留所有日志级别
     logger: WinstonModule.createLogger({
       instance: winstonLoggerService.getWinstonInstance(),

@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
+import * as crypto from 'crypto'
 import * as svgCaptcha from 'svg-captcha'
 
 interface CaptchaEntry {
@@ -12,7 +13,7 @@ export class CaptchaService {
   private captchaStore = new Map<string, CaptchaEntry>()
 
   generateCaptcha(): { svg: string; key: string } {
-    const key = Math.random().toString(36).substring(2, 15)
+    const key = crypto.randomBytes(16).toString('hex')
 
     try {
       const captcha = svgCaptcha.create({
@@ -65,7 +66,7 @@ export class CaptchaService {
   private generateFallbackCode(): string {
     let code = ''
     for (let i = 0; i < 4; i++) {
-      code += Math.floor(Math.random() * 10).toString()
+      code += crypto.randomInt(0, 10).toString()
     }
     return code
   }

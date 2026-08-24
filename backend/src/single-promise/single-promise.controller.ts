@@ -23,6 +23,7 @@ import { Roles } from '../admin/roles.decorator'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
 import { SinglePromiseService } from './single-promise.service'
+import { SubmitSinglePromiseDto, AuditSinglePromiseDto } from './dto'
 
 const uploadsDir = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads')
 if (!existsSync(uploadsDir)) {
@@ -69,14 +70,14 @@ export class SinglePromiseController {
   async submit(
     @Request() req: any,
     @UploadedFile() file: any,
-    @Body('realName') realName?: string,
+    @Body() body: SubmitSinglePromiseDto,
   ) {
     const userId = req.user.id || req.user.sub
     if (!file) {
       return Result.error('请上传签名图片')
     }
     const signatureUrl = `/uploads/${file.filename}`
-    const data = await this.spService.submit(userId, signatureUrl, realName)
+    const data = await this.spService.submit(userId, signatureUrl, body.realName)
     return Result.success(data)
   }
 
@@ -103,7 +104,7 @@ export class SinglePromiseController {
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   async audit(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { status: number; rejectReason?: string; adminId?: number },
+    @Body() body: AuditSinglePromiseDto,
   ) {
     const data = await this.spService.audit(id, body)
     return Result.success(data)

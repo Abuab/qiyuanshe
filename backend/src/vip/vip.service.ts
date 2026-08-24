@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
+import * as crypto from 'crypto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, DataSource } from 'typeorm'
 import { User } from '../entities/User'
@@ -16,7 +17,7 @@ export const RED_LINE_TERM_DEFAULT = '红线'
 
 function generateOrderNo(): string {
   const ts = Date.now().toString(36)
-  const rand = Math.random().toString(36).slice(2, 10)
+  const rand = crypto.randomBytes(4).toString('hex')
   return `VIP${ts}${rand}`.toUpperCase()
 }
 

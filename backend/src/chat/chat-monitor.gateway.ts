@@ -102,9 +102,17 @@ export class ChatMonitorGateway implements OnGatewayConnection, OnGatewayDisconn
       if (!token) throw new Error('missing token')
 
       // 仅接受管理后台 JWT（C 端已改 HTTP 轮询，不再连接 WebSocket）
-      const decoded = this.jwtService.verify(token, {
+      const decoded: any = this.jwtService.verify(token, {
         secret: adminJwtConfig.secret,
       })
+      // 仅接受访问令牌：拒绝 refresh token 及类型缺失的令牌
+      if (decoded.type !== 'admin_access' && decoded.type !== 'admin') {
+        throw new Error('invalid token type')
+      }
+      if (typeof decoded.sub !== 'number') {
+        throw new Error('invalid token subject')
+      }
+
       const auth: WsAuth = { type: 'admin', userId: decoded.sub }
       this.adminSockets.set(decoded.sub, client)
 

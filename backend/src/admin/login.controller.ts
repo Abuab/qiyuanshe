@@ -97,21 +97,32 @@ export class AdminLoginController {
   }
 
   /** 生成管理员 token 对（accessToken + refreshToken） */
-  private generateTokens(adminUser: { id: number; username: string; role: string; tokenVersion: number }) {
-    const payload = {
-      sub: adminUser.id,
-      username: adminUser.username,
-      role: adminUser.role,
-      tokenVersion: adminUser.tokenVersion,
-    }
-
+  private generateTokens(adminUser: {
+    id: number
+    username: string
+    role: string
+    tokenVersion: number
+    refreshTokenVersion: number
+  }) {
     const accessToken = this.jwtService.sign(
-      { ...payload, type: 'admin_access' },
+      {
+        sub: adminUser.id,
+        username: adminUser.username,
+        role: adminUser.role,
+        tokenVersion: adminUser.tokenVersion,
+        type: 'admin_access',
+      },
       { secret: adminJwtConfig.secret, expiresIn: adminJwtConfig.expiresIn },
     )
 
     const refreshToken = this.jwtService.sign(
-      { ...payload, type: 'admin_refresh' },
+      {
+        sub: adminUser.id,
+        username: adminUser.username,
+        role: adminUser.role,
+        refreshVersion: adminUser.refreshTokenVersion,
+        type: 'admin_refresh',
+      },
       { secret: adminJwtConfig.secret, expiresIn: adminJwtConfig.refreshTokenExpiresIn },
     )
 
@@ -315,14 +326,27 @@ export class AdminLoginController {
       return { success: false, message: '账号不存在或已禁用' }
     }
 
-    // 验证 tokenVersion
-    if (payload.tokenVersion !== undefined && adminUser.tokenVersion !== payload.tokenVersion) {
+    // 验证 refreshTokenVersion：刷新后旧 refreshToken 立即失效（单次使用）
+    if (payload.refreshVersion !== undefined && adminUser.refreshTokenVersion !== payload.refreshVersion) {
       return { success: false, message: '令牌已失效，请重新登录' }
     }
+
+    // 刷新令牌轮换：仅递增 refreshTokenVersion，使旧 refreshToken 立即失效（单次使用），不影响 accessToken
+    await this.adminAccountService.incrementRefreshTokenVersion(adminUser.id)
+    adminUser.refreshTokenVersion += 1
 
     const tokens = this.generateTokens(adminUser)
     this.audit('刷新令牌', 'auth', adminUser.id, adminUser.username, 'Token刷新成功', req)
     return { success: true, token: tokens.accessToken, refreshToken: tokens.refreshToken }
+  }
+
+  @Post('logout')
+  @UseGuards(AdminJwtAuthGuard)
+  async logout(@Req() req: any) {
+    await this.adminAccountService.incrementTokenVersion(req.user.id)
+    await this.adminAccountService.incrementRefreshTokenVersion(req.user.id)
+    this.audit('登出', 'auth', req.user.id, req.user.username, '管理员退出登录', req)
+    return { success: true, message: '已退出登录' }
   }
 
   // ===== 子账号管理接口（仅超级管理员） =====

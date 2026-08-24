@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import * as crypto from 'crypto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ContentFilterService } from '../common/content-filter.service'
 import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm'
@@ -132,14 +133,14 @@ export class UserService {
   async generateUserId(): Promise<string> {
     const MAX_RETRIES = 10
     for (let i = 0; i < MAX_RETRIES; i++) {
-      const num = Math.floor(Math.random() * 900000) + 100000
+      const num = crypto.randomInt(100000, 1000000)
       const userId = String(num)
       const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
       if (!exists) return userId
     }
     // 6位池接近耗尽，扩展到7位
     for (let i = 0; i < MAX_RETRIES; i++) {
-      const num = Math.floor(Math.random() * 9000000) + 1000000
+      const num = crypto.randomInt(1000000, 10000000)
       const userId = String(num)
       const exists = await this.userRepository.findOne({ where: { userId }, select: ['id'] })
       if (!exists) return userId
@@ -953,6 +954,7 @@ export class UserService {
     delete safeUser.phone
     delete safeUser.eidBizSeqNo
     delete safeUser.tokenVersion
+    delete safeUser.refreshTokenVersion
     delete safeUser.adminRemark
     delete safeUser.deleteReason
     delete safeUser.manualBoostScore
@@ -1315,7 +1317,8 @@ export class UserService {
     user.status = 0
     user.deleteReason = reason === 'revoke' ? '撤回协议同意' : '用户自行注销'
     user.phone = null          // 释放手机号
-    user.tokenVersion += 1     // 使所有已签发 token 失效
+    user.tokenVersion += 1     // 使所有已签发 accessToken 失效
+    user.refreshTokenVersion += 1 // 使所有已签发 refreshToken 失效
     await this.userRepository.save(user)
 
     // 写入审计日志

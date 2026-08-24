@@ -59,11 +59,18 @@ export class AdminAccountService {
       }
     }
 
+    const isPasswordChange = !!data.password
     if (data.password) {
       data.password = await bcrypt.hash(data.password, 10)
     }
 
     await this.repo.update(id, data)
+
+    // 重置子账号密码后使该账号所有已签发 token 失效（accessToken 与 refreshToken 均失效）
+    if (isPasswordChange) {
+      await this.incrementTokenVersion(id)
+      await this.incrementRefreshTokenVersion(id)
+    }
   }
 
   async delete(id: number) {
@@ -77,8 +84,13 @@ export class AdminAccountService {
     await this.repo.delete(id)
   }
 
-  /** 递增 tokenVersion 使该用户所有已签发的 token 失效 */
+  /** 递增 tokenVersion 使该用户所有已签发的 accessToken 失效 */
   async incrementTokenVersion(id: number) {
     await this.repo.increment({ id }, 'tokenVersion', 1)
+  }
+
+  /** 递增 refreshTokenVersion 使该用户所有已签发的 refreshToken 失效（刷新令牌单次轮换） */
+  async incrementRefreshTokenVersion(id: number) {
+    await this.repo.increment({ id }, 'refreshTokenVersion', 1)
   }
 }

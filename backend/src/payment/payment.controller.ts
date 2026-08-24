@@ -56,11 +56,12 @@ export class PaymentController {
       throw new ForbiddenException('Forbidden')
     }
     // V3 回调验签需原始 Body 字节流，不能用 JSON.stringify（键序/格式不一致导致验签失败）
-    const rawBody = (req as any).rawBody || undefined
+    const raw = (req as any).rawBody
+    const rawBody = raw ? (Buffer.isBuffer(raw) ? raw.toString('utf8') : String(raw)) : undefined
     return this.paymentService.processNotify(data, rawBody, headers)
   }
 
-  /** 模拟支付 - 仅管理员 + 测试环境/MOCK_PAY_ENABLED=true 时可用 */
+  /** 模拟支付 - 仅管理员 + 非生产环境可用（生产环境在 service 层硬性禁用） */
   @Post('mock-pay')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.OPERATOR)
   @UseGuards(AdminJwtAuthGuard, RoleGuard)

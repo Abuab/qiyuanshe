@@ -90,7 +90,8 @@ export class AuthService {
   private resetReactivatedUser(user: User): void {
     user.isDeleted = 0
     user.deleteReason = null
-    user.tokenVersion += 1     // 使注销前签发的旧 refreshToken 失效
+    user.tokenVersion += 1           // 使注销前签发的旧 accessToken 失效
+    user.refreshTokenVersion += 1    // 使注销前签发的旧 refreshToken 失效
     user.unionId = null       // 清除旧 unionId，避免微信账号主体变更后冲突
     user.nickname = `昵称${user.userId}`
     user.avatar = ''
@@ -392,10 +393,14 @@ export class AuthService {
         throw new UnauthorizedException('用户不存在或已被禁用')
       }
 
-      // 验证 tokenVersion：注销/改密后旧 refreshToken 立即失效
-      if (payload.tokenVersion !== undefined && user.tokenVersion !== payload.tokenVersion) {
+      // 验证 refreshTokenVersion：刷新后旧 refreshToken 立即失效（单次使用）
+      if (payload.refreshVersion !== undefined && user.refreshTokenVersion !== payload.refreshVersion) {
         throw new UnauthorizedException('令牌已失效，请重新登录')
       }
+
+      // 刷新令牌轮换：仅递增 refreshTokenVersion，使旧 refreshToken 立即失效（单次使用），不影响 accessToken
+      await this.userRepository.increment({ id: user.id }, 'refreshTokenVersion', 1)
+      user.refreshTokenVersion += 1
 
       return this.generateToken(user)
     } catch (error) {
@@ -404,6 +409,12 @@ export class AuthService {
       }
       throw new UnauthorizedException('无效或过期的刷新令牌')
     }
+  }
+
+  /** 登出：递增 tokenVersion 与 refreshTokenVersion，使当前用户所有已签发 token 立即失效 */
+  async logout(userId: number): Promise<void> {
+    await this.userRepository.increment({ id: userId }, 'tokenVersion', 1)
+    await this.userRepository.increment({ id: userId }, 'refreshTokenVersion', 1)
   }
 
   async validateUserById(userId: number, tokenVersion?: number): Promise<Partial<User>> {
@@ -532,7 +543,7 @@ export class AuthService {
         sub: user.id,
         openid: user.openid,
         type: 'refresh',
-        tokenVersion: user.tokenVersion,
+        refreshVersion: user.refreshTokenVersion,
       },
       {
         expiresIn: refreshExpiry,

@@ -35,6 +35,9 @@ export class AdminProfileService {
 
     if (dto.password) {
       admin.password = await bcrypt.hash(dto.password, 10)
+      // 修改密码后使该管理员所有已签发 token 失效（accessToken 与 refreshToken 均失效），强制重新登录
+      admin.tokenVersion += 1
+      admin.refreshTokenVersion += 1
     }
 
     await this.adminRepo.save(admin)

@@ -1,16 +1,20 @@
 import {
   Controller,
-  Get,
   Post,
   Put,
   Body,
-  Query,
   UseGuards,
   Request,
 } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { Result } from '../common/result'
 import { EidAuthService } from './eid-auth.service'
+import {
+  CheckIdCardDuplicateDto,
+  ReVerifyDto,
+  QueryEidResultDto,
+  OcrIdCardDto,
+} from './dto'
 
 @Controller('eid-auth')
 export class EidAuthController {
@@ -19,7 +23,7 @@ export class EidAuthController {
   /** 实名认证前检查身份证号是否已被绑定 */
   @Post('check-duplicate')
   @UseGuards(JwtAuthGuard)
-  async checkDuplicate(@Request() req: any, @Body() body: { idCard?: string; realName?: string }) {
+  async checkDuplicate(@Request() req: any, @Body() body: CheckIdCardDuplicateDto) {
     const userId = req.user.id || req.user.sub
     if (!body?.idCard) {
       return Result.error('请提供身份证号')
@@ -35,7 +39,7 @@ export class EidAuthController {
   /** 二次认证：已注销用户支付 1 元后复用历史身份信息完成认证 */
   @Put('re-verify')
   @UseGuards(JwtAuthGuard)
-  async reVerify(@Request() req: any, @Body() body: { idCard?: string }) {
+  async reVerify(@Request() req: any, @Body() body: ReVerifyDto) {
     const userId = req.user.id || req.user.sub
     if (!body?.idCard) {
       return Result.error('请提供身份证号')
@@ -64,26 +68,14 @@ export class EidAuthController {
     }
   }
 
-  /** 查询当前用户认证结果 —— GET（query 参数，兼容 E证通回调后小程序页面调用） */
-  @Get('result')
-  @UseGuards(JwtAuthGuard)
-  async resultGet(
-    @Request() req: any,
-    @Query('realName') realName?: string,
-    @Query('idCard') idCard?: string,
-  ) {
-    return this.doResult(req, realName, idCard)
-  }
-
   /** 查询当前用户认证结果（仅返回状态，不返回身份信息） */
   @Post('result')
   @UseGuards(JwtAuthGuard)
   async result(
     @Request() req: any,
-    @Body('realName') realName?: string,
-    @Body('idCard') idCard?: string,
+    @Body() body: QueryEidResultDto,
   ) {
-    return this.doResult(req, realName, idCard)
+    return this.doResult(req, body.realName, body.idCard)
   }
 
   private async doResult(
@@ -103,7 +95,7 @@ export class EidAuthController {
   /** 身份证 OCR 识别（仅返回识别结果供前端填充，不保存） */
   @Post('ocr')
   @UseGuards(JwtAuthGuard)
-  async ocr(@Body() body: { imageBase64?: string }) {
+  async ocr(@Body() body: OcrIdCardDto) {
     try {
       const data = await this.service.recognizeIdCard(body?.imageBase64 || '')
       return Result.success(data)

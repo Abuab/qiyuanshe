@@ -61,9 +61,9 @@ export class VipController {
     @Param('orderNo') orderNo: string,
     @Body('transactionId') transactionId?: string,
   ) {
-    const mockPayEnabled = process.env.NODE_ENV !== 'production' || process.env.MOCK_PAY_ENABLED === 'true'
-    if (!mockPayEnabled) {
-      throw new BadRequestException('生产环境下模拟支付已禁用，请通过微信支付完成付款')
+    // 模拟支付仅在非生产环境可用；生产环境硬性禁用，防止误配 MOCK_PAY_ENABLED 绕过真实支付
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('生产环境禁止模拟支付，请通过微信支付完成付款')
     }
     if (!(await this.systemService.isVipEnabled())) {
       return Result.success(null, '功能维护中，请稍后再试')

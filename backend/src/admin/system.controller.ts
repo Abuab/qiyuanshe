@@ -18,6 +18,7 @@ export class AdminSystemController {
   ) {}
 
   @Get('configs')
+  @Roles(AdminRole.SUPER_ADMIN)
   async getConfigs() {
     const configs = await this.systemService.getConfigs()
     return Result.success(configs)
@@ -31,6 +32,7 @@ export class AdminSystemController {
   }
 
   @Get('config/:key')
+  @Roles(AdminRole.SUPER_ADMIN)
   async getConfig(@Param('key') key: string) {
     const value = await this.systemService.getConfig(key)
     return Result.success(value)
@@ -45,6 +47,7 @@ export class AdminSystemController {
 
   /** 获取用量限额配置 */
   @Get('quota')
+  @Roles(AdminRole.SUPER_ADMIN)
   async getQuotaConfig() {
     const config = await this.quotaService.getConfig()
     return Result.success(config)
@@ -59,6 +62,7 @@ export class AdminSystemController {
   }
 
   @Get('notify-logs')
+  @Roles(AdminRole.SUPER_ADMIN)
   async getNotifyLogs(@Query() query: any) {
     const logs = await this.notifyService.getRecentLogs(20, query)
     return Result.success(logs)

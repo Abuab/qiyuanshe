@@ -23,7 +23,7 @@ services:
       - mysql_data:/var/lib/mysql
       # 完整建表结构（由 scripts/generate-schema.sh 从 Entity 生成，权威 schema）
       - ./docker/mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      # 种子数据（系统配置/字典/示例数据；其中的 CREATE TABLE IF NOT EXISTS 在 schema 已建表时为 no-op）
+      # 生产种子数据（系统配置/字典；仅 INSERT，表结构由 01-schema.sql 创建）
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
       # 自定义配置文件
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
@@ -235,7 +235,8 @@ services:
     environment:
       TZ: Asia/Shanghai
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      # 真实 HTTP 探测：验证 nginx 进程在运行且能正常响应，而非仅校验配置语法
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

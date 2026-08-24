@@ -175,9 +175,22 @@ export class PaymentService {
 
   // ===== 支付回调处理 =====
   async processNotify(data: any, rawBody?: string, reqHeaders?: Record<string, string>): Promise<string> {
-    const { out_trade_no, transaction_id } = data
+    // 1. 校验签名（仅接受 V3 回调：Wechatpay-* 头 + RSA-SHA256 平台证书验签）
+    const signValid = await this.verifyNotifySign(rawBody, reqHeaders)
+    if (!signValid) {
+      this.logger.error('[回调] 签名校验失败')
+      return this.buildNotifyResponse(false, '签名校验失败')
+    }
 
-    // 幂等性：Redis 分布式锁
+    // 2. 解密 resource 字段，获取订单号与流水号（V3 回调把业务数据加密在 resource.ciphertext）
+    const resource = this.decryptNotifyResource(data?.resource)
+    if (!resource || !resource.out_trade_no) {
+      this.logger.error('[回调] 解密回调数据失败')
+      return this.buildNotifyResponse(false, '解密失败')
+    }
+    const { out_trade_no, transaction_id } = resource
+
+    // 3. 幂等性：Redis 分布式锁
     const lockKey = `pay:notify:lock:${out_trade_no}`
     const lockAcquired = await this.redis.getClient().set(lockKey, '1', 'PX', 30000, 'NX')
     if (!lockAcquired) {
@@ -186,13 +199,6 @@ export class PaymentService {
     }
 
     try {
-      // 校验签名：仅接受 V3 回调（Wechatpay-* 头 + RSA-SHA256 平台证书验签）
-      const signValid = await this.verifyNotifySign(rawBody, reqHeaders)
-      if (!signValid) {
-        this.logger.error(`[回调] 签名校验失败: ${out_trade_no}`)
-        return this.buildNotifyResponse(false, '签名校验失败')
-      }
-
       const order = await this.orderRepository.findOne({ where: { orderNo: out_trade_no, isDeleted: 0 } })
       if (!order) {
         this.logger.error(`[回调] 订单不存在: ${out_trade_no}`)
@@ -204,8 +210,8 @@ export class PaymentService {
         return this.buildNotifyResponse(true)
       }
 
-      // 金额校验：订单金额已为整数分，直接比较
-      const totalFee = parseInt(String(data.total_fee || data.amount?.total || '0'), 10)
+      // 金额校验：回调金额与订单金额（整数分）必须一致，防止篡改
+      const totalFee = resource.amount
       const orderAmountCents = Number(order.amount)
       if (totalFee !== orderAmountCents) {
         this.logger.error(`[回调] 金额不匹配: 回调=${totalFee}, 订单=${orderAmountCents} (${out_trade_no})`)
@@ -275,6 +281,43 @@ export class PaymentService {
     return JSON.stringify({ code: 'FAIL', message: msg })
   }
 
+  /** 解密微信支付 V3 回调的 resource 字段（AEAD_AES_256_GCM），返回业务数据 */
+  private decryptNotifyResource(resource: any): { out_trade_no: string; transaction_id: string; amount: number } | null {
+    if (!resource || typeof resource !== 'object') {
+      this.logger.error('[回调] 缺少 resource 字段')
+      return null
+    }
+    if (resource.algorithm !== 'AEAD_AES_256_GCM') {
+      this.logger.error(`[回调] 不支持的加密算法: ${resource.algorithm}`)
+      return null
+    }
+    if (!this.apiV3Key) {
+      this.logger.error('[回调] 未配置 WECHAT_API_V3_KEY，无法解密回调数据')
+      return null
+    }
+    try {
+      // ciphertext 的末尾 16 字节为 GCM 认证标签，需拆分
+      const ciphertext = Buffer.from(resource.ciphertext, 'base64')
+      const authTag = ciphertext.subarray(ciphertext.length - 16)
+      const data = ciphertext.subarray(0, ciphertext.length - 16)
+
+      const decipher = crypto.createDecipheriv('aes-256-gcm', this.apiV3Key, Buffer.from(resource.nonce, 'base64'))
+      decipher.setAuthTag(authTag)
+      decipher.setAAD(Buffer.from(resource.associated_data || '', 'utf8'))
+      const decrypted = Buffer.concat([decipher.update(data), decipher.final()])
+
+      const result = JSON.parse(decrypted.toString('utf8'))
+      return {
+        out_trade_no: result.out_trade_no,
+        transaction_id: result.transaction_id,
+        amount: result.amount?.total ?? 0,
+      }
+    } catch (e) {
+      this.logger.error(`[回调] 解密失败: ${(e as Error).message}`)
+      return null
+    }
+  }
+
   /** 校验回调签名（仅接受 V3 回调：Wechatpay-* 头 + RSA-SHA256 平台证书验签） */
   private async verifyNotifySign(rawBody?: string, headers?: Record<string, string>): Promise<boolean> {
     if (headers?.['wechatpay-signature'] && rawBody) {
@@ -291,7 +334,6 @@ export class PaymentService {
       const timestamp = headers['wechatpay-timestamp']
       const nonce = headers['wechatpay-nonce']
       const signature = headers['wechatpay-signature']
-      const serial = headers['wechatpay-serial']
 
       if (!timestamp || !nonce || !signature) return false
 
@@ -300,18 +342,22 @@ export class PaymentService {
       // 使用微信平台证书公钥验签（从环境变量获取，支持多个用分号分隔）
       const certPems = (process.env.WECHAT_PLATFORM_CERT_PEM || '')
         .replace(/\\n/g, '\n')
-        .split(';END CERTIFICATE-----')
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map(s => s + (s.endsWith('-----') ? '' : ';END CERTIFICATE-----'))
+        .split('-----END CERTIFICATE-----')
+        .map(s => s.trim().replace(/^;/, '').trim())
+        .filter(s => s.includes('-----BEGIN CERTIFICATE-----'))
+        .map(s => `${s}\n-----END CERTIFICATE-----`)
+
+      if (certPems.length === 0) {
+        this.logger.error('[V3验签] 未配置 WECHAT_PLATFORM_CERT_PEM')
+        return false
+      }
 
       for (const pem of certPems) {
         try {
-          return crypto
-            .createVerify('RSA-SHA256')
-            .update(message)
-            .verify(pem, signature, 'base64')
-        } catch { /* 下一张证书 */ }
+          if (crypto.createVerify('RSA-SHA256').update(message).verify(pem, signature, 'base64')) {
+            return true
+          }
+        } catch { /* 尝试下一张证书 */ }
       }
       return false
     } catch (e) {
@@ -354,9 +400,9 @@ export class PaymentService {
 
   // ===== Mock 支付（仅测试/管理员环境） =====
   async mockPay(orderNo: string, userId: number): Promise<void> {
-    const mockPayEnabled = process.env.NODE_ENV !== 'production' || process.env.MOCK_PAY_ENABLED === 'true'
-    if (!mockPayEnabled) {
-      throw new BadRequestException('生产环境下模拟支付已禁用')
+    // 模拟支付仅在非生产环境可用；生产环境硬性禁用，防止误配 MOCK_PAY_ENABLED 绕过真实支付
+    if (process.env.NODE_ENV === 'production') {
+      throw new BadRequestException('生产环境禁止模拟支付')
     }
 
     const queryRunner = this.dataSource.createQueryRunner()
