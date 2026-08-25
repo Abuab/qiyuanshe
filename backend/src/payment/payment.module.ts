@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { VipOrder, VipPackage, User, AuditLog } from '../entities'
+import { VipOrder, VipPackage, User, AuditLog, UserRedLineQuota, UserTopCardQuota } from '../entities'
 import { PaymentController } from './payment.controller'
 import { PaymentService } from './payment.service'
 import { SystemModule } from '../system/system.module'
@@ -12,6 +12,8 @@ import { SystemModule } from '../system/system.module'
       VipPackage,
       User,
       AuditLog,
+      UserRedLineQuota,
+      UserTopCardQuota,
     ]),
     SystemModule,
   ],

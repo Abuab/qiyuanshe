@@ -1,13 +1,22 @@
 import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource } from 'typeorm'
+import { Repository, DataSource, EntityManager } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
 import { VipPackage } from '../entities/VipPackage'
 import { User } from '../entities/User'
 import { AuditLog } from '../entities/AuditLog'
+import { UserRedLineQuota } from '../entities/UserRedLineQuota'
+import { UserTopCardQuota } from '../entities/UserTopCardQuota'
 import { CreateOrderDto } from './dto'
 import { RedisService } from '../common/redis.service'
 import * as crypto from 'crypto'
+
+/** 获取今日日期字符串 YYYY-MM-DD（UTC+8） */
+function todayStr(): string {
+  const d = new Date()
+  const local = new Date(d.getTime() + 8 * 3600_000)
+  return local.toISOString().slice(0, 10)
+}
 
 export interface PayParams {
   timeStamp: string
@@ -56,6 +65,50 @@ export class PaymentService {
     const timestamp = Date.now()
     const random = crypto.randomBytes(6).toString('hex').toUpperCase()
     return `LT${timestamp}${random}`
+  }
+
+  /**
+   * 发放套餐权益（红线终身累计 + 置顶卡当日即时发放）
+   * 必须在支付成功事务内调用，确保与会员开通原子一致
+   */
+  private async grantPackageBenefits(manager: EntityManager, userId: number, pkg: VipPackage): Promise<void> {
+    // 红线：终身累计，续费时累加
+    if (pkg.redLineCount > 0) {
+      const existing = await manager.findOne(UserRedLineQuota, { where: { userId, isDeleted: 0 } })
+      if (existing) {
+        existing.totalQuota += pkg.redLineCount
+        await manager.save(existing)
+      } else {
+        const rl = manager.create(UserRedLineQuota, {
+          userId,
+          totalQuota: pkg.redLineCount,
+          usedCount: 0,
+          vipPackageId: pkg.id,
+        })
+        await manager.save(rl)
+      }
+    }
+
+    // 置顶卡：即时发放当日配额（每日 0 点定时任务会因已存在而跳过，不会重复发）
+    if (pkg.dailyTopCards > 0) {
+      const today = todayStr()
+      const existingQuota = await manager.findOne(UserTopCardQuota, {
+        where: { userId, date: today as any, isDeleted: 0 },
+      })
+      if (existingQuota) {
+        existingQuota.totalQuota += pkg.dailyTopCards
+        await manager.save(existingQuota)
+      } else {
+        const quota = manager.create(UserTopCardQuota, {
+          userId,
+          date: today as any,
+          totalQuota: pkg.dailyTopCards,
+          usedCount: 0,
+          vipPackageId: pkg.id,
+        })
+        await manager.save(quota)
+      }
+    }
   }
 
   // ===== APIv3 RSA-SHA256 签名 =====
@@ -253,6 +306,10 @@ export class PaymentService {
           vipPackageName: pkg?.name || '',
         })
 
+        if (pkg) {
+          await this.grantPackageBenefits(queryRunner.manager, order.userId, pkg)
+        }
+
         const log = this.auditLogRepository.create({
           action: 'VIP_PURCHASE',
           targetType: 'vip_order',
@@ -439,6 +496,10 @@ export class PaymentService {
         isVip: 1,
         vipPackageName: pkg?.name || '',
       })
+
+      if (pkg) {
+        await this.grantPackageBenefits(queryRunner.manager, userId, pkg)
+      }
 
       await queryRunner.commitTransaction()
       this.logger.log(`[模拟支付] orderNo=${orderNo}, userId=${userId}`)
