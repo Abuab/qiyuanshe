@@ -138,7 +138,7 @@ setup_renewal() {
     # 创建续期钩子脚本
     sudo mkdir -p "$CERTBOT_WWW"
 
-    sudo tee /etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh > /dev/null << HOOK
+    sudo tee /etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh > /dev/null << HOOK
 #!/bin/bash
 # Let's Encrypt 续期后自动复制证书并重载 nginx
 
@@ -154,10 +154,10 @@ chmod 600 "\$SSL_DIR/privkey.pem"
 cd "$PROJECT_DIR"
 docker compose exec -T nginx nginx -s reload
 
-echo "\$(date '+%Y-%m-%d %H:%M:%S') SSL certificate renewed and nginx reloaded" >> /var/log/lingtong-ssl-renewal.log
+echo "\$(date '+%Y-%m-%d %H:%M:%S') SSL certificate renewed and nginx reloaded" >> /var/log/qys-ssl-renewal.log
 HOOK
 
-    sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh
+    sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh
 
     # 添加定时任务（每天凌晨 2 点检查并续期）
     CRON_JOB="0 2 * * * certbot renew --quiet --webroot -w $CERTBOT_WWW"
@@ -165,7 +165,7 @@ HOOK
 
     log_success "自动续期已配置完成"
     log_info "定时任务: 每天凌晨 2:00 检查证书续期"
-    log_info "续期日志: /var/log/lingtong-ssl-renewal.log"
+    log_info "续期日志: /var/log/qys-ssl-renewal.log"
 }
 
 # =============================================
@@ -177,7 +177,7 @@ renew_now() {
         --quiet \
         --webroot \
         -w "$CERTBOT_WWW" \
-        --deploy-hook "/etc/letsencrypt/renewal-hooks/deploy/copy-lingtong-certs.sh"
+        --deploy-hook "/etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh"
     log_success "续期检查完成"
 }
 

@@ -170,8 +170,8 @@ generate_env() {
 
     # 生成随机密码（使用 od 替代 xxd，兼容性更好）
     local random_suffix=$(head -c 4 /dev/urandom | od -An -tx1 | tr -d ' \n')
-    local db_password="lingtong_${random_suffix}"
-    local redis_password="lingtong_${random_suffix}"
+    local db_password="qys_${random_suffix}"
+    local redis_password="qys_${random_suffix}"
     local jwt_secret=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
 
     # 更新 .env 文件

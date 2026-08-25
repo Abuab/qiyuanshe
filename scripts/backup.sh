@@ -54,13 +54,13 @@ load_env() {
 
 # 备份数据库
 backup_database() {
-    local backup_file="${BACKUP_DIR}/lingtong_$(date +%Y%m%d_%H%M%S).sql"
+    local backup_file="${BACKUP_DIR}/qys_$(date +%Y%m%d_%H%M%S).sql"
     local compressed_file="${backup_file}.gz"
 
     log_info "开始备份数据库..."
 
     # 确保 MySQL 容器正在运行
-    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_mysql$"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "^qys_mysql$"; then
         log_error "MySQL 容器未运行"
         return 1
     fi
@@ -75,7 +75,7 @@ backup_database() {
         --events \
         --master-data=2 \
         --flush-logs \
-        "${MYSQL_DATABASE:-lingtong_match}" > "$backup_file" 2>/dev/null; then
+        "${MYSQL_DATABASE:-qys_match}" > "$backup_file" 2>/dev/null; then
 
         # 压缩备份文件
         if gzip -9 "$backup_file"; then
@@ -112,7 +112,7 @@ cleanup_old_backups() {
             deleted_count=$((deleted_count + 1))
             log_info "已删除旧备份: $file"
         fi
-    done < <(find "$BACKUP_DIR" -name "lingtong_*.sql.gz" -mtime +${BACKUP_RETENTION_DAYS} -type f 2>/dev/null)
+    done < <(find "$BACKUP_DIR" -name "qys_*.sql.gz" -mtime +${BACKUP_RETENTION_DAYS} -type f 2>/dev/null)
 
     if [ $deleted_count -gt 0 ]; then
         log_success "已清理 $deleted_count 个旧备份文件"
@@ -138,7 +138,7 @@ upload_to_oss() {
     log_info "上传备份到阿里云 OSS..."
 
     # 计算文件名（包含日期）
-    local oss_key="lingtong/backup/$(basename "$backup_file")"
+    local oss_key="qys/backup/$(basename "$backup_file")"
 
     # 使用 ossutil 上传
     if command -v ossutil &> /dev/null; then
@@ -192,7 +192,7 @@ verify_backup() {
 show_stats() {
     log_info "备份统计信息..."
 
-    local total_count=$(find "$BACKUP_DIR" -name "lingtong_*.sql.gz" -type f 2>/dev/null | wc -l)
+    local total_count=$(find "$BACKUP_DIR" -name "qys_*.sql.gz" -type f 2>/dev/null | wc -l)
     local total_size=$(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1)
 
     echo ""

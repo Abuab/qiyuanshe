@@ -32,7 +32,7 @@ if [ -f "${PROJECT_DIR}/.env" ]; then
     set +a
 fi
 
-DB_NAME="${MYSQL_DATABASE:-lingtong_match}"
+DB_NAME="${MYSQL_DATABASE:-qys_match}"
 
 list_backups() {
     log_info "可用备份文件（${BACKUP_DIR}）:"
@@ -40,7 +40,7 @@ list_backups() {
     while IFS= read -r f; do
         echo "  $(basename "$f")  ($(du -h "$f" | cut -f1))"
         count=$((count + 1))
-    done < <(find "$BACKUP_DIR" -name "lingtong_*.sql.gz" -type f 2>/dev/null | sort)
+    done < <(find "$BACKUP_DIR" -name "qys_*.sql.gz" -type f 2>/dev/null | sort)
     if [ "$count" -eq 0 ]; then
         log_warning "没有找到备份文件"
     fi
@@ -52,7 +52,7 @@ do_restore() {
         log_error "备份文件不存在: $backup_file"
         exit 1
     fi
-    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_mysql$"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "^qys_mysql$"; then
         log_error "MySQL 容器未运行"
         exit 1
     fi
@@ -62,7 +62,7 @@ do_restore() {
     fi
 
     log_info "恢复数据库 ${DB_NAME}，备份文件: $(basename "$backup_file") ($(du -h "$backup_file" | cut -f1))"
-    if gunzip -c "$backup_file" | docker exec -i lingtong_mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" "$DB_NAME"; then
+    if gunzip -c "$backup_file" | docker exec -i qys_mysql mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" "$DB_NAME"; then
         log_success "数据库恢复成功"
     else
         log_error "数据库恢复失败"

@@ -102,8 +102,8 @@ cleanup_nginx_logs() {
     fi
 
     # 通知 nginx 重新打开日志文件，避免 truncate 后文件句柄偏移错位产生稀疏文件
-    if docker ps --format '{{.Names}}' | grep -q "^lingtong_nginx$"; then
-        docker exec lingtong_nginx nginx -s reopen 2>/dev/null || true
+    if docker ps --format '{{.Names}}' | grep -q "^qys_nginx$"; then
+        docker exec qys_nginx nginx -s reopen 2>/dev/null || true
     fi
 
     if [ $cleared_count -gt 0 ]; then
@@ -117,7 +117,7 @@ cleanup_nginx_logs() {
 cleanup_mysql_logs() {
     log_info "轮转 MySQL 慢查询日志..."
 
-    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_mysql$"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "^qys_mysql$"; then
         log_info "MySQL 容器未运行，跳过慢查询日志轮转"
         return 0
     fi
@@ -125,7 +125,7 @@ cleanup_mysql_logs() {
     # MYSQL_PWD 通过 -e 注入，避免密码出现在命令行/进程列表
     # 退出码约定：0=已轮转，2=无慢查询日志（跳过），其它=轮转失败
     local rc=0
-    if docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:-}" lingtong_mysql sh -c '
+    if docker exec -e MYSQL_PWD="${MYSQL_ROOT_PASSWORD:-}" qys_mysql sh -c '
         SLOW=/var/lib/mysql/slow.log
         if [ ! -f "$SLOW" ]; then
             exit 2

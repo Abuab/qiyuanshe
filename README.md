@@ -297,8 +297,8 @@ vim .env
 ### 第一步：克隆项目
 
 ```bash
-git clone https://github.com/Abuab/qiyuanshe.git /opt/lingtong
-cd /opt/lingtong
+git clone https://github.com/Abuab/qiyuanshe.git /opt/qys
+cd /opt/qys
 ```
 
 ### 第二步：配置 `.env`
@@ -426,7 +426,7 @@ curl https://yourdomain.com/api/health
 ### 第八步：配置开机自启
 
 ```bash
-sudo tee /etc/systemd/system/lingtong.service > /dev/null << 'EOF'
+sudo tee /etc/systemd/system/qys.service > /dev/null << 'EOF'
 [Unit]
 Description=栖缘社婚恋交友平台
 Requires=docker.service
@@ -435,7 +435,7 @@ After=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=/opt/lingtong
+WorkingDirectory=/opt/qys
 ExecStart=/usr/bin/docker compose up -d
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0
@@ -445,7 +445,7 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable lingtong.service
+sudo systemctl enable qys.service
 ```
 
 ## 手动部署（不使用 Docker）
@@ -532,17 +532,17 @@ sudo mysql -u root -p
 
 ```sql
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS lingtong_match
+CREATE DATABASE IF NOT EXISTS qys_match
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 -- 创建数据库用户（修改密码）
-CREATE USER IF NOT EXISTS 'lingtong'@'localhost' IDENTIFIED BY 'your_mysql_password';
-CREATE USER IF NOT EXISTS 'lingtong'@'127.0.0.1' IDENTIFIED BY 'your_mysql_password';
+CREATE USER IF NOT EXISTS 'qys'@'localhost' IDENTIFIED BY 'your_mysql_password';
+CREATE USER IF NOT EXISTS 'qys'@'127.0.0.1' IDENTIFIED BY 'your_mysql_password';
 
 -- 授权
-GRANT ALL PRIVILEGES ON lingtong_match.* TO 'lingtong'@'localhost';
-GRANT ALL PRIVILEGES ON lingtong_match.* TO 'lingtong'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON qys_match.* TO 'qys'@'localhost';
+GRANT ALL PRIVILEGES ON qys_match.* TO 'qys'@'127.0.0.1';
 
 -- 刷新权限
 FLUSH PRIVILEGES;
@@ -556,13 +556,13 @@ EXIT;
 
 ```bash
 # 1. 导入完整建表结构（权威 schema）
-sudo mysql -u root -p lingtong_match < docker/mysql/schema.sql
+sudo mysql -u root -p qys_match < docker/mysql/schema.sql
 
 # 2. 导入生产种子数据（系统配置 + 数据字典）
-sudo mysql -u root -p lingtong_match < docker/mysql/init.sql
+sudo mysql -u root -p qys_match < docker/mysql/init.sql
 
 # 3.（可选）如需演示数据（示例红娘 / 热门问题 / 举报 / 演示用户）
-# sudo mysql -u root -p lingtong_match < docker/mysql/demo-data.sql
+# sudo mysql -u root -p qys_match < docker/mysql/demo-data.sql
 ```
 
 > 说明：生产环境请保持 `DB_SYNC=false`（切勿开启 synchronize 自动建表）。
@@ -596,9 +596,9 @@ redis-cli -a your_redis_password ping   # 返回 PONG
 ```bash
 # 克隆到 /opt 目录
 cd /opt
-sudo git clone https://github.com/Abuab/qiyuanshe.git lingtong
-sudo chown -R $USER:$USER /opt/lingtong
-cd /opt/lingtong
+sudo git clone https://github.com/Abuab/qiyuanshe.git qys
+sudo chown -R $USER:$USER /opt/qys
+cd /opt/qys
 ```
 
 **配置 `.env`（唯一环境变量文件）：**
@@ -617,9 +617,9 @@ PORT=3000
 # 数据库（连接本机）
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_USERNAME=lingtong
+DB_USERNAME=qys
 DB_PASSWORD=your_mysql_password
-DB_DATABASE=lingtong_match
+DB_DATABASE=qys_match
 
 # Redis（连接本机）
 REDIS_HOST=127.0.0.1
@@ -665,20 +665,20 @@ TC_REGION=ap-guangzhou
 CORS_ORIGINS=https://yourdomain.com,http://localhost:5173
 
 # 上传文件目录（不配置则默认用 ./uploads）
-UPLOAD_DIR=/opt/lingtong/data/uploads
+UPLOAD_DIR=/opt/qys/data/uploads
 ```
 
 **创建数据目录：**
 
 ```bash
-mkdir -p /opt/lingtong/data/uploads /opt/lingtong/data/logs
-chmod 755 /opt/lingtong/data/uploads
+mkdir -p /opt/qys/data/uploads /opt/qys/data/logs
+chmod 755 /opt/qys/data/uploads
 ```
 
 ### 第六步：构建 & 启动后端服务
 
 ```bash
-cd /opt/lingtong/backend
+cd /opt/qys/backend
 
 # 安装依赖
 npm install
@@ -691,10 +691,10 @@ ls dist/main.js   # 应存在
 
 # 用 PM2 启动后端（进程守护）
 pm2 start dist/main.js \
-  --name "lingtong-api" \
-  --cwd /opt/lingtong/backend \
+  --name "qys-api" \
+  --cwd /opt/qys/backend \
   --time \
-  --log /opt/lingtong/data/logs/api.log \
+  --log /opt/qys/data/logs/api.log \
   --env production
 
 # 保存 PM2 进程列表（开机自启用）
@@ -714,16 +714,16 @@ curl http://127.0.0.1:3000/api/health
 
 ```bash
 pm2 status                    # 查看所有进程
-pm2 logs lingtong-api         # 查看日志
-pm2 restart lingtong-api      # 重启后端
-pm2 stop lingtong-api         # 停止后端
-pm2 reload lingtong-api       # 0 秒停机重载
+pm2 logs qys-api         # 查看日志
+pm2 restart qys-api      # 重启后端
+pm2 stop qys-api         # 停止后端
+pm2 reload qys-api       # 0 秒停机重载
 ```
 
 ### 第七步：构建管理后台前端
 
 ```bash
-cd /opt/lingtong/admin
+cd /opt/qys/admin
 
 # 安装依赖
 npm install
@@ -735,9 +735,9 @@ npm run build
 ls dist/index.html   # 应存在
 
 # 将构建产物部署到 Nginx 静态目录
-sudo mkdir -p /var/www/lingtong/admin
-sudo cp -r dist/* /var/www/lingtong/admin/
-sudo chown -R www-data:www-data /var/www/lingtong/admin
+sudo mkdir -p /var/www/qys/admin
+sudo cp -r dist/* /var/www/qys/admin/
+sudo chown -R www-data:www-data /var/www/qys/admin
 ```
 
 ### 第八步：安装 & 配置 Nginx
@@ -752,12 +752,12 @@ sudo systemctl start nginx
 **创建 Nginx 站点配置：**
 
 ```bash
-sudo vim /etc/nginx/sites-available/lingtong
+sudo vim /etc/nginx/sites-available/qys
 ```
 
 ```nginx
 # 上游后端服务
-upstream lingtong_api {
+upstream qys_api {
     server 127.0.0.1:3000;
     keepalive 32;
 }
@@ -805,7 +805,7 @@ server {
 
     # API 代理
     location /api/ {
-        proxy_pass http://lingtong_api/api/;
+        proxy_pass http://qys_api/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -824,7 +824,7 @@ server {
 
     # 上传文件（静态资源 — 可长期缓存）
     location ^~ /uploads/ {
-        root /opt/lingtong/data;
+        root /opt/qys/data;
         expires 365d;
         add_header Cache-Control "public, max-age=31536000, immutable";
         add_header Access-Control-Allow-Origin "*" always;
@@ -832,7 +832,7 @@ server {
 
     # 管理后台静态资源（Vite 构建产物带 hash）
     location /assets/ {
-        root /var/www/lingtong/admin;
+        root /var/www/qys/admin;
         expires 365d;
         add_header Cache-Control "public, max-age=31536000, immutable";
         add_header Access-Control-Allow-Origin "*" always;
@@ -840,7 +840,7 @@ server {
 
     # 管理后台（SPA 入口）
     location / {
-        root /var/www/lingtong/admin;
+        root /var/www/qys/admin;
         index index.html;
         try_files $uri $uri/ /index.html;
     }
@@ -854,7 +854,7 @@ server {
 sudo mkdir -p /var/www/certbot
 
 # 启用站点
-sudo ln -sf /etc/nginx/sites-available/lingtong /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/qys /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 
 # 验证配置语法
@@ -898,17 +898,17 @@ sudo systemctl start nginx
 
 ```bash
 # 创建续期钩子脚本
-sudo tee /etc/letsencrypt/renewal-hooks/deploy/lingtong-ssl.sh > /dev/null << 'HOOK'
+sudo tee /etc/letsencrypt/renewal-hooks/deploy/qys-ssl.sh > /dev/null << 'HOOK'
 #!/bin/bash
 cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem /etc/nginx/ssl/fullchain.pem
 cp /etc/letsencrypt/live/yourdomain.com/privkey.pem /etc/nginx/ssl/privkey.pem
 chmod 644 /etc/nginx/ssl/fullchain.pem
 chmod 600 /etc/nginx/ssl/privkey.pem
 systemctl reload nginx
-echo "$(date '+%Y-%m-%d %H:%M:%S') SSL renewed" >> /var/log/lingtong-ssl-renewal.log
+echo "$(date '+%Y-%m-%d %H:%M:%S') SSL renewed" >> /var/log/qys-ssl-renewal.log
 HOOK
 
-sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/lingtong-ssl.sh
+sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/qys-ssl.sh
 
 # 测试续期
 sudo certbot renew --dry-run
@@ -920,7 +920,7 @@ sudo certbot renew --dry-run
 ### 第十步：编译小程序代码
 
 ```bash
-cd /opt/lingtong
+cd /opt/qys
 
 # 安装小程序依赖
 npm install
@@ -984,8 +984,8 @@ sudo systemctl enable redis-server   # Ubuntu
 ```bash
 # ====== 后端 ======
 pm2 status                              # 查看后端进程状态
-pm2 restart lingtong-api                # 重启后端
-pm2 logs lingtong-api --lines 100       # 查看最近 100 行日志
+pm2 restart qys-api                # 重启后端
+pm2 logs qys-api --lines 100       # 查看最近 100 行日志
 
 # ====== Nginx ======
 sudo nginx -t                           # 检查配置语法
@@ -995,40 +995,40 @@ sudo tail -f /var/log/nginx/access.log  # 查看访问日志
 sudo tail -f /var/log/nginx/error.log   # 查看错误日志
 
 # ====== 更新部署 ======
-cd /opt/lingtong
+cd /opt/qys
 git pull
 
 # 更新后端
 cd backend && npm install && npm run build
-pm2 restart lingtong-api
+pm2 restart qys-api
 
 # 更新管理后台
 cd ../admin && npm install && npm run build
-sudo cp -r dist/* /var/www/lingtong/admin/
+sudo cp -r dist/* /var/www/qys/admin/
 sudo systemctl reload nginx
 
 # 重新编译小程序
-cd /opt/lingtong && npm run build:mp-weixin
+cd /opt/qys && npm run build:mp-weixin
 ```
 
 ### 文件目录结构（手动部署）
 
 ```
-/opt/lingtong/                          # 项目根目录
+/opt/qys/                          # 项目根目录
 ├── backend/                            # NestJS 后端源码
 ├── admin/                              # Vue3 管理后台源码
 ├── data/uploads/                       # 用户上传图片
 ├── data/logs/                          # 应用日志
 ├── dist/build/mp-weixin/               # 小程序构建产物
 
-/var/www/lingtong/admin/                # 管理后台静态文件（Nginx 服务）
+/var/www/qys/admin/                # 管理后台静态文件（Nginx 服务）
     ├── index.html
     ├── assets/
     └── ...
 
 /etc/nginx/
-├── sites-available/lingtong            # 站点配置
-├── sites-enabled/lingtong -> ...       # 启用的站点（软链接）
+├── sites-available/qys            # 站点配置
+├── sites-enabled/qys -> ...       # 启用的站点（软链接）
 └── ssl/
     ├── fullchain.pem                   # SSL 证书
     └── privkey.pem                     # SSL 私钥
@@ -1207,7 +1207,7 @@ bash scripts/setup-ssl.sh install
 bash scripts/backup.sh
 
 # 配置定时任务（每天凌晨 2 点）
-(crontab -l 2>/dev/null; echo "0 2 * * * cd /opt/lingtong && bash scripts/backup.sh >> /var/log/lingtong-backup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 2 * * * cd /opt/qys && bash scripts/backup.sh >> /var/log/qys-backup.log 2>&1") | crontab -
 ```
 
 **执行内容**：
@@ -1217,7 +1217,7 @@ bash scripts/backup.sh
 4. 自动清理超过 `BACKUP_RETENTION_DAYS` 天的旧备份
 5. 如配置了 OSS，可上传到阿里云 OSS（`ENABLE_REMOTE_BACKUP=true`）
 
-**备份文件位置**：`backups/lingtong_YYMMDD_HHMMSS.sql.gz`
+**备份文件位置**：`backups/qys_YYMMDD_HHMMSS.sql.gz`
 
 **依赖环境变量**：
 
@@ -1241,12 +1241,12 @@ bash scripts/backup.sh
 bash scripts/restore.sh
 
 # 恢复到指定备份（--yes 跳过确认，用于自动化 / 恢复演练）
-bash scripts/restore.sh backups/lingtong_20260825_020000.sql.gz --yes
+bash scripts/restore.sh backups/qys_20260825_020000.sql.gz --yes
 ```
 
 **执行内容**：
 1. 检查备份文件是否存在、MySQL 容器是否运行
-2. 解压备份并通过 `mysql` 导入 `lingtong_match` 库
+2. 解压备份并通过 `mysql` 导入 `qys_match` 库
 3. 恢复前会提示确认（除非加 `--yes`），恢复会覆盖现有数据
 
 **依赖环境变量**：
@@ -1254,7 +1254,7 @@ bash scripts/restore.sh backups/lingtong_20260825_020000.sql.gz --yes
 | 变量 | 说明 |
 |------|------|
 | `MYSQL_ROOT_PASSWORD` | 数据库 root 密码 |
-| `MYSQL_DATABASE` | 目标库名（默认 `lingtong_match`） |
+| `MYSQL_DATABASE` | 目标库名（默认 `qys_match`） |
 | `BACKUP_PATH` | 备份目录（默认 `./backups`） |
 
 > 提示：建议定期做恢复演练（对 `backups/` 内最新备份加 `--yes` 导入到测试库），验证备份确实可用。
@@ -1272,7 +1272,7 @@ bash scripts/restore.sh backups/lingtong_20260825_020000.sql.gz --yes
 bash scripts/cleanup.sh
 
 # 配置定时任务（每天凌晨 3 点）
-(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/lingtong && bash scripts/cleanup.sh >> /var/log/lingtong-cleanup.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "0 3 * * * cd /opt/qys && bash scripts/cleanup.sh >> /var/log/qys-cleanup.log 2>&1") | crontab -
 ```
 
 **执行内容**：
@@ -1306,7 +1306,7 @@ bash scripts/cleanup.sh
 bash scripts/monitor.sh
 
 # 配置定时任务（每 5 分钟）
-(crontab -l 2>/dev/null; echo "*/5 * * * * cd /opt/lingtong && bash scripts/monitor.sh >> /var/log/lingtong-monitor.log 2>&1") | crontab -
+(crontab -l 2>/dev/null; echo "*/5 * * * * cd /opt/qys && bash scripts/monitor.sh >> /var/log/qys-monitor.log 2>&1") | crontab -
 ```
 
 **监控指标**：
@@ -1325,16 +1325,16 @@ bash scripts/monitor.sh
 
 ```cron
 # 数据库每日备份（凌晨2点）
-0 2 * * * cd /opt/lingtong && ./scripts/backup.sh >> /var/log/backup.log 2>&1
+0 2 * * * cd /opt/qys && ./scripts/backup.sh >> /var/log/backup.log 2>&1
 
 # 日志清理（凌晨3点）
-0 3 * * * cd /opt/lingtong && ./scripts/cleanup.sh >> /var/log/cleanup.log 2>&1
+0 3 * * * cd /opt/qys && ./scripts/cleanup.sh >> /var/log/cleanup.log 2>&1
 
 # 监控检查（每5分钟）
-*/5 * * * * cd /opt/lingtong && ./scripts/monitor.sh >> /var/log/monitor.log 2>&1
+*/5 * * * * cd /opt/qys && ./scripts/monitor.sh >> /var/log/monitor.log 2>&1
 
 # SSL 证书续期（每天凌晨2:00，由 setup-ssl.sh setup-renewal 自动配置）
-0 2 * * * certbot renew --quiet --webroot -w /opt/lingtong/docker/nginx/certbot/www
+0 2 * * * certbot renew --quiet --webroot -w /opt/qys/docker/nginx/certbot/www
 ```
 
 ## OSS 对象存储 & CDN 加速接入
@@ -1701,7 +1701,7 @@ docker stats --no-stream --format "{{.Name}} | {{.MemUsage}} | {{.MemPerc}}"
 free -h
 
 # MySQL 关键内存参数
-docker exec lingtong_mysql sh -c 'mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "SELECT @@innodb_buffer_pool_size/1024/1024 AS pool_mb, @@max_connections, @@performance_schema;"'
+docker exec qys_mysql sh -c 'mysql -uroot -p$MYSQL_ROOT_PASSWORD -e "SELECT @@innodb_buffer_pool_size/1024/1024 AS pool_mb, @@max_connections, @@performance_schema;"'
 ```
 
 ## 监控与告警方案
@@ -1806,7 +1806,7 @@ docker compose up -d --build
 **步骤 1：进入后端容器生成 bcrypt 密码**
 
 ```bash
-docker exec -it lingtong_api sh
+docker exec -it qys_api sh
 node -e "const bcrypt = require('bcrypt'); bcrypt.hash('你的新密码', 10).then(h => console.log(h));"
 ```
 
@@ -1815,7 +1815,7 @@ node -e "const bcrypt = require('bcrypt'); bcrypt.hash('你的新密码', 10).th
 **步骤 2：进入 MySQL 更新密码**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE admin_users SET password='上面复制的hash值' WHERE username='admin';"
+docker exec -it qys_mysql mysql -u root -p -e "USE qys_match; UPDATE admin_users SET password='上面复制的hash值' WHERE username='admin';"
 ```
 
 > **注意**：将 `-p` 后的密码替换为你的 MySQL root 密码。
@@ -1833,7 +1833,7 @@ docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; UPDATE a
 **步骤 1：数据库直接禁用 MFA**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_match; UPDATE admin_users SET isMfaEnabled = 0, mfaSecret = NULL WHERE id = 1;"
+docker exec -it qys_mysql mysql -u root -p your_password -e "USE qys_match; UPDATE admin_users SET isMfaEnabled = 0, mfaSecret = NULL WHERE id = 1;"
 ```
 
 > **注意**：
@@ -1862,7 +1862,7 @@ docker exec -it lingtong_mysql mysql -u root -p your_password -e "USE lingtong_m
 **Q: 如何查看管理员 ID？**
 
 ```bash
-docker exec -it lingtong_mysql mysql -u root -p -e "USE lingtong_match; SELECT id, username, isMfaEnabled FROM admin_users;"
+docker exec -it qys_mysql mysql -u root -p -e "USE qys_match; SELECT id, username, isMfaEnabled FROM admin_users;"
 ```
 
 ---

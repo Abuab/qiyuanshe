@@ -1,11 +1,11 @@
 -- =============================================
--- 栖缘社完整建表结构（从生产库 lingtong_match 导出）
+-- 栖缘社完整建表结构（从生产库 qys_match 导出）
 -- 生成时间: 2026-08-21 02:37:54
 -- 从零部署时由 docker-entrypoint-initdb.d/01-schema.sql 执行
 -- =============================================
 
 SET NAMES utf8mb4;
-USE `lingtong_match`;
+USE `qys_match`;
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;

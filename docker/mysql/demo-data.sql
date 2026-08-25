@@ -5,12 +5,12 @@
 --   - 本文件仅供开发 / 演示环境使用，用于快速填充示例内容
 --   - 生产部署时【不要】挂载本文件到 docker-entrypoint-initdb.d
 --   - 使用方式（在已有数据库上手动导入）：
---       docker exec -i lingtong_mysql mysql -uroot -p lingtong_match < docker/mysql/demo-data.sql
+--       docker exec -i qys_mysql mysql -uroot -p qys_match < docker/mysql/demo-data.sql
 --   - 包含：示例红娘、示例热门问题、示例举报数据、演示用户
 -- =============================================
 
 SET NAMES utf8mb4;
-USE `lingtong_match`;
+USE `qys_match`;
 
 -- =============================================
 -- 示例红娘数据

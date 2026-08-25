@@ -108,9 +108,9 @@ backup_database() {
     BACKUP_DIR="./backups"
     mkdir -p "$BACKUP_DIR"
 
-    BACKUP_FILE="${BACKUP_DIR}/lingtong_$(date +%Y%m%d_%H%M%S).sql"
+    BACKUP_FILE="${BACKUP_DIR}/qys_$(date +%Y%m%d_%H%M%S).sql"
 
-    if docker compose exec -T mysql mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --single-transaction --routines --triggers lingtong_match > "$BACKUP_FILE" 2>/dev/null; then
+    if docker compose exec -T mysql mysqldump -u root -p"${MYSQL_ROOT_PASSWORD}" --single-transaction --routines --triggers qys_match > "$BACKUP_FILE" 2>/dev/null; then
         # 压缩备份文件
         gzip "$BACKUP_FILE"
         BACKUP_FILE="${BACKUP_FILE}.gz"
@@ -120,7 +120,7 @@ backup_database() {
     fi
 
     # 清理旧备份（保留30天）
-    find "$BACKUP_DIR" -name "lingtong_*.sql.gz" -mtime +30 -delete 2>/dev/null
+    find "$BACKUP_DIR" -name "qys_*.sql.gz" -mtime +30 -delete 2>/dev/null
 }
 
 # 拉取最新代码（可选）
@@ -262,7 +262,7 @@ show_result() {
 # 清理函数
 cleanup() {
     # 删除临时文件
-    rm -f /tmp/lingtong_deploy_*.log
+    rm -f /tmp/qys_deploy_*.log
 }
 
 # 主函数

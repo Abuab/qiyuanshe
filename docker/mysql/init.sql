@@ -9,7 +9,7 @@
 -- =============================================
 
 SET NAMES utf8mb4;
-USE `lingtong_match`;
+USE `qys_match`;
 
 -- =============================================
 -- 默认系统配置
@@ -45,7 +45,7 @@ INSERT INTO `system_configs` (`configKey`, `configValue`, `description`) VALUES
 -- 支付配置
 ('payment:wechatMchId', '', '微信支付商户号'),
 ('payment:wechatApiV3Key', '', 'API v3密钥'),
-('payment:notifyUrl', 'https://api.lingtong.com/payment/notify', '支付回调URL'),
+('payment:notifyUrl', 'https://api.qys.com/payment/notify', '支付回调URL'),
 
 -- 审核配置
 ('audit:tencentSecretId', '', '腾讯云SecretId'),

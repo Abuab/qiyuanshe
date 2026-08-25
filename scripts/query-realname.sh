@@ -52,8 +52,8 @@ if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
     echo "[ERROR] 未设置 MYSQL_ROOT_PASSWORD（请在项目根目录 .env 中配置 MYSQL_ROOT_PASSWORD）" >&2
     exit 1
 fi
-DB_NAME="${MYSQL_DATABASE:-lingtong_match}"
-MYSQL_CMD="docker exec -e MYSQL_PWD=$MYSQL_ROOT_PASSWORD -i lingtong_mysql mysql -uroot $DB_NAME"
+DB_NAME="${MYSQL_DATABASE:-qys_match}"
+MYSQL_CMD="docker exec -e MYSQL_PWD=$MYSQL_ROOT_PASSWORD -i qys_mysql mysql -uroot $DB_NAME"
 
 # ----- 辅助函数：执行 SQL（格式化表格输出） -----
 run_sql() {

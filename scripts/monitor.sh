@@ -94,7 +94,7 @@ check_services() {
     local all_running=true
 
     for service in "${services[@]}"; do
-        local container_name="lingtong_${service}"
+        local container_name="qys_${service}"
         local status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "not_found")
 
         if [ "$status" == "running" ]; then
@@ -211,7 +211,7 @@ check_mysql() {
     echo "           MySQL 连接检查"
     echo "============================================="
 
-    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_mysql$"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "^qys_mysql$"; then
         log_error "MySQL 容器未运行"
         return
     fi
@@ -248,7 +248,7 @@ check_redis() {
     echo "           Redis 内存检查"
     echo "============================================="
 
-    if ! docker ps --format '{{.Names}}' | grep -q "^lingtong_redis$"; then
+    if ! docker ps --format '{{.Names}}' | grep -q "^qys_redis$"; then
         log_error "Redis 容器未运行"
         return
     fi

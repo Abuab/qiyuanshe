@@ -37,14 +37,14 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 BACKEND_DIR="$PROJECT_DIR/backend"
 OUTPUT="$PROJECT_DIR/docker/mysql/schema.sql"
 
-# 临时 MySQL 容器参数（与生产 lingtong_mysql 完全隔离）
+# 临时 MySQL 容器参数（与生产 qys_mysql 完全隔离）
 TEMP_CONTAINER="qiyuanshe_schema_gen"
 TEMP_PORT="${SCHEMA_GEN_PORT:-13306}"
 TEMP_DB="qiyuanshe_schema"
 TEMP_ROOT_PASS="tmp_schema_123"
 
 # 目标数据库名（必须与 docker-compose 的 MYSQL_DATABASE 一致）
-TARGET_DB="lingtong_match"
+TARGET_DB="qys_match"
 if [ -f "$PROJECT_DIR/.env" ]; then
   _db="$(grep -E '^MYSQL_DATABASE=' "$PROJECT_DIR/.env" | head -n1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs)"
   [ -n "$_db" ] && TARGET_DB="$_db"

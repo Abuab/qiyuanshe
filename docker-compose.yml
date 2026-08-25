@@ -5,7 +5,7 @@ services:
   # ============ MySQL 数据库 ============
   mysql:
     image: mysql:8.0
-    container_name: lingtong_mysql
+    container_name: qys_mysql
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -14,8 +14,8 @@ services:
         max-file: "3"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?生产环境必须设置 MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-lingtong_match}
-      MYSQL_USER: ${MYSQL_USER:-lingtong}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-qys_match}
+      MYSQL_USER: ${MYSQL_USER:-qys}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?生产环境必须设置 MYSQL_PASSWORD}
       TZ: Asia/Shanghai
     volumes:
@@ -28,7 +28,7 @@ services:
       # 自定义配置文件
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
-      - lingtong_network
+      - qys_network
     command: [
       '--character-set-server=utf8mb4',
       '--collation-server=utf8mb4_unicode_ci',
@@ -48,7 +48,7 @@ services:
   # ============ Redis 缓存 ============
   redis:
     image: redis:7-alpine
-    container_name: lingtong_redis
+    container_name: qys_redis
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -68,7 +68,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - lingtong_network
+      - qys_network
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
@@ -82,7 +82,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: lingtong_api
+    container_name: qys_api
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -95,9 +95,9 @@ services:
       # 数据库配置
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: ${MYSQL_USER:-lingtong}
+      DB_USERNAME: ${MYSQL_USER:-qys}
       DB_PASSWORD: ${MYSQL_PASSWORD}
-      DB_DATABASE: ${MYSQL_DATABASE:-lingtong_match}
+      DB_DATABASE: ${MYSQL_DATABASE:-qys_match}
       DB_SYNC: ${DB_SYNC:-false}
       # 数据库连接池参数（可通过根目录 .env 覆盖，默认值适配 MySQL max_connections=150）
       DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
@@ -157,7 +157,7 @@ services:
       # 敏感词库目录（51K 开源词库，聊天与 AI 内容审核共用；只读挂载，随 git 更新）
       - ./config:/app/config:ro
     networks:
-      - lingtong_network
+      - qys_network
     depends_on:
       mysql:
         condition: service_healthy
@@ -177,7 +177,7 @@ services:
     build:
       context: ./admin
       dockerfile: Dockerfile
-    container_name: lingtong_admin
+    container_name: qys_admin
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -190,7 +190,7 @@ services:
     environment:
       TZ: Asia/Shanghai
     networks:
-      - lingtong_network
+      - qys_network
     depends_on:
       - api
     healthcheck:
@@ -205,7 +205,7 @@ services:
   # ============ Nginx 反向代理（生产环境） ============
   nginx:
     image: nginx:alpine
-    container_name: lingtong_nginx
+    container_name: qys_nginx
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -226,7 +226,7 @@ services:
       - "80:80"
       - "443:443"
     networks:
-      - lingtong_network
+      - qys_network
     depends_on:
       api:
         condition: service_healthy
@@ -254,7 +254,7 @@ volumes:
 
 # ============ 网络定义 ============
 networks:
-  lingtong_network:
+  qys_network:
     driver: bridge
     ipam:
       config:
