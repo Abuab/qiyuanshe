@@ -37,9 +37,18 @@
         </view>
         <view class="header-right">
           <view class="shield-wrap">
-            <view class="shield-ribbon" />
-            <view class="shield">
-              <view class="shield-check" />
+            <!-- 丝带后段（盾牌后方，左右露头形成环绕空间感） -->
+            <view class="ribbon ribbon-behind" />
+            <!-- 盾牌主体（外层深色描边 + 内层粉色渐变） -->
+            <view class="shield-outer">
+              <view class="shield-inner">
+                <view class="shield-gloss" />
+                <view class="shield-check" />
+              </view>
+            </view>
+            <!-- 丝带前段（盾牌前方，斜跨中下 + 高光线） -->
+            <view class="ribbon ribbon-front">
+              <view class="ribbon-shine" />
             </view>
           </view>
         </view>
@@ -509,50 +518,113 @@ function handleItemTap(type: string) {
   margin-left: 24rpx;
 }
 
-/* ---- 盾牌（纯 CSS） ---- */
+/* ---- 盾牌（纯 CSS 2.5D 还原） ---- */
+// 经典盾牌轮廓（顶部圆弧过渡 + 中间微凸 + 底部收尖，非六边形）
+$shield-clip: polygon(
+  50% 0%, 62% 5%, 76% 14%, 88% 27%, 93% 42%, 90% 56%, 80% 68%, 66% 81%, 54% 92%, 50% 100%,
+  46% 92%, 34% 81%, 20% 68%, 10% 56%, 7% 42%, 12% 27%, 24% 14%, 38% 5%
+);
+
+// 金色丝带波浪边缘（上下起伏，模拟褶皱）
+$ribbon-clip: polygon(
+  0% 50%, 9% 28%, 18% 55%, 27% 26%, 36% 58%, 45% 28%, 54% 60%, 63% 28%, 72% 56%, 82% 28%, 91% 52%, 100% 42%,
+  100% 64%, 91% 82%, 82% 54%, 72% 80%, 63% 50%, 54% 80%, 45% 50%, 36% 80%, 27% 54%, 18% 80%, 9% 56%, 0% 66%
+);
+
 .shield-wrap {
   position: relative;
-  width: 140rpx;
-  height: 150rpx;
+  width: 190rpx;
+  height: 200rpx;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.shield {
+/* 盾牌外层 = 深色描边 #ff7a9a + 柔和投影 */
+.shield-outer {
   position: relative;
   z-index: 2;
-  width: 120rpx;
-  height: 140rpx;
-  background: linear-gradient(160deg, #FFC4D6 0%, #FF9EBB 50%, #FF6B9D 100%);
-  clip-path: polygon(50% 0%, 100% 12%, 100% 72%, 50% 100%, 0% 72%, 0% 12%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 136rpx;
+  height: 158rpx;
+  background: #ff7a9a;
+  clip-path: $shield-clip;
+  filter: drop-shadow(0 8rpx 16rpx rgba(255, 100, 130, 0.25));
 }
 
-/* 对勾 */
-.shield-check {
-  width: 44rpx;
-  height: 28rpx;
-  border-right: 8rpx solid #FFF;
-  border-bottom: 8rpx solid #FFF;
-  transform: rotate(45deg);
-  margin-top: -14rpx;
-  filter: drop-shadow(0 2rpx 8rpx rgba(0, 0, 0, 0.1));
-}
-
-/* 金色丝带（弧形环绕，被盾牌遮挡中段） */
-.shield-ribbon {
+/* 盾牌内层 = 粉色渐变（浅粉 → 深粉） */
+.shield-inner {
   position: absolute;
-  z-index: 1;
+  top: 6rpx;
+  left: 6rpx;
+  right: 6rpx;
   bottom: 6rpx;
+  background: linear-gradient(180deg, #ffe4ec 0%, #ffc2d2 40%, #ff9eb5 100%);
+  clip-path: $shield-clip;
+}
+
+/* 顶部 1/3 白色高光（3D 光泽） */
+.shield-gloss {
+  position: absolute;
+  top: 10rpx;
+  left: 30rpx;
+  width: 56rpx;
+  height: 48rpx;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 50%;
+  filter: blur(2rpx);
+}
+
+/* 白色对勾（圆润末端 + 立体阴影） */
+.shield-check {
+  position: absolute;
   left: 50%;
-  transform: translateX(-50%) rotate(-8deg);
-  width: 140rpx;
-  height: 18rpx;
-  background: #FFD700;
-  border-radius: 9rpx;
+  top: 50%;
+  width: 42rpx;
+  height: 24rpx;
+  border-right: 9rpx solid #fff;
+  border-bottom: 9rpx solid #fff;
+  transform: translate(-50%, -62%) rotate(45deg);
+  border-radius: 4rpx;
+  filter: drop-shadow(0 2rpx 0 #ff7a9a);
+}
+
+/* ---- 金色环绕丝带 ---- */
+.ribbon {
+  position: absolute;
+  height: 34rpx;
+}
+
+/* 丝带后段（盾牌后方，左右露头形成环绕空间感） */
+.ribbon-behind {
+  z-index: 1;
+  left: 50%;
+  top: 44%;
+  width: 180rpx;
+  transform: translate(-50%, -50%) rotate(-28deg);
+  background: linear-gradient(90deg, #e6b800 0%, #ffd700 40%, #fff5d6 52%, #ffd700 68%, #e6b800 100%);
+  clip-path: $ribbon-clip;
+}
+
+/* 丝带前段（盾牌前方，斜跨中下 + 高光线） */
+.ribbon-front {
+  z-index: 3;
+  left: 50%;
+  top: 62%;
+  width: 152rpx;
+  transform: translate(-50%, -50%) rotate(-28deg);
+  background: linear-gradient(90deg, #fff5d6 0%, #ffd700 55%, #e6b800 100%);
+  clip-path: $ribbon-clip;
+}
+
+/* 丝带中段高光线 */
+.ribbon-shine {
+  position: absolute;
+  top: 8rpx;
+  left: 22rpx;
+  right: 22rpx;
+  height: 3rpx;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 2rpx;
 }
 
 // ==========================================
