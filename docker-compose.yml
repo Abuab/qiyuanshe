@@ -236,7 +236,9 @@ services:
       TZ: Asia/Shanghai
     healthcheck:
       # 真实 HTTP 探测：验证 nginx 进程在运行且能正常响应，而非仅校验配置语法
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:80/healthz || exit 1"]
+      # 注意：用 127.0.0.1 而非 localhost——nginx 仅监听 IPv4，busybox wget 对 localhost
+      # 会优先解析到 ::1（IPv6）导致 Connection refused，误判为 unhealthy
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:80/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
