@@ -89,15 +89,6 @@
         </view>
       </view>
 
-      <!-- ========== 我的订单 ========== -->
-      <view class="auth-card" @tap="goToOrders">
-        <view class="auth-card-header">
-          <text class="auth-label">我的订单</text>
-          <text class="auth-desc">查看订单与支付记录</text>
-          <text class="arrow">></text>
-        </view>
-      </view>
-
       <!-- ========== 信息认证 ========== -->
       <view class="auth-card" @tap="goToRealnameAuth">
         <view class="auth-card-header">
@@ -687,11 +678,6 @@ const goToPhotos = () => safeNavigateTo('/pages/edit-profile/index')
 const goToRealnameAuth = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
   safeNavigateTo('/subpkg-pages/realname-auth/index')
-}
-
-const goToOrders = () => {
-  if (!isLoggedIn.value) { goToLogin(); return }
-  safeNavigateTo('/pages/order-list/index')
 }
 
 const showMatchmaker = ref(false)

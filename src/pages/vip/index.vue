@@ -40,6 +40,17 @@
         </view>
       </view>
 
+      <!-- 我的订单 -->
+      <view v-if="userStore.isLoggedIn" class="orders-card" @tap="handleGoOrders">
+        <view class="topcard-left">
+          <text class="topcard-title">我的订单</text>
+          <text class="topcard-desc">查看会员购买记录</text>
+        </view>
+        <view class="topcard-btn">
+          <text>查看</text>
+        </view>
+      </view>
+
       <!-- 套餐选择 -->
       <view class="packages-section">
         <text class="section-title">会员套餐</text>
@@ -557,6 +568,10 @@ function handleBack() {
   safeNavigateBack()
 }
 
+function handleGoOrders() {
+  uni.navigateTo({ url: '/pages/order-list/index' })
+}
+
 const fetchPackagesAndProfile = async () => {
   await fetchPackages()
   // 刷新用户信息以获取最新 vipPackageName 和 VIP 状态
@@ -820,15 +835,16 @@ onShow(() => {
   padding: 0 20px 20px;
 }
 
-// ===== 资料置顶卡（VIP 置顶卡） =====
-.topcard-card {
+// ===== 资料置顶卡 / 我的订单（紧凑卡片） =====
+.topcard-card,
+.orders-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 20px 16px;
-  padding: 24rpx;
+  margin: 0 20px 12px;
+  padding: 16rpx 20rpx;
+  border-radius: 14rpx;
   background: linear-gradient(135deg, #FFF0F3 0%, #FFE3EC 100%);
-  border-radius: 16rpx;
 }
 
 .topcard-left {
@@ -839,31 +855,31 @@ onShow(() => {
 
 .topcard-title {
   display: block;
-  font-size: 30rpx;
+  font-size: 26rpx;
   font-weight: bold;
   color: #333;
-  margin-bottom: 6rpx;
+  margin-bottom: 4rpx;
 }
 
 .topcard-desc {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: #B0748A;
   line-height: 1.4;
 }
 
 .topcard-btn {
   flex-shrink: 0;
-  min-width: 128rpx;
-  height: 56rpx;
-  padding: 0 24rpx;
-  border-radius: 28rpx;
+  min-width: 100rpx;
+  height: 44rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
   background: linear-gradient(90deg, #FFA0B9 0%, #FF5B84 100%);
   display: flex;
   align-items: center;
   justify-content: center;
 
   text {
-    font-size: 24rpx;
+    font-size: 22rpx;
     color: #fff;
     font-weight: bold;
   }
