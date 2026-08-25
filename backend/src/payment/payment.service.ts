@@ -72,13 +72,15 @@ export class PaymentService {
    * 必须在支付成功事务内调用，确保与会员开通原子一致
    */
   private async grantPackageBenefits(manager: EntityManager, userId: number, pkg: VipPackage): Promise<void> {
-    // 红线：终身累计，续费时累加
+    // 红线：终身累计，续费时累加；用原子 UPDATE 避免并发 lost update
     if (pkg.redLineCount > 0) {
-      const existing = await manager.findOne(UserRedLineQuota, { where: { userId, isDeleted: 0 } })
-      if (existing) {
-        existing.totalQuota += pkg.redLineCount
-        await manager.save(existing)
-      } else {
+      const result = await manager
+        .createQueryBuilder()
+        .update(UserRedLineQuota)
+        .set({ totalQuota: () => `totalQuota + ${pkg.redLineCount}` })
+        .where('userId = :userId AND isDeleted = 0', { userId })
+        .execute()
+      if (!result.affected) {
         const rl = manager.create(UserRedLineQuota, {
           userId,
           totalQuota: pkg.redLineCount,
@@ -92,16 +94,16 @@ export class PaymentService {
     // 置顶卡：即时发放当日配额（每日 0 点定时任务会因已存在而跳过，不会重复发）
     if (pkg.dailyTopCards > 0) {
       const today = todayStr()
-      const existingQuota = await manager.findOne(UserTopCardQuota, {
-        where: { userId, date: today as any, isDeleted: 0 },
-      })
-      if (existingQuota) {
-        existingQuota.totalQuota += pkg.dailyTopCards
-        await manager.save(existingQuota)
-      } else {
+      const result = await manager
+        .createQueryBuilder()
+        .update(UserTopCardQuota)
+        .set({ totalQuota: () => `totalQuota + ${pkg.dailyTopCards}` })
+        .where('userId = :userId AND date = :date AND isDeleted = 0', { userId, date: today })
+        .execute()
+      if (!result.affected) {
         const quota = manager.create(UserTopCardQuota, {
           userId,
-          date: today as any,
+          date: today,
           totalQuota: pkg.dailyTopCards,
           usedCount: 0,
           vipPackageId: pkg.id,
