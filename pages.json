@@ -99,6 +99,14 @@
       }
     },
     {
+      "path": "pages/order-list/index",
+      "style": {
+        "navigationBarTitleText": "我的订单",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#f5f5f5"
+      }
+    },
+    {
       "path": "pages/image-crop/index",
       "style": {
         "navigationBarTitleText": "裁剪图片",

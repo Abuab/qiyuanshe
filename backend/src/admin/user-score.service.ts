@@ -42,11 +42,9 @@ export class UserScoreService {
     if (user.residence) score += 2
     if (user.mateRequirement && user.mateRequirement.length > 10) score += 2
 
-    // 2. VIP 状态 (0-25)
+    // 2. VIP 状态 (0-15)
     if (user.isVip) {
       score += 15
-      if (user.vipLevel && user.vipLevel >= 2) score += 5  // 高级VIP额外加分
-      if (user.vipLevel && user.vipLevel >= 3) score += 5
     }
 
     // 3. 认证数量 (0-20)

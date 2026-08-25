@@ -24,7 +24,6 @@ import { diskStorage } from 'multer'
 import { join } from 'path'
 import { UserService } from './user.service'
 import { UserProfileDetailService } from './user-profile-detail.service'
-import { FilterUsersDto } from './dto'
 import { UpdateProfileDto } from './dto/update-profile.dto'
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 import { Report, ReportType, ReportReason } from '../entities/Report'
@@ -121,13 +120,6 @@ export class UserController {
       this.logger.error('findRecommend controller error:', error?.message || error)
       return Result.serverError('推荐数据加载失败，请稍后重试: ' + (error?.message || ''))
     }
-  }
-
-  @Post('filter')
-  @UseGuards(ThrottlerGuard, JwtAuthGuard)
-  async filterUsers(@Body() dto: FilterUsersDto, @Request() req: any) {
-    const currentUserId = req?.user?.id
-    return this.userService.filterUsers(dto, currentUserId)
   }
 
   @Put('profile')
@@ -725,24 +717,6 @@ export class UserController {
     }
   }
 
-  @Get(':id/followers')
-  async getFollowers(
-    @Param('id', ParseIntPipe) userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-  ) {
-    return this.userService.getFollowers(userId, page, limit)
-  }
-
-  @Get(':id/following')
-  async getFollowing(
-    @Param('id', ParseIntPipe) userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-  ) {
-    return this.userService.getFollowing(userId, page, limit)
-  }
-
   @Post('reports')
   @UseGuards(JwtAuthGuard)
   async createReport(
@@ -788,50 +762,6 @@ export class UserController {
       userAgent,
     )
     return Result.success(null, '已记录')
-  }
-
-  /** 新用户完善资料 - 实名认证提交（姓名+身份证号） */
-  @Post('real-name-auth')
-  @UseGuards(JwtAuthGuard)
-  async submitRealNameAuth(
-    @Body() body: { realName: string; idCard: string },
-    @Request() req: any,
-  ) {
-    const userId = req.user.id || req.user.sub
-    const realName = (body.realName || '').trim()
-    const idCard = (body.idCard || '').trim().toUpperCase()
-
-    if (!realName || !idCard) {
-      throw new ForbiddenException('请填写真实姓名和身份证号')
-    }
-
-    // 简单格式校验
-    if (!/^[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]$/.test(idCard)) {
-      throw new ForbiddenException('身份证号格式不正确')
-    }
-
-    const weight = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
-    const checkMap = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
-    let sum = 0
-    for (let i = 0; i < 17; i++) {
-      sum += parseInt(idCard[i]) * weight[i]
-    }
-    if (checkMap[sum % 11] !== idCard[17]) {
-      throw new ForbiddenException('身份证号校验码不正确')
-    }
-
-    //  注意：身份证信息仅在内存处理，不落库存储任何身份敏感信息
-    //  更新实名状态标记
-    await this.userRepo.update(userId, {
-      isRealName: 1,
-      eidCertStatus: 2, // 已认证
-      eidCertTime: new Date(),
-    })
-
-    // 清除推荐缓存：实名认证状态变更影响推荐筛选结果
-    this.redisService?.delByPattern('v3:rec:*').catch(() => {})
-
-    return Result.success(null, '认证成功')
   }
 
   // 锁定用户解锁只能由管理员在后台操作，已移除用户端自解锁接口

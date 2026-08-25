@@ -83,12 +83,7 @@ const fetchOrderDetail = async () => {
 }
 
 const getVipName = (level: number) => {
-  const names: Record<number, string> = {
-    1: '黄金会员',
-    2: '钻石会员',
-    3: '至尊VIP',
-  }
-  return names[level] || 'VIP'
+  return level > 0 ? '会员' : 'VIP'
 }
 
 const retryPay = () => {

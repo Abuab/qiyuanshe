@@ -2,14 +2,9 @@ import {
   Controller,
   Get,
   Post,
-  Put,
   Body,
-  Param,
-  ParseIntPipe,
-  Query,
   UseGuards,
   Request,
-  BadRequestException,
 } from '@nestjs/common'
 import { VipService } from './vip.service'
 import { JwtAuthGuard } from '../auth/guards'
@@ -27,55 +22,6 @@ export class VipController {
   @Get('packages')
   async listPackages() {
     return Result.success(await this.vipService.listPackages())
-  }
-
-  /** 创建订单 */
-  @Post('orders')
-  @UseGuards(JwtAuthGuard)
-  async createOrder(
-    @Request() req: any,
-    @Body('packageId') packageId: number,
-    @Body('payType') payType?: string,
-  ) {
-    if (!(await this.systemService.isVipEnabled())) {
-      return Result.success(null, '功能维护中，请稍后再试')
-    }
-    try {
-      const result = await this.vipService.createOrder(
-        req.user.id, packageId, payType,
-      )
-      return Result.success(result, '订单创建成功')
-    } catch (error: any) {
-      return Result.serverError(error?.message || '创建订单失败')
-    }
-  }
-
-  /**
-   * 模拟支付成功回调
-   * 真实环境由微信支付回调调用，此接口仅测试环境可用
-   */
-  @Put('orders/:orderNo/pay')
-  @UseGuards(JwtAuthGuard)
-  async payOrder(
-    @Request() req: any,
-    @Param('orderNo') orderNo: string,
-    @Body('transactionId') transactionId?: string,
-  ) {
-    // 模拟支付仅在非生产环境可用；生产环境硬性禁用，防止误配 MOCK_PAY_ENABLED 绕过真实支付
-    if (process.env.NODE_ENV === 'production') {
-      throw new BadRequestException('生产环境禁止模拟支付，请通过微信支付完成付款')
-    }
-    if (!(await this.systemService.isVipEnabled())) {
-      return Result.success(null, '功能维护中，请稍后再试')
-    }
-    try {
-      const result = await this.vipService.handlePaymentSuccess(
-        orderNo, transactionId, req.user.id,
-      )
-      return Result.success(result, '支付成功，会员已激活')
-    } catch (error: any) {
-      return Result.serverError(error?.message || '支付处理失败')
-    }
   }
 
   /** 查询我的置顶卡状态 */
@@ -127,11 +73,5 @@ export class VipController {
     } catch (error: any) {
       return Result.serverError(error?.message || '解锁失败')
     }
-  }
-
-  /** 获取红线索显示名称（公开，不需登录） */
-  @Get('red-line/term')
-  async getRedLineTerm() {
-    return Result.success({ term: await this.vipService.getRedLineTerm() })
   }
 }

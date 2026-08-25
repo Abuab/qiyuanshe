@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
-import { get } from '@/utils/request'
+import { get, post } from '@/utils/request'
 import { STORAGE_KEY } from '@/config/constants'
 
 interface UserInfo {
@@ -114,7 +114,14 @@ const isVipValid = computed(() => {
     secureStorage.clearAll()
   }
 
-  const logout = () => {
+  const logout = async () => {
+    // 先调用后端登出接口，使服务端 token 立即失效（tokenVersion / refreshTokenVersion 递增）
+    // 必须在清除本地 token 之前调用，否则请求将不带 Authorization 头
+    try {
+      await post('/auth/logout', undefined, undefined, 3000)
+    } catch (_) {
+      // 登出接口失败（网络异常/401）也继续清理本地登录态，保证用户能正常退出
+    }
     clearLoginState()
     try { uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL) } catch (_) { /* ignore */ }
     try { uni.removeStorageSync('unreadMessageCount') } catch (_) { /* ignore */ }

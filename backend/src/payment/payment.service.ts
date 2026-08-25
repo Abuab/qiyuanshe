@@ -32,6 +32,8 @@ export class PaymentService {
     private readonly orderRepository: Repository<VipOrder>,
     @InjectRepository(VipPackage)
     private readonly packageRepository: Repository<VipPackage>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly dataSource: DataSource,
@@ -81,12 +83,16 @@ export class PaymentService {
     if (!pkg) throw new BadRequestException('无效的会员套餐')
     if (pkg.price <= 0) throw new BadRequestException('套餐价格异常')
 
+    // JSAPI 统一下单必须携带下单用户的 openid（payer.openid 为必填项）
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user?.openid) throw new BadRequestException('缺少用户 openid，无法发起支付')
+
     const orderNo = this.generateOrderNo()
 
     const order = this.orderRepository.create({
       userId,
       orderNo,
-      vipLevel: pkg.id,
+      vipLevel: 1, // 会员仅一档，套餐只区分时长（月度/季度），无等级与曝光差异，统一写 1
       packageId: pkg.id,
       amount: pkg.price, // 整数分
       payType: 'wechat',
@@ -108,12 +114,12 @@ export class PaymentService {
       }
     }
 
-    const payParams = await this.unifiedOrder(orderNo, pkg.price, pkg.name)
+    const payParams = await this.unifiedOrder(orderNo, pkg.price, pkg.name, user.openid)
     return { orderNo, payParams }
   }
 
   /** 真实调用微信支付 V3 JSAPI 统一下单 */
-  private async unifiedOrder(orderNo: string, amountCents: number, description: string): Promise<PayParams> {
+  private async unifiedOrder(orderNo: string, amountCents: number, description: string, openid: string): Promise<PayParams> {
     const path = '/v3/pay/transactions/jsapi'
     const url = `https://api.mch.weixin.qq.com${path}`
 
@@ -124,7 +130,7 @@ export class PaymentService {
       out_trade_no: orderNo,
       notify_url: this.notifyUrl,
       amount: { total: amountCents, currency: 'CNY' },
-      payer: {}, // JSAPI 由小程序传入 openid，此处留空由前端补
+      payer: { openid },
     })
 
     this.logger.log(`[统一下单] orderNo=${orderNo}, amount=${amountCents}分`)

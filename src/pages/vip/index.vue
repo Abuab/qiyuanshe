@@ -307,7 +307,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
-import { get, post, put } from '@/utils/request'
+import { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -470,30 +470,47 @@ async function handlePay() {
   paying.value = true
   try {
     uni.showLoading({ title: '创建订单...', mask: true })
-    const orderResult: any = await post('/vip/orders', {
-      packageId: selectedPackage.value.id,
+    // 走真实微信支付：创建订单并获取 JSAPI 调起支付参数
+    const orderResult: any = await post('/payment/create-order', {
+      vipPackageId: selectedPackage.value.id,
+    })
+    uni.hideLoading()
+
+    const payParams = orderResult?.payParams
+    if (!payParams || !payParams.paySign) {
+      uni.showToast({ title: '微信支付未配置，暂不支持支付', icon: 'none' })
+      return
+    }
+
+    // 拉起微信支付
+    await new Promise<void>((resolve, reject) => {
+      uni.requestPayment({
+        provider: 'wxpay',
+        timeStamp: payParams.timeStamp,
+        nonceStr: payParams.nonceStr,
+        package: payParams.package,
+        signType: payParams.signType,
+        paySign: payParams.paySign,
+        success: () => resolve(),
+        fail: (err: any) => reject(err),
+      })
     })
 
-    if (orderResult.orderNo) {
-      // 模拟支付成功
-      const payResult: any = await put(`/vip/orders/${orderResult.orderNo}/pay`, {
-        transactionId: 'MOCK_' + Date.now(),
-      })
-      uni.hideLoading()
-      uni.showToast({ title: '支付成功，会员已激活', icon: 'success' })
-      // 刷新用户会员状态
-      userStore.checkVip()
-      // 延迟跳转
-      setTimeout(() => {
-        uni.switchTab({ url: '/pages/my/index' })
-      }, 1500)
-    } else {
-      uni.hideLoading()
-      uni.showToast({ title: '创建订单失败', icon: 'none' })
-    }
+    uni.showToast({ title: '支付成功，会员已激活', icon: 'success' })
+    // 刷新用户会员状态
+    userStore.checkVip()
+    // 延迟跳转
+    setTimeout(() => {
+      uni.switchTab({ url: '/pages/my/index' })
+    }, 1500)
   } catch (e: any) {
     uni.hideLoading()
-    uni.showToast({ title: e?.message || '支付失败', icon: 'none' })
+    // 用户主动取消支付不弹错误
+    if (e?.errMsg && String(e.errMsg).includes('cancel')) {
+      uni.showToast({ title: '已取消支付', icon: 'none' })
+    } else {
+      uni.showToast({ title: e?.message || '支付失败', icon: 'none' })
+    }
   } finally {
     paying.value = false
   }

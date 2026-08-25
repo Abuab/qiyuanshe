@@ -875,12 +875,7 @@ watch(userChartType, () => {
 })
 
 function getVipName(level: number) {
-  const map: Record<number, string> = {
-    1: '黄金会员',
-    2: '钻石会员',
-    3: '至尊VIP',
-  }
-  return map[level] || '普通用户'
+  return level > 0 ? '会员' : '普通用户'
 }
 </script>
 

@@ -53,4 +53,24 @@ export class VipScheduler {
       await this.redis.del(lockKey).catch(() => {})
     }
   }
+
+  /**
+   * 每 15 分钟检查一次，自动关闭超过 30 分钟未支付的待支付订单
+   * 锁过期时间 5 分钟
+   */
+  @Cron('*/15 * * * *')
+  async handleCloseTimeoutOrders() {
+    const lockKey = 'cron:close:timeout_orders'
+    const acquired = await this.redis.getClient().set(lockKey, '1', 'EX', 300, 'NX')
+    if (!acquired) return
+
+    try {
+      const count = await this.vipService.closeTimeoutOrders(30)
+      if (count > 0) {
+        this.logger.debug(`[VipScheduler] 已关闭 ${count} 笔超时未支付订单`)
+      }
+    } finally {
+      await this.redis.del(lockKey).catch(() => {})
+    }
+  }
 }

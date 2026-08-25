@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException, ForbiddenException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -7,17 +7,14 @@ import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
 import { UserAuth } from '../entities/UserAuth'
 import { SystemConfig } from '../entities/SystemConfig'
-import { WechatLoginDto, PhoneLoginDto, UpdateProfileDto } from './dto'
+import { WechatLoginDto, PhoneLoginDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig, parseExpirySeconds } from '../config/jwt'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
-import { calcProfileScore } from '../common/profile-score'
 import { UserService } from '../user/user.service'
 import { ContentFilterService } from '../common/content-filter.service'
 import { RedisService } from '../common/redis.service'
 import { CryptoService } from '../common/crypto.service'
-
-import { MIN_REGISTER_AGE, UNDERAGE_REJECT_MESSAGE } from '../ai/ai-compliance.constants'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 interface WechatSession {
@@ -489,37 +486,6 @@ export class AuthService {
     ;(profile as any).isNewUser = (!user.avatar || !user.avatar.trim()) && /^昵称/.test(user.nickname || '')
 
     return profile
-  }
-
-  async updateProfile(userId: number, dto: UpdateProfileDto): Promise<Partial<User>> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId, isDeleted: 0 },
-    })
-
-    if (!user) {
-      throw new UnauthorizedException('用户不存在')
-    }
-
-    // 敏感词过滤 - 用户自定义文本字段
-    if (dto.nickname) this.contentFilter.checkAndThrow(dto.nickname, '昵称')
-    if (dto.occupation) this.contentFilter.checkAndThrow(dto.occupation, '职业')
-    if (dto.hometown) this.contentFilter.checkAndThrow(dto.hometown, '家乡')
-    if (dto.residence) this.contentFilter.checkAndThrow(dto.residence, '现居地')
-    if (dto.mateRequirement) this.contentFilter.checkAndThrow(dto.mateRequirement, '择偶要求')
-
-    // 未成年人保护：设置出生年份时校验年龄
-    if (dto.birthYear !== undefined) {
-      const age = new Date().getFullYear() - dto.birthYear
-      if (age < MIN_REGISTER_AGE) {
-        throw new ForbiddenException(UNDERAGE_REJECT_MESSAGE)
-      }
-    }
-
-    Object.assign(user, dto)
-    user.profileScore = calcProfileScore(user)
-    await this.userRepository.save(user)
-
-    return this.sanitizeUser(user)
   }
 
   private generateToken(user: User): TokenPair {

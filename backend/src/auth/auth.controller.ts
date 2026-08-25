@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Get,
-  Put,
   Body,
   UseGuards,
   Request,
@@ -13,7 +12,7 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AuthService } from './auth.service'
-import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto, UpdateProfileDto } from './dto'
+import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto } from './dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import { Result } from '../common/result'
 import { Feedback } from '../entities/Feedback'
@@ -85,13 +84,6 @@ export class AuthController {
   async getStoreCertStatus(@Request() req) {
     const certified = await this.authService.getStoreCertStatus(req.user.id)
     return Result.success({ certified })
-  }
-
-  @Put('profile')
-  @UseGuards(JwtAuthGuard)
-  async updateProfile(@Request() req, @Body() dto: UpdateProfileDto) {
-    const user = await this.authService.updateProfile(req.user.id, dto)
-    return Result.success(user)
   }
 
   @Post('feedback')

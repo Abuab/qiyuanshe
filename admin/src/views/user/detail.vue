@@ -521,7 +521,7 @@
                   </el-table-column>
                   <el-table-column label="VIP等级" width="90">
                     <template #default="{ row }">
-                      <el-tag v-if="row.vipLevel > 0" type="warning" size="small">{{ ['','普通','黄金','钻石','至尊'][row.vipLevel] || 'VIP' }}</el-tag>
+                      <el-tag v-if="row.vipLevel > 0" type="warning" size="small">会员</el-tag>
                       <span v-else>-</span>
                     </template>
                   </el-table-column>

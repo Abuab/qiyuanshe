@@ -174,6 +174,7 @@ export class AdminPaymentService {
     // 已支付订单
     const paidOrders = await this.orderRepository.find({
       where: { status: 1, isDeleted: 0, ...dateCondition },
+      relations: ['package'],
     })
     // 已退款订单
     const refundedOrders = await this.orderRepository.find({
@@ -216,8 +217,8 @@ export class AdminPaymentService {
     // 套餐销量
     const packageMap: Record<string, number> = {}
     paidOrders.forEach(o => {
-      const levelName = ['普通', '黄金', '钻石', '至尊'][o.vipLevel || 0] || '未知'
-      packageMap[levelName] = (packageMap[levelName] || 0) + 1
+      const packageName = o.package?.name || '未知'
+      packageMap[packageName] = (packageMap[packageName] || 0) + 1
     })
     const packageData = Object.entries(packageMap).map(([name, count]) => ({ name, count }))
 

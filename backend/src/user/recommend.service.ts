@@ -399,8 +399,8 @@ export class RecommendService {
     // 3. 运营手动加权分（直接累加，无上限）
     score += WEIGHTS.manualBoost * (user.manualBoostScore || 0)
 
-    // 4. 会员权重分
-    score += WEIGHTS.vip * this.calcVipScore(user.isVip, user.vipLevel)
+    // 4. 会员权重分（会员统一固定分值，无等级区分）
+    score += WEIGHTS.vip * this.calcVipScore(user.isVip)
 
     // 5. 新用户保护分
     score += WEIGHTS.newUser * this.calcNewUserScore(user.createdAt)
@@ -423,7 +423,7 @@ export class RecommendService {
       END
       + ${WEIGHTS.profile} * COALESCE(user.profileScore, 0)
       + ${WEIGHTS.manualBoost} * COALESCE(user.manualBoostScore, 0)
-      + ${WEIGHTS.vip} * (CASE WHEN user.isVip = 1 THEN COALESCE(user.vipLevel, 1) * 15 ELSE 0 END)
+      + ${WEIGHTS.vip} * (CASE WHEN user.isVip = 1 THEN 35 ELSE 0 END)
       + ${WEIGHTS.newUser} * (CASE WHEN DATEDIFF(NOW(), user.createdAt) <= 7 THEN 80 ELSE 0 END))
     `
   }
@@ -602,10 +602,10 @@ export class RecommendService {
     return 15
   }
 
-  /** 会员权重分: 基础20 + 等级×15 */
-  private calcVipScore(isVip: number, vipLevel: number): number {
+  /** 会员权重分: 会员统一固定分值（套餐仅区分时长，无等级/曝光差异） */
+  private calcVipScore(isVip: number): number {
     if (!isVip || isVip === 0) return 0
-    return 20 + (vipLevel || 1) * 15
+    return 35
   }
 
   /** 新用户保护分: 7天内80分，否则0 */

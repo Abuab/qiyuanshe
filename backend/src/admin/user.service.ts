@@ -462,7 +462,7 @@ export class AdminUserService {
       车辆: u.carStatus || '-',
       职业: u.occupation || '-',
       实名认证: u.eidCertStatus === 2 ? '已认证' : u.eidCertStatus === 1 ? '认证中' : u.eidCertStatus === 3 ? '认证失败' : '未认证',
-      会员等级: u.vipLevel === 1 ? '黄金' : u.vipLevel === 2 ? '钻石' : u.vipLevel === 3 ? '至尊' : '普通',
+      会员状态: u.vipLevel > 0 ? '会员' : '普通',
       资料完整度: calcProfileScore(u),
       运营加权: u.manualBoostScore || 0,
       置顶截至: u.pinnedExpireAt ? new Date(u.pinnedExpireAt).toLocaleString('zh-CN') : '-',
@@ -540,7 +540,7 @@ export class AdminUserService {
 
     const updateData: Record<string, any> = {
       isVip: level > 0 ? 1 : 0,
-      vipLevel: level,
+      vipLevel: level > 0 ? 1 : 0,
       vipExpireTime: level > 0 ? expireTime : null,
     }
     if (packageName !== undefined) {

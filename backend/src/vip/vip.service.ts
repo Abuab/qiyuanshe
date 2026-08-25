@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common'
-import * as crypto from 'crypto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, DataSource } from 'typeorm'
 import { User } from '../entities/User'
@@ -14,12 +13,6 @@ import { RedisService } from '../common/redis.service'
 import { RecommendService } from '../user/recommend.service'
 
 export const RED_LINE_TERM_DEFAULT = '红线'
-
-function generateOrderNo(): string {
-  const ts = Date.now().toString(36)
-  const rand = crypto.randomBytes(4).toString('hex')
-  return `VIP${ts}${rand}`.toUpperCase()
-}
 
 /** 获取今日日期字符串 YYYY-MM-DD（UTC+8） */
 function todayStr(): string {
@@ -70,132 +63,6 @@ export class VipService {
       id: Number(pkg.id),
       price: Number(pkg.price),
     }))
-  }
-
-  // ========================================================================
-  //  购买会员流程
-  // ========================================================================
-
-  /**
-   * 创建订单
-   */
-  async createOrder(userId: number, packageId: number, payType = 'wechat') {
-    const pkg = await this.packageRepo.findOne({ where: { id: packageId, status: 1, isDeleted: 0 } })
-    if (!pkg) throw new Error('套餐不存在或已下架')
-
-    const orderNo = generateOrderNo()
-    const order = this.orderRepo.create({
-      userId,
-      packageId: pkg.id,
-      orderNo,
-      vipLevel: 1,
-      amount: pkg.price,
-      payType,
-      status: 0, // 待支付
-    })
-    await this.orderRepo.save(order)
-
-    // 返回给前端用于调起支付
-    return {
-      orderId: order.id,
-      orderNo: order.orderNo,
-      amount: Number(pkg.price),
-      packageName: pkg.name,
-      durationDays: pkg.durationDays,
-    }
-  }
-
-  /**
-   * 支付成功回调（模拟微信支付回调）
-   * 真实环境：由 /payment/notify 调用此方法
-   */
-  async handlePaymentSuccess(orderNo: string, transactionId: string | undefined, userId: number) {
-    const queryRunner = this.dataSource.createQueryRunner()
-    await queryRunner.connect()
-    await queryRunner.startTransaction()
-
-    try {
-      const order = await queryRunner.manager.findOne(VipOrder, {
-        where: { orderNo },
-        relations: ['package'],
-      })
-      if (!order) throw new Error('订单不存在')
-      if (order.userId !== userId) throw new Error('无权操作该订单')
-      if (order.status === 1) {
-        await queryRunner.rollbackTransaction()
-        return { success: true, message: '已处理' }
-      }
-
-      const pkg = order.package
-      if (!pkg) throw new Error('套餐不存在')
-
-      const now = new Date()
-      const expireTime = new Date(now.getTime() + pkg.durationDays * 86_400_000)
-
-      // 1. 更新订单
-      await queryRunner.manager.update(VipOrder, { orderNo }, {
-        status: 1, paidAt: now, expireTime, transactionId: transactionId || '',
-      })
-
-      // 2. 激活会员
-      const user = await queryRunner.manager.findOne(User, { where: { id: order.userId } })
-      if (user) {
-        const updateData: Partial<User> = { isVip: 1, vipLevel: Math.max(user.vipLevel || 0, order.vipLevel) }
-        if (user.vipExpireTime && user.vipExpireTime > now) {
-          updateData.vipExpireTime = new Date(user.vipExpireTime.getTime() + pkg.durationDays * 86_400_000)
-        } else {
-          updateData.vipExpireTime = expireTime
-        }
-        await queryRunner.manager.update(User, { id: order.userId }, updateData)
-      }
-
-      // 3. 发放今日置顶卡额度（仅当前套餐每日配额生效）
-      // 业务规则：每日配额以最新订单的套餐为准，不做叠加
-      if (pkg.dailyTopCards > 0) {
-        const today = todayStr()
-        const existingQuota = await queryRunner.manager.findOne(UserTopCardQuota, {
-          where: { userId: order.userId, date: today as any, isDeleted: 0 },
-        })
-        if (existingQuota) {
-          existingQuota.totalQuota += pkg.dailyTopCards
-          await queryRunner.manager.save(existingQuota)
-        } else {
-          const quota = queryRunner.manager.create(UserTopCardQuota, {
-            userId: order.userId, date: today as any, totalQuota: pkg.dailyTopCards, usedCount: 0, vipPackageId: pkg.id,
-          })
-          await queryRunner.manager.save(quota)
-        }
-      }
-
-      // 4. 发放红线索额度（终身累计，非每日重置）
-      // 续费时若已有未用完额度，正确累加新套餐红线索数量
-      if (pkg.redLineCount > 0) {
-        const existing = await queryRunner.manager.findOne(UserRedLineQuota, {
-          where: { userId: order.userId, isDeleted: 0 },
-        })
-        if (existing) {
-          existing.totalQuota += pkg.redLineCount
-          await queryRunner.manager.save(existing)
-        } else {
-          const rl = queryRunner.manager.create(UserRedLineQuota, {
-            userId: order.userId, totalQuota: pkg.redLineCount, usedCount: 0, vipPackageId: pkg.id,
-          })
-          await queryRunner.manager.save(rl)
-        }
-      }
-
-      await queryRunner.commitTransaction()
-
-      // 清除缓存（事务外，Redis 失败不影响主流程）
-      await this.redis.del(`recommend:score:${order.userId}`).catch(() => {})
-
-      return { success: true, orderId: order.id, expireTime }
-    } catch (e) {
-      await queryRunner.rollbackTransaction()
-      throw e
-    } finally {
-      await queryRunner.release()
-    }
   }
 
   // ========================================================================
@@ -339,6 +206,26 @@ export class VipService {
     }
 
     return count
+  }
+
+  /**
+   * 定时任务：自动关闭超时未支付订单
+   * 将超过 timeoutMinutes 分钟仍为 status=0（待支付）的订单批量置为 status=3（已取消）
+   * 使用单条 UPDATE 语句，避免逐条查询
+   */
+  async closeTimeoutOrders(timeoutMinutes: number): Promise<number> {
+    const deadline = new Date(Date.now() - timeoutMinutes * 60_000)
+
+    const result = await this.orderRepo
+      .createQueryBuilder()
+      .update(VipOrder)
+      .set({ status: 3 })
+      .where('status = :pending', { pending: 0 })
+      .andWhere('isDeleted = :deleted', { deleted: 0 })
+      .andWhere('createdAt < :deadline', { deadline })
+      .execute()
+
+    return result.affected || 0
   }
 
   // ========================================================================
