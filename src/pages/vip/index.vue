@@ -112,38 +112,17 @@
         <text class="cd-card-title">{{ customConfig.suitableTitle || '哪些人适合1对1定制服务' }}</text>
         <view class="cd-grid">
           <view class="cd-item" v-for="(item, idx) in customConfig.suitableList" :key="idx">
-            <!-- 图标1: 晕眩表情 -->
             <view v-if="idx === 0" class="cd-circ cd-circ-red">
-              <view class="cd-dizzy">
-                <view class="dz-dot dz-left-dot"></view>
-                <view class="dz-dot dz-right-dot"></view>
-                <view class="dz-mouth"></view>
-              </view>
+              <image class="cd-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
-            <!-- 图标2: 指南针 -->
             <view v-else-if="idx === 1" class="cd-circ cd-circ-orange">
-              <view class="cd-compass">
-                <view class="cp-diamond"></view>
-                <view class="cp-center"></view>
-                <view class="cp-tick cp-t1"></view>
-                <view class="cp-tick cp-t2"></view>
-                <view class="cp-tick cp-t3"></view>
-                <view class="cp-tick cp-t4"></view>
-              </view>
+              <image class="cd-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
-            <!-- 图标3: 人形铃铛 -->
             <view v-else-if="idx === 2" class="cd-circ cd-circ-pink">
-              <view class="cd-bell">
-                <view class="bl-head"></view>
-                <view class="bl-body"></view>
-                <view class="bl-bottom"></view>
-              </view>
+              <image class="cd-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
-            <!-- 图标4: 盾牌对勾 -->
             <view v-else class="cd-circ cd-circ-purple">
-              <view class="cd-shield">
-                <view class="sh-body"><view class="sh-check"></view></view>
-              </view>
+              <image class="cd-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <text class="cd-name">{{ item.name }}</text>
             <text class="cd-desc">{{ item.desc }}</text>
@@ -156,57 +135,29 @@
         <text class="cd-card-title">{{ customConfig.serviceTitle || '专属服务 助你脱单' }}</text>
         <view class="cd-svc-list">
           <view class="cd-svc" v-for="(item, idx) in customConfig.serviceList" :key="'svc'+idx">
-            <!-- 服务图标 -->
             <view v-if="idx === 0" class="cd-svc-icon cd-svc-grad-pink">
-              <view class="si-target"><view class="tg-ring1"></view><view class="tg-ring2"></view><view class="tg-core"></view></view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 1" class="cd-svc-icon cd-svc-grad-purple">
-              <view class="si-smile">
-                <view class="sm-eye sm-l"></view>
-                <view class="sm-eye sm-r"></view>
-                <view class="sm-mouth"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 2" class="cd-svc-icon cd-svc-grad-blue">
-              <view class="si-lock">
-                <view class="lk-shackle"></view>
-                <view class="lk-body"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 3" class="cd-svc-icon cd-svc-grad-green">
-              <view class="si-shield-bolt">
-                <view class="sb-shield"><view class="sb-bolt"></view></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 4" class="cd-svc-icon cd-svc-grad-purple2">
-              <view class="si-heart-check">
-                <view class="hc-heart"></view>
-                <view class="hc-check"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 5" class="cd-svc-icon cd-svc-grad-red">
-              <view class="si-redhead">
-                <view class="rh-hair"></view>
-                <view class="rh-bangs">
-                  <view class="rh-bang"></view>
-                  <view class="rh-bang"></view>
-                  <view class="rh-bang"></view>
-                </view>
-                <view class="rh-face"></view>
-                <view class="rh-body"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else-if="idx === 6" class="cd-svc-icon cd-svc-grad-green">
-              <view class="si-person-pin">
-                <view class="pp-head"></view>
-                <view class="pp-body"></view>
-                <view class="pp-pin"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view v-else class="cd-svc-icon cd-svc-grad-blue">
-              <view class="si-bubble-simple">
-                <view class="bs-box"></view>
-              </view>
+              <image class="cd-svc-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <view class="cd-svc-text">
               <text class="cd-svc-name">{{ item.name }}</text>
@@ -257,31 +208,7 @@
         <view class="pf-list">
           <view class="pf-card" v-for="(item, idx) in aboutConfig.features" :key="idx">
             <view class="pf-icon">
-              <view class="ic-house" v-if="idx % 4 === 0">
-                <view class="h-sign"></view>
-                <view class="h-roof"></view>
-                <view class="h-body"><view class="h-door"></view></view>
-              </view>
-              <view class="ic-trophy" v-else-if="idx % 4 === 1">
-                <view class="t-handle t-left"></view>
-                <view class="t-handle t-right"></view>
-                <view class="t-cup"></view>
-                <view class="t-base"></view>
-              </view>
-              <view class="ic-chart" v-else-if="idx % 4 === 2">
-                <view class="c-line c-line1"></view>
-                <view class="c-line c-line2"></view>
-                <view class="c-node c-node1"></view>
-                <view class="c-node c-node2"></view>
-                <view class="c-bar c-bar1"></view>
-                <view class="c-bar c-bar2"></view>
-                <view class="c-bar c-bar3"></view>
-              </view>
-              <view class="ic-couple" v-else>
-                <view class="mini-heart"></view>
-                <view class="person p-left"><view class="p-head"></view><view class="p-body"></view></view>
-                <view class="person p-right"><view class="p-head"></view><view class="p-body"></view></view>
-              </view>
+              <image class="pf-icon-img" :src="item.icon" mode="aspectFit" />
             </view>
             <text class="pf-text">{{ item.name }}</text>
           </view>
@@ -532,21 +459,21 @@ const customConfig = reactive({
   bannerUrl: '',
   suitableTitle: '哪些人适合1对1定制服务',
   suitableList: [
-    { icon: '', name: '工作繁忙', desc: '没时间自己筛选', color: '#FFF0F3' },
-    { icon: '', name: '目标明确', desc: '想找特定类型', color: '#F0F0FF' },
-    { icon: '', name: '注重隐私', desc: '不愿公开信息', color: '#FFF8E1' },
-    { icon: '', name: '追求效率', desc: '希望快速脱单', color: '#E8F5E9' },
+    { icon: '/static/icons/vip/fatigue.png', name: '交友疲惫', desc: '没有方向', color: '#FFF0F3' },
+    { icon: '/static/icons/vip/busy.png', name: '工作忙碌', desc: '异性圈窄', color: '#F0F0FF' },
+    { icon: '/static/icons/vip/independent.png', name: '独立自主', desc: '不愿将就', color: '#FFF8E1' },
+    { icon: '/static/icons/vip/privacy.png', name: '身份特殊', desc: '需要私密', color: '#E8F5E9' },
   ] as SuitableItem[],
   serviceTitle: '专属服务 助你脱单',
   serviceList: [
-    { icon: '', name: '精准1对1匹配', desc: '红娘根据您的条件精准筛选推荐', color: '#FFF0F3' },
-    { icon: '', name: '红娘主动推荐', desc: '专业红娘主动为您匹配合适人选', color: '#F0F0FF' },
-    { icon: '', name: '开放隐藏会员', desc: '解锁隐藏优质会员资料查看权限', color: '#FFF8E1' },
-    { icon: '', name: '优先优质配对', desc: '平台优先推荐优质匹配对象', color: '#E8F5E9' },
-    { icon: '', name: '情感指导服务', desc: '专业情感顾问一对一指导', color: '#FCE4EC' },
-    { icon: '', name: '个人形象提升', desc: '专业团队帮您打造最佳形象', color: '#E3F2FD' },
-    { icon: '', name: '线下约见服务', desc: '协助安排安全舒适的线下见面', color: '#FFF3E0' },
-    { icon: '', name: '及时反馈结果', desc: '定期反馈匹配进展和优化建议', color: '#F3E5F5' },
+    { icon: '/static/icons/vip/precise-match.png', name: '精准1对1匹配', desc: '红娘根据您的条件精准筛选推荐', color: '#FFF0F3' },
+    { icon: '/static/icons/vip/matchmaker.png', name: '红娘主动推荐', desc: '专业红娘主动为您匹配合适人选', color: '#F0F0FF' },
+    { icon: '/static/icons/vip/hidden-member.png', name: '开放隐藏会员', desc: '解锁隐藏优质会员资料查看权限', color: '#FFF8E1' },
+    { icon: '/static/icons/vip/priority-match.png', name: '优先优质配对', desc: '平台优先推荐优质匹配对象', color: '#E8F5E9' },
+    { icon: '/static/icons/vip/emotion-guide.png', name: '情感指导服务', desc: '专业情感顾问一对一指导', color: '#FCE4EC' },
+    { icon: '/static/icons/vip/image-upgrade.png', name: '个人形象提升', desc: '专业团队帮您打造最佳形象', color: '#E3F2FD' },
+    { icon: '/static/icons/vip/offline-meet.png', name: '线下约见服务', desc: '协助安排安全舒适的线下见面', color: '#FFF3E0' },
+    { icon: '/static/icons/vip/feedback.png', name: '及时反馈结果', desc: '定期反馈匹配进展和优化建议', color: '#F3E5F5' },
   ] as ServiceItem[],
 })
 
@@ -555,10 +482,10 @@ const aboutConfig = reactive({
   bannerUrl: '',
   title: '平台特点',
   features: [
-    { icon: '', name: '真实海量本地用户', desc: '严格审核机制，确保用户真实可靠', color: '#FFF0F3' },
-    { icon: '', name: '靠谱本地服务团队', desc: '专业红娘团队，深耕本地婚恋市场', color: '#F0F0FF' },
-    { icon: '', name: '匹配资源丰富脱单效率高', desc: '海量优质资源，智能匹配快速脱单', color: '#FFF8E1' },
-    { icon: '', name: '私人定制专享红娘服务', desc: '一对一专属服务，全程陪伴指导', color: '#E8F5E9' },
+    { icon: '/static/icons/vip/real-users.png', name: '真实海量本地用户', desc: '严格审核机制，确保用户真实可靠', color: '#FFF0F3' },
+    { icon: '/static/icons/vip/local-team.png', name: '靠谱本地服务团队', desc: '专业红娘团队，深耕本地婚恋市场', color: '#F0F0FF' },
+    { icon: '/static/icons/vip/rich-resources.png', name: '匹配资源丰富脱单效率高', desc: '海量优质资源，智能匹配快速脱单', color: '#FFF8E1' },
+    { icon: '/static/icons/vip/private-custom.png', name: '私人定制专享红娘服务', desc: '一对一专属服务，全程陪伴指导', color: '#E8F5E9' },
   ] as FeatureItem[],
 })
 
@@ -1236,38 +1163,13 @@ onShow(() => {
   justify-content: center;
   position: relative;
 }
-.cd-circ-red { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
-.cd-circ-orange { background: linear-gradient(135deg, #FF9F43, #FFB876); }
-.cd-circ-pink { background: linear-gradient(135deg, #FF6B9D, #FF8FAB); }
-.cd-circ-purple { background: linear-gradient(135deg, #A55EEA, #C084FC); }
+.cd-circ-red { background: #F5F5F5; }
+.cd-circ-orange { background: #F5F5F5; }
+.cd-circ-pink { background: #F5F5F5; }
+.cd-circ-purple { background: #F5F5F5; }
 
-// 图标1：晕眩表情（两眼改为纯点）
-.cd-dizzy { position: relative; width: 60rpx; height: 50rpx; }
-.dz-dot { position: absolute; top: 14rpx; width: 6rpx; height: 6rpx; border-radius: 50%; background: #fff; }
-.dz-left-dot { left: 16rpx; }
-.dz-right-dot { right: 16rpx; }
-.dz-mouth { position: absolute; bottom: 4rpx; left: 50%; transform: translateX(-50%); width: 28rpx; height: 14rpx; border-bottom: 3rpx solid #fff; border-radius: 0 0 50% 50%; }
-
-// 图标2：指南针
-.cd-compass { position: relative; width: 60rpx; height: 60rpx; }
-.cp-diamond { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); width: 24rpx; height: 24rpx; border: 2rpx solid #fff; }
-.cp-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6rpx; height: 6rpx; border-radius: 50%; background: #fff; }
-.cp-tick { position: absolute; width: 0; height: 0; border-left: 4rpx solid transparent; border-right: 4rpx solid transparent; border-bottom: 6rpx solid #fff; }
-.cp-t1 { top: 6rpx; left: 50%; transform: translateX(-50%); }
-.cp-t2 { bottom: 6rpx; left: 50%; transform: translateX(-50%) rotate(180deg); }
-.cp-t3 { left: 6rpx; top: 50%; transform: translateY(-50%) rotate(-90deg); }
-.cp-t4 { right: 6rpx; top: 50%; transform: translateY(-50%) rotate(90deg); }
-
-// 图标3：人形铃铛
-.cd-bell { position: relative; width: 40rpx; height: 56rpx; display: flex; flex-direction: column; align-items: center; }
-.bl-head { width: 18rpx; height: 18rpx; border-radius: 50%; background: #fff; }
-.bl-body { width: 0; height: 0; border-left: 12rpx solid transparent; border-right: 12rpx solid transparent; border-bottom: 20rpx solid #fff; margin-top: -2rpx; }
-.bl-bottom { width: 20rpx; height: 8rpx; border-radius: 0 0 50% 50%; background: #fff; margin-top: -2rpx; }
-
-// 图标4：盾牌对勾
-.cd-shield { position: relative; width: 44rpx; height: 50rpx; display: flex; align-items: center; justify-content: center; }
-.sh-body { width: 32rpx; height: 36rpx; border-radius: 50% 50% 50% 50% / 15% 15% 85% 85%; background: #fff; display: flex; align-items: center; justify-content: center; }
-.sh-check { width: 14rpx; height: 8rpx; border-right: 3rpx solid #A55EEA; border-bottom: 3rpx solid #A55EEA; transform: rotate(45deg); margin-top: -4rpx; }
+// 模块一图标图片
+.cd-icon-img { width: 56rpx; height: 56rpx; }
 
 // 模块二：服务列表
 .cd-svc-list {
@@ -1290,75 +1192,18 @@ onShow(() => {
   margin-right: 24rpx;
   position: relative;
 }
-.cd-svc-grad-pink { background: linear-gradient(135deg, #FFB6C1, #FFD4A0); }
-.cd-svc-grad-purple { background: linear-gradient(135deg, #B19CD9, #D4B8F0); }
-.cd-svc-grad-purple2 { background: linear-gradient(135deg, #B19CD9, #D4B8F0); }
-.cd-svc-grad-blue { background: linear-gradient(135deg, #74B9FF, #A29BFE); }
-.cd-svc-grad-green { background: linear-gradient(135deg, #55E6C1, #58B19F); }
-.cd-svc-grad-red { background: linear-gradient(135deg, #FF6B6B, #FF8E8E); }
+.cd-svc-grad-pink { background: #F5F5F5; }
+.cd-svc-grad-purple { background: #F5F5F5; }
+.cd-svc-grad-purple2 { background: #F5F5F5; }
+.cd-svc-grad-blue { background: #F5F5F5; }
+.cd-svc-grad-green { background: #F5F5F5; }
+.cd-svc-grad-red { background: #F5F5F5; }
 .cd-svc-text { flex: 1; }
 .cd-svc-name { font-size: 32rpx; font-weight: bold; color: #4A4A8A; display: block; margin-bottom: 6rpx; }
 .cd-svc-desc { font-size: 26rpx; color: #999; line-height: 1.5; }
 
-// 服务图标1：靶心
-.si-target { position: relative; width: 44rpx; height: 44rpx; }
-.tg-ring1 { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40rpx; height: 40rpx; border-radius: 50%; border: 4rpx solid #FF6B6B; }
-.tg-ring2 { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28rpx; height: 28rpx; border-radius: 50%; border: 4rpx solid #FFD700; }
-.tg-core { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12rpx; height: 12rpx; border-radius: 50%; background: #FF6B6B; }
-
-// 服务图标2：笑脸
-.si-smile { position: relative; width: 44rpx; height: 36rpx; }
-.sm-eye { position: absolute; top: 4rpx; width: 8rpx; height: 10rpx; border-radius: 50%; background: #fff; }
-.sm-l { left: 10rpx; }
-.sm-r { right: 10rpx; }
-.sm-mouth { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24rpx; height: 12rpx; border-bottom: 3rpx solid #fff; border-radius: 0 0 50% 50%; }
-
-// 服务图标3：锁
-.si-lock { position: relative; width: 30rpx; height: 36rpx; display: flex; flex-direction: column; align-items: center; }
-.lk-shackle { width: 24rpx; height: 14rpx; border: 3rpx solid #fff; border-bottom: none; border-radius: 50% 50% 0 0; }
-.lk-body { width: 22rpx; height: 18rpx; background: #fff; border-radius: 4rpx; margin-top: -2rpx; }
-
-// 服务图标4：绿盾闪电
-.si-shield-bolt { position: relative; width: 44rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; }
-.sb-shield { width: 36rpx; height: 40rpx; border-radius: 50% 50% 50% 50% / 15% 15% 70% 70%; background: #fff; display: flex; align-items: center; justify-content: center; }
-.sb-bolt { width: 8rpx; height: 20rpx; background: #FFD700; clip-path: polygon(40% 0%, 100% 50%, 60% 50%, 60% 100%, 0% 50%, 40% 50%); }
-
-// 服务图标5：紫心对勾
-.si-heart-check { position: relative; width: 40rpx; height: 38rpx; display: flex; align-items: center; justify-content: center; }
-.hc-heart { position: relative; width: 30rpx; height: 26rpx; }
-.hc-heart::before,
-.hc-heart::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 15rpx;
-  width: 15rpx;
-  height: 22rpx;
-  background: #fff;
-  border-radius: 15rpx 15rpx 0 0;
-  transform: rotate(-45deg);
-  transform-origin: 0 100%;
-}
-.hc-heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
-.hc-check { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(45deg); width: 10rpx; height: 6rpx; border-right: 2rpx solid #B19CD9; border-bottom: 2rpx solid #B19CD9; margin-top: -2rpx; }
-
-// 服务图标6：红发人物
-.si-redhead { position: relative; width: 46rpx; height: 60rpx; display: flex; flex-direction: column; align-items: center; }
-.rh-hair { width: 40rpx; height: 20rpx; background: #FF4757; border-radius: 50% 50% 0 0; position: relative; z-index: 2; }
-.rh-bangs { display: flex; gap: 2rpx; margin-top: -6rpx; position: relative; z-index: 3; }
-.rh-bang { width: 6rpx; height: 8rpx; background: #FF4757; }
-.rh-face { width: 18rpx; height: 18rpx; border-radius: 50%; background: #fff; position: relative; z-index: 1; margin-top: -4rpx; }
-.rh-body { width: 0; height: 0; border-left: 10rpx solid transparent; border-right: 10rpx solid transparent; border-bottom: 16rpx solid #fff; margin-top: 2rpx; }
-
-// 服务图标7：人形+定位
-.si-person-pin { position: relative; width: 52rpx; height: 48rpx; }
-.pp-head { position: absolute; top: 2rpx; left: 4rpx; width: 14rpx; height: 14rpx; border-radius: 50%; background: #fff; }
-.pp-body { position: absolute; top: 16rpx; left: 1rpx; width: 0; height: 0; border-left: 10rpx solid transparent; border-right: 10rpx solid transparent; border-bottom: 16rpx solid #fff; }
-.pp-pin { position: absolute; bottom: 4rpx; right: 6rpx; width: 18rpx; height: 22rpx; border-radius: 50% 50% 50% 0; background: #FFD700; transform: rotate(-45deg); }
-
-// 服务图标8：纯圆角气泡（居中）
-.si-bubble-simple { display: flex; align-items: center; justify-content: center; }
-.bs-box { width: 36rpx; height: 24rpx; background: #fff; border-radius: 8rpx; }
+// 模块二服务图标图片
+.cd-svc-icon-img { width: 60rpx; height: 60rpx; }
 
 // ===== 关于我们 =====
 .feature-list {
@@ -1468,55 +1313,7 @@ onShow(() => {
   margin-right: 24rpx;
 }
 
-/* 图标一：小房子 */
-.ic-house { position: relative; width: 40rpx; height: 52rpx; }
-.h-sign { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 20rpx; height: 4rpx; background: #FFB6C1; border-radius: 2rpx; }
-.h-roof { position: absolute; top: 8rpx; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20rpx solid transparent; border-right: 20rpx solid transparent; border-bottom: 16rpx solid #fff; }
-.h-body { position: absolute; top: 24rpx; left: 50%; transform: translateX(-50%); width: 32rpx; height: 24rpx; background: #fff; border-radius: 0 0 4rpx 4rpx; }
-.h-door { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 8rpx; height: 12rpx; background: #FF9A56; border-radius: 2rpx 2rpx 0 0; }
-
-/* 图标二：奖杯 */
-.ic-trophy { position: relative; width: 40rpx; height: 44rpx; }
-.t-cup { position: absolute; top: 4rpx; left: 50%; transform: translateX(-50%); width: 22rpx; height: 0; border-bottom: 26rpx solid #fff; border-left: 6rpx solid transparent; border-right: 6rpx solid transparent; }
-.t-base { position: absolute; bottom: 2rpx; left: 50%; transform: translateX(-50%); width: 20rpx; height: 6rpx; background: #fff; border-radius: 2rpx; }
-.t-handle { position: absolute; top: 6rpx; width: 12rpx; height: 18rpx; border: 3rpx solid #fff; border-radius: 50%; }
-.t-left { left: 2rpx; border-right: none; }
-.t-right { right: 2rpx; border-left: none; }
-
-/* 图标三：上升图表 */
-.ic-chart { position: relative; width: 42rpx; height: 32rpx; }
-.c-bar { position: absolute; bottom: 0; width: 6rpx; background: #fff; border-radius: 3rpx; }
-.c-bar1 { left: 4rpx; height: 12rpx; }
-.c-bar2 { left: 18rpx; height: 20rpx; }
-.c-bar3 { left: 32rpx; height: 16rpx; }
-.c-line { position: absolute; height: 2rpx; background: #fff; transform-origin: left center; }
-.c-line1 { left: 7rpx; bottom: 12rpx; width: 16rpx; transform: rotate(-27deg); }
-.c-line2 { left: 21rpx; bottom: 20rpx; width: 15rpx; transform: rotate(15deg); }
-.c-node { position: absolute; width: 5rpx; height: 5rpx; background: #fff; transform: rotate(45deg); }
-.c-node1 { left: 19rpx; bottom: 18rpx; }
-.c-node2 { left: 33rpx; bottom: 14rpx; }
-
-/* 图标四：双人+爱心 */
-.ic-couple { position: relative; width: 52rpx; height: 40rpx; }
-.person { position: absolute; bottom: 4rpx; }
-.p-left { left: 4rpx; }
-.p-right { right: 4rpx; }
-.p-head { width: 14rpx; height: 14rpx; border-radius: 50%; background: #fff; margin: 0 auto; }
-.p-body { width: 0; height: 0; margin-top: 2rpx; border-left: 5rpx solid transparent; border-right: 5rpx solid transparent; border-bottom: 16rpx solid #fff; }
-.mini-heart { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 14rpx; height: 12rpx; }
-.mini-heart::before,
-.mini-heart::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 7rpx;
-  width: 7rpx;
-  height: 11rpx;
-  background: #FF6B9D;
-  border-radius: 7rpx 7rpx 0 0;
-  transform: rotate(-45deg);
-  transform-origin: 0 100%;
-}
-.mini-heart::after { left: 0; transform: rotate(45deg); transform-origin: 100% 100%; }
+/* 关于我们图标图片 */
+.pf-icon-img { width: 56rpx; height: 56rpx; }
 
 </style>
