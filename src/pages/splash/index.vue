@@ -4,7 +4,7 @@
 
     <view class="main-content">
       <view class="heart-container">
-        <image class="heart-icon" src="/static/icons/loveheart.png" mode="aspectFit"></image>
+        <image class="heart-icon" src="/static/icons/favicon.png" mode="aspectFit"></image>
       </view>
 
       <text class="splash-text">{{ splashText }}</text>

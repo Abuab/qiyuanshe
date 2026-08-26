@@ -134,9 +134,10 @@ export class PaymentService {
   async createOrder(userId: number, dto: CreateOrderDto): Promise<{ orderNo: string; payParams: PayParams }> {
     // 从数据库读取套餐信息
     const packages = await this.packageRepository.find({ where: { status: 1, isDeleted: 0 } })
-    const pkg = packages.find(p => p.id === dto.vipPackageId)
+    const pkg = packages.find(p => Number(p.id) === Number(dto.vipPackageId))
     if (!pkg) throw new BadRequestException('无效的会员套餐')
-    if (pkg.price <= 0) throw new BadRequestException('套餐价格异常')
+    const priceCents = Number(pkg.price)
+    if (priceCents <= 0) throw new BadRequestException('套餐价格异常')
 
     // JSAPI 统一下单必须携带下单用户的 openid（payer.openid 为必填项）
     const user = await this.userRepository.findOne({ where: { id: userId } })
@@ -148,8 +149,8 @@ export class PaymentService {
       userId,
       orderNo,
       vipLevel: 1, // 会员仅一档，套餐只区分时长（月度/季度），无等级与曝光差异，统一写 1
-      packageId: pkg.id,
-      amount: pkg.price, // 整数分
+      packageId: Number(pkg.id),
+      amount: priceCents, // 整数分
       payType: 'wechat',
       status: 0,
     })
@@ -169,7 +170,7 @@ export class PaymentService {
       }
     }
 
-    const payParams = await this.unifiedOrder(orderNo, pkg.price, pkg.name, user.openid)
+    const payParams = await this.unifiedOrder(orderNo, priceCents, pkg.name, user.openid)
     return { orderNo, payParams }
   }
 

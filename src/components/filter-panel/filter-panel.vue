@@ -772,7 +772,7 @@ defineExpose({
   height: 88rpx;
   display: flex;
   align-items: center;
-  padding: 0 20rpx;
+  padding: 0 44rpx;
 }
 
 .range-track {

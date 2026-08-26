@@ -426,13 +426,15 @@ function handleLogout() {
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: 9px;
   background-color: #E6A23C;
   color: #fff;
   font-size: 12px;
-  line-height: 1;
+  line-height: 18px;
   font-weight: 500;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 // 审核管理父级标题上的计数标：紧跟文字、红色
