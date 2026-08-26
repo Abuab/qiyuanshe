@@ -29,6 +29,7 @@
               <el-option label="未支付" :value="0" />
               <el-option label="已支付" :value="1" />
               <el-option label="已退款" :value="2" />
+              <el-option label="已取消" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item label="时间范围">
@@ -302,6 +303,7 @@ function getStatusName(status: number) {
     0: '未支付',
     1: '已支付',
     2: '已退款',
+    3: '已取消',
   }
   return map[status] || '未知'
 }
@@ -311,6 +313,7 @@ function getStatusTagType(status: number) {
     0: 'info',
     1: 'success',
     2: 'danger',
+    3: 'info',
   }
   return map[status] || 'info'
 }

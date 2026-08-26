@@ -41,7 +41,7 @@
       <view class="card-list">
         <!-- 1. 实名认证 -->
         <view class="auth-card" @tap="handleItemTap('realname')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #FFF3C4, #FFE066);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/realname.png" mode="aspectFit" />
           </view>
           <view class="card-text">
@@ -55,7 +55,7 @@
 
         <!-- 2. 单身承诺 -->
         <view class="auth-card" @tap="handleItemTap('single')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #FFB347, #FF8C42);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/single.png" mode="aspectFit" />
           </view>
           <view class="card-text">
@@ -69,7 +69,7 @@
 
         <!-- 3. 学历认证 -->
         <view class="auth-card" @tap="handleItemTap('education')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #FFD93D, #F9A825);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/education.png" mode="aspectFit" />
           </view>
           <view class="card-text">
@@ -83,7 +83,7 @@
 
         <!-- 4. 房产认证 -->
         <view class="auth-card" @tap="handleItemTap('house')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #55E6C1, #58B19F);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/property.png" mode="aspectFit" />
           </view>
           <view class="card-text">
@@ -97,7 +97,7 @@
 
         <!-- 5. 车产认证 -->
         <view class="auth-card" @tap="handleItemTap('car')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #74B9FF, #A29BFE);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/car.png" mode="aspectFit" />
           </view>
           <view class="card-text">
@@ -111,7 +111,7 @@
 
         <!-- 6. 到店认证 -->
         <view class="auth-card" @tap="handleItemTap('store')">
-          <view class="card-icon" style="background: linear-gradient(135deg, #FF6B6B, #FF8E8E);">
+          <view class="card-icon" style="background: #F5F5F5;">
             <image class="card-icon-img" src="/static/icons/auth/store.png" mode="aspectFit" />
           </view>
           <view class="card-text">
