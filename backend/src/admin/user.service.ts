@@ -17,6 +17,8 @@ import { calcProfileScore } from '../common/profile-score'
 import { RedisService } from '../common/redis.service'
 import { AdminMessageTemplateService } from './message-template.service'
 import { UserService } from '../user/user.service'
+import { VipOrder } from '../entities/VipOrder'
+import { VipPackage } from '../entities/VipPackage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { beijingISO } from '../common/utils/date-utils'
 import * as bcrypt from 'bcrypt'
@@ -82,6 +84,10 @@ export class AdminUserService {
     private readonly userService: UserService,
     @InjectRepository(SystemConfig)
     private readonly configRepo: Repository<SystemConfig>,
+    @InjectRepository(VipOrder)
+    private readonly vipOrderRepository: Repository<VipOrder>,
+    @InjectRepository(VipPackage)
+    private readonly vipPackageRepository: Repository<VipPackage>,
   ) {}
   private readonly logger = new Logger(AdminUserService.name)
 
@@ -531,7 +537,7 @@ export class AdminUserService {
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
-  async updateVip(id: number, level: number, days: number, packageName?: string) {
+  async updateVip(id: number, level: number, days: number, packageName?: string, packageId?: number) {
     const user = await this.userRepository.findOne({ where: { id } })
     if (!user) return
 
@@ -547,6 +553,33 @@ export class AdminUserService {
       updateData.vipPackageName = packageName
     }
     await this.userRepository.update(id, updateData)
+
+    // 开通会员时落一条「免费赠送」订单记录，保证订单列表/财务统计/用户订单完整
+    if (level > 0) {
+      try {
+        let resolvedPackageId: number | null = packageId ?? null
+        if (resolvedPackageId == null && packageName) {
+          const pkg = await this.vipPackageRepository.findOne({ where: { name: packageName, isDeleted: 0 } })
+          if (pkg) resolvedPackageId = pkg.id
+        }
+        const orderNo = `LT${Date.now()}${crypto.randomBytes(6).toString('hex').toUpperCase()}`
+        await this.vipOrderRepository.save(this.vipOrderRepository.create({
+          userId: id,
+          packageId: resolvedPackageId,
+          orderNo,
+          vipLevel: 1,
+          amount: 0,
+          payType: 'admin',
+          status: 1,
+          paidAt: now,
+          expireTime,
+          isDeleted: 0,
+        }))
+      } catch (e: any) {
+        this.logger.warn(`手动开通会员时生成赠送订单失败 userId=${id}: ${e?.message}`)
+      }
+    }
+
     // 清除推荐缓存：VIP 变更影响推荐排序权重
     this.redis.delByPattern('v3:rec:*').catch(() => {})
   }

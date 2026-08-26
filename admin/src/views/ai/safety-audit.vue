@@ -78,22 +78,12 @@
         </el-form>
       </div>
 
-      <!-- 批量操作 -->
-      <div v-if="selectedRows.length > 0" class="batch-bar">
-        <el-button type="success" @click="handleBatchPass">批量通过 ({{ selectedRows.length }})</el-button>
-        <el-button type="danger" @click="handleBatchBlock">批量拦截 ({{ selectedRows.length }})</el-button>
-      </div>
-
       <!-- 表格 -->
       <el-table
-        ref="tableRef"
         :data="tableData"
         v-loading="loading"
-        @selection-change="handleSelectionChange"
-        row-key="id"
         stripe
       >
-        <el-table-column type="selection" width="50" />
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="用户" width="140">
           <template #default="{ row }">
@@ -151,13 +141,6 @@
         <el-table-column prop="createdAt" label="生成时间" width="160">
           <template #default="{ row }">
             {{ formatTime(row.createdAt) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button type="success" size="small" link @click.stop="handlePass(row)">通过</el-button>
-            <el-button type="danger" size="small" link @click.stop="handleBlock(row)">拦截</el-button>
-            <el-button type="warning" size="small" link @click.stop="handleMarkReview(row)">标记复核</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -238,21 +221,6 @@
 
       <template #footer>
         <el-button @click="contentDialogVisible = false">关闭</el-button>
-        <el-button
-          v-if="contentDialogRow?.auditResult !== 'PASS'"
-          type="success"
-          @click="auditInDialog('PASS')"
-        >通过</el-button>
-        <el-button
-          v-if="contentDialogRow?.auditResult !== 'BLOCK'"
-          type="danger"
-          @click="auditInDialog('BLOCK')"
-        >拦截</el-button>
-        <el-button
-          v-if="contentDialogRow?.auditResult !== 'MANUAL_REVIEW'"
-          type="warning"
-          @click="auditInDialog('MANUAL_REVIEW')"
-        >标记复核</el-button>
       </template>
     </el-dialog>
   </div>
@@ -260,7 +228,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import request from '@/api/request'
 
 interface AuditItem {
@@ -277,8 +245,6 @@ interface AuditItem {
 
 const loading = ref(false)
 const tableData = ref<AuditItem[]>([])
-const tableRef = ref()
-const selectedRows = ref<AuditItem[]>([])
 const page = ref(1)
 const pageSize = ref(20)
 const total = ref(0)
@@ -334,66 +300,6 @@ const openContentDialog = (row: AuditItem) => {
   contentDialogVisible.value = true
 }
 
-// ---- 弹窗中操作 ----
-const auditInDialog = (result: string) => {
-  if (!contentDialogRow.value) return
-  if (result === 'PASS') {
-    confirmPass(contentDialogRow.value.id)
-  } else if (result === 'BLOCK') {
-    promptBlock(contentDialogRow.value.id)
-  } else if (result === 'MANUAL_REVIEW') {
-    updateAudit(contentDialogRow.value.id, 'MANUAL_REVIEW').then(() => {
-      contentDialogVisible.value = false
-    })
-  }
-}
-
-// ---- 审核操作 ----
-const updateAudit = async (id: number, result: string): Promise<void> => {
-  try {
-    await request.put(`/admin/ai/safety-audits/${id}`, { auditResult: result })
-    ElMessage.success('操作成功')
-    // 更新表格中的行数据
-    const row = tableData.value.find((r) => r.id === id)
-    if (row) row.auditResult = result
-    if (contentDialogRow.value?.id === id) {
-      contentDialogRow.value.auditResult = result
-    }
-    fetchStats()
-  } catch {
-    ElMessage.error('操作失败')
-  }
-}
-
-const hasPassed = (row: AuditItem): boolean => row.auditResult === 'PASS'
-const hasBlocked = (row: AuditItem): boolean => row.auditResult === 'BLOCK'
-
-const confirmPass = (id: number) => {
-  ElMessageBox.confirm('确认通过该内容的审核？', '审核确认', {
-    confirmButtonText: '确认通过',
-    cancelButtonText: '取消',
-    type: 'success',
-  }).then(() => updateAudit(id, 'PASS').then(() => { contentDialogVisible.value = false }))
-}
-
-const promptBlock = (id: number) => {
-  ElMessageBox.prompt('请输入拦截原因', '拦截确认', {
-    confirmButtonText: '确认拦截',
-    cancelButtonText: '取消',
-    inputPlaceholder: '拦截原因',
-    inputType: 'textarea',
-    type: 'warning',
-  }).then(({ value }) => {
-    updateAudit(id, 'BLOCK').then(() => {
-      contentDialogVisible.value = false
-      request.put(`/admin/ai/safety-audits/${id}/remove`, { reason: value }).catch(() => {})
-    })
-  }).catch(() => {})
-}
-
-const handlePass = (row: AuditItem) => { confirmPass(row.id) }
-const handleBlock = (row: AuditItem) => { promptBlock(row.id) }
-const handleMarkReview = (row: AuditItem) => { updateAudit(row.id, 'MANUAL_REVIEW') }
 
 // ---- API ----
 const fetchData = async () => {
@@ -441,36 +347,6 @@ const handleReset = () => {
   fetchData()
 }
 
-const handleSelectionChange = (rows: AuditItem[]) => {
-  selectedRows.value = rows
-}
-
-// ---- 批量操作 ----
-const handleBatchPass = () => {
-  const ids = selectedRows.value.map((r) => r.id)
-  ElMessageBox.confirm(`确认批量通过 ${ids.length} 条内容？`, '批量审核', { type: 'success' })
-    .then(async () => {
-      try {
-        await request.put('/admin/ai/safety-audits/batch', { ids, auditResult: 'PASS' })
-        ElMessage.success('操作成功')
-        fetchData()
-        fetchStats()
-      } catch { ElMessage.error('操作失败') }
-    }).catch(() => {})
-}
-
-const handleBatchBlock = () => {
-  const ids = selectedRows.value.map((r) => r.id)
-  ElMessageBox.confirm(`确认批量拦截 ${ids.length} 条内容？`, '批量审核', { type: 'warning' })
-    .then(async () => {
-      try {
-        await request.put('/admin/ai/safety-audits/batch', { ids, auditResult: 'BLOCK' })
-        ElMessage.success('操作成功')
-        fetchData()
-        fetchStats()
-      } catch { ElMessage.error('操作失败') }
-    }).catch(() => {})
-}
 
 // ===== 工具 =====
 const getCallTypeLabel = (type: string): string => {

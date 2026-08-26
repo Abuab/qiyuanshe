@@ -621,6 +621,14 @@ onMounted(() => {
 })
 
 onShow(() => {
+  // 从「我的」页点开通会员跳转时，确保切到 VIP会员 Tab
+  const app = getApp()
+  if (app?.globalData?.vipTab === 'vip') {
+    app.globalData.vipTab = ''
+    if (systemStore.vipEnabled && userStore.isLoggedIn) {
+      switchTab('vip')
+    }
+  }
   fetchPackagesAndProfile()
   loadTopCardStatus()
 })

@@ -445,7 +445,7 @@ export class AiMatchmakerService {
       }
     }
 
-    // 4. 敏感词检查 → 输入拦截（AiSafetyService 51K词库） + 写入 AuditLog
+    // 4. 敏感词检查 → 输入拦截（AiSafetyService 内置分级词库） + 写入 AuditLog
     const inputCheck = this.safetyService.checkText(message)
     if (!inputCheck.passed) {
       await this.writeAuditLog(userId, message, inputCheck.hitWords)

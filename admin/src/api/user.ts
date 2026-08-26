@@ -110,6 +110,8 @@ export interface UserListResponse {
 export interface UpdateVipDto {
   level: number
   days: number
+  packageName?: string
+  packageId?: number
 }
 
 export const adminUsers = {

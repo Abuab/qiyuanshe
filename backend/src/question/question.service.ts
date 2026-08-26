@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Optional, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource, In } from 'typeorm'
-import { readdirSync, readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
@@ -78,50 +76,17 @@ export class QuestionService implements OnModuleInit {
   /** DFA 敏感词过滤器（Trie 树多模式匹配，O(N) 复杂度） */
   private sensitiveFilter = new SensitiveWordFilter()
 
-  async onModuleInit() {
-    await this.loadSensitiveWords()
-  }
+  /** 内置收敛敏感词库（不加载 51K 开源大词库，避免对正常回答文本误拦） */
+  private static readonly CURATED_KEYWORDS: string[] = [
+    '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
+    '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
+    '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
+    '加微信', '加我微信', '微商', '刷单',
+  ]
 
-  /** 加载敏感词库（本地 config/sensitive-words/ 目录） */
-  private async loadSensitiveWords(): Promise<void> {
-    try {
-      const candidateDirs = [
-        resolve(process.cwd(), 'config/sensitive-words'),
-        resolve(__dirname, '../../../config/sensitive-words'),
-        resolve(__dirname, '../../../../config/sensitive-words'),
-      ]
-      const wordsDir = candidateDirs.find(dir => existsSync(dir))
-      if (wordsDir) {
-        const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
-        if (txtFiles.length > 0) {
-          const wordSet = new Set<string>()
-          for (const file of txtFiles) {
-            try {
-              const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
-              raw.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .forEach(word => wordSet.add(word))
-            } catch { /* 单个文件读取失败跳过 */ }
-          }
-          if (wordSet.size > 0) {
-            this.sensitiveFilter.build(Array.from(wordSet))
-            this.logger.debug(`敏感词库加载完成，共 ${wordSet.size} 个词，DFA 已构建`)
-            return
-          }
-        }
-      }
-    } catch (e: any) {
-      this.logger.warn('敏感词库加载失败，使用硬编码兜底:', e?.message)
-    }
-    // 兜底：硬编码基础词库
-    this.sensitiveFilter.build([
-      '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
-      '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
-      '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
-      '加微信', '加我微信', '微商', '刷单',
-    ])
-    this.logger.debug('使用硬编码敏感词库兜底')
+  async onModuleInit() {
+    this.sensitiveFilter.build(QuestionService.CURATED_KEYWORDS)
+    this.logger.debug(`问答敏感词库加载完成，共 ${QuestionService.CURATED_KEYWORDS.length} 个词`)
   }
 
   async getQuestions(page: number = 1, limit: number = 20, userId?: number | null): Promise<QuestionListResult> {
@@ -471,7 +436,7 @@ export class QuestionService implements OnModuleInit {
   }
 
   /**
-   * 本地敏感词检查（使用 DFA Trie 树 51K+ 词库）
+   * 本地敏感词检查（使用内置收敛词库 CURATED_KEYWORDS）
    * - 命中：直接拒绝
    * - 未命中：进入待审核状态
    */

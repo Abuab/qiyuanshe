@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException, Optional, Inject, forwardRef, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, LessThan } from 'typeorm'
-import { readFileSync, existsSync, readdirSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { ChatMessage } from '../entities/ChatMessage'
 import { User } from '../entities/User'
@@ -122,8 +122,8 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * 加载敏感词库（优先级：远程 URL > 本地文件 > 硬编码兜底）
-   * 修复：支持从 SystemConfig 配置的远程 URL 拉取词库，兼容 JSON 数组和纯文本每行一词两种格式
+   * 加载敏感词库（优先级：远程 URL > 本地 JSON > 硬编码兜底）
+   * 使用收敛词库，不再加载 51K 开源大词库（config/sensitive-words/*.txt），避免对正常聊天误拦
    */
   private async loadSensitiveWords(): Promise<void> {
     // 1. 尝试从远程 URL 拉取
@@ -147,55 +147,19 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn('远程敏感词库拉取失败，回退到本地文件:', e?.message)
     }
 
-    // 2. 回退到本地文件（优先读取 config/sensitive-words/ 目录下的所有 .txt 文件）
+    // 2. 本地收敛词库 JSON（config/sensitive-words.json）
     let localWords: string[] | null = null
     try {
-      // 兼容多种部署形态：容器内挂载(/app/config) 优先，其次开发态相对路径
-      const candidateDirs = [
-        resolve(process.cwd(), 'config/sensitive-words'),
-        resolve(__dirname, '../../../config/sensitive-words'),
-        resolve(__dirname, '../../../../config/sensitive-words'),
-      ]
-      const wordsDir = candidateDirs.find(dir => existsSync(dir))
-      if (wordsDir) {
-        const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
-        if (txtFiles.length > 0) {
-          const localWordSet = new Set<string>()
-          for (const file of txtFiles) {
-            try {
-              const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
-              raw.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .forEach(word => localWordSet.add(word))
-            } catch {
-              // 单个文件读取失败跳过
-            }
-          }
-          if (localWordSet.size > 0) {
-            localWords = Array.from(localWordSet)
-            this.logger.debug(`本地 .txt 词库加载完成，从 ${txtFiles.length} 个文件读取，共 ${localWords.length} 个唯一词`)
-          }
+      const filePath = resolve(__dirname, '../../../config/sensitive-words.json')
+      if (existsSync(filePath)) {
+        const raw = readFileSync(filePath, 'utf-8')
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localWords = parsed.map((w: unknown) => String(w)).filter(w => w.length > 0)
         }
       }
     } catch (e: any) {
-      this.logger.warn('本地 .txt 词库目录加载失败:', e?.message)
-    }
-
-    // 2.1 降级：txt 目录无数据时尝试 JSON 文件
-    if (!localWords) {
-      try {
-        const filePath = resolve(__dirname, '../../../config/sensitive-words.json')
-        if (existsSync(filePath)) {
-          const raw = readFileSync(filePath, 'utf-8')
-          const parsed = JSON.parse(raw)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            localWords = parsed.map((w: unknown) => String(w)).filter(w => w.length > 0)
-          }
-        }
-      } catch (e: any) {
-        this.logger.warn('本地敏感词 JSON 文件加载失败:', e?.message)
-      }
+      this.logger.warn('本地敏感词 JSON 文件加载失败:', e?.message)
     }
 
     // 3. 合并词库（远程优先，去重）

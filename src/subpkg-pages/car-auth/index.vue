@@ -199,9 +199,8 @@ function handleSubmit() {
       }
       if (data?.code === 200 || data?.success) {
         uni.showToast({ title: '提交成功，等待审核', icon: 'success' })
-        authStatus.value = 0
-        refreshPreview()
-        setTimeout(() => loadStatus(), 1500)
+        // 提交成功后返回信息认证页，返回时 onShow 会刷新认证状态为「待审核」
+        setTimeout(() => safeNavigateBack(), 1000)
       } else {
         uni.showToast({ title: data?.msg || data?.message || '提交失败', icon: 'none' })
       }

@@ -2539,6 +2539,7 @@ async function handleVipSubmit() {
       level: vipForm.level,
       days: vipForm.days,
       packageName: vipForm.packageName || undefined,
+      packageId: vipForm.packageId ?? undefined,
     } as any)
     if (res.success) {
       ElMessage.success('VIP设置成功')

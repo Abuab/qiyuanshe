@@ -1,6 +1,4 @@
 import { Injectable, OnModuleInit, ForbiddenException, Logger } from '@nestjs/common'
-import { readdirSync, readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
 import { SensitiveWordFilter } from './sensitive-word.filter'
 
 /**
@@ -14,8 +12,8 @@ export class ContentFilterService implements OnModuleInit {
   private readonly logger = new Logger(ContentFilterService.name)
   private filter = new SensitiveWordFilter()
 
-  /** 硬编码兜底敏感词库 */
-  private static readonly FALLBACK_KEYWORDS: string[] = [
+  /** 内置收敛敏感词库（不加载 51K 开源大词库，避免对正常自由文本误拦） */
+  private static readonly CURATED_KEYWORDS: string[] = [
     '傻逼', '傻B', '煞笔', 'SB', 'sb', 'Sb', 'sB',
     '尼玛', '你妈', 'nmb', 'NMB', 'cnm', 'CNM', '草泥马', '艹你', '操你',
     '去死', '去你妈', '滚蛋', '滚犊子',
@@ -39,42 +37,8 @@ export class ContentFilterService implements OnModuleInit {
   ]
 
   async onModuleInit() {
-    await this.loadSensitiveWords()
-  }
-
-  private async loadSensitiveWords(): Promise<void> {
-    try {
-      const candidateDirs = [
-        resolve(process.cwd(), 'config/sensitive-words'),
-        resolve(__dirname, '../../../config/sensitive-words'),
-        resolve(__dirname, '../../../../config/sensitive-words'),
-      ]
-      const wordsDir = candidateDirs.find(dir => existsSync(dir))
-      if (wordsDir) {
-        const txtFiles = readdirSync(wordsDir).filter(f => f.endsWith('.txt'))
-        if (txtFiles.length > 0) {
-          const wordSet = new Set<string>()
-          for (const file of txtFiles) {
-            try {
-              const raw = readFileSync(resolve(wordsDir, file), 'utf-8')
-              raw.split('\n')
-                .map(line => line.trim())
-                .filter(line => line.length > 0)
-                .forEach(word => wordSet.add(word))
-            } catch { /* 单个文件读取失败跳过 */ }
-          }
-          if (wordSet.size > 0) {
-            this.filter.build(Array.from(wordSet))
-            this.logger.debug(`敏感词库加载完成，共 ${wordSet.size} 个词`)
-            return
-          }
-        }
-      }
-    } catch (e: any) {
-      this.logger.warn('[ContentFilterService] 敏感词库加载失败，使用硬编码兜底:', e?.message)
-    }
-    this.filter.build(ContentFilterService.FALLBACK_KEYWORDS)
-    this.logger.debug('[ContentFilterService] 使用硬编码敏感词库兜底')
+    this.filter.build(ContentFilterService.CURATED_KEYWORDS)
+    this.logger.debug(`内容安全过滤词库加载完成，共 ${ContentFilterService.CURATED_KEYWORDS.length} 个词`)
   }
 
   /**

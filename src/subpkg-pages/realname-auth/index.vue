@@ -182,9 +182,14 @@ onMounted(async () => {
 
 let certStatusMounted = false
 onShow(() => {
-  // 从子页面（单身承诺等）返回时刷新认证状态，避免 onMounted 仅执行一次导致状态滞后
+  // 从子页面返回时刷新认证状态，避免 onMounted 仅执行一次导致状态滞后
   if (!certStatusMounted) { certStatusMounted = true; return }
   fetchSinglePromiseStatus()
+  fetchRealnameStatus()
+  fetchAuthStatus('/education-auth/status', educationAction, educationActionClass)
+  fetchAuthStatus('/property-auth/status', propertyAction, propertyActionClass)
+  fetchAuthStatus('/car-auth/status', carAction, carActionClass)
+  fetchStoreCertStatus()
 })
 
 // 学历/房产/车产：返回 { exists, status }（0待审核 / 1已通过 / 2已拒绝）

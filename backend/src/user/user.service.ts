@@ -670,8 +670,7 @@ export class UserService {
     if (dto.occupation && !KNOWN_OCCUPATIONS.has(dto.occupation)) {
       this.contentFilter.checkAndThrow(dto.occupation, '职业')
     }
-    if (dto.hometown) this.contentFilter.checkAndThrow(dto.hometown, '家乡')
-    if (dto.residence) this.contentFilter.checkAndThrow(dto.residence, '现居地')
+    // 户籍地/现居地来自省市选择器（非用户自由输入），不做敏感词校验，避免正常地名被大词库误拦
 
     // 只更新传入的非 undefined 字段
     if (dto.nickname !== undefined) user.nickname = dto.nickname

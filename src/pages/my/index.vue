@@ -560,7 +560,12 @@ const safeNavigateTo = (url: string, fallbackUrl?: string, fallbackFn?: () => vo
 
 const goToLogin = () => safeNavigateTo('/pages/login/index')
 const goToEditProfile = () => safeNavigateTo('/pages/edit-profile/index')
-const goToVip = () => uni.switchTab({ url: '/pages/vip/index' })
+const goToVip = () => {
+  const app = getApp()
+  app.globalData = app.globalData || {}
+  app.globalData.vipTab = 'vip'
+  uni.switchTab({ url: '/pages/vip/index' })
+}
 const goToQuestions = () => {
   if (!isLoggedIn.value) { goToLogin(); return }
   // 优先跳转我的回答，失败则跳转问答广场

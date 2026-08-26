@@ -314,6 +314,8 @@ async function refreshCertResult() {
     if (status === 2) {
       showToast('实名认证成功')
       userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+      // 认证成功后自动返回信息认证页，稍作延迟让成功提示可见
+      setTimeout(() => safeNavigateBack(), 1000)
     } else if (status === 3) {
       showToast('认证失败，请重新认证')
     }

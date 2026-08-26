@@ -1337,6 +1337,17 @@ bash scripts/monitor.sh
 0 2 * * * certbot renew --quiet --webroot -w /opt/qys/docker/nginx/certbot/www
 ```
 
+> **当前生产环境实际配置**（服务器 `/usr/local/src/qiyuanshe`，已生效）：
+>
+> ```cron
+> # 数据库每日备份（凌晨 3 点）
+> 0 3 * * * cd /usr/local/src/qiyuanshe && bash scripts/backup.sh >> logs/backup.log 2>&1
+> # 系统监控告警（每 10 分钟，脚本内部写 logs/monitor.log 并发送 Webhook 告警）
+> */10 * * * * cd /usr/local/src/qiyuanshe && bash scripts/monitor.sh > /dev/null 2>&1
+> # SSL 证书自动续期（每天凌晨 2 点）
+> 0 2 * * * certbot renew --quiet --webroot -w /usr/local/src/qiyuanshe/docker/nginx/certbot/www
+> ```
+
 ## OSS 对象存储 & CDN 加速接入
 
 ### 架构图

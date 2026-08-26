@@ -1,10 +1,10 @@
-import { Controller, Get, Put, Param, Body, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { In, Repository } from 'typeorm'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
 import { RoleGuard } from '../admin/role.guard'
 import { Roles } from '../admin/roles.decorator'
-import { ContentSafetyAudit, SafetyAuditResult, BlockReasonType } from '../entities/ContentSafetyAudit'
+import { ContentSafetyAudit, SafetyAuditResult } from '../entities/ContentSafetyAudit'
 import { User } from '../entities/User'
 import { Result } from '../common/result'
 import { AdminRole } from '../shared/enums'
@@ -101,57 +101,6 @@ export class AdminAiSafetyAuditController {
     ])
 
     return Result.success({ pending: 0, approved, blocked, flagged })
-  }
-
-  /** 更新单条审核状态 */
-  @Put(':id')
-  async updateAudit(
-    @Param('id') id: number,
-    @Body('auditResult') auditResult: string,
-  ) {
-    const audit = await this.auditRepo.findOne({ where: { id } })
-    if (!audit) return Result.notFound('审核记录不存在')
-
-    const mapped = mapAuditResult(auditResult)
-    if (!mapped) return Result.badRequest('无效的审核结果')
-
-    audit.result = mapped
-    if (auditResult === 'BLOCK' && !audit.blockReason) {
-      audit.blockReason = BlockReasonType.OTHER
-    }
-    await this.auditRepo.save(audit)
-
-    return Result.success(null, '审核状态已更新')
-  }
-
-  /** 批量更新审核状态 */
-  @Put('batch')
-  async batchUpdate(@Body('ids') ids: number[], @Body('auditResult') auditResult: string) {
-    if (!ids?.length) return Result.badRequest('请选择审核记录')
-    const mapped = mapAuditResult(auditResult)
-    if (!mapped) return Result.badRequest('无效的审核结果')
-
-    const updateData: any = { result: mapped }
-    if (auditResult === 'BLOCK') updateData.blockReason = BlockReasonType.OTHER
-    await this.auditRepo.update(ids, updateData)
-    return Result.success(null, `已更新 ${ids.length} 条记录`)
-  }
-
-  /** 下架内容（拦截 + 记录原因） */
-  @Put(':id/remove')
-  async removeContent(
-    @Param('id') id: number,
-    @Body('reason') reason?: string,
-  ) {
-    const audit = await this.auditRepo.findOne({ where: { id } })
-    if (!audit) return Result.notFound('审核记录不存在')
-
-    audit.result = SafetyAuditResult.BLOCK
-    audit.blockReason = BlockReasonType.OTHER
-    audit.detail = (audit.detail || '') + `\n下架原因: ${reason || '管理员手动下架'}`
-    await this.auditRepo.save(audit)
-
-    return Result.success(null, '内容已下架')
   }
 }
 

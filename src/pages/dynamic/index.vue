@@ -126,9 +126,9 @@
           <view class="user-info">
             <view class="user-name-row">
               <text class="user-name">{{ item.nickname }}</text>
-              <view v-if="item.isRealName" class="realname-tag">
-                <text class="realname-icon">✓</text>
-                <text class="realname-text">已实名</text>
+              <view v-if="item.isRealName" class="real-name-badge">
+                <AppIcon name="icon-shimingrenzheng" size="20" color="#FFFFFF" />
+                <text>已实名</text>
               </view>
             </view>
             <view class="user-tags">
@@ -950,6 +950,21 @@ onShow(() => {
 .realname-text {
   font-size: 20rpx;
   color: #409EFF;
+}
+
+/* 已实名标签（与首页用户列表 user-card 保持一致） */
+.real-name-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+  padding: 2rpx 4rpx;
+  font-size: 20rpx;
+  color: #fff;
+  background-color: #4d9fff;
+  border-radius: 10rpx;
+  line-height: 1.4;
+  margin-left: 6rpx;
 }
 
 .user-tags {

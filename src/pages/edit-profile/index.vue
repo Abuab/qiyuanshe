@@ -467,16 +467,16 @@
             v-for="(opt, idx) in housingOptions"
             :key="idx"
             class="popup-option"
-            :class="{ active: tempHousing.includes(opt) }"
-            @tap="toggleHousing(opt)"
+            :class="{ active: form.housingRequirement === opt }"
+            @tap="selectHousing(opt)"
           >
             <text>{{ opt }}</text>
           </view>
         </view>
       </view>
       <view class="popup-footer">
-        <view class="popup-confirm" @tap="confirmHousingPicker">
-          <text>确定</text>
+        <view class="popup-confirm" @tap="closeHousingPicker">
+          <text>取消</text>
         </view>
       </view>
     </view>
@@ -800,7 +800,6 @@ const emptyCells = computed(() => {
 
 // ===== 弹窗状态 =====
 const showHousingPopup = ref(false)
-const tempHousing = ref<string[]>([])
 const showHousingStatusPopup = ref(false)
 const showCarStatusPopup = ref(false)
 const showTagPopup = ref(false)
@@ -1224,24 +1223,11 @@ const onAcceptChildrenChange = (e: { detail: { value: number } }) => {
   autoSave()
 }
 
-// ===== 住房要求弹窗 =====
-const openHousingPicker = () => {
-  tempHousing.value = form.value.housingRequirement
-    ? form.value.housingRequirement.split(',').map((s) => s.trim()).filter(Boolean)
-    : []
-  showHousingPopup.value = true
-}
+// ===== 住房要求弹窗（单选） =====
+const openHousingPicker = () => { showHousingPopup.value = true }
 const closeHousingPicker = () => { showHousingPopup.value = false }
-const toggleHousing = (opt: string) => {
-  const idx = tempHousing.value.indexOf(opt)
-  if (idx > -1) {
-    tempHousing.value.splice(idx, 1)
-  } else {
-    tempHousing.value.push(opt)
-  }
-}
-const confirmHousingPicker = () => {
-  form.value.housingRequirement = tempHousing.value.join(',')
+const selectHousing = (opt: string) => {
+  form.value.housingRequirement = opt
   showHousingPopup.value = false
   autoSave()
 }
