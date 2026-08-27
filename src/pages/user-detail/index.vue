@@ -1137,9 +1137,17 @@ const isRealNameNotVerified = computed(() => {
 })
 
 // ===== 提醒对方认证 =====
+let isNavigatingToLogin = false
 const goToLogin = () => {
+  if (isNavigatingToLogin) return
+  const pages = getCurrentPages()
+  if (pages[pages.length - 1]?.route === 'pages/login/index') return
+  isNavigatingToLogin = true
   const params = `from=detail&userId=${userId.value}`
-  uni.navigateTo({ url: `/pages/login/index?${params}` })
+  uni.navigateTo({
+    url: `/pages/login/index?${params}`,
+    complete: () => { isNavigatingToLogin = false },
+  })
 }
 
 const goToAnswer = (item: any) => {
