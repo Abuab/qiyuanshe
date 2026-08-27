@@ -1,3 +1,5 @@
 export * from './wechat-login.dto'
 export * from './phone-login.dto'
 export * from './refresh-token.dto'
+export * from './send-sms-code.dto'
+export * from './sms-login.dto'

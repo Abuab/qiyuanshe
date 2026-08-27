@@ -56,9 +56,13 @@ export async function callTencentApi<T = any>(opts: {
   action: string
   region?: string
   params: Record<string, any>
+  secretId?: string
+  secretKey?: string
 }): Promise<T> {
   const cfg = getEidConfig()
-  if (!cfg.secretId || !cfg.secretKey) {
+  const secretId = opts.secretId || cfg.secretId
+  const secretKey = opts.secretKey || cfg.secretKey
+  if (!secretId || !secretKey) {
     throw new Error('腾讯云密钥未配置')
   }
   const { service, host, version, action, params } = opts
@@ -95,7 +99,7 @@ export async function callTencentApi<T = any>(opts: {
   ].join('\n')
 
   // 3. 计算签名
-  const secretDate = hmac('TC3' + cfg.secretKey, date)
+  const secretDate = hmac('TC3' + secretKey, date)
   const secretService = hmac(secretDate, service)
   const secretSigning = hmac(secretService, 'tc3_request')
   const signature = crypto
@@ -104,7 +108,7 @@ export async function callTencentApi<T = any>(opts: {
     .digest('hex')
 
   // 4. Authorization
-  const authorization = `${algorithm} Credential=${cfg.secretId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+  const authorization = `${algorithm} Credential=${secretId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 
   const headers: Record<string, string> = {
     Authorization: authorization,

@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -15,6 +15,7 @@ import { UserService } from '../user/user.service'
 import { ContentFilterService } from '../common/content-filter.service'
 import { RedisService } from '../common/redis.service'
 import { CryptoService } from '../common/crypto.service'
+import { SmsService } from '../common/sms.service'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 interface WechatSession {
@@ -57,6 +58,7 @@ export class AuthService {
     private readonly contentFilter: ContentFilterService,
     private readonly redis: RedisService,
     private readonly cryptoService: CryptoService,
+    private readonly smsService: SmsService,
   ) {}
   private readonly logger = new Logger(AuthService.name)
 
@@ -370,6 +372,157 @@ export class AuthService {
     const userInfo = this.sanitizeUser(user)
 
     return { user: userInfo, tokens }
+  }
+
+  /** 发送短信验证码 */
+  async sendSmsCode(phone: string): Promise<void> {
+    // 1. 校验手机号格式
+    if (!/^1[3-9]\d{9}$/.test(phone)) {
+      throw new BadRequestException('手机号格式不正确')
+    }
+
+    // 2. 发送频率限制：60 秒内只能发送一次
+    const cooldownKey = `sms:cooldown:${phone}`
+    const cooldown = await this.redis.get(cooldownKey)
+    if (cooldown) {
+      throw new BadRequestException('发送过于频繁，请稍后再试')
+    }
+
+    // 3. 每日发送次数限制（24 小时滚动窗口，最多 10 次）
+    const dailyKey = `sms:daily:${phone}`
+    const dailyCount = parseInt(await this.redis.get(dailyKey) || '0', 10)
+    if (dailyCount >= 10) {
+      throw new BadRequestException('今日发送次数已达上限')
+    }
+
+    // 4. 生成 6 位验证码并存储（5 分钟有效）
+    const code = String(Math.floor(100000 + Math.random() * 900000))
+    await this.redis.set(`sms:code:${phone}`, code, 300)
+
+    // 5. 调用腾讯云短信发送
+    await this.smsService.sendVerificationCode(phone, code)
+
+    // 6. 记录限流
+    await this.redis.set(cooldownKey, '1', 60)
+    await this.redis.set(dailyKey, String(dailyCount + 1), 86400)
+  }
+
+  /** 手机验证码登录 */
+  async smsLogin(code: string, phone: string, smsCode: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+    // 1. code2Session 换取 openid
+    const session = await this.code2Session(code)
+    if (!session.openid) {
+      throw new UnauthorizedException('微信登录失败，无效的code')
+    }
+
+    // 2. 校验短信验证码（校验通过后立即失效）
+    await this.verifySmsCode(phone, smsCode)
+
+    // 3. 检查该手机号是否已被其他账号绑定（排除已删除账号）
+    const phoneUser = await this.userRepository.findOne({
+      where: { phone, isDeleted: 0 },
+    })
+    if (phoneUser && phoneUser.openid !== session.openid) {
+      throw new UnauthorizedException('该手机号已绑定其他账号')
+    }
+
+    // 4. 按 openid 查找或创建用户（与 phoneLogin 保持一致）
+    let user = await this.userRepository.findOne({
+      where: { openid: session.openid, isDeleted: 0 },
+    })
+
+    if (!user) {
+      const deletedUser = await this.userRepository.findOne({
+        where: { openid: session.openid, isDeleted: 1 },
+      })
+      if (deletedUser) {
+        user = deletedUser
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
+        this.resetReactivatedUser(user)
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
+        user.phone = phone
+        await this.userRepository.save(user)
+        await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
+      } else {
+        const userId = await this.userService.generateUserId()
+        user = this.userRepository.create({
+          openid: session.openid,
+          unionId: session.unionid || null,
+          nickname: `昵称${userId}`,
+          userId,
+          phone,
+          status: await this.getNewUserStatus(),
+        })
+        user = await this.userRepository.save(user)
+
+        await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
+        this.agreementLogStorage.saveLog({
+          userId: user.id,
+          agreementType: 'USER_AGREEMENT',
+          version: '1.0',
+          action: 'agree',
+          ipAddress: ipAddress || '',
+          userAgent: userAgent || '',
+        }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
+        user.protocolAgreedAt = new Date()
+        user.protocolVersion = '1.0'
+      }
+    } else {
+      if (!user.phone) {
+        user.phone = phone
+      }
+      if (!user.protocolAgreedAt) {
+        const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
+        this.resetReactivatedUser(user)
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
+        user.phone = phone
+        Object.assign(user, savedVip)
+        await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
+      }
+    }
+
+    if (user.status === 3) {
+      throw new UnauthorizedException('账号已被禁用')
+    }
+    if (user.status === 0) {
+      throw new UnauthorizedException('账号审核中，请耐心等待')
+    }
+    // status=4（已锁定）允许登录，由前端弹窗引导确认脱单意向
+
+    if (!user.protocolAgreedAt) {
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
+    }
+
+    user.lastLoginAt = new Date()
+    user.lastActiveAt = new Date()
+    await this.userRepository.save(user)
+
+    const tokens = this.generateToken(user)
+    const userInfo = this.sanitizeUser(user)
+
+    return { user: userInfo, tokens }
+  }
+
+  private async verifySmsCode(phone: string, smsCode: string): Promise<void> {
+    const key = `sms:code:${phone}`
+    const stored = await this.redis.get(key)
+    if (!stored || stored !== smsCode) {
+      throw new UnauthorizedException('验证码错误或已过期')
+    }
+    await this.redis.del(key)
   }
 
   async refreshToken(refreshToken: string): Promise<TokenPair> {

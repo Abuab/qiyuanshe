@@ -68,6 +68,38 @@
       </view>
     </view>
 
+    <!-- 手机验证码登录弹窗 -->
+    <view v-if="showSmsPopup" class="phone-popup" @tap="handleSmsPopupClose">
+      <view class="phone-mask" />
+      <view class="phone-card" @tap.stop>
+        <text class="phone-title">手机验证码登录</text>
+        <text class="phone-desc">输入手机号获取验证码</text>
+        <view class="sms-form">
+          <input
+            v-model="smsPhone"
+            class="sms-input"
+            type="number"
+            maxlength="11"
+            placeholder="请输入手机号"
+          />
+          <view class="sms-code-row">
+            <input
+              v-model="smsCode"
+              class="sms-input sms-code-input"
+              type="number"
+              maxlength="6"
+              placeholder="请输入验证码"
+            />
+            <view class="sms-send-btn" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
+              <text>{{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}</text>
+            </view>
+          </view>
+        </view>
+        <button class="get-phone-btn" @tap="submitSmsLogin">登录</button>
+        <text class="phone-cancel" @tap="handleSmsPopupClose">取消</text>
+      </view>
+    </view>
+
     <!-- 加载遮罩 -->
     <view v-if="loading" class="loading-mask">
       <view class="loading-spinner" />
@@ -110,6 +142,12 @@ const illustrationImg = ref('')
 const pendingAgreementReport = ref(false)
 // 预存 wx.login code，在 getPhoneNumber 之前获取，确保 session key 一致
 const phoneLoginCode = ref('')
+// 手机验证码登录
+const showSmsPopup = ref(false)
+const smsPhone = ref('')
+const smsCode = ref('')
+const smsCountdown = ref(0)
+let smsTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(async () => {
   await loadLoginConfig()
@@ -201,8 +239,15 @@ const handlePhoneCodeLogin = () => {
     showProtocol.value = true
     return
   }
-  // 手机验证码登录：先获取微信授权码，再跳转验证码页面
-  performWechatLogin()
+  showSmsPopup.value = true
+}
+
+const handleSmsPopupClose = () => {
+  showSmsPopup.value = false
+  if (smsTimer) {
+    clearInterval(smsTimer)
+    smsTimer = null
+  }
 }
 
 const handlePhonePopupClose = () => {
@@ -225,16 +270,59 @@ const getDeviceInfo = (): string => {
   }
 }
 
-/** 微信授权 → 后端登录 */
-const performWechatLogin = async () => {
+/** 发送短信验证码 */
+const sendSmsCode = async () => {
+  const phone = smsPhone.value.trim()
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    showToast('请输入正确的手机号', 'none')
+    return
+  }
+  if (smsCountdown.value > 0) return
+
   try {
-    loading.value = true
+    await post('/auth/sms-code', { phone })
+    showToast('验证码已发送', 'none')
+    smsCountdown.value = 60
+    smsTimer = setInterval(() => {
+      smsCountdown.value -= 1
+      if (smsCountdown.value <= 0 && smsTimer) {
+        clearInterval(smsTimer)
+        smsTimer = null
+      }
+    }, 1000)
+  } catch (error: any) {
+    logger.error('发送短信验证码失败:', error?.message || error)
+    showToast(error?.message || '发送失败，请重试', 'none')
+  }
+}
+
+/** 手机验证码登录 */
+const submitSmsLogin = async () => {
+  const phone = smsPhone.value.trim()
+  const code = smsCode.value.trim()
+  if (!/^1[3-9]\d{9}$/.test(phone)) {
+    showToast('请输入正确的手机号', 'none')
+    return
+  }
+  if (!/^\d{6}$/.test(code)) {
+    showToast('请输入6位验证码', 'none')
+    return
+  }
+
+  loading.value = true
+  try {
     const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
     if (!loginRes.code) throw new Error('微信登录失败')
 
-    const result = await post<LoginResult>('/auth/wechat-login', { code: loginRes.code, deviceInfo: getDeviceInfo() })
+    const result = await post<LoginResult>('/auth/sms-login', {
+      code: loginRes.code,
+      phone,
+      smsCode: code,
+      deviceInfo: getDeviceInfo(),
+    })
+
     if (result?.user && result?.tokens) {
       const profileComplete = !result.user.isNewUser
       userStore.login(result.tokens.accessToken, result.user, profileComplete)
@@ -243,12 +331,14 @@ const performWechatLogin = async () => {
       showToast('登录成功', 'success')
       handleLoginSuccess()
     } else {
-      throw new Error('登录响应数据异常')
+      showToast('登录失败，请重试', 'none')
     }
   } catch (error: any) {
-    logger.error('微信登录失败:', error)
-    showToast(error.message || '登录失败，请重试', 'none')
-  } finally { loading.value = false }
+    logger.error('手机验证码登录失败:', error?.errMsg || error)
+    showToast(error?.message || '登录失败，请重试', 'none')
+  } finally {
+    loading.value = false
+  }
 }
 
 /** 获取手机号回调 */
@@ -472,6 +562,37 @@ const handleLoginSuccess = () => {
 }
 .phone-cancel {
   font-size: 28rpx; color: #999; margin-top: 28rpx; text-decoration: underline;
+}
+
+// ===== 手机验证码登录表单 =====
+.sms-form {
+  width: 100%; display: flex; flex-direction: column; gap: 20rpx;
+  margin-bottom: 40rpx;
+}
+.sms-input {
+  width: 100%; height: 84rpx;
+  background: #F7F7F7; border-radius: 16rpx;
+  padding: 0 24rpx; box-sizing: border-box;
+  font-size: 30rpx; color: #333;
+}
+.sms-code-row {
+  width: 100%; display: flex; align-items: center; gap: 16rpx;
+}
+.sms-code-input {
+  flex: 1;
+}
+.sms-send-btn {
+  flex-shrink: 0; height: 84rpx; min-width: 176rpx;
+  padding: 0 20rpx; box-sizing: border-box;
+  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+  border-radius: 16rpx;
+  display: flex; align-items: center; justify-content: center;
+  text { font-size: 26rpx; color: #fff; font-weight: 500; }
+  &:active { opacity: 0.85; }
+  &.disabled {
+    background: #E5E5E5;
+    text { color: #999; }
+  }
 }
 
 // ===== 加载遮罩 =====

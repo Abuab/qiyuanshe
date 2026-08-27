@@ -12,7 +12,7 @@ import { ThrottlerGuard, Throttle } from '@nestjs/throttler'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { AuthService } from './auth.service'
-import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto } from './dto'
+import { WechatLoginDto, PhoneLoginDto, RefreshTokenDto, SendSmsCodeDto, SmsLoginDto } from './dto'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
 import { Result } from '../common/result'
 import { Feedback } from '../entities/Feedback'
@@ -53,6 +53,27 @@ export class AuthController {
       ipAddress,
       userAgent,
     )
+    return Result.success(result)
+  }
+
+  @Post('sms-code')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async sendSmsCode(@Body() dto: SendSmsCodeDto) {
+    await this.authService.sendSmsCode(dto.phone)
+    return Result.success(null, '验证码已发送')
+  }
+
+  @Post('sms-login')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async smsLogin(@Body() dto: SmsLoginDto, @Request() req: any) {
+    const ip = req.headers['x-forwarded-for'] || req.ip || ''
+    const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    const userAgent = (dto.deviceInfo || req.headers['user-agent'] || '') as string
+    const result = await this.authService.smsLogin(dto.code, dto.phone, dto.smsCode, ipAddress, userAgent)
     return Result.success(result)
   }
 
