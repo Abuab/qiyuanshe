@@ -16,37 +16,23 @@ USE `qys_match`;
 -- =============================================
 INSERT IGNORE INTO `system_configs` (`configKey`, `configValue`, `description`) VALUES
 -- 基础配置
-('basic:appName', '栖缘社', '小程序名称'),
-('basic:splashText', '正在为您寻找心仪的对象...', '开场提示文字'),
-('basic:servicePhone', '', '客服电话'),
-('basic:serviceWechat', '', '客服微信'),
-('basic:logo', '', 'Logo URL'),
-('basic:aboutUs', '', '关于我们'),
-('basic:userAgreement', '', '用户协议'),
-('basic:privacyPolicy', '', '隐私政策'),
-('basic:vipAgreement', '', '会员服务协议'),
+('basic.appName', '栖缘社', '小程序名称'),
+('basic.splashText', '正在为您寻找心仪的对象...', '开场提示文字'),
+('basic.userAgreement', '', '用户协议'),
+('basic.privacyPolicy', '', '隐私政策'),
+('basic.vipAgreement', '', '会员服务协议'),
 
 -- 分享配置
-('share:shareTitle', '我在栖缘社等你，快来认识我吧！', '分享标题'),
-('share:shareDesc', '一个真诚的婚恋平台', '分享描述'),
-('share:shareImage', '', '分享图片'),
-('share:posterTemplates', '[]', '海报模板配置'),
+('share.shareTitle', '我在栖缘社等你，快来认识我吧！', '分享标题'),
+('share.shareDesc', '一个真诚的婚恋平台', '分享描述'),
 
 -- VIP配置
-('vip:freeChatLimit', '3', '非VIP每日聊天限制'),
-('vip:vipBenefits', '', 'VIP权益说明'),
-
--- 支付配置
-('payment:wechatMchId', '', '微信支付商户号'),
-('payment:wechatApiV3Key', '', 'API v3密钥'),
-('payment:notifyUrl', 'https://api.qys.com/payment/notify', '支付回调URL'),
+('vip.freeChatLimit', '3', '非VIP每日聊天限制'),
+('vip.vipBenefits', '', 'VIP权益说明'),
 
 -- 审核配置
-('audit:tencentSecretId', '', '腾讯云SecretId'),
-('audit:tencentSecretKey', '', '腾讯云SecretKey'),
-('audit:aiAuditEnabled', 'true', 'AI审核开关'),
-('audit:sensitiveWords', '', '敏感词库'),
-('audit:manualAuditEnabled', 'true', '人工审核开关');
+('audit.aiEnabled', 'true', 'AI审核开关'),
+('audit.manualReviewEnabled', 'true', '人工审核开关');
 
 -- =============================================
 -- 数据字典预置数据

@@ -91,8 +91,9 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken, requireLogin } from '@/utils/auth'
 import { getFullImageUrl } from '@/utils/common'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navBarHeightPx = ref(44)
 
 const localImagePath = ref('')
@@ -122,7 +123,6 @@ onMounted(() => {
   if (!requireLogin()) return
 
   const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   loadStatus()
 })

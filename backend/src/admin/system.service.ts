@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Optional, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
+import { RedisService } from '../common/redis.service'
+
+/** 系统配置缓存 key 前缀（与 system/system.service.ts 保持一致） */
+const SYS_CFG_PREFIX = 'sys:cfg:'
 
 export interface SystemConfigs {
   basic?: Record<string, any>
   share?: Record<string, any>
   vip?: Record<string, any>
-  payment?: Record<string, any>
   audit?: Record<string, any>
   dict?: Record<string, any>
   icon?: Record<string, any>
@@ -20,6 +23,9 @@ export class AdminSystemService {
   constructor(
     @InjectRepository(SystemConfig)
     private readonly systemConfigRepository: Repository<SystemConfig>,
+    @Optional()
+    @Inject(RedisService)
+    private readonly redisService?: RedisService,
   ) {}
 
   async getConfigs(): Promise<SystemConfigs> {
@@ -69,6 +75,8 @@ export class AdminSystemService {
         }
       }
     }
+
+    await this.invalidateConfigCache()
   }
 
   async getConfig(key: string): Promise<string | null> {
@@ -93,6 +101,17 @@ export class AdminSystemService {
         description: key,
       })
       await this.systemConfigRepository.save(config)
+    }
+
+    await this.invalidateConfigCache()
+  }
+
+  /** 清空系统配置缓存（与 system.service.ts 共用同一前缀） */
+  private async invalidateConfigCache(): Promise<void> {
+    try {
+      await this.redisService?.delByPattern(`${SYS_CFG_PREFIX}*`)
+    } catch {
+      // 缓存清理失败不影响主流程
     }
   }
 }

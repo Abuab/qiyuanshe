@@ -292,13 +292,6 @@
           }
         },
         {
-          "path": "about/index",
-          "style": {
-            "navigationBarTitleText": "关于我们",
-            "navigationStyle": "custom"
-          }
-        },
-        {
           "path": "love-quotes/index",
           "style": {
             "navigationBarTitleText": "爱情语录",

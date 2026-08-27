@@ -674,7 +674,6 @@ const refreshMyProfileGen = async () => {
     profileGenLoading.value = false
   }
 }
-const goToSettings = () => safeNavigateTo('/subpkg-pages/settings/index')
 const goToFollows = () => safeNavigateTo('/subpkg-pages/my-follows/index?tab=following')
 const goToFollowers = () => safeNavigateTo('/subpkg-pages/my-follows/index?tab=followers')
 const goToVisitors = () => safeNavigateTo('/subpkg-pages/my-visitors/index?tab=visitors')

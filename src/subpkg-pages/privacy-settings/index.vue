@@ -92,19 +92,18 @@ import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { logger } from '@/utils/logger'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navTopPx = ref(0)
 const showDialog = ref(false)
 
 const pageIcons = computed(() => systemStore.icons?.page || {})
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  navTopPx.value = statusBarHeight.value + 44
 })
 
 const handleBack = () => {

@@ -36,6 +36,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { icons } from '@/config/icons'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 import { getFullImageUrl } from '@/utils/common'
 import { useSystemStore } from '@/store/system'
 import { logger } from '@/utils/logger'
@@ -43,7 +44,7 @@ import { logger } from '@/utils/logger'
 const systemStore = useSystemStore()
 const entryName = computed(() => systemStore.quickEntryNames?.[0] || '红娘评语')
 
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navBarHeightPx = ref(44)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 const loading = ref(true)
@@ -51,7 +52,6 @@ const comments = ref<any[]>([])
 
 onMounted(async () => {
   const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
   try {
     const res = await get<any>('/matchmaker-comments')

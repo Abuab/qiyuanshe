@@ -1,4 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common'
+import { APP_INTERCEPTOR } from '@nestjs/core'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
 import { jwtConfig } from '../config/jwt'
@@ -189,7 +190,7 @@ import { AdminOperationTagService } from './operation-tag.service'
     VipPackageService,
     VipService,
     AdminSeederService,
-    AdminAuditInterceptor,
+    { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     UserScoreService,
     AdminMessageTemplateService,
     AdminOperationTagService,

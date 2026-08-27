@@ -38,8 +38,9 @@ import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navBarHeightPx = ref(44)
 const userStore = useUserStore()
 
@@ -53,7 +54,6 @@ const faqs = ref([
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
 })
 

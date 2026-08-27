@@ -1,7 +1,15 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit, Optional, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { SystemConfig } from '../entities/SystemConfig'
+import { RedisService } from '../common/redis.service'
+
+/** 系统配置缓存 key 前缀（与 admin/system.service.ts 保持一致） */
+const SYS_CFG_PREFIX = 'sys:cfg:'
+/** 全量配置缓存 key */
+const SYS_CFG_ALL_KEY = 'sys:cfg:all'
+/** 缓存有效期（秒） */
+const SYS_CFG_TTL = 300
 
 /** 默认选项字典 */
 const DEFAULT_DICTS: Record<string, any> = {
@@ -46,6 +54,9 @@ export class SystemService implements OnModuleInit {
   constructor(
     @InjectRepository(SystemConfig)
     private readonly configRepository: Repository<SystemConfig>,
+    @Optional()
+    @Inject(RedisService)
+    private readonly redisService?: RedisService,
   ) {}
 
   async onModuleInit() {
@@ -98,8 +109,27 @@ export class SystemService implements OnModuleInit {
   }
 
   async getAllConfigs(): Promise<Record<string, any>> {
-    const configs = await this.configRepository.find()
+    try {
+      const cached = await this.redisService?.get(SYS_CFG_ALL_KEY)
+      if (cached) return JSON.parse(cached)
+    } catch (error: any) {
+      this.logger.warn(`[Config] 读取全量配置缓存失败，回退数据库: ${error?.message}`)
+    }
 
+    const configs = await this.configRepository.find()
+    const result = this.buildConfigMap(configs)
+
+    try {
+      await this.redisService?.set(SYS_CFG_ALL_KEY, JSON.stringify(result), SYS_CFG_TTL)
+    } catch (error: any) {
+      this.logger.warn(`[Config] 写入全量配置缓存失败: ${error?.message}`)
+    }
+
+    return result
+  }
+
+  /** 将配置行按 group.key 组装为嵌套对象 */
+  private buildConfigMap(configs: SystemConfig[]): Record<string, any> {
     const result: Record<string, any> = {
       basic: {},
       share: {},
@@ -128,8 +158,21 @@ export class SystemService implements OnModuleInit {
   }
 
   async getConfig(key: string): Promise<string | null> {
+    const cacheKey = `${SYS_CFG_PREFIX}${key}`
+    try {
+      const cached = await this.redisService?.get(cacheKey)
+      if (cached !== null && cached !== undefined) return cached
+    } catch (error: any) {
+      this.logger.warn(`[Config] 读取配置缓存失败，回退数据库: ${error?.message}`)
+    }
+
     const config = await this.configRepository.findOne({ where: { configKey: key } })
     if (config) {
+      try {
+        await this.redisService?.set(cacheKey, config.configValue, SYS_CFG_TTL)
+      } catch (error: any) {
+        this.logger.warn(`[Config] 写入配置缓存失败: ${error?.message}`)
+      }
       return config.configValue
     }
     return null
@@ -154,6 +197,17 @@ export class SystemService implements OnModuleInit {
           await this.configRepository.save(config)
         }
       }
+    }
+
+    await this.invalidateConfigCache()
+  }
+
+  /** 清空系统配置缓存（写库后调用，避免前端在 TTL 内读到旧值） */
+  async invalidateConfigCache(): Promise<void> {
+    try {
+      await this.redisService?.delByPattern(`${SYS_CFG_PREFIX}*`)
+    } catch (error: any) {
+      this.logger.warn(`[Config] 清空配置缓存失败: ${error?.message}`)
     }
   }
 

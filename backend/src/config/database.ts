@@ -21,7 +21,10 @@ export const databaseConfig = (): TypeOrmModuleOptions => {
     database: process.env.DB_DATABASE || 'qiyuanshe',
     entities: [__dirname + '/../entities/*{.ts,.js}'],
     synchronize: dbSync && !isProduction,
-    logging: false,
+    // 生产环境只记录 error/warn（含慢查询），开发环境记录全部 SQL
+    logging: isProduction ? ['error', 'warn'] : true,
+    // 超过 1s 的查询以 warn 级别输出为慢查询日志
+    maxQueryExecutionTime: 1000,
     autoLoadEntities: true,
     charset: 'utf8mb4',
     timezone: '+08:00',

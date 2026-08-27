@@ -54,12 +54,13 @@ import { storeToRefs } from 'pinia'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 import { get, put } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const { appName } = storeToRefs(systemStore)
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navTopPx = ref(0)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 const quotes = ref<string[]>([])
@@ -71,9 +72,7 @@ const currentQuote = computed(() => {
 })
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  navTopPx.value = statusBarHeight.value + 44
 })
 
 // 从系统配置加载爱情语录

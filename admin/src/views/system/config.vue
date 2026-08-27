@@ -19,51 +19,6 @@
               />
             </el-form-item>
 
-            <el-form-item label="客服电话">
-              <el-input v-model="basicConfig.servicePhone" placeholder="请输入客服电话" />
-            </el-form-item>
-
-            <el-form-item label="客服微信">
-              <el-input v-model="basicConfig.serviceWechat" placeholder="请输入客服微信" />
-            </el-form-item>
-
-            <el-form-item label="Logo上传">
-              <div class="upload-item">
-                <el-image
-                  v-if="basicConfig.logo && !logoError"
-                  :src="basicConfig.logo"
-                  class="logo-preview"
-                  fit="contain"
-                  @error="logoError = true"
-                  @load="logoError = false"
-                >
-                  <template #error>
-                    <div class="image-error-slot"></div>
-                  </template>
-                </el-image>
-                <div v-if="logoError" class="logo-broken">
-                  <span class="broken-text">图片加载失败，请重新上传</span>
-                </div>
-                <el-upload
-                  action="#"
-                  :http-request="uploadLogo"
-                  :show-file-list="false"
-                  class="logo-upload"
-                >
-                  <el-button type="primary">上传Logo</el-button>
-                </el-upload>
-              </div>
-            </el-form-item>
-
-            <el-form-item label="关于我们">
-              <el-input
-                v-model="basicConfig.aboutUs"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入关于我们内容"
-              />
-            </el-form-item>
-
             <el-form-item label="首页快捷入口">
               <div v-for="(name, idx) in basicConfig.quickEntryNames" :key="idx" class="mb-8">
                 <el-input
@@ -196,70 +151,6 @@
               />
             </el-form-item>
 
-            <el-form-item label="分享图片">
-              <div class="upload-item">
-                <el-image
-                  v-if="shareConfig.shareImage"
-                  :src="shareConfig.shareImage"
-                  class="share-image-preview"
-                  fit="contain"
-                />
-                <el-upload
-                  action="#"
-                  :http-request="uploadShareImage"
-                  :show-file-list="false"
-                >
-                  <el-button type="primary">上传分享图片</el-button>
-                </el-upload>
-              </div>
-              <div class="form-tip">建议尺寸：500x400</div>
-            </el-form-item>
-
-            <el-form-item label="海报模板配置">
-              <el-input
-                v-model="shareConfig.posterTemplates"
-                type="textarea"
-                :rows="6"
-                placeholder="JSON格式的海报模板配置"
-              />
-              <div class="form-tip">
-                示例格式：<br />
-                [
-                  {"id": 1, "bgColor": "#fff", "layout": "portrait"},
-                  {"id": 2, "bgColor": "#f5f5f5", "layout": "landscape"}
-                ]
-              </div>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-
-      <el-tab-pane label="支付配置" name="payment">
-        <el-card class="config-card">
-          <el-form :model="paymentConfig" label-width="160px">
-            <el-form-item label="微信支付商户号">
-              <el-input
-                v-model="paymentConfig.wechatMchId"
-                placeholder="请输入微信支付商户号"
-              />
-            </el-form-item>
-
-            <el-form-item label="API v3密钥">
-              <el-input
-                v-model="paymentConfig.wechatApiV3Key"
-                type="password"
-                placeholder="请输入API v3密钥"
-                show-password
-              />
-            </el-form-item>
-
-            <el-form-item label="支付回调URL">
-              <el-input
-                :model-value="paymentConfig.notifyUrl"
-                disabled
-              />
-              <div class="form-tip">自动拼接为：https://api.xxx.com/payment/notify</div>
-            </el-form-item>
           </el-form>
         </el-card>
       </el-tab-pane>
@@ -267,108 +158,14 @@
       <el-tab-pane label="审核配置" name="audit">
         <el-card class="config-card">
           <el-form :model="auditConfig" label-width="160px">
-            <el-form-item label="腾讯云SecretId">
-              <el-input
-                v-model="auditConfig.tencentSecretId"
-                placeholder="请输入腾讯云SecretId"
-              />
-            </el-form-item>
-
-            <el-form-item label="腾讯云SecretKey">
-              <el-input
-                v-model="auditConfig.tencentSecretKey"
-                type="password"
-                placeholder="请输入腾讯云SecretKey"
-                show-password
-              />
-            </el-form-item>
-
             <el-form-item label="AI审核开关">
-              <el-switch v-model="auditConfig.aiAuditEnabled" />
+              <el-switch v-model="auditConfig.aiEnabled" />
               <div class="form-tip">启用后自动调用腾讯云内容审核服务</div>
             </el-form-item>
 
-            <el-form-item label="敏感词库">
-              <el-input
-                v-model="auditConfig.sensitiveWords"
-                type="textarea"
-                :rows="8"
-                placeholder="每行一个敏感词"
-              />
-              <div class="form-tip">每行一个敏感词，审核时自动过滤</div>
-            </el-form-item>
-
             <el-form-item label="人工审核开关">
-              <el-switch v-model="auditConfig.manualAuditEnabled" />
+              <el-switch v-model="auditConfig.manualReviewEnabled" />
               <div class="form-tip">启用后AI审核结果需人工确认</div>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-tab-pane>
-
-      <el-tab-pane label="照片审核规则" name="photoAudit">
-        <el-card class="config-card">
-          <el-form :model="photoAuditConfig" label-width="160px">
-            <el-form-item label="审核严格等级">
-              <el-radio-group v-model="photoAuditConfig.strictLevel">
-                <el-radio value="loose">宽松</el-radio>
-                <el-radio value="normal">标准</el-radio>
-                <el-radio value="strict">严格</el-radio>
-              </el-radio-group>
-              <div class="form-tip">宽松：仅过滤明显违规；标准：大部分情况人工复核；严格：所有照片都需人工审核</div>
-            </el-form-item>
-
-            <el-form-item label="AI自动审核">
-              <el-switch v-model="photoAuditConfig.aiAutoAudit" />
-              <div class="form-tip">启用后照片上传时自动调用AI审核</div>
-            </el-form-item>
-
-            <el-form-item label="人工复核">
-              <el-switch v-model="photoAuditConfig.manualReview" />
-              <div class="form-tip">AI审核通过后仍需人工确认</div>
-            </el-form-item>
-
-            <el-divider content-position="left">不合格原因标签</el-divider>
-            <div class="form-tip mb-12">配置照片审核不通过的原因标签，小程序端引导页展示</div>
-
-            <el-form-item label="衣着不当">
-              <div style="display:flex;align-items:center;gap:12px">
-                <el-switch v-model="photoAuditConfig.rejectTags.clothing.enabled" />
-                <el-input v-model="photoAuditConfig.rejectTags.clothing.label" placeholder="衣着不当" style="width:200px" />
-                <el-input v-model="photoAuditConfig.rejectTags.clothing.tip" placeholder="如赤膊、过于暴露" style="width:300px" />
-              </div>
-            </el-form-item>
-
-            <el-form-item label="模糊遮挡">
-              <div style="display:flex;align-items:center;gap:12px">
-                <el-switch v-model="photoAuditConfig.rejectTags.blurry.enabled" />
-                <el-input v-model="photoAuditConfig.rejectTags.blurry.label" placeholder="模糊遮挡" style="width:200px" />
-                <el-input v-model="photoAuditConfig.rejectTags.blurry.tip" placeholder="如戴口罩、墨镜、模糊" style="width:300px" />
-              </div>
-            </el-form-item>
-
-            <el-form-item label="非人物照">
-              <div style="display:flex;align-items:center;gap:12px">
-                <el-switch v-model="photoAuditConfig.rejectTags.nonHuman.enabled" />
-                <el-input v-model="photoAuditConfig.rejectTags.nonHuman.label" placeholder="非人物照" style="width:200px" />
-                <el-input v-model="photoAuditConfig.rejectTags.nonHuman.tip" placeholder="如宠物、风景、卡通" style="width:300px" />
-              </div>
-            </el-form-item>
-
-            <el-form-item label="无正脸">
-              <div style="display:flex;align-items:center;gap:12px">
-                <el-switch v-model="photoAuditConfig.rejectTags.noFrontFace.enabled" />
-                <el-input v-model="photoAuditConfig.rejectTags.noFrontFace.label" placeholder="无正脸" style="width:200px" />
-                <el-input v-model="photoAuditConfig.rejectTags.noFrontFace.tip" placeholder="如背影、侧脸过度、仅身体" style="width:300px" />
-              </div>
-            </el-form-item>
-
-            <el-form-item label="网络照片">
-              <div style="display:flex;align-items:center;gap:12px">
-                <el-switch v-model="photoAuditConfig.rejectTags.webPic.enabled" />
-                <el-input v-model="photoAuditConfig.rejectTags.webPic.label" placeholder="网络照片" style="width:200px" />
-                <el-input v-model="photoAuditConfig.rejectTags.webPic.tip" placeholder="如明星照、网图、带水印的下载图" style="width:300px" />
-              </div>
             </el-form-item>
           </el-form>
         </el-card>
@@ -481,15 +278,10 @@ import { useSystemStore } from '../../store/system'
 const activeTab = ref('basic')
 const saving = ref(false)
 const systemStore = useSystemStore()
-const logoError = ref(false)
 
 const basicConfig = reactive({
   appName: '',
   splashText: '正在为您寻找心仪的对象...',
-  servicePhone: '',
-  serviceWechat: '',
-  logo: '',
-  aboutUs: '',
   quickEntryNames: ['红娘评语', '最新活动', '相亲圈子', '我们脱单了'],
   followEmptyText: '您还木有关注任何人~',
   followerEmptyText: '还木有人关注您~',
@@ -512,34 +304,11 @@ const basicConfig = reactive({
 const shareConfig = reactive({
   shareTitle: '我在等你，快来认识我吧！',
   shareDesc: '一个真诚的婚恋平台',
-  shareImage: '',
-  posterTemplates: '[]',
-})
-const paymentConfig = reactive({
-  wechatMchId: '',
-  wechatApiV3Key: '',
-  notifyUrl: 'https://api.xxx.com/payment/notify',
 })
 
 const auditConfig = reactive({
-  tencentSecretId: '',
-  tencentSecretKey: '',
-  aiAuditEnabled: true,
-  sensitiveWords: '',
-  manualAuditEnabled: true,
-})
-
-const photoAuditConfig = reactive({
-  strictLevel: 'normal',
-  aiAutoAudit: true,
-  manualReview: false,
-  rejectTags: {
-    clothing: { enabled: true, label: '衣着不当', tip: '如赤膊、过于暴露' },
-    blurry: { enabled: true, label: '模糊遮挡', tip: '如戴口罩、墨镜、模糊' },
-    nonHuman: { enabled: true, label: '非人物照', tip: '如宠物、风景、卡通' },
-    noFrontFace: { enabled: true, label: '无正脸', tip: '如背影、侧脸过度、仅身体' },
-    webPic: { enabled: true, label: '网络照片', tip: '如明星照、网图、带水印的下载图' },
-  },
+  aiEnabled: true,
+  manualReviewEnabled: true,
 })
 
 const introConfig = reactive({
@@ -593,7 +362,6 @@ async function fetchConfig() {
     if (res.success && res.data) {
       Object.assign(basicConfig, res.data.basic || {})
       Object.assign(shareConfig, res.data.share || {})
-      Object.assign(paymentConfig, res.data.payment || {})
       Object.assign(auditConfig, res.data.audit || {})
       // 简介模板
       if (res.data.intro) {
@@ -602,21 +370,6 @@ async function fetchConfig() {
       // 爱情语录
       if (res.data.loveQuotes) {
         loveQuotesConfig.quotes = res.data.loveQuotes.quotes || ['', '', '', '', '', '']
-      }
-      // 重新加载配置时重置图片错误状态，让 el-image 重新尝试加载
-      logoError.value = false
-
-      // 照片审核规则
-      if (res.data.photoAudit) {
-        Object.assign(photoAuditConfig, res.data.photoAudit)
-        // 深合并 rejectTags（避免嵌套对象被整体替换）
-        if (res.data.photoAudit.rejectTags) {
-          for (const [key, val] of Object.entries(res.data.photoAudit.rejectTags)) {
-            if (photoAuditConfig.rejectTags[key as keyof typeof photoAuditConfig.rejectTags]) {
-              Object.assign(photoAuditConfig.rejectTags[key as keyof typeof photoAuditConfig.rejectTags], val)
-            }
-          }
-        }
       }
 
       // 加载红线索显示名称（独立 key）
@@ -643,11 +396,9 @@ async function handleSave() {
     const configs = {
       basic: { ...basicConfig },
       share: { ...shareConfig },
-      payment: { ...paymentConfig },
       audit: { ...auditConfig },
       intro: { ...introConfig },
       loveQuotes: { quotes: loveQuotesConfig.quotes.filter(q => q && q.trim()) },
-      photoAudit: { ...photoAuditConfig, rejectTags: JSON.parse(JSON.stringify(photoAuditConfig.rejectTags)) },
       matchmaker: {
         safetyLabel: basicConfig.matchmakerSafetyLabel,
         safetyBoundaryLabel: basicConfig.matchmakerSafetyBoundaryLabel,
@@ -673,21 +424,6 @@ async function handleSave() {
   }
 }
 
-async function uploadLogo(options: any) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  try {
-    const res = await adminSystem.upload(formData)
-    if (res.success && res.data?.url) {
-      basicConfig.logo = res.data.url
-      logoError.value = false
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}
-
 async function uploadLoginIllustration(options: any) {
   const formData = new FormData()
   formData.append('file', options.file)
@@ -702,19 +438,6 @@ async function uploadLoginIllustration(options: any) {
   }
 }
 
-async function uploadShareImage(options: any) {
-  const formData = new FormData()
-  formData.append('file', options.file)
-  try {
-    const res = await adminSystem.upload(formData)
-    if (res.success && res.data?.url) {
-      shareConfig.shareImage = res.data.url
-      ElMessage.success('上传成功')
-    }
-  } catch (error) {
-    ElMessage.error('上传失败')
-  }
-}
 </script>
 
 <style scoped lang="scss">
@@ -748,19 +471,6 @@ async function uploadShareImage(options: any) {
     margin-top: 4px;
   }
 
-  .webhook-hint {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
-    font-family: monospace;
-    word-break: break-all;
-  }
-
-  .unit {
-    margin-left: 8px;
-    color: #606266;
-  }
-
   .upload-item {
     display: flex;
     align-items: flex-start;
@@ -769,32 +479,6 @@ async function uploadShareImage(options: any) {
     .logo-preview {
       width: 80px;
       height: 80px;
-      border: 1px solid #dcdfe6;
-      border-radius: 4px;
-    }
-
-    .logo-broken {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 80px;
-      height: 80px;
-      border: 1px dashed #dcdfe6;
-      border-radius: 4px;
-      background: #fafafa;
-
-      .broken-text {
-        font-size: 11px;
-        color: #c0c4cc;
-        text-align: center;
-        padding: 4px;
-        line-height: 1.4;
-      }
-    }
-
-    .share-image-preview {
-      width: 120px;
-      height: 96px;
       border: 1px solid #dcdfe6;
       border-radius: 4px;
     }

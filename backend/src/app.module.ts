@@ -2,53 +2,8 @@ import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule } from '@nestjs/throttler'
-import { APP_INTERCEPTOR } from '@nestjs/core'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
-import {
-  User,
-  UserPhoto,
-  UserAuth,
-  HotQuestion,
-  QuestionAnswer,
-  AnswerLike,
-  Matchmaker,
-  SystemConfig,
-  VipOrder,
-  ChatMessage,
-  AuditLog,
-  BroadcastLog,
-  Follow,
-  Report,
-  AdminUser,
-  UserNotification,
-  MatchmakerReview,
-  MatchRecord,
-  UserBlock,
-  Dynamic,
-  DynamicLike,
-  Agreement,
-  MatchmakerComment,
-  Circle,
-  SuccessCase,
-  UserRedLineQuota,
-  RedLineUsage,
-  UserRedLineUsageRecord,
-  UserSystemTag,
-  UserTagSelection,
-  AiUserProfile,
-  AiCallLog,
-  ContentSafetyAudit,
-  AiFeatureSwitchLog,
-  AiMatchReport,
-  AiFunQuizReport,
-  QuickQuestion,
-  QuickQuestionCategory,
-  UserAgreement,
-  Feedback,
-  SinglePromise,
-  AdminAuditLog,
-} from './entities'
 import { AuthModule } from './auth/auth.module'
 import { UserModule } from './user/user.module'
 import { MatchmakerModule } from './matchmaker/matchmaker.module'
@@ -81,7 +36,6 @@ import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
 import { CosModule } from './cos/cos.module'
 import { DatabaseIndexService } from './common/database-index.service'
-import { AdminAuditInterceptor } from './admin/admin-audit.interceptor'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 import { CommonModule } from './common/common.module'
 
@@ -97,50 +51,6 @@ import { CommonModule } from './common/common.module'
       load: [databaseConfig],
     }),
     TypeOrmModule.forRoot(databaseConfig()),
-    TypeOrmModule.forFeature([
-      User,
-      UserPhoto,
-      UserAuth,
-      HotQuestion,
-      QuestionAnswer,
-      AnswerLike,
-      Matchmaker,
-      SystemConfig,
-      VipOrder,
-      ChatMessage,
-      AuditLog,
-      BroadcastLog,
-      Follow,
-      Report,
-      AdminUser,
-      UserNotification,
-      MatchmakerReview,
-      MatchRecord,
-      UserBlock,
-      Dynamic,
-      DynamicLike,
-      Agreement,
-      MatchmakerComment,
-      Circle,
-      SuccessCase,
-      UserRedLineQuota,
-      RedLineUsage,
-      UserRedLineUsageRecord,
-      UserSystemTag,
-      UserTagSelection,
-      AiUserProfile,
-      AiCallLog,
-      ContentSafetyAudit,
-      AiFeatureSwitchLog,
-      AiMatchReport,
-      AiFunQuizReport,
-      QuickQuestion,
-      QuickQuestionCategory,
-      UserAgreement,
-      Feedback,
-      SinglePromise,
-      AdminAuditLog,
-    ]),
     // 静态资源通过 main.ts 中的 app.useStaticAssets 配置
     // ServeStaticModule 在部分 NestJS 版本中可能与 useStaticAssets 冲突
     // 统一使用 main.ts 中的配置
@@ -178,7 +88,7 @@ import { CommonModule } from './common/common.module'
     CommonModule,
   ],
   controllers: [HealthController],
-  providers: [DatabaseIndexService, { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor }],
+  providers: [DatabaseIndexService],
   exports: [],
 })
 export class AppModule {}

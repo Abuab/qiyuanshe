@@ -79,6 +79,7 @@ import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 
@@ -98,15 +99,13 @@ const limit = 20
 const loading = ref(false)
 const refreshing = ref(false)
 const noMore = ref(false)
-const statusBarHeight = ref(0)
+const statusBarHeight = useStatusBarHeight()
 const navInnerHeight = 44
 
 // ===== 回到顶部 =====
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
   fetchQuestions()
 })
 

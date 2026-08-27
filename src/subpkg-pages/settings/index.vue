@@ -53,7 +53,6 @@ const menus = [
   { url: '/pages/account-security/index', label: '账号与安全' },
   { url: '/subpkg-pages/privacy-settings/index', label: '隐私设置' },
   { url: '/pages/notification-settings/index', label: '消息通知' },
-  { url: '/subpkg-pages/about/index', label: '关于我们' },
 ]
 
 const goTo = (url: string) => {

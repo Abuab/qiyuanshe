@@ -39,23 +39,111 @@ DISK_THRESHOLD=${DISK_USAGE_THRESHOLD:-80}
 MEMORY_THRESHOLD=${MEMORY_USAGE_THRESHOLD:-85}
 API_TIME_THRESHOLD=${API_RESPONSE_TIME_THRESHOLD:-3000}
 LOG_FILE="${PROJECT_DIR}/logs/monitor.log"
+# 告警抑制状态文件：记录每个告警项的最近状态，避免 cron 每次运行都重复发送
+ALERT_STATE_FILE="${PROJECT_DIR}/logs/alert_state"
+
+# 告警抑制配置：同一告警项未恢复前最多发送 3 次，重发间隔 5 分钟；恢复后发送一次恢复通知
+MAX_ALERT_SENDS=${MAX_ALERT_SENDS:-3}
+ALERT_RESEND_INTERVAL=${ALERT_RESEND_INTERVAL:-300}
 
 # 告警状态
 ALERT_COUNT=0
 ALERT_MESSAGES=()
 
-# 发送告警通知
-send_alert() {
+# 读取某告警项的当前状态；输出格式 "alert|count|last_sent_epoch"，无记录时输出空
+alert_get_state() {
+    local key="$1"
+    if [ -f "$ALERT_STATE_FILE" ]; then
+        grep "^${key}=" "$ALERT_STATE_FILE" 2>/dev/null | head -1 | sed "s/^${key}=//"
+    fi
+}
+
+# 写入某告警项状态
+alert_set_state() {
+    local key="$1"
+    local value="$2"
+    mkdir -p "$(dirname "$ALERT_STATE_FILE")"
+    touch "$ALERT_STATE_FILE"
+    grep -v "^${key}=" "$ALERT_STATE_FILE" > "${ALERT_STATE_FILE}.tmp" 2>/dev/null || true
+    mv "${ALERT_STATE_FILE}.tmp" "$ALERT_STATE_FILE" 2>/dev/null || true
+    echo "${key}=${value}" >> "$ALERT_STATE_FILE"
+}
+
+# 判断告警是否需要发送
+# 返回 0=需要发送, 1=抑制
+alert_should_send() {
+    local key="$1"
+    local state
+    state="$(alert_get_state "$key")"
+
+    # 首次告警，立即发送
+    if [ -z "$state" ]; then
+        return 0
+    fi
+
+    local status="${state%%|*}"
+    local rest="${state#*|}"
+    local count="${rest%%|*}"
+    local last_sent="${rest#*|}"
+
+    if [ "$status" != "alert" ]; then
+        return 0
+    fi
+
+    # 已达最大发送次数，抑制
+    if [ "$count" -ge "$MAX_ALERT_SENDS" ]; then
+        return 1
+    fi
+
+    # 距上次发送不足间隔，抑制
+    local now
+    now=$(date +%s)
+    if [ $((now - last_sent)) -lt "$ALERT_RESEND_INTERVAL" ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+# 标记告警已发送（递增次数并更新时间戳）
+alert_mark_sent() {
+    local key="$1"
+    local now
+    now=$(date +%s)
+    local state
+    state="$(alert_get_state "$key")"
+    local count=0
+    if [ -n "$state" ]; then
+        count="${state#*|}"
+        count="${count%%|*}"
+    fi
+    count=$((count + 1))
+    alert_set_state "$key" "alert|${count}|${now}"
+}
+
+# 清除告警状态；若此前处于告警状态则发送一条恢复通知
+alert_clear() {
+    local key="$1"
+    local label="${2:-$key}"
+    local state
+    state="$(alert_get_state "$key")"
+
+    if [ -n "$state" ] && [ "${state%%|*}" == "alert" ]; then
+        send_recovery "$label"
+    fi
+
+    if [ -f "$ALERT_STATE_FILE" ]; then
+        grep -v "^${key}=" "$ALERT_STATE_FILE" > "${ALERT_STATE_FILE}.tmp" 2>/dev/null || true
+        mv "${ALERT_STATE_FILE}.tmp" "$ALERT_STATE_FILE" 2>/dev/null || true
+    fi
+}
+
+# 推送通知到企业微信/钉钉
+push_notification() {
     local title="$1"
     local message="$2"
     local level="$3"
 
-    ALERT_COUNT=$((ALERT_COUNT + 1))
-    ALERT_MESSAGES+=("[$level] $title: $message")
-
-    log_warning "$title - $message"
-
-    # 发送到企业微信
     if [ -n "${WECHAT_WEBHOOK_URL}" ]; then
         local content="【栖缘社监控告警】
 标题: $title
@@ -69,7 +157,6 @@ send_alert() {
             -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"$content\"}}" 2>/dev/null || true
     fi
 
-    # 发送到钉钉
     if [ -n "${DINGTALK_WEBHOOK_URL}" ]; then
         local content="【栖缘社监控告警】
 标题: $title
@@ -81,6 +168,36 @@ send_alert() {
             -H 'Content-Type: application/json' \
             -d "{\"msgtype\":\"text\",\"text\":{\"content\":\"$content\"}}" 2>/dev/null || true
     fi
+}
+
+# 发送告警通知
+send_alert() {
+    local title="$1"
+    local message="$2"
+    local level="$3"
+    local key="${4:-$title}"
+
+    if ! alert_should_send "$key"; then
+        log_warning "$title - $message (重复告警已抑制)"
+        return
+    fi
+    alert_mark_sent "$key"
+
+    ALERT_COUNT=$((ALERT_COUNT + 1))
+    ALERT_MESSAGES+=("[$level] $title: $message")
+
+    log_warning "$title - $message"
+    push_notification "$title" "$message" "$level"
+}
+
+# 发送恢复通知
+send_recovery() {
+    local label="$1"
+    local title="恢复通知"
+    local message="${label} 已恢复正常"
+
+    log_success "$title - $message"
+    push_notification "$title" "$message" "正常"
 }
 
 # 检查 Docker 服务状态
@@ -96,13 +213,15 @@ check_services() {
     for service in "${services[@]}"; do
         local container_name="qys_${service}"
         local status=$(docker inspect -f '{{.State.Status}}' "$container_name" 2>/dev/null || echo "not_found")
+        local alert_key="service_${service}"
 
         if [ "$status" == "running" ]; then
             log_success "$service: 运行中"
+            alert_clear "$alert_key" "$service 服务"
         else
             log_error "$service: $status"
             all_running=false
-            send_alert "服务停止" "$service 服务当前状态: $status" "严重"
+            send_alert "服务停止" "$service 服务当前状态: $status" "严重" "$alert_key"
         fi
     done
 
@@ -126,9 +245,10 @@ check_disk() {
 
     if [ "$disk_usage" -ge "$DISK_THRESHOLD" ]; then
         log_error "磁盘使用率超过阈值 (${DISK_THRESHOLD}%)"
-        send_alert "磁盘空间不足" "磁盘使用率: ${disk_usage}%, 可用: $disk_available" "严重"
+        send_alert "磁盘空间不足" "磁盘使用率: ${disk_usage}%, 可用: $disk_available" "严重" "disk"
     else
         log_success "磁盘空间充足"
+        alert_clear "disk" "磁盘空间"
     fi
 }
 
@@ -151,9 +271,10 @@ check_memory() {
 
     if [ "$usage_percent" -ge "$MEMORY_THRESHOLD" ]; then
         log_error "内存使用率超过阈值 (${MEMORY_THRESHOLD}%)"
-        send_alert "内存使用率过高" "内存使用: ${usage_percent}% (${used}/${total}MB)" "警告"
+        send_alert "内存使用率过高" "内存使用: ${usage_percent}% (${used}/${total}MB)" "警告" "memory"
     else
         log_success "内存使用正常"
+        alert_clear "memory" "内存使用"
     fi
 
     # Docker 容器内存使用
@@ -184,15 +305,18 @@ check_api() {
     echo "响应时间: ${response_time}ms"
 
     if [ "$response" == "200" ]; then
+        # API 在线，清除"服务异常"告警状态（无论快慢）
+        alert_clear "api_down" "API服务"
         if [ "$response_time" -le "$API_TIME_THRESHOLD" ]; then
             log_success "API 响应正常 (${response_time}ms)"
+            alert_clear "api_slow" "API响应时间"
         else
             log_warning "API 响应时间超过阈值 (${API_TIME_THRESHOLD}ms)"
-            send_alert "API响应慢" "响应时间: ${response_time}ms, 阈值: ${API_TIME_THRESHOLD}ms" "警告"
+            send_alert "API响应慢" "响应时间: ${response_time}ms, 阈值: ${API_TIME_THRESHOLD}ms" "警告" "api_slow"
         fi
     else
         log_error "API 服务异常 (HTTP $response)"
-        send_alert "API服务异常" "HTTP 状态码: $response" "严重"
+        send_alert "API服务异常" "HTTP 状态码: $response" "严重" "api_down"
     fi
 
     # 检查其他端点
@@ -234,9 +358,10 @@ check_mysql() {
         local usage_percent=$((connections * 100 / max_connections))
         if [ "$usage_percent" -ge 80 ]; then
             log_warning "MySQL 连接使用率: ${usage_percent}%"
-            send_alert "MySQL连接数高" "当前连接: $connections, 最大: $max_connections" "警告"
+            send_alert "MySQL连接数高" "当前连接: $connections, 最大: $max_connections" "警告" "mysql_connections"
         else
             log_success "MySQL 连接正常"
+            alert_clear "mysql_connections" "MySQL连接"
         fi
     fi
 }

@@ -62,6 +62,7 @@ import { ref, onMounted } from 'vue'
 import { get, del } from '@/utils/request'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
+import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
 import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
@@ -80,14 +81,12 @@ interface BlockItem {
 
 const list = ref<BlockItem[]>([])
 const loading = ref(true)
-const statusBarHeight = ref(20)
+const statusBarHeight = useStatusBarHeight()
 const navTopPx = ref(0)
 const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 
 onMounted(() => {
-  const sysInfo = uni.getWindowInfo()
-  statusBarHeight.value = sysInfo.statusBarHeight || 20
-  navTopPx.value = (sysInfo.statusBarHeight || 20) + 44
+  navTopPx.value = statusBarHeight.value + 44
   if (userStore.isLoggedIn) loadList()
 })
 

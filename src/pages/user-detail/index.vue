@@ -339,9 +339,9 @@
           <template v-else>
           <view v-if="profileData.answers?.length">
           <view v-for="(item, idx) in profileData.answers" :key="idx" class="qa-item">
-            <!-- 问题气泡（左：红心头像） -->
+            <!-- 问题气泡（左：平台 logo 图标） -->
             <view class="qa-row qa-question-row">
-              <view class="qa-avatar qa-question-avatar"><view class="ico ico-heart ico-md"></view></view>
+              <image class="qa-avatar qa-question-avatar" src="/static/icons/favicon.png" mode="aspectFit" />
               <view class="qa-bubble qa-bubble-question">
                 <text>{{ item.question }}</text>
               </view>
@@ -2169,9 +2169,10 @@ $text-hint: #999999;
 }
 
 .qa-question-avatar {
-  background: linear-gradient(135deg, #FF8A9E, #FFB3C1);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32rpx; margin-right: 12rpx;
+  background: #fff;
+  border: 1rpx solid #F0F0F0;
+  box-sizing: border-box;
+  margin-right: 12rpx;
 }
 
 .qa-user-avatar { margin-left: 12rpx; }
