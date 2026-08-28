@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException, BadRequestException, ServiceUnavailableException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, EntityManager } from 'typeorm'
 import { JwtService } from '@nestjs/jwt'
@@ -10,6 +10,7 @@ import { SystemConfig } from '../entities/SystemConfig'
 import { WechatLoginDto, PhoneLoginDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig, parseExpirySeconds } from '../config/jwt'
+import { isSmsConfigured } from '../config/sms'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { UserService } from '../user/user.service'
 import { ContentFilterService } from '../common/content-filter.service'
@@ -379,6 +380,11 @@ export class AuthService {
     // 1. 校验手机号格式
     if (!/^1[3-9]\d{9}$/.test(phone)) {
       throw new BadRequestException('手机号格式不正确')
+    }
+
+    // 短信服务未配置时提前返回友好错误（降级到手机号快捷登录），避免生成并存储无意义的验证码
+    if (!isSmsConfigured()) {
+      throw new ServiceUnavailableException('短信服务暂未开通，请使用手机号快捷登录')
     }
 
     // 2. 发送频率限制：60 秒内只能发送一次

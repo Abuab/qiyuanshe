@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common'
 import { smsConfig, isSmsConfigured } from '../config/sms'
 import { callTencentApi } from '../eid-auth/eid-tencent.util'
 
@@ -16,7 +16,7 @@ export class SmsService {
   async sendVerificationCode(phone: string, code: string): Promise<void> {
     const cfg = smsConfig()
     if (!isSmsConfigured()) {
-      throw new Error('短信服务未配置，请检查 SMS_* 环境变量')
+      throw new ServiceUnavailableException('短信服务暂未开通，请使用手机号快捷登录')
     }
 
     const response = await callTencentApi({

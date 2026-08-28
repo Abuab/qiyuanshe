@@ -292,6 +292,14 @@ const sendSmsCode = async () => {
       }
     }, 1000)
   } catch (error: any) {
+    const msg = error?.message || ''
+    // 短信服务未配置 → 自动降级到手机号快捷登录
+    if (msg.includes('短信服务暂未开通') || msg.includes('未配置')) {
+      handleSmsPopupClose()
+      showToast('短信登录暂不可用，请使用手机号快捷登录', 'none')
+      handlePhoneLogin()
+      return
+    }
     logger.error('发送短信验证码失败:', error?.message || error)
     showToast(error?.message || '发送失败，请重试', 'none')
   }
