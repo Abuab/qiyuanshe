@@ -26,57 +26,68 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
   }
 
   private async createIndexes() {
-    const indexes: Array<{ name: string; sql: string }> = [
+    const indexes: Array<{ name: string; table: string; sql: string }> = [
       // ========== chat_messages：会话查询优化 ==========
       // 功能索引：按 (LEAST(f,t), GREATEST(f,t)) 排序获取每对用户最新消息
       {
         name: 'idx_chat_pair_latest',
+        table: 'chat_messages',
         sql: `CREATE INDEX idx_chat_pair_latest ON chat_messages ((LEAST(fromUserId, toUserId)), (GREATEST(fromUserId, toUserId)), id DESC)`,
       },
       // 复合索引：查询单用户的收发消息
       {
         name: 'idx_chat_from_created',
+        table: 'chat_messages',
         sql: `CREATE INDEX idx_chat_from_created ON chat_messages (fromUserId, createdAt DESC)`,
       },
       {
         name: 'idx_chat_to_created',
+        table: 'chat_messages',
         sql: `CREATE INDEX idx_chat_to_created ON chat_messages (toUserId, createdAt DESC)`,
       },
       // ========== notify_logs：通知查询优化 ==========
       {
         name: 'idx_notify_channel',
+        table: 'notify_logs',
         sql: `CREATE INDEX idx_notify_channel ON notify_logs (channel, createdAt DESC)`,
       },
       {
         name: 'idx_notify_source',
+        table: 'notify_logs',
         sql: `CREATE INDEX idx_notify_source ON notify_logs (source, createdAt DESC)`,
       },
       // ========== dynamics：动态时间线 ==========
       {
         name: 'idx_dynamic_user_time',
+        table: 'dynamics',
         sql: `CREATE INDEX idx_dynamic_user_time ON dynamics (userId, createdAt DESC)`,
       },
       // ========== users：推荐/搜索优化 ==========
       {
         name: 'idx_users_status_created',
+        table: 'users',
         sql: `CREATE INDEX idx_users_status_created ON users (status, createdAt DESC)`,
       },
       {
         name: 'idx_users_gender_status',
+        table: 'users',
         sql: `CREATE INDEX idx_users_gender_status ON users (gender, status)`,
       },
       {
         name: 'idx_users_is_deleted',
+        table: 'users',
         sql: `CREATE INDEX idx_users_is_deleted ON users (isDeleted, status)`,
       },
       // ========== chat_monitor_sessions ==========
       {
         name: 'idx_monitor_op_created',
+        table: 'chat_monitor_sessions',
         sql: `CREATE INDEX idx_monitor_op_created ON chat_monitor_sessions (operatorId, createdAt DESC)`,
       },
       // ========== chat_operation_logs ==========
       {
         name: 'idx_oplog_created',
+        table: 'chat_operation_logs',
         sql: `CREATE INDEX idx_oplog_created ON chat_operation_logs (createdAt DESC)`,
       },
 
@@ -84,6 +95,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getConversations() 未读数: WHERE toUserId=? AND isRead=0 GROUP BY fromUserId
       {
         name: 'idx_chat_unread_group',
+        table: 'chat_messages',
         sql: `CREATE INDEX idx_chat_unread_group ON chat_messages (toUserId, isRead, fromUserId)`,
       },
 
@@ -91,11 +103,13 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // list(): WHERE userId=? ORDER BY createdAt DESC
       {
         name: 'idx_notif_user_created',
+        table: 'user_notifications',
         sql: `CREATE INDEX idx_notif_user_created ON user_notifications (userId, createdAt DESC)`,
       },
       // unreadCount(): WHERE userId=? AND isRead=0
       {
         name: 'idx_notif_user_read',
+        table: 'user_notifications',
         sql: `CREATE INDEX idx_notif_user_read ON user_notifications (userId, isRead)`,
       },
 
@@ -103,11 +117,13 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getFollowing(): WHERE user_id=? ORDER BY created_at DESC
       {
         name: 'idx_follows_user_created',
+        table: 'follows',
         sql: `CREATE INDEX idx_follows_user_created ON follows (user_id, created_at DESC)`,
       },
       // getFollowers(): WHERE target_user_id=? ORDER BY created_at DESC
       {
         name: 'idx_follows_target_created',
+        table: 'follows',
         sql: `CREATE INDEX idx_follows_target_created ON follows (target_user_id, created_at DESC)`,
       },
 
@@ -115,6 +131,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getMyViews(): WHERE visitor_user_id=? GROUP BY user_id ORDER BY MAX(created_at) DESC
       {
         name: 'idx_visits_visitor_created',
+        table: 'profile_visits',
         sql: `CREATE INDEX idx_visits_visitor_created ON profile_visits (visitor_user_id, created_at DESC)`,
       },
 
@@ -122,11 +139,13 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getQuestionDetail(): WHERE questionId=? AND status=1 ORDER BY createdAt DESC
       {
         name: 'idx_qa_question_status_time',
+        table: 'question_answers',
         sql: `CREATE INDEX idx_qa_question_status_time ON question_answers (questionId, status, createdAt DESC)`,
       },
       // getUserAnswers(): WHERE userId=? ORDER BY createdAt DESC
       {
         name: 'idx_qa_user_created',
+        table: 'question_answers',
         sql: `CREATE INDEX idx_qa_user_created ON question_answers (userId, createdAt DESC)`,
       },
 
@@ -134,6 +153,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getAnswerDynamics(): WHERE type='answer' ORDER BY createdAt DESC
       {
         name: 'idx_dynamic_type_time',
+        table: 'dynamics',
         sql: `CREATE INDEX idx_dynamic_type_time ON dynamics (type, createdAt DESC)`,
       },
 
@@ -141,6 +161,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getCircleUsers(): WHERE circleId=? ORDER BY sortOrder ASC
       {
         name: 'idx_circle_members_sort',
+        table: 'circle_members',
         sql: `CREATE INDEX idx_circle_members_sort ON circle_members (circleId, sortOrder)`,
       },
 
@@ -148,6 +169,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // WHERE userId IN (...) AND status=1 ORDER BY createdAt DESC
       {
         name: 'idx_mm_comments_user',
+        table: 'matchmaker_comments',
         sql: `CREATE INDEX idx_mm_comments_user ON matchmaker_comments (userId, status, createdAt DESC)`,
       },
 
@@ -155,6 +177,7 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // WHERE userId IN (...) ORDER BY sortOrder ASC
       {
         name: 'idx_user_photos_user_sort',
+        table: 'user_photos',
         sql: `CREATE INDEX idx_user_photos_user_sort ON user_photos (userId, sortOrder)`,
       },
 
@@ -162,17 +185,23 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
       // getActivityList(): WHERE isActive=1 ORDER BY sortOrder ASC, createdAt DESC
       {
         name: 'idx_activities_list',
+        table: 'activities',
         sql: `CREATE INDEX idx_activities_list ON activities (isActive, sortOrder, createdAt DESC)`,
       },
     ]
 
     let created = 0
     for (const idx of indexes) {
+      // 先检查索引是否已存在，避免每次重启 TypeORM 记录 "Duplicate key name" 错误日志
+      if (await this.indexExists(idx.table, idx.name)) {
+        continue
+      }
+
       try {
         await this.dataSource.query(idx.sql)
         created++
       } catch (e: any) {
-        // ER_DUP_KEYNAME (1061) = 索引已存在，忽略
+        // ER_DUP_KEYNAME (1061) = 索引已存在（多实例并发启动时可能刚被其他实例创建），忽略
         const code = e?.code || e?.sqlState
         if (code === 'ER_DUP_KEYNAME' || e?.errno === 1061) {
           // 索引已存在，跳过
@@ -185,5 +214,16 @@ export class DatabaseIndexService implements OnApplicationBootstrap {
     if (created > 0) {
       this.logger.debug(`[Index] 已创建 ${created}/${indexes.length} 个索引`)
     }
+  }
+
+  /** 判断指定表的指定索引是否已存在 */
+  private async indexExists(table: string, indexName: string): Promise<boolean> {
+    const rows: any[] = await this.dataSource.query(
+      `SELECT 1 FROM information_schema.statistics
+       WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?
+       LIMIT 1`,
+      [table, indexName],
+    )
+    return rows.length > 0
   }
 }
