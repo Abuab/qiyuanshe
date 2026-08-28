@@ -248,6 +248,7 @@ const handleSmsPopupClose = () => {
     clearInterval(smsTimer)
     smsTimer = null
   }
+  smsCountdown.value = 0
 }
 
 const handlePhonePopupClose = () => {

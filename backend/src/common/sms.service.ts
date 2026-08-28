@@ -36,6 +36,13 @@ export class SmsService {
       secretKey: cfg.secretKey,
     })
 
+    // 校验单条发送结果：SendSms 整体成功不代表目标手机号真正送达（黑名单/运营商拒绝/频控会体现在 SendStatusSet）
+    const statuses = response?.SendStatusSet
+    const first = Array.isArray(statuses) && statuses.length > 0 ? statuses[0] : null
+    if (!first || first.Code !== 'Ok') {
+      throw new Error(`短信发送失败: ${first?.Message || '未知错误'}`)
+    }
+
     this.logger.debug(`[sms] SendSms 返回: ${JSON.stringify(response)}`)
   }
 }
