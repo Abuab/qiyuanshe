@@ -7,13 +7,11 @@ import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
 import { UserAuth } from '../entities/UserAuth'
 import { SystemConfig } from '../entities/SystemConfig'
-import { WechatLoginDto, PhoneLoginDto } from './dto'
 import { wechatConfig } from '../config/wechat'
 import { jwtConfig, parseExpirySeconds } from '../config/jwt'
 import { isSmsConfigured } from '../config/sms'
 import { AgreementLogStorageService } from '../agreement-log-storage/agreement-log-storage.service'
 import { UserService } from '../user/user.service'
-import { ContentFilterService } from '../common/content-filter.service'
 import { RedisService } from '../common/redis.service'
 import { CryptoService } from '../common/crypto.service'
 import { SmsService } from '../common/sms.service'
@@ -56,7 +54,6 @@ export class AuthService {
     private readonly agreementLogStorage: AgreementLogStorageService,
     private readonly userService: UserService,
     private readonly entityManager: EntityManager,
-    private readonly contentFilter: ContentFilterService,
     private readonly redis: RedisService,
     private readonly cryptoService: CryptoService,
     private readonly smsService: SmsService,
