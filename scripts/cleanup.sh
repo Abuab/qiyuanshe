@@ -35,7 +35,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # 清理配置
-APP_LOG_RETENTION_DAYS=7
+# 应用日志（data/logs/app）由 winston 按天轮转（maxFiles: 30d），此处作为兜底清理
+APP_LOG_RETENTION_DAYS=30
+# 宿主机脚本日志（logs/ 下持续追加的单文件）归档保留天数与单文件轮转阈值
+SCRIPT_LOG_RETENTION_DAYS=7
+SCRIPT_LOG_MAX_SIZE=10485760   # 10MB
 LOG_FILE="${PROJECT_DIR}/logs/cleanup.log"
 
 # 创建必要目录
@@ -51,11 +55,11 @@ load_env() {
     fi
 }
 
-# 清理应用日志
+# 清理应用日志（容器挂载目录 data/logs/app，winston 每日轮转的 app-*.log / error-*.log）
 cleanup_app_logs() {
     log_info "清理应用日志（保留 ${APP_LOG_RETENTION_DAYS} 天）..."
 
-    local app_logs_dir="${PROJECT_DIR}/logs"
+    local app_logs_dir="${PROJECT_DIR}/data/logs/app"
     local deleted_count=0
 
     if [ -d "$app_logs_dir" ]; then
@@ -79,6 +83,51 @@ cleanup_app_logs() {
         log_success "已清理 $deleted_count 个应用日志文件"
     else
         log_info "没有需要清理的应用日志"
+    fi
+}
+
+# 轮转宿主机脚本日志（logs/ 下持续追加的单文件，如 monitor.log/backup.log）
+# 这类单文件 mtime 始终是最新，find -mtime 无法按年龄删除，需按大小轮转 + 按归档年龄清理
+cleanup_script_logs() {
+    log_info "轮转宿主机脚本日志（单文件超过 $((SCRIPT_LOG_MAX_SIZE / 1024 / 1024))MB 时归档，归档保留 ${SCRIPT_LOG_RETENTION_DAYS} 天）..."
+
+    local script_logs_dir="${PROJECT_DIR}/logs"
+    [ -d "$script_logs_dir" ] || return 0
+
+    local rotated=0
+
+    # 1) 超过大小阈值的单文件 → rename 成带时间戳的归档，再重建空文件
+    while IFS= read -r file; do
+        if [ -z "$file" ] || [ ! -f "$file" ]; then
+            continue
+        fi
+        local size
+        size=$(wc -c < "$file" 2>/dev/null | tr -d '[:space:]')
+        size=${size:-0}
+        if [ "$size" -ge "$SCRIPT_LOG_MAX_SIZE" ]; then
+            local stamp
+            stamp=$(date +%Y%m%d-%H%M%S)
+            mv "$file" "${file}.${stamp}"
+            : > "$file"
+            log_info "已归档并清空: $file -> ${file}.${stamp}"
+            rotated=$((rotated + 1))
+        fi
+    done < <(find "$script_logs_dir" -maxdepth 1 -name "*.log" -type f 2>/dev/null)
+
+    # 2) 删除过期的归档文件（*.log.*，归档后不再修改，可用 mtime 判断年龄）
+    local deleted=0
+    while IFS= read -r file; do
+        if [ -n "$file" ] && [ -f "$file" ]; then
+            rm -f "$file"
+            deleted=$((deleted + 1))
+            log_info "已删除过期归档: $file"
+        fi
+    done < <(find "$script_logs_dir" -maxdepth 1 -name "*.log.*" -mtime +${SCRIPT_LOG_RETENTION_DAYS} -type f 2>/dev/null)
+
+    if [ $rotated -gt 0 ] || [ $deleted -gt 0 ]; then
+        log_success "脚本日志轮转：归档 $rotated 个，删除过期归档 $deleted 个"
+    else
+        log_info "没有需要轮转的脚本日志"
     fi
 }
 
@@ -277,6 +326,9 @@ main() {
 
     # 清理应用日志
     cleanup_app_logs
+
+    # 轮转宿主机脚本日志
+    cleanup_script_logs
 
     # 清理 Nginx 日志
     cleanup_nginx_logs
