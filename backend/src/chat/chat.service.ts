@@ -670,60 +670,52 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * 修改点 B：内容审核方法
-   * - 优先使用腾讯云 AI 审核（audit.aiEnabled = true）
-   * - 未启用 AI 审核时，降级为本地 bannedKeywords 过滤
-   * - AI 审核调用失败时，降级为本地过滤
+   * 内容审核方法
+   * - 第一道防线：本地敏感词库，命中直接拒绝（优先于 AI，避免 AI 把明确脏话判成 Review 而漏拦）
+   * - 本地未命中时，若启用腾讯云 AI 审核则继续 AI 审核
+   * - AI 审核调用失败时，本地已兜底检查过，仅记录日志
    */
   private async auditMessageContent(userId: number, content: string): Promise<void> {
-    // 读取审核配置
-    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
+    // 第一道防线：本地敏感词库，命中直接拒绝
+    await this.checkLocalBannedContent(userId, content)
 
-    if (aiEnabled === '1' || aiEnabled === 'true') {
-      // === 腾讯云 AI 审核 ===
-      if (!this.auditService) {
-        // AuditService 未注入，降级为本地过滤
-        await this.checkLocalBannedContent(userId, content)
+    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
+    if (aiEnabled !== '1' && aiEnabled !== 'true') {
+      return // AI 未开启，本地未命中即通过
+    }
+
+    if (!this.auditService) {
+      return // AuditService 未注入，本地已兜底检查
+    }
+
+    try {
+      const auditResult = await this.auditService.auditText({
+        text: content,
+        type: 'user' as any, // AuditType.USER
+        userId,
+      })
+
+      if (auditResult.result === 'pass') {
+        return // 正常通过
+      }
+
+      if (auditResult.result === 'reject') {
+        throw new ForbiddenException('消息包含违规内容，请修改后重试')
+      }
+
+      // result === 'review'
+      const manualReviewEnabled = await this.getConfigValue('audit.manualReviewEnabled')
+      if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
+        // 人工审核已启用，消息正常存入，审核日志已由 AuditService.auditText 自动写入
+        this.logger.log(`消息进入人工审核: userId=${userId} contentLen=${content.length}`)
         return
       }
-
-      try {
-        const auditResult = await this.auditService.auditText({
-          text: content,
-          type: 'user' as any, // AuditType.USER
-          userId,
-        })
-
-        if (auditResult.result === 'pass') {
-          return // 正常通过
-        }
-
-        if (auditResult.result === 'reject') {
-          throw new ForbiddenException('消息包含违规内容，请修改后重试')
-        }
-
-        // result === 'review'
-        if (auditResult.result === 'review') {
-          const manualReviewEnabled = await this.getConfigValue('audit.manualReviewEnabled')
-          if (manualReviewEnabled === '1' || manualReviewEnabled === 'true') {
-            // 人工审核已启用，消息存入但需要标记（实体无 status/isVisible 字段，正常存入）
-            // 审核日志已由 AuditService.auditText 自动写入
-            // 调用 webhook 通知（预留接口，当前仅打印日志）
-            this.logger.log(`消息进入人工审核: userId=${userId} contentLen=${content.length}`)
-            return // 消息允许保存，人工审核后端可查看 AuditLog 表
-          }
-          // 人工审核未启用，按拒绝处理
-          throw new ForbiddenException('消息包含违规内容，请修改后重试')
-        }
-      } catch (e: any) {
-        // 修改点 B-3：腾讯云审核 API 调用失败，降级为本地敏感词过滤
-        if (e instanceof ForbiddenException) throw e
-        this.logger.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
-        await this.checkLocalBannedContent(userId, content)
-      }
-    } else {
-      // === 本地敏感词过滤（兜底） ===
-      await this.checkLocalBannedContent(userId, content)
+      // 人工审核未启用，按拒绝处理
+      throw new ForbiddenException('消息包含违规内容，请修改后重试')
+    } catch (e: any) {
+      if (e instanceof ForbiddenException) throw e
+      // 腾讯云审核调用失败：本地已在上方检查过，此处仅记录日志
+      this.logger.error('腾讯云审核调用失败:', e)
     }
   }
 

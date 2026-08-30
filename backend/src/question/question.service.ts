@@ -78,9 +78,19 @@ export class QuestionService implements OnModuleInit {
 
   /** 内置收敛敏感词库（不加载 51K 开源大词库，避免对正常回答文本误拦） */
   private static readonly CURATED_KEYWORDS: string[] = [
-    '傻逼', '傻B', '煞笔', '尼玛', '你妈', 'cnm', '操你', '去死',
+    // 侮辱 / 脏话（直接拦截）
+    '傻逼', '傻B', '傻X', '傻x', '傻叉', '煞笔', '二逼', '二B', '二货',
+    '尼玛', '你妈', '你他妈', '你他妈的', '他妈的', '妈的', '妈逼', '去你妈', '去你妈的',
+    'cnm', '操你', '操你妈', '草泥马', '草你妈', '操尼玛', '草尼玛',
+    '贱人', '贱货', '婊子', '骚货', '骚逼', '荡妇',
+    '狗日的', '狗东西', '狗逼', '杂种', '畜生',
+    '白痴', '弱智', '智障', '脑残',
+    '王八蛋', '王八羔子', '龟儿子',
+    '滚蛋', '滚犊子', '去死',
+    // 违法 / 诈骗
     '赌博', '博彩', '赌场', '下注', '裸聊', '约炮', '嫖娼', '色情',
     '毒品', '冰毒', '枪支', '假钞', '洗钱', '诈骗', '传销',
+    // 引流 / 商业营销
     '加微信', '加我微信', '微商', '刷单',
   ]
 
@@ -418,11 +428,16 @@ export class QuestionService implements OnModuleInit {
    * - 返回 'pass' | 'reject' | 'review'
    */
   private async auditAnswerContent(userId: number, content: string): Promise<'pass' | 'reject' | 'review'> {
-    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
+    // 第一道防线：本地硬性敏感词库，命中直接拒绝。
+    // 放在 AI 之前，避免 AI 开启时把明确脏话判成 Review 而漏进待审核。
+    if (this.checkLocalBannedContent(content) === 'reject') {
+      return 'reject'
+    }
 
+    const aiEnabled = await this.getConfigValue('audit.aiEnabled')
     if (aiEnabled === '1' || aiEnabled === 'true') {
       if (!this.auditService) {
-        return this.checkLocalBannedContent(content)
+        return 'review'
       }
       try {
         const auditResult = await this.auditService.auditText({
@@ -432,13 +447,13 @@ export class QuestionService implements OnModuleInit {
         })
         return auditResult.result as 'pass' | 'reject' | 'review'
       } catch (e) {
-        this.logger.error('腾讯云审核调用失败，降级为本地敏感词过滤:', e)
-        return this.checkLocalBannedContent(content)
+        this.logger.error('腾讯云审核调用失败，降级为待人工审核:', e)
+        return 'review'
       }
     }
 
-    // 本地敏感词过滤
-    return this.checkLocalBannedContent(content)
+    // AI 未开启且本地未命中，进入待审核
+    return 'review'
   }
 
   /**
