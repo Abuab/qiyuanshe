@@ -845,7 +845,7 @@ export class AdminUserService {
         id: u.id,
         userId: u.userId,
         nickname: u.nickname,
-        avatar: u.avatar,
+        avatar: resolveAvatarUrl(u.avatar),
         phone: u.phone,
         gender: u.gender,
         deleteReason: u.deleteReason,
