@@ -38,7 +38,7 @@ import { ref, onMounted } from 'vue'
 import { post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
-import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
+import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 
 const statusBarHeight = useStatusBarHeight()
 const navBarHeightPx = ref(44)

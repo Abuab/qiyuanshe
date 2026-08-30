@@ -5,12 +5,6 @@
     <view class="pcp-card">
       <!-- 插画区 -->
       <view class="pcp-illustration">
-        <!-- 装饰元素 -->
-        <text class="pcp-deco pcp-deco-x">×</text>
-        <view class="pcp-deco pcp-deco-diamond" />
-        <view class="pcp-deco pcp-deco-star ico ico-star ico-sm"></view>
-        <view class="pcp-deco pcp-deco-ring" />
-
         <!-- 头像区（有真实头像时展示） -->
         <view v-if="avatarUrl" class="pcp-real-avatar-wrap">
           <image class="pcp-real-avatar" :src="avatarUrl" mode="aspectFill" />
@@ -25,12 +19,6 @@
           <view class="pcp-file-line" style="width: 40px; margin-top: 6px;" />
         </view>
 
-        <!-- 右侧铅笔 -->
-        <view class="pcp-pencil">
-          <view class="pcp-pencil-tip" />
-          <view class="pcp-pencil-body" />
-          <view class="pcp-pencil-cap" />
-        </view>
       </view>
 
       <!-- 昵称区 -->
@@ -130,44 +118,6 @@ const handleGoProfile = () => {
   overflow: hidden;
 }
 
-// ===== 装饰元素 =====
-.pcp-deco {
-  position: absolute;
-}
-
-.pcp-deco-x {
-  top: 20%;
-  left: 20%;
-  font-size: 20px;
-  color: #a78bfa;
-  font-weight: bold;
-  line-height: 1;
-}
-
-.pcp-deco-diamond {
-  bottom: 15%;
-  left: 15%;
-  width: 10px;
-  height: 10px;
-  background: #f9a8d4;
-  transform: rotate(45deg);
-}
-
-.pcp-deco-star {
-  top: 15%;
-  right: 15%;
-}
-
-.pcp-deco-ring {
-  bottom: 20%;
-  right: 20%;
-  width: 12px;
-  height: 12px;
-  border: 2px solid #fbbf24;
-  border-radius: 50%;
-  background: transparent;
-}
-
 // ===== 真实头像区 =====
 .pcp-real-avatar-wrap {
   position: relative;
@@ -261,40 +211,6 @@ const handleGoProfile = () => {
   margin-top: 8px;
   font-size: 14px;
   color: #999999;
-}
-
-// ===== 铅笔装饰 =====
-.pcp-pencil {
-  position: absolute;
-  right: 36%;
-  top: 20%;
-  z-index: 3;
-  transform: rotate(-30deg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.pcp-pencil-body {
-  width: 10px;
-  height: 60px;
-  background: #34d399;
-  border-radius: 2px 2px 0 0;
-}
-
-.pcp-pencil-tip {
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 14px solid #4b3621;
-}
-
-.pcp-pencil-cap {
-  width: 12px;
-  height: 6px;
-  background: #fbbf24;
-  border-radius: 2px 2px 0 0;
 }
 
 // ===== 文字区 =====

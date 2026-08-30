@@ -92,7 +92,7 @@ import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { logger } from '@/utils/logger'
 import { safeNavigateBack } from '@/utils/navigate'
-import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
+import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()

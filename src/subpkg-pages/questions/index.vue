@@ -79,7 +79,7 @@ import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
-import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
+import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 

@@ -91,7 +91,7 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { get, getBaseUrl } from '@/utils/request'
 import { getToken, requireLogin } from '@/utils/auth'
 import { getFullImageUrl } from '@/utils/common'
-import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
+import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 
 const statusBarHeight = useStatusBarHeight()
 const navBarHeightPx = ref(44)

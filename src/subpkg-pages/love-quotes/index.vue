@@ -54,7 +54,7 @@ import { storeToRefs } from 'pinia'
 import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
-import { useStatusBarHeight } from '@/composables/useStatusBarHeight'
+import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 import { get, put } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 
