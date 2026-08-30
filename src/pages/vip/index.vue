@@ -241,7 +241,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
@@ -306,6 +306,13 @@ const tabs = computed(() => {
   return list
 })
 const activeTab = ref(systemStore.vipEnabled && userStore.isLoggedIn ? 'vip' : 'custom')
+
+// 管理后台关闭 VIP 后，立即将当前 tab 从「VIP会员」切走，避免购买内容继续显示
+watch(() => systemStore.vipEnabled, (enabled) => {
+  if (!enabled && activeTab.value === 'vip') {
+    activeTab.value = 'custom'
+  }
+})
 
 const currentTabLabel = computed(() => {
   const tab = tabs.value.find(t => t.key === activeTab.value)
@@ -621,6 +628,9 @@ onMounted(() => {
 })
 
 onShow(() => {
+  // 每次进入时刷新系统配置，确保 vipEnabled 等开关即时生效（管理后台可能刚关闭 VIP）
+  systemStore.loadSystemConfig()
+
   // 从「我的」页点开通会员跳转时，确保切到 VIP会员 Tab
   const app = getApp()
   if (app?.globalData?.vipTab === 'vip') {
