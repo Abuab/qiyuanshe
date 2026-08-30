@@ -717,6 +717,16 @@ export class UserService {
     }
     // 户籍地/现居地来自省市选择器（非用户自由输入），不做敏感词校验，避免正常地名被大词库误拦
 
+    // 昵称查重：与其他未注销用户重名时拒绝（排除自己、空昵称、未变更的情况）
+    if (dto.nickname !== undefined && dto.nickname.trim() !== '' && dto.nickname !== user.nickname) {
+      const duplicate = await this.userRepository.findOne({
+        where: { nickname: dto.nickname, isDeleted: 0 },
+      })
+      if (duplicate && duplicate.id !== userId) {
+        throw new BadRequestException('该昵称已被使用，请重新填写')
+      }
+    }
+
     // 只更新传入的非 undefined 字段
     if (dto.nickname !== undefined) user.nickname = dto.nickname
     if (dto.avatar !== undefined) user.avatar = dto.avatar
