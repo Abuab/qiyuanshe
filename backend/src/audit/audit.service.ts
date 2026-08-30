@@ -73,7 +73,20 @@ export class AuditService {
       const timestamp = data.time
         ? (typeof data.time === 'string' ? new Date(data.time).toLocaleString('zh-CN') : new Date().toLocaleString('zh-CN'))
         : new Date().toLocaleString('zh-CN')
-      const userLabel = data.userNickname || data.userId || '未知'
+      // 查询昵称与 6 位业务 userId 用于展示（data.userId 是数据库自增主键）
+      let userNickname = data.userNickname || ''
+      let displayUserId = ''
+      if (data.userId) {
+        try {
+          const u = await this.userRepository.findOne({
+            where: { id: data.userId },
+            select: ['userId', 'nickname'],
+          })
+          if (!userNickname) userNickname = u?.nickname || ''
+          displayUserId = u?.userId || ''
+        } catch { /* 查询失败时回退到自增主键 */ }
+      }
+      const userLabel = userNickname || displayUserId || (data.userId ? String(data.userId) : '未知')
       const contentText = data.content || data.photoUrl || ''
 
       const typeLabelMap: Record<string, string> = {

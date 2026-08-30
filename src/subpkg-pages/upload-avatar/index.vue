@@ -83,6 +83,7 @@ const appName = computed(() => systemStore.appName || '灵通相亲')
 
 // ========== 头像数据 ==========
 const avatarPath = ref('') // 裁剪后的本地临时路径
+const isExistingAvatar = ref(false) // 是否回显的已上传头像（远程 URL，无需重复上传）
 
 // 进入时若已有头像，回显
 onMounted(() => {
@@ -91,6 +92,7 @@ onMounted(() => {
   const avatar = userStore.userInfo?.avatar
   if (avatar) {
     avatarPath.value = getFullImageUrl(avatar)
+    isExistingAvatar.value = true
   }
 })
 
@@ -196,11 +198,18 @@ onUnmounted(() => {
 // ========== 裁剪结果处理 ==========
 const handleCroppedResult = (filePath: string) => {
   avatarPath.value = filePath
+  isExistingAvatar.value = false
 }
 
 // ========== 提交上传 ==========
 const handleSubmit = async () => {
   if (!avatarPath.value) return
+
+  // 回显的已上传头像（远程 URL）：无需重复上传，直接进入下一步
+  if (isExistingAvatar.value) {
+    uni.navigateTo({ url: '/subpkg-pages/detail-info/index' })
+    return
+  }
 
   try {
     uni.showLoading({ title: '上传中...', mask: true })

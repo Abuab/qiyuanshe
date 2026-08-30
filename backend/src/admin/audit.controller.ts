@@ -81,6 +81,12 @@ export class AdminAuditController {
         if (userInfo) {
           notifyNickname = userInfo.nickname || ''
         }
+      } else if (audit.targetType === 'answer') {
+        const answerInfo = await this.auditService.getAnswerInfo(audit.targetId)
+        if (answerInfo) {
+          notifyUserId = answerInfo.userId
+          notifyNickname = answerInfo.nickname || ''
+        }
       }
       // voice 类型不发送审核通过/拒绝通知（仅 user.service 中提交时发送 voice_upload 通知）
       if (audit.targetType !== 'voice') {
@@ -121,6 +127,12 @@ export class AdminAuditController {
         const userInfo = await this.auditService.getUserInfo(audit.targetId)
         if (userInfo) {
           notifyNickname = userInfo.nickname || ''
+        }
+      } else if (audit.targetType === 'answer') {
+        const answerInfo = await this.auditService.getAnswerInfo(audit.targetId)
+        if (answerInfo) {
+          notifyUserId = answerInfo.userId
+          notifyNickname = answerInfo.nickname || ''
         }
       }
       // voice 类型不发送审核通过/拒绝通知

@@ -350,6 +350,15 @@ export class AdminAuditService {
     return { nickname: user.nickname || '' }
   }
 
+  async getAnswerInfo(answerId: number) {
+    const answer = await this.answerRepository.findOne({
+      where: { id: answerId },
+      relations: ['user'],
+    })
+    if (!answer) return null
+    return { userId: answer.userId, nickname: (answer as any).user?.nickname || '' }
+  }
+
   async voiceAudit(userId: number, status: number, remark?: string) {
     const user = await this.userRepository.findOne({ where: { id: userId } })
     if (!user || !user.voiceUrl) throw new Error('用户无语音记录')

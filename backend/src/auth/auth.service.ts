@@ -82,7 +82,7 @@ export class AuthService {
   }
 
   /**
-   * 重新激活已注销用户：复位 isDeleted/status 并清除所有个人资料字段，等同于重新注册
+   * 重置用户资料（用于协议撤回后重新注册）：清除所有个人资料字段并复位 token 版本
    */
   private resetReactivatedUser(user: User): void {
     user.isDeleted = 0
@@ -149,6 +149,29 @@ export class AuthService {
     user.delegateToPlatform = false  // 隐私：不委托平台（仅红娘可操作）
   }
 
+  /**
+   * 兼容历史遗留数据：注销时未释放 openid/unionId 的旧记录，在新建账号前释放，
+   * 避免 openid/unionId 唯一索引冲突。
+   */
+  private async releaseLegacyDeletedUser(openid: string): Promise<void> {
+    try {
+      // 保持 updatedAt 不变：管理后台「已注销用户」的注销时间（canceledAt）取自 updatedAt，
+      // 直接 update 会触发 @UpdateDateColumn 自动刷新，导致注销时间被覆盖为重新注册时间。
+      const legacy = await this.userRepository.findOne({
+        where: { openid, isDeleted: 1 },
+        select: ['updatedAt'],
+      })
+      await this.userRepository.update(
+        { openid, isDeleted: 1 },
+        legacy?.updatedAt
+          ? { openid: null, unionId: null, updatedAt: legacy.updatedAt }
+          : { openid: null, unionId: null },
+      )
+    } catch (e: any) {
+      this.logger.warn('[auth] 释放历史注销用户 openid 失败:', e?.message || e)
+    }
+  }
+
   async wechatLogin(code: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     const session = await this.code2Session(code)
 
@@ -156,18 +179,14 @@ export class AuthService {
       throw new UnauthorizedException('微信登录失败，无效的code')
     }
 
-    // 按 openid 查找（包括已删除的），如果已删除则重新激活，避免二次查询窗口
+    // 按 openid 查找未注销用户（注销时已释放 openid，注销用户不会被命中）
     let user = await this.userRepository.findOne({
-      where: { openid: session.openid },
+      where: { openid: session.openid, isDeleted: 0 },
     })
-    if (user && user.isDeleted === 1) {
-      const preservedStatus = [3, 4].includes(user.status) ? user.status : null
-      this.resetReactivatedUser(user)
-      user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
-      await this.userRepository.save(user)
-      await this.userService.cleanupDeletedUserData(user.id)
-      this.clearRateLimitKeys(user.id)
-    } else if (!user) {
+    if (!user) {
+      // 注销后再注册 → 创建全新账号；兜底释放历史遗留的注销记录 openid
+      await this.releaseLegacyDeletedUser(session.openid)
+
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
         openid: session.openid,
@@ -278,20 +297,9 @@ export class AuthService {
     })
 
     if (!user) {
-      // 检查是否已删除：如果已注销则重新激活（相当于重新注册）
-      const deletedUser = await this.userRepository.findOne({
-        where: { openid: session.openid, isDeleted: 1 },
-      })
-      if (deletedUser) {
-        user = deletedUser
-        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
-        this.resetReactivatedUser(user)
-        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
-        user.phone = phoneData.purePhoneNumber
-        await this.userRepository.save(user)
-        await this.userService.cleanupDeletedUserData(user.id)
-        this.clearRateLimitKeys(user.id)
-      } else {
+      // 注销后再注册 → 创建全新账号；兜底释放历史遗留的注销记录 openid
+      await this.releaseLegacyDeletedUser(session.openid)
+
       // 新用户注册
       const userId = await this.userService.generateUserId()
       user = this.userRepository.create({
@@ -317,7 +325,6 @@ export class AuthService {
       }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
       user.protocolAgreedAt = new Date()
       user.protocolVersion = '1.0'
-      }
     } else {
       // 已有用户，绑定手机号（如果之前未绑定）
       if (!user.phone) {
@@ -435,42 +442,31 @@ export class AuthService {
     })
 
     if (!user) {
-      const deletedUser = await this.userRepository.findOne({
-        where: { openid: session.openid, isDeleted: 1 },
-      })
-      if (deletedUser) {
-        user = deletedUser
-        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
-        this.resetReactivatedUser(user)
-        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
-        user.phone = phone
-        await this.userRepository.save(user)
-        await this.userService.cleanupDeletedUserData(user.id)
-        this.clearRateLimitKeys(user.id)
-      } else {
-        const userId = await this.userService.generateUserId()
-        user = this.userRepository.create({
-          openid: session.openid,
-          unionId: session.unionid || null,
-          nickname: `昵称${userId}`,
-          userId,
-          phone,
-          status: await this.getNewUserStatus(),
-        })
-        user = await this.userRepository.save(user)
+      // 注销后再注册 → 创建全新账号；兜底释放历史遗留的注销记录 openid
+      await this.releaseLegacyDeletedUser(session.openid)
 
-        await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
-        this.agreementLogStorage.saveLog({
-          userId: user.id,
-          agreementType: 'USER_AGREEMENT',
-          version: '1.0',
-          action: 'agree',
-          ipAddress: ipAddress || '',
-          userAgent: userAgent || '',
-        }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
-        user.protocolAgreedAt = new Date()
-        user.protocolVersion = '1.0'
-      }
+      const userId = await this.userService.generateUserId()
+      user = this.userRepository.create({
+        openid: session.openid,
+        unionId: session.unionid || null,
+        nickname: `昵称${userId}`,
+        userId,
+        phone,
+        status: await this.getNewUserStatus(),
+      })
+      user = await this.userRepository.save(user)
+
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
     } else {
       if (!user.phone) {
         user.phone = phone
