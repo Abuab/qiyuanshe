@@ -165,10 +165,17 @@ const loadLoginConfig = async () => {
 }
 
 const checkLogin = () => {
-  if (userStore.isLoggedIn) {
+  // 以 storage 中的 token 为准判断登录态：401 处理会先同步清空 storage，而内存 store 的
+  // 清空是异步的，若只依赖内存 isLoggedIn 会在竞态窗口误判「已登录」导致闪跳登录页循环
+  const hasToken = !!secureStorage.getToken()
+  if (userStore.isLoggedIn && hasToken) {
     // 已登录用户直接进首页，不弹协议弹窗（后端已有协议记录）
     handleLoginSuccess()
     return
+  }
+  // storage 已无 token 但内存仍残留登录态（401 异步清理竞态/失败），同步清空内存态防止闪跳
+  if (userStore.isLoggedIn && !hasToken) {
+    userStore.clearLoginState()
   }
   // 未登录用户检查是否已同意协议（uniStorage + 本地缓存兜底）
   const hasAgreed = uni.getStorageSync(STORAGE_KEY.HAS_AGREED_PROTOCOL) === true

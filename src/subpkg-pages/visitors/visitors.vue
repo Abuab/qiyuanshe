@@ -61,7 +61,7 @@ interface Visitor {
   id: number
   nickname: string
   avatar: string
-  createdAt: string
+  lastVisitedAt: string
   isVip: boolean
 }
 

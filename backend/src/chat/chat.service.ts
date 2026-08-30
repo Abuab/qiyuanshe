@@ -516,6 +516,12 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
         `(SELECT ub2.blockerId FROM user_blocks ub2 WHERE ub2.blockedUserId = :uid4)`,
         { uid4: userId },
       )
+      // 排除已注销的聊天对象，与 total 查询的 isDeleted=0 保持一致，避免列表展示已注销用户
+      .andWhere(
+        `(CASE WHEN m.fromUserId = :uid5 THEN m.toUserId ELSE m.fromUserId END) NOT IN ` +
+        `(SELECT u.id FROM users u WHERE u.isDeleted = 1)`,
+        { uid5: userId },
+      )
       .groupBy('CASE WHEN m.fromUserId = :uid2 THEN m.toUserId ELSE m.fromUserId END')
       .setParameter('uid2', userId)
 

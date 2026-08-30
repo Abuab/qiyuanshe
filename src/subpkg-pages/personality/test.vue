@@ -71,7 +71,6 @@ import request, { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import {
   ensureGuestToken,
-  getGuestToken,
   saveLocalProgress,
   loadLocalProgress,
   clearLocalProgress,
@@ -211,10 +210,18 @@ function persist() {
       answeredAt: answeredAt.value[q.questionId] || Date.now(),
     }))
   if (answerList.length > 0) {
-    const payload: any = { sessionId: sessionId.value, answers: answerList }
-    if (!isLoggedIn.value) payload.guestToken = getGuestToken()
-    request({ url: '/personality/progress', method: 'POST', data: payload, skipToast: true }).catch(() => {})
+    syncProgress(answerList)
   }
+}
+
+// 静默同步答题进度到后端（游客 token 过期时自动刷新）
+async function syncProgress(answerList: any[]) {
+  const payload: any = { sessionId: sessionId.value, answers: answerList }
+  if (!isLoggedIn.value) {
+    const token = await ensureGuestToken()
+    if (token) payload.guestToken = token
+  }
+  request({ url: '/personality/progress', method: 'POST', data: payload, skipToast: true }).catch(() => {})
 }
 
 function choose(optionId: number) {
@@ -280,7 +287,7 @@ async function submit() {
   analyzing.value = true
   const analyzeStart = Date.now()
   try {
-    const guestToken = isLoggedIn.value ? '' : getGuestToken()
+    const guestToken = isLoggedIn.value ? '' : await ensureGuestToken()
     const payload: any = {
       sessionId: sessionId.value,
       startedAt: startedAt.value,

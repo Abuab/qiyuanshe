@@ -13,17 +13,47 @@ const QUESTIONS_CACHE_KEY = 'ptest_questions_cache'
 
 // ==================== 游客 token ====================
 
-export function getGuestToken(): string {
+interface GuestTokenStorage {
+  token: string
+  expiresAt: number
+}
+
+// 提前 5 分钟视为过期，留出刷新余量，避免临界时刻使用已失效 token
+const GUEST_TOKEN_SKEW_MS = 5 * 60 * 1000
+
+function readGuestTokenStorage(): GuestTokenStorage | null {
   try {
-    return (uni.getStorageSync(GUEST_TOKEN_KEY) as string) || ''
+    const raw = uni.getStorageSync(GUEST_TOKEN_KEY)
+    if (!raw) return null
+    // 兼容旧版本：可能存的是纯字符串 token（无过期时间，视为已过期）
+    if (typeof raw === 'string') {
+      return raw ? { token: raw, expiresAt: 0 } : null
+    }
+    if (raw && typeof raw === 'object' && (raw as GuestTokenStorage).token) {
+      return {
+        token: (raw as GuestTokenStorage).token,
+        expiresAt: (raw as GuestTokenStorage).expiresAt || 0,
+      }
+    }
+    return null
   } catch {
-    return ''
+    return null
   }
 }
 
-function setGuestToken(token: string): void {
+export function getGuestToken(): string {
+  return readGuestTokenStorage()?.token || ''
+}
+
+function setGuestToken(token: string, expiresInSeconds?: number): void {
   try {
-    uni.setStorageSync(GUEST_TOKEN_KEY, token)
+    if (expiresInSeconds) {
+      const data: GuestTokenStorage = { token, expiresAt: Date.now() + expiresInSeconds * 1000 }
+      uni.setStorageSync(GUEST_TOKEN_KEY, data)
+    } else {
+      // 未提供有效期时仍存字符串，兼容旧读取逻辑
+      uni.setStorageSync(GUEST_TOKEN_KEY, token)
+    }
   } catch { /* ignore */ }
 }
 
@@ -33,17 +63,20 @@ export function clearGuestToken(): void {
   } catch { /* ignore */ }
 }
 
-/** 确保存在有效游客 token（未登录时使用），返回 token（失败返回空串） */
+/** 确保存在有效游客 token（未登录时使用），返回 token（失败返回空串）；过期则自动重新获取 */
 export async function ensureGuestToken(): Promise<string> {
-  const existing = getGuestToken()
-  if (existing) return existing
+  const existing = readGuestTokenStorage()
+  if (existing && existing.token && existing.expiresAt > Date.now() + GUEST_TOKEN_SKEW_MS) {
+    return existing.token
+  }
   try {
     const sys = uni.getSystemInfoSync()
     const res: any = await post('/personality/guest-token', {
       deviceInfo: { model: sys.model, platform: sys.platform, system: sys.system },
     })
     const token = res?.guestToken || ''
-    if (token) setGuestToken(token)
+    const expiresIn = res?.expiresIn
+    if (token) setGuestToken(token, expiresIn)
     return token
   } catch {
     return ''

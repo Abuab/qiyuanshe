@@ -14,7 +14,7 @@
     <!-- 右侧信息区 -->
     <view class="card-info">
       <text class="card-nickname">{{ displayNickname }}</text>
-      <text class="card-time">{{ formatTime(visitor.createdAt) }}</text>
+      <text class="card-time">{{ formatTime(visitor.lastVisitedAt) }}</text>
       <view v-if="isBlurred" class="blur-tag">
         <text>同城异性</text>
       </view>
@@ -34,7 +34,7 @@ interface VisitorData {
   id: number
   nickname: string
   avatar: string
-  createdAt: string
+  lastVisitedAt: string
   isVip: boolean
 }
 

@@ -284,6 +284,12 @@ onMounted(() => {
   const options = currentPage.options || {}
 
   toUserId.value = parseInt(options.userId) || 0
+  // 无效聊天对象（未传 userId）时直接提示返回，避免发起 userId=0 的请求
+  if (!toUserId.value) {
+    uni.showToast({ title: '对方不存在或已注销', icon: 'none' })
+    setTimeout(() => uni.navigateBack(), 1500)
+    return
+  }
   nickname.value = decodeURIComponent(options.displayName || options.nickname || '聊天')
   avatar.value = decodeURIComponent(options.avatar || '')
   myAvatar.value = userStore.userInfo?.avatar || ''

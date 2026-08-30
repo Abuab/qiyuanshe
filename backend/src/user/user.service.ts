@@ -205,7 +205,12 @@ export class UserService {
     }
   }> {
     const user = await this.userRepository.findOne({
-      where: { id, status: 1, isDeleted: 0 },
+      where: {
+        id,
+        isDeleted: 0,
+        // 本人查看放宽 status（未完善资料的新用户也能看自己）；他人查看仍仅展示 NORMAL
+        ...(currentUserId === id ? {} : { status: 1 }),
+      },
     })
 
     if (!user) {
