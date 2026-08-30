@@ -31,6 +31,7 @@ import { CarAuthModule } from './car-auth/car-auth.module'
 import { EidAuthModule } from './eid-auth/eid-auth.module'
 import { PersonalityTestModule } from './personality-test/personality-test.module'
 import { GuideCopyModule } from './guide-copy/guide-copy.module'
+import { ConfigSeedModule } from './config-seed/config-seed.module'
 import { HealthController } from './health.controller'
 import { AdminModule } from './admin/admin.module'
 import { VipModule } from './vip/vip.module'
@@ -83,6 +84,7 @@ import { CommonModule } from './common/common.module'
     EidAuthModule,
     PersonalityTestModule,
     GuideCopyModule,
+    ConfigSeedModule,
     CosModule,
     WinstonLoggerModule,
     CommonModule,
