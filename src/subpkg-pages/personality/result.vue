@@ -74,7 +74,7 @@
       <!-- ========== 登录完整版 ========== -->
       <block v-else>
         <!-- AI 深度解读（折叠卡片） -->
-        <view class="ai-card">
+        <view v-if="aiPersonalityEnabled" class="ai-card">
           <view class="ai-head" @tap="toggleAi">
             <view class="ai-head-left">
               <view class="ico ico-star ico-sm ai-star"></view>
@@ -126,7 +126,7 @@
         </view>
 
         <!-- 分享文案 -->
-        <view class="share-card">
+        <view v-if="aiPersonalityEnabled" class="share-card">
           <text class="section-title">AI 生成分享文案</text>
           <view class="style-tabs">
             <view
@@ -178,6 +178,7 @@ import { onLoad, onReady, onShow } from '@dcloudio/uni-app'
 import request, { get, post } from '@/utils/request'
 import { logger } from '@/utils/logger'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import {
   getGuestToken,
   clearGuestToken,
@@ -214,6 +215,7 @@ const RESULT_CTA_SLOT = 'result_login_cta'
 const DEFAULT_TYPE_NAME = '神秘探索者'
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const instance = getCurrentInstance()
 const statusBarHeight = ref(20)
 const loading = ref(true)
@@ -235,6 +237,8 @@ const dimensions = computed(() => result.value?.dimensions || [])
 const matchTypeDetails = computed<MatchTypeDetail[]>(() => result.value?.matchTypeDetails || [])
 // 类型名兜底：后端类型数据异常时展示默认类型「神秘探索者」
 const displayTypeName = computed(() => result.value?.typeName || DEFAULT_TYPE_NAME)
+// AI 性格功能开关：后台关闭后隐藏「AI 深度解读」与「AI 生成分享文案」
+const aiPersonalityEnabled = computed(() => systemStore.isAiFeatureEnabled('personality'))
 
 // 登录 CTA 文案（后台文案位配置，默认兜底）
 const loginCtaText = ref('登录查看完整解析')
@@ -266,6 +270,7 @@ onReady(() => {
 
 // onShow：登录态变化后自动刷新（游客登录 → 完整版）
 onShow(() => {
+  systemStore.loadAiFeatureConfig(true) // force=true 确保每次显示都拉最新 AI 开关状态
   loadResult()
 })
 

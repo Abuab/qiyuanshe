@@ -585,6 +585,23 @@ export class UserController {
     }
   }
 
+  @Post(':id/remind-verify')
+  @UseGuards(JwtAuthGuard)
+  async remindRealnameVerify(
+    @Param('id', ParseIntPipe) targetUserId: number,
+    @Request() req: any,
+  ) {
+    try {
+      const userId = req.user.id
+      const { sent } = await this.userService.remindRealnameVerify(userId, targetUserId)
+      return Result.success({ sent }, sent ? '已发送提醒' : '今天已提醒过对方')
+    } catch (error: any) {
+      this.logger.error('remindRealnameVerify error:', error?.message || error)
+      if (error.getStatus) throw error
+      return Result.serverError('提醒失败: ' + (error?.message || '请稍后重试'))
+    }
+  }
+
   @Post(':id/like')
   @UseGuards(JwtAuthGuard)
   async likeUser(

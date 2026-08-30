@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import * as crypto from 'crypto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ContentFilterService } from '../common/content-filter.service'
 import { Repository, SelectQueryBuilder, In, DataSource } from 'typeorm'
-import { User, UserPhoto } from '../entities'
+import { User, UserPhoto, UserNotification } from '../entities'
 import { Follow } from '../entities/Follow'
 import { UserBlock } from '../entities/UserBlock'
 import { ProfileVisit } from '../entities/ProfileVisit'
@@ -80,6 +80,8 @@ export class UserService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(UserAgreement)
     private readonly agreementRepo: Repository<UserAgreement>,
+    @InjectRepository(UserNotification)
+    private readonly notificationRepository: Repository<UserNotification>,
     private readonly systemService: SystemService,
     private readonly recommendService: RecommendService,
     private readonly agreementLogStorage: AgreementLogStorageService,
@@ -341,7 +343,7 @@ export class UserService {
 
   async followUser(userId: number, targetUserId: number): Promise<void> {
     if (userId === targetUserId) {
-      throw new UnauthorizedException('不能关注自己')
+      throw new BadRequestException('不能关注自己')
     }
 
     // 使用事务：同时检查、创建关注记录
@@ -354,7 +356,7 @@ export class UserService {
         ],
       })
       if (blockExists) {
-        throw new UnauthorizedException('无法关注该用户')
+        throw new BadRequestException('无法关注该用户')
       }
 
       const targetUser = await manager.findOne(User, {
@@ -370,7 +372,7 @@ export class UserService {
       })
 
       if (existingFollow) {
-        throw new UnauthorizedException('已关注该用户')
+        throw new BadRequestException('已关注该用户')
       }
 
       const follow = manager.create(Follow)
@@ -395,6 +397,49 @@ export class UserService {
 
       await manager.remove(follow)
     })
+  }
+
+  /**
+   * 提醒对方完成实名认证（向对方发送系统通知）
+   */
+  async remindRealnameVerify(userId: number, targetUserId: number): Promise<{ sent: boolean }> {
+    if (userId === targetUserId) {
+      throw new BadRequestException('不能提醒自己')
+    }
+
+    const targetUser = await this.userRepository.findOne({
+      where: { id: targetUserId, isDeleted: 0 },
+    })
+    if (!targetUser) {
+      throw new NotFoundException('用户不存在')
+    }
+    if (targetUser.isRealName === 1) {
+      throw new BadRequestException('对方已完成实名认证')
+    }
+
+    // 24 小时内同一对用户只提醒一次，避免重复打扰
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const recentNotify = await this.notificationRepository.findOne({
+      where: { userId: targetUserId, senderType: 'realname_remind', senderId: userId },
+      order: { createdAt: 'DESC' },
+    })
+    if (recentNotify && recentNotify.createdAt > oneDayAgo) {
+      return { sent: false }
+    }
+
+    const sender = await this.userRepository.findOne({ where: { id: userId } })
+    const senderName = sender?.nickname || '一位用户'
+
+    const notification = this.notificationRepository.create({
+      userId: targetUserId,
+      title: '实名认证提醒',
+      content: `${senderName} 提醒你尽快完成实名认证，认证后可获得更多信任与曝光，认识彼此更安心～`,
+      senderType: 'realname_remind',
+      senderId: userId,
+    })
+    await this.notificationRepository.save(notification)
+
+    return { sent: true }
   }
 
   /** 查询当前用户是否已关注目标用户 */

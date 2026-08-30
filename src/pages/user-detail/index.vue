@@ -398,25 +398,6 @@
         </view>
       </view>
 
-      <!-- ========== 关注后订阅弹窗 ========== -->
-      <view v-if="showSubscribeDialog" class="dialog-overlay" @tap="closeSubscribeDialog">
-        <view class="dialog-card" @tap.stop>
-          <text class="dialog-title">总是保持订阅，不错过重要信息</text>
-          <view class="dialog-buttons">
-            <view class="dialog-btn cancel-btn" @tap="closeSubscribeDialog">
-              <text>取消</text>
-            </view>
-            <view class="dialog-btn allow-btn" @tap="handleSubscribeAllow">
-              <text>允许</text>
-            </view>
-          </view>
-          <label class="dialog-check-label">
-            <checkbox :checked="alwaysSubscribe" @tap="alwaysSubscribe = !alwaysSubscribe" style="transform:scale(0.7)" />
-            <text>总是保持以上选择，不再询问</text>
-          </label>
-        </view>
-      </view>
-
       <!-- ========== 拉黑确认弹窗 ========== -->
       <view v-if="showBlockDialog" class="dialog-overlay" @tap="showBlockDialog = false">
         <view class="dialog-card" @tap.stop>
@@ -884,10 +865,6 @@ const safeAreaBottom = computed(() => {
   return sysInfo.platform === 'android' ? 28 : 0
 })
 
-// ===== 订阅弹窗 =====
-const showSubscribeDialog = ref(false)
-const alwaysSubscribe = ref(false)
-
 // ===== 拉黑弹窗 =====
 const showBlockDialog = ref(false)
 const isBlocked = ref(false)
@@ -1156,12 +1133,18 @@ const goToAnswer = (item: any) => {
   uni.navigateTo({ url: `/subpkg-pages/answer/index?questionId=${questionId}&title=${title}` })
 }
 
-const remindVerify = () => {
+const remindVerify = async () => {
   if (!isLoggedIn.value) {
     goToLogin()
     return
   }
-  uni.showToast({ title: '已发送提醒', icon: 'success' })
+  try {
+    const res: any = await request({ url: `/users/${userId.value}/remind-verify`, method: 'POST' })
+    const sent = res?.sent
+    uni.showToast({ title: sent ? '已发送提醒' : '今天已提醒过对方', icon: 'none' })
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || '提醒失败', icon: 'none' })
+  }
 }
 
 // ===== 关注 / 取消关注 =====
@@ -1177,25 +1160,11 @@ const toggleFollow = async () => {
     await request({ url: `/users/${userId.value}/follow`, method: followed ? 'DELETE' : 'POST' })
     profileData.value.top.isFollowed = !followed
     uni.showToast({ title: followed ? '已取消关注' : '关注成功', icon: 'success', duration: 1000 })
-    // 操作完成后弹出订阅弹窗
-    setTimeout(() => {
-      showSubscribeDialog.value = true
-    }, 1200)
   } catch (e: any) {
     uni.showToast({ title: e?.message || '操作失败', icon: 'none' })
   } finally {
     followLoading.value = false
   }
-}
-
-const closeSubscribeDialog = () => {
-  showSubscribeDialog.value = false
-}
-
-const handleSubscribeAllow = () => {
-  showSubscribeDialog.value = false
-  // 只要点击允许，就全局不再弹窗
-  uni.setStorageSync('subscribe_always_allow', true)
 }
 
 // ===== 拉黑 =====

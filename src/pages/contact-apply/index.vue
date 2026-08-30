@@ -92,25 +92,6 @@
       <view class="bottom-spacer" />
     </scroll-view>
 
-    <!-- ===== 订阅弹窗 ===== -->
-    <view v-if="showSubscribeDialog" class="dialog-overlay" @tap="closeSubscribeDialog">
-      <view class="dialog-card" @tap.stop>
-        <text class="dialog-title">总是保持订阅，不错过重要信息</text>
-        <view class="dialog-buttons">
-          <view class="dialog-btn cancel-btn" @tap="closeSubscribeDialog">
-            <text>取消</text>
-          </view>
-          <view class="dialog-btn allow-btn" @tap="handleSubscribeAllow">
-            <text>允许</text>
-          </view>
-        </view>
-        <label class="dialog-check-label">
-          <checkbox :checked="alwaysSubscribe" @tap="alwaysSubscribe = !alwaysSubscribe" style="transform:scale(0.7)" />
-          <text>总是保持以上选择，不再询问</text>
-        </label>
-      </view>
-    </view>
-
     <!-- ===== 红娘弹窗 ===== -->
     <matchmaker-popup
       :show="showMatchmaker"
@@ -237,22 +218,6 @@ const presetMatchmakerText = computed(() => {
   return `我想认识 "${targetNickname.value}"，ID：${targetPublicUserId.value || targetUserId.value}，请帮我牵线。`
 })
 
-// ===== 订阅弹窗 =====
-const showSubscribeDialog = ref(false)
-const alwaysSubscribe = ref(false)
-
-const closeSubscribeDialog = () => {
-  showSubscribeDialog.value = false
-}
-
-const handleSubscribeAllow = () => {
-  showSubscribeDialog.value = false
-  // 只要点击允许，就全局不再弹窗
-  uni.setStorageSync('subscribe_always_allow', true)
-  // 订阅确认后执行红线扣除
-  doUseRedLine()
-}
-
 // ===== 红线扣除 =====
 const showSuccess = ref(false)
 const doUseRedLine = async () => {
@@ -263,7 +228,7 @@ const doUseRedLine = async () => {
       method: 'POST',
       data: { targetUserId: targetUserId.value },
     })
-    if (res.success || res.code === 0) {
+    if (res && (res.success || res.code === 0)) {
       const already = res.data?.alreadyUnlocked || res.alreadyUnlocked
       const contact = (res.data?.contact || res.contact || '').toString()
       uni.showToast({
@@ -277,10 +242,10 @@ const doUseRedLine = async () => {
       // 显示成功状态和去聊天按钮
       showSuccess.value = true
     } else {
-      uni.showToast({ title: res.message || '操作失败', icon: 'none' })
+      uni.showToast({ title: res?.message || '操作失败', icon: 'none' })
     }
-  } catch (e: any) {
-    uni.showToast({ title: e?.message || '操作失败，请稍后重试', icon: 'none' })
+  } catch {
+    // request 层已统一弹出失败提示，此处不重复弹 Toast
   } finally {
     applying.value = false
   }
@@ -312,20 +277,14 @@ const handleConfirm = async () => {
     redLineRemaining.value = statusRes?.data?.remaining ?? statusRes?.remaining ?? 0
 
     if (redLineRemaining.value > 0) {
-      // 红线充足：弹出订阅弹窗
-      const neverAsk = uni.getStorageSync('subscribe_always_allow')
-      if (neverAsk) {
-        // 已勾选"不再询问"，直接扣除
-        await doUseRedLine()
-      } else {
-        showSubscribeDialog.value = true
-      }
+      // 红线充足：直接扣除
+      await doUseRedLine()
     } else {
       // 红线不足：展开提示区
       showInsufficient.value = true
     }
-  } catch (e: any) {
-    uni.showToast({ title: e?.message || '网络异常，请稍后重试', icon: 'none' })
+  } catch {
+    // request 层已统一弹出失败提示，此处不重复弹 Toast
   } finally {
     applying.value = false
   }

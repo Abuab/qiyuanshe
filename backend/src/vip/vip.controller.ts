@@ -36,7 +36,7 @@ export class VipController {
   @UseGuards(JwtAuthGuard)
   async useTopCard(@Request() req: any) {
     if (!(await this.systemService.isVipEnabled())) {
-      return Result.success(null, '功能维护中，请稍后再试')
+      return Result.error('功能维护中，请稍后再试', 503)
     }
     try {
       const result = await this.vipService.useTopCard(req.user.id)
@@ -65,7 +65,7 @@ export class VipController {
     @Body('targetUserId') targetUserId: number,
   ) {
     if (!(await this.systemService.isVipEnabled())) {
-      return Result.success(null, '功能维护中，请稍后再试')
+      return Result.error('功能维护中，请稍后再试', 503)
     }
     try {
       const result = await this.vipService.useRedLine(req.user.id, targetUserId)
