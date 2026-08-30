@@ -36,6 +36,9 @@ async function bootstrap() {
   // 将 Winston 设为全局 Logger，替换所有 new Logger() 实例的输出
   app.useLogger(loggerService)
 
+  // 身份证 OCR 等接口会以 base64 上传图片，需放宽 JSON 请求体限制（默认 100KB）
+  app.useBodyParser('json', { limit: '10mb' })
+
   // ===== 生产环境 CORS 校验 =====
   const isProduction = process.env.NODE_ENV === 'production'
 

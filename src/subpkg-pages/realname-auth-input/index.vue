@@ -266,32 +266,47 @@ const handleOCR = () => {
       const filePath = res.tempFilePaths && res.tempFilePaths[0]
       if (!filePath) return
       uni.showLoading({ title: '识别中...', mask: true })
-      const fs = uni.getFileSystemManager()
-      fs.readFile({
-        filePath,
-        encoding: 'base64',
-        success: async (r: any) => {
-          try {
-            const resp: any = await post('/eid-auth/ocr', { imageBase64: r.data })
-            const d = resp?.data || resp
-            if (d && d.name) realName.value = d.name
-            if (d && d.idCard) idCard.value = d.idCard
-            if (d && (d.name || d.idCard)) {
-              showToast('识别成功')
-            } else {
-              showToast('未识别到身份证信息，请手动填写')
-            }
-          } catch (e: any) {
-            showToast(e?.message || '识别失败，请手动填写')
-          } finally {
-            uni.hideLoading()
-          }
+      // 先压缩图片，避免 base64 上传超过后端请求体限制
+      uni.compressImage({
+        src: filePath,
+        quality: 80,
+        compressedWidth: 1280,
+        success: (compressed: any) => {
+          readImageAndOcr(compressed.tempFilePath || filePath)
         },
         fail: () => {
-          uni.hideLoading()
-          showToast('读取图片失败，请手动填写')
+          readImageAndOcr(filePath)
         },
       })
+    },
+  })
+}
+
+function readImageAndOcr(filePath: string) {
+  const fs = uni.getFileSystemManager()
+  fs.readFile({
+    filePath,
+    encoding: 'base64',
+    success: async (r: any) => {
+      try {
+        const resp: any = await post('/eid-auth/ocr', { imageBase64: r.data })
+        const d = resp?.data || resp
+        if (d && d.name) realName.value = d.name
+        if (d && d.idCard) idCard.value = d.idCard
+        if (d && (d.name || d.idCard)) {
+          showToast('识别成功')
+        } else {
+          showToast('未识别到身份证信息，请手动填写')
+        }
+      } catch (e: any) {
+        showToast(e?.message || '识别失败，请手动填写')
+      } finally {
+        uni.hideLoading()
+      }
+    },
+    fail: () => {
+      uni.hideLoading()
+      showToast('读取图片失败，请手动填写')
     },
   })
 }
