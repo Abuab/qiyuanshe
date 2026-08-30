@@ -85,8 +85,6 @@
             :circular="true"
             :interval="4000"
             :duration="400"
-            :current="questionSwiperIndex"
-            @change="onQuestionSwiperChange"
             :style="{ height: '100rpx' }"
           >
             <swiper-item v-for="q in hotQuestions" :key="q.id">
@@ -242,7 +240,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
@@ -293,7 +291,6 @@ const loadingMore = ref(false)
 const noMoreData = ref(false)
 const currentPage = ref(1)
 const showFilter = ref(false)
-const questionSwiperIndex = ref(0)
 const statusBarHeight = ref(0)
 const scrollViewStyle = computed(() => {
   const top = (statusBarHeight.value || 20) + 44
@@ -516,10 +513,6 @@ const goToQuestionDetail = (q: { id: number; title: string }) => {
   })
 }
 
-const onQuestionSwiperChange = (e: any) => {
-  questionSwiperIndex.value = e.detail.current
-}
-
 const goToFilter = () => {
   showFilter.value = true
 }
@@ -665,20 +658,20 @@ onShow(() => {
   }
 })
 
-const onShareAppMessage = () => {
+onShareAppMessage(() => {
   return {
     title: `${systemStore.appName} - 遇见对的TA`,
     path: '/pages/index/index',
     imageUrl: icons.common.heart,
   }
-}
+})
 
-const onShareTimeline = () => {
+onShareTimeline(() => {
   return {
     title: `${systemStore.appName} - 遇见对的TA`,
     imageUrl: icons.common.heart,
   }
-}
+})
 </script>
 
 <style lang="scss" scoped>
@@ -840,6 +833,7 @@ const onShareTimeline = () => {
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
