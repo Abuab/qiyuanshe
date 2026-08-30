@@ -21,7 +21,8 @@
           <view class="target-info">
             <view class="target-name-row">
               <text class="target-nickname">{{ targetNickname }}</text>
-              <view v-if="targetIsRealName" class="real-name-tag">
+              <view v-if="targetIsRealName" class="real-name-badge">
+                <AppIcon name="icon-shimingrenzheng" size="20" color="#FFFFFF" />
                 <text>已实名</text>
               </view>
             </view>
@@ -122,6 +123,7 @@ import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
@@ -441,15 +443,18 @@ onMounted(() => {
   color: #333;
 }
 
-.real-name-tag {
-  padding: 2rpx 12rpx;
-  background: linear-gradient(135deg, #67C23A, #85CE61);
-  border-radius: 6rpx;
-
-  text {
-    font-size: 20rpx;
-    color: #fff;
-  }
+.real-name-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2rpx;
+  padding: 2rpx 4rpx;
+  font-size: 20rpx;
+  color: #fff;
+  background-color: #4d9fff;
+  border-radius: 10rpx;
+  line-height: 1.4;
+  margin-left: 6rpx;
 }
 
 .target-brief {
