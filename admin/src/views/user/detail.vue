@@ -2190,10 +2190,15 @@ async function handleEditSave() {
   finally { editSaving.value = false }
 }
 
-async function handleVipSubmit(payload: { level: number; days: number }) {
+async function handleVipSubmit(payload: { level: number; days: number; packageId?: number | null; packageName?: string }) {
   if (!user.value) return
   try {
-    const res = await adminUsers.updateVip(user.value.id, { level: payload.level, days: payload.days } as any)
+    const res = await adminUsers.updateVip(user.value.id, {
+      level: payload.level,
+      days: payload.days,
+      packageName: payload.packageName || undefined,
+      packageId: payload.packageId ?? undefined,
+    } as any)
     if (res.success) { ElMessage.success('VIP设置成功'); vipDialogVisible.value = false; fetchDetail() }
     else ElMessage.error(res.message || 'VIP设置失败')
   } catch (e: any) { ElMessage.error(e.message || 'VIP设置失败') }
