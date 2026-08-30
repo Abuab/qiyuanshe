@@ -252,6 +252,12 @@ export class QuestionService implements OnModuleInit {
       }
       if (auditResult === 'review') {
         answerStatus = ANSWER_STATUS.PENDING
+      } else if (auditResult === 'pass') {
+        // AI 审核通过但开启了人工复核时，仍进入待审核，等待管理员确认
+        const manualReview = await this.getConfigValue('audit.manualReviewEnabled')
+        if (manualReview === '1' || manualReview === 'true') {
+          answerStatus = ANSWER_STATUS.PENDING
+        }
       }
     }
 
@@ -275,9 +281,9 @@ export class QuestionService implements OnModuleInit {
       { answerCount: question.answerCount + 1 },
     )
 
-    // 创建审核记录
+    // 创建审核记录（action 需与管理后台审核列表的状态筛选保持一致：PENDING/APPROVE）
     const auditLog = this.auditLogRepository.create({
-      action: answerStatus === ANSWER_STATUS.PENDING ? 'PENDING' : 'PASS',
+      action: answerStatus === ANSWER_STATUS.PENDING ? 'PENDING' : 'APPROVE',
       targetType: 'answer',
       targetId: answerId,
       submitterId: userId,

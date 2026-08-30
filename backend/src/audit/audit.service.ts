@@ -191,10 +191,13 @@ export class AuditService {
         action: `TEXT_${result.result.toUpperCase()}`,
         targetType: type,
         targetId: targetId || 0,
+        submitterId: userId || null,
+        content: (text || '').substring(0, 500),
         reason: JSON.stringify({
           aiResult: result.evilLabel,
           keywords: result.keywords,
         }),
+        aiResult: result.evilLabel,
       })
       await this.auditLogRepository.save(log)
 

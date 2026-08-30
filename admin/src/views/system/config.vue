@@ -46,10 +46,13 @@
             </el-form-item>
 
             <el-form-item label="会员卡片轮播文案">
-              <div v-for="(txt, idx) in basicConfig.vipCardTexts" :key="idx" style="margin-bottom:6px">
-                <el-input v-model="basicConfig.vipCardTexts[idx]" :placeholder="['限时特惠，尊享VIP特权','每日签到领金币，解锁更多功能','开通VIP，优先匹配心仪TA'][idx]" style="width:100%">
-                  <template #append>{{ idx + 1 }}</template>
-                </el-input>
+              <div v-for="(txt, idx) in basicConfig.vipCardTexts" :key="idx" class="vip-card-text-row">
+                <span class="vip-card-text-idx">{{ idx + 1 }}</span>
+                <el-input
+                  v-model="basicConfig.vipCardTexts[idx]"
+                  :placeholder="['限时特惠，尊享VIP特权','每日签到领金币，解锁更多功能','开通VIP，优先匹配心仪TA'][idx]"
+                  class="vip-card-text-input"
+                />
               </div>
               <div class="form-tip">我的页会员卡片栏轮播展示的文字（3条）</div>
             </el-form-item>
@@ -469,6 +472,26 @@ async function uploadLoginIllustration(options: any) {
     font-size: 12px;
     color: #909399;
     margin-top: 4px;
+  }
+
+  .vip-card-text-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .vip-card-text-idx {
+    flex: none;
+    width: 20px;
+    margin-right: 8px;
+    color: #909399;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .vip-card-text-input {
+    flex: 1;
   }
 
   .upload-item {
