@@ -48,21 +48,18 @@
         </view>
       </view>
 
-      <!-- ===== 交换成功后去聊天 ===== -->
+      <!-- ===== 交换成功 ===== -->
       <view v-if="showSuccess" class="success-section">
         <view class="success-card">
           <view class="ico ico-check ico-xl success-icon"></view>
           <text class="success-title">联系方式已解锁</text>
-          <text class="success-desc">你现在可以与 {{ targetNickname }} 自由聊天了</text>
+          <text class="success-desc">你现在可以与 {{ targetNickname }} 联系了</text>
           <view v-if="unlockedContact" class="success-contact">
             <text class="contact-label">手机号：</text>
             <text class="contact-value">{{ unlockedContact }}</text>
           </view>
         </view>
         <view class="success-btns">
-          <view class="success-btn chat-btn" @tap="goChat">
-            <text>去聊天</text>
-          </view>
           <view class="success-btn back-btn" @tap="handleBack">
             <text>返回</text>
           </view>
@@ -119,7 +116,6 @@ import { getFullImageUrl } from '@/utils/common'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
-import { useUserStore } from '@/store/user'
 import { requireLogin } from '@/utils/auth'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -127,7 +123,6 @@ import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
-const userStore = useUserStore()
 
 // ===== 查询参数 =====
 const targetUserId = ref(0)
@@ -241,7 +236,7 @@ const doUseRedLine = async () => {
       // 缓存已解锁用户及联系方式
       addUnlockedTarget(targetUserId.value, contact)
       unlockedContact.value = contact
-      // 显示成功状态和去聊天按钮
+      // 显示成功状态
       showSuccess.value = true
     } else {
       uni.showToast({ title: res?.message || '操作失败', icon: 'none' })
@@ -251,17 +246,6 @@ const doUseRedLine = async () => {
   } finally {
     applying.value = false
   }
-}
-
-const goChat = () => {
-  // 聊天功能关闭时，跳转到用户详情页
-  if (!systemStore.chatEnabled) {
-    uni.navigateTo({ url: `/pages/user-detail/index?id=${targetUserId.value}` })
-    return
-  }
-  uni.navigateTo({
-    url: `/pages/chat/index?userId=${targetUserId.value}&nickname=${encodeURIComponent(targetNickname.value)}&avatar=${encodeURIComponent(targetAvatar.value)}`,
-  })
 }
 
 // ===== 确认申请 =====
@@ -593,14 +577,6 @@ onMounted(() => {
   text {
     font-size: 32rpx;
     font-weight: 600;
-  }
-}
-
-.success-btn.chat-btn {
-  background: linear-gradient(135deg, #FF6B9D, #FF8E8E);
-
-  text {
-    color: #fff;
   }
 }
 

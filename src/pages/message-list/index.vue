@@ -15,7 +15,6 @@
       enable-flex
       :scroll-top="scrollToVal"
       @scroll="onScroll"
-      @scrolltolower="loadMore"
       :refresher-enabled="true"
       @refresherrefresh="onRefresh"
       :refresher-triggered="refreshing"
@@ -67,39 +66,6 @@
           </view>
         </view>
 
-        <!-- 用户聊天项 -->
-        <view v-else class="user-message" @tap.stop="goToChat(item)">
-          <image
-            class="user-avatar"
-            :src="getFullImageUrl(item.avatar) || icons.common.defaultAvatar"
-            mode="aspectFill"
-            lazy-load
-          />
-          <view class="message-content">
-            <view class="message-header">
-              <text class="message-title">{{ item.displayName || item.nickname }}</text>
-              <text class="message-time">{{ formatTime(item.createdAt) }}</text>
-            </view>
-            <text class="message-preview">{{ isImagePreview(item) ? '[图片]' : item.lastMessage }}</text>
-          </view>
-          <view v-if="item.unreadCount > 0" class="unread-badge">
-            <text>{{ item.unreadCount > 99 ? '99+' : item.unreadCount }}</text>
-          </view>
-          <!-- 删除按钮 -->
-          <view
-            class="delete-btn"
-            :style="item.unreadCount > 0 ? 'right: 60rpx' : ''"
-            @tap.stop="confirmDelete(item)"
-          >
-            <text>删除</text>
-          </view>
-        </view>
-      </view>
-
-      <view v-if="!loading && noMore && messageList.length > 0" class="no-more-tip">
-        <view class="no-more-line"></view>
-        <text>仅展示最近2个月的消息</text>
-        <view class="no-more-line"></view>
       </view>
     </scroll-view>
 
@@ -125,7 +91,6 @@ import { safeNavigateBack } from '@/utils/navigate'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { useMessageStore } from '@/store/message'
-import { icons } from '@/config/icons'
 import { getFullImageUrl } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import BackTop from '@/components/back-top/back-top.vue'
@@ -143,20 +108,7 @@ interface SystemAggregate {
   unreadCount: number
 }
 
-interface UserMessage {
-  id: number
-  type: 'user'
-  userId: string      // 6位公开ID
-  nickname: string
-  displayName?: string
-  avatar: string
-  lastMessage: string
-  messageType?: string
-  createdAt: string
-  unreadCount: number
-}
-
-type MessageItem = SystemAggregate | UserMessage
+type MessageItem = SystemAggregate
 
 const userStore = useUserStore()
 const messageStore = useMessageStore()
@@ -173,8 +125,6 @@ const handleOfficialAccount = async () => {
 const messageList = ref<MessageItem[]>([])
 const loading = ref(false)
 const refreshing = ref(false)
-const noMore = ref(false)
-const page = ref(1)
 let fetchLock = false // 防止 onMounted + onShow 并发导致重复请求
 
 // ===== 回到顶部 =====
@@ -187,7 +137,7 @@ onMounted(() => {
 })
 
 onShow(() => {
-  fetchConversations(true)
+  fetchConversations()
 })
 
 const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggregate => {
@@ -202,7 +152,7 @@ const buildSystemAggregate = (lastNotify: any, unreadCount: number): SystemAggre
   }
 }
 
-const fetchConversations = async (isRefresh = false) => {
+const fetchConversations = async () => {
   // 游客态：不发起认证请求，仅展示系统消息入口，避免「暂无消息」空态或 401 触发登录跳转
   if (!userStore.isLoggedIn) {
     messageList.value = [buildSystemAggregate(null, 0)]
@@ -214,65 +164,30 @@ const fetchConversations = async (isRefresh = false) => {
   if (fetchLock) return
   fetchLock = true
   try {
-    if (isRefresh) {
-      page.value = 1
-      noMore.value = false
-    }
-
     loading.value = true
 
-    // 并行获取聊天会话 + 系统通知未读数
-    const [chatRes, notifyRes] = await Promise.all([
-      request({
-        url: '/chat/conversations',
-        method: 'GET',
-        data: { page: page.value },
-      }).catch(() => ({ list: [] })),
-      request({
-        url: '/notifications',
-        method: 'GET',
-        data: { page: 1, limit: 1 },
-      }).catch(() => ({ data: { list: [], unreadCount: 0 } })),
-    ])
+    // 获取系统通知未读数
+    const notifyRes = await request({
+      url: '/notifications',
+      method: 'GET',
+      data: { page: 1, limit: 1 },
+    }).catch(() => ({ data: { list: [], unreadCount: 0 } }))
 
     // 请求返回时已退出登录：丢弃结果，避免向全局未读数/列表写入脏数据
     if (!userStore.isLoggedIn) return
-
-    const chatList = ((chatRes as any).list || []).map((item: any) => ({
-      ...item,
-      type: 'user' as const,
-    }))
 
     const notifyData: any = (notifyRes as any)?.data || (notifyRes as any) || {}
     const notifyUnread = notifyData.unreadCount || 0
     const lastNotify = (notifyData.list && notifyData.list.length > 0) ? notifyData.list[0] : null
 
     // 更新未读数
-    const totalUnread = chatList.reduce((sum: number, c: any) => sum + (c.unreadCount || 0), 0) + notifyUnread
-    messageStore.setUnreadCount(totalUnread)
+    messageStore.setUnreadCount(notifyUnread)
 
     // 构建聚合的系统消息入口
     const systemAggregate = buildSystemAggregate(lastNotify, notifyUnread)
+    messageList.value = [systemAggregate]
 
-    // 合并：系统消息入口在前，聊天在后
-    const mergedList: MessageItem[] = [systemAggregate, ...chatList]
-
-    if (isRefresh) {
-      messageList.value = mergedList
-      refreshing.value = false
-    } else {
-      if (page.value === 1) {
-        messageList.value = mergedList
-      } else {
-        messageList.value.push(...chatList)
-      }
-    }
-
-    if (chatList.length < 20) {
-      noMore.value = true
-    }
-
-    page.value++
+    refreshing.value = false
   } catch (e) {
     logger.error('fetch conversations error', e)
     refreshing.value = false
@@ -282,15 +197,9 @@ const fetchConversations = async (isRefresh = false) => {
   }
 }
 
-const loadMore = () => {
-  if (!loading.value && !noMore.value) {
-    fetchConversations()
-  }
-}
-
 const onRefresh = () => {
   refreshing.value = true
-  fetchConversations(true)
+  fetchConversations()
 }
 
 const handleBack = () => {
@@ -301,71 +210,6 @@ const handleClick = (item: MessageItem) => {
   if (item.type === 'systemAggregate') {
     uni.navigateTo({ url: '/subpkg-pages/system-messages/index' })
   }
-}
-
-const goToChat = (item: UserMessage) => {
-  // 聊天功能关闭时，禁止进入聊天
-  if (!systemStore.chatEnabled) {
-    uni.showToast({ title: '聊天功能暂未开放', icon: 'none' })
-    return
-  }
-  uni.navigateTo({
-    url: `/pages/chat/index?userId=${item.id}&nickname=${encodeURIComponent(item.displayName || item.nickname)}&displayName=${encodeURIComponent(item.displayName || item.nickname)}&avatar=${encodeURIComponent(item.avatar || '')}`,
-  })
-}
-
-const confirmDelete = (item: UserMessage) => {
-  uni.showModal({
-    title: '删除会话',
-    content: `确定要删除与 ${item.displayName || item.nickname} 的聊天记录吗？`,
-    confirmText: '删除',
-    confirmColor: '#FF6B9D',
-    success: async (res) => {
-      if (res.confirm) {
-        await deleteConversation(item.id)
-      }
-    },
-  })
-}
-
-const deleteConversation = async (targetUserId: number) => {
-  try {
-    await request({
-      url: `/chat/conversations/${targetUserId}`,
-      method: 'DELETE',
-    })
-    uni.showToast({ title: '已删除', icon: 'success' })
-    // 从列表中移除
-    messageList.value = messageList.value.filter(m => m.type !== 'user' || (m as UserMessage).id !== targetUserId)
-  } catch {
-    uni.showToast({ title: '删除失败', icon: 'none' })
-  }
-}
-
-const formatTime = (timeStr: string) => {
-  if (!timeStr) return ''
-
-  const date = new Date(timeStr)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
-
-  return `${date.getMonth() + 1}-${date.getDate()}`
-}
-
-const IMAGE_EXT_RE = /\.(jpg|jpeg|png|gif|webp|bmp)(\?.*)?$/i
-
-function isImagePreview(item: UserMessage): boolean {
-  if (item.messageType === 'image') return true
-  return IMAGE_EXT_RE.test(item.lastMessage || '')
 }
 </script>
 
@@ -433,16 +277,10 @@ function isImagePreview(item: UserMessage): boolean {
   margin-bottom: 2rpx;
 }
 
-.system-message,
-.user-message {
+.system-message {
   display: flex;
   align-items: center;
   padding: 24rpx 32rpx;
-}
-
-.user-message {
-  position: relative;
-  background-color: #fff;
 }
 
 .system-icon {
@@ -464,14 +302,6 @@ function isImagePreview(item: UserMessage): boolean {
 .system-icon-img {
   width: 60rpx;
   height: 60rpx;
-}
-
-.user-avatar {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
-  margin-right: 20rpx;
-  flex-shrink: 0;
 }
 
 .message-content {
@@ -510,11 +340,6 @@ function isImagePreview(item: UserMessage): boolean {
   font-size: 30rpx;
   font-weight: bold;
   color: #333;
-}
-
-.message-time {
-  font-size: 24rpx;
-  color: #999;
 }
 
 .message-preview {
@@ -556,36 +381,6 @@ function isImagePreview(item: UserMessage): boolean {
     font-size: 22rpx;
     color: #fff;
   }
-}
-
-.delete-btn {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  width: 44rpx;
-  height: 44rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  color: #CCC;
-  z-index: 2;
-}
-
-.no-more-tip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32rpx 0;
-  font-size: 20rpx;
-  color: #BBBBBB;
-}
-
-.no-more-line {
-  width: 140rpx;
-  height: 2rpx;
-  background: #E0E0E0;
-  margin: 0 28rpx;
 }
 
 // ===== 关注公众号提示栏 =====

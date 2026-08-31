@@ -69,14 +69,6 @@
       }
     },
     {
-      "path": "pages/chat/index",
-      "style": {
-        "navigationBarTitleText": "聊天",
-        "navigationStyle": "custom",
-        "enablePullDownRefresh": false
-      }
-    },
-    {
       "path": "pages/message-list/index",
       "style": {
         "navigationBarTitleText": "消息列表",

@@ -60,11 +60,6 @@
               class="action-btn like-back-btn"
               @tap="handleLikeBack(item)"
             >回喜欢</view>
-            <view
-              v-if="currentTab === 2 && systemStore.leaveMessageEnabled"
-              class="action-btn chat-btn"
-              @tap="goChat(item)"
-            >去留言</view>
           </view>
         </view>
       </view>
@@ -87,11 +82,9 @@ import { icons } from '@/config/icons'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
-import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
 
-const systemStore = useSystemStore()
 const userStore = useUserStore()
 
 interface LikeUser {
@@ -158,19 +151,6 @@ async function handleLikeBack(item: LikeUser) {
   } catch {
     uni.showToast({ title: '操作失败', icon: 'none' })
   }
-}
-
-function goChat(item: LikeUser) {
-  // 聊天功能关闭时，跳转到用户详情页
-  if (!systemStore.chatEnabled) {
-    uni.navigateTo({ url: `/pages/user-detail/index?id=${item.id}` })
-    return
-  }
-  const name = encodeURIComponent(item.nickname)
-  const avatar = encodeURIComponent(item.avatar || '')
-  uni.navigateTo({
-    url: `/pages/chat/index?userId=${item.id}&nickname=${name}&avatar=${avatar}`,
-  })
 }
 
 function goToUser(item: LikeUser) {
@@ -339,11 +319,6 @@ onShow(() => {
   background: #fff0f3;
   color: #ff6b6b;
   border: 1rpx solid #ff6b6b;
-}
-
-.chat-btn {
-  background: #ff6b6b;
-  color: #ffffff;
 }
 
 .empty-state {

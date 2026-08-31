@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { ChatMessage, User, AuditLog, UserBlock } from '../entities'
 import { ChatMonitorSession } from '../entities/ChatMonitorSession'
 import { ChatOperationLog } from '../entities/ChatOperationLog'
-import { ChatController } from './chat.controller'
 import { ChatService } from './chat.service'
 import { ChatMonitorGateway } from './chat-monitor.gateway'
 import { ChatMonitorService } from './chat-monitor.service'
@@ -29,7 +28,6 @@ import { SystemModule } from '../system/system.module'
     AuditModule,
     SystemModule,
   ],
-  controllers: [ChatController],
   providers: [ChatService, ChatMonitorGateway, ChatMonitorService],
   exports: [ChatService, ChatMonitorGateway, ChatMonitorService],
 })
