@@ -103,12 +103,12 @@
 
             <el-form-item label="想认识Ta按钮">
               <el-switch v-model="basicConfig.showWantMeetButton" active-text="显示" inactive-text="隐藏" />
-              <div class="form-tip ml-12">用户详情页底部"想认识Ta"按钮显隐</div>
+              <div class="form-tip ml-12">用户详情页底部及动态页卡片"想认识Ta"按钮显隐</div>
             </el-form-item>
 
             <el-form-item label="红娘牵线按钮">
               <el-switch v-model="basicConfig.showMatchmakerButton" active-text="显示" inactive-text="隐藏" />
-              <div class="form-tip ml-12">用户详情页底部"红娘牵线"按钮显隐</div>
+              <div class="form-tip ml-12">用户详情页底部及动态页卡片"红娘牵线"按钮显隐</div>
             </el-form-item>
 
             <el-form-item label="回答问题按钮">

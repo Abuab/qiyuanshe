@@ -190,12 +190,12 @@
         <!-- 底部操作栏 -->
         <view class="bottom-bar">
           <text class="time-text">{{ formatTime(item.createdAt) }}</text>
-          <view class="action-buttons">
-            <view class="btn-hi" @tap="handleHi(item)">
+          <view v-if="systemStore.showWantMeetButton || systemStore.showMatchmakerButton" class="action-buttons">
+            <view v-if="systemStore.showWantMeetButton" class="btn-hi" @tap="handleHi(item)">
               <text class="hi-label">Hi</text>
               <text class="hi-text">认识Ta</text>
             </view>
-            <view class="btn-matchmaker" @tap="handleMatchmaker(item)">
+            <view v-if="systemStore.showMatchmakerButton" class="btn-matchmaker" @tap="handleMatchmaker(item)">
               <text class="mm-text">红娘牵线</text>
             </view>
           </view>

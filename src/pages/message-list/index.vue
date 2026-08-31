@@ -186,13 +186,11 @@ const fetchConversations = async () => {
     // 构建聚合的系统消息入口
     const systemAggregate = buildSystemAggregate(lastNotify, notifyUnread)
     messageList.value = [systemAggregate]
-
-    refreshing.value = false
   } catch (e) {
     logger.error('fetch conversations error', e)
-    refreshing.value = false
   } finally {
     loading.value = false
+    refreshing.value = false
     fetchLock = false
   }
 }
