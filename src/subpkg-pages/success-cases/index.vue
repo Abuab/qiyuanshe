@@ -155,7 +155,7 @@ import { useBackTop } from '@/composables/useBackTop'
 import { logger } from '@/utils/logger'
 
 const systemStore = useSystemStore()
-const entryName = computed(() => systemStore.quickEntryNames?.[3] || '佳偶天成')
+const entryName = computed(() => systemStore.quickEntryNames?.[3] || '我们脱单了')
 
 const statusBarHeight = ref(20)
 const navBarHeightPx = ref(44)

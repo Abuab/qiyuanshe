@@ -34,7 +34,7 @@
                 mode="aspectFit"
               />
             </view>
-            <text class="grid-text">媒妁之言</text>
+            <text class="grid-text">{{ quickEntryLabels[0] }}</text>
           </view>
 
           <view class="grid-item" @tap="handleQuickEntry(2)">
@@ -45,7 +45,7 @@
                 mode="aspectFit"
               />
             </view>
-            <text class="grid-text">佳会新启</text>
+            <text class="grid-text">{{ quickEntryLabels[1] }}</text>
           </view>
 
           <view class="grid-item" @tap="handleQuickEntry(3)">
@@ -56,7 +56,7 @@
                 mode="aspectFit"
               />
             </view>
-            <text class="grid-text">志趣相投</text>
+            <text class="grid-text">{{ quickEntryLabels[2] }}</text>
           </view>
 
           <view class="grid-item" @tap="handleQuickEntry(4)">
@@ -67,7 +67,7 @@
                 mode="aspectFit"
               />
             </view>
-            <text class="grid-text">佳偶天成</text>
+            <text class="grid-text">{{ quickEntryLabels[3] }}</text>
           </view>
         </view>
       </view>
@@ -334,6 +334,12 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const licenseStore = useLicenseStore()
 const appName = computed(() => systemStore.appName)
+const quickEntryLabels = computed(() => [
+  systemStore.quickEntryNames?.[0] || '红娘评语',
+  systemStore.quickEntryNames?.[1] || '最新活动',
+  systemStore.quickEntryNames?.[2] || '相亲圈子',
+  systemStore.quickEntryNames?.[3] || '我们脱单了',
+])
 const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
 const matchmakerShowHi = computed(() => systemStore.matchmakerShowHi !== false)
 const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || '红娘')

@@ -20,7 +20,7 @@ export const useLicenseStore = defineStore('license', () => {
   const graceDaysLeft = ref(0)
   const lockMessage = ref('')
   const loaded = ref(false)
-  /** 宽限期横幅是否被手动关闭（仅内存态，下次冷启动自动恢复显示） */
+  /** 宽限期横幅是否被手动关闭（持久化到本地 storage，授权状态变化时自动清除） */
   const graceBannerClosed = ref(false)
 
   const isGracePeriod = computed(() => status.value === 'grace_period')
@@ -42,6 +42,7 @@ export const useLicenseStore = defineStore('license', () => {
 
   const closeGraceBanner = () => {
     graceBannerClosed.value = true
+    uni.setStorageSync('license:graceBannerClosed', '1')
   }
 
   const applyInfo = (info: LicenseInfo | null) => {
@@ -58,12 +59,25 @@ export const useLicenseStore = defineStore('license', () => {
     graceDaysLeft.value = info.graceDaysLeft ?? 0
     lockMessage.value = info.lockMessage || ''
     loaded.value = true
+
+    // 状态不再是宽限期时，清除持久化的关闭标记，使下次回到宽限期时横幅重新显示
+    if (status.value !== 'grace_period') {
+      try {
+        uni.removeStorageSync('license:graceBannerClosed')
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   const loadLicense = async () => {
     try {
       const info = await get<LicenseInfo>('/system/license')
       applyInfo(info)
+      // 宽限期时恢复用户之前的关闭状态（持久化标记）
+      if (status.value === 'grace_period') {
+        graceBannerClosed.value = uni.getStorageSync('license:graceBannerClosed') === '1'
+      }
     } catch (e) {
       logger.error('[License] 加载授权状态失败:', e)
       applyInfo(null)
