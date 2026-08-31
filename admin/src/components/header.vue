@@ -1,6 +1,9 @@
 <template>
   <div class="header-bar">
     <div class="header-left">
+      <el-icon v-if="isMobile" class="menu-toggle" @click="openMobileMenu">
+        <Menu />
+      </el-icon>
       <el-breadcrumb separator="/">
         <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
         <el-breadcrumb-item v-if="parentTitle">{{ parentTitle }}</el-breadcrumb-item>
@@ -74,8 +77,9 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminStore } from '../store/admin'
+import { isMobile } from '../composables/useIsMobile'
 import Avatar from './Avatar.vue'
-import { ArrowDown, User, Lock, SwitchButton, Search } from '@element-plus/icons-vue'
+import { ArrowDown, User, Lock, SwitchButton, Search, Menu } from '@element-plus/icons-vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { adminUsers } from '../api'
 
@@ -166,6 +170,10 @@ function goToUser(id: number) {
   router.push({ name: 'UserDetail', params: { id } })
 }
 
+function openMobileMenu() {
+  adminStore.setMobileMenuOpen(true)
+}
+
 function handleCommand(command: string) {
   searchResults.value = []
   switch (command) {
@@ -210,6 +218,13 @@ function handleLogout() {
 .header-left {
   display: flex;
   align-items: center;
+}
+
+.menu-toggle {
+  font-size: 22px;
+  cursor: pointer;
+  color: #303133;
+  margin-right: 12px;
 }
 
 .header-center {
@@ -312,6 +327,23 @@ function handleLogout() {
   .username {
     color: #333;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-left {
+    .el-breadcrumb {
+      display: none;
+    }
+  }
+
+  .header-center {
+    max-width: none;
+    margin: 0 12px;
+  }
+
+  .user-dropdown .username {
+    display: none;
   }
 }
 </style>

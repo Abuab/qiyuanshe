@@ -63,6 +63,7 @@
     <!-- 审核列表 -->
     <div class="table-card">
       <el-table
+        v-if="!isMobile"
         :data="tableData"
         v-loading="loading"
         stripe
@@ -183,7 +184,74 @@
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="!loading && tableData.length === 0" description="暂无待审核内容" />
+      <!-- 移动端卡片列表 -->
+      <div v-else v-loading="loading" class="mobile-list">
+        <div v-for="row in tableData" :key="row.id" class="mobile-card">
+          <div class="mc-head">
+            <div style="display:flex;align-items:center;gap:8px">
+              <el-checkbox
+                :model-value="isRowSelected(row)"
+                @change="toggleRowSelection(row)"
+              />
+              <span class="mc-title">{{ typeLabel(row) }}</span>
+            </div>
+            <span :class="waitTimeClass(row.createdAt)">{{ relativeTime(row.createdAt) }}</span>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">内容</span>
+            <span class="mc-value">
+              <template v-if="isTextType(row)">
+                <span class="preview-text">{{ getContentSummary(row) }}</span>
+              </template>
+              <template v-else-if="isImageType(row)">
+                <el-image
+                  :src="getImageUrl(row)"
+                  fit="cover"
+                  :preview-src-list="[getImageUrl(row)]"
+                  preview-teleported
+                  style="width: 72px; height: 72px; border-radius: 6px"
+                />
+              </template>
+              <template v-else-if="isVoiceType(row)">
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :icon="VideoPlay"
+                  :loading="voicePlayingId === row.id"
+                  @click.stop="toggleVoicePlay(row)"
+                >
+                  {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
+                </el-button>
+                <span style="color:#909399;font-size:12px">{{ parseDuration(row.content) }}″</span>
+              </template>
+            </span>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">用户</span>
+            <span class="mc-value">
+              <template v-if="row.submitter">{{ row.submitter.nickname }}（ID:{{ row.submitter.userId || row.submitterId }}）</template>
+              <template v-else>-</template>
+            </span>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">提交时间</span>
+            <span class="mc-value">{{ formatTime(row.createdAt) }}</span>
+          </div>
+
+          <div class="mobile-card-actions">
+            <el-button type="success" size="small" :loading="row._approving" @click="handleApprove(row)">通过</el-button>
+            <el-button type="danger" size="small" @click="handleReject(row)">拒绝</el-button>
+            <el-button type="info" size="small" plain @click="viewContext(row)">上下文</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!loading && tableData.length === 0" description="暂无待审核内容" />
+      </div>
+
+      <el-empty v-if="!isMobile && !loading && tableData.length === 0" description="暂无待审核内容" />
 
       <div class="pagination-wrapper">
         <el-pagination
@@ -312,6 +380,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight, Check, Close, Picture, User, VideoPlay } from '@element-plus/icons-vue'
 import { adminAudit } from '@/api'
+import { isMobile } from '@/composables/useIsMobile'
 
 // ===== 统计 =====
 const stats = reactive({ pending: 0, approvedToday: 0, rejectedToday: 0 })
@@ -496,6 +565,19 @@ function onPageSizeChange() { pagination.page = 1; fetchData() }
 
 function handleSelectionChange(rows: any[]) {
   selectedRows.value = rows
+}
+
+function isRowSelected(row: any) {
+  return selectedRows.value.some((r) => r.id === row.id)
+}
+
+function toggleRowSelection(row: any) {
+  const idx = selectedRows.value.findIndex((r) => r.id === row.id)
+  if (idx >= 0) {
+    selectedRows.value.splice(idx, 1)
+  } else {
+    selectedRows.value.push(row)
+  }
 }
 
 // ===== 通过 =====

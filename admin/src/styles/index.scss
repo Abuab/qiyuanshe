@@ -283,3 +283,85 @@ a {
     background: #a8a8a8;
   }
 }
+
+// ========== 移动端适配（<= 768px） ==========
+@media (max-width: 768px) {
+  // 弹窗/抽屉自适应宽度
+  .el-dialog {
+    width: 92% !important;
+  }
+
+  .el-drawer {
+    width: 85% !important;
+  }
+
+  // 分页在手机上左对齐、允许换行
+  .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+// ========== 移动端卡片列表（各页面共享） ==========
+.mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card {
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .mc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .mc-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #303133;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.mobile-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 13px;
+
+  .mc-label {
+    color: #909399;
+    flex-shrink: 0;
+    min-width: 64px;
+  }
+
+  .mc-value {
+    color: #303133;
+    flex: 1;
+    text-align: right;
+    word-break: break-all;
+  }
+}
+
+.mobile-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+  justify-content: flex-end;
+}
+

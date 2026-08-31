@@ -16,7 +16,7 @@
         <el-button type="primary" @click="handleSearch" style="margin-left: 12px">查询</el-button>
       </div>
 
-      <el-table :data="list" border stripe v-loading="loading" style="margin-top: 16px">
+      <el-table v-if="!isMobile" :data="list" border stripe v-loading="loading" style="margin-top: 16px">
         <el-table-column prop="id" label="ID" width="70" align="center" />
         <el-table-column label="昵称" min-width="120">
           <template #default="{ row }">
@@ -69,6 +69,48 @@
         </el-table-column>
       </el-table>
 
+      <!-- 移动端卡片列表 -->
+      <div v-else v-loading="loading" class="mobile-list" style="margin-top:16px">
+        <div v-for="row in list" :key="row.id" class="mobile-card">
+          <div class="mc-head">
+            <span class="mc-title">{{ row.user?.nickname || '-' }}</span>
+            <el-tag v-if="row.status === 0" type="warning" size="small">待审核</el-tag>
+            <el-tag v-else-if="row.status === 1" type="success" size="small">已通过</el-tag>
+            <el-tag v-else-if="row.status === 2" type="danger" size="small">已拒绝</el-tag>
+          </div>
+          <div class="mobile-card-row">
+            <span class="mc-label">行驶证</span>
+            <span class="mc-value">
+              <el-image
+                v-if="row.authData?.image"
+                :src="resolveImg(row.authData.image)"
+                :preview-src-list="[resolveImg(row.authData.image)]"
+                fit="cover"
+                style="width:72px;height:72px;border-radius:6px"
+                :hide-on-click-modal="true"
+              />
+              <span v-else style="color:#999;font-size:12px">未上传</span>
+            </span>
+          </div>
+          <div v-if="row.rejectReason" class="mobile-card-row">
+            <span class="mc-label">拒绝原因</span>
+            <span class="mc-value">{{ row.rejectReason }}</span>
+          </div>
+          <div class="mobile-card-row">
+            <span class="mc-label">提交时间</span>
+            <span class="mc-value">{{ formatTime(row.createdAt) }}</span>
+          </div>
+          <div class="mobile-card-actions" v-if="!isReadonlyRole">
+            <template v-if="row.status === 0">
+              <el-button type="success" size="small" @click="approve(row)">通过</el-button>
+              <el-button type="danger" size="small" @click="reject(row)">拒绝</el-button>
+            </template>
+            <el-button v-else size="small" type="warning" @click="reAudit(row)">重新审核</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!loading && list.length === 0" description="暂无数据" />
+      </div>
+
       <div class="pagination-wrap">
         <el-pagination
           v-model:current-page="pageNum"
@@ -103,6 +145,7 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { carAuthApi } from '@/api/car-auth'
 import { useAdminStore } from '../../store/admin'
+import { isMobile } from '../../composables/useIsMobile'
 
 const adminStore = useAdminStore()
 const isReadonlyRole = computed(() => adminStore.userInfo?.role === 'readonly')

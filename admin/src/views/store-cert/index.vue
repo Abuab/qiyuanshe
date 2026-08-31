@@ -353,4 +353,22 @@ onMounted(() => {
   gap: 12px;
   flex-shrink: 0;
 }
+
+/* 移动端：面板纵向堆叠，中间操作按钮改为横向 */
+@media (max-width: 768px) {
+  .transfer-container {
+    flex-direction: column;
+    height: auto;
+    gap: 12px;
+  }
+
+  .transfer-panel {
+    height: 320px;
+  }
+
+  .transfer-actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
 </style>

@@ -51,6 +51,7 @@
       </div>
 
       <el-table
+        v-if="!isMobile"
         ref="tableRef"
         :data="tableData"
         v-loading="loading"
@@ -177,6 +178,82 @@
         </el-table-column>
       </el-table>
 
+      <!-- 移动端卡片列表 -->
+      <div v-else v-loading="loading" class="mobile-list">
+        <div v-for="row in tableData" :key="row.id" class="mobile-card">
+          <div class="mc-head">
+            <div style="display:flex;align-items:center;gap:8px">
+              <el-checkbox
+                v-if="activeTab === 'pending'"
+                :model-value="isRowSelected(row)"
+                @change="toggleRowSelection(row)"
+              />
+              <span class="mc-title">#{{ row.id }}</span>
+              <el-tag :type="getTypeTagType(row.targetType)" size="small">
+                {{ row.typeLabel || getTypeName(row.targetType) }}
+              </el-tag>
+            </div>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">提交人</span>
+            <span class="mc-value">
+              <template v-if="row.submitter">{{ row.submitter.nickname }}（ID:{{ row.submitter.userId ?? row.submitterId }}）</template>
+              <template v-else>系统提交</template>
+            </span>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">内容</span>
+            <span class="mc-value">
+              <el-image
+                v-if="isPhotoContent(row)"
+                :src="tryParseImageUrl(row.content)"
+                fit="cover"
+                :preview-src-list="[tryParseImageUrl(row.content)]"
+                preview-teleported
+                style="width: 72px; height: 72px; border-radius: 6px"
+              />
+              <template v-else-if="row.targetType === 'voice'">
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  :icon="VideoPlay"
+                  :loading="voicePlayingId === row.id"
+                  @click="toggleVoicePlay(row)"
+                >
+                  {{ voicePlayingId === row.id ? '播放中...' : '播放语音' }}
+                </el-button>
+                <span style="color:#909399;font-size:12px">{{ parseVoiceDuration(row.content) }}″</span>
+              </template>
+              <template v-else>{{ getContentSummary(row) }}</template>
+            </span>
+          </div>
+
+          <div v-if="row.aiResult" class="mobile-card-row">
+            <span class="mc-label">AI 审核</span>
+            <span class="mc-value">
+              <el-tag :type="getAiTagType(row)" size="small" effect="plain">{{ row.aiResult }}</el-tag>
+            </span>
+          </div>
+
+          <div class="mobile-card-row">
+            <span class="mc-label">提交时间</span>
+            <span class="mc-value">{{ formatDate(row.createdAt) }}</span>
+          </div>
+
+          <div class="mobile-card-actions">
+            <template v-if="activeTab === 'pending'">
+              <el-button type="success" size="small" @click="handleApprove(row)">通过</el-button>
+              <el-button type="danger" size="small" @click="handleReject(row)">拒绝</el-button>
+            </template>
+            <el-button v-else type="primary" size="small" @click="handleViewDetail(row)">查看详情</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!loading && tableData.length === 0" description="暂无审核内容" />
+      </div>
+
       <div class="pagination-wrapper">
         <el-pagination
           v-model:current-page="pagination.page"
@@ -224,6 +301,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Picture, VideoPlay } from '@element-plus/icons-vue'
 import { adminAudit } from '../../api'
 import { useAdminStore } from '../../store/admin'
+import { isMobile } from '../../composables/useIsMobile'
 import { formatDate } from '../../utils/date'
 import type { AuditItem } from '../../api/audit'
 
@@ -382,6 +460,19 @@ function handleReset() {
 
 function handleSelectionChange(rows: AuditItem[]) {
   selectedRows.value = rows
+}
+
+function isRowSelected(row: AuditItem) {
+  return selectedRows.value.some((r) => r.id === row.id)
+}
+
+function toggleRowSelection(row: AuditItem) {
+  const idx = selectedRows.value.findIndex((r) => r.id === row.id)
+  if (idx >= 0) {
+    selectedRows.value.splice(idx, 1)
+  } else {
+    selectedRows.value.push(row)
+  }
 }
 
 function handleSizeChange() {

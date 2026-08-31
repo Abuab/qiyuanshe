@@ -26,7 +26,7 @@
     </div>
 
     <div class="card">
-      <el-table v-loading="loading" :data="list" stripe>
+      <el-table v-if="!isMobile" v-loading="loading" :data="list" stripe>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column label="用户昵称" width="150">
           <template #default="{ row }">
@@ -80,6 +80,43 @@
         </el-table-column>
       </el-table>
 
+      <!-- 移动端卡片列表 -->
+      <div v-else v-loading="loading" class="mobile-list">
+        <div v-for="row in list" :key="row.id" class="mobile-card">
+          <div class="mc-head">
+            <span class="mc-title">{{ row.user?.nickname || row.realName || '-' }}</span>
+            <el-tag :type="getStatusTagType(row.status)" size="small">{{ getStatusLabel(row.status) }}</el-tag>
+          </div>
+          <div class="mobile-card-row">
+            <span class="mc-label">真实姓名</span>
+            <span class="mc-value">{{ row.realName || '-' }}</span>
+          </div>
+          <div class="mobile-card-row">
+            <span class="mc-label">签名</span>
+            <span class="mc-value">
+              <img v-if="row.signatureUrl" :src="row.signatureUrl" style="width:100%;max-width:160px;height:80px;object-fit:contain;border-radius:4px;background:#f5f5f5" />
+              <span v-else style="color:#ccc;font-size:12px">未上传</span>
+            </span>
+          </div>
+          <div v-if="row.rejectReason" class="mobile-card-row">
+            <span class="mc-label">拒绝原因</span>
+            <span class="mc-value">{{ row.rejectReason }}</span>
+          </div>
+          <div class="mobile-card-row">
+            <span class="mc-label">签署日期</span>
+            <span class="mc-value">{{ formatDate(row.createdAt) }}</span>
+          </div>
+          <div class="mobile-card-actions" v-if="!isReadonly">
+            <template v-if="row.status === 0">
+              <el-button type="success" size="small" @click="handleApprove(row)">通过</el-button>
+              <el-button type="danger" size="small" @click="handleReject(row)">拒绝</el-button>
+            </template>
+            <el-button v-else-if="row.status === 2" type="warning" size="small" @click="handleReaudit(row)">重新审核</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!loading && list.length === 0" description="暂无数据" />
+      </div>
+
       <div class="pagination">
         <el-pagination
           v-model:current-page="filterForm.page"
@@ -117,6 +154,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useAdminStore } from '../../store/admin'
+import { isMobile } from '../../composables/useIsMobile'
 import { adminSinglePromise } from '../../api'
 import type { SinglePromiseItem } from '../../api/single-promise'
 

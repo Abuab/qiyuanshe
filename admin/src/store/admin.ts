@@ -20,6 +20,8 @@ export const useAdminStore = defineStore('admin', () => {
   const token = ref<string>(localStorage.getItem('admin_token') || '')
   const userInfo = ref<AdminUser | null>(null)
   const isCollapsed = ref(false)
+  // 移动端侧边栏抽屉开关
+  const mobileMenuOpen = ref(false)
   // 审核管理（资料/照片等）待审核数
   const pendingAuditCount = ref(0)
   // 认证管理父级待审核合计（学历/房产/车产/单身承诺）
@@ -165,6 +167,10 @@ export const useAdminStore = defineStore('admin', () => {
     isCollapsed.value = !isCollapsed.value
   }
 
+  function setMobileMenuOpen(open: boolean) {
+    mobileMenuOpen.value = open
+  }
+
   function updateUserInfo(info: Partial<AdminUser>) {
     if (userInfo.value) {
       userInfo.value = { ...userInfo.value, ...info }
@@ -212,6 +218,7 @@ export const useAdminStore = defineStore('admin', () => {
     token,
     userInfo,
     isCollapsed,
+    mobileMenuOpen,
     pendingAuditCount,
     pendingAuthCount,
     pendingSinglePromiseCount,
@@ -226,6 +233,7 @@ export const useAdminStore = defineStore('admin', () => {
     mfaLoginVerify,
     logout,
     toggleSidebar,
+    setMobileMenuOpen,
     updateUserInfo,
     impersonate,
     fetchPendingAuditCount,

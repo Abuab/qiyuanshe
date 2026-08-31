@@ -217,6 +217,7 @@
         </div>
       </div>
       <el-button
+        v-if="!isMobile"
         :icon="isCollapsed ? 'Expand' : 'Fold'"
         circle
         @click="toggleSidebar"
@@ -234,9 +235,10 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useAdminStore } from '../store/admin'
 import { useSystemStore } from '../store/system'
+import { isMobile } from '../composables/useIsMobile'
 import { isRouteAllowed } from '../config/permissions'
 import Avatar from './Avatar.vue'
 import {
@@ -263,14 +265,13 @@ import {
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
-const router = useRouter()
 const adminStore = useAdminStore()
 const systemStore = useSystemStore()
 
 const appName = computed(() => systemStore.appName)
 const appNameShort = computed(() => systemStore.appName.charAt(0))
 
-const isCollapsed = computed(() => adminStore.isCollapsed)
+const isCollapsed = computed(() => (isMobile.value ? false : adminStore.isCollapsed))
 const userInfo = computed(() => adminStore.userInfo)
 
 onMounted(async () => {
