@@ -159,7 +159,7 @@
     <tab-bar />
 
     <!-- 悬浮按钮：问媒 / 测一测（由后台「首页浮动按钮配置」切换，即时生效） -->
-    <view v-if="!showLoveIntent" class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
+    <view v-if="!showLoveIntent && isFloatEnabled" class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
       <template v-if="isFloatTestMode">
         <text class="float-label float-label-test">{{ floatText }}</text>
       </template>
@@ -335,6 +335,7 @@ const matchmakerButtonText = computed(() => systemStore.matchmakerButtonText || 
 const floatConfig = ref<any>(null)
 const floatCtaItemId = ref<number | undefined>(undefined)
 const isFloatTestMode = computed(() => floatConfig.value?.mode === 'test')
+const isFloatEnabled = computed(() => floatConfig.value?.enabled !== false)
 const floatText = computed(() => floatConfig.value?.test?.text || '测一测')
 const floatButtonStyle = computed(() =>
   isFloatTestMode.value && floatConfig.value?.test?.bgColor

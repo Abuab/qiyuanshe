@@ -65,6 +65,11 @@ export class PublicSystemController {
       defaultAvatar: configs.basic?.defaultAvatar || '',
       // 留言功能开关（我的喜欢-互相喜欢 去留言按钮）
       leaveMessageEnabled: configs.basic?.leaveMessageEnabled !== false,
+      // 前端社交按钮显隐开关（审核改造：可按需隐藏，定位为婚庆展示类小程序）
+      showLikeButton: configs.basic?.showLikeButton !== false,
+      showFollowButton: configs.basic?.showFollowButton !== false,
+      showWantMeetButton: configs.basic?.showWantMeetButton !== false,
+      showMatchmakerButton: configs.basic?.showMatchmakerButton !== false,
       // 到店认证门店配置
       storeCert: {
         name: configs.storeCert?.name || '',

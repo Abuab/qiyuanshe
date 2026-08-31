@@ -14,6 +14,7 @@ export interface FloatingButtonStyle {
 }
 
 export interface FloatingButtonConfig {
+  enabled: boolean
   mode: FloatingButtonMode
   ask: FloatingButtonStyle
   test: FloatingButtonStyle

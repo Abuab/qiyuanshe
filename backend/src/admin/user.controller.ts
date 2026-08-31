@@ -182,6 +182,21 @@ export class AdminUserController {
     return Result.success(null, '已设为主图')
   }
 
+  @Put(':id/voice')
+  async setVoice(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { voiceUrl: string; voiceDuration?: number },
+  ) {
+    await this.userService.setVoice(id, body.voiceUrl, body.voiceDuration)
+    return Result.success(null, '语音介绍已保存')
+  }
+
+  @Delete(':id/voice')
+  async deleteVoice(@Param('id', ParseIntPipe) id: number) {
+    await this.userService.deleteVoice(id)
+    return Result.success(null, '语音介绍已删除')
+  }
+
   @Put('batch-status')
   async batchUpdateStatus(@Body() body: { ids: number[]; status: number }) {
     await this.userService.batchUpdateStatus(body.ids, body.status)

@@ -689,6 +689,31 @@ export class AdminUserService {
   async setMainPhoto(photoId: number) {
     const photo = await this.userPhotoRepository.findOne({ where: { id: photoId } })
     if (!photo) throw new Error('照片不存在')
+
+    // 保留旧头像：若旧头像是独立上传（不在相册中），先补录为一张普通照片，
+    // 避免设为头像后旧头像从照片页"消失"
+    const user = await this.userRepository.findOne({ where: { id: photo.userId }, select: ['avatar'] })
+    const oldAvatar = user?.avatar?.trim()
+    if (oldAvatar) {
+      const oldAvatarNorm = normalizeImageUrl(oldAvatar)
+      const newPhotoNorm = normalizeImageUrl(photo.photoUrl)
+      if (oldAvatarNorm && oldAvatarNorm !== newPhotoNorm) {
+        const existingPhotos = await this.userPhotoRepository.find({ where: { userId: photo.userId } })
+        const alreadyInAlbum = existingPhotos.some(p => normalizeImageUrl(p.photoUrl) === oldAvatarNorm)
+        if (!alreadyInAlbum) {
+          await this.userPhotoRepository.save(
+            this.userPhotoRepository.create({
+              userId: photo.userId,
+              photoUrl: oldAvatar,
+              isMain: 0,
+              sortOrder: 0,
+              auditStatus: 1,
+            }),
+          )
+        }
+      }
+    }
+
     // 将该用户的所有照片设为非主图
     await this.userPhotoRepository.update({ userId: photo.userId }, { isMain: 0 })
     // 设置目标照片为主图
@@ -699,6 +724,35 @@ export class AdminUserService {
       // 清除推荐缓存：头像变更应立即反映在推荐列表中
       this.redis.delByPattern('v3:rec:*').catch(() => {})
     }
+  }
+
+  /** 管理员为用户设置/替换语音介绍（管理员代传，直接置为已通过） */
+  async setVoice(userId: number, voiceUrl: string, voiceDuration?: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) throw new NotFoundException('用户不存在')
+
+    if (!voiceUrl) throw new BadRequestException('语音 URL 不能为空')
+
+    await this.userRepository.update(userId, {
+      voiceUrl: normalizeImageUrl(voiceUrl),
+      voiceDuration: voiceDuration && voiceDuration > 0 ? Math.round(voiceDuration) : null,
+      voiceAuditStatus: 1,
+    })
+    // 清除推荐缓存：语音状态变更应立即反映在推荐/卡片中
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
+  }
+
+  /** 管理员删除用户语音介绍 */
+  async deleteVoice(userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } })
+    if (!user) throw new NotFoundException('用户不存在')
+
+    await this.userRepository.update(userId, {
+      voiceUrl: null,
+      voiceDuration: null,
+      voiceAuditStatus: null,
+    })
+    this.redis.delByPattern('v3:rec:*').catch(() => {})
   }
 
   async batchUpdateStatus(ids: number[], status: number) {

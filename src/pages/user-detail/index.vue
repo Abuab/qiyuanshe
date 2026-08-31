@@ -108,7 +108,7 @@
                 <text class="pt-text">{{ targetPersonality.nickname || targetPersonality.typeName }}</text>
               </view>
             </view>
-            <view v-if="!profileData.top.isSelf" class="follow-wrap" @tap="toggleFollow">
+            <view v-if="!profileData.top.isSelf && systemStore.showFollowButton" class="follow-wrap" @tap="toggleFollow">
               <view class="follow-btn" :class="{ liked: profileData.top.isFollowed }">
                 <!-- 用 Unicode 心形替代 uni-icons 图标字体，避免真机字体不渲染 -->
                 <text class="follow-ico">{{ profileData.top.isFollowed ? '♥' : '♡' }}</text>
@@ -389,11 +389,11 @@
       </scroll-view>
 
       <!-- ========== 底部悬浮操作按钮（固定） ========== -->
-      <view v-if="profileData.bottomBar.visible" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
-        <view class="bb-btn contact-btn" @tap="handleContact">
+      <view v-if="profileData.bottomBar.visible && (systemStore.showWantMeetButton || systemStore.showMatchmakerButton)" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
+        <view v-if="systemStore.showWantMeetButton" class="bb-btn contact-btn" @tap="handleContact">
           <text>想认识Ta</text>
         </view>
-        <view class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
+        <view v-if="systemStore.showMatchmakerButton" class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
           <text>红娘牵线</text>
         </view>
       </view>

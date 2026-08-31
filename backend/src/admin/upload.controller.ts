@@ -35,6 +35,22 @@ const ALLOWED_MIME_TYPES = [
 
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
 
+/** 语音文件 MIME → 扩展名映射（与 user.controller.ts 保持一致） */
+const VOICE_MIME_EXT: Record<string, string> = {
+  'audio/mpeg': '.mp3',
+  'audio/mp3': '.mp3',
+  'audio/wav': '.wav',
+  'audio/x-wav': '.wav',
+  'audio/x-m4a': '.m4a',
+  'audio/m4a': '.m4a',
+  'audio/mp4': '.m4a',
+  'audio/aac': '.aac',
+  'audio/x-aac': '.aac',
+  'audio/aacp': '.aac',
+  'audio/webm': '.webm',
+  'audio/ogg': '.ogg',
+}
+
 const ensureDirectoryExists = (dir: string) => {
   if (!existsSync(dir)) {
     try {
@@ -100,5 +116,36 @@ export class UploadController {
     }
 
     return Result.success({ url, compressedUrl })
+  }
+
+  @Post('voice')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: uploadsDir,
+        filename: (_req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+          const ext = VOICE_MIME_EXT[file.mimetype] || '.mp3'
+          cb(null, `voice-${uniqueSuffix}${ext}`)
+        },
+      }),
+      limits: {
+        fileSize: 1024 * 1024 * 5, // 5MB
+      },
+      fileFilter: (_req, file, cb) => {
+        if (VOICE_MIME_EXT[file.mimetype]) {
+          cb(null, true)
+        } else {
+          cb(new Error('只允许上传语音文件'), false)
+        }
+      },
+    }),
+  )
+  async uploadVoiceFile(@UploadedFile() file: UploadedFile) {
+    if (!file) {
+      return Result.error('请选择要上传的语音文件')
+    }
+    const url = `/uploads/${file.filename}`
+    return Result.success({ url })
   }
 }

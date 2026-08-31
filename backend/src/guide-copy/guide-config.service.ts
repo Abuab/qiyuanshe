@@ -17,6 +17,8 @@ export interface FloatingButtonStyle {
 }
 
 export interface FloatingButtonConfig {
+  /** 是否在小程序端展示（审核改造：可整体隐藏浮动按钮） */
+  enabled: boolean
   /** 当前生效模式 */
   mode: FloatingButtonMode
   /** 问媒模式配置 */
@@ -28,6 +30,7 @@ export interface FloatingButtonConfig {
 const CONFIG_KEY = 'guide.homeFloatingButton'
 
 const DEFAULTS: FloatingButtonConfig = {
+  enabled: true,
   mode: 'ask',
   ask: {
     text: '问媒',
@@ -63,6 +66,7 @@ export class GuideConfigService {
     }
     // 与默认值合并，保证字段完整
     return {
+      enabled: parsed.enabled !== false,
       mode: parsed.mode === 'test' ? 'test' : 'ask',
       ask: { ...DEFAULTS.ask, ...(parsed.ask || {}) },
       test: { ...DEFAULTS.test, ...(parsed.test || {}) },
@@ -82,6 +86,7 @@ export class GuideConfigService {
       }
     }
     const config: FloatingButtonConfig = {
+      enabled: input?.enabled !== false,
       mode,
       ask: normalizeStyle(input?.ask, DEFAULTS.ask),
       test: normalizeStyle(input?.test, DEFAULTS.test),

@@ -46,6 +46,10 @@ export const adminSystem = {
     return request.post('/admin/upload', data)
   },
 
+  uploadVoice(data: FormData): Promise<ApiResponse<{ url: string }>> {
+    return request.post('/admin/upload/voice', data)
+  },
+
   resetPassword(data: { username: string; newPassword: string; adminKey: string }): Promise<ApiResponse> {
     return request.post('/admin/reset-password', data)
   },

@@ -7,6 +7,11 @@
 
     <el-card shadow="never" v-loading="loading">
       <el-form :model="form" label-width="120px" style="max-width: 720px">
+        <el-form-item label="小程序端显示">
+          <el-switch v-model="form.enabled" active-text="显示" inactive-text="隐藏" />
+          <div class="tip">关闭后小程序端首页不再显示浮动按钮（用于审核改造场景）。</div>
+        </el-form-item>
+
         <el-form-item label="当前展示模式">
           <el-radio-group v-model="form.mode">
             <el-radio-button label="ask">问媒模式</el-radio-button>
@@ -76,6 +81,7 @@ const modes = [
 ]
 
 const form = reactive<FloatingButtonConfig>({
+  enabled: true,
   mode: 'ask',
   ask: { text: '问媒', icon: 'chat', bgColor: '#ff6b81', target: 'action:matchmaker-contact' },
   test: { text: '测一测', icon: 'compass', bgColor: '#7c5cff', target: '/pages/personality/test' },

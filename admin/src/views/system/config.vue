@@ -91,6 +91,26 @@
               <div class="form-tip ml-12">互相喜欢页"去留言"按钮显隐</div>
             </el-form-item>
 
+            <el-form-item label="喜欢按钮">
+              <el-switch v-model="basicConfig.showLikeButton" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">首页用户列表卡片上的"喜欢/心动"按钮显隐</div>
+            </el-form-item>
+
+            <el-form-item label="关注按钮">
+              <el-switch v-model="basicConfig.showFollowButton" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">用户详情页"关注"按钮显隐</div>
+            </el-form-item>
+
+            <el-form-item label="想认识Ta按钮">
+              <el-switch v-model="basicConfig.showWantMeetButton" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">用户详情页底部"想认识Ta"按钮显隐</div>
+            </el-form-item>
+
+            <el-form-item label="红娘牵线按钮">
+              <el-switch v-model="basicConfig.showMatchmakerButton" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">用户详情页底部"红娘牵线"按钮显隐</div>
+            </el-form-item>
+
             <el-form-item label="登录页插画">
               <div class="upload-item">
                 <el-image
@@ -302,6 +322,10 @@ const basicConfig = reactive({
   chatEnabled: true,
   vipEnabled: true,
   leaveMessageEnabled: true,
+  showLikeButton: true,
+  showFollowButton: true,
+  showWantMeetButton: true,
+  showMatchmakerButton: true,
 })
 
 const shareConfig = reactive({

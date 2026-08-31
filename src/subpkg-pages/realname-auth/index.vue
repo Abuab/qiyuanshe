@@ -23,8 +23,6 @@
     <scroll-view
       class="content"
       scroll-y
-      :enhanced="true"
-      :show-scrollbar="false"
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px' }"
     >
       <!-- 标题区（完善认证） -->

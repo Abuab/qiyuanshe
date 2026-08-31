@@ -112,21 +112,34 @@
                 <span v-else>未开通</span>
               </el-descriptions-item>
               <el-descriptions-item label="语音介绍">
-                <template v-if="user.voiceUrl">
-                  <template v-if="user.voiceAuditStatus === 1">
-                    <div class="voice-player">
-                      <el-button size="small" circle @click="toggleAdminVoicePlay">
-                        <el-icon :size="14"><VideoPlay /></el-icon>
-                      </el-button>
-                      <span class="voice-dur">{{ user.voiceDuration || 0 }}″</span>
-                      <audio :ref="onAdminVoiceAudioRef" :src="fullVoiceUrl" style="display:none" />
-                    </div>
+                <div class="voice-manage">
+                  <template v-if="user.voiceUrl">
+                    <template v-if="user.voiceAuditStatus === 1">
+                      <div class="voice-player">
+                        <el-button size="small" circle @click="toggleAdminVoicePlay">
+                          <el-icon :size="14"><VideoPlay /></el-icon>
+                        </el-button>
+                        <span class="voice-dur">{{ user.voiceDuration || 0 }}″</span>
+                        <audio :ref="onAdminVoiceAudioRef" :src="fullVoiceUrl" style="display:none" />
+                      </div>
+                    </template>
+                    <el-tag v-else-if="user.voiceAuditStatus === 0" type="warning" size="small">审核中</el-tag>
+                    <el-tag v-else-if="user.voiceAuditStatus === 2" type="danger" size="small">审核未通过</el-tag>
+                    <el-tag v-else size="small">-</el-tag>
+                    <el-button type="danger" link size="small" :loading="voiceDeleting" @click="handleDeleteVoice">删除</el-button>
                   </template>
-                  <el-tag v-else-if="user.voiceAuditStatus === 0" type="warning" size="small">审核中</el-tag>
-                  <el-tag v-else-if="user.voiceAuditStatus === 2" type="danger" size="small">审核未通过</el-tag>
-                  <el-tag v-else size="small">-</el-tag>
-                </template>
-                <span v-else>未录制</span>
+                  <span v-else class="voice-empty">未录制</span>
+                  <el-upload
+                    :show-file-list="false"
+                    :http-request="handleVoiceUpload"
+                    :before-upload="beforeVoiceUpload"
+                    accept="audio/*"
+                  >
+                    <el-button type="primary" link size="small" :loading="voiceUploading">
+                      {{ user.voiceUrl ? '更换语音' : '上传语音' }}
+                    </el-button>
+                  </el-upload>
+                </div>
               </el-descriptions-item>
             </el-descriptions>
             <!-- 我的特点 -->
@@ -1095,7 +1108,7 @@
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, User, Picture, CopyDocument } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Picture, CopyDocument, VideoPlay } from '@element-plus/icons-vue'
 import { adminUsers } from '../../api'
 import { adminSystem } from '../../api/system'
 import { adminChat, type ChatMessageItem } from '../../api/chat'
@@ -1337,6 +1350,8 @@ const followSearchUserLoading = ref(false)
 const viewData = reactive({ views: [] as any[], visitors: [] as any[] })
 const userPhotos = ref<any[]>([])
 const photoUploading = ref(false)
+const voiceUploading = ref(false)
+const voiceDeleting = ref(false)
 
 // Review dialog
 const reviewDialogVisible = ref(false)
@@ -2340,7 +2355,6 @@ async function handlePhotoUpload(options: any) {
   try {
     const fd = new FormData()
     fd.append('file', options.file)
-    const { adminSystem } = await import('../../api/system')
     const uploadRes = await adminSystem.upload(fd as any)
     if (uploadRes.success && uploadRes.data?.url) {
       const res = await adminUsers.addUserPhoto(user.value.id, uploadRes.data.url)
@@ -2372,6 +2386,80 @@ async function handleDeletePhoto(photoId: number) {
     ElMessage.success('删除成功')
     loadPhotos()
   } catch (e) { if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } } }
+}
+
+function beforeVoiceUpload(file: File) {
+  if (!file.type.startsWith('audio/')) {
+    ElMessage.warning('请选择音频文件')
+    return false
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.warning('语音大小不能超过5MB')
+    return false
+  }
+  return true
+}
+
+/** 读取本地音频文件时长（秒，四舍五入）；无法解析时返回 0 */
+function readAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    try {
+      const url = URL.createObjectURL(file)
+      const audio = new Audio()
+      audio.preload = 'metadata'
+      const done = (duration: number) => {
+        URL.revokeObjectURL(url)
+        resolve(duration)
+      }
+      audio.onloadedmetadata = () => {
+        const d = audio.duration
+        done(d && Number.isFinite(d) && d > 0 ? Math.round(d) : 0)
+      }
+      audio.onerror = () => done(0)
+      audio.src = url
+    } catch {
+      resolve(0)
+    }
+  })
+}
+
+async function handleVoiceUpload(options: any) {
+  if (!user.value) return
+  voiceUploading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', options.file)
+    const uploadRes = await adminSystem.uploadVoice(fd as any)
+    if (uploadRes.success && uploadRes.data?.url) {
+      const voiceDuration = await readAudioDuration(options.file)
+      const res = await adminUsers.setVoice(user.value.id, { voiceUrl: uploadRes.data.url, voiceDuration })
+      if (res.success) {
+        ElMessage.success('语音介绍上传成功')
+        fetchDetail()
+      }
+    }
+  } catch (e) {
+    ElMessage.error('上传失败')
+  } finally {
+    voiceUploading.value = false
+  }
+}
+
+async function handleDeleteVoice() {
+  if (!user.value) return
+  try {
+    await ElMessageBox.confirm('确定要删除该用户的语音介绍吗？', '删除确认', { type: 'warning' })
+    voiceDeleting.value = true
+    const res = await adminUsers.deleteVoice(user.value.id)
+    if (res.success) {
+      ElMessage.success('语音介绍已删除')
+      fetchDetail()
+    }
+  } catch (e) {
+    if (e !== 'cancel') { if (import.meta.env.DEV) { console.error(e) } }
+  } finally {
+    voiceDeleting.value = false
+  }
 }
 
 function getReportTypeName(type: string) {
@@ -2623,6 +2711,10 @@ function getOpLogTypeColor(action: string) {
 .link-text { color: var(--el-color-primary); cursor: pointer; &:hover { text-decoration: underline; } }
 .ml-10 { margin-left: 10px; }
 .text-muted { color: #909399; font-size: 13px; }
+.voice-manage { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.voice-player { display: flex; align-items: center; gap: 6px; }
+.voice-dur { color: #606266; font-size: 13px; }
+.voice-empty { color: #909399; font-size: 13px; }
 
 // ===== 喜欢 tab =====
 .like-stats-row {

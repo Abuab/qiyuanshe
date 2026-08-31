@@ -73,7 +73,7 @@
     </view>
 
     <!-- 心动按钮：用 Unicode 心形替代 uni-icons 图标字体，避免真机字体不渲染 -->
-    <view class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
+    <view v-if="store.showLikeButton" class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
       <text class="heart-ico">{{ isLiked ? '♥' : '♡' }}</text>
     </view>
   </view>

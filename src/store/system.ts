@@ -51,6 +51,10 @@ interface SystemConfig {
   vipEnabled: boolean
   defaultAvatar: string
   leaveMessageEnabled: boolean
+  showLikeButton: boolean
+  showFollowButton: boolean
+  showWantMeetButton: boolean
+  showMatchmakerButton: boolean
   storeCert: {
     name: string
     address: string
@@ -93,6 +97,10 @@ export const useSystemStore = defineStore('system', () => {
   const vipEnabled = ref<boolean>(true)
   const defaultAvatar = ref<string>('')
   const leaveMessageEnabled = ref<boolean>(true)
+  const showLikeButton = ref<boolean>(true)
+  const showFollowButton = ref<boolean>(true)
+  const showWantMeetButton = ref<boolean>(true)
+  const showMatchmakerButton = ref<boolean>(true)
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -137,6 +145,10 @@ export const useSystemStore = defineStore('system', () => {
           vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
           defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
           leaveMessageEnabled.value = res.leaveMessageEnabled !== undefined ? res.leaveMessageEnabled : leaveMessageEnabled.value
+          showLikeButton.value = res.showLikeButton !== undefined ? res.showLikeButton : showLikeButton.value
+          showFollowButton.value = res.showFollowButton !== undefined ? res.showFollowButton : showFollowButton.value
+          showWantMeetButton.value = res.showWantMeetButton !== undefined ? res.showWantMeetButton : showWantMeetButton.value
+          showMatchmakerButton.value = res.showMatchmakerButton !== undefined ? res.showMatchmakerButton : showMatchmakerButton.value
           storeCert.value = res.storeCert ?? storeCert.value
           appVersion.value = res.appVersion ?? appVersion.value
           icons.value = res.icons ?? DEFAULT_ICONS
@@ -192,6 +204,10 @@ export const useSystemStore = defineStore('system', () => {
           vipEnabled.value = config.vipEnabled !== undefined ? config.vipEnabled : vipEnabled.value
           defaultAvatar.value = config.defaultAvatar ?? defaultAvatar.value
           leaveMessageEnabled.value = config.leaveMessageEnabled !== undefined ? config.leaveMessageEnabled : leaveMessageEnabled.value
+          showLikeButton.value = config.showLikeButton !== undefined ? config.showLikeButton : showLikeButton.value
+          showFollowButton.value = config.showFollowButton !== undefined ? config.showFollowButton : showFollowButton.value
+          showWantMeetButton.value = config.showWantMeetButton !== undefined ? config.showWantMeetButton : showWantMeetButton.value
+          showMatchmakerButton.value = config.showMatchmakerButton !== undefined ? config.showMatchmakerButton : showMatchmakerButton.value
           storeCert.value = config.storeCert ?? storeCert.value
           icons.value = config.icons ?? icons.value
         }
@@ -266,6 +282,10 @@ export const useSystemStore = defineStore('system', () => {
       vipEnabled: vipEnabled.value,
       defaultAvatar: defaultAvatar.value,
       leaveMessageEnabled: leaveMessageEnabled.value,
+      showLikeButton: showLikeButton.value,
+      showFollowButton: showFollowButton.value,
+      showWantMeetButton: showWantMeetButton.value,
+      showMatchmakerButton: showMatchmakerButton.value,
       storeCert: storeCert.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -295,6 +315,10 @@ export const useSystemStore = defineStore('system', () => {
     vipEnabled,
     defaultAvatar,
     leaveMessageEnabled,
+    showLikeButton,
+    showFollowButton,
+    showWantMeetButton,
+    showMatchmakerButton,
     storeCert,
     appVersion,
     icons,

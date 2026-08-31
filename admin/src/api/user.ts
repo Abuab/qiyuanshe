@@ -232,6 +232,15 @@ export const adminUsers = {
     return request.put(`/admin/users/photos/${photoId}/main`)
   },
 
+  // 语音介绍管理
+  setVoice(id: number, data: { voiceUrl: string; voiceDuration?: number }): Promise<ApiResponse> {
+    return request.put(`/admin/users/${id}/voice`, data)
+  },
+
+  deleteVoice(id: number): Promise<ApiResponse> {
+    return request.delete(`/admin/users/${id}/voice`)
+  },
+
   // 关注管理
   getFollowStats(id: number): Promise<ApiResponse<{ following: number; followers: number }>> {
     return request.get(`/admin/users/${id}/follow-stats`)
