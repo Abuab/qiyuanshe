@@ -70,6 +70,13 @@ export class PublicSystemController {
       showFollowButton: configs.basic?.showFollowButton !== false,
       showWantMeetButton: configs.basic?.showWantMeetButton !== false,
       showMatchmakerButton: configs.basic?.showMatchmakerButton !== false,
+      showAnswerButton: configs.basic?.showAnswerButton !== false,
+      // 我的页面入口显隐（审核改造：可按需隐藏，定位为婚庆展示类小程序）
+      showMatchmakerEntry: configs.basic?.showMatchmakerEntry !== false,
+      showMyLikesEntry: configs.basic?.showMyLikesEntry !== false,
+      showPersonalityEntry: configs.basic?.showPersonalityEntry !== false,
+      // 红娘弹窗显隐（审核改造：关闭后小程序端弹窗提示请联系客服）
+      showMatchmakerPopup: configs.basic?.showMatchmakerPopup !== false,
       // 到店认证门店配置
       storeCert: {
         name: configs.storeCert?.name || '',

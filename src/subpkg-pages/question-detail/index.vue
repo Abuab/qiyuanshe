@@ -87,7 +87,7 @@
     </scroll-view>
 
     <!-- 底部悬浮回答按钮 -->
-    <view class="float-answer-btn" @tap="goToAnswer">
+    <view v-if="systemStore.showAnswerButton" class="float-answer-btn" @tap="goToAnswer">
       <text class="answer-btn-text">回答</text>
     </view>
 

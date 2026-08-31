@@ -127,6 +127,19 @@ const onAvatarError = () => { avatarError.value = true }
 const onQrcodeError = () => { qrcodeError.value = true }
 
 watch(() => props.show, (newVal) => {
+  if (newVal && !systemStore.showMatchmakerPopup) {
+    // 红娘弹窗被后台关闭：改为提示联系客服
+    visible.value = false
+    uni.showModal({
+      title: '提示',
+      content: '请联系客服',
+      showCancel: false,
+      confirmText: '知道了',
+    })
+    emit('update:show', false)
+    emit('close')
+    return
+  }
   visible.value = newVal
 }, { immediate: true })
 

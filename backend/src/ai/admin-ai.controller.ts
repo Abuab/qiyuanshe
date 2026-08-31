@@ -29,7 +29,7 @@ export class AdminAiController {
     @Req() req: any,
   ) {
     const operatorId = req.user?.id || null
-    const ipAddress = req.ip || req.connection?.remoteAddress || ''
+    const ipAddress = this.getClientIp(req)
 
     // 从类型定义中获取 DB key
     const dbKey = `ai.feature.${key}.enabled`
@@ -46,7 +46,7 @@ export class AdminAiController {
     @Req() req: any,
   ) {
     const operatorId = req.user?.id || null
-    const ipAddress = req.ip || req.connection?.remoteAddress || ''
+    const ipAddress = this.getClientIp(req)
 
     await this.aiConfigService.updateSwitch(
       'ai.feature.master.enabled',
@@ -67,5 +67,19 @@ export class AdminAiController {
     const l = Math.min(100, Math.max(1, parseInt(limit) || 20))
     const data = await this.aiConfigService.getSwitchLogs(p, l)
     return Result.success(data)
+  }
+
+  /** 提取客户端真实 IP（优先 X-Forwarded-For 首个，兼容反向代理；IPv4-mapped IPv6 归一化为 IPv4） */
+  private getClientIp(req?: any): string {
+    if (!req) return ''
+    const xff = req.headers?.['x-forwarded-for']
+    if (xff) {
+      const first = String(xff).split(',')[0]?.trim()
+      if (first) return first.replace(/^::ffff:/i, '')
+    }
+    const realIp = req.headers?.['x-real-ip']
+    if (realIp) return String(realIp).replace(/^::ffff:/i, '')
+    const raw = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || ''
+    return String(raw).replace(/^::ffff:/i, '')
   }
 }

@@ -107,7 +107,7 @@
             </view>
             <text class="service-label">我的问答</text>
           </view>
-          <view class="service-item" @tap="goToMatchmaker">
+          <view v-if="systemStore.showMatchmakerEntry" class="service-item" @tap="goToMatchmaker">
             <view class="service-icon-box" style="background-color: #F3E5F5;">
               <image class="service-icon-img" src="/static/icons/home-grid/nvxing.png" mode="aspectFit" />
             </view>
@@ -119,7 +119,7 @@
             </view>
             <text class="service-label">AI助手</text>
           </view>
-          <view class="service-item" @tap="goMyPersonality">
+          <view v-if="systemStore.showPersonalityEntry" class="service-item" @tap="goMyPersonality">
             <view class="service-icon-box" style="background-color: #FCE4EC;">
               <image class="service-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
               <view v-if="personalityTested" class="service-dot" />
@@ -752,16 +752,20 @@ const handleToolClick = (key: string) => {
 
 // 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
 // 后台可通过 pageIcons[item.key] 配置图标URL
-const toolGrid7 = [
-  { key: 'myPhotos',    label: '我的相册', iconName: 'icon-image', emoji: '' },
-  { key: 'loveQuotes',  label: '爱情语录', iconName: 'icon-list-heart', emoji: '' },
-  { key: 'myLikes',     label: '我的喜欢', iconName: 'icon-heart', emoji: '' },
-  { key: 'privacy',     label: '隐私设置', iconName: 'icon-shield-warning', emoji: '' },
-  { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '' },
-  { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '' },
-  { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '' },
-  { key: 'dummy',       label: '',        iconName: '', emoji: '',      placeholder: true },
-]
+const toolGrid7 = computed(() => {
+  const all = [
+    { key: 'myPhotos',    label: '我的相册', iconName: 'icon-image', emoji: '' },
+    { key: 'loveQuotes',  label: '爱情语录', iconName: 'icon-list-heart', emoji: '' },
+    { key: 'myLikes',     label: '我的喜欢', iconName: 'icon-heart', emoji: '' },
+    { key: 'privacy',     label: '隐私设置', iconName: 'icon-shield-warning', emoji: '' },
+    { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '' },
+    { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '' },
+    { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '' },
+    { key: 'dummy',       label: '',        iconName: '', emoji: '',      placeholder: true },
+  ]
+  // 「我的喜欢」入口受后台开关控制
+  return all.filter(item => item.key !== 'myLikes' || systemStore.showMyLikesEntry)
+})
 </script>
 
 <style lang="scss" scoped>

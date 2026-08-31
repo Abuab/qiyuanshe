@@ -50,7 +50,7 @@
         </view>
 
         <view v-if="index === 0" class="card-bottom">
-          <view class="answer-btn-inline" @tap.stop="goToAnswer(question)">
+          <view v-if="systemStore.showAnswerButton" class="answer-btn-inline" @tap.stop="goToAnswer(question)">
             <text>回答 ></text>
           </view>
         </view>
@@ -77,6 +77,7 @@ import { ref, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import request from '@/utils/request'
 import { useUserStore } from '@/store/user'
+import { useSystemStore } from '@/store/system'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
@@ -93,6 +94,7 @@ interface Question {
 }
 
 const userStore = useUserStore()
+const systemStore = useSystemStore()
 const questionList = ref<Question[]>([])
 const page = ref(1)
 const limit = 20

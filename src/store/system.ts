@@ -55,6 +55,11 @@ interface SystemConfig {
   showFollowButton: boolean
   showWantMeetButton: boolean
   showMatchmakerButton: boolean
+  showAnswerButton: boolean
+  showMatchmakerEntry: boolean
+  showMyLikesEntry: boolean
+  showPersonalityEntry: boolean
+  showMatchmakerPopup: boolean
   storeCert: {
     name: string
     address: string
@@ -101,6 +106,11 @@ export const useSystemStore = defineStore('system', () => {
   const showFollowButton = ref<boolean>(true)
   const showWantMeetButton = ref<boolean>(true)
   const showMatchmakerButton = ref<boolean>(true)
+  const showAnswerButton = ref<boolean>(true)
+  const showMatchmakerEntry = ref<boolean>(true)
+  const showMyLikesEntry = ref<boolean>(true)
+  const showPersonalityEntry = ref<boolean>(true)
+  const showMatchmakerPopup = ref<boolean>(true)
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
   const dicts = ref<Record<string, any>>({})
@@ -149,6 +159,11 @@ export const useSystemStore = defineStore('system', () => {
           showFollowButton.value = res.showFollowButton !== undefined ? res.showFollowButton : showFollowButton.value
           showWantMeetButton.value = res.showWantMeetButton !== undefined ? res.showWantMeetButton : showWantMeetButton.value
           showMatchmakerButton.value = res.showMatchmakerButton !== undefined ? res.showMatchmakerButton : showMatchmakerButton.value
+          showAnswerButton.value = res.showAnswerButton !== undefined ? res.showAnswerButton : showAnswerButton.value
+          showMatchmakerEntry.value = res.showMatchmakerEntry !== undefined ? res.showMatchmakerEntry : showMatchmakerEntry.value
+          showMyLikesEntry.value = res.showMyLikesEntry !== undefined ? res.showMyLikesEntry : showMyLikesEntry.value
+          showPersonalityEntry.value = res.showPersonalityEntry !== undefined ? res.showPersonalityEntry : showPersonalityEntry.value
+          showMatchmakerPopup.value = res.showMatchmakerPopup !== undefined ? res.showMatchmakerPopup : showMatchmakerPopup.value
           storeCert.value = res.storeCert ?? storeCert.value
           appVersion.value = res.appVersion ?? appVersion.value
           icons.value = res.icons ?? DEFAULT_ICONS
@@ -208,6 +223,11 @@ export const useSystemStore = defineStore('system', () => {
           showFollowButton.value = config.showFollowButton !== undefined ? config.showFollowButton : showFollowButton.value
           showWantMeetButton.value = config.showWantMeetButton !== undefined ? config.showWantMeetButton : showWantMeetButton.value
           showMatchmakerButton.value = config.showMatchmakerButton !== undefined ? config.showMatchmakerButton : showMatchmakerButton.value
+          showAnswerButton.value = config.showAnswerButton !== undefined ? config.showAnswerButton : showAnswerButton.value
+          showMatchmakerEntry.value = config.showMatchmakerEntry !== undefined ? config.showMatchmakerEntry : showMatchmakerEntry.value
+          showMyLikesEntry.value = config.showMyLikesEntry !== undefined ? config.showMyLikesEntry : showMyLikesEntry.value
+          showPersonalityEntry.value = config.showPersonalityEntry !== undefined ? config.showPersonalityEntry : showPersonalityEntry.value
+          showMatchmakerPopup.value = config.showMatchmakerPopup !== undefined ? config.showMatchmakerPopup : showMatchmakerPopup.value
           storeCert.value = config.storeCert ?? storeCert.value
           icons.value = config.icons ?? icons.value
         }
@@ -286,6 +306,11 @@ export const useSystemStore = defineStore('system', () => {
       showFollowButton: showFollowButton.value,
       showWantMeetButton: showWantMeetButton.value,
       showMatchmakerButton: showMatchmakerButton.value,
+      showAnswerButton: showAnswerButton.value,
+      showMatchmakerEntry: showMatchmakerEntry.value,
+      showMyLikesEntry: showMyLikesEntry.value,
+      showPersonalityEntry: showPersonalityEntry.value,
+      showMatchmakerPopup: showMatchmakerPopup.value,
       storeCert: storeCert.value,
     }
     uni.setStorageSync('systemConfig', JSON.stringify(config))
@@ -319,6 +344,11 @@ export const useSystemStore = defineStore('system', () => {
     showFollowButton,
     showWantMeetButton,
     showMatchmakerButton,
+    showAnswerButton,
+    showMatchmakerEntry,
+    showMyLikesEntry,
+    showPersonalityEntry,
+    showMatchmakerPopup,
     storeCert,
     appVersion,
     icons,

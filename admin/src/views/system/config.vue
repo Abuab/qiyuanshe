@@ -111,6 +111,31 @@
               <div class="form-tip ml-12">用户详情页底部"红娘牵线"按钮显隐</div>
             </el-form-item>
 
+            <el-form-item label="回答问题按钮">
+              <el-switch v-model="basicConfig.showAnswerButton" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">问答详情页底部"回答"按钮、问答列表页"回答&gt;"按钮显隐</div>
+            </el-form-item>
+
+            <el-form-item label="专属红娘入口">
+              <el-switch v-model="basicConfig.showMatchmakerEntry" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">我的页面"专属红娘"入口显隐</div>
+            </el-form-item>
+
+            <el-form-item label="我的喜欢入口">
+              <el-switch v-model="basicConfig.showMyLikesEntry" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">我的页面"我的喜欢"工具入口显隐</div>
+            </el-form-item>
+
+            <el-form-item label="我的性格入口">
+              <el-switch v-model="basicConfig.showPersonalityEntry" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">我的页面"我的性格/测一测"入口显隐</div>
+            </el-form-item>
+
+            <el-form-item label="红娘弹窗">
+              <el-switch v-model="basicConfig.showMatchmakerPopup" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">关闭后所有红娘弹窗改为提示"请联系客服"</div>
+            </el-form-item>
+
             <el-form-item label="登录页插画">
               <div class="upload-item">
                 <el-image
@@ -326,6 +351,11 @@ const basicConfig = reactive({
   showFollowButton: true,
   showWantMeetButton: true,
   showMatchmakerButton: true,
+  showAnswerButton: true,
+  showMatchmakerEntry: true,
+  showMyLikesEntry: true,
+  showPersonalityEntry: true,
+  showMatchmakerPopup: true,
 })
 
 const shareConfig = reactive({
