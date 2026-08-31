@@ -87,7 +87,7 @@
     </scroll-view>
 
     <!-- 底部悬浮回答按钮 -->
-    <view v-if="systemStore.showAnswerButton" class="float-answer-btn" @tap="goToAnswer">
+    <view v-if="systemStore.showAnswerButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.ANSWER)" class="float-answer-btn" @tap="goToAnswer">
       <text class="answer-btn-text">回答</text>
     </view>
 
@@ -102,6 +102,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -127,6 +129,7 @@ interface Answer {
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 const questionId = ref(0)
 const questionTitle = ref('')
 const answerList = ref<Answer[]>([])

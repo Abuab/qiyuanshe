@@ -35,7 +35,7 @@
     </view>
 
     <!-- 底部输入区 -->
-    <view class="input-bar">
+    <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_QUIZ)" class="input-bar">
       <view class="btn-new-question" @tap="nextQuestion">换一题</view>
       <input
         class="input-field"
@@ -61,6 +61,8 @@ import { ref, nextTick, onMounted } from 'vue'
 import request from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
 import { requireLogin } from '@/utils/auth'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 
 interface ChatMessage {
   type: 'ai' | 'user'
@@ -72,6 +74,7 @@ const inputText = ref('')
 const lastMsgId = ref('')
 const statusBarHeight = ref(0)
 const loadingFailed = ref(false)
+const licenseStore = useLicenseStore()
 
 function scrollToBottom() {
   lastMsgId.value = ''

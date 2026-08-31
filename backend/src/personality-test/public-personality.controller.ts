@@ -14,6 +14,7 @@ import * as QRCode from 'qrcode'
 import { ThrottlerGuard } from '@nestjs/throttler'
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
 import { Result } from '../common/result'
+import { RequireLicense } from '../license/license.decorator'
 import { PersonalityUserService } from './personality-user.service'
 import { PersonalityGuestService } from './personality-guest.service'
 import { PersonalityMatchService } from './personality-match.service'
@@ -65,6 +66,7 @@ export class PublicPersonalityController {
    * POST /personality/submit  Body: { sessionId, guestToken?, answers:[{questionId,optionId,answeredAt?}], startedAt? }
    */
   @Post('submit')
+  @RequireLicense()
   @UseGuards(OptionalJwtAuthGuard)
   async submit(@Body() body: any, @Request() req: any) {
     const data = await this.userService.submit(
@@ -126,6 +128,7 @@ export class PublicPersonalityController {
    * POST /personality/retest  Body: { guestToken? }
    */
   @Post('retest')
+  @RequireLicense()
   @UseGuards(OptionalJwtAuthGuard)
   async retest(@Body() body: any, @Request() req: any) {
     const data = await this.userService.retest({

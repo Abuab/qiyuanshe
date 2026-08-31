@@ -35,7 +35,7 @@
       </view>
 
       <!-- 提交按钮 -->
-      <view class="submit-btn" @tap="handleSubmit">
+      <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.ANSWER)" class="submit-btn" @tap="handleSubmit">
         <text>提交</text>
       </view>
     </view>
@@ -49,6 +49,8 @@ import request from '@/utils/request'
 import { getToken } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 
 const questionId = ref(0)
 const questionTitle = ref('')
@@ -56,6 +58,7 @@ const answerContent = ref('')
 const submitting = ref(false)
 const statusBarHeight = ref(0)
 const navInnerHeight = 44
+const licenseStore = useLicenseStore()
 
 onLoad((options: any) => {
   const sysInfo = uni.getSystemInfoSync()

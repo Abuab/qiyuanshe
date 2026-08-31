@@ -2,6 +2,8 @@ export class Result<T = any> {
   code: number
   message: string
   data: T
+  /** 业务错误码（字符串），如 LICENSE_EXPIRED / LICENSE_INVALID，供前端精确识别 */
+  bizCode?: string
 
   constructor(code: number, message: string, data?: T) {
     this.code = code

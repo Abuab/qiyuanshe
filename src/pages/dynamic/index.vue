@@ -195,7 +195,7 @@
               <text class="hi-label">Hi</text>
               <text class="hi-text">认识Ta</text>
             </view>
-            <view v-if="systemStore.showMatchmakerButton" class="btn-matchmaker" @tap="handleMatchmaker(item)">
+            <view v-if="systemStore.showMatchmakerButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER)" class="btn-matchmaker" @tap="handleMatchmaker(item)">
               <text class="mm-text">红娘牵线</text>
             </view>
           </view>
@@ -266,6 +266,8 @@ import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { useIcon } from '@/composables/useIcon'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { onShow } from '@dcloudio/uni-app'
 import { logger } from '@/utils/logger'
 const { handleImageError } = useImageFallback()
@@ -311,6 +313,7 @@ const pageSize = 10
 const statusBarHeight = ref(0)
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 const { getPageIcon } = useIcon()
 const myUserId = computed(() => (userStore.userInfo as any)?.id || 0)
 

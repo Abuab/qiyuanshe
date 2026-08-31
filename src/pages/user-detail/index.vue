@@ -238,7 +238,7 @@
         </view>
 
         <!-- ========== AI缘分分析入口 ========== -->
-        <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openAiMatch">
+        <view v-if="profileData.showAiMatchEntry && !profileData.top.isSelf && licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_MATCH)" class="ai-entry-card" @tap="openAiMatch">
           <view class="ai-entry-content">
             <text class="ai-entry-emoji">💗</text>
             <view class="ai-entry-info">
@@ -250,7 +250,7 @@
         </view>
 
         <!-- ========== AI趣味测试入口 ========== -->
-        <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf" class="ai-entry-card" @tap="openFunQuiz">
+        <view v-if="profileData.showAiFunQuizEntry && !profileData.top.isSelf && licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_QUIZ)" class="ai-entry-card" @tap="openFunQuiz">
           <view class="ai-entry-content">
             <text class="ai-entry-emoji">🔮</text>
             <view class="ai-entry-info">
@@ -274,7 +274,7 @@
         </view>
 
         <!-- ========== 浏览者未测试引导（文案由后台配置） ========== -->
-        <view v-if="showViewerTestGuide && !profileData.top.isSelf" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
+        <view v-if="showViewerTestGuide && !profileData.top.isSelf && licenseStore.isFeatureEnabled(LICENSE_FEATURES.PERSONALITY_TEST)" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
           <view class="ai-entry-content">
             <image class="ai-entry-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
             <view class="ai-entry-info">
@@ -390,10 +390,10 @@
 
       <!-- ========== 底部悬浮操作按钮（固定） ========== -->
       <view v-if="profileData.bottomBar.visible && (systemStore.showWantMeetButton || systemStore.showMatchmakerButton)" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
-        <view v-if="systemStore.showWantMeetButton" class="bb-btn contact-btn" @tap="handleContact">
+        <view v-if="systemStore.showWantMeetButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.CONTACT_APPLY)" class="bb-btn contact-btn" @tap="handleContact">
           <text>想认识Ta</text>
         </view>
-        <view v-if="systemStore.showMatchmakerButton" class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
+        <view v-if="systemStore.showMatchmakerButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER)" class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
           <text>红娘牵线</text>
         </view>
       </view>
@@ -734,6 +734,8 @@ import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { uploadImage } from '@/utils/upload'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -747,6 +749,7 @@ import RealNameAuthPopup from '@/components/real-name-auth-popup/real-name-auth-
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 const defaultAvatar = computed(() => systemStore.defaultAvatar || icons.common.defaultAvatar)
 
 const userId = ref(0)

@@ -20,6 +20,9 @@
       :scroll-top="scrollToVal"
       :scroll-with-animation="true"
     >
+      <!-- 宽限期横幅：仅 grace_period 状态显示 -->
+      <GracePeriodBanner />
+
       <!-- 顶部粉色区域：功能图标 -->
       <view class="top-pink-area">
         <view class="quick-entry-section">
@@ -159,7 +162,7 @@
     <tab-bar />
 
     <!-- 悬浮按钮：问媒 / 测一测（由后台「首页浮动按钮配置」切换，即时生效） -->
-    <view v-if="!showLoveIntent && isFloatEnabled" class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
+    <view v-if="!showLoveIntent && isFloatEnabled && isFloatButtonAllowed" class="float-matchmaker" :style="floatButtonStyle" @tap="handleFloatButton">
       <template v-if="isFloatTestMode">
         <text class="float-label float-label-test">{{ floatText }}</text>
       </template>
@@ -255,10 +258,13 @@ import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import LoveIntentPopup from '@/components/love-intent-popup/love-intent-popup.vue'
 import BackTop from '@/components/back-top/back-top.vue'
+import GracePeriodBanner from '@/components/GracePeriodBanner/GracePeriodBanner.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import { icons } from '@/config/icons'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { logger } from '@/utils/logger'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
 import { goPersonalityEntry, resolveAndExposeCopy, reportCopyClick, flushReportQueue } from '@/utils/personality'
 
 interface HotQuestion {
@@ -326,6 +332,7 @@ const fetchMyPhotoCount = async () => {
 const filterStore = useFilterStore()
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 const appName = computed(() => systemStore.appName)
 const matchmakerHiText = computed(() => systemStore.matchmakerHiText || 'Hi')
 const matchmakerShowHi = computed(() => systemStore.matchmakerShowHi !== false)
@@ -336,6 +343,12 @@ const floatConfig = ref<any>(null)
 const floatCtaItemId = ref<number | undefined>(undefined)
 const isFloatTestMode = computed(() => floatConfig.value?.mode === 'test')
 const isFloatEnabled = computed(() => floatConfig.value?.enabled !== false)
+// 浮动按钮按模式映射 License 功能：测一测 → 人格测试，问媒 → 红娘牵线
+const isFloatButtonAllowed = computed(() =>
+  isFloatTestMode.value
+    ? licenseStore.isFeatureEnabled(LICENSE_FEATURES.PERSONALITY_TEST)
+    : licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER),
+)
 const floatText = computed(() => floatConfig.value?.test?.text || '测一测')
 const floatButtonStyle = computed(() =>
   isFloatTestMode.value && floatConfig.value?.test?.bgColor

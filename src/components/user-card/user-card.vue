@@ -73,7 +73,7 @@
     </view>
 
     <!-- 心动按钮：用 Unicode 心形替代 uni-icons 图标字体，避免真机字体不渲染 -->
-    <view v-if="store.showLikeButton" class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
+    <view v-if="store.showLikeButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.LIKE)" class="heart-btn" :class="{ liked: isLiked }" @tap.stop="onLike">
       <text class="heart-ico">{{ isLiked ? '♥' : '♡' }}</text>
     </view>
   </view>
@@ -87,6 +87,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 
 export interface UserCardData {
   id: number
@@ -142,6 +144,7 @@ const computedSecondLine = computed(() => {
 
 const store = useSystemStore()
 const userStore = useUserStore()
+const licenseStore = useLicenseStore()
 const defaultAvatar = computed(() => store.defaultAvatar || icons.common.defaultAvatar)
 
 const avatarUrl = computed(() => {

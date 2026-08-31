@@ -63,7 +63,7 @@
 
           <view class="action-bar">
             <view class="btn-dislike" @tap="onDislike(item, index)">不感兴趣</view>
-            <view class="btn-like" @tap="onLike(item, index)">心动</view>
+            <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.LIKE)" class="btn-like" @tap="onLike(item, index)">心动</view>
           </view>
         </view>
       </view>
@@ -81,6 +81,8 @@ import { ref, onMounted } from 'vue'
 import request from '@/utils/request'
 import { getFullImageUrl } from '@/utils/common'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 
 interface UserInfo {
   id: number
@@ -98,6 +100,7 @@ interface UserInfo {
 }
 
 const list = ref<UserInfo[]>([])
+const licenseStore = useLicenseStore()
 
 function getTags(user: UserInfo): string[] {
   const tags: string[] = []

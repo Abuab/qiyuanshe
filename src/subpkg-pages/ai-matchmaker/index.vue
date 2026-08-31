@@ -118,7 +118,7 @@
       </scroll-view>
 
       <!-- 输入框行 -->
-      <view class="input-row">
+      <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_CHAT)" class="input-row">
         <input
           class="input-field"
           v-model="inputText"
@@ -154,11 +154,14 @@ import { getFullImageUrl } from '@/utils/common'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { requireLogin } from '@/utils/auth'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
 const userStore = useUserStore()
+const licenseStore = useLicenseStore()
 
 interface Message {
   role: 'user' | 'ai'

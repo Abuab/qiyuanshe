@@ -6,6 +6,7 @@
 import { onLaunch, onShow, onHide, onError, onUnhandledRejection } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
 import { logger } from '@/utils/logger'
 import { get } from '@/utils/request'
 import { EID_APPID } from '@/config/constants'
@@ -26,6 +27,9 @@ onLaunch(() => {
   systemStore.loadSystemConfig().then(() => {
     logger.setTag(systemStore.appName)
   })
+
+  // 加载授权状态（公开接口，登录前即可判断）
+  useLicenseStore().loadLicense()
 
   // 全局开启分享菜单（兜底），失败静默
   uni.showShareMenu({
@@ -118,6 +122,9 @@ onShow((options: any) => {
       logger.setTag(systemStore.appName)
     }),
   )
+
+  // 每次切回前台时静默刷新授权状态
+  tasks.push(useLicenseStore().loadLicense())
 
   // 每次切回前台时同步 VIP 状态（管理后台可能取消/修改了会员）
   const userStore = useUserStore()

@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AiFunQuizService } from './ai-fun-quiz.service'
 import { FunQuizRequest, FunQuizAnswerRequest } from './ai-fun-quiz.types'
 import { Result } from '../common/result'
+import { RequireLicense } from '../license/license.decorator'
 
 /**
  * 小程序端：AI 趣味缘分测试接口
@@ -26,6 +27,7 @@ export class AiFunQuizController {
    * POST /ai/fun-quiz/answer
    */
   @Post('answer')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async answerQuestion(@Req() req: any, @Body() body: FunQuizAnswerRequest) {
     const userId = req.user?.id || 0
@@ -39,6 +41,7 @@ export class AiFunQuizController {
    * POST /ai/fun-quiz/generate
    */
   @Post('generate')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async generate(@Req() req: any, @Body() body: FunQuizRequest) {
     const data = await this.funQuizService.generateReport(req.user.id, body)

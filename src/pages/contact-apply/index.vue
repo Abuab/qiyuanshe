@@ -42,7 +42,7 @@
       </view>
 
       <!-- ===== 确认按钮 ===== -->
-      <view v-if="!showSuccess" class="confirm-section">
+      <view v-if="!showSuccess && licenseStore.isFeatureEnabled(LICENSE_FEATURES.CONTACT_APPLY)" class="confirm-section">
         <view class="confirm-btn" :class="{ disabled: applying }" @tap="handleConfirm">
           <text>{{ applying ? '处理中...' : '确认想认识Ta' }}</text>
         </view>
@@ -116,6 +116,8 @@ import { getFullImageUrl } from '@/utils/common'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { requireLogin } from '@/utils/auth'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -123,6 +125,7 @@ import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 
 // ===== 查询参数 =====
 const targetUserId = ref(0)

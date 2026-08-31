@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt'
 import { DynamicService } from './dynamic.service'
 import { JwtAuthGuard } from '../auth/guards'
 import { Result } from '../common/result'
+import { RequireLicense } from '../license/license.decorator'
 
 @Controller('dynamics')
 export class DynamicController {
@@ -50,6 +51,7 @@ export class DynamicController {
   }
 
   @Post(':id/like')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async toggleLike(
     @Param('id', ParseIntPipe) id: number,

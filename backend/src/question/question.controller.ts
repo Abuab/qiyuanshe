@@ -14,6 +14,7 @@ import {
 import { QuestionService } from './question.service'
 import { GetQuestionsDto, CreateAnswerDto } from './dto'
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '../auth/guards'
+import { RequireLicense } from '../license/license.decorator'
 
 @Controller('questions')
 export class QuestionController {
@@ -65,6 +66,7 @@ export class QuestionController {
   }
 
   @Post(':id/answers')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async createAnswer(
     @Param('id', ParseIntPipe) id: number,
@@ -98,6 +100,7 @@ export class QuestionController {
   }
 
   @Post(':id/answers/:answerId/like')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async likeAnswer(
     @Param('answerId', ParseIntPipe) answerId: number,
@@ -131,6 +134,7 @@ export class AnswerController {
   constructor(private readonly questionService: QuestionService) {}
 
   @Post(':id/like')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async likeAnswer(
     @Param('id', ParseIntPipe) id: number,

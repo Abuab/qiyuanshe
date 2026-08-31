@@ -39,6 +39,7 @@ import { CosModule } from './cos/cos.module'
 import { DatabaseIndexService } from './common/database-index.service'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 import { CommonModule } from './common/common.module'
+import { LicenseModule } from './license/license.module'
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { CommonModule } from './common/common.module'
     CosModule,
     WinstonLoggerModule,
     CommonModule,
+    LicenseModule,
   ],
   controllers: [HealthController],
   providers: [DatabaseIndexService],

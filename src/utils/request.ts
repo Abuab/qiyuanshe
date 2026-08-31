@@ -107,6 +107,51 @@ function statusMessage(statusCode: number): string {
 /** 标记是否正在跳转登录页，防止并发 401 推入多个登录页 */
 let isNavigatingToLogin = false
 
+/** 标记是否正在展示授权异常弹窗，防止并发写请求触发多个 Modal */
+let isShowingLicenseModal = false
+
+/** 处理授权异常响应（bizCode 为 LICENSE_EXPIRED / LICENSE_INVALID）：
+ *  刷新授权状态、弹「系统授权异常」弹窗并 reject 带 bizCode 的错误。
+ *  返回 true 表示已处理（调用方应直接 return）。 */
+function handleLicenseBizCode(
+  responseBody: Record<string, unknown> | undefined,
+  statusCode: number,
+  reject: (reason: any) => void,
+): boolean {
+  const bizCode = responseBody?.bizCode as string | undefined
+  if (bizCode !== 'LICENSE_EXPIRED' && bizCode !== 'LICENSE_INVALID') {
+    return false
+  }
+
+  import('../store/license')
+    .then(({ useLicenseStore }) => {
+      useLicenseStore().loadLicense()
+    })
+    .catch(() => { /* 忽略 */ })
+
+  if (!isShowingLicenseModal) {
+    isShowingLicenseModal = true
+    uni.showModal({
+      title: '系统授权异常',
+      content: bizCode === 'LICENSE_EXPIRED'
+        ? '系统授权已过期，部分功能暂时无法使用，请联系管理员'
+        : '系统未授权，部分功能暂时无法使用，请联系管理员',
+      showCancel: false,
+      confirmText: '知道了',
+      complete: () => { isShowingLicenseModal = false },
+    })
+  }
+
+  const err = new Error((responseBody?.message as string) || '系统授权异常') as Error & {
+    statusCode: number
+    bizCode: string
+  }
+  err.statusCode = statusCode
+  err.bizCode = bizCode
+  reject(err)
+  return true
+}
+
 /** 无需登录即可访问的认证端点：这些端点的 401 不应触发全局限流跳转 */
 const AUTH_WHITELIST = ['/auth/phone-login', '/auth/wechat-login', '/auth/refresh', '/auth/sms-code', '/auth/sms-login']
 
@@ -298,6 +343,7 @@ function retryRequest(
 
       if (!isHttpSuccess(statusCode)) {
         const responseBody = response.data as Record<string, unknown> | undefined
+        if (handleLicenseBizCode(responseBody, statusCode, reject)) return
         const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
         const msg = bizMsg || statusMessage(statusCode)
         uni.showToast({ title: msg, icon: 'none', duration: 2000 })
@@ -372,6 +418,10 @@ const request = <T = unknown>(options: RequestOptions): Promise<T> => {
         // ---- 非成功状态码 ----
         if (!isHttpSuccess(statusCode)) {
           const responseBody = response.data as Record<string, unknown> | undefined
+
+          // 授权异常：刷新授权状态并弹窗提示，不阻断浏览（仅拒绝本次写操作）
+          if (handleLicenseBizCode(responseBody, statusCode, reject)) return
+
           const bizMsg = (responseBody?.msg || responseBody?.message) as string | undefined
           const msg = bizMsg || statusMessage(statusCode)
           if (statusCode !== 401 && !skipToast) {

@@ -35,6 +35,7 @@ import { AuditLog } from '../entities/AuditLog'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Follow } from '../entities/Follow'
 import { Result } from '../common/result'
+import { RequireLicense } from '../license/license.decorator'
 import { getDisplayName } from '../common/user-utils'
 import { normalizeImageUrl, resolveAvatarUrl } from '../common/image-url'
 import { DynamicService } from '../dynamic/dynamic.service'
@@ -603,6 +604,7 @@ export class UserController {
   }
 
   @Post(':id/like')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async likeUser(
     @Param('id', ParseIntPipe) targetUserId: number,
@@ -650,6 +652,7 @@ export class UserController {
   }
 
   @Delete(':id/like')
+  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async unlikeUser(
     @Param('id', ParseIntPipe) targetUserId: number,

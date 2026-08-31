@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Req, UseGuards, ParseIntPipe } from '@nes
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AiMatchService } from './ai-match.service'
 import { Result } from '../common/result'
+import { RequireLicense } from '../license/license.decorator'
 
 /**
  * 小程序端：AI 缘分匹配分析接口
@@ -29,6 +30,7 @@ export class AiMatchController {
    * POST /ai/match/analyze/:targetUserId
    */
   @Post('analyze/:targetUserId')
+  @RequireLicense()
   async analyze(
     @Req() req: any,
     @Param('targetUserId', ParseIntPipe) targetUserId: number,
@@ -68,6 +70,7 @@ export class AiMatchController {
    * POST /ai/match/remind/:targetUserId
    */
   @Post('remind/:targetUserId')
+  @RequireLicense()
   async remindTarget(
     @Req() req: any,
     @Param('targetUserId', ParseIntPipe) targetUserId: number,

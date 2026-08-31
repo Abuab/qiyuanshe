@@ -62,11 +62,11 @@
             <text class="stat-label">被关注</text>
             <text class="stat-num">{{ stats.followers }}</text>
           </view>
-          <view class="stat-item" @tap.stop="goToFootprints">
+          <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.VISITOR_LOG)" class="stat-item" @tap.stop="goToFootprints">
             <text class="stat-label">足迹</text>
             <text class="stat-num">{{ stats.footprints }}</text>
           </view>
-          <view class="stat-item" @tap.stop="goToVisitors">
+          <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.VISITOR_LOG)" class="stat-item" @tap.stop="goToVisitors">
             <text class="stat-label">看过我</text>
             <text class="stat-num">{{ stats.viewedMe }}</text>
           </view>
@@ -77,7 +77,7 @@
     <view class="scroll-wrap">
     <scroll-view class="content-scroll" scroll-y>
       <!-- ========== 会员卡片 ========== -->
-      <view class="vip-card" @tap="goToVip">
+      <view v-if="licenseStore.isFeatureEnabled(LICENSE_FEATURES.VIP)" class="vip-card" @tap="goToVip">
         <view class="vip-card-left">
           <text class="vip-card-title">{{ isVipValid ? '会员已开通' : '尚未开通会员' }}</text>
           <view class="vip-card-carousel">
@@ -107,7 +107,7 @@
             </view>
             <text class="service-label">我的问答</text>
           </view>
-          <view v-if="systemStore.showMatchmakerEntry" class="service-item" @tap="goToMatchmaker">
+          <view v-if="systemStore.showMatchmakerEntry && licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER)" class="service-item" @tap="goToMatchmaker">
             <view class="service-icon-box" style="background-color: #F3E5F5;">
               <image class="service-icon-img" src="/static/icons/home-grid/nvxing.png" mode="aspectFit" />
             </view>
@@ -119,7 +119,7 @@
             </view>
             <text class="service-label">AI助手</text>
           </view>
-          <view v-if="systemStore.showPersonalityEntry" class="service-item" @tap="goMyPersonality">
+          <view v-if="systemStore.showPersonalityEntry && licenseStore.isFeatureEnabled(LICENSE_FEATURES.PERSONALITY_TEST)" class="service-item" @tap="goMyPersonality">
             <view class="service-icon-box" style="background-color: #FCE4EC;">
               <image class="service-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
               <view v-if="personalityTested" class="service-dot" />
@@ -129,13 +129,13 @@
         </view>
         <!-- AI助手展开面板 -->
         <view v-if="showAiAssistantEntry && aiAssistantExpanded" class="ai-assistant-panel">
-          <view v-if="systemStore.isAiFeatureEnabled('matchmaker')" class="ai-sub-item" @tap="goToAiMatchmaker">
+          <view v-if="systemStore.isAiFeatureEnabled('matchmaker') && licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_CHAT)" class="ai-sub-item" @tap="goToAiMatchmaker">
             <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">AI 红娘</text>
             <text class="ai-sub-desc">智能匹配缘分</text>
             <text class="arrow">></text>
           </view>
-          <view v-if="systemStore.isAiFeatureEnabled('fun_quiz')" class="ai-sub-item" @tap="goToAiQuiz">
+          <view v-if="systemStore.isAiFeatureEnabled('fun_quiz') && licenseStore.isFeatureEnabled(LICENSE_FEATURES.AI_QUIZ)" class="ai-sub-item" @tap="goToAiQuiz">
             <view class="ico ico-star ico-sm ai-sub-star"></view>
             <text class="ai-sub-label">AI 情感问答</text>
             <text class="ai-sub-desc">解答情感困惑</text>
@@ -247,6 +247,8 @@ import { computed, ref, watch, onMounted, onUnmounted, reactive } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import TabBar from '@/components/tab-bar/tab-bar.vue'
 import MatchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import MatchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
@@ -263,6 +265,7 @@ import { logger } from '@/utils/logger'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 
 // ========== 资料完善度弹窗 ==========
 const showProfilePopup = ref(false)

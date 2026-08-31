@@ -30,7 +30,7 @@
       :style="{ paddingTop: (statusBarHeight + navBarHeightPx) + 'px', paddingBottom: '300rpx' }"
     >
       <!-- 资料置顶（VIP 置顶卡） -->
-      <view v-if="systemStore.vipEnabled" class="topcard-card" @tap="handleUseTopCard">
+      <view v-if="systemStore.vipEnabled && licenseStore.isFeatureEnabled(LICENSE_FEATURES.VIP)" class="topcard-card" @tap="handleUseTopCard">
         <view class="topcard-left">
           <text class="topcard-title">资料置顶</text>
           <text class="topcard-desc">{{ topCardDesc }}</text>
@@ -248,10 +248,13 @@ import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { get, post } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 import { safeNavigateBack } from '@/utils/navigate'
 
 const userStore = useUserStore()
 const systemStore = useSystemStore()
+const licenseStore = useLicenseStore()
 
 interface VipPackageItem {
   id: number
@@ -293,23 +296,31 @@ const statusBarHeight = ref(20)
 const safeAreaOffset = ref(0)
 const navBarHeightPx = ref(82) // 36px level1 + 46px level2
 
+// VIP 会员 Tab 是否可见：同时受管理后台开关、登录态与 License「vip」功能授权控制
+const vipTabVisible = computed(
+  () =>
+    systemStore.vipEnabled &&
+    userStore.isLoggedIn &&
+    licenseStore.isFeatureEnabled(LICENSE_FEATURES.VIP),
+)
+
 const tabs = computed(() => {
   const list: { key: string; label: string }[] = [
     { key: 'custom', label: '定制会员' },
     { key: 'about', label: '关于我们' },
   ]
-  if (systemStore.vipEnabled && userStore.isLoggedIn) {
+  if (vipTabVisible.value) {
     list.unshift(
       { key: 'vip', label: 'VIP会员' },
     )
   }
   return list
 })
-const activeTab = ref(systemStore.vipEnabled && userStore.isLoggedIn ? 'vip' : 'custom')
+const activeTab = ref(vipTabVisible.value ? 'vip' : 'custom')
 
-// 管理后台关闭 VIP 后，立即将当前 tab 从「VIP会员」切走，避免购买内容继续显示
-watch(() => systemStore.vipEnabled, (enabled) => {
-  if (!enabled && activeTab.value === 'vip') {
+// 后台关闭 VIP 或 License 锁定「vip」功能后，立即切走「VIP会员」Tab，避免购买/使用内容继续显示
+watch(vipTabVisible, (visible) => {
+  if (!visible && activeTab.value === 'vip') {
     activeTab.value = 'custom'
   }
 })

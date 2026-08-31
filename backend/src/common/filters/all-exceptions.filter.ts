@@ -22,6 +22,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message = '服务器内部错误'
     let code = 500
     let errorData: any = undefined
+    let bizCode: string | undefined
 
     if (exception instanceof HttpException) {
       status = exception.getStatus()
@@ -32,6 +33,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         code = status
       } else if (typeof exceptionResponse === 'object') {
         const responseObj = exceptionResponse as Record<string, any>
+        if (typeof responseObj.bizCode === 'string') bizCode = responseObj.bizCode
         if (typeof responseObj.message === 'object' && responseObj.message !== null) {
           // class-validator 返回的 message 可能是数组，例如 ["birthMonth must not be less than 1"]
           if (Array.isArray(responseObj.message)) {
@@ -55,6 +57,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const result = Result.error(message, code, errorData)
+    if (bizCode) result.bizCode = bizCode
 
     // 服务器内部错误发送告警通知
     const alertUrl = process.env.ERROR_ALERT_WEBHOOK_URL

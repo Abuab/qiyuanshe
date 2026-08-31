@@ -56,7 +56,7 @@
           </view>
           <view class="like-actions" @tap.stop>
             <view
-              v-if="currentTab === 1"
+              v-if="currentTab === 1 && licenseStore.isFeatureEnabled(LICENSE_FEATURES.LIKE)"
               class="action-btn like-back-btn"
               @tap="handleLikeBack(item)"
             >回喜欢</view>
@@ -84,8 +84,11 @@ import { useBackTop } from '@/composables/useBackTop'
 import { getFullImageUrl } from '@/utils/common'
 import { useUserStore } from '@/store/user'
 import { safeNavigateBack } from '@/utils/navigate'
+import { useLicenseStore } from '@/store/license'
+import { LICENSE_FEATURES } from '@/config/license-features'
 
 const userStore = useUserStore()
+const licenseStore = useLicenseStore()
 
 interface LikeUser {
   id: number
