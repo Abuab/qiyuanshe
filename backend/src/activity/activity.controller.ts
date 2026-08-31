@@ -9,6 +9,7 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  DefaultValuePipe,
   Request,
   Logger,
 } from '@nestjs/common'
@@ -31,10 +32,10 @@ export class ActivityController {
   @Get()
   async list(
     @Query('type') type: string,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    const result = await this.activityService.getActivityList(type, +page, +limit)
+    const result = await this.activityService.getActivityList(type, page, limit)
     return Result.success(result)
   }
 

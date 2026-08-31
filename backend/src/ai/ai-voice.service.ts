@@ -163,8 +163,8 @@ export class AiVoiceService {
   }
 
   /**
-   * Qwen3-ASR-Flash 转录（OpenAI 兼容 chat/completions API）
-   * 参考文档: https://help.aliyun.com/zh/model-studio/qwen-asr-api-reference
+   * Qwen3-ASR-Flash 转录（DashScope 原生 multimodal-generation 协议）
+   * 参考文档: https://help.aliyun.com/zh/model-studio/non-real-time-speech-recognition-for-fun-asr-flash
    */
   private async tryTranscribeQwenAsr(
     provider: AiProviderSnapshot,
@@ -178,31 +178,36 @@ export class AiVoiceService {
       // 将音频 Blob 转为 base64（Data URL 格式: data:<mime>;base64,<data>）
       const arrayBuffer = await audioBlob.arrayBuffer()
       const audioBase64 = Buffer.from(arrayBuffer).toString('base64')
-      // Blob 的 type 属性可能是空字符串，默认为 audio/mpeg
+      // Blob 的 type 属性可能是空字符串，默认为 audio/mpeg（小程序录音为 mp3）
       const mimeType = audioBlob.type || 'audio/mpeg'
       const dataUrl = `data:${mimeType};base64,${audioBase64}`
 
-      // 构建 Qwen3-ASR chat/completions 请求 URL
-      let baseUrl = (provider.apiBase || '').replace(/\/+$/, '')
-      // 确保 baseUrl 以 /v1 结尾，但不追加（兼容 compatible-mode/v1）
-      if (!baseUrl.endsWith('/v1') && !baseUrl.includes('/v1/')) {
-        baseUrl += '/v1'
-      }
-      const url = `${baseUrl}/chat/completions`
+      // Qwen3-ASR-Flash 使用 DashScope 原生协议，而非 compatible-mode 的 /chat/completions。
+      // 从 apiBase 提取 origin，兼容 dashscope.aliyuncs.com/compatible-mode/v1 等写法
+      const url = `${this.resolveOrigin(provider.apiBase)}/api/v1/services/aigc/multimodal-generation/generation`
+
+      // 根据 MIME 推断 DashScope 要求的音频 format（支持 wav/mp3/opus 等）
+      const format = this.resolveAudioFormat(mimeType)
 
       const body = {
         model: provider.modelName || 'qwen3-asr-flash',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'input_audio',
-                input_audio: { data: dataUrl },
-              },
-            ],
-          },
-        ],
+        input: {
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'input_audio',
+                  input_audio: { data: dataUrl },
+                },
+              ],
+            },
+          ],
+        },
+        parameters: {
+          format,
+          sample_rate: '16000',
+        },
       }
 
       // 调试日志：打印实际 URL 和请求体摘要
@@ -211,7 +216,7 @@ export class AiVoiceService {
       )
       this.logger.debug(
         `[${provider.displayName}] Qwen3-ASR body.model=${body.model}, ` +
-        `dataUrl 前缀=${dataUrl.slice(0, 60)}..., 长度=${dataUrl.length}`,
+        `format=${format}, dataUrl 前缀=${dataUrl.slice(0, 60)}..., 长度=${dataUrl.length}`,
       )
 
       const response = await fetch(url, {
@@ -219,6 +224,7 @@ export class AiVoiceService {
         headers: {
           Authorization: `Bearer ${provider.apiKeyPlain}`,
           'Content-Type': 'application/json',
+          'X-DashScope-SSE': 'disable',
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -226,7 +232,7 @@ export class AiVoiceService {
 
       if (!response.ok) {
         const errText = await response.text().catch(() => '')
-        const shortErr = errText.slice(0, 200)
+        const shortErr = errText.slice(0, 300)
         this.logger.warn(
           `[${provider.displayName}] Qwen3-ASR 转录失败 ${response.status}: ${shortErr}`,
         )
@@ -236,22 +242,11 @@ export class AiVoiceService {
         return { text: null, error: `API错误 ${response.status}: ${shortErr}` }
       }
 
-      // 解析 chat/completions 响应：choices[0].message.content
+      // DashScope 原生协议响应：output.text 为完整识别文本
       const data = await response.json()
-      const rawContent = data?.choices?.[0]?.message?.content
-      // Qwen3-ASR content 可能是 array（如 [{text: "..."}] 或 ["..."]）或 string
-      let text = ''
-      if (Array.isArray(rawContent)) {
-        text = rawContent
-          .map((item: any) => (typeof item === 'string' ? item : item?.text || ''))
-          .join('')
-          .trim()
-      } else if (typeof rawContent === 'string') {
-        text = rawContent.trim()
-      }
+      const text = (data?.output?.text || '').trim()
       if (!text) {
-        // 仅记录调试信息（长度），不打印原始语音识别文本
-        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容, rawLen=${String(rawContent || '').length}`)
+        this.logger.debug(`[${provider.displayName}] Qwen3-ASR 返回空内容`)
         return { text: null, error: '返回空内容' }
       }
 
@@ -269,6 +264,27 @@ export class AiVoiceService {
     } finally {
       clearTimeout(timer)
     }
+  }
+
+  /**
+   * 从 apiBase 提取 origin，用于拼接 DashScope 原生接口地址。
+   * 兼容 https://dashscope.aliyuncs.com/compatible-mode/v1 等写法。
+   */
+  private resolveOrigin(apiBase: string): string {
+    try {
+      return new URL(apiBase).origin
+    } catch {
+      return 'https://dashscope.aliyuncs.com'
+    }
+  }
+
+  /**
+   * 根据 MIME 类型推断 DashScope ASR 的 format 参数。
+   * 小程序录音为 mp3，其余默认 mp3。
+   */
+  private resolveAudioFormat(mimeType: string): string {
+    if (mimeType === 'audio/wav' || mimeType === 'audio/x-wav') return 'wav'
+    return 'mp3'
   }
 
   /**

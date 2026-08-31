@@ -9,6 +9,7 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  DefaultValuePipe,
   BadRequestException,
 } from '@nestjs/common'
 import { AdminJwtAuthGuard } from '../admin/admin-jwt.guard'
@@ -30,8 +31,11 @@ export class SuccessCaseController {
   }
 
   @Get()
-  async getList(@Query('page') page = 1, @Query('limit') limit = 10) {
-    const result = await this.successCaseService.getList(+page, +limit)
+  async getList(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    const result = await this.successCaseService.getList(page, limit)
     return Result.success(result)
   }
 
