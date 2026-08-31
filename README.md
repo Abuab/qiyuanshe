@@ -53,6 +53,29 @@
 | 红娘弹窗 | 关闭后所有红娘弹窗改为提示「请联系客服」 |
 | 公众号关注提示 | 我的页/系统消息页公众号关注横幅显隐 |
 
+## License 授权状态控制
+
+平台支持通过「授权状态」一键锁定/解锁小程序功能，用于订阅到期控制、密钥校验等场景。授权状态存储在 `system_configs` 表的 `license.config` 记录中（JSON），无需改代码、无需重启即可实时生效。
+
+### 四种状态
+
+| 状态 | 写操作（喜欢/红娘/AI/问答/VIP/人格测试提交等） | 读操作（浏览/详情/实名认证） | 前端表现 |
+|------|------|------|------|
+| `valid` | ✅ 可用 | ✅ 可用 | 无提示 |
+| `grace_period` | ✅ 可用 | ✅ 可用 | 首页顶部「即将到期」横幅 |
+| `expired` | ❌ 禁用 | ✅ 可用 | 写入口隐藏，强制调用返回 403「系统授权已过期」 |
+| `unauthorized` | ❌ 禁用 | ✅ 可用 | 写入口隐藏，强制调用返回 403「系统未授权」 |
+
+### 实现要点
+
+- **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
+- **fail-open**：数据库未配置 `license.config` 或读取异常时，一律按 `valid` 处理，不会误锁全平台。
+- **后端**：`backend/src/license/` 提供全局 `LicenseGuard` + `@RequireLicense()` 装饰器，仅拦截标注的写接口，返回 HTTP 403 + `bizCode`（`LICENSE_EXPIRED` / `LICENSE_INVALID`）。
+- **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
+- **公开状态接口**：`GET /api/system/license`。
+
+> 详细操作步骤（如何上锁/解锁、SQL 示例、验证方法）见 **[LICENSE_TUTORIAL.md](LICENSE_TUTORIAL.md)**。
+
 ## 技术栈
 
 ### 后端
@@ -116,6 +139,7 @@ qiyuanshe/
 │   │   ├── common/           # 公共模块
 │   │   ├── config/           # 配置文件
 │   │   ├── entities/         # 数据库实体
+│   │   ├── license/          # 授权状态控制（Guard/Service/Decorator）
 │   │   ├── payment/          # 支付模块
 │   │   ├── poster/           # 海报生成
 │   │   ├── question/         # 问答模块
@@ -1933,5 +1957,5 @@ docker exec -it qys_mysql mysql -u root -p -e "USE qys_match; SELECT id, usernam
 
 ---
 
-*文档版本: v2.4*
+*文档版本: v2.5*
 *最后更新: 2026-08-31*
