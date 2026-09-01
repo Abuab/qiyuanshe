@@ -108,15 +108,16 @@ mkdir -p /usr/local/src/qiyuanshe-license
 cp -r /usr/local/src/qiyuanshe/license-server/. /usr/local/src/qiyuanshe-license/
 
 cd /usr/local/src/qiyuanshe-license
-# 设置管理面板密钥（务必改成强随机值）
-export ADMIN_KEY='请改成强随机值'
+# 设置管理面板密钥（务必改成强随机值，写入 .env 持久化）
+echo "ADMIN_KEY=$(openssl rand -hex 24)" > .env
 docker compose up -d --build
 docker compose ps
 ```
 
-启动后，管理面板在 `http://127.0.0.1:3002/`（通过 nginx 反代对外）。
+> license-server 的 `docker-compose.yml` 已配置加入后端所在的 `qiyuanshe_qys_network` 网络，
+> 因此后端容器可直接通过 `http://qys_license:3002/api/verify` 心跳，无需公网域名。
 
-### nginx 反代（在 qys_nginx 配置中追加）
+启动后，管理面板在本机 `http://127.0.0.1:3002/` 访问。如需对外，可再经 qys_nginx 反代：
 
 ```nginx
 server {
@@ -124,7 +125,7 @@ server {
     server_name license.你的域名;
 
     location / {
-        proxy_pass http://127.0.0.1:3002;
+        proxy_pass http://qys_license:3002;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -146,7 +147,7 @@ server {
 在后端 `.env` 中新增（可选，不配置则纯离线运行）：
 
 ```env
-LICENSE_SERVER_URL=https://license.你的域名/api/verify
+LICENSE_SERVER_URL=http://qys_license:3002/api/verify
 APP_DOMAIN=你的域名
 ```
 

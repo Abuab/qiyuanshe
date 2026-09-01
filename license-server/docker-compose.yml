@@ -13,3 +13,11 @@ services:
       # 管理面板鉴权密钥，部署时务必替换为强随机值
       - ADMIN_KEY=${ADMIN_KEY:-change-me}
       - PORT=3002
+    networks:
+      - qys_network
+
+# 加入后端所在网络，使 qys_api 容器可通过 http://qys_license:3002/api/verify 心跳
+networks:
+  qys_network:
+    external: true
+    name: qiyuanshe_qys_network
