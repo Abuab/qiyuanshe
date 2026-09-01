@@ -108,7 +108,12 @@ cat license_public.pem   # 复制新公钥内容
 
 ```bash
 cd /Users/kevin/Documents/trae_projects/qiyuanshe-match   # 仓库根目录
+
+# 方式一：Node.js 版本
 node generate-license.js ~/license-keys/license_private.pem
+
+# 方式二：Python 版本（需先 pip install cryptography）
+python3 generate-license.py ~/license-keys/license_private.pem
 ```
 
 按提示输入：
