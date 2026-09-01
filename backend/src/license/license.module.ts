@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { APP_GUARD } from '@nestjs/core'
 import { SystemLicense } from '../entities/SystemLicense'
@@ -6,6 +6,7 @@ import { LicenseService, LICENSE_PUBLIC_KEY_TOKEN, LICENSE_PUBLIC_KEY } from './
 import { LicenseGuard } from './license.guard'
 import { AdminLicenseGuard } from './admin-license.guard'
 
+@Global()
 @Module({
   imports: [TypeOrmModule.forFeature([SystemLicense])],
   providers: [

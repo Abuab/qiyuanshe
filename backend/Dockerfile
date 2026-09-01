@@ -27,6 +27,10 @@ RUN npm prune --omit=dev
 # 生产阶段镜像
 FROM node:20-alpine AS production
 
+# 构建时注入客户标识：--build-arg CUSTOMER_ID=xxx（用于 License Key 与客户绑定，A 客户源码编译的镜像 B 客户无法激活）
+ARG CUSTOMER_ID=""
+ENV BUILD_CUSTOMER_ID=${CUSTOMER_ID}
+
 # 安装 curl（健康检查）、su-exec（启动脚本切换用户）、字体包（svg-captcha）和 tzdata（时区）
 RUN apk add --no-cache curl su-exec fontconfig ttf-dejavu tzdata
 

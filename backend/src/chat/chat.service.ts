@@ -13,6 +13,7 @@ import { RedisService } from '../common/redis.service'
 import { SensitiveWordFilter } from '../common/sensitive-word.filter'
 import { AuditService } from '../audit/audit.service'
 import { SystemService } from '../system/system.service'
+import { LicenseService } from '../license/license.service'
 import { resolveAvatarUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
 import { beijingISO } from '../common/utils/date-utils'
@@ -227,6 +228,7 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserBlock)
     private readonly blockRepository: Repository<UserBlock>,
+    private readonly licenseService: LicenseService,
     @Optional()
     @InjectRepository(AuditLog)
     private readonly auditLogRepository?: Repository<AuditLog>,
@@ -250,6 +252,10 @@ export class ChatService implements OnModuleInit, OnModuleDestroy {
   }
 
   async sendMessage(userId: number, dto: SendMessageDto, currentUser?: { userId: number; role?: string }): Promise<ChatMessage> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     const { toUserId, content, type = 'text' } = dto
 
     if (userId === toUserId) {

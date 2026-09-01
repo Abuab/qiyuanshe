@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import * as crypto from 'crypto'
 import { InjectRepository } from '@nestjs/typeorm'
 import { ContentFilterService } from '../common/content-filter.service'
@@ -18,6 +18,7 @@ import { calcProfileScore } from '../common/profile-score'
 import { getDisplayName } from '../common/user-utils'
 import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 import { AiVoiceService } from '../ai/ai-voice.service'
+import { LicenseService } from '../license/license.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { beijingISO } from '../common/utils/date-utils'
 
@@ -89,6 +90,7 @@ export class UserService {
     private readonly notifyService: NotifyChannelService,
     private readonly dataSource: DataSource,
     private readonly contentFilter: ContentFilterService,
+    private readonly licenseService: LicenseService,
   ) {}
 
   /**
@@ -702,6 +704,10 @@ export class UserService {
 
   /** 编辑个人资料 */
   async updateProfile(userId: number, dto: UpdateProfileDto): Promise<Partial<User>> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     const user = await this.userRepository.findOne({
       where: { id: userId, isDeleted: 0 },
     })

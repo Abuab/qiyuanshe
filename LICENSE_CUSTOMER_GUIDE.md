@@ -9,18 +9,28 @@
 在项目根目录 `.env` 中配置：
 
 ```env
-# 机器指纹（可选，用于防复制）。留空时后端自动采集 /etc/machine-id 或容器 hostname。
-# 建议显式配置为宿主机 `cat /etc/machine-id` 的值，与授权方签发时绑定的指纹保持一致。
+# 机器指纹（可选，用于防复制）。留空时后端自动多源采集并做 SHA256 组合：
+#   LICENSE_MACHINE_ID → /etc/machine-id → DMI 产品 UUID → 主板序列号 → 容器 hostname
+# 建议在管理后台「系统授权」页查看后端算出的指纹，并与授权方签发时绑定的指纹保持一致。
 LICENSE_MACHINE_ID=
+
+# License Key 数据库加密密钥（AES-256-GCM，64 位十六进制 = 32 字节）。
+# 用于加密存储数据库中的 License Key，防止直接读库获取明文授权码。
+# 生成：openssl rand -hex 32。未配置时后端回退用内置公钥派生密钥（可用但不推荐）。
+LICENSE_ENCRYPT_KEY=
 ```
 
-> 若授权方在签发 License Key 时已绑定机器指纹，则 `LICENSE_MACHINE_ID`（或后端自动采集到的指纹）必须与该值一致，否则验签时会被判定「机器指纹不匹配」而无法激活。
+> 若授权方在签发 License Key 时已绑定机器指纹，则后端本机计算出的指纹必须与签发的值一致，否则验签时会被判定「机器指纹不匹配」而无法激活。
 
-**关于 `/etc/machine-id` 的说明：**
+**如何获取机器指纹：**
 
-- Linux 宿主机通常已有 `/etc/machine-id`，Docker Compose 会将其只读挂载进 `api` 容器，后端自动读取该文件作为机器指纹，此时无需额外配置。
-- 若宿主机**没有**该文件（如 macOS、部分精简云主机），Docker 会把它当作**目录**挂载，导致容器内 `/etc/machine-id` 变成目录而非文件；后端读取失败后会回退为容器 `hostname`（容器重建后可能变化，指纹绑定不可靠）。
-- 遇到这种情况，请务必在 `.env` 中**显式设置** `LICENSE_MACHINE_ID`（使用一个稳定唯一的值，例如 `openssl rand -hex 16` 或固定 UUID），并在授权方签发 License Key 时绑定**同一个值**，否则机器指纹绑定会失效。
+登录管理后台 → 「系统授权」页面，页面会展示后端自动计算出的机器指纹（多源组合后的 SHA256）。请将该值发给授权方用于签发绑定。
+
+**关于机器指纹来源的说明：**
+
+- 后端按 `LICENSE_MACHINE_ID` → `/etc/machine-id`（Docker Compose 已只读挂载）→ `/sys/class/dmi/id/product_uuid` → `/sys/class/dmi/id/board_serial` → 容器 `hostname` 的顺序采集所有可读的非空值，用 `|` 连接后做 SHA256。
+- 每个来源独立 try/catch，读不到就跳过，不会因单个来源缺失而失败。
+- 若希望指纹稳定可预期，可在 `.env` 中**显式设置** `LICENSE_MACHINE_ID`（如 `openssl rand -hex 16` 或固定 UUID），并让授权方签发时绑定**同一个值**；此时后端优先采用该值，不受宿主机文件/主机名变化影响。
 
 ## 二、激活 License
 

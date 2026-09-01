@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common'
+import { ForbiddenException, Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource, EntityManager } from 'typeorm'
 import { VipOrder } from '../entities/VipOrder'
@@ -9,6 +9,7 @@ import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { UserTopCardQuota } from '../entities/UserTopCardQuota'
 import { CreateOrderDto } from './dto'
 import { RedisService } from '../common/redis.service'
+import { LicenseService } from '../license/license.service'
 import * as crypto from 'crypto'
 
 /** 获取今日日期字符串 YYYY-MM-DD（UTC+8） */
@@ -47,6 +48,7 @@ export class PaymentService {
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly dataSource: DataSource,
     private readonly redis: RedisService,
+    private readonly licenseService: LicenseService,
   ) {
     this.mchId = process.env.WECHAT_MCH_ID || ''
     this.apiV3Key = process.env.WECHAT_API_V3_KEY || ''
@@ -132,6 +134,10 @@ export class PaymentService {
 
   // ===== 统一下单 =====
   async createOrder(userId: number, dto: CreateOrderDto): Promise<{ orderNo: string; payParams: PayParams }> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     // 从数据库读取套餐信息
     const packages = await this.packageRepository.find({ where: { status: 1, isDeleted: 0 } })
     const pkg = packages.find(p => Number(p.id) === Number(dto.vipPackageId))
@@ -237,6 +243,10 @@ export class PaymentService {
 
   // ===== 支付回调处理 =====
   async processNotify(data: any, rawBody?: string, reqHeaders?: Record<string, string>): Promise<string> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     // 1. 校验签名（仅接受 V3 回调：Wechatpay-* 头 + RSA-SHA256 平台证书验签）
     const signValid = await this.verifyNotifySign(rawBody, reqHeaders)
     if (!signValid) {
@@ -466,6 +476,10 @@ export class PaymentService {
 
   // ===== Mock 支付（仅测试/管理员环境） =====
   async mockPay(orderNo: string, userId: number): Promise<void> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     // 模拟支付仅在非生产环境可用；生产环境硬性禁用，防止误配 MOCK_PAY_ENABLED 绕过真实支付
     if (process.env.NODE_ENV === 'production') {
       throw new BadRequestException('生产环境禁止模拟支付')

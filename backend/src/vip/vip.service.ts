@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThan, DataSource } from 'typeorm'
 import { User } from '../entities/User'
@@ -10,6 +10,7 @@ import { UserRedLineQuota } from '../entities/UserRedLineQuota'
 import { RedLineUsage } from '../entities/RedLineUsage'
 import { SystemConfig } from '../entities/SystemConfig'
 import { RedisService } from '../common/redis.service'
+import { LicenseService } from '../license/license.service'
 import { RecommendService } from '../user/recommend.service'
 
 export const RED_LINE_TERM_DEFAULT = '红线'
@@ -46,6 +47,7 @@ export class VipService {
     private readonly redis: RedisService,
     private readonly dataSource: DataSource,
     private readonly recommendService: RecommendService,
+    private readonly licenseService: LicenseService,
   ) {}
 
   // ========================================================================
@@ -98,6 +100,10 @@ export class VipService {
    * 使用置顶卡
    */
   async useTopCard(userId: number) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     const user = await this.userRepo.findOne({ where: { id: userId } })
     if (!user) throw new Error('用户不存在')
 
@@ -285,6 +291,10 @@ export class VipService {
    * @param boostScore 手动加权分（可选）
    */
   async adminPinUser(userId: number, durationHours: number, boostScore?: number) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     if (boostScore !== undefined && (boostScore < 0 || boostScore > 1000)) {
       throw new Error('boostScore 超出允许范围（0-1000）')
     }
@@ -347,6 +357,10 @@ export class VipService {
 
   /** 管理员设置红线索显示名称 */
   async setRedLineTerm(term: string) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     let cfg = await this.configRepo.findOne({ where: { configKey: 'red_line_term' } })
     if (!cfg) {
       cfg = this.configRepo.create({ configKey: 'red_line_term', configValue: term })
@@ -372,6 +386,10 @@ export class VipService {
 
   /** 使用红线索解锁目标用户的联系方式 */
   async useRedLine(userId: number, targetUserId: number) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     // 校验会员有效性
     const now = new Date()
     const user = await this.userRepo.findOne({ where: { id: userId } })

@@ -74,7 +74,7 @@ def main():
 
     domain = input('绑定域名 (* 表示不限): ').strip() or '*'
 
-    machine_id = input('绑定机器指纹 (可选，防复制；客户在服务器上运行 cat /etc/machine-id 获取): ').strip()
+    machine_id = input('绑定机器指纹 (可选，防复制；客户在管理后台「系统授权」页查看并发送): ').strip()
 
     days = input('授权天数 (整数，如 365；直接回车则改为填写过期时间): ').strip()
     if days:

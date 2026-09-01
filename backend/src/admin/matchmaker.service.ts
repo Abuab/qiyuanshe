@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Matchmaker } from '../entities/Matchmaker'
 import { normalizeImageUrl } from '../common/image-url'
+import { LicenseService } from '../license/license.service'
 
 interface MatchmakerFilter {
   page?: number
@@ -16,6 +17,7 @@ export class AdminMatchmakerService {
   constructor(
     @InjectRepository(Matchmaker)
     private readonly matchmakerRepository: Repository<Matchmaker>,
+    private readonly licenseService: LicenseService,
   ) {}
 
   private transformToResponse(matchmaker: Matchmaker) {
@@ -82,21 +84,33 @@ export class AdminMatchmakerService {
   }
 
   async create(data: any) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
     const transformedData = this.transformFromInput(data)
     const matchmaker = this.matchmakerRepository.create(transformedData)
     return this.matchmakerRepository.save(matchmaker)
   }
 
   async update(id: number, data: any) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
     const transformedData = this.transformFromInput(data)
     await this.matchmakerRepository.update(id, transformedData)
   }
 
   async delete(id: number) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
     await this.matchmakerRepository.delete(id)
   }
 
   async updateSort(id: number, sortOrder: number) {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
     await this.matchmakerRepository.update(id, { sortOrder })
   }
 }

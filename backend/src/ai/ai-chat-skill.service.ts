@@ -1,7 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
+import { LicenseService } from '../license/license.service'
 import { beijingISO } from '../common/utils/date-utils'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
@@ -44,6 +45,7 @@ export class AiChatSkillService {
     private readonly aiApiService: AiApiService,
     private readonly safetyService: AiSafetyService,
     private readonly quotaService: AiQuotaService,
+    private readonly licenseService: LicenseService,
   ) {}
 
   /**
@@ -53,6 +55,10 @@ export class AiChatSkillService {
     userId: number,
     targetUserId: number,
   ): Promise<ChatSkillResponse> {
+    if (!(await this.licenseService.isActive())) {
+      throw new ForbiddenException('系统未授权，该功能暂不可用')
+    }
+
     // 1. 校验开关
     const enabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.CHAT_SKILL)
     if (!enabled) {

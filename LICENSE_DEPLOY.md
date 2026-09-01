@@ -9,7 +9,7 @@
 授权方案为**纯离线**模式，核心机制：
 
 - **RSA-SHA256 非对称签名**：授权方用私钥签发 License Key，客户后端用硬编码公钥验签。
-- **机器指纹绑定（防复制）**：签发时可把 License Key 绑定到客户服务器的机器指纹（`/etc/machine-id`），后端每次验签时对比本机指纹，防止同一 License Key 被复制到其他服务器。
+- **机器指纹绑定（防复制）**：签发时可把 License Key 绑定到客户服务器的机器指纹（多源组合 SHA256），后端每次验签时对比本机指纹，防止同一 License Key 被复制到其他服务器。
 - **fail-closed**：无激活记录 / 验签失败时，后端按 `unauthorized` 处理，只保留只读白名单（浏览、实名认证），写功能被拦截。
 - **无远程吊销、无激活计数**：纯离线模式不依赖任何许可证服务器，取消 License Key 只能靠客户自行停用；防复制完全依赖机器指纹绑定。
 
@@ -123,7 +123,7 @@ python3 generate-license.py ~/license-keys/license_private.pem
 | 客户ID | 如 `C20260901001`（必填） |
 | 客户名称 | 如「某某婚恋工作室」（必填） |
 | 绑定域名 | `*` 表示不限，或填具体域名 |
-| 绑定机器指纹 | 可选，防复制；让客户在服务器上运行 `cat /etc/machine-id` 获取 |
+| 绑定机器指纹 | 可选，防复制；让客户在管理后台「系统授权」页查看机器指纹并发送 |
 | 授权天数 | 整数（如 `365`），填了会自动计算到期日；直接回车则改为填写下面的过期时间 |
 | 过期时间 | `YYYY-MM-DD`（仅当「授权天数」留空时填写） |
 | 授权状态 | `valid` / `grace_period` / `expired`（默认 `valid`） |
@@ -134,7 +134,7 @@ python3 generate-license.py ~/license-keys/license_private.pem
 2. **授权信息**：payload 明文（含 `machineId`，若已绑定）。
 3. **机器指纹绑定提示**：是否已绑定机器指纹。
 
-> 绑定机器指纹后，客户服务器必须保证 `LICENSE_MACHINE_ID`（或后端自动采集的 `/etc/machine-id`）与该值一致，否则无法激活。
+> 绑定机器指纹后，客户服务器必须保证后端本机计算出的多源指纹（或显式配置的 `LICENSE_MACHINE_ID`）与该值一致，否则无法激活。
 
 ---
 
@@ -145,12 +145,17 @@ python3 generate-license.py ~/license-keys/license_private.pem
 在项目根目录 `.env` 中配置（详见 `.env.example` 的 License 段落）：
 
 ```env
-# 机器指纹（可选）。留空时后端自动采集 /etc/machine-id → 容器 hostname。
-# 建议显式配置为宿主机 `cat /etc/machine-id` 的值。
+# 机器指纹（可选）。留空时后端自动多源采集并做 SHA256 组合。
 LICENSE_MACHINE_ID=
+
+# License Key 数据库加密密钥（AES-256-GCM，64 位十六进制 = 32 字节）。
+# 生成：openssl rand -hex 32；未配置时回退用内置公钥派生密钥。
+LICENSE_ENCRYPT_KEY=
 ```
 
-`docker-compose.yml` 已把宿主机 `/etc/machine-id` 以只读方式挂载进 api 容器（`/etc/machine-id:/etc/machine-id:ro`），保证容器内外机器指纹一致。
+`docker-compose.yml` 已把宿主机 `/etc/machine-id` 以只读方式挂载进 api 容器（`/etc/machine-id:/etc/machine-id:ro`），作为机器指纹的其中一个采集来源。
+
+> 可选（防 A 客户密钥在 B 客户镜像上激活）：构建镜像时注入客户标识 `--build-arg CUSTOMER_ID=<customerId>`，激活时后端会校验 License Key 内的 `customerId` 与构建标识一致。
 
 ### 2. 拉取并重建
 
@@ -181,7 +186,7 @@ sleep 3 && docker compose ps
 
 登录管理后台 →「系统授权」页，粘贴签发的 License Key，点击「激活 / 更新」。
 
-后端流程：本地 RSA 验签 → 校验机器指纹 → 写入本地 `system_licenses` 记录。
+后端流程：本地 RSA 验签 → 校验机器指纹 →（构建时注入客户标识校验）→ AES-256-GCM 加密 licenseKey → 写入本地 `system_licenses` 记录。
 
 ### 2. 续费 / 换发
 
