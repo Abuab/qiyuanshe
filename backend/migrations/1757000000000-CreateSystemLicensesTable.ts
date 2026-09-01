@@ -3,8 +3,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm'
 /**
  * 创建 system_licenses 表（License 授权记录，单例）。
  *
- * 背景：生产环境 synchronize 关闭，依赖迁移建表；此表承载 RSA 授权码验签
- * 与远程吊销状态（含 V3 远程字段），使用 CREATE TABLE IF NOT EXISTS 可安全重复执行。
+ * 纯离线授权：本表只承载 RSA 授权码验签后的本地激活记录，不含远程吊销/激活计数字段。
+ * 生产环境 synchronize 关闭，依赖迁移建表；使用 CREATE TABLE IF NOT EXISTS 可安全重复执行。
  */
 export class CreateSystemLicensesTable1757000000000 implements MigrationInterface {
   name = 'CreateSystemLicensesTable1757000000000'
@@ -20,9 +20,6 @@ export class CreateSystemLicensesTable1757000000000 implements MigrationInterfac
         \`features\` TEXT NULL,
         \`customerId\` VARCHAR(255) NULL,
         \`customerName\` VARCHAR(255) NULL,
-        \`activationId\` VARCHAR(64) NULL,
-        \`remoteStatus\` VARCHAR(32) NOT NULL DEFAULT 'valid',
-        \`remoteStatusUpdatedAt\` DATETIME NULL,
         \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
         \`updatedAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
         PRIMARY KEY (\`id\`)
