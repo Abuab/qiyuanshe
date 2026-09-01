@@ -119,7 +119,8 @@ node generate-license.js ~/license-keys/license_private.pem
 | 客户名称 | 如「某某婚恋工作室」（必填） |
 | 绑定域名 | `*` 表示不限，或填具体域名 |
 | 绑定机器指纹 | 可选，防复制；让客户在服务器上运行 `cat /etc/machine-id` 获取 |
-| 过期时间 | `YYYY-MM-DD` |
+| 授权天数 | 整数（如 `365`），填了会自动计算到期日；直接回车则改为填写下面的过期时间 |
+| 过期时间 | `YYYY-MM-DD`（仅当「授权天数」留空时填写） |
 | 授权状态 | `valid` / `grace_period` / `expired`（默认 `valid`） |
 
 脚本输出：

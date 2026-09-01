@@ -67,10 +67,23 @@ async function main() {
     await question(rl, '绑定机器指纹 (可选，防复制；客户在服务器上运行 cat /etc/machine-id 获取): ')
   ).trim()
 
-  const expiresAt = (await question(rl, '过期时间 (YYYY-MM-DD): ')).trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) {
-    console.error('过期时间格式应为 YYYY-MM-DD')
-    process.exit(1)
+  const days = (await question(rl, '授权天数 (整数，如 365；直接回车则改为填写过期时间): ')).trim()
+  let expiresAt
+  if (days) {
+    const n = Number(days)
+    if (!Number.isInteger(n) || n <= 0) {
+      console.error('授权天数应为正整数')
+      process.exit(1)
+    }
+    const d = new Date(Date.now() + n * 86400000)
+    const pad = (v) => String(v).padStart(2, '0')
+    expiresAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  } else {
+    expiresAt = (await question(rl, '过期时间 (YYYY-MM-DD): ')).trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) {
+      console.error('过期时间格式应为 YYYY-MM-DD')
+      process.exit(1)
+    }
   }
 
   const status = (await question(rl, '授权状态 (valid/grace_period/expired, 默认 valid): ')).trim() || 'valid'
