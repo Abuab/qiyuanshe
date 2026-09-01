@@ -122,11 +122,11 @@ export class LicenseService {
     }
   }
 
-  /** 激活/更新 License：本地验签 → 许可证服务器在线注册激活 → 写入本地数据库（单条记录） */
+  /** 激活/更新 License：本地验签 → 许可证服务器在线注册激活（不可达时降级离线激活）→ 写入本地数据库 */
   async activateLicense(licenseKey: string): Promise<LicenseInfo> {
     const payload = this.verifyAndParse(licenseKey)
 
-    // 在线注册激活（激活次数配额由许可证服务器校验；网络失败 / 达上限时抛错）
+    // 在线注册激活（校验激活次数并分配 activationId）；网络不可达时降级离线激活，activationId 为 null
     const { activationId } = await this.registerActivation(licenseKey)
 
     const data = {
@@ -171,7 +171,7 @@ export class LicenseService {
       throw new Error('当前授权未记录激活实例 ID，无法在线解绑')
     }
 
-    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    const serverUrl = this.getServerUrl()
     if (!serverUrl) {
       throw new Error('未配置许可证服务器（LICENSE_SERVER_URL），无法在线解绑')
     }
@@ -180,7 +180,7 @@ export class LicenseService {
       const res = await axios.post(
         `${serverUrl}/deactivate`,
         { licenseSignature: signature, activationId },
-        { timeout: 10000 },
+        { timeout: 10000, headers: this.getAuthHeaders() },
       )
       if (!res?.data?.success) {
         throw new Error(res?.data?.message || '解绑失败')
@@ -201,13 +201,14 @@ export class LicenseService {
     const empty = { maxActivations: 0, activationCount: 0, activations: [] }
     if (!signature) return empty
 
-    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    const serverUrl = this.getServerUrl()
     if (!serverUrl) return empty
 
     try {
       const res = await axios.get(`${serverUrl}/activations`, {
         params: { licenseSignature: signature },
         timeout: 10000,
+        headers: this.getAuthHeaders(),
       })
       const data = res?.data?.data
       if (data && typeof data === 'object') {
@@ -223,11 +224,12 @@ export class LicenseService {
     return empty
   }
 
-  /** 调用许可证服务器注册激活；达上限 / 网络失败时抛出友好错误，返回激活实例 ID */
+  /** 调用许可证服务器注册激活；达上限抛出错误，网络不可达降级离线激活（返回 activationId=null） */
   private async registerActivation(licenseKey: string): Promise<{ activationId: string | null }> {
-    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    const serverUrl = this.getServerUrl()
     if (!serverUrl) {
-      throw new Error('未配置许可证服务器（LICENSE_SERVER_URL），无法在线激活')
+      this.logger.warn('[License] 未配置 LICENSE_SERVER_URL，降级为离线激活')
+      return { activationId: null }
     }
 
     // 重复激活同一授权时带上已记录的 activationId，避免重复占用名额
@@ -241,7 +243,7 @@ export class LicenseService {
           activationId: existing?.activationId || undefined,
           domain: process.env.APP_DOMAIN || '',
         },
-        { timeout: 10000 },
+        { timeout: 10000, headers: this.getAuthHeaders() },
       )
       if (!res?.data?.success) {
         throw new Error(res?.data?.message || '激活失败')
@@ -252,7 +254,9 @@ export class LicenseService {
       if (e?.response?.data?.message) {
         throw new Error(e.response.data.message)
       }
-      throw new Error('无法连接许可证服务器，请检查网络或 LICENSE_SERVER_URL 配置')
+      // 网络类错误（无响应）：降级为离线激活，本地验签已通过
+      this.logger.warn(`[License] 许可证服务器不可达，降级为离线激活：${e?.message || e}`)
+      return { activationId: null }
     }
   }
 
@@ -440,6 +444,38 @@ export class LicenseService {
       activatedAt: '',
       remoteStatus: 'valid',
       maxActivations: 1,
+    }
+  }
+
+  /**
+   * 读取许可证服务器地址（预留寻址入口）。
+   * 当前从环境变量读取；未来换域名/换 IP 可在此处改为从配置中心（如 github/gitee 仓库）
+   * 动态拉取最新地址，客户侧无需手动改 .env。
+   */
+  private getServerUrl(): string {
+    return (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+  }
+
+  /** 构造调用许可证服务器时的鉴权头（方案 E：客户端接口共享密钥鉴权） */
+  private getAuthHeaders(): Record<string, string> {
+    const secret = (process.env.LICENSE_SERVER_SECRET || '').trim()
+    return secret ? { 'X-License-Secret': secret } : {}
+  }
+
+  /** 离线激活后的在线对账：补齐 activationId，恢复在线解绑与激活计数能力 */
+  async reconcileOfflineActivation(): Promise<void> {
+    const license = await this.getActivatedLicense()
+    if (!license || license.activationId) return
+
+    try {
+      const { activationId } = await this.registerActivation(license.licenseKey)
+      if (activationId) {
+        await this.licenseRepository.update(license.id, { activationId })
+        this.logger.log(`[License] 离线激活对账完成，已补齐 activationId: ${activationId}`)
+      }
+    } catch (e: any) {
+      // 达上限等业务错误不锁定客户，保持离线可用；网络失败下次心跳再试
+      this.logger.warn(`[License] 离线激活对账失败，保持离线状态：${e?.message || e}`)
     }
   }
 }

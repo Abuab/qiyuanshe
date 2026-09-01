@@ -18,11 +18,11 @@ app.get('/health', (req, res) => {
   res.json({ success: true, status: 'ok' })
 })
 
+// 管理面板接口（先挂载，避免被 /api 下 verifyRouter 的客户端鉴权拦截）
+app.use('/api/admin', adminRouter)
+
 // 客户服务器验证接口（服务器到服务器，无需 CORS）
 app.use('/api', verifyRouter)
-
-// 管理面板接口
-app.use('/api/admin', adminRouter)
 
 // 管理面板静态页面
 app.use(express.static(path.join(__dirname, '..', 'public')))

@@ -11,7 +11,8 @@
 - **RSA-SHA256 非对称签名**：授权方用私钥签发 License Key，客户部署的后端用硬编码公钥验签；许可证服务器也用同一公钥验签。
 - **激活次数限制**：一个 License Key 最多可在 N 台服务器上激活（`maxActivations`，默认 1）。许可证服务器为每个激活分配唯一 `activationId`，用于心跳、解绑与去重。
 - **在线校验**：客户后端激活时在线注册，之后每天凌晨 3 点向许可证服务器心跳，支持远程吊销。
-- **fail-closed**：无激活记录 / 验签失败 / 许可证服务器不可达时，后端按 `unauthorized` 处理，只保留只读白名单（浏览、实名认证），写功能被拦截。
+- **离线激活兜底**：激活时若许可证服务器不可达（网络错误），降级为离线激活（本地验签通过即生效，`activationId` 为空），后续心跳在线时自动对账补齐。
+- **fail-closed**：无激活记录 / 验签失败时，后端按 `unauthorized` 处理，只保留只读白名单（浏览、实名认证），写功能被拦截。
 
 ### 授权四态
 
@@ -215,8 +216,11 @@ mkdir -p /usr/local/src/qiyuanshe-license
 cp -r /usr/local/src/qiyuanshe/license-server/. /usr/local/src/qiyuanshe-license/
 cd /usr/local/src/qiyuanshe-license
 
-# 设置管理面板鉴权密钥（务必替换为强随机值）
+# 设置鉴权密钥（务必替换为强随机值）：
+#   ADMIN_KEY    —— 管理面板接口鉴权（请求头 X-Admin-Key）
+#   CLIENT_SECRET—— 客户端接口鉴权（客户后端调用 /api/activate 等需携带 X-License-Secret）
 echo "ADMIN_KEY=$(openssl rand -hex 24)" > .env
+echo "CLIENT_SECRET=$(openssl rand -hex 24)" >> .env
 ```
 
 ### 2. 配置端口绑定并启动
@@ -243,27 +247,34 @@ docker compose ps
 | 宿主机映射 | `${LICENSE_BIND:-127.0.0.1}:3002`（默认仅本机，可改为内网 IP / `0.0.0.0`） |
 | 网络 | 独立（不依赖主项目网络，可单独迁移到任意服务器） |
 | 数据 | `./data/license.db`（SQLite，随卷持久化） |
-| 鉴权 | 管理接口需请求头 `X-Admin-Key`，未配置时 fail-closed |
+| 鉴权 | 管理接口需 `X-Admin-Key`；客户端接口需 `X-License-Secret`，均未配置时 fail-closed |
 
-### 3. 反向代理（可选）
+### 3. 主域名反代（推荐，隐藏源站 IP）
 
-如需通过公网域名访问管理面板，在 `qys_nginx` 中增加（`proxy_pass` 指向宿主机内网 IP）：
+为避免 license-server 的公网 IP/域名直接暴露，推荐复用主项目已有的公网域名反代：license-server 继续只绑内网，客户后端经主域名访问客户端接口，管理面不对外。
+
+`docker/nginx/nginx.conf`（及 `nginx.conf.example`）已内置如下配置，部署时按需把 `10.0.16.3` 换成 license-server 所在宿主机内网 IP：
 
 ```nginx
-server {
-    listen 443 ssl;
-    server_name license.你的域名;
+upstream license_upstream {
+    server 10.0.16.3:3002;   # license-server 所在宿主机内网 IP
+}
 
-    location / {
-        proxy_pass http://10.0.16.3:3002;   # 宿主机内网 IP（license-server 绑定到内网 IP）
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
+# 屏蔽管理面与健康检查，仅暴露客户端接口
+location ~ ^/license/(api/admin|health) { return 404; }
+
+location /license/ {
+    proxy_pass http://license_upstream/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 }
 ```
 
-> 后端访问 license-server 无需公网域名，直接用内网 IP `http://内网IP:3002/api` 即可（见「六」）。管理面板远程访问推荐 SSH 隧道，无需反向代理。
+> - 客户后端 `LICENSE_SERVER_URL` 填 `https://你的域名/license/api`。
+> - license-server 端口 3002 **不要在任何公网安全组放行**，仅在宿主机内网可达（`LICENSE_BIND=内网IP`）。
+> - 管理面板仍走 SSH 隧道，**绝不要反代到公网**。
 
 ---
 
@@ -271,19 +282,32 @@ server {
 
 ### 1. 配置环境变量
 
-在项目根目录 `.env` 中新增（`LICENSE_SERVER_URL` 必须配置为许可证服务器地址，否则无法激活）：
+在项目根目录 `.env` 中配置：
 
 ```env
-# 指向 license-server 的 /api 前缀（后端会在此后拼接 /activate、/heartbeat、/deactivate、/activations）
-# 同机部署填内网 IP；独立部署填 license-server 所在服务器的内网 IP 或域名
-LICENSE_SERVER_URL=http://10.0.16.3:3002/api
+# 指向 license-server 的 /api 前缀（后端会在此后拼接 /activate、/heartbeat、/deactivate、/activations）。
+# 推荐经主域名反代：https://你的域名/license/api（license-server 不出公网，见「五.3」）。
+# 留空或不可达时会降级为离线激活（见「六.2」）。
+LICENSE_SERVER_URL=https://你的域名/license/api
+# 客户端接口鉴权密钥，必须与 license-server 的 CLIENT_SECRET 一致
+LICENSE_SERVER_SECRET=<与 CLIENT_SECRET 相同的强随机值>
 # 当前部署域名，上报给许可证服务器用于展示实例归属
 APP_DOMAIN=你的域名
 ```
 
 > ⚠️ `LICENSE_SERVER_URL` 必须指向 `/api` **前缀**，不要写成 `/api/verify`（那是完整端点，写成它会拼接出 `/api/verify/activate` 等错误路径）。
 
-### 2. 拉取并重建
+### 2. 离线激活（服务器不可达兜底）
+
+激活时若许可证服务器不可达（网络类错误），后端会**降级为离线激活**：
+
+- 本地 RSA 验签通过即写入激活记录，`activationId` 为空，系统按本地过期时间运行（`valid` / `expired`）。
+- 离线激活**不受在线激活次数（maxActivations）约束**——这是无法在线计数时的固有代价，本地仍受「过期时间」约束。
+- 后续每天心跳在线时，会自动对账补齐 `activationId`（恢复在线解绑 / 激活计数能力）；若此时发现已达激活上限，仅记录日志、不锁定客户。
+
+> 未配置 `LICENSE_SERVER_URL` 时同样走离线激活，等同「纯离线模式」，但无法在线解绑 / 远程吊销 / 查询激活数。
+
+### 3. 拉取并重建
 
 ```bash
 ssh sh-th
@@ -293,7 +317,7 @@ docker compose up -d --build
 sleep 3 && docker compose ps
 ```
 
-### 3. 数据库迁移
+### 4. 数据库迁移
 
 后端容器启动时自动执行 `migration:run`，无需手动操作：
 
@@ -313,6 +337,8 @@ sleep 3 && docker compose ps
 登录管理后台 →「系统授权」页，粘贴签发的 License Key，点击激活。
 
 后端流程：本地 RSA 验签 → 调用许可证服务器 `POST /api/activate` 注册激活（校验 `maxActivations`）→ 写入本地 `system_licenses`（保存 `activationId`）。
+
+> 许可证服务器不可达时降级为离线激活（见「六.2」），`activationId` 为空。
 
 ### 2. 解绑当前服务器
 

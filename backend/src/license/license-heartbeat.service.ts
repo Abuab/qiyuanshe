@@ -30,6 +30,8 @@ export class LicenseHeartbeatService {
       }
 
       const activationId = await this.licenseService.getActivationId()
+      const secret = (process.env.LICENSE_SERVER_SECRET || '').trim()
+      const headers = secret ? { 'X-License-Secret': secret } : {}
       const res = await axios.post(
         `${serverUrl}/heartbeat`,
         {
@@ -37,7 +39,7 @@ export class LicenseHeartbeatService {
           activationId: activationId || undefined,
           domain: process.env.APP_DOMAIN || '',
         },
-        { timeout: 10000 },
+        { timeout: 10000, headers },
       )
 
       const status = res?.data?.status
@@ -46,6 +48,8 @@ export class LicenseHeartbeatService {
         return
       }
 
+      // 离线激活对账：若本地 activationId 为空（离线激活），在线后补齐
+      await this.licenseService.reconcileOfflineActivation()
       await this.licenseService.updateRemoteStatus(status)
       this.logger.debug(`[License] 心跳完成，远程状态：${status}`)
     } catch (e: any) {

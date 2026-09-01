@@ -3,9 +3,13 @@
 const express = require('express')
 const db = require('../db')
 const rateLimit = require('../middleware/rate-limit')
+const requireClient = require('../middleware/client-auth')
 const { verifyAndParse } = require('../license-key')
 
 const router = express.Router()
+
+// 客户端接口统一鉴权（X-License-Secret），管理接口走独立的 X-Admin-Key，互不影响
+router.use(requireClient)
 
 /** 远程吊销后给客户服务器的宽限期（天） */
 const GRACE_DAYS = 7

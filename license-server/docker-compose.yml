@@ -15,4 +15,6 @@ services:
       - NODE_ENV=production
       # 管理面板鉴权密钥，部署时务必替换为强随机值
       - ADMIN_KEY=${ADMIN_KEY:-change-me}
+      # 客户端接口鉴权密钥（客户后端调用 /api/activate 等需携带 X-License-Secret）
+      - CLIENT_SECRET=${CLIENT_SECRET:-change-me}
       - PORT=3002
