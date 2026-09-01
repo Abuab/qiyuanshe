@@ -16,6 +16,12 @@ LICENSE_MACHINE_ID=
 
 > 若授权方在签发 License Key 时已绑定机器指纹，则 `LICENSE_MACHINE_ID`（或后端自动采集到的指纹）必须与该值一致，否则验签时会被判定「机器指纹不匹配」而无法激活。
 
+**关于 `/etc/machine-id` 的说明：**
+
+- Linux 宿主机通常已有 `/etc/machine-id`，Docker Compose 会将其只读挂载进 `api` 容器，后端自动读取该文件作为机器指纹，此时无需额外配置。
+- 若宿主机**没有**该文件（如 macOS、部分精简云主机），Docker 会把它当作**目录**挂载，导致容器内 `/etc/machine-id` 变成目录而非文件；后端读取失败后会回退为容器 `hostname`（容器重建后可能变化，指纹绑定不可靠）。
+- 遇到这种情况，请务必在 `.env` 中**显式设置** `LICENSE_MACHINE_ID`（使用一个稳定唯一的值，例如 `openssl rand -hex 16` 或固定 UUID），并在授权方签发 License Key 时绑定**同一个值**，否则机器指纹绑定会失效。
+
 ## 二、激活 License
 
 1. 登录管理后台 → 「系统授权」页面。

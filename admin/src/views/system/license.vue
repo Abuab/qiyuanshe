@@ -40,6 +40,36 @@
       </el-descriptions>
     </el-card>
 
+    <!-- 机器指纹（防复制绑定） -->
+    <el-card class="machine-card">
+      <template #header>机器指纹（防复制绑定）</template>
+      <el-descriptions :column="1" border>
+        <el-descriptions-item label="本机机器指纹">
+          <div class="fingerprint-row">
+            <span class="fingerprint-text">{{ machineInfo?.machineFingerprint || '-' }}</span>
+            <el-button
+              v-if="machineInfo?.machineFingerprint"
+              size="small"
+              text
+              type="primary"
+              @click="copyFingerprint"
+            >复制</el-button>
+          </div>
+        </el-descriptions-item>
+        <el-descriptions-item label="当前 License 绑定指纹">
+          <span v-if="machineInfo?.boundMachineId" class="fingerprint-text">{{ machineInfo.boundMachineId }}</span>
+          <el-tag v-else size="small" type="info">未绑定</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="绑定状态">
+          <el-tag v-if="!machineInfo" size="small" type="info">加载中</el-tag>
+          <el-tag v-else-if="!machineInfo.boundMachineId" size="small" type="warning">未绑定指纹</el-tag>
+          <el-tag v-else-if="machineInfo.boundMachineId === machineInfo.machineFingerprint" size="small" type="success">已匹配</el-tag>
+          <el-tag v-else size="small" type="danger">不匹配</el-tag>
+        </el-descriptions-item>
+      </el-descriptions>
+      <p class="machine-hint">签发 License 时，将「本机机器指纹」提供给授权方即可绑定防复制；换服务器后指纹会变化，需联系授权方重新签发。</p>
+    </el-card>
+
     <!-- 输入/更新 License -->
     <el-card class="input-card">
       <template #header>更新 License Key</template>
@@ -65,9 +95,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { licenseApi, type LicenseInfo } from '../../api/license'
+import { licenseApi, type LicenseInfo, type MachineBindingInfo } from '../../api/license'
 
 const licenseInfo = ref<LicenseInfo | null>(null)
+const machineInfo = ref<MachineBindingInfo | null>(null)
 const licenseKeyInput = ref('')
 const activating = ref(false)
 
@@ -92,7 +123,7 @@ const statusTagType = computed(() => {
 })
 
 onMounted(async () => {
-  await fetchStatus()
+  await Promise.all([fetchStatus(), fetchMachine()])
 })
 
 async function fetchStatus() {
@@ -103,6 +134,28 @@ async function fetchStatus() {
     }
   } catch (error) {
     console.error('获取授权状态失败:', error)
+  }
+}
+
+async function fetchMachine() {
+  try {
+    const res = await licenseApi.getMachine()
+    if (res.success && res.data) {
+      machineInfo.value = res.data
+    }
+  } catch (error) {
+    console.error('获取机器指纹失败:', error)
+  }
+}
+
+async function copyFingerprint() {
+  const fp = machineInfo.value?.machineFingerprint
+  if (!fp) return
+  try {
+    await navigator.clipboard.writeText(fp)
+    ElMessage.success('机器指纹已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动复制')
   }
 }
 
@@ -162,6 +215,29 @@ async function handleActivate() {
 
   .input-card {
     max-width: 700px;
+  }
+
+  .machine-card {
+    margin-bottom: 20px;
+    max-width: 700px;
+  }
+
+  .fingerprint-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fingerprint-text {
+    word-break: break-all;
+    font-family: monospace;
+    color: #303133;
+  }
+
+  .machine-hint {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: #909399;
   }
 
   .feature-tag {

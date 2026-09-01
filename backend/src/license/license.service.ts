@@ -31,6 +31,8 @@ export interface LicensePayload {
   issuedAt?: string
   /** 绑定的机器指纹（可选，签发时写入；用于防止同一 License Key 复制到其他服务器） */
   machineId?: string
+  /** V1 旧版 License Key 使用的机器指纹字段（向后兼容，等价于 machineId） */
+  machineFingerprint?: string
 }
 
 /** 所有功能 featureKey（与小程序端 src/config/license-features.ts 保持一致） */
@@ -117,6 +119,26 @@ export class LicenseService {
     } catch {
       return null
     }
+  }
+
+  /** 获取本机机器指纹与当前 License 绑定的指纹（供管理后台展示，方便客户绑定防复制） */
+  async getMachineBindingInfo(): Promise<{ machineFingerprint: string; boundMachineId: string | null }> {
+    const machineFingerprint = this.getMachineFingerprint()
+    let boundMachineId: string | null = null
+    try {
+      const license = await this.licenseRepository.findOne({
+        where: { isActivated: true },
+        order: { id: 'DESC' },
+      })
+      if (license) {
+        const payload = this.verifyAndParse(license.licenseKey)
+        boundMachineId = payload.machineId || payload.machineFingerprint || null
+      }
+    } catch {
+      // 未激活或验签失败时，绑定指纹视为空
+      boundMachineId = null
+    }
+    return { machineFingerprint, boundMachineId }
   }
 
   /** 激活/更新 License：本地验签 → 机器指纹绑定校验 → 写入本地数据库 */
@@ -233,7 +255,7 @@ export class LicenseService {
 
   /** 校验 License Key 绑定的机器指纹；payload 未绑定 machineId 时不校验 */
   private verifyMachineBinding(payload: LicensePayload): void {
-    const bound = payload.machineId
+    const bound = payload.machineId || payload.machineFingerprint
     if (!bound) return
     const local = this.getMachineFingerprint()
     if (local !== bound) {

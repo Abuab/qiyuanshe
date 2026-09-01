@@ -18,6 +18,12 @@ export class AdminLicenseController {
     return Result.success(await this.licenseService.getLicenseInfo())
   }
 
+  @Get('machine')
+  @Roles(AdminRole.SUPER_ADMIN)
+  async getMachine() {
+    return Result.success(await this.licenseService.getMachineBindingInfo())
+  }
+
   @Post('activate')
   @Roles(AdminRole.SUPER_ADMIN)
   async activate(@Body('licenseKey') licenseKey: string) {
