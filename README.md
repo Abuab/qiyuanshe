@@ -55,7 +55,9 @@
 
 ## License 授权状态控制
 
-平台采用 RSA 授权码验签机制控制功能可用性：授权方用私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥验签。授权过期或未授权时，小程序写功能与管理后台被限制。
+平台采用「**License Key + 激活次数限制 + 在线校验**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端与独立的许可证服务器（license-server）用硬编码公钥验签。许可证服务器负责激活计数、心跳与远程吊销。授权过期、未授权或被远程吊销时，小程序写功能与管理后台被限制。
+
+> 完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
 ### 四种状态
 
@@ -70,12 +72,12 @@
 
 - **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
 - **fail-closed**：无授权记录或验签失败时按 `unauthorized` 处理，防破解优先。
-- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。
-- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key 与授权状态查看（`GET/POST /api/admin/license`）。
+- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储 + 在线激活/解绑）、`LicenseHeartbeatService`（每日心跳到许可证服务器）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。
+- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key、解绑当前服务器与激活实例数查看（`GET/POST /api/admin/license`）。
 - **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
 - **公开状态接口**：`GET /api/system/license`。
 
-> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）。
+> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）；许可证服务器部署见 `license-server/` 与 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
 ## 技术栈
 
@@ -211,6 +213,14 @@ qiyuanshe/
 │   ├── query-realname.sh     # 实名信息查询（解密）
 │   └── decrypt-identity.js   # 实名信息解密工具
 │
+├── license-server/           # 许可证服务器（独立 Express + SQLite 服务）
+│   ├── src/                  # 服务端源码（server / db / routes / middleware / license-key）
+│   ├── public/               # 管理面板静态页
+│   ├── Dockerfile
+│   └── docker-compose.yml
+│
+├── generate-license.js       # License Key 签发脚本（本地工具，私钥不提交）
+├── LICENSE_DEPLOY.md         # License 授权系统部署与运维说明
 ├── .env.example              # 环境变量示例（唯一配置源）
 ├── docker-compose.yml        # 服务编排
 └── README.md
@@ -1875,6 +1885,12 @@ docker compose up -d --build
 ```
 
 ## 相关文档
+
+### 项目内部文档
+
+- [License 授权系统部署与运维说明](LICENSE_DEPLOY.md)
+
+### 外部文档
 
 - [NestJS 文档](https://docs.nestjs.com/)
 - [Vue3 文档](https://vuejs.org/)

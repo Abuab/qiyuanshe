@@ -1,8 +1,8 @@
 import { Injectable, Logger, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { createVerify, createHash } from 'crypto'
-import * as os from 'os'
+import { createVerify } from 'crypto'
+import axios from 'axios'
 import { SystemLicense } from '../entities/SystemLicense'
 
 export type LicenseStatus = 'valid' | 'grace_period' | 'expired' | 'unauthorized'
@@ -16,9 +16,9 @@ export interface LicenseInfo {
   customer?: string
   customerId?: string
   domain?: string
-  machineFingerprint?: string
   activatedAt?: string
   remoteStatus?: string
+  maxActivations: number
 }
 
 /** 授权码中签发的载荷（不含签名） */
@@ -26,11 +26,11 @@ export interface LicensePayload {
   customer: string
   customerId?: string
   domain?: string
-  machineFingerprint?: string
   status?: 'valid' | 'grace_period' | 'expired'
   expiresAt: string
   features?: string[]
   issuedAt?: string
+  maxActivations?: number
 }
 
 /** 所有功能 featureKey（与小程序端 src/config/license-features.ts 保持一致） */
@@ -122,17 +122,12 @@ export class LicenseService {
     }
   }
 
-  /** 激活/更新 License：验签通过后写入数据库（单条记录） */
+  /** 激活/更新 License：本地验签 → 许可证服务器在线注册激活 → 写入本地数据库（单条记录） */
   async activateLicense(licenseKey: string): Promise<LicenseInfo> {
     const payload = this.verifyAndParse(licenseKey)
 
-    // 机器指纹可选绑定：仅当授权码显式携带非空 machineFingerprint 时才校验
-    if (payload.machineFingerprint) {
-      const current = this.generateMachineFingerprint()
-      if (current !== payload.machineFingerprint) {
-        throw new Error('License Key 绑定的机器指纹与当前服务器不匹配')
-      }
-    }
+    // 在线注册激活（激活次数配额由许可证服务器校验；网络失败 / 达上限时抛错）
+    const { activationId } = await this.registerActivation(licenseKey)
 
     const data = {
       isActivated: true,
@@ -142,7 +137,7 @@ export class LicenseService {
       features: this.sanitizeFeatures(payload.features),
       customerId: payload.customerId || null,
       customerName: payload.customer || null,
-      machineFingerprint: payload.machineFingerprint || null,
+      activationId,
       remoteStatus: 'valid',
       remoteStatusUpdatedAt: null,
     }
@@ -159,6 +154,106 @@ export class LicenseService {
     }
 
     return this.getLicenseInfo()
+  }
+
+  /** 解绑当前服务器：在许可证服务器释放激活名额，并清除本地授权状态 */
+  async deactivateLicense(): Promise<void> {
+    const license = await this.getActivatedLicense()
+    if (!license) return
+
+    const signature = await this.getLicenseSignature()
+    if (!signature) {
+      throw new Error('未找到已激活授权码，无法解绑')
+    }
+
+    const activationId = license.activationId
+    if (!activationId) {
+      throw new Error('当前授权未记录激活实例 ID，无法在线解绑')
+    }
+
+    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    if (!serverUrl) {
+      throw new Error('未配置许可证服务器（LICENSE_SERVER_URL），无法在线解绑')
+    }
+
+    try {
+      const res = await axios.post(
+        `${serverUrl}/deactivate`,
+        { licenseSignature: signature, activationId },
+        { timeout: 10000 },
+      )
+      if (!res?.data?.success) {
+        throw new Error(res?.data?.message || '解绑失败')
+      }
+    } catch (e: any) {
+      if (e?.response?.data?.message) {
+        throw new Error(e.response.data.message)
+      }
+      throw new Error('无法连接许可证服务器，请检查网络或 LICENSE_SERVER_URL 配置')
+    }
+
+    await this.licenseRepository.update(license.id, { isActivated: false, activationId: null })
+  }
+
+  /** 查询当前授权的激活实例摘要（供管理后台展示「已激活实例数 / 最大激活数」） */
+  async getActivationSummary(): Promise<{ maxActivations: number; activationCount: number; activations: unknown[] }> {
+    const signature = await this.getLicenseSignature()
+    const empty = { maxActivations: 0, activationCount: 0, activations: [] }
+    if (!signature) return empty
+
+    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    if (!serverUrl) return empty
+
+    try {
+      const res = await axios.get(`${serverUrl}/activations`, {
+        params: { licenseSignature: signature },
+        timeout: 10000,
+      })
+      const data = res?.data?.data
+      if (data && typeof data === 'object') {
+        return {
+          maxActivations: Number(data.maxActivations) || 0,
+          activationCount: Number(data.activationCount) || 0,
+          activations: Array.isArray(data.activations) ? data.activations : [],
+        }
+      }
+    } catch (e: any) {
+      this.logger.warn(`[License] 查询激活实例失败：${e?.message || e}`)
+    }
+    return empty
+  }
+
+  /** 调用许可证服务器注册激活；达上限 / 网络失败时抛出友好错误，返回激活实例 ID */
+  private async registerActivation(licenseKey: string): Promise<{ activationId: string | null }> {
+    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
+    if (!serverUrl) {
+      throw new Error('未配置许可证服务器（LICENSE_SERVER_URL），无法在线激活')
+    }
+
+    // 重复激活同一授权时带上已记录的 activationId，避免重复占用名额
+    const existing = await this.getActivatedLicense()
+
+    try {
+      const res = await axios.post(
+        `${serverUrl}/activate`,
+        {
+          licenseKey,
+          activationId: existing?.activationId || undefined,
+          domain: process.env.APP_DOMAIN || '',
+        },
+        { timeout: 10000 },
+      )
+      if (!res?.data?.success) {
+        throw new Error(res?.data?.message || '激活失败')
+      }
+      const activationId = res?.data?.activationId
+      return { activationId: activationId != null ? String(activationId) : null }
+    } catch (e: any) {
+      if (e?.response?.data?.message) {
+        throw new Error(e.response.data.message)
+      }
+      throw new Error('无法连接许可证服务器，请检查网络或 LICENSE_SERVER_URL 配置')
+    }
   }
 
   /** 判断当前是否授权可用（valid / grace_period 均视为可用） */
@@ -198,18 +293,10 @@ export class LicenseService {
     }
   }
 
-  /** 生成机器指纹（主机名 + CPU 型号 + 网卡 MAC 的 SHA256），供可选绑定使用 */
-  generateMachineFingerprint(): string {
-    const parts = [
-      os.hostname(),
-      os.cpus()[0]?.model || '',
-      Object.values(os.networkInterfaces())
-        .flat()
-        .map((i) => i?.mac)
-        .filter(Boolean)
-        .join(','),
-    ]
-    return createHash('sha256').update(parts.join('|')).digest('hex')
+  /** 获取当前激活实例 ID（许可证服务器分配，心跳上报用） */
+  async getActivationId(): Promise<string | null> {
+    const license = await this.getActivatedLicense()
+    return license?.activationId || null
   }
 
   /** Base64 解码 + 提取 payload/signature + RSA-SHA256 验签，返回 payload */
@@ -269,9 +356,12 @@ export class LicenseService {
       customer: payload.customer,
       customerId: payload.customerId || '',
       domain: payload.domain || '',
-      machineFingerprint: payload.machineFingerprint || '',
       activatedAt: license.activatedAt ? license.activatedAt.toISOString() : '',
       remoteStatus: license.remoteStatus,
+      maxActivations:
+        Number.isInteger(payload.maxActivations) && (payload.maxActivations as number) > 0
+          ? (payload.maxActivations as number)
+          : 1,
     }
   }
 
@@ -347,9 +437,9 @@ export class LicenseService {
       customer: '',
       customerId: '',
       domain: '',
-      machineFingerprint: '',
       activatedAt: '',
       remoteStatus: 'valid',
+      maxActivations: 1,
     }
   }
 }

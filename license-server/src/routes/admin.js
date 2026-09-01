@@ -15,7 +15,7 @@ router.get('/licenses', (req, res) => {
 
 /** 新增授权记录（预录入：客户激活前先在许可证服务器登记签名） */
 router.post('/licenses', (req, res) => {
-  const { customerId, customerName, licenseSignature, expiresAt, machineFingerprint, domain } = req.body || {}
+  const { customerId, customerName, licenseSignature, expiresAt, domain } = req.body || {}
 
   if (!customerId || typeof customerId !== 'string' || !customerId.trim()) {
     return res.status(400).json({ success: false, message: 'customerId 必填' })
@@ -30,7 +30,6 @@ router.post('/licenses', (req, res) => {
       customerName: customerName || null,
       licenseSignature: licenseSignature.trim(),
       expiresAt: expiresAt || null,
-      machineFingerprint: machineFingerprint || null,
       domain: domain || null,
     })
     return res.json({ success: true, data: row, message: '创建成功' })
@@ -56,12 +55,11 @@ router.put('/licenses/:id', (req, res) => {
     return res.status(404).json({ success: false, message: '授权记录不存在' })
   }
 
-  const { customerName, expiresAt, machineFingerprint, domain, status } = req.body || {}
+  const { customerName, expiresAt, domain, status } = req.body || {}
   const fields = {}
 
   if (customerName !== undefined) fields.customer_name = customerName
   if (expiresAt !== undefined) fields.expires_at = expiresAt
-  if (machineFingerprint !== undefined) fields.machine_fingerprint = machineFingerprint
   if (domain !== undefined) fields.domain = domain
 
   if (status !== undefined) {
@@ -96,6 +94,30 @@ router.post('/licenses/:id/revoke', (req, res) => {
 
   const updated = db.update(id, { status: 'revoked', revoked_at: new Date().toISOString() })
   return res.json({ success: true, data: updated, message: '已吊销' })
+})
+
+/** 查看某 license 的所有激活实例 */
+router.get('/activations/:licenseId', (req, res) => {
+  const licenseId = Number(req.params.licenseId)
+  if (!Number.isInteger(licenseId)) {
+    return res.status(400).json({ success: false, message: '无效的 licenseId' })
+  }
+
+  const row = db.getById(licenseId)
+  if (!row) {
+    return res.status(404).json({ success: false, message: '授权记录不存在' })
+  }
+
+  const activations = db.listActivations(licenseId)
+  return res.json({
+    success: true,
+    data: {
+      license: row,
+      maxActivations: row.max_activations,
+      activationCount: activations.length,
+      activations,
+    },
+  })
 })
 
 /** 统计看板 */

@@ -5,7 +5,7 @@ import { LicenseService } from './license.service'
 
 /**
  * License 心跳服务：每天凌晨 3 点向远程许可证服务器上报授权状态。
- * - LICENSE_SERVER_URL 未配置时跳过（纯离线模式，不影响使用）
+ * - LICENSE_SERVER_URL 未配置时跳过心跳（激活必须联网，激活后可短暂离线运行）
  * - 网络失败 / 响应异常时仅记录日志，不阻断业务（本地验签兜底）
  */
 @Injectable()
@@ -16,9 +16,9 @@ export class LicenseHeartbeatService {
 
   @Cron('0 3 * * *')
   async heartbeat(): Promise<void> {
-    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim()
+    const serverUrl = (process.env.LICENSE_SERVER_URL || '').trim().replace(/\/+$/, '')
     if (!serverUrl) {
-      this.logger.debug('[License] 未配置 LICENSE_SERVER_URL，跳过心跳（纯离线模式）')
+      this.logger.debug('[License] 未配置 LICENSE_SERVER_URL，跳过心跳')
       return
     }
 
@@ -29,13 +29,13 @@ export class LicenseHeartbeatService {
         return
       }
 
+      const activationId = await this.licenseService.getActivationId()
       const res = await axios.post(
-        serverUrl,
+        `${serverUrl}/heartbeat`,
         {
           licenseSignature: signature,
-          machineFingerprint: this.licenseService.generateMachineFingerprint(),
+          activationId: activationId || undefined,
           domain: process.env.APP_DOMAIN || '',
-          version: process.env.APP_VERSION || '',
         },
         { timeout: 10000 },
       )

@@ -20,8 +20,8 @@ db.exec(`
     license_signature TEXT UNIQUE NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
     expires_at TEXT,
-    machine_fingerprint TEXT,
     domain TEXT,
+    max_activations INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     revoked_at TEXT,
     last_heartbeat_at TEXT,
@@ -29,12 +29,44 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_signature ON licenses(license_signature);
   CREATE INDEX IF NOT EXISTS idx_status ON licenses(status);
+
+  CREATE TABLE IF NOT EXISTS activations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    license_id INTEGER NOT NULL,
+    domain TEXT,
+    ip TEXT,
+    activated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_heartbeat_at TEXT,
+    status TEXT NOT NULL DEFAULT 'active'
+  );
+  CREATE INDEX IF NOT EXISTS idx_activations_license ON activations(license_id);
 `)
 
+/** 兼容旧库：老版本 licenses 表缺少 max_activations 列时补加 */
+function hasColumn(table, column) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all()
+  return cols.some((c) => c.name === column)
+}
+if (!hasColumn('licenses', 'max_activations')) {
+  db.exec('ALTER TABLE licenses ADD COLUMN max_activations INTEGER NOT NULL DEFAULT 1')
+}
+// 旧方案「机器指纹强绑定」已取消：删除 licenses 表中的 machine_fingerprint 列
+if (hasColumn('licenses', 'machine_fingerprint')) {
+  db.exec('ALTER TABLE licenses DROP COLUMN machine_fingerprint')
+}
+
 /** 允许手动更新的字段白名单，防止 SQL 注入 / 越权改字段 */
-const UPDATABLE_FIELDS = ['customer_name', 'expires_at', 'machine_fingerprint', 'domain', 'status', 'revoked_at']
+const UPDATABLE_FIELDS = [
+  'customer_name',
+  'expires_at',
+  'domain',
+  'max_activations',
+  'status',
+  'revoked_at',
+]
 
 module.exports = {
+  // ===== licenses =====
   getBySignature(signature) {
     return db.prepare('SELECT * FROM licenses WHERE license_signature = ?').get(signature)
   },
@@ -47,14 +79,21 @@ module.exports = {
     return db.prepare('SELECT * FROM licenses ORDER BY id DESC').all()
   },
 
-  create({ customerId, customerName, licenseSignature, expiresAt, machineFingerprint, domain }) {
+  create({ customerId, customerName, licenseSignature, expiresAt, domain, maxActivations }) {
     const info = db
       .prepare(
         `INSERT INTO licenses
-          (customer_id, customer_name, license_signature, status, expires_at, machine_fingerprint, domain)
+          (customer_id, customer_name, license_signature, status, expires_at, domain, max_activations)
          VALUES (?, ?, ?, 'active', ?, ?, ?)`,
       )
-      .run(customerId, customerName || null, licenseSignature, expiresAt || null, machineFingerprint || null, domain || null)
+      .run(
+        customerId,
+        customerName || null,
+        licenseSignature,
+        expiresAt || null,
+        domain || null,
+        maxActivations && Number.isInteger(maxActivations) && maxActivations > 0 ? maxActivations : 1,
+      )
     return this.getById(info.lastInsertRowid)
   },
 
@@ -80,12 +119,55 @@ module.exports = {
   recordHeartbeat(id, { domain }) {
     const row = this.getById(id)
     if (!row) return
-    // 首次心跳且尚未绑定域名时，记录部署域名（仅记录，不参与判定）
     const nextDomain = !row.domain && domain ? domain : row.domain
     db.prepare(
       `UPDATE licenses
          SET last_heartbeat_at = ?, heartbeat_count = heartbeat_count + 1, domain = ?
        WHERE id = ?`,
     ).run(new Date().toISOString(), nextDomain, id)
+  },
+
+  // ===== activations =====
+  countActivations(licenseId) {
+    const row = db
+      .prepare(`SELECT COUNT(*) AS cnt FROM activations WHERE license_id = ? AND status = 'active'`)
+      .get(licenseId)
+    return row ? row.cnt : 0
+  },
+
+  getActivationById(id) {
+    return db.prepare('SELECT * FROM activations WHERE id = ?').get(id)
+  },
+
+  listActivations(licenseId) {
+    return db
+      .prepare('SELECT * FROM activations WHERE license_id = ? ORDER BY id ASC')
+      .all(licenseId)
+  },
+
+  createActivation({ licenseId, domain, ip }) {
+    const info = db
+      .prepare(
+        `INSERT INTO activations
+          (license_id, domain, ip, activated_at, last_heartbeat_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      )
+      .run(licenseId, domain || null, ip || null, new Date().toISOString(), new Date().toISOString())
+    return this.getActivationById(info.lastInsertRowid)
+  },
+
+  touchActivation(id, { domain, ip }) {
+    db.prepare(
+      `UPDATE activations
+         SET last_heartbeat_at = ?, domain = COALESCE(?, domain), ip = COALESCE(?, ip)
+       WHERE id = ?`,
+    ).run(new Date().toISOString(), domain || null, ip || null, id)
+  },
+
+  deleteActivation(licenseId, activationId) {
+    const info = db
+      .prepare('DELETE FROM activations WHERE license_id = ? AND id = ?')
+      .run(licenseId, activationId)
+    return info.changes > 0
   },
 }

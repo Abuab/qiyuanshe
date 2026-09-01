@@ -36,7 +36,6 @@
         <input id="fCustomerId" placeholder="客户ID *" class="border border-gray-300 rounded px-3 py-2" />
         <input id="fCustomerName" placeholder="客户名称" class="border border-gray-300 rounded px-3 py-2" />
         <input id="fExpiresAt" placeholder="过期时间 (YYYY-MM-DD 或 ISO)" class="border border-gray-300 rounded px-3 py-2" />
-        <input id="fMachineFingerprint" placeholder="机器指纹（可选）" class="border border-gray-300 rounded px-3 py-2" />
         <input id="fDomain" placeholder="域名（可选）" class="border border-gray-300 rounded px-3 py-2" />
         <input id="fLicenseSignature" placeholder="授权签名 *" class="border border-gray-300 rounded px-3 py-2 md:col-span-3" />
       </div>
@@ -65,6 +64,17 @@
         </table>
       </div>
     </section>
+  </div>
+
+  <!-- 激活实例弹窗 -->
+  <div id="activationsModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg shadow w-full max-w-2xl max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b">
+        <h3 class="font-semibold">激活实例 <span id="actTitle" class="text-sm text-gray-500 font-normal"></span></h3>
+        <button id="actClose" class="text-gray-500 hover:text-gray-800 text-xl leading-none">&times;</button>
+      </div>
+      <div id="actBody" class="p-4 overflow-y-auto"></div>
+    </div>
   </div>
 
   <script>
@@ -150,6 +160,7 @@
               <td class="py-2 pr-3">${esc(r.expires_at || '-')}</td>
               <td class="py-2 pr-3">${fmtTime(r.last_heartbeat_at)}</td>
               <td class="py-2 pr-3">
+                <button class="text-green-600 hover:underline mr-3" data-action="activations" data-id="${r.id}">激活实例</button>
                 <button class="text-blue-600 hover:underline mr-3" data-action="extend" data-id="${r.id}">延期</button>
                 ${revokeBtn}
               </td>
@@ -190,7 +201,6 @@
         customerName: $('fCustomerName').value.trim(),
         licenseSignature: $('fLicenseSignature').value.trim(),
         expiresAt: $('fExpiresAt').value.trim() || null,
-        machineFingerprint: $('fMachineFingerprint').value.trim() || null,
         domain: $('fDomain').value.trim() || null,
       }
       if (!body.customerId || !body.licenseSignature) {
@@ -200,7 +210,7 @@
       try {
         await api('/licenses', { method: 'POST', body: JSON.stringify(body) })
         setMsg('新增成功', true)
-        ;['fCustomerId', 'fCustomerName', 'fExpiresAt', 'fMachineFingerprint', 'fDomain', 'fLicenseSignature']
+        ;['fCustomerId', 'fCustomerName', 'fExpiresAt', 'fDomain', 'fLicenseSignature']
           .forEach((id) => (($(id).value = '')))
         await refresh()
       } catch (e) {
@@ -230,6 +240,44 @@
       }
     }
 
+    async function showActivations(id) {
+      try {
+        const { data } = await api(`/activations/${id}`)
+        const license = data.license || {}
+        const name = license.customer_name || license.customer_id || ''
+        $('actTitle').textContent = `（${data.activationCount} / ${data.maxActivations} · ${name}）`
+        const list = Array.isArray(data.activations) ? data.activations : []
+        if (list.length === 0) {
+          $('actBody').innerHTML = '<p class="text-gray-400 text-sm">暂无激活实例</p>'
+        } else {
+          $('actBody').innerHTML = `
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left border-b text-gray-500">
+                  <th class="py-2 pr-3">实例ID</th>
+                  <th class="py-2 pr-3">域名</th>
+                  <th class="py-2 pr-3">IP</th>
+                  <th class="py-2 pr-3">激活时间</th>
+                  <th class="py-2 pr-3">最后心跳</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map((a) => `<tr class="border-b">
+                  <td class="py-2 pr-3">${a.id}</td>
+                  <td class="py-2 pr-3">${esc(a.domain || '-')}</td>
+                  <td class="py-2 pr-3">${esc(a.ip || '-')}</td>
+                  <td class="py-2 pr-3">${fmtTime(a.activated_at)}</td>
+                  <td class="py-2 pr-3">${fmtTime(a.last_heartbeat_at)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>`
+        }
+        $('activationsModal').classList.remove('hidden')
+      } catch (e) {
+        alert(e.message)
+      }
+    }
+
     function setMsg(text, ok) {
       $('formMsg').textContent = text
       $('formMsg').className = 'text-sm ' + (ok ? 'text-green-600' : 'text-red-600')
@@ -241,6 +289,7 @@
       const id = btn.getAttribute('data-id')
       if (btn.getAttribute('data-action') === 'revoke') revoke(id)
       if (btn.getAttribute('data-action') === 'extend') extend(id)
+      if (btn.getAttribute('data-action') === 'activations') showActivations(id)
     })
 
     $('loginBtn').addEventListener('click', login)
@@ -250,6 +299,10 @@
       showLogin(true)
     })
     $('addBtn').addEventListener('click', addLicense)
+    $('actClose').addEventListener('click', () => $('activationsModal').classList.add('hidden'))
+    $('activationsModal').addEventListener('click', (e) => {
+      if (e.target === $('activationsModal')) $('activationsModal').classList.add('hidden')
+    })
 
     // 初始化：已有 key 则尝试直接进入主面板
     if (getKey()) {

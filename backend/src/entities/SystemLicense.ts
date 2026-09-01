@@ -36,8 +36,9 @@ export class SystemLicense {
   @Column({ type: 'varchar', length: 255, nullable: true })
   customerName: string | null
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  machineFingerprint: string | null
+  /** 许可证服务器分配的激活实例 ID（用于心跳/解绑时定位当前实例） */
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  activationId: string | null
 
   /** 远程状态：valid（默认）/ revoked（已被授权方远程吊销） */
   @Column({ type: 'varchar', length: 32, default: 'valid' })

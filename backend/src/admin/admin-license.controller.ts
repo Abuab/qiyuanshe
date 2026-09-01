@@ -31,4 +31,21 @@ export class AdminLicenseController {
       return Result.error(e?.message || '激活失败，请检查 License Key 是否正确', 400)
     }
   }
+
+  @Post('deactivate')
+  @Roles(AdminRole.SUPER_ADMIN)
+  async deactivate() {
+    try {
+      await this.licenseService.deactivateLicense()
+      return Result.success(null, '解绑成功')
+    } catch (e: any) {
+      return Result.error(e?.message || '解绑失败', 400)
+    }
+  }
+
+  @Get('activations')
+  @Roles(AdminRole.SUPER_ADMIN)
+  async getActivations() {
+    return Result.success(await this.licenseService.getActivationSummary())
+  }
 }

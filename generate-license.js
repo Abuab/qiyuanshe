@@ -74,7 +74,12 @@ async function main() {
     process.exit(1)
   }
 
-  const bindMachine = (await question(rl, '绑定机器指纹? (y/n, 默认 n): ')).trim().toLowerCase()
+  const maxActivationsInput = (await question(rl, '最大激活次数 (默认 1，即最多激活 1 台服务器): ')).trim()
+  const maxActivations = maxActivationsInput ? Number(maxActivationsInput) : 1
+  if (!Number.isInteger(maxActivations) || maxActivations < 1) {
+    console.error('最大激活次数应为大于 0 的整数')
+    process.exit(1)
+  }
 
   const payload = {
     customer,
@@ -84,11 +89,7 @@ async function main() {
     expiresAt: expiresAt + 'T23:59:59+08:00',
     features: ALL_FEATURES,
     issuedAt: new Date().toISOString(),
-  }
-
-  if (bindMachine === 'y') {
-    const fp = (await question(rl, '客户机器指纹: ')).trim()
-    if (fp) payload.machineFingerprint = fp
+    maxActivations,
   }
 
   const payloadStr = JSON.stringify(payload)

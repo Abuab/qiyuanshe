@@ -20,7 +20,7 @@ export class CreateSystemLicensesTable1757000000000 implements MigrationInterfac
         \`features\` TEXT NULL,
         \`customerId\` VARCHAR(255) NULL,
         \`customerName\` VARCHAR(255) NULL,
-        \`machineFingerprint\` VARCHAR(255) NULL,
+        \`activationId\` VARCHAR(64) NULL,
         \`remoteStatus\` VARCHAR(32) NOT NULL DEFAULT 'valid',
         \`remoteStatusUpdatedAt\` DATETIME NULL,
         \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
