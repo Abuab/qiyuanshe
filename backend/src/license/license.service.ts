@@ -122,11 +122,11 @@ export class LicenseService {
     }
   }
 
-  /** 激活/更新 License：本地验签 → 许可证服务器在线注册激活（不可达时降级离线激活）→ 写入本地数据库 */
+  /** 激活/更新 License：本地验签 → 许可证服务器在线注册激活（首次激活不可达时降级离线激活）→ 写入本地数据库 */
   async activateLicense(licenseKey: string): Promise<LicenseInfo> {
     const payload = this.verifyAndParse(licenseKey)
 
-    // 在线注册激活（校验激活次数并分配 activationId）；网络不可达时降级离线激活，activationId 为 null
+    // 在线注册激活（校验激活次数并分配 activationId）；首次激活网络不可达时降级离线激活，activationId 为 null
     const { activationId } = await this.registerActivation(licenseKey)
 
     const data = {
@@ -224,10 +224,15 @@ export class LicenseService {
     return empty
   }
 
-  /** 调用许可证服务器注册激活；达上限抛出错误，网络不可达降级离线激活（返回 activationId=null） */
+  /** 调用许可证服务器注册激活；达上限等业务拒绝抛错，网络不可达时仅首次激活降级离线激活 */
   private async registerActivation(licenseKey: string): Promise<{ activationId: string | null }> {
     const serverUrl = this.getServerUrl()
     if (!serverUrl) {
+      // 未配置服务器：首次激活降级离线激活；已激活则拒绝，避免丢失在线记录
+      const existing = await this.getActivatedLicense()
+      if (existing) {
+        throw new Error('未配置许可证服务器（LICENSE_SERVER_URL），无法在线更新授权')
+      }
       this.logger.warn('[License] 未配置 LICENSE_SERVER_URL，降级为离线激活')
       return { activationId: null }
     }
@@ -235,8 +240,9 @@ export class LicenseService {
     // 重复激活同一授权时带上已记录的 activationId，避免重复占用名额
     const existing = await this.getActivatedLicense()
 
+    let res: any
     try {
-      const res = await axios.post(
+      res = await axios.post(
         `${serverUrl}/activate`,
         {
           licenseKey,
@@ -245,19 +251,27 @@ export class LicenseService {
         },
         { timeout: 10000, headers: this.getAuthHeaders() },
       )
-      if (!res?.data?.success) {
-        throw new Error(res?.data?.message || '激活失败')
-      }
-      const activationId = res?.data?.activationId
-      return { activationId: activationId != null ? String(activationId) : null }
     } catch (e: any) {
+      // 服务器可达但明确拒绝（HTTP 4xx/5xx，如鉴权失败）→ 抛业务错误
       if (e?.response?.data?.message) {
         throw new Error(e.response.data.message)
       }
-      // 网络类错误（无响应）：降级为离线激活，本地验签已通过
+      // 网络类错误（无响应）
+      if (existing) {
+        // 已激活实例重新激活必须在线，避免丢失已有 activationId
+        throw new Error('无法连接许可证服务器，请检查网络或 LICENSE_SERVER_URL 配置')
+      }
+      // 首次激活：网络不可达降级为离线激活
       this.logger.warn(`[License] 许可证服务器不可达，降级为离线激活：${e?.message || e}`)
       return { activationId: null }
     }
+
+    // 服务器可达：检查业务结果（达上限等明确拒绝，必须抛出，不能降级离线激活）
+    if (!res?.data?.success) {
+      throw new Error(res?.data?.message || '激活失败')
+    }
+    const activationId = res?.data?.activationId
+    return { activationId: activationId != null ? String(activationId) : null }
   }
 
   /** 判断当前是否授权可用（valid / grace_period 均视为可用） */

@@ -5,7 +5,7 @@ import { LicenseService } from './license.service'
 
 /**
  * License 心跳服务：每天凌晨 3 点向远程许可证服务器上报授权状态。
- * - LICENSE_SERVER_URL 未配置时跳过心跳（激活必须联网，激活后可短暂离线运行）
+ * - LICENSE_SERVER_URL 未配置时跳过心跳（激活已支持离线兜底，激活后可离线运行）
  * - 网络失败 / 响应异常时仅记录日志，不阻断业务（本地验签兜底）
  */
 @Injectable()

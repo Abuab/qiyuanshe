@@ -57,7 +57,9 @@
 
 平台采用「**License Key + 激活次数限制 + 在线校验**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端与独立的许可证服务器（license-server）用硬编码公钥验签。许可证服务器负责激活计数、心跳与远程吊销。授权过期、未授权或被远程吊销时，小程序写功能与管理后台被限制。
 
-> 完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
+**安全与可用性增强**：许可证服务器客户端接口启用共享密钥鉴权（请求头 `X-License-Secret`），并复用主域名反向代理对外暴露客户端接口（管理面与健康检查不对外），隐藏真实源站 IP；许可证服务器不可达时支持**离线激活兜底**——首次激活自动降级为离线激活（本地验签 + 过期时间兜底），已激活实例离线运行不受影响，恢复在线后自动对账补齐激活记录。
+
+> 客户侧交付说明见 [LICENSE_CUSTOMER_GUIDE.md](LICENSE_CUSTOMER_GUIDE.md)；完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
 ### 四种状态
 
@@ -1889,6 +1891,7 @@ docker compose up -d --build
 ### 项目内部文档
 
 - [License 授权系统部署与运维说明](LICENSE_DEPLOY.md)
+- [License 客户交付说明](LICENSE_CUSTOMER_GUIDE.md)
 
 ### 外部文档
 
