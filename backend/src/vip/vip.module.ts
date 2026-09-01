@@ -1,6 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
-import { ScheduleModule } from '@nestjs/schedule'
 import { VipController } from './vip.controller'
 import { VipService } from './vip.service'
 import { VipScheduler } from './vip.scheduler'
@@ -27,7 +26,6 @@ import { UserModule } from '../user/user.module'
       RedLineUsage,
       SystemConfig,
     ]),
-    ScheduleModule.forRoot(),
     forwardRef(() => SystemModule),
     forwardRef(() => UserModule),
   ],

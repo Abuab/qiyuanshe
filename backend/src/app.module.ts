@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConfigModule } from '@nestjs/config'
 import { ThrottlerModule } from '@nestjs/throttler'
+import { ScheduleModule } from '@nestjs/schedule'
 import { join } from 'path'
 import { databaseConfig } from './config/database'
 import { AuthModule } from './auth/auth.module'
@@ -43,6 +44,8 @@ import { LicenseModule } from './license/license.module'
 
 @Module({
   imports: [
+    // 定时任务调度器（全局，仅注册一次；供 vip/ai/license 各模块的 @Cron 使用）
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
       ttl: 60000,   // 时间窗口 60 秒
       limit: 60,    // 每个窗口最多 60 次请求（公开接口可单独覆盖为更低值）
