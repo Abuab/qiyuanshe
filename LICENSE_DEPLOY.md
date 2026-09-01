@@ -142,8 +142,6 @@ node generate-license.js ~/license-keys/license_private.pem
 # 机器指纹（可选）。留空时后端自动采集 /etc/machine-id → 容器 hostname。
 # 建议显式配置为宿主机 `cat /etc/machine-id` 的值。
 LICENSE_MACHINE_ID=
-# 当前部署域名（仅展示，无远程上报）
-APP_DOMAIN=你的域名
 ```
 
 `docker-compose.yml` 已把宿主机 `/etc/machine-id` 以只读方式挂载进 api 容器（`/etc/machine-id:/etc/machine-id:ro`），保证容器内外机器指纹一致。

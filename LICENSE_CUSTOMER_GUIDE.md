@@ -12,9 +12,6 @@
 # 机器指纹（可选，用于防复制）。留空时后端自动采集 /etc/machine-id 或容器 hostname。
 # 建议显式配置为宿主机 `cat /etc/machine-id` 的值，与授权方签发时绑定的指纹保持一致。
 LICENSE_MACHINE_ID=
-
-# 本实例部署域名（仅展示，无远程上报）
-APP_DOMAIN=你的域名
 ```
 
 > 若授权方在签发 License Key 时已绑定机器指纹，则 `LICENSE_MACHINE_ID`（或后端自动采集到的指纹）必须与该值一致，否则验签时会被判定「机器指纹不匹配」而无法激活。
