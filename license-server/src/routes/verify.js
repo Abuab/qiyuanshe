@@ -57,7 +57,8 @@ router.post('/verify', rateLimit, (req, res) => {
  * 客户服务器激活时调用：本地 RSA 验签 + 激活次数配额检查 + 创建/复用 activation 记录。
  */
 router.post('/activate', rateLimit, (req, res) => {
-  const { licenseKey, activationId, domain, ip } = req.body || {}
+  const { licenseKey, activationId, domain } = req.body || {}
+  const ip = req.body?.ip || req.ip
 
   if (!licenseKey || typeof licenseKey !== 'string') {
     return res.status(400).json({ success: false, message: '缺少 licenseKey' })
@@ -75,11 +76,27 @@ router.post('/activate', rateLimit, (req, res) => {
     Number.isInteger(payload.maxActivations) && payload.maxActivations > 0 ? payload.maxActivations : 1
 
   try {
-    // 定位授权记录；不存在则自动创建（从 payload 提取，首次激活无需预录入）
+    const customerId = String(payload.customerId || payload.customer || signature)
     let license = db.getBySignature(signature)
-    if (!license) {
-      const customerId = String(payload.customerId || payload.customer || signature)
-      try {
+
+    if (license) {
+      // 同一签名重复激活：同步配额（签名一致即 payload 一致，此处为幂等兜底）
+      db.update(license.id, { max_activations: maxActivations })
+      license = db.getById(license.id)
+    } else {
+      // 新签名：优先按 customerId 复用已有记录（续费换发新 key），否则新建
+      const existing = db.getByCustomerId(customerId)
+      if (existing) {
+        db.update(existing.id, {
+          license_signature: signature,
+          customer_name: payload.customer || null,
+          expires_at: payload.expiresAt || null,
+          max_activations: maxActivations,
+          status: 'active',
+          revoked_at: null,
+        })
+        license = db.getById(existing.id)
+      } else {
         license = db.create({
           customerId,
           customerName: payload.customer || null,
@@ -88,17 +105,7 @@ router.post('/activate', rateLimit, (req, res) => {
           domain: domain || null,
           maxActivations,
         })
-      } catch (e) {
-        if (String(e && e.message).includes('UNIQUE')) {
-          license = db.getBySignature(signature)
-        } else {
-          throw e
-        }
       }
-    } else {
-      // 授权码更新时同步 max_activations
-      db.update(license.id, { max_activations: maxActivations })
-      license = db.getById(license.id)
     }
 
     if (!license) {
@@ -170,7 +177,8 @@ router.post('/deactivate', rateLimit, (req, res) => {
  * 客户服务器每天心跳调用：更新 activation 的 last_heartbeat_at 并返回远程状态。
  */
 router.post('/heartbeat', rateLimit, (req, res) => {
-  const { licenseSignature, activationId, domain, ip } = req.body || {}
+  const { licenseSignature, activationId, domain } = req.body || {}
+  const ip = req.body?.ip || req.ip
 
   if (!licenseSignature || typeof licenseSignature !== 'string') {
     return res.status(400).json({ success: false, message: '缺少 licenseSignature' })

@@ -147,8 +147,8 @@
         licenseCache = data
         $('licenseRows').innerHTML = data
           .map((r) => {
-            const revokeBtn = r.status === 'revoked'
-              ? '<span class="text-gray-400">已吊销</span>'
+            const statusAction = r.status === 'revoked'
+              ? `<button class="text-green-600 hover:underline" data-action="restore" data-id="${r.id}">恢复</button>`
               : `<button class="text-red-600 hover:underline" data-action="revoke" data-id="${r.id}">吊销</button>`
             return `<tr class="border-b">
               <td class="py-2 pr-3">${r.id}</td>
@@ -162,7 +162,7 @@
               <td class="py-2 pr-3">
                 <button class="text-green-600 hover:underline mr-3" data-action="activations" data-id="${r.id}">激活实例</button>
                 <button class="text-blue-600 hover:underline mr-3" data-action="extend" data-id="${r.id}">延期</button>
-                ${revokeBtn}
+                ${statusAction}
               </td>
             </tr>`
           })
@@ -222,6 +222,16 @@
       if (!confirm('确定吊销该授权？客户下次心跳后将进入宽限期。')) return
       try {
         await api(`/licenses/${id}/revoke`, { method: 'POST' })
+        await refresh()
+      } catch (e) {
+        alert(e.message)
+      }
+    }
+
+    async function restore(id) {
+      if (!confirm('确定恢复该授权？客户下次心跳后将恢复正常。')) return
+      try {
+        await api(`/licenses/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'active' }) })
         await refresh()
       } catch (e) {
         alert(e.message)
@@ -288,6 +298,7 @@
       if (!btn) return
       const id = btn.getAttribute('data-id')
       if (btn.getAttribute('data-action') === 'revoke') revoke(id)
+      if (btn.getAttribute('data-action') === 'restore') restore(id)
       if (btn.getAttribute('data-action') === 'extend') extend(id)
       if (btn.getAttribute('data-action') === 'activations') showActivations(id)
     })

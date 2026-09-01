@@ -58,6 +58,7 @@ if (hasColumn('licenses', 'machine_fingerprint')) {
 /** 允许手动更新的字段白名单，防止 SQL 注入 / 越权改字段 */
 const UPDATABLE_FIELDS = [
   'customer_name',
+  'license_signature',
   'expires_at',
   'domain',
   'max_activations',
@@ -69,6 +70,10 @@ module.exports = {
   // ===== licenses =====
   getBySignature(signature) {
     return db.prepare('SELECT * FROM licenses WHERE license_signature = ?').get(signature)
+  },
+
+  getByCustomerId(customerId) {
+    return db.prepare('SELECT * FROM licenses WHERE customer_id = ?').get(customerId)
   },
 
   getById(id) {
