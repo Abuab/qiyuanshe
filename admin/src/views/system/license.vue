@@ -22,15 +22,11 @@
         <el-descriptions-item label="授权状态">
           <el-tag :type="statusTagType">{{ statusText }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="远程状态">
-          <el-tag :type="remoteStatusTagType">{{ remoteStatusText }}</el-tag>
-        </el-descriptions-item>
         <el-descriptions-item label="客户ID">{{ licenseInfo.customerId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="客户名称">{{ licenseInfo.customer || '-' }}</el-descriptions-item>
         <el-descriptions-item label="过期时间">{{ licenseInfo.expiresAt || '-' }}</el-descriptions-item>
         <el-descriptions-item label="剩余天数">{{ licenseInfo.graceDaysLeft }} 天</el-descriptions-item>
         <el-descriptions-item label="绑定域名">{{ licenseInfo.domain || '不限' }}</el-descriptions-item>
-        <el-descriptions-item label="激活实例数">{{ activationCountText }}</el-descriptions-item>
         <el-descriptions-item label="激活时间">{{ licenseInfo.activatedAt || '-' }}</el-descriptions-item>
         <el-descriptions-item label="功能白名单" :span="2">
           <el-tag
@@ -42,11 +38,6 @@
           >{{ f }}</el-tag>
         </el-descriptions-item>
       </el-descriptions>
-      <div class="card-actions">
-        <el-button type="danger" plain :loading="deactivating" @click="handleDeactivate">
-          解绑当前服务器
-        </el-button>
-      </div>
     </el-card>
 
     <!-- 输入/更新 License -->
@@ -73,14 +64,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { licenseApi, type LicenseInfo, type ActivationSummary } from '../../api/license'
+import { ElMessage } from 'element-plus'
+import { licenseApi, type LicenseInfo } from '../../api/license'
 
 const licenseInfo = ref<LicenseInfo | null>(null)
-const activationSummary = ref<ActivationSummary | null>(null)
 const licenseKeyInput = ref('')
 const activating = ref(false)
-const deactivating = ref(false)
 
 const statusText = computed(() => {
   const map: Record<string, string> = {
@@ -102,25 +91,8 @@ const statusTagType = computed(() => {
   return map[licenseInfo.value?.status || ''] || 'info'
 })
 
-const remoteStatusText = computed(() => {
-  const status = licenseInfo.value?.remoteStatus
-  if (status === 'revoked') return '已吊销'
-  if (status === 'valid') return '正常'
-  return status || '未知'
-})
-
-const remoteStatusTagType = computed(() => {
-  return licenseInfo.value?.remoteStatus === 'revoked' ? 'danger' : 'success'
-})
-
-const activationCountText = computed(() => {
-  const count = activationSummary.value?.activationCount ?? 0
-  const max = activationSummary.value?.maxActivations ?? licenseInfo.value?.maxActivations ?? 1
-  return `${count} / ${max}`
-})
-
 onMounted(async () => {
-  await Promise.all([fetchStatus(), fetchActivations()])
+  await fetchStatus()
 })
 
 async function fetchStatus() {
@@ -147,7 +119,7 @@ async function handleActivate() {
     if (res.success) {
       ElMessage.success('激活成功')
       licenseKeyInput.value = ''
-      await Promise.all([fetchStatus(), fetchActivations()])
+      await fetchStatus()
     } else {
       ElMessage.error(res.message || '激活失败')
     }
@@ -155,44 +127,6 @@ async function handleActivate() {
     ElMessage.error(error?.message || '激活失败，请检查 License Key 是否正确')
   } finally {
     activating.value = false
-  }
-}
-
-async function fetchActivations() {
-  try {
-    const res = await licenseApi.getActivations()
-    if (res.success && res.data) {
-      activationSummary.value = res.data
-    }
-  } catch (error) {
-    console.error('获取激活实例数失败:', error)
-  }
-}
-
-async function handleDeactivate() {
-  try {
-    await ElMessageBox.confirm(
-      '解绑后当前服务器将失去授权，所有功能将被锁定，需重新激活后才能使用。确认继续？',
-      '解绑确认',
-      { type: 'warning', confirmButtonText: '确认解绑', cancelButtonText: '取消' },
-    )
-  } catch {
-    return
-  }
-
-  deactivating.value = true
-  try {
-    const res = await licenseApi.deactivate()
-    if (res.success) {
-      ElMessage.success('解绑成功')
-      await Promise.all([fetchStatus(), fetchActivations()])
-    } else {
-      ElMessage.error(res.message || '解绑失败')
-    }
-  } catch (error: any) {
-    ElMessage.error(error?.message || '解绑失败，请稍后重试')
-  } finally {
-    deactivating.value = false
   }
 }
 </script>
@@ -228,10 +162,6 @@ async function handleDeactivate() {
 
   .input-card {
     max-width: 700px;
-  }
-
-  .card-actions {
-    margin-top: 16px;
   }
 
   .feature-tag {

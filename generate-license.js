@@ -9,6 +9,7 @@
  * - 使用 RSA 私钥对 payload 做 SHA256 签名，输出 Base64 License Key 发给客户
  * - 公钥已硬编码在后端 backend/src/license/license.service.ts 中
  * - 私钥绝不可提交到代码仓库
+ * - 纯离线模式：本地验签 + 机器指纹绑定（可选），无远程吊销与激活计数
  */
 const crypto = require('crypto')
 const fs = require('fs')
@@ -62,6 +63,10 @@ async function main() {
 
   const domain = (await question(rl, '绑定域名 (* 表示不限): ')).trim() || '*'
 
+  const machineId = (
+    await question(rl, '绑定机器指纹 (可选，防复制；客户在服务器上运行 cat /etc/machine-id 获取): ')
+  ).trim()
+
   const expiresAt = (await question(rl, '过期时间 (YYYY-MM-DD): ')).trim()
   if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) {
     console.error('过期时间格式应为 YYYY-MM-DD')
@@ -74,13 +79,6 @@ async function main() {
     process.exit(1)
   }
 
-  const maxActivationsInput = (await question(rl, '最大激活次数 (默认 1，即最多激活 1 台服务器): ')).trim()
-  const maxActivations = maxActivationsInput ? Number(maxActivationsInput) : 1
-  if (!Number.isInteger(maxActivations) || maxActivations < 1) {
-    console.error('最大激活次数应为大于 0 的整数')
-    process.exit(1)
-  }
-
   const payload = {
     customer,
     customerId,
@@ -89,7 +87,7 @@ async function main() {
     expiresAt: expiresAt + 'T23:59:59+08:00',
     features: ALL_FEATURES,
     issuedAt: new Date().toISOString(),
-    maxActivations,
+    ...(machineId ? { machineId } : {}),
   }
 
   const payloadStr = JSON.stringify(payload)
@@ -104,9 +102,8 @@ async function main() {
   console.log(licenseKey)
   console.log('\n========== 授权信息 ==========')
   console.log(JSON.stringify(payload, null, 2))
-  console.log('\n========== 预录入许可证服务器（可选，用于远程吊销） ==========')
-  console.log('客户ID:', customerId)
-  console.log('授权签名:', signature)
+  console.log('\n========== 机器指纹绑定 ==========')
+  console.log(machineId ? `已绑定机器指纹: ${machineId}` : '未绑定机器指纹（该 License 可复制到任意服务器）')
 
   rl.close()
 }

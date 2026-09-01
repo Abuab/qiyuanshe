@@ -55,9 +55,9 @@
 
 ## License 授权状态控制
 
-平台采用「**License Key + 激活次数限制 + 在线校验**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端与独立的许可证服务器（license-server）用硬编码公钥验签。许可证服务器负责激活计数、心跳与远程吊销。授权过期、未授权或被远程吊销时，小程序写功能与管理后台被限制。
+平台采用「**License Key + 离线验签 + 机器指纹绑定**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key（可绑定客户服务器机器指纹），客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥本地验签并校验机器指纹，无需在线许可证服务器。授权过期或未授权时，小程序写功能与管理后台被限制。
 
-**安全与可用性增强**：许可证服务器客户端接口启用共享密钥鉴权（请求头 `X-License-Secret`），并复用主域名反向代理对外暴露客户端接口（管理面与健康检查不对外），隐藏真实源站 IP；许可证服务器不可达时支持**离线激活兜底**——首次激活自动降级为离线激活（本地验签 + 过期时间兜底），已激活实例离线运行不受影响，恢复在线后自动对账补齐激活记录。
+**防复制**：签发时可绑定客户服务器的机器指纹（`cat /etc/machine-id` 获取），后端每次验签时对比本机指纹，防止同一 License Key 复制到其他服务器。纯离线模式无远程吊销与激活计数，防复制完全依赖机器指纹绑定。
 
 > 客户侧交付说明见 [LICENSE_CUSTOMER_GUIDE.md](LICENSE_CUSTOMER_GUIDE.md)；完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
@@ -74,12 +74,12 @@
 
 - **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
 - **fail-closed**：无授权记录或验签失败时按 `unauthorized` 处理，防破解优先。
-- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储 + 在线激活/解绑）、`LicenseHeartbeatService`（每日心跳到许可证服务器）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。
-- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key、解绑当前服务器与激活实例数查看（`GET/POST /api/admin/license`）。
+- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + 机器指纹校验 + `SystemLicense` 存储）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。
+- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key 与授权状态查看（`GET/POST /api/admin/license`）。
 - **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
 - **公开状态接口**：`GET /api/system/license`。
 
-> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）；许可证服务器部署见 `license-server/` 与 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
+> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）；完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
 ## 技术栈
 
@@ -214,12 +214,6 @@ qiyuanshe/
 │   ├── generate-schema.sh    # 从 Entity 生成 schema.sql
 │   ├── query-realname.sh     # 实名信息查询（解密）
 │   └── decrypt-identity.js   # 实名信息解密工具
-│
-├── license-server/           # 许可证服务器（独立 Express + SQLite 服务）
-│   ├── src/                  # 服务端源码（server / db / routes / middleware / license-key）
-│   ├── public/               # 管理面板静态页
-│   ├── Dockerfile
-│   └── docker-compose.yml
 │
 ├── generate-license.js       # License Key 签发脚本（本地工具，私钥不提交）
 ├── LICENSE_DEPLOY.md         # License 授权系统部署与运维说明
