@@ -1,7 +1,19 @@
 #!/bin/bash
 # =============================================
-# 栖缘社数据库备份脚本
-# 支持：本地备份、压缩、远程上传（阿里云OSS）
+# 栖缘社数据库备份脚本（MySQL 主库）
+#
+# 作用：对 MySQL 主库执行 mysqldump 在线备份 -> gzip 压缩 -> 可选上传阿里云 OSS，
+#       并按保留天数清理旧备份。
+#
+# 备份输出位置：<项目根目录>/backups/qys_YYYYMMDD_HHMMSS.sql.gz
+# 保留策略：默认 30 天（BACKUP_RETENTION_DAYS）
+# 日志文件：<项目根目录>/logs/backup.log
+#
+# 用法：
+#   bash scripts/backup.sh
+#
+# crontab 计划任务（每天 03:00）：
+#   0 3 * * * cd /usr/local/src/qiyuanshe && bash scripts/backup.sh >> logs/backup.log 2>&1
 # =============================================
 
 set -e

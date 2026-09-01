@@ -9,6 +9,11 @@
 #   ./backup.sh [备份目录] [保留份数]
 #   示例：./backup.sh ./backups 30
 #
+# 备份输出位置：默认 <脚本目录>/backups/license_YYYYMMDD_HHMMSS.db（保留最近 30 份）
+#
+# crontab 计划任务（每天 04:00）：
+#   0 4 * * * cd /usr/local/src/qiyuanshe-license && bash ./backup.sh ./backups 30 >> ./backups/backup.log 2>&1
+#
 # 依赖：优先使用宿主机 sqlite3 命令；若没有，则回退到运行中容器内的 better-sqlite3。
 set -euo pipefail
 

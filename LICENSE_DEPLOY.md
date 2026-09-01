@@ -35,12 +35,76 @@
 | 管理后台接口 | `backend/src/admin/admin-license.controller.ts` | 激活/解绑/查询激活数接口 |
 | 管理后台页面 | `admin/src/views/system/license.vue` | 「系统授权」页 |
 | 许可证服务器 | `license-server/` | 独立 Express + SQLite 服务，负责激活计数、心跳、远程吊销 |
+| 备份脚本 | `license-server/backup.sh` | 在线备份 SQLite 数据，配合 crontab 定时执行 |
+| 恢复脚本 | `license-server/restore.sh` | 从备份恢复，或用于跨服务器迁移 |
+
+### 脚本清单（详解）
+
+| 脚本 | 位置 | 作用 | 何时运行 |
+|------|------|------|----------|
+| `generate-license.js` | 仓库根目录 | 授权方本机用私钥签发 License Key | 手动（新客户 / 续费 / 换发） |
+| `license-server/backup.sh` | `license-server/` | 在线一致性备份授权台账 SQLite（`license.db`） | crontab 每天 04:00 |
+| `license-server/restore.sh` | `license-server/` | 用备份恢复授权台账，或跨服务器迁移 | 手动（灾难恢复 / 迁移） |
+| `scripts/backup.sh` | `scripts/` | MySQL 主库 `mysqldump` 备份 + gzip + 可选 OSS 上传 | crontab 每天 03:00 |
+| `scripts/restore.sh` | `scripts/` | 从 `.sql.gz` 备份恢复 MySQL 主库 | 手动（灾难恢复） |
+| `scripts/monitor.sh` | `scripts/` | 监控服务/磁盘/内存/API/MySQL/Redis，超阈值告警（企业微信/钉钉） | crontab 每 10 分钟 |
+| `scripts/cleanup.sh` | `scripts/` | 清理应用日志 / Nginx 日志 / MySQL 慢查询 / Docker 资源 / 临时文件 | 手动或按需 cron |
+| `scripts/deploy.sh` | `scripts/` | 一键部署：拉代码、构建、启动、健康检查 | 手动 |
+| `scripts/install.sh` | `scripts/` | 一键初始化安装（Ubuntu/CentOS） | 手动（首次） |
+| `scripts/setup-ssl.sh` | `scripts/` | 申请 / 续期 Let's Encrypt 证书 | 手动（首次 / 证书异常） |
+| `scripts/generate-schema.sh` | `scripts/` | 从 TypeORM Entity 生成权威建表 `schema.sql` | 手动（实体变更后） |
+| `scripts/query-realname.sh` | `scripts/` | 查询实名认证数据（支持解密、去重排查） | 手动（运维排查） |
+
+> 只有 `scripts/backup.sh`、`scripts/monitor.sh`、`license-server/backup.sh` 进了 crontab；其余均为手动运维脚本。
+
+### 备份文件位置一览
+
+| 备份内容 | 位置 | 生成者 | 说明 |
+|---------|------|--------|------|
+| MySQL 主库（每日） | `/usr/local/src/qiyuanshe/backups/qys_YYYYMMDD_HHMMSS.sql.gz` | `scripts/backup.sh` | 业务库全量备份，保留 30 天 |
+| 授权台账（每日） | `/usr/local/src/qiyuanshe-license/backups/license_YYYYMMDD_HHMMSS.db` | `license-server/backup.sh` | 授权 / 吊销 / 激活记录，保留 30 份 |
+| 授权台账（运行中） | `/usr/local/src/qiyuanshe-license/data/license.db`（含 `-wal` / `-shm`） | license-server 运行时 | 当前库，勿手动删除 |
+| 恢复前留底 | `/usr/local/src/qiyuanshe-license/data/license.db.pre-restore.<时间戳>` | `license-server/restore.sh` | 恢复前的自动留底 |
+| crontab 快照 | `/usr/local/src/qiyuanshe/backups/crontab_backup_*.txt` | 手动导出 | 计划任务历史记录 |
+| 历史备份（旧库名） | `/usr/local/src/qiyuanshe/backups/lingtong_*.sql.gz` | 旧版 `scripts/backup.sh` | 旧库 `lingtong_match` 时期产物 |
+| 上线前手动备份 | `/usr/local/src/qiyuanshe/backups/qys_match_pre_launch_*.sql.gz` | 手动 | 上线前的全量备份 |
+
+### 计划任务（crontab）
+
+生产环境 crontab 完整内容（每条均带注释，便于识别）：
+
+```cron
+# ============================================================
+# 栖缘社生产环境计划任务
+# 脚本目录：/usr/local/src/qiyuanshe/scripts/（主项目）
+#          /usr/local/src/qiyuanshe-license/（许可证服务器）
+# ============================================================
+
+# 腾讯云 stargate 安全监控 agent（系统自带，请勿删除）
+*/5 * * * * flock -xn /tmp/stargate.lock -c '/usr/local/qcloud/stargate/admin/start.sh > /dev/null 2>&1 &'
+
+# SSL 证书自动续期（Let's Encrypt，每天 02:00，webroot 方式）
+0 2 * * * certbot renew --quiet --webroot -w /usr/local/src/qiyuanshe/docker/nginx/certbot/www
+
+# MySQL 主库在线备份（每天 03:00）→ backups/qys_*.sql.gz，保留 30 天
+0 3 * * * cd /usr/local/src/qiyuanshe && bash scripts/backup.sh >> logs/backup.log 2>&1
+
+# 许可证服务器授权台账备份（每天 04:00）→ backups/license_*.db，保留 30 份
+0 4 * * * cd /usr/local/src/qiyuanshe-license && bash ./backup.sh ./backups 30 >> ./backups/backup.log 2>&1
+
+# 系统资源监控告警（每 10 分钟）→ 日志 logs/monitor.log
+*/10 * * * * cd /usr/local/src/qiyuanshe && bash scripts/monitor.sh > /dev/null 2>&1
+```
 
 ---
 
 ## 三、密钥管理
 
-后端在 `backend/src/license/license.service.ts` 中硬编码了公钥 `LICENSE_PUBLIC_KEY`，签发时必须使用与之配对的私钥。
+### 3.1 密钥与目录
+
+- 私钥 `license_private.pem` 只保存在**授权方本机**，建议固定目录 `~/license-keys/`。
+- 签发脚本 `generate-license.js` 在仓库根目录，同样只在本机执行。
+- 公钥硬编码进代码（后端与 license-server），**服务器上不需要存放任何密钥文件**。
 
 生成密钥对（如已存在可跳过）：
 
@@ -50,8 +114,60 @@ openssl genrsa -out license_private.pem 2048
 openssl rsa -in license_private.pem -pubout -out license_public.pem
 ```
 
-- 若重新生成密钥对，需将 `license_public.pem` 的内容同步替换到后端 `LICENSE_PUBLIC_KEY`（保留 `-----BEGIN/END PUBLIC KEY-----`）。
-- 许可证服务器 `license-server/src/license-key.js` 中也硬编码了同一公钥，用于 `/api/activate` 的本地验签。
+后端在 `backend/src/license/license.service.ts` 硬编码公钥 `LICENSE_PUBLIC_KEY`，许可证服务器在 `license-server/src/license-key.js` 硬编码 `PUBLIC_KEY`，二者必须为同一公钥。
+
+若重新生成密钥对，需把 `license_public.pem` 内容同步替换到上述两处（保留 `-----BEGIN/END PUBLIC KEY-----`）。
+
+### 3.2 私钥丢失怎么办
+
+**先认清后果**——私钥丢失不等于系统立刻瘫痪：
+
+- ❌ 无法再签发新 License Key（新客户、续费、换发都做不了）。
+- ✅ 已签发的 key 仍然有效：验签用的是**公钥**（硬编码在代码里，没丢）。
+- ✅ 已激活的客户不受影响，继续正常运行。
+
+**预防（务必执行）**：私钥做**离线加密备份**至少两处（移动硬盘 / 密码管理器 / 云 KMS）。私钥绝不能提交到 git 仓库或上传服务器。
+
+**丢失后的恢复步骤**（破坏性操作，会导致旧 key 全部失效）：
+
+```bash
+# 1. 重新生成密钥对
+mkdir -p ~/license-keys-new && cd ~/license-keys-new
+openssl genrsa -out license_private.pem 2048
+openssl rsa -in license_private.pem -pubout -out license_public.pem
+cat license_public.pem   # 复制新公钥内容
+```
+
+2. 把新公钥替换到 `backend/src/license/license.service.ts` 的 `LICENSE_PUBLIC_KEY` 和 `license-server/src/license-key.js` 的 `PUBLIC_KEY`。
+3. 重新部署后端与 license-server，使新公钥生效（此刻起旧 key 全部验签失败）。
+4. **导出客户清单**（从许可证服务器 SQLite 读取，作为重签发台账）：
+
+   ```bash
+   docker exec qys_license node -e "const db=require('better-sqlite3')('/app/data/license.db'); for(const r of db.prepare('SELECT customer_id,customer_name,expires_at,max_activations,domain,status FROM licenses ORDER BY id').all()) console.log([r.customer_id,r.customer_name,r.expires_at,r.max_activations,r.domain||'',r.status].join(' | '));"
+   ```
+
+   输出形如 `C20260901001 | 某某婚恋工作室 | 2027-01-01 | 1 | * | active`，逐行对应一个客户。
+
+5. **逐客户重新签发**（授权方本机，用新私钥）：
+
+   ```bash
+   cd /path/to/qiyuanshe-match
+   node generate-license.js ~/license-keys-new/license_private.pem
+   ```
+
+   按第 4 步清单，为每个客户输入**相同的**「客户ID / 客户名称 / 过期时间 / 最大激活次数 / 域名」，得到新的 License Key 与新的授权签名（`signature`）。
+
+6. **更新许可证服务器签名**：新 key 的签名与库中旧签名不同，需让服务器按 `customerId` 复用并更新。推荐直接让客户重新激活（`POST /api/activate` 会按 `customerId` 命中旧记录，自动更新 `license_signature` / `expires_at` / `max_activations` 并置为 `active`），无需手动改库。
+
+7. **通知客户重新激活**：把新 key 发给客户，客户登录管理后台「系统授权」页，先「解绑当前服务器」释放旧名额，再粘贴新 key 点激活。
+
+> 结论：私钥丢失可恢复，但代价大，核心是提前做好离线备份。
+
+> ⚠️ 重签期间旧 key 全部失效：公钥已换，客户本地旧 key 验签失败进入 `unauthorized`，写功能被锁定，需尽快完成所有客户重新激活。
+>
+> ⚠️ 吊销状态会复位：重新激活会把该授权记录 `status` 置为 `active` 并清空 `revoked_at`。若重签前有已吊销客户，重签后需在管理面板对其重新「吊销」。
+>
+> ⚠️ 激活名额：重新激活前先让客户「解绑当前服务器」，否则旧激活实例仍占用名额，可能触发「激活次数已达上限」。
 
 > ⚠️ 私钥 `license_private.pem` 绝不能提交到仓库或上传服务器。
 
@@ -59,8 +175,10 @@ openssl rsa -in license_private.pem -pubout -out license_public.pem
 
 ## 四、签发 License Key
 
+在**授权方本机**执行（签发脚本与私钥都不在服务器上）。私钥路径按实际存放位置填写，本示例为 `~/license-keys/license_private.pem`：
+
 ```bash
-cd /Users/kevin/Documents/trae_projects/qiyuanshe-match
+cd /path/to/qiyuanshe-match          # 仓库根目录
 node generate-license.js ~/license-keys/license_private.pem
 ```
 
@@ -194,6 +312,49 @@ sleep 3 && docker compose ps
 ### 4. 远程吊销
 
 在许可证服务器管理面板对某授权执行「吊销」。客户后端下次心跳（最长 24 小时）收到 `revoked` 状态，进入 7 天宽限期后锁定写功能。
+
+### 5. 恢复已吊销授权
+
+管理面板对已吊销记录点「恢复」（调用 `PUT /api/admin/licenses/:id`，传 `status:'active'`）。客户后端下次心跳（最长 24 小时）收到 `valid` 后恢复。宽限期（7 天）内恢复可即时解锁；即便超期被锁定，恢复后下次心跳也会解锁。
+
+### 6. 备份（backup.sh）
+
+在线一致性备份 SQLite 数据，无需停机（优先宿主机 `sqlite3`，否则回退到容器内 better-sqlite3）：
+
+```bash
+cd /usr/local/src/qiyuanshe-license
+./backup.sh ./backups 30          # 备份到 backups/，保留最近 30 份
+```
+
+定时备份（crontab，每天凌晨 2 点）：
+
+```cron
+0 2 * * * cd /usr/local/src/qiyuanshe-license && ./backup.sh ./backups 30 >> ./backups/backup.log 2>&1
+```
+
+异地备份（再防一层，同步到另一台机器 / 对象存储）：
+
+```bash
+rsync -avz /usr/local/src/qiyuanshe-license/backups/ backup@异地机器:/backup/license/
+```
+
+### 7. 迁移 / 恢复（restore.sh）
+
+跨服务器迁移或灾难恢复：
+
+```bash
+# 源机：备份
+cd /usr/local/src/qiyuanshe-license && ./backup.sh
+scp backups/license_*.db 新服务器:/tmp/
+
+# 目标机：先部署（拷贝代码 + 配 .env + docker compose up -d --build），再恢复
+cd /usr/local/src/qiyuanshe-license && ./restore.sh /tmp/license_*.db
+curl http://127.0.0.1:3002/health     # 期望 {"success":true,"status":"ok"}
+```
+
+`restore.sh` 会自动：停止容器 → 留底当前库（`license.db.pre-restore.<时间戳>`）→ 覆盖数据库并清理 WAL/SHM → 重启容器。
+
+> 说明：license-server 数据丢失不会让已激活客户「无法激活/无法用」（客户本地验签兜底），备份的核心价值是保住**吊销记录**与**激活计数台账**，便于审计与快速恢复管控能力。
 
 ---
 
