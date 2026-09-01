@@ -1,17 +1,25 @@
 import { Module } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { APP_GUARD } from '@nestjs/core'
-import { SystemConfig } from '../entities/SystemConfig'
-import { LicenseService } from './license.service'
+import { SystemLicense } from '../entities/SystemLicense'
+import { LicenseService, LICENSE_PUBLIC_KEY_TOKEN, LICENSE_PUBLIC_KEY } from './license.service'
 import { LicenseGuard } from './license.guard'
+import { AdminLicenseGuard } from './admin-license.guard'
+import { LicenseHeartbeatService } from './license-heartbeat.service'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([SystemConfig])],
+  imports: [TypeOrmModule.forFeature([SystemLicense])],
   providers: [
     LicenseService,
+    // 生产使用硬编码公钥；测试可覆盖注入临时公钥
+    { provide: LICENSE_PUBLIC_KEY_TOKEN, useValue: LICENSE_PUBLIC_KEY },
     LicenseGuard,
-    // 注册为全局守卫：所有路由都会经过，但仅 @RequireLicense() 标注的接口才校验
+    AdminLicenseGuard,
+    LicenseHeartbeatService,
+    // 业务写接口守卫：仅 @RequireLicense() 标注的接口校验
     { provide: APP_GUARD, useClass: LicenseGuard },
+    // 管理后台守卫：/admin/* 未激活/过期时拦截（白名单放行登录与授权激活）
+    { provide: APP_GUARD, useClass: AdminLicenseGuard },
   ],
   exports: [LicenseService],
 })

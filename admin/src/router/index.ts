@@ -216,6 +216,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '用量限额', requiresAuth: true },
       },
       {
+        path: '/system/license',
+        name: 'SystemLicense',
+        component: () => import('../views/system/license.vue'),
+        meta: { title: '系统授权', requiresAuth: true },
+      },
+      {
         path: '/activity/list',
         name: 'ActivityList',
         component: () => import('../views/activity/list.vue'),

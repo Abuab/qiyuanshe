@@ -197,6 +197,7 @@
         <el-menu-item index="/system/notification-channel">通知通道</el-menu-item>
         <el-menu-item index="/system/notification-log">通知日志</el-menu-item>
         <el-menu-item index="/system/store-cert">到店认证门店配置</el-menu-item>
+        <el-menu-item index="/system/license">系统授权</el-menu-item>
       </el-sub-menu>
 
       <el-menu-item

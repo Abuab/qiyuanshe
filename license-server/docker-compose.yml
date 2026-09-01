@@ -1,0 +1,15 @@
+services:
+  license:
+    build: .
+    container_name: qys_license
+    restart: unless-stopped
+    ports:
+      # 仅监听本机，通过 qys_nginx 反向代理对外（端口 3002 避免与 qys_admin 的 3001 冲突）
+      - "127.0.0.1:3002:3002"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      # 管理面板鉴权密钥，部署时务必替换为强随机值
+      - ADMIN_KEY=${ADMIN_KEY:-change-me}
+      - PORT=3002

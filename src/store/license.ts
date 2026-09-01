@@ -47,10 +47,10 @@ export const useLicenseStore = defineStore('license', () => {
 
   const applyInfo = (info: LicenseInfo | null) => {
     if (!info) {
-      // fail-open：接口异常时按 valid 处理，避免后端故障误锁全部写操作
-      status.value = 'valid'
+      // fail-closed：接口异常时按未授权处理，与后端「无记录/异常 → unauthorized」保持一致
+      status.value = 'unauthorized'
       features.value = []
-      loaded.value = false
+      loaded.value = true
       return
     }
     status.value = info.status ?? 'valid'

@@ -55,7 +55,7 @@
 
 ## License 授权状态控制
 
-平台支持通过「授权状态」一键锁定/解锁小程序功能，用于订阅到期控制、密钥校验等场景。授权状态存储在 `system_configs` 表的 `license.config` 记录中（JSON），无需改代码、无需重启即可实时生效。
+平台采用 RSA 授权码验签机制控制功能可用性：授权方用私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥验签。授权过期或未授权时，小程序写功能与管理后台被限制。
 
 ### 四种状态
 
@@ -69,12 +69,13 @@
 ### 实现要点
 
 - **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
-- **fail-open**：数据库未配置 `license.config` 或读取异常时，一律按 `valid` 处理，不会误锁全平台。
-- **后端**：`backend/src/license/` 提供全局 `LicenseGuard` + `@RequireLicense()` 装饰器，仅拦截标注的写接口，返回 HTTP 403 + `bizCode`（`LICENSE_EXPIRED` / `LICENSE_INVALID`）。
+- **fail-closed**：无授权记录或验签失败时按 `unauthorized` 处理，防破解优先。
+- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。
+- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key 与授权状态查看（`GET/POST /api/admin/license`）。
 - **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
 - **公开状态接口**：`GET /api/system/license`。
 
-> 详细操作步骤（如何上锁/解锁、SQL 示例、验证方法）见 **[LICENSE_TUTORIAL.md](LICENSE_TUTORIAL.md)**。
+> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）。
 
 ## 技术栈
 

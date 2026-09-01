@@ -11,6 +11,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware'
 import { RequestIdMiddleware } from './common/logger/request-id.middleware'
 import { WinstonLoggerService } from './common/logger/winston-logger.service'
+import { LicenseService } from './license/license.service'
 
 // 设置 Node.js 进程时区为北京时间（影响 Logger 时间戳、toLocaleString、Date.toString 等）
 process.env.TZ = 'Asia/Shanghai'
@@ -140,6 +141,22 @@ async function bootstrap() {
   })
 
   app.setGlobalPrefix('api')
+
+  // ===== 启动时校验 License（仅打印日志，不阻断启动，运行时由守卫保护） =====
+  try {
+    const licenseService = app.get(LicenseService)
+    const license = await licenseService.getActivatedLicense()
+    if (!license) {
+      loggerService.warn('[License] 系统未激活，请登录管理后台「系统授权」页面输入 License Key')
+    } else {
+      const info = await licenseService.getLicenseInfo()
+      loggerService.log(
+        `[License] 授权状态：${info.status}，客户：${info.customer || '-'}，过期时间：${info.expiresAt || '-'}`,
+      )
+    }
+  } catch (e: any) {
+    loggerService.error(`[License] 启动校验失败：${e?.message || e}`)
+  }
 
   const port = process.env.PORT || 3000
   await app.listen(port)
