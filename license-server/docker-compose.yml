@@ -4,8 +4,11 @@ services:
     container_name: qys_license
     restart: unless-stopped
     ports:
-      # 仅监听本机，通过 qys_nginx 反向代理对外（端口 3002 避免与 qys_admin 的 3001 冲突）
-      - "127.0.0.1:3002:3002"
+      # 端口绑定地址可配置（通过 .env 的 LICENSE_BIND 控制，默认仅本机监听）：
+      # - 同机部署：后端容器需访问时设 LICENSE_BIND=内网IP（如 10.0.16.3），后端填 http://内网IP:3002/api
+      # - 独立部署：设 LICENSE_BIND=0.0.0.0 或内网 IP，后端填 http://新服务器IP:3002/api
+      # license-server 不依赖主项目网络，可独立部署到任意服务器
+      - "${LICENSE_BIND:-127.0.0.1}:3002:3002"
     volumes:
       - ./data:/app/data
     environment:
@@ -13,11 +16,3 @@ services:
       # 管理面板鉴权密钥，部署时务必替换为强随机值
       - ADMIN_KEY=${ADMIN_KEY:-change-me}
       - PORT=3002
-    networks:
-      - qys_network
-
-# 加入后端所在网络，使 qys_api 容器可通过 http://qys_license:3002/api/verify 心跳
-networks:
-  qys_network:
-    external: true
-    name: qiyuanshe_qys_network

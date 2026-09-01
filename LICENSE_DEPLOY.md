@@ -203,7 +203,9 @@ node generate-license.js ~/license-keys/license_private.pem
 
 ## 五、部署许可证服务器（license-server）
 
-`license-server/` 是独立服务，不依赖主项目。建议部署到服务器 `/usr/local/src/qiyuanshe-license/`。
+`license-server/` 是**完全独立**的服务，不依赖主项目的 Docker 网络，可部署到任意服务器（与主项目同机，或独立一台均可）。建议目录 `/usr/local/src/qiyuanshe-license/`。
+
+> 后端通过 `LICENSE_SERVER_URL` 环境变量指向 license-server 的地址（内网 IP 或域名），因此 license-server 迁移到新服务器时，只需更新后端这一处配置即可，不影响已激活客户（本地验签兜底）。
 
 ### 1. 拷贝代码并配置
 
@@ -217,9 +219,17 @@ cd /usr/local/src/qiyuanshe-license
 echo "ADMIN_KEY=$(openssl rand -hex 24)" > .env
 ```
 
-### 2. 启动
+### 2. 配置端口绑定并启动
+
+默认仅本机监听（`127.0.0.1:3002`）。若需让后端容器访问（同机部署的后端或远程后端），需把端口绑定到内网 IP 或 `0.0.0.0`：
 
 ```bash
+# 同机部署：绑定宿主机内网 IP，后端容器经 http://内网IP:3002/api 访问
+echo "LICENSE_BIND=10.0.16.3" >> .env   # 换成你的服务器内网 IP
+
+# 独立部署（单独一台服务器）：绑定 0.0.0.0 或该机内网 IP
+echo "LICENSE_BIND=0.0.0.0" >> .env
+
 docker compose up -d --build
 docker compose ps
 ```
@@ -230,14 +240,14 @@ docker compose ps
 |----|----|
 | 容器名 | `qys_license` |
 | 内部端口 | `3002` |
-| 宿主机映射 | `127.0.0.1:3002`（仅本机，经 nginx 反代对外） |
-| 网络 | `qiyuanshe_qys_network`（与后端 `qys_api` 同网络） |
+| 宿主机映射 | `${LICENSE_BIND:-127.0.0.1}:3002`（默认仅本机，可改为内网 IP / `0.0.0.0`） |
+| 网络 | 独立（不依赖主项目网络，可单独迁移到任意服务器） |
 | 数据 | `./data/license.db`（SQLite，随卷持久化） |
 | 鉴权 | 管理接口需请求头 `X-Admin-Key`，未配置时 fail-closed |
 
 ### 3. 反向代理（可选）
 
-如需通过公网域名访问管理面板，在 `qys_nginx` 中增加：
+如需通过公网域名访问管理面板，在 `qys_nginx` 中增加（`proxy_pass` 指向宿主机内网 IP）：
 
 ```nginx
 server {
@@ -245,7 +255,7 @@ server {
     server_name license.你的域名;
 
     location / {
-        proxy_pass http://qys_license:3002;
+        proxy_pass http://10.0.16.3:3002;   # 宿主机内网 IP（license-server 绑定到内网 IP）
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -253,7 +263,7 @@ server {
 }
 ```
 
-> 后端容器与 `qys_license` 同网络，可直接用 `http://qys_license:3002` 访问，无需公网域名。
+> 后端访问 license-server 无需公网域名，直接用内网 IP `http://内网IP:3002/api` 即可（见「六」）。管理面板远程访问推荐 SSH 隧道，无需反向代理。
 
 ---
 
@@ -264,11 +274,14 @@ server {
 在项目根目录 `.env` 中新增（`LICENSE_SERVER_URL` 必须配置为许可证服务器地址，否则无法激活）：
 
 ```env
-# 指向 /api 前缀，后端会在其后拼接具体端点
-LICENSE_SERVER_URL=http://qys_license:3002/api
+# 指向 license-server 的 /api 前缀（后端会在此后拼接 /activate、/heartbeat、/deactivate、/activations）
+# 同机部署填内网 IP；独立部署填 license-server 所在服务器的内网 IP 或域名
+LICENSE_SERVER_URL=http://10.0.16.3:3002/api
 # 当前部署域名，上报给许可证服务器用于展示实例归属
 APP_DOMAIN=你的域名
 ```
+
+> ⚠️ `LICENSE_SERVER_URL` 必须指向 `/api` **前缀**，不要写成 `/api/verify`（那是完整端点，写成它会拼接出 `/api/verify/activate` 等错误路径）。
 
 ### 2. 拉取并重建
 
@@ -353,6 +366,17 @@ curl http://127.0.0.1:3002/health     # 期望 {"success":true,"status":"ok"}
 ```
 
 `restore.sh` 会自动：停止容器 → 留底当前库（`license.db.pre-restore.<时间戳>`）→ 覆盖数据库并清理 WAL/SHM → 重启容器。
+
+#### 7.1 把 license-server 迁移到独立的新服务器
+
+license-server 不依赖主项目网络，可整体搬到任意一台服务器：
+
+1. **新服务器部署**：拷贝 `license-server/` 目录 → `echo "ADMIN_KEY=..." > .env` → `echo "LICENSE_BIND=0.0.0.0" >> .env` → `docker compose up -d --build`。
+2. **迁移数据**：把源机 `backups/license_*.db` 用 `scp` 传到新服务器，再执行 `restore.sh` 恢复。
+3. **改后端指向**：在**主项目** `.env` 中把 `LICENSE_SERVER_URL` 改成新服务器地址，如 `http://新服务器内网IP:3002/api`，然后 `docker compose up -d` 重启后端。
+4. **验证**：新服务器 `curl http://127.0.0.1:3002/health`；主项目后端次日 03:00 心跳或手动激活一次确认连通。
+
+> 迁移期间已激活客户不受影响（本地验签兜底）；只有「新激活 / 续费 / 解绑」需等待第 3 步后端指向新地址后恢复。
 
 > 说明：license-server 数据丢失不会让已激活客户「无法激活/无法用」（客户本地验签兜底），备份的核心价值是保住**吊销记录**与**激活计数台账**，便于审计与快速恢复管控能力。
 
