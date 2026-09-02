@@ -216,7 +216,7 @@
               <text>{{ tag.name }}</text>
             </view>
           </view>
-          <view v-if="profileData.aboutMe.aiProfileText" class="ai-profile-block">
+          <view v-if="profileData.aboutMe.aiProfileText && systemStore.isAiFeatureEnabled('profile_gen')" class="ai-profile-block">
             <view class="ai-label">
               <view class="ico ico-sparkle ico-sm ai-dot"></view>
               <text class="ai-label-text">AI印象</text>
@@ -963,6 +963,7 @@ async function fetchVoiceIntro() {
 
 onMounted(async () => {
   await fetchVoiceEnabled()
+  systemStore.loadAiFeatureConfig(true) // force=true 确保 AI 开关关闭后详情页同步隐藏 AI 印象
   uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
   const pages = getCurrentPages()
   const opts = (pages[pages.length - 1] as any)?.options || {}
