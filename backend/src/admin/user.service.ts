@@ -1379,6 +1379,7 @@ export class AdminUserService {
     const users = await this.userRepository.find({
       where: [
         { nickname: Like(`%${keyword}%`), isDeleted: 0 },
+        { userId: Like(`%${keyword}%`), isDeleted: 0 },
       ],
       select: ['id', 'nickname', 'avatar'],
       take: 20,

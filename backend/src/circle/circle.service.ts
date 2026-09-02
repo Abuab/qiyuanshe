@@ -209,7 +209,7 @@ export class CircleService {
 
     if (keyword && keyword.trim().length > 0) {
       qb.andWhere(
-        '(user.nickname LIKE :kw OR CAST(user.id AS CHAR) LIKE :kw)',
+        '(user.nickname LIKE :kw OR user.userId LIKE :kw OR CAST(user.id AS CHAR) LIKE :kw)',
         { kw: `%${keyword.trim()}%` },
       )
     }
@@ -299,7 +299,7 @@ export class CircleService {
     if (!keyword || keyword.trim().length === 0) return []
     return this.userRepo.createQueryBuilder('user')
       .select(['user.id', 'user.nickname', 'user.avatar'])
-      .where('user.nickname LIKE :kw', { kw: `%${keyword.trim()}%` })
+      .where('(user.nickname LIKE :kw OR user.userId LIKE :kw)', { kw: `%${keyword.trim()}%` })
       .andWhere('user.status = 1')
       .andWhere('user.isDeleted = 0')
       .take(20)
