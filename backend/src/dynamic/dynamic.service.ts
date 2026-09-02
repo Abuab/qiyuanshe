@@ -140,7 +140,7 @@ export class DynamicService {
     const list = users.map((user) => {
       const personalityTags = this.parseJsonField(user.personalityTags)
       const hopeTaTags = this.parseJsonField(user.hopeTaTags)
-      const introText = personalityTags
+      const introText = (personalityTags || hopeTaTags)
         ? this.buildIntroFromTags(personalityTags, hopeTaTags, introTemplate, introSep)
         : ''
 
