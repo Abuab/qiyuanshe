@@ -1,6 +1,6 @@
 # 栖缘社 License 授权系统 — 部署与运维说明
 
-> 本文档覆盖「**License Key + 离线验签 + 机器指纹绑定**」授权方案从签发到部署、激活、运维的完整流程。
+> 本文档覆盖「**License Key + 离线验签**」授权方案从签发到部署、激活、运维的完整流程。
 
 ---
 
@@ -9,9 +9,8 @@
 授权方案为**纯离线**模式，核心机制：
 
 - **RSA-SHA256 非对称签名**：授权方用私钥签发 License Key，客户后端用硬编码公钥验签。
-- **机器指纹绑定（防复制）**：签发时可把 License Key 绑定到客户服务器的机器指纹（多源组合 SHA256），后端每次验签时对比本机指纹，防止同一 License Key 被复制到其他服务器。
 - **fail-closed**：无激活记录 / 验签失败时，后端按 `unauthorized` 处理，只保留只读白名单（浏览、实名认证），写功能被拦截。
-- **无远程吊销、无激活计数**：纯离线模式不依赖任何许可证服务器，取消 License Key 只能靠客户自行停用；防复制完全依赖机器指纹绑定。
+- **无远程吊销、无激活计数**：纯离线模式不依赖任何许可证服务器，取消授权只能靠客户自行停用或 License Key 到期自动失效。
 
 ### 授权四态
 
@@ -29,7 +28,7 @@
 | 组件 | 路径 | 说明 |
 |------|------|------|
 | 签发脚本 | `generate-license.js` | 本地工具，用私钥签发 License Key，**私钥绝不提交** |
-| 后端授权模块 | `backend/src/license/` | RSA 验签、机器指纹校验、授权状态 Guard |
+| 后端授权模块 | `backend/src/license/` | RSA 验签、授权状态 Guard |
 | 后端实体 | `backend/src/entities/SystemLicense.ts` | `system_licenses` 表 |
 | 后端迁移 | `backend/migrations/1757000000000*`、`1757000000001*`、`1757000000002*` | 建表与字段调整 |
 | 管理后台接口 | `backend/src/admin/admin-license.controller.ts` | 状态查询 / 激活接口 |
@@ -96,7 +95,7 @@ cat license_public.pem   # 复制新公钥内容
 
 2. 把新公钥替换到 `backend/src/license/license.service.ts` 的 `LICENSE_PUBLIC_KEY`。
 3. 重新部署后端，使新公钥生效（此刻起旧 key 全部验签失败）。
-4. 按客户台账（客户ID / 客户名称 / 过期时间 / 域名 / 机器指纹）**逐客户重新签发**，并把新 key 发给客户重新激活。
+4. 按客户台账（客户ID / 客户名称 / 过期时间 / 域名）**逐客户重新签发**，并把新 key 发给客户重新激活。
 
 > 结论：私钥丢失可恢复，但代价大，核心是提前做好离线备份。
 
@@ -123,7 +122,6 @@ python3 generate-license.py ~/license-keys/license_private.pem
 | 客户ID | 如 `C20260901001`（必填） |
 | 客户名称 | 如「某某婚恋工作室」（必填） |
 | 绑定域名 | `*` 表示不限，或填具体域名 |
-| 绑定机器指纹 | 可选，防复制；让客户在管理后台「系统授权」页查看机器指纹并发送 |
 | 授权天数 | 整数（如 `365`），填了会自动计算到期日；直接回车则改为填写下面的过期时间 |
 | 过期时间 | `YYYY-MM-DD`（仅当「授权天数」留空时填写） |
 | 授权状态 | `valid` / `grace_period` / `expired`（默认 `valid`） |
@@ -131,10 +129,7 @@ python3 generate-license.py ~/license-keys/license_private.pem
 脚本输出：
 
 1. **License Key**：Base64 编码的 `{ payload, signature }`，发给客户用于激活。
-2. **授权信息**：payload 明文（含 `machineId`，若已绑定）。
-3. **机器指纹绑定提示**：是否已绑定机器指纹。
-
-> 绑定机器指纹后，客户服务器必须保证后端本机计算出的多源指纹（或显式配置的 `LICENSE_MACHINE_ID`）与该值一致，否则无法激活。
+2. **授权信息**：payload 明文。
 
 ---
 
@@ -145,15 +140,10 @@ python3 generate-license.py ~/license-keys/license_private.pem
 在项目根目录 `.env` 中配置（详见 `.env.example` 的 License 段落）：
 
 ```env
-# 机器指纹（可选）。留空时后端自动多源采集并做 SHA256 组合。
-LICENSE_MACHINE_ID=
-
 # License Key 数据库加密密钥（AES-256-GCM，64 位十六进制 = 32 字节）。
 # 生成：openssl rand -hex 32；未配置时回退用内置公钥派生密钥。
 LICENSE_ENCRYPT_KEY=
 ```
-
-`docker-compose.yml` 已把宿主机 `/etc/machine-id` 以只读方式挂载进 api 容器（`/etc/machine-id:/etc/machine-id:ro`），作为机器指纹的其中一个采集来源。
 
 > 可选（防 A 客户密钥在 B 客户镜像上激活）：构建镜像时注入客户标识 `--build-arg CUSTOMER_ID=<customerId>`，激活时后端会校验 License Key 内的 `customerId` 与构建标识一致。
 
@@ -186,7 +176,7 @@ sleep 3 && docker compose ps
 
 登录管理后台 →「系统授权」页，粘贴签发的 License Key，点击「激活 / 更新」。
 
-后端流程：本地 RSA 验签 → 校验机器指纹 →（构建时注入客户标识校验）→ AES-256-GCM 加密 licenseKey → 写入本地 `system_licenses` 记录。
+后端流程：本地 RSA 验签 →（构建时注入客户标识校验）→ AES-256-GCM 加密 licenseKey → 写入本地 `system_licenses` 记录。
 
 ### 2. 续费 / 换发
 
@@ -194,7 +184,7 @@ sleep 3 && docker compose ps
 
 ### 3. 客户换服务器
 
-客户换服务器（机器指纹变化）时，需按新服务器的机器指纹重新签发 License Key。若签发时未绑定机器指纹，则同一 License Key 可直接复制到新服务器激活（无防复制保护）。
+由于不绑定机器指纹，同一 License Key 可直接复制到新服务器激活。换服务器时只需把原 License Key 在新服务器上重新激活即可。
 
 ---
 
@@ -224,7 +214,6 @@ sleep 3 && docker compose ps
 1. `docker compose ps`：`qys_api` 等容器均 `healthy`。
 2. 管理后台「系统授权」页显示「已授权 / 正常」，客户ID、过期时间正确。
 3. 小程序写功能正常，未被误锁。
-4. 将同一 License Key 复制到另一台机器指纹不同的服务器激活，应报「机器指纹不匹配」（仅在绑定了机器指纹时验证）。
 
 ---
 
@@ -250,8 +239,4 @@ docker compose up -d --build
 
 **Q：同一 License Key 能被复制到多台服务器吗？**
 
-若签发时绑定了机器指纹，则不能——其他服务器机器指纹不匹配，验签失败进入 `unauthorized`。若签发时未绑定机器指纹，则可复制，因此建议正式交付时一律绑定机器指纹。
-
-**Q：客户服务器重装导致 `/etc/machine-id` 变化怎么办？**
-
-重装系统可能改变 `/etc/machine-id`，导致原绑定指纹失效。需联系授权方按新指纹重新签发 License Key。
+能。纯离线模式不绑定机器指纹，同一 License Key 可在任意服务器上激活。如需限制授权范围，可通过签发脚本中的客户标识（`customerId`）+ 构建时注入的 `BUILD_CUSTOMER_ID` 实现「A 客户的 Key 无法在 B 客户的镜像上激活」。

@@ -55,9 +55,9 @@
 
 ## License 授权状态控制
 
-平台采用「**License Key + 离线验签 + 机器指纹绑定**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key（可绑定客户服务器机器指纹），客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥本地验签并校验机器指纹，无需在线许可证服务器。授权过期或未授权时，小程序写功能与管理后台被限制。
+平台采用「**License Key + 离线验签**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥本地验签，无需在线许可证服务器。授权过期或未授权时，小程序写功能与管理后台被限制。
 
-**防复制**：签发时可绑定客户服务器的机器指纹（多源组合 SHA256，在管理后台「系统授权」页查看），后端每次验签时对比本机指纹，防止同一 License Key 复制到其他服务器。纯离线模式无远程吊销与激活计数，防复制完全依赖机器指纹绑定。数据库中的 License Key 以 AES-256-GCM 加密存储（`LICENSE_ENCRYPT_KEY`，未配置时回退用内置公钥派生密钥）。
+纯离线模式无远程吊销与激活计数，授权范围由 License Key 内的过期时间与客户标识控制。数据库中的 License Key 以 AES-256-GCM 加密存储（`LICENSE_ENCRYPT_KEY`，未配置时回退用内置公钥派生密钥）。
 
 > 客户侧交付说明见 [LICENSE_CUSTOMER_GUIDE.md](LICENSE_CUSTOMER_GUIDE.md)；完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
@@ -74,7 +74,7 @@
 
 - **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
 - **fail-closed**：无授权记录或验签失败时按 `unauthorized` 处理，防破解优先。
-- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + 机器指纹校验 + `SystemLicense` 存储，licenseKey 以 AES-256-GCM 加密）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。核心业务 Service 写方法（发动态、AI 匹配/聊天、下单/开通 VIP、发消息、红娘操作、改资料等）也在方法内做 `licenseService.isActive()` 分散校验，防止仅注释 Guard 即绕过授权。
+- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储，licenseKey 以 AES-256-GCM 加密）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。核心业务 Service 写方法（发动态、AI 匹配/聊天、下单/开通 VIP、发消息、红娘操作、改资料等）也在方法内做 `licenseService.isActive()` 分散校验，防止仅注释 Guard 即绕过授权。
 - **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key 与授权状态查看（`GET/POST /api/admin/license`）。
 - **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
 - **公开状态接口**：`GET /api/system/license`。

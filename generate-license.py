@@ -10,7 +10,7 @@
 - 使用 RSA 私钥对 payload 做 SHA256 签名，输出 Base64 License Key 发给客户
 - 公钥已硬编码在后端 backend/src/license/license.service.ts 中
 - 私钥绝不可提交到代码仓库
-- 纯离线模式：本地验签 + 机器指纹绑定（可选），无远程吊销与激活计数
+- 纯离线模式：本地验签，无远程吊销与激活计数
 - 依赖：pip install cryptography
 """
 import sys
@@ -74,8 +74,6 @@ def main():
 
     domain = input('绑定域名 (* 表示不限): ').strip() or '*'
 
-    machine_id = input('绑定机器指纹 (可选，防复制；客户在管理后台「系统授权」页查看并发送): ').strip()
-
     days = input('授权天数 (整数，如 365；直接回车则改为填写过期时间): ').strip()
     if days:
         try:
@@ -109,8 +107,6 @@ def main():
         'features': ALL_FEATURES,
         'issuedAt': now_iso_ms(),
     }
-    if machine_id:
-        payload['machineId'] = machine_id
 
     # 关键：ensure_ascii=False 保证中文不转义；separators 保证紧凑格式，与后端 JSON.stringify 逐字节一致
     payload_str = json.dumps(payload, ensure_ascii=False, separators=(',', ':'))
@@ -133,8 +129,6 @@ def main():
     print(license_key)
     print('\n========== 授权信息 ==========')
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    print('\n========== 机器指纹绑定 ==========')
-    print('已绑定机器指纹: %s' % machine_id if machine_id else '未绑定机器指纹（该 License 可复制到任意服务器）')
 
 
 if __name__ == '__main__':
