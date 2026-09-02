@@ -103,7 +103,7 @@
                 <text v-if="profileData.basicInfo.education">{{ profileData.basicInfo.education }}</text>
               </view>
               <!-- 人格类型标签（该用户已测试时展示，点击查看简化雷达图） -->
-              <view v-if="targetPersonality" class="personality-tag" @tap="openPersonalityPopup">
+              <view v-if="targetPersonality && floatEnabled" class="personality-tag" @tap="openPersonalityPopup">
                 <image class="pt-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
                 <text class="pt-text">{{ targetPersonality.nickname || targetPersonality.typeName }}</text>
               </view>
@@ -274,7 +274,7 @@
         </view>
 
         <!-- ========== 浏览者未测试引导（文案由后台配置） ========== -->
-        <view v-if="showViewerTestGuide && !profileData.top.isSelf && licenseStore.isFeatureEnabled(LICENSE_FEATURES.PERSONALITY_TEST)" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
+        <view v-if="showViewerTestGuide && !profileData.top.isSelf && floatEnabled && licenseStore.isFeatureEnabled(LICENSE_FEATURES.PERSONALITY_TEST)" class="ai-entry-card viewer-guide-card" @tap="goViewerTest">
           <view class="ai-entry-content">
             <image class="ai-entry-icon-img" src="/static/icons/personality.png" mode="aspectFit" />
             <view class="ai-entry-info">
@@ -957,6 +957,7 @@ async function fetchVoiceIntro() {
 onMounted(async () => {
   await fetchVoiceEnabled()
   systemStore.loadAiFeatureConfig(true) // force=true 确保 AI 开关关闭后详情页同步隐藏 AI 印象
+  loadFloatConfig() // 首页浮动按钮 enabled 开关联动详情页测一测引导与人格类型标签
   uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
   const pages = getCurrentPages()
   const opts = (pages[pages.length - 1] as any)?.options || {}
@@ -1356,6 +1357,8 @@ const showPersonalityPopup = ref(false)
 const viewerTested = ref(false)                // 浏览者本人是否已测
 const viewerGuideText = ref('测一测')
 const viewerGuideItemId = ref<number | undefined>(undefined)
+// 首页浮动按钮（测一测/问媒）小程序端显示开关：详情页测一测引导与人格类型标签跟随一起显示/隐藏
+const floatEnabled = ref(true)
 // 浏览者本人未测试即展示引导（不依赖对方是否已测，符合需求6）
 const showViewerTestGuide = computed(() => !viewerTested.value)
 const personalityAdviceText = computed(() => {
@@ -1370,6 +1373,14 @@ const matchmakerReviewText = computed(() => {
   // 存在多条时只展示最新一条（后端按 createdAt DESC 排序，取首条）
   return reviews[0]?.content || ''
 })
+
+// 加载首页浮动按钮配置，详情页测一测引导与人格类型标签跟随其 enabled 开关
+const loadFloatConfig = async () => {
+  try {
+    const cfg: any = await request({ url: '/guide/floating-button', method: 'GET' })
+    floatEnabled.value = cfg?.enabled !== false
+  } catch { floatEnabled.value = true }
+}
 
 // 加载对方人格 + 浏览者自身测试状态（在资料加载后调用）
 const loadPersonalityInfo = async () => {
