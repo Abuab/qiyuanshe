@@ -307,18 +307,11 @@
               <text class="pt-value">{{ pt.value }}</text>
             </view>
           </view>
-          <view v-if="profileData.hopeTa.aiHopeText" class="ai-hope-block">
-            <view class="ai-label">
-              <view class="ico ico-sparkle ico-sm ai-dot"></view>
-              <text class="ai-label-text">AI期望解读</text>
-            </view>
-            <text class="ai-text">{{ profileData.hopeTa.aiHopeText }}</text>
-          </view>
           <view v-if="hopeText" class="hope-line-wrap">
             <view class="section-divider" />
             <text class="hope-line">{{ hopeText }}</text>
           </view>
-          <view v-if="!cleanedPartnerTags.length && !profileData.hopeTa.aiHopeText" class="empty-hint">
+          <view v-if="!cleanedPartnerTags.length && !hopeText" class="empty-hint">
             <text>TA还没填写期待哦～</text>
           </view>
           </template>
@@ -2061,7 +2054,7 @@ $text-hint: #999999;
   font-size: 24rpx; color: #111; font-weight: 400;
 }
 
-.ai-profile-block, .ai-hope-block {
+.ai-profile-block {
   background: #FAFAFA; border-radius: 16rpx; padding: 20rpx; margin-top: 6rpx;
 }
 

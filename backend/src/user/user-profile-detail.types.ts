@@ -114,10 +114,6 @@ export interface HopeTaSection {
   title: string
   /** 择偶条件标签 */
   partnerTags: PartnerTag[]
-  /** AI 生成的择偶期望文字 */
-  aiHopeText: string
-  /** 是否有 AI 期望描述 */
-  hasAiHopeText: boolean
 }
 
 // ===================== 6. 互动区 =====================

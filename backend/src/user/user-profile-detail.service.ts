@@ -425,8 +425,6 @@ export class UserProfileDetailService {
     return {
       title: 'Ta希望你',
       partnerTags,
-      aiHopeText: user.mateRequirement || '',
-      hasAiHopeText: !!user.mateRequirement,
     }
   }
 
