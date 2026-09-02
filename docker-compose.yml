@@ -82,6 +82,10 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        # 客户标识（用于 License Key 客户隔离）。构建时写入镜像，A 客户编译的镜像无法激活 B 客户的 Key。
+        # 留空则关闭该校验。需与签发 License Key 时的 customerId 保持一致。
+        CUSTOMER_ID: ${CUSTOMER_ID:-}
     container_name: qys_api
     restart: unless-stopped
     logging:
