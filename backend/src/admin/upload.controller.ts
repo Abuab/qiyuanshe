@@ -5,6 +5,8 @@ import {
   UseInterceptors,
   UseGuards,
   Logger,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { diskStorage } from 'multer'
@@ -88,7 +90,7 @@ export class UploadController {
         if (ALLOWED_MIME_TYPES.includes(file.mimetype) && ALLOWED_EXTENSIONS.includes(ext)) {
           cb(null, true)
         } else {
-          cb(new Error('只允许上传图片文件 (jpg, png, gif, webp, bmp)'), false)
+          cb(new HttpException('只允许上传图片文件 (jpg, png, gif, webp, bmp)', HttpStatus.BAD_REQUEST), false)
         }
       },
     }),
