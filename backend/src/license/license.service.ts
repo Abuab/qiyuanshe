@@ -1,3 +1,12 @@
+/**
+ * 栖缘社 - 授权管理系统
+ *
+ * 版权声明：Copyright © 2024-2025 [授权方名称]. All rights reserved.
+ * 本软件为商业授权产品，未经授权不得使用、复制、修改、分发。
+ * 违反授权协议将追究法律责任。
+ *
+ * 当前授权信息由 License Key 管理，非授权方签发的 License Key 无效。
+ */
 import { Injectable, Logger, Inject } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'

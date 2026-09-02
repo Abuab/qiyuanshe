@@ -62,7 +62,7 @@ def main():
     with open(PRIVATE_KEY_PATH, 'rb') as f:
         private_key = serialization.load_pem_private_key(f.read(), password=None)
 
-    customer_id = input('客户ID (如 C20260901001): ').strip()
+    customer_id = input('客户ID (如 QYS-PROD-001): ').strip()
     if not customer_id:
         print('客户ID不能为空')
         sys.exit(1)
@@ -72,9 +72,9 @@ def main():
         print('客户名称不能为空')
         sys.exit(1)
 
-    domain = input('绑定域名 (* 表示不限): ').strip() or '*'
+    domain = input('绑定域名 (直接回车表示不限): ').strip() or '*'
 
-    days = input('授权天数 (整数，如 365；直接回车则改为填写过期时间): ').strip()
+    days = input('授权天数 (整数，如 365；直接回车表示永久授权): ').strip()
     if days:
         try:
             n = int(days)
@@ -86,12 +86,7 @@ def main():
             sys.exit(1)
         expires_at = (datetime.now() + timedelta(days=n)).strftime('%Y-%m-%d')
     else:
-        expires_at = input('过期时间 (YYYY-MM-DD): ').strip()
-        try:
-            datetime.strptime(expires_at, '%Y-%m-%d')
-        except ValueError:
-            print('过期时间格式应为 YYYY-MM-DD')
-            sys.exit(1)
+        expires_at = '2099-12-31'
 
     status = input('授权状态 (valid/grace_period/expired, 默认 valid): ').strip() or 'valid'
     if status not in ('valid', 'grace_period', 'expired'):

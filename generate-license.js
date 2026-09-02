@@ -11,9 +11,9 @@
  * - 私钥绝不可提交到代码仓库
  * - 纯离线模式：本地验签，无远程吊销与激活计数
  */
-const crypto = require('crypto')
-const fs = require('fs')
-const readline = require('readline')
+import crypto from 'crypto'
+import fs from 'fs'
+import readline from 'readline'
 
 const PRIVATE_KEY_PATH = process.argv[2] || './license_private.pem'
 
@@ -49,7 +49,7 @@ async function main() {
   const privateKey = fs.readFileSync(PRIVATE_KEY_PATH)
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 
-  const customerId = (await question(rl, '客户ID (如 C20260901001): ')).trim()
+  const customerId = (await question(rl, '客户ID (如 QYS-PROD-001): ')).trim()
   if (!customerId) {
     console.error('客户ID不能为空')
     process.exit(1)
@@ -61,9 +61,9 @@ async function main() {
     process.exit(1)
   }
 
-  const domain = (await question(rl, '绑定域名 (* 表示不限): ')).trim() || '*'
+  const domain = (await question(rl, '绑定域名 (直接回车表示不限): ')).trim() || '*'
 
-  const days = (await question(rl, '授权天数 (整数，如 365；直接回车则改为填写过期时间): ')).trim()
+  const days = (await question(rl, '授权天数 (整数，如 365；直接回车表示永久授权): ')).trim()
   let expiresAt
   if (days) {
     const n = Number(days)
@@ -75,11 +75,7 @@ async function main() {
     const pad = (v) => String(v).padStart(2, '0')
     expiresAt = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   } else {
-    expiresAt = (await question(rl, '过期时间 (YYYY-MM-DD): ')).trim()
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiresAt)) {
-      console.error('过期时间格式应为 YYYY-MM-DD')
-      process.exit(1)
-    }
+    expiresAt = '2099-12-31'
   }
 
   const status = (await question(rl, '授权状态 (valid/grace_period/expired, 默认 valid): ')).trim() || 'valid'

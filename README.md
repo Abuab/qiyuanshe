@@ -81,6 +81,27 @@
 
 > 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）；完整签发、部署与运维流程见 [LICENSE_DEPLOY.md](LICENSE_DEPLOY.md)。
 
+## 授权说明
+
+本软件为商业授权源码，使用需获得授权方签发的有效 License Key。
+
+### 授权范围
+
+- 授权仅限于被授权方自身业务运营使用
+- 不得进行再销售、转授权、 sublicensing
+- 不得将源码、数据库、配置文件以任何形式提供给第三方
+- 不得对授权验证机制进行反向工程、反编译、删除或绕过
+
+### 授权方式
+
+1. 联系授权方购买授权
+2. 授权方使用 `node generate-license.js` 签发 License Key
+3. 在管理后台「系统授权」页面粘贴 License Key 激活
+
+### 违约责任
+
+违反上述授权范围的，授权方有权终止授权并追究法律责任。
+
 ## 技术栈
 
 ### 后端
@@ -1967,7 +1988,7 @@ docker exec -it qys_mysql mysql -u root -p -e "USE qys_match; SELECT id, usernam
 
 ## License
 
-本项目采用 [MIT License](LICENSE) 开源协议，完整授权条款见根目录 [LICENSE](LICENSE) 文件。
+本项目为商业授权产品，使用需获得授权方签发的有效 License Key。未经授权不得使用、复制、修改、分发，违反授权协议将追究法律责任。授权范围、授权方式与违约责任详见上文「授权说明」章节。
 
 ---
 
