@@ -155,11 +155,18 @@ function chooseImage() {
     sourceType: ['album', 'camera'],
     success: (res) => {
       const path = res.tempFilePaths?.[0]
-      if (path) {
-        localImagePath.value = path
-        authStatus.value = null
-        refreshPreview()
+      if (!path) return
+      // 后端 multer 限制 5MB，超限提前提示，避免提交后再被拒绝
+      const rawFiles = res.tempFiles
+      const file = Array.isArray(rawFiles) ? rawFiles[0] : rawFiles
+      const MAX_SIZE = 5 * 1024 * 1024
+      if (file && typeof file.size === 'number' && file.size > MAX_SIZE) {
+        uni.showToast({ title: '图片过大（最大 5MB），请重新选择', icon: 'none' })
+        return
       }
+      localImagePath.value = path
+      authStatus.value = null
+      refreshPreview()
     },
   })
 }

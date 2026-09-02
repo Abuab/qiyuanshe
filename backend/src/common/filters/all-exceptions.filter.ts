@@ -49,6 +49,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
         }
         code = typeof responseObj.code === 'number' ? responseObj.code : status
       }
+    } else if (this.isMulterFileTooLarge(exception)) {
+      // multer 文件大小超限（图片上传超过 5MB）
+      status = HttpStatus.BAD_REQUEST
+      message = '图片不能超过 5MB'
+      code = 400
+    } else if (this.isPayloadTooLarge(exception)) {
+      // body-parser JSON 请求体超限（base64 图片超过 10MB）
+      status = HttpStatus.PAYLOAD_TOO_LARGE
+      message = '上传内容过大，请压缩后重试'
+      code = 413
     } else if (exception instanceof Error) {
       // 非生产环境返回具体错误便于调试，生产环境仅返回通用错误防止信息泄露
       const isProd = process.env.NODE_ENV === 'production'
@@ -66,6 +76,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     response.status(status).json(result)
+  }
+
+  /** 判断是否为 multer 文件大小超限错误（图片上传 > 5MB） */
+  private isMulterFileTooLarge(exception: unknown): boolean {
+    if (typeof exception !== 'object' || exception === null) return false
+    const e = exception as { name?: unknown; code?: unknown }
+    return e.name === 'MulterError' && e.code === 'LIMIT_FILE_SIZE'
+  }
+
+  /** 判断是否为 body-parser 请求体超限错误（base64 图片 > 10MB） */
+  private isPayloadTooLarge(exception: unknown): boolean {
+    if (typeof exception !== 'object' || exception === null) return false
+    const e = exception as { type?: unknown }
+    return e.type === 'entity.too.large'
   }
 
   /**
