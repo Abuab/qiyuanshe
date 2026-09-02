@@ -24,10 +24,10 @@
         </el-descriptions-item>
         <el-descriptions-item label="客户ID">{{ licenseInfo.customerId || '-' }}</el-descriptions-item>
         <el-descriptions-item label="客户名称">{{ licenseInfo.customer || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="过期时间">{{ licenseInfo.expiresAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="过期时间">{{ formatDate(licenseInfo.expiresAt) }}</el-descriptions-item>
         <el-descriptions-item label="剩余天数">{{ licenseInfo.graceDaysLeft }} 天</el-descriptions-item>
         <el-descriptions-item label="绑定域名">{{ licenseInfo.domain || '不限' }}</el-descriptions-item>
-        <el-descriptions-item label="激活时间">{{ licenseInfo.activatedAt || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="激活时间">{{ formatDate(licenseInfo.activatedAt) }}</el-descriptions-item>
         <el-descriptions-item label="功能白名单" :span="2">
           <el-tag
             v-for="f in licenseInfo.features"
@@ -66,6 +66,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { licenseApi, type LicenseInfo } from '../../api/license'
+import { formatDate } from '../../utils/date'
 
 const licenseInfo = ref<LicenseInfo | null>(null)
 const licenseKeyInput = ref('')
