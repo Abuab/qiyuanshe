@@ -586,7 +586,7 @@ export class RecommendService {
       qb.andWhere('user.hometown LIKE :ht', { ht: `%${filters.hometown}%` })
     }
     if (filters.keyword) {
-      qb.andWhere('user.nickname LIKE :kw', { kw: `%${filters.keyword}%` })
+      qb.andWhere('(user.nickname LIKE :kw OR user.userId LIKE :kw)', { kw: `%${filters.keyword}%` })
     }
   }
 

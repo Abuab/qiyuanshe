@@ -127,6 +127,18 @@ export class AdminQuestionService {
   }
 
   async deleteAnswer(answerId: number) {
+    const answer = await this.answerRepository.findOne({ where: { id: answerId } })
+    if (!answer) return
     await this.answerRepository.delete(answerId)
+    // 删除回答后同步递减问题的回答计数器，避免列表回答数与详情不一致
+    if (answer.questionId) {
+      const question = await this.questionRepository.findOne({ where: { id: answer.questionId } })
+      if (question && question.answerCount > 0) {
+        await this.questionRepository.update(
+          { id: answer.questionId },
+          { answerCount: question.answerCount - 1 },
+        )
+      }
+    }
   }
 }
