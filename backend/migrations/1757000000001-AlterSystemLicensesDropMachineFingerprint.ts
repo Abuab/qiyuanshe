@@ -1,10 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 
 /**
- * 清理 system_licenses 表中旧「机器指纹强绑定」方案的 machineFingerprint 列。
+ * 清理 system_licenses 表中旧「机器指纹强绑定」方案遗留的 machineFingerprint 列。
  *
- * 纯离线授权下，机器指纹改为在签发 License Key 时写入 payload（machineId），
- * 由后端运行时读取本机指纹比对，无需在数据库中存储 machineFingerprint 列，故删除。
+ * 当前纯离线授权不再绑定机器指纹，此列已无用途，故删除。
  *
  * 本迁移对「从零部署」与「已上线升级」均安全：根据 information_schema 判断列是否存在后再执行。
  */

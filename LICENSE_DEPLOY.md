@@ -163,7 +163,7 @@ sleep 3 && docker compose ps
 后端容器启动时自动执行 `migration:run`，无需手动操作：
 
 - `1757000000000-CreateSystemLicensesTable`：创建 `system_licenses` 表。
-- `1757000000001-AlterSystemLicensesDropMachineFingerprint`：清理旧方案 `machineFingerprint` 列。
+- `1757000000001-AlterSystemLicensesDropMachineFingerprint`：清理旧方案遗留的 `machineFingerprint` 列。
 - `1757000000002-AlterSystemLicensesDropOnlineFields`：删除在线授权遗留的 `activationId`、`remoteStatus`、`remoteStatusUpdatedAt` 三个字段（按 information_schema 判断，对老库/新库均安全）。
 
 > ⚠️ 新代码为 fail-closed，重建后、激活前线上系统处于锁定状态，请尽快在管理后台激活。

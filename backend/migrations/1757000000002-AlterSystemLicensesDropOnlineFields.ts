@@ -7,7 +7,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm'
  * - remoteStatus（远程吊销状态）
  * - remoteStatusUpdatedAt（远程状态更新时间）
  *
- * 改为纯离线模式：本地 RSA 验签 + 机器指纹绑定，无远程心跳与吊销。
+ * 改为纯离线模式：本地 RSA 验签，无远程心跳与吊销。
  * 本迁移根据 information_schema 判断列是否存在后再执行，对「从零部署」与「已上线升级」均安全。
  */
 export class AlterSystemLicensesDropOnlineFields1757000000002 implements MigrationInterface {
