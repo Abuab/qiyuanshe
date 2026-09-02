@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
+import { Dynamic } from '../entities/Dynamic'
 import { AdminRole } from '../shared/enums'
 
 interface QuestionFilter {
@@ -20,6 +21,8 @@ export class AdminQuestionService {
     private readonly questionRepository: Repository<HotQuestion>,
     @InjectRepository(QuestionAnswer)
     private readonly answerRepository: Repository<QuestionAnswer>,
+    @InjectRepository(Dynamic)
+    private readonly dynamicRepository: Repository<Dynamic>,
   ) {}
 
   async list(filter: QuestionFilter, user?: { role?: string; id?: number }) {
@@ -130,6 +133,8 @@ export class AdminQuestionService {
     const answer = await this.answerRepository.findOne({ where: { id: answerId } })
     if (!answer) return
     await this.answerRepository.delete(answerId)
+    // 同步删除该回答关联的动态，避免动态页仍展示已删除的回答
+    await this.dynamicRepository.delete({ type: 'answer', referenceId: answerId })
     // 删除回答后同步递减问题的回答计数器，避免列表回答数与详情不一致
     if (answer.questionId) {
       const question = await this.questionRepository.findOne({ where: { id: answer.questionId } })
