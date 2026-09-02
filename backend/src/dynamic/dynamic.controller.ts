@@ -1,20 +1,11 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
-  Param,
   Query,
-  UseGuards,
-  Request,
   Headers,
-  ParseIntPipe,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { DynamicService } from './dynamic.service'
-import { JwtAuthGuard } from '../auth/guards'
-import { Result } from '../common/result'
-import { RequireLicense } from '../license/license.decorator'
 
 @Controller('dynamics')
 export class DynamicController {
@@ -47,23 +38,6 @@ export class DynamicController {
       type,
       gender || undefined,
     )
-    return { success: true, ...result }
-  }
-
-  @Post(':id/like')
-  @RequireLicense()
-  @UseGuards(JwtAuthGuard)
-  async toggleLike(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ) {
-    const result = await this.dynamicService.toggleLike(id, req.user.id)
-    return { success: true, ...result }
-  }
-
-  @Get(':id/like-users')
-  async getLikeUsers(@Param('id', ParseIntPipe) id: number) {
-    const result = await this.dynamicService.getLikeUsers(id)
     return { success: true, ...result }
   }
 }

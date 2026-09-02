@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
+import { Repository } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { Dynamic } from '../entities/Dynamic'
-import { AnswerLike } from '../entities/AnswerLike'
 import { AdminRole } from '../shared/enums'
 
 interface QuestionFilter {
@@ -24,8 +23,6 @@ export class AdminQuestionService {
     private readonly answerRepository: Repository<QuestionAnswer>,
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
-    @InjectRepository(AnswerLike)
-    private readonly answerLikeRepository: Repository<AnswerLike>,
   ) {}
 
   async list(filter: QuestionFilter, user?: { role?: string; id?: number }) {
@@ -94,16 +91,6 @@ export class AdminQuestionService {
   async delete(id: number) {
     // 同步删除该问题下所有回答关联的动态，避免动态页展示已删除问题的回答
     await this.dynamicRepository.delete({ type: 'answer', questionId: id })
-    // 同步删除该问题下所有回答的点赞记录，避免孤儿数据
-    const answers = await this.answerRepository.find({
-      where: { questionId: id },
-      select: ['id'],
-    })
-    if (answers.length > 0) {
-      await this.answerLikeRepository.delete({
-        answerId: In(answers.map((a) => a.id)),
-      })
-    }
     // 先删除关联的回答
     await this.answerRepository.delete({ questionId: id })
     // 再删除问题
@@ -132,7 +119,6 @@ export class AdminQuestionService {
         userId: a.userId,
         content: a.content,
         photos: a.photos,
-        likeCount: a.likeCount,
         status: a.status,
         createdAt: a.createdAt,
         userAvatar: a.user?.avatar || '',
@@ -150,8 +136,6 @@ export class AdminQuestionService {
     await this.answerRepository.delete(answerId)
     // 同步删除该回答关联的动态，避免动态页仍展示已删除的回答
     await this.dynamicRepository.delete({ type: 'answer', referenceId: answerId })
-    // 同步删除该回答的点赞记录，避免孤儿数据
-    await this.answerLikeRepository.delete({ answerId })
     // 删除回答后同步递减问题的回答计数器，避免列表回答数与详情不一致
     if (answer.questionId) {
       const question = await this.questionRepository.findOne({ where: { id: answer.questionId } })

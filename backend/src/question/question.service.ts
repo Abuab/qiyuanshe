@@ -1,10 +1,9 @@
 import { Injectable, NotFoundException, ForbiddenException, Optional, OnModuleInit, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository, DataSource, In } from 'typeorm'
+import { Repository, In } from 'typeorm'
 import { HotQuestion } from '../entities/HotQuestion'
 import { QuestionAnswer } from '../entities/QuestionAnswer'
 import { User } from '../entities/User'
-import { AnswerLike } from '../entities/AnswerLike'
 import { AuditLog } from '../entities/AuditLog'
 import { DynamicService } from '../dynamic/dynamic.service'
 import { AuditService } from '../audit/audit.service'
@@ -57,12 +56,9 @@ export class QuestionService implements OnModuleInit {
     private readonly answerRepository: Repository<QuestionAnswer>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(AnswerLike)
-    private readonly answerLikeRepository: Repository<AnswerLike>,
     @InjectRepository(AuditLog)
     private readonly auditLogRepository: Repository<AuditLog>,
     private readonly dynamicService: DynamicService,
-    private readonly dataSource: DataSource,
     @Optional()
     private readonly auditService?: AuditService,
     @Optional()
@@ -145,12 +141,12 @@ export class QuestionService implements OnModuleInit {
 
     if (questions.length === 0) return []
 
-    // 批量查询所有问题的高赞回答（消除 N+1），再按问题分组取前 3 个
+    // 批量查询所有问题的最新回答（消除 N+1），再按问题分组取前 3 个
     const questionIds = questions.map((q) => q.id)
     const allAnswers = await this.answerRepository.find({
       where: { questionId: In(questionIds), status: 1 },
       relations: ['user'],
-      order: { likeCount: 'DESC' },
+      order: { createdAt: 'DESC' },
     })
     const answersByQuestion = new Map<number, QuestionAnswer[]>()
     for (const a of allAnswers) {
@@ -203,7 +199,6 @@ export class QuestionService implements OnModuleInit {
       userId: answer.userId,
       content: answer.content,
       photos: answer.photos || [],
-      likeCount: answer.likeCount,
       createdAt: answer.createdAt,
       user: answer.user ? {
         nickname: answer.user.nickname,
@@ -278,7 +273,6 @@ export class QuestionService implements OnModuleInit {
       content,
       photos,
       status: answerStatus,
-      likeCount: 0,
     } as any)
 
     const answerId = insertResult.identifiers[0]?.id
@@ -334,64 +328,6 @@ export class QuestionService implements OnModuleInit {
     return this.answerRepository.findOneOrFail({ where: { id: answerId } })
   }
 
-  async likeAnswer(answerId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
-    const queryRunner = this.dataSource.createQueryRunner()
-    await queryRunner.connect()
-    await queryRunner.startTransaction()
-
-    try {
-      const answer = await queryRunner.manager.findOne(QuestionAnswer, {
-        where: { id: answerId },
-        lock: { mode: 'pessimistic_write' },
-      })
-
-      if (!answer) {
-        throw new NotFoundException('回答不存在')
-      }
-
-      const existingLike = await queryRunner.manager.findOne(AnswerLike, {
-        where: { answerId, userId },
-      })
-
-      let liked = false
-
-      if (existingLike) {
-        await queryRunner.manager.remove(existingLike)
-        await queryRunner.manager.update(
-          QuestionAnswer,
-          { id: answerId },
-          { likeCount: () => 'likeCount - 1' },
-        )
-        liked = false
-      } else {
-        const newLike = this.answerLikeRepository.create({ answerId, userId })
-        await queryRunner.manager.save(newLike)
-        await queryRunner.manager.update(
-          QuestionAnswer,
-          { id: answerId },
-          { likeCount: () => 'likeCount + 1' },
-        )
-        liked = true
-      }
-
-      await queryRunner.commitTransaction()
-
-      const updatedAnswer = await this.answerRepository.findOne({
-        where: { id: answerId },
-      })
-
-      return {
-        liked,
-        likeCount: updatedAnswer?.likeCount || 0,
-      }
-    } catch (error) {
-      await queryRunner.rollbackTransaction()
-      throw error
-    } finally {
-      await queryRunner.release()
-    }
-  }
-
   // ===== 修改点 C：用户查看自己的回答（含 PENDING/REJECTED 状态） =====
   async getUserAnswers(userId: number, page: number = 1, limit: number = 20): Promise<{ list: any[]; total: number }> {
     const skip = (page - 1) * limit
@@ -411,7 +347,6 @@ export class QuestionService implements OnModuleInit {
       userId: a.userId,
       content: a.content,
       photos: a.photos || [],
-      likeCount: a.likeCount,
       status: a.status,
       statusText: a.status === ANSWER_STATUS.PENDING ? '审核中' : a.status === ANSWER_STATUS.REJECTED ? '未通过审核' : '已通过',
       createdAt: a.createdAt,

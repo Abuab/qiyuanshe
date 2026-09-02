@@ -354,22 +354,6 @@ CREATE TABLE `ai_user_profiles` (
   CONSTRAINT `FK_b2cb60c5faba406fda064cd0eb0` FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `answer_likes`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `answer_likes` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `answerId` bigint NOT NULL,
-  `userId` bigint NOT NULL,
-  `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UQ_answer_likes_user_answer` (`userId`,`answerId`),
-  KEY `IDX_bf86068d436c5cf83064866de9` (`answerId`),
-  KEY `IDX_e69ede58d9f4e7ca535d1545b7` (`userId`),
-  CONSTRAINT `FK_bf86068d436c5cf83064866de9c` FOREIGN KEY (`answerId`) REFERENCES `question_answers` (`id`),
-  CONSTRAINT `FK_e69ede58d9f4e7ca535d1545b7a` FOREIGN KEY (`userId`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `audit_logs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -626,22 +610,6 @@ CREATE TABLE `copy_stats` (
   KEY `IDX_copy_stats_slot` (`slotId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
-DROP TABLE IF EXISTS `dynamic_likes`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `dynamic_likes` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
-  `dynamicId` bigint NOT NULL,
-  `userId` bigint NOT NULL,
-  `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `UQ_dynamic_likes_user_dynamic` (`userId`,`dynamicId`),
-  KEY `IDX_c4c394244312688377c1116386` (`dynamicId`),
-  KEY `IDX_5bcb3e40004af4a6d88f114492` (`userId`),
-  CONSTRAINT `FK_5bcb3e40004af4a6d88f1144922` FOREIGN KEY (`userId`) REFERENCES `users` (`id`),
-  CONSTRAINT `FK_c4c394244312688377c11163862` FOREIGN KEY (`dynamicId`) REFERENCES `dynamics` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
 DROP TABLE IF EXISTS `dynamics`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -651,7 +619,6 @@ CREATE TABLE `dynamics` (
   `content` text COLLATE utf8mb4_unicode_ci,
   `images` json DEFAULT NULL,
   `totalImages` int NOT NULL DEFAULT '0',
-  `likeCount` int NOT NULL DEFAULT '0',
   `commentCount` int NOT NULL DEFAULT '0',
   `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   `status` tinyint NOT NULL DEFAULT '1',
@@ -1029,7 +996,6 @@ CREATE TABLE `question_answers` (
   `userId` bigint NOT NULL,
   `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
   `photos` json DEFAULT NULL,
-  `likeCount` int NOT NULL DEFAULT '0',
   `status` tinyint NOT NULL DEFAULT '0',
   `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (`id`),

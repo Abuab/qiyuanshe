@@ -294,12 +294,6 @@ export class AdminUserController {
     return Result.success(null, '用户更新成功')
   }
 
-  @Post(':id/regenerate-dynamics')
-  async regenerateDynamics(@Param('id', ParseIntPipe) id: number) {
-    const result = await this.userService.regenerateUserDynamics(id)
-    return Result.success(result)
-  }
-
   // ===== 关注管理（后台手动管理用户的关注和粉丝） =====
 
   @Get(':id/follow-stats')

@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { JwtModule } from '@nestjs/jwt'
 import { jwtConfig } from '../config/jwt'
 import { Dynamic } from '../entities/Dynamic'
-import { DynamicLike } from '../entities/DynamicLike'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
@@ -16,7 +15,7 @@ import { SystemModule } from '../system/system.module'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Dynamic, DynamicLike, User, UserPhoto, Follow, MatchRecord, Matchmaker, UserBlock]),
+    TypeOrmModule.forFeature([Dynamic, User, UserPhoto, Follow, MatchRecord, Matchmaker, UserBlock]),
     JwtModule.register({
       secret: jwtConfig.secret,
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },

@@ -4,10 +4,9 @@ import {
   HotQuestion,
   QuestionAnswer,
   User,
-  AnswerLike,
   AuditLog,
 } from '../entities'
-import { QuestionController, AnswerController } from './question.controller'
+import { QuestionController } from './question.controller'
 import { QuestionService } from './question.service'
 import { DynamicModule } from '../dynamic/dynamic.module'
 import { AdminModule } from '../admin/admin.module'
@@ -20,7 +19,6 @@ import { SystemModule } from '../system/system.module'
       HotQuestion,
       QuestionAnswer,
       User,
-      AnswerLike,
       AuditLog,
     ]),
     DynamicModule,
@@ -28,7 +26,7 @@ import { SystemModule } from '../system/system.module'
     AuditModule,
     SystemModule,
   ],
-  controllers: [QuestionController, AnswerController],
+  controllers: [QuestionController],
   providers: [QuestionService],
   exports: [QuestionService],
 })

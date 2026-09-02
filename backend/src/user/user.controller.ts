@@ -38,7 +38,6 @@ import { Result } from '../common/result'
 import { RequireLicense } from '../license/license.decorator'
 import { getDisplayName } from '../common/user-utils'
 import { normalizeImageUrl, resolveAvatarUrl } from '../common/image-url'
-import { DynamicService } from '../dynamic/dynamic.service'
 import { NotifyChannelService } from '../admin/notify-channel.service'
 import { RedisService } from '../common/redis.service'
 import { RecommendService } from './recommend.service'
@@ -81,7 +80,6 @@ export class UserController {
     @InjectRepository(AuditLog) private auditLogRepo: Repository<AuditLog>,
     @InjectRepository(MatchRecord) private matchRecordRepo: Repository<MatchRecord>,
     @InjectRepository(Follow) private followRepo: Repository<Follow>,
-    private readonly dynamicService: DynamicService,
     private readonly notifyService: NotifyChannelService,
     private readonly redisService?: RedisService,
     private readonly recommendService?: RecommendService,
@@ -202,7 +200,6 @@ export class UserController {
         questionTitle: a.question?.title || '',
         content: a.content,
         photos: a.photos || [],
-        likeCount: a.likeCount,
         status: a.status,
         createdAt: a.createdAt,
       })),
@@ -285,16 +282,6 @@ export class UserController {
       userId,
       userNickname: req.user.nickname || '',
       source: 'photo_upload',
-    }).catch(() => {})
-
-    // 自动生成动态：「更新了相册」（最多 3 张）
-    const userPhotos = await this.photoRepo.find({ where: { userId }, order: { sortOrder: 'ASC' }, take: 3 })
-    const photoUrls = userPhotos.map((p) => normalizeImageUrl(p.photoUrl))
-    this.dynamicService.autoCreateDynamic({
-      userId,
-      type: 'photo',
-      content: '更新了相册',
-      images: photoUrls,
     }).catch(() => {})
 
     // 清除推荐缓存：新增照片可能影响推荐列表中的用户展示

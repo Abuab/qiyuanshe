@@ -29,9 +29,6 @@ export class QuestionAnswer {
   @Column({ type: 'json', nullable: true })
   photos: string[]
 
-  @Column({ type: 'int', default: 0 })
-  likeCount: number
-
   @Column({ type: 'tinyint', default: 0 })
   status: number
 

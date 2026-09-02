@@ -2,13 +2,11 @@ import { Injectable, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
-import { DynamicLike } from '../entities/DynamicLike'
 import { MatchRecord } from '../entities/MatchRecord'
 import { Matchmaker } from '../entities/Matchmaker'
 import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
-import { UserBlock } from '../entities/UserBlock'
 import { SystemService } from '../system/system.service'
 import { LicenseService } from '../license/license.service'
 import { DynamicType } from '../shared/enums'
@@ -19,8 +17,6 @@ export class DynamicService {
   constructor(
     @InjectRepository(Dynamic)
     private readonly dynamicRepository: Repository<Dynamic>,
-    @InjectRepository(DynamicLike)
-    private readonly dynamicLikeRepository: Repository<DynamicLike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(UserPhoto)
@@ -31,8 +27,6 @@ export class DynamicService {
     private readonly matchRecordRepository: Repository<MatchRecord>,
     @InjectRepository(Matchmaker)
     private readonly matchmakerRepository: Repository<Matchmaker>,
-    @InjectRepository(UserBlock)
-    private readonly blockRepository: Repository<UserBlock>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
     private readonly licenseService: LicenseService,
@@ -169,10 +163,7 @@ export class DynamicService {
         questionId: undefined as number | undefined,
         questionTitle: undefined as string | undefined,
         createdAt: user.createdAt,
-        likeCount: 0,
         commentCount: 0,
-        isLiked: false,
-        likeUsers: [] as { id: number; nickname: string }[],
       }
     })
 
@@ -268,10 +259,7 @@ export class DynamicService {
         questionId: item.questionId,
         questionTitle: item.questionTitle,
         createdAt: item.createdAt,
-        likeCount: item.likeCount,
         commentCount: item.commentCount,
-        isLiked: false,
-        likeUsers: [] as { id: number; nickname: string }[],
       }
     })
 
@@ -324,10 +312,7 @@ export class DynamicService {
       questionId: undefined,
       questionTitle: undefined,
       createdAt: r.createdAt,
-      likeCount: 0,
       commentCount: 0,
-      isLiked: false,
-      likeUsers: [],
       // 红娘信息
       matchmakerId: r.matchmaker?.id || 0,
       matchmakerName: r.matchmaker?.name || '',
@@ -434,10 +419,10 @@ export class DynamicService {
       .trim()
   }
 
-  /** 自动生成动态（照片更新 / 问答回答），status=1 跳过审核 */
+  /** 自动生成动态（问答回答），status=1 跳过审核 */
   async autoCreateDynamic(params: {
     userId: number
-    type: 'photo' | 'answer'
+    type: 'answer'
     content?: string
     images?: string[]
     referenceId?: number
@@ -458,64 +443,11 @@ export class DynamicService {
       questionId: params.questionId || null,
       questionTitle: params.questionTitle || null,
       status: 1,
-      likeCount: 0,
       commentCount: 0,
     } as any)
 
     const dynamicId = insertResult.identifiers[0]?.id
     if (!dynamicId) return null
     return this.dynamicRepository.findOne({ where: { id: dynamicId } })
-  }
-
-  async toggleLike(dynamicId: number, userId: number) {
-    // ===== 拉黑检查：动态作者与当前用户之间不能存在拉黑关系 =====
-    const dynamic = await this.dynamicRepository.findOne({ where: { id: dynamicId }, select: ['userId'] })
-    if (dynamic) {
-      const blockExists = await this.blockRepository.findOne({
-        where: [
-          { blockerId: userId, blockedUserId: dynamic.userId },
-          { blockerId: dynamic.userId, blockedUserId: userId },
-        ],
-      })
-      if (blockExists) {
-        throw new ForbiddenException('无法操作')
-      }
-    }
-
-    const existing = await this.dynamicLikeRepository.findOne({
-      where: { dynamicId, userId },
-    })
-
-    if (existing) {
-      await this.dynamicLikeRepository.remove(existing)
-      await this.dynamicRepository.update(
-        { id: dynamicId },
-        { likeCount: () => 'likeCount - 1' },
-      )
-      return { liked: false, action: 'unliked' }
-    }
-
-    const newLike = this.dynamicLikeRepository.create({ dynamicId, userId })
-    await this.dynamicLikeRepository.save(newLike)
-    await this.dynamicRepository.update(
-      { id: dynamicId },
-      { likeCount: () => 'likeCount + 1' },
-    )
-    return { liked: true, action: 'liked' }
-  }
-
-  async getLikeUsers(dynamicId: number) {
-    const likes = await this.dynamicLikeRepository.find({
-      where: { dynamicId },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-      take: 50,
-    })
-    return {
-      likeUsers: likes.map((l) => ({
-        id: l.userId,
-        nickname: l.user?.nickname || '',
-      })),
-    }
   }
 }

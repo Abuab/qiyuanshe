@@ -574,7 +574,6 @@
               <el-table v-else :data="userAnswerList" stripe>
                 <el-table-column prop="questionTitle" label="问题" min-width="180" show-overflow-tooltip />
                 <el-table-column prop="content" label="回答内容" min-width="220" show-overflow-tooltip />
-                <el-table-column prop="likeCount" label="点赞" width="80" />
                 <el-table-column label="状态" width="100">
                   <template #default="{ row }">
                     <el-tag :type="getAnswerStatusType(row.status)" size="small">{{ getAnswerStatusName(row.status) }}</el-tag>

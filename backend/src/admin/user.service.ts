@@ -12,7 +12,6 @@ import { ProfileVisit } from '../entities/ProfileVisit'
 import { RealNameIdentity } from '../entities/RealNameIdentity'
 import { normalizeImageUrl, resolveStaticUrl, resolveAvatarUrl } from '../common/image-url'
 import { getDisplayName } from '../common/user-utils'
-import { DynamicService } from '../dynamic/dynamic.service'
 import { calcProfileScore } from '../common/profile-score'
 import { RedisService } from '../common/redis.service'
 import { AdminMessageTemplateService } from './message-template.service'
@@ -76,7 +75,6 @@ export class AdminUserService {
     private readonly followRepository: Repository<Follow>,
     @InjectRepository(ProfileVisit)
     private readonly visitRepository: Repository<ProfileVisit>,
-    private readonly dynamicService: DynamicService,
     private readonly redis: RedisService,
     @InjectRepository(RealNameIdentity)
     private readonly realNameIdentityRepo: Repository<RealNameIdentity>,
@@ -672,13 +670,6 @@ export class AdminUserService {
     })
     const saved = await this.userPhotoRepository.save(photo)
 
-    // 自动生成照片动态
-    this.dynamicService.autoCreateDynamic({
-      userId,
-      type: 'photo',
-      images: [normalizedUrl],
-    }).catch((err) => this.logger.error('添加照片动态失败:', err?.message || err))
-
     return saved
   }
 
@@ -1078,13 +1069,6 @@ export class AdminUserService {
         auditStatus: 1,
       }))
       await this.userPhotoRepository.insert(photos)
-
-      // 自动生成照片动态，新用户也能在动态页展示
-      this.dynamicService.autoCreateDynamic({
-        userId: saved.id,
-        type: 'photo',
-        images: data.photoUrls,
-      }).catch((err) => this.logger.error('创建用户照片动态失败:', err?.message || err))
     }
 
     // 创建审核记录
@@ -1173,33 +1157,6 @@ export class AdminUserService {
 
     // 清除推荐列表缓存，确保用户资料变更后首页列表及时更新
     this.redis.delByPattern('v3:rec:*').catch(() => {})
-  }
-
-  /** 重新生成用户照片动态（用于修复历史数据） */
-  async regenerateUserDynamics(userId: number) {
-    const photos = await this.userPhotoRepository.find({
-      where: { userId },
-      order: { sortOrder: 'ASC' },
-      take: 4,
-    })
-    if (photos.length === 0) {
-      return { success: false, message: '该用户没有照片' }
-    }
-    const photoUrls = photos.map((p) => {
-      const url = p.photoUrl
-      if (!url) return ''
-      if (url.startsWith('http')) return url
-      return url.startsWith('/') ? url : '/' + url
-    }).filter(Boolean)
-    if (photoUrls.length === 0) {
-      return { success: false, message: '照片 URL 为空' }
-    }
-    await this.dynamicService.autoCreateDynamic({
-      userId,
-      type: 'photo',
-      images: photoUrls,
-    })
-    return { success: true, message: `已生成动态，${photoUrls.length} 张照片` }
   }
 
   // ===== 关注管理 =====

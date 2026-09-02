@@ -19,8 +19,6 @@ export class AddMissingIndexes1751558400000 implements MigrationInterface {
     { table: 'users', name: 'IDX_users_vipLevel', ddl: 'ALTER TABLE `users` ADD INDEX `IDX_users_vipLevel` (`vipLevel`)' },
     { table: 'users', name: 'IDX_users_status', ddl: 'ALTER TABLE `users` ADD INDEX `IDX_users_status` (`status`)' },
     // ========== 唯一约束（防重复） ==========
-    { table: 'answer_likes', name: 'UQ_answer_likes_user_answer', ddl: 'ALTER TABLE `answer_likes` ADD UNIQUE INDEX `UQ_answer_likes_user_answer` (`userId`, `answerId`)' },
-    { table: 'dynamic_likes', name: 'UQ_dynamic_likes_user_dynamic', ddl: 'ALTER TABLE `dynamic_likes` ADD UNIQUE INDEX `UQ_dynamic_likes_user_dynamic` (`userId`, `dynamicId`)' },
     { table: 'user_blocks', name: 'UQ_user_blocks_blocker_blocked', ddl: 'ALTER TABLE `user_blocks` ADD UNIQUE INDEX `UQ_user_blocks_blocker_blocked` (`blockerId`, `blockedUserId`)' },
     { table: 'matchmaker_reviews', name: 'UQ_reviews_user_matchmaker', ddl: 'ALTER TABLE `matchmaker_reviews` ADD UNIQUE INDEX `UQ_reviews_user_matchmaker` (`userId`, `matchmakerId`)' },
     { table: 'matchmaker_comments', name: 'UQ_comments_user_matchmaker', ddl: 'ALTER TABLE `matchmaker_comments` ADD UNIQUE INDEX `UQ_comments_user_matchmaker` (`userId`, `matchmakerId`)' },

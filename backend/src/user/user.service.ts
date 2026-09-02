@@ -1114,12 +1114,8 @@ export class UserService {
       // 关注关系（我关注的 + 关注我的）
       { sql: 'DELETE FROM follows WHERE user_id = ? OR target_user_id = ?', desc: 'follows', params: (id) => [id, id] },
       // 问答
-      { sql: 'DELETE FROM answer_likes WHERE userId = ?', desc: 'answer_likes', params: (id) => [id] },
-      { sql: `DELETE al FROM answer_likes al INNER JOIN question_answers qa ON al.answerId = qa.id WHERE qa.userId = ?`, desc: 'answer_likes_on_own_answers', params: (id) => [id] },
       { sql: 'DELETE FROM question_answers WHERE userId = ?', desc: 'question_answers', params: (id) => [id] },
       // 动态
-      { sql: 'DELETE FROM dynamic_likes WHERE userId = ?', desc: 'dynamic_likes', params: (id) => [id] },
-      { sql: `DELETE dl FROM dynamic_likes dl INNER JOIN dynamics d ON dl.dynamicId = d.id WHERE d.userId = ?`, desc: 'dynamic_likes_on_own', params: (id) => [id] },
       { sql: 'DELETE FROM dynamics WHERE userId = ?', desc: 'dynamics', params: (id) => [id] },
       // 活动报名
       { sql: 'DELETE FROM activity_signups WHERE userId = ?', desc: 'activity_signups', params: (id) => [id] },

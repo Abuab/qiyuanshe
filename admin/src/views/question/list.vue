@@ -116,7 +116,6 @@
             </div>
             <div class="answer-dialog-content">{{ answer.content }}</div>
             <div class="answer-dialog-footer">
-              <span>点赞 {{ answer.likeCount || 0 }}</span>
               <el-button v-if="!isReadonly" type="danger" link size="small" @click="handleDeleteAnswerInList(answer)">删除</el-button>
             </div>
           </div>

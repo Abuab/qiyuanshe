@@ -125,7 +125,6 @@ export class UserProfileService {
         questionId: a.questionId,
         userId: a.userId,
         content: a.content,
-        likeCount: a.likeCount,
         status: a.status,
         createdAt: a.createdAt,
         questionTitle: a.question?.title || '未知问题',
@@ -301,7 +300,6 @@ export class UserProfileService {
       questionId,
       content,
       status: 0, // 待审核
-      likeCount: 0,
     })
     const saved = await this.answerRepository.save(answer)
 

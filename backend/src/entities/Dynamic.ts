@@ -18,7 +18,7 @@ export class Dynamic {
   @Column({ type: 'bigint' })
   userId: number
 
-  /** 动态类型：'photo' 更新相册 | 'answer' 回答问题 | 'text' 纯文字(仅后台) */
+  /** 动态类型：'answer' 回答问题 | 'text' 纯文字(仅后台)。'photo' 不再写入本表，由 users/user_photos 虚拟生成 */
   @Column({ type: 'varchar', length: 20, default: 'text' })
   type: string
 
@@ -42,9 +42,6 @@ export class Dynamic {
 
   @Column({ type: 'int', default: 0 })
   totalImages: number
-
-  @Column({ type: 'int', default: 0 })
-  likeCount: number
 
   @Column({ type: 'int', default: 0 })
   commentCount: number

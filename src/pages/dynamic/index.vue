@@ -292,7 +292,6 @@ interface DynamicItem {
   questionId?: number
   questionTitle?: string
   createdAt: string
-  likeCount: number
   commentCount: number
   // 红娘相关字段
   matchmakerId?: number

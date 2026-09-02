@@ -20,7 +20,6 @@ export interface Answer {
   userId: number
   content: string
   photos?: string[]
-  likeCount: number
   status: number
   createdAt: string
   user?: any
