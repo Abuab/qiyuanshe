@@ -60,6 +60,7 @@ interface SystemConfig {
   showMyLikesEntry: boolean
   showPersonalityEntry: boolean
   showQuestionEntry: boolean
+  showMyStats: boolean
   showMatchmakerPopup: boolean
   storeCert: {
     name: string
@@ -112,6 +113,7 @@ export const useSystemStore = defineStore('system', () => {
   const showMyLikesEntry = ref<boolean>(true)
   const showPersonalityEntry = ref<boolean>(true)
   const showQuestionEntry = ref<boolean>(true)
+  const showMyStats = ref<boolean>(true)
   const showMatchmakerPopup = ref<boolean>(true)
   const matchmakers = ref<Matchmaker[]>([])
   const icons = ref<IconConfig>(DEFAULT_ICONS)
@@ -166,6 +168,7 @@ export const useSystemStore = defineStore('system', () => {
           showMyLikesEntry.value = res.showMyLikesEntry !== undefined ? res.showMyLikesEntry : showMyLikesEntry.value
           showPersonalityEntry.value = res.showPersonalityEntry !== undefined ? res.showPersonalityEntry : showPersonalityEntry.value
           showQuestionEntry.value = res.showQuestionEntry !== undefined ? res.showQuestionEntry : showQuestionEntry.value
+          showMyStats.value = res.showMyStats !== undefined ? res.showMyStats : showMyStats.value
           showMatchmakerPopup.value = res.showMatchmakerPopup !== undefined ? res.showMatchmakerPopup : showMatchmakerPopup.value
           storeCert.value = res.storeCert ?? storeCert.value
           appVersion.value = res.appVersion ?? appVersion.value
@@ -231,6 +234,7 @@ export const useSystemStore = defineStore('system', () => {
           showMyLikesEntry.value = config.showMyLikesEntry !== undefined ? config.showMyLikesEntry : showMyLikesEntry.value
           showPersonalityEntry.value = config.showPersonalityEntry !== undefined ? config.showPersonalityEntry : showPersonalityEntry.value
           showQuestionEntry.value = config.showQuestionEntry !== undefined ? config.showQuestionEntry : showQuestionEntry.value
+          showMyStats.value = config.showMyStats !== undefined ? config.showMyStats : showMyStats.value
           showMatchmakerPopup.value = config.showMatchmakerPopup !== undefined ? config.showMatchmakerPopup : showMatchmakerPopup.value
           storeCert.value = config.storeCert ?? storeCert.value
           icons.value = config.icons ?? icons.value
@@ -315,6 +319,7 @@ export const useSystemStore = defineStore('system', () => {
       showMyLikesEntry: showMyLikesEntry.value,
       showPersonalityEntry: showPersonalityEntry.value,
       showQuestionEntry: showQuestionEntry.value,
+      showMyStats: showMyStats.value,
       showMatchmakerPopup: showMatchmakerPopup.value,
       storeCert: storeCert.value,
     }
@@ -354,6 +359,7 @@ export const useSystemStore = defineStore('system', () => {
     showMyLikesEntry,
     showPersonalityEntry,
     showQuestionEntry,
+    showMyStats,
     showMatchmakerPopup,
     storeCert,
     appVersion,

@@ -53,7 +53,7 @@
         </view>
 
         <!-- 统计行 -->
-        <view class="stats-row" v-if="isLoggedIn">
+        <view class="stats-row" v-if="isLoggedIn && systemStore.showMyStats">
           <view class="stat-item" @tap.stop="goToFollows">
             <text class="stat-label">关注</text>
             <text class="stat-num">{{ stats.following }}</text>
