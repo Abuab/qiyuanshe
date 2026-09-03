@@ -131,6 +131,11 @@
               <div class="form-tip ml-12">我的页面"我的性格/测一测"入口显隐</div>
             </el-form-item>
 
+            <el-form-item label="问答功能">
+              <el-switch v-model="basicConfig.showQuestionEntry" active-text="显示" inactive-text="隐藏" />
+              <div class="form-tip ml-12">我的页面"我的问答"入口 + 首页"热门问答"轮播显隐</div>
+            </el-form-item>
+
             <el-form-item label="红娘弹窗">
               <el-switch v-model="basicConfig.showMatchmakerPopup" active-text="显示" inactive-text="隐藏" />
               <div class="form-tip ml-12">关闭后所有红娘弹窗改为提示"请联系客服"</div>
@@ -355,6 +360,7 @@ const basicConfig = reactive({
   showMatchmakerEntry: true,
   showMyLikesEntry: true,
   showPersonalityEntry: true,
+  showQuestionEntry: true,
   showMatchmakerPopup: true,
 })
 

@@ -101,7 +101,7 @@
       <!-- ========== 金刚区：我的问答 + 专属红娘 + AI助手 ========== -->
       <view class="service-card">
         <view class="service-grid">
-          <view class="service-item" @tap="goToQuestions">
+          <view v-if="systemStore.showQuestionEntry" class="service-item" @tap="goToQuestions">
             <view class="service-icon-box" style="background-color: #FFF3E0;">
               <image class="service-icon-img" src="/static/icons/home-grid/jinghao.png" mode="aspectFit" />
             </view>

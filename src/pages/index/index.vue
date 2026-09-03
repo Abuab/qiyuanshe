@@ -72,7 +72,7 @@
         </view>
       </view>
       <!-- 热门问答轮播卡片 -->
-      <view class="hot-questions-card">
+      <view v-if="systemStore.showQuestionEntry" class="hot-questions-card">
         <view class="section-header">
           <view class="section-title-row">
             <text class="section-title-icon">#</text>

@@ -77,6 +77,8 @@ export class PublicSystemController {
       showMatchmakerEntry: configs.basic?.showMatchmakerEntry !== false,
       showMyLikesEntry: configs.basic?.showMyLikesEntry !== false,
       showPersonalityEntry: configs.basic?.showPersonalityEntry !== false,
+      // 问答功能显隐（我的页面"我的问答"入口 + 首页"热门问答"轮播）
+      showQuestionEntry: configs.basic?.showQuestionEntry !== false,
       // 红娘弹窗显隐（审核改造：关闭后小程序端弹窗提示请联系客服）
       showMatchmakerPopup: configs.basic?.showMatchmakerPopup !== false,
       // 到店认证门店配置
