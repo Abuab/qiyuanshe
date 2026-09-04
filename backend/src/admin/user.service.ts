@@ -1223,23 +1223,6 @@ export class AdminUserService {
 
   // ===== 喜欢管理 =====
 
-  async getUserLikeStats(userId: number) {
-    const [liked, likedBy, mutual] = await Promise.all([
-      this.followRepository.count({ where: { userId } }),
-      this.followRepository.count({ where: { targetUserId: userId } }),
-      this.getMutualCount(userId),
-    ])
-    return { liked, likedBy, mutual }
-  }
-
-  private async getMutualCount(userId: number): Promise<number> {
-    const myLikes = await this.followRepository.find({ where: { userId }, select: ['targetUserId'] })
-    if (myLikes.length === 0) return 0
-    return this.followRepository.count({
-      where: { userId: In(myLikes.map(f => f.targetUserId)), targetUserId: userId },
-    })
-  }
-
   async getUserLikesList(
     userId: number,
     type: 'liked' | 'likedBy' | 'mutual',

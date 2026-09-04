@@ -392,13 +392,6 @@ export class AdminUserController {
 
   // ===== 喜欢管理（后台手动管理用户的喜欢） =====
 
-  @Get(':id/like-stats')
-  @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
-  async getLikeStats(@Param('id', ParseIntPipe) id: number) {
-    const stats = await this.userService.getUserLikeStats(id)
-    return Result.success(stats)
-  }
-
   @Get(':id/admin-likes')
   @Roles(AdminRole.SUPER_ADMIN, AdminRole.MATCHMAKER, AdminRole.OPERATOR, AdminRole.READONLY)
   async getUserLikes(

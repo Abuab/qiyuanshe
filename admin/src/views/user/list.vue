@@ -226,6 +226,7 @@
         <el-button type="success" size="small" @click="handleBatchApprove">批量审核通过</el-button>
                 <el-button type="warning" size="small" @click="handleBatchLock">批量锁定</el-button>
                 <el-button type="warning" size="small" @click="handleBatchDisable">批量禁用</el-button>
+                <el-button type="success" size="small" @click="handleBatchEnable">批量启用</el-button>
         <el-button type="success" size="small" @click="handleExport" :loading="exportLoading">批量导出Excel</el-button>
         <el-button type="primary" size="small" @click="handleBatchSendNotify">批量发送通知</el-button>
         <el-button size="small" @click="handleBatchTag">批量打标签</el-button>
@@ -1348,7 +1349,6 @@ const advancedFilterVisible = ref(false)
 // 最近活跃时间筛选
 const lastActiveAtRange = ref<string | undefined>(undefined)
 const lastActiveAtDateRange = ref<string[]>([])
-const selectAll = ref(false)
 
 const pagination = reactive({
   page: 1,
@@ -2261,17 +2261,6 @@ function handleCurrentChange() {
 
 function handleSelectionChange(rows: User[]) {
   selectedRows.value = rows
-  selectAll.value = rows.length === tableData.value.length
-}
-
-function handleSelectAll(val: boolean) {
-  if (val) {
-    tableData.value.forEach((row) => {
-      tableRef.value?.toggleRowSelection(row, true)
-    })
-  } else {
-    tableRef.value?.clearSelection()
-  }
 }
 
 function handleSortChange({ prop, order }: { prop: string; order: string | null }) {
@@ -2728,7 +2717,6 @@ const handleBatchDelete = async () => {
 function clearSelection() {
   tableRef.value?.clearSelection()
   selectedRows.value = []
-  selectAll.value = false
 }
 
 async function handleRecalculateScores() {
