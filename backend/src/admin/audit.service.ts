@@ -58,7 +58,7 @@ export class AdminAuditService {
     if (filter.status !== undefined) {
       const s = Number(filter.status)
       const action = s === 0 ? 'PENDING' : s === 1 ? 'APPROVE' : 'REJECT'
-      queryBuilder.andWhere('audit.action LIKE :action', { action: `%${action}%` })
+      queryBuilder.andWhere('audit.action = :action', { action })
     }
 
     if (filter.startDate) {

@@ -761,7 +761,7 @@ export class AdminUserService {
           log.targetType = 'user_create'
           log.targetId = u.id
           log.submitterId = u.id
-          log.action = 'APPROVED'
+          log.action = 'APPROVE'
           log.content = JSON.stringify({
             nickname: u.nickname,
             phone: u.phone,
@@ -981,6 +981,7 @@ export class AdminUserService {
     hometown?: string
     residence?: string
     status?: number
+    isRealName?: number
     adminId?: number
     personalityTags?: string | string[]
     hopeTaTags?: string | string[]
@@ -1051,6 +1052,7 @@ export class AdminUserService {
       partnerMaritalStatus: data.partnerMaritalStatus || null,
       acceptChildren: data.acceptChildren || null,
       status,
+      isRealName: data.isRealName || 0,
       isVip: 0,
       vipLevel: 0,
       openid: null,

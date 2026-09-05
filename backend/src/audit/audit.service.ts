@@ -341,18 +341,25 @@ export class AuditService {
   async approve(targetType: string, targetId: number, dto: ApproveAuditDto): Promise<{ success: boolean }> {
     const { adminId, reason } = dto
 
+    let submitterId: number | null = null
     if (targetType === 'photo') {
+      const photo = await this.photoRepository.findOne({ where: { id: targetId } })
+      submitterId = photo?.userId || null
       await this.photoRepository.update({ id: targetId }, { auditStatus: AuditStatus.APPROVED })
     } else if (targetType === 'answer') {
+      const answer = await this.answerRepository.findOne({ where: { id: targetId } })
+      submitterId = answer?.userId || null
       await this.answerRepository.update({ id: targetId }, { status: AuditStatus.APPROVED })
     } else if (targetType === 'user') {
+      submitterId = targetId
       await this.userRepository.update({ id: targetId }, { status: 1 })
     }
 
     const log = this.auditLogRepository.create({
-      action: `APPROVE_${targetType.toUpperCase()}`,
+      action: 'APPROVE',
       targetType,
       targetId,
+      submitterId,
       adminId,
       reason: reason || '审核通过',
     })
@@ -368,11 +375,13 @@ export class AuditService {
       throw new BadRequestException('拒绝原因不能为空')
     }
 
+    let submitterId: number | null = null
     if (targetType === 'photo') {
       await this.photoRepository.update({ id: targetId }, { auditStatus: AuditStatus.REJECTED })
 
       const photo = await this.photoRepository.findOne({ where: { id: targetId } })
       if (photo) {
+        submitterId = photo.userId
         await this.sendRejectionNotification(photo.userId, '照片', reason)
       }
     } else if (targetType === 'answer') {
@@ -380,18 +389,21 @@ export class AuditService {
 
       const answer = await this.answerRepository.findOne({ where: { id: targetId } })
       if (answer) {
+        submitterId = answer.userId
         await this.sendRejectionNotification(answer.userId, '回答', reason)
       }
     } else if (targetType === 'user') {
+      submitterId = targetId
       await this.userRepository.update({ id: targetId }, { status: 3 })
 
       await this.sendRejectionNotification(targetId, '用户资料', reason)
     }
 
     const log = this.auditLogRepository.create({
-      action: `REJECT_${targetType.toUpperCase()}`,
+      action: 'REJECT',
       targetType,
       targetId,
+      submitterId,
       adminId,
       reason,
     })
