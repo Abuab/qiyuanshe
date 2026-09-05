@@ -760,6 +760,7 @@ export class AdminUserService {
           const log = new AuditLog()
           log.targetType = 'user_create'
           log.targetId = u.id
+          log.submitterId = u.id
           log.action = 'APPROVED'
           log.content = JSON.stringify({
             nickname: u.nickname,
@@ -1077,7 +1078,7 @@ export class AdminUserService {
       targetId: saved.id,
       action: 'PENDING',
       adminId: data.adminId || null,
-      submitterId: data.adminId || null,
+      submitterId: saved.id,
       content: JSON.stringify({
         nickname: saved.nickname,
         phone: saved.phone,

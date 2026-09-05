@@ -379,6 +379,7 @@ export class AdminAuditService {
         this.auditLogRepository.create({
           targetType: 'voice',
           targetId: userId,
+          submitterId: userId,
           action,
           reason: remark || null,
           content: JSON.stringify({ voiceUrl: user.voiceUrl, duration: user.voiceDuration }),
