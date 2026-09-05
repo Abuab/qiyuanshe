@@ -1,12 +1,10 @@
-# 栖缘社 License 授权系统 — 部署与运维说明
+# 栖缘社 License 授权说明
 
-> 本文档覆盖「**License Key + 离线验签**」授权方案从签发到部署、激活、运维的完整流程。
+本系统采用「**License Key + 离线验签**」：授权方用 RSA 私钥签发 License Key，后端在本地用硬编码公钥验签，**无需联网、无需许可证服务器**。本文档覆盖从签发、部署、激活到运维的完整流程，同时面向授权方（签发）与客户（部署 / 激活）。
 
 ---
 
 ## 一、方案概述
-
-授权方案为**纯离线**模式，核心机制：
 
 - **RSA-SHA256 非对称签名**：授权方用私钥签发 License Key，客户后端用硬编码公钥验签。
 - **fail-closed**：无激活记录 / 验签失败时，后端按 `unauthorized` 处理，只保留只读白名单（浏览、实名认证），写功能被拦截。
@@ -23,39 +21,9 @@
 
 ---
 
-## 二、组件与文件清单
+## 二、密钥管理（授权方）
 
-| 组件 | 路径 | 说明 |
-|------|------|------|
-| 签发脚本 | `generate-license.js` | 本地工具，用私钥签发 License Key，**私钥绝不提交** |
-| 后端授权模块 | `backend/src/license/` | RSA 验签、授权状态 Guard |
-| 后端实体 | `backend/src/entities/SystemLicense.ts` | `system_licenses` 表 |
-| 后端迁移 | `backend/migrations/1757000000000*`、`1757000000001*`、`1757000000002*` | 建表与字段调整 |
-| 管理后台接口 | `backend/src/admin/admin-license.controller.ts` | 状态查询 / 激活接口 |
-| 管理后台页面 | `admin/src/views/system/license.vue` | 「系统授权」页 |
-
-### 脚本清单（详解）
-
-| 脚本 | 位置 | 作用 | 何时运行 |
-|------|------|------|----------|
-| `generate-license.js` | 仓库根目录 | 授权方本机用私钥签发 License Key | 手动（新客户 / 续费 / 换发） |
-| `scripts/backup.sh` | `scripts/` | MySQL 主库 `mysqldump` 备份 + gzip + 可选 OSS 上传 | crontab 每天 03:00 |
-| `scripts/restore.sh` | `scripts/` | 从 `.sql.gz` 备份恢复 MySQL 主库 | 手动（灾难恢复） |
-| `scripts/monitor.sh` | `scripts/` | 监控服务/磁盘/内存/API/MySQL/Redis，超阈值告警（企业微信/钉钉） | crontab 每 10 分钟 |
-| `scripts/cleanup.sh` | `scripts/` | 清理应用日志 / Nginx 日志 / MySQL 慢查询 / Docker 资源 / 临时文件 | 手动或按需 cron |
-| `scripts/deploy.sh` | `scripts/` | 一键部署：拉代码、构建、启动、健康检查 | 手动 |
-| `scripts/install.sh` | `scripts/` | 一键初始化安装（Ubuntu/CentOS） | 手动（首次） |
-| `scripts/setup-ssl.sh` | `scripts/` | 申请 / 续期 Let's Encrypt 证书 | 手动（首次 / 证书异常） |
-| `scripts/generate-schema.sh` | `scripts/` | 从 TypeORM Entity 生成权威建表 `schema.sql` | 手动（实体变更后） |
-| `scripts/query-realname.sh` | `scripts/` | 查询实名认证数据（支持解密、去重排查） | 手动（运维排查） |
-
-> 只有 `scripts/backup.sh`、`scripts/monitor.sh` 进了 crontab；其余均为手动运维脚本。
-
----
-
-## 三、密钥管理
-
-### 3.1 密钥与目录
+### 2.1 密钥与目录
 
 - 私钥 `license_private.pem` 只保存在**授权方本机**，建议固定目录 `~/license-keys/`。
 - 签发脚本 `generate-license.js` 在仓库根目录，同样只在本机执行。
@@ -69,11 +37,9 @@ openssl genrsa -out license_private.pem 2048
 openssl rsa -in license_private.pem -pubout -out license_public.pem
 ```
 
-后端在 `backend/src/license/license.service.ts` 硬编码公钥 `LICENSE_PUBLIC_KEY`，即上述 `license_public.pem` 的内容（保留 `-----BEGIN/END PUBLIC KEY-----`）。
+后端在 `backend/src/license/license.service.ts` 硬编码公钥 `LICENSE_PUBLIC_KEY`，即上述 `license_public.pem` 的内容（保留 `-----BEGIN/END PUBLIC KEY-----`）。若重新生成密钥对，需把新公钥内容同步替换到该处。
 
-若重新生成密钥对，需把新公钥内容同步替换到该处。
-
-### 3.2 私钥丢失怎么办
+### 2.2 私钥丢失怎么办
 
 **先认清后果**——私钥丢失不等于系统立刻瘫痪：
 
@@ -81,7 +47,7 @@ openssl rsa -in license_private.pem -pubout -out license_public.pem
 - ✅ 已签发的 key 仍然有效：验签用的是**公钥**（硬编码在代码里，没丢）。
 - ✅ 已激活的客户不受影响，继续正常运行。
 
-**预防（务必执行）**：私钥做**离线加密备份**至少两处（移动硬盘 / 密码管理器 / 云 KMS）。私钥绝不能提交到 git 仓库或上传服务器。
+**预防**：私钥做**离线加密备份**至少两处（移动硬盘 / 密码管理器 / 云 KMS）。私钥绝不能提交到 git 仓库或上传服务器。
 
 **丢失后的恢复步骤**（破坏性操作，会导致旧 key 全部失效）：
 
@@ -97,11 +63,9 @@ cat license_public.pem   # 复制新公钥内容
 3. 重新部署后端，使新公钥生效（此刻起旧 key 全部验签失败）。
 4. 按客户台账（客户ID / 客户名称 / 过期时间 / 域名）**逐客户重新签发**，并把新 key 发给客户重新激活。
 
-> 结论：私钥丢失可恢复，但代价大，核心是提前做好离线备份。
-
 ---
 
-## 四、签发 License Key
+## 三、签发 License Key（授权方）
 
 在**授权方本机**执行（签发脚本与私钥都不在服务器上）：
 
@@ -133,21 +97,22 @@ python3 generate-license.py ~/license-keys/license_private.pem
 
 ---
 
-## 五、部署客户端（后端）
+## 四、部署客户端（客户侧）
 
-### 1. 配置环境变量
+### 4.1 配置环境变量
 
-在项目根目录 `.env` 中配置（详见 `.env.example` 的 License 段落）：
+在项目根目录 `.env` 中配置：
 
 ```env
 # License Key 数据库加密密钥（AES-256-GCM，64 位十六进制 = 32 字节）。
-# 生成：openssl rand -hex 32；未配置时回退用内置公钥派生密钥。
+# 用于加密存储数据库中的 License Key，防止直接读库获取明文授权码。
+# 生成：openssl rand -hex 32。未配置时后端回退用内置公钥派生密钥（可用但不推荐）。
 LICENSE_ENCRYPT_KEY=
 ```
 
 > 可选（防 A 客户密钥在 B 客户镜像上激活）：构建镜像时注入客户标识 `--build-arg CUSTOMER_ID=<customerId>`，激活时后端会校验 License Key 内的 `customerId` 与构建标识一致。
 
-### 2. 拉取并重建
+### 4.2 拉取并重建
 
 ```bash
 ssh sh-th
@@ -158,7 +123,7 @@ docker compose up -d --build
 sleep 3 && docker compose ps
 ```
 
-### 3. 数据库迁移
+### 4.3 数据库迁移
 
 后端容器启动时自动执行 `migration:run`，无需手动操作：
 
@@ -170,27 +135,34 @@ sleep 3 && docker compose ps
 
 ---
 
-## 六、激活与日常运维
+## 五、激活与日常运维（客户侧）
 
-### 1. 激活 License
+### 5.1 激活 License
 
-登录管理后台 →「系统授权」页，粘贴签发的 License Key，点击「激活 / 更新」。
+1. 登录管理后台 →「系统授权」页面。
+2. 粘贴授权方签发的 License Key。
+3. 点击「激活 / 更新」。
 
-后端流程：本地 RSA 验签 →（构建时注入客户标识校验）→ AES-256-GCM 加密 licenseKey → 写入本地 `system_licenses` 记录。
+后端流程：本地 RSA 验签 →（构建时注入客户标识校验）→ AES-256-GCM 加密 licenseKey → 写入本地 `system_licenses` 记录。激活成功即进入 `valid` 状态。
 
-### 2. 续费 / 换发
+### 5.2 续费 / 换发
 
 到期或需要延期时，用签发脚本重新生成新的 License Key（客户ID / 客户名称保持一致），发给客户在「系统授权」页重新激活即可，旧记录被覆盖。
 
-### 3. 客户换服务器
+### 5.3 客户换服务器
 
 由于不绑定机器指纹，同一 License Key 可直接复制到新服务器激活。换服务器时只需把原 License Key 在新服务器上重新激活即可。
 
+### 5.4 注意事项
+
+1. License Key 由授权方私钥签发，公钥已硬编码在后端代码中，服务器上**无需存放任何密钥文件**。
+2. 管理后台「系统授权」页面仅在管理网使用，不要暴露到公网。
+3. 纯离线模式**无远程吊销、无激活次数限制**，授权范围由 License Key 内的过期时间控制；请妥善保管 License Key，不要复制到其他服务器。
+4. 换服务器时，将原 License Key 在新服务器上重新激活即可。
+
 ---
 
-## 七、API 端点
-
-### 后端管理后台接口（前端调用）
+## 六、API 端点
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -201,15 +173,13 @@ sleep 3 && docker compose ps
 
 ---
 
-## 八、数据库
-
-### 后端（MySQL）
+## 七、数据库
 
 `system_licenses`：本地激活记录（单条），含 `licenseKey`、`isActivated`、`expiresAt`、`features`、`customerId`、`customerName`、`activatedAt`、`createdAt`、`updatedAt`。
 
 ---
 
-## 九、验证清单
+## 八、验证清单
 
 1. `docker compose ps`：`qys_api` 等容器均 `healthy`。
 2. 管理后台「系统授权」页显示「已授权 / 正常」，客户ID、过期时间正确。
@@ -217,7 +187,7 @@ sleep 3 && docker compose ps
 
 ---
 
-## 十、回滚
+## 九、回滚
 
 若部署后出现异常：
 
@@ -231,7 +201,7 @@ docker compose up -d --build
 
 ---
 
-## 十一、常见问题
+## 十、常见问题
 
 **Q：能远程吊销某个客户吗？**
 
@@ -240,3 +210,33 @@ docker compose up -d --build
 **Q：同一 License Key 能被复制到多台服务器吗？**
 
 能。纯离线模式不绑定机器指纹，同一 License Key 可在任意服务器上激活。如需限制授权范围，可通过签发脚本中的客户标识（`customerId`）+ 构建时注入的 `BUILD_CUSTOMER_ID` 实现「A 客户的 Key 无法在 B 客户的镜像上激活」。
+
+---
+
+## 附录：组件与文件清单
+
+| 组件 | 路径 | 说明 |
+|------|------|------|
+| 签发脚本 | `generate-license.js` | 本地工具，用私钥签发 License Key，**私钥绝不提交** |
+| 后端授权模块 | `backend/src/license/` | RSA 验签、授权状态 Guard |
+| 后端实体 | `backend/src/entities/SystemLicense.ts` | `system_licenses` 表 |
+| 后端迁移 | `backend/migrations/1757000000000*`、`1757000000001*`、`1757000000002*` | 建表与字段调整 |
+| 管理后台接口 | `backend/src/admin/admin-license.controller.ts` | 状态查询 / 激活接口 |
+| 管理后台页面 | `admin/src/views/system/license.vue` | 「系统授权」页 |
+
+### 运维脚本清单
+
+| 脚本 | 位置 | 作用 | 何时运行 |
+|------|------|------|----------|
+| `generate-license.js` | 仓库根目录 | 授权方本机用私钥签发 License Key | 手动（新客户 / 续费 / 换发） |
+| `scripts/backup.sh` | `scripts/` | MySQL 主库 `mysqldump` 备份 + gzip + 可选 OSS 上传 | crontab 每天 03:00 |
+| `scripts/restore.sh` | `scripts/` | 从 `.sql.gz` 备份恢复 MySQL 主库 | 手动（灾难恢复） |
+| `scripts/monitor.sh` | `scripts/` | 监控服务/磁盘/内存/API/MySQL/Redis，超阈值告警（企业微信/钉钉） | crontab 每 10 分钟 |
+| `scripts/cleanup.sh` | `scripts/` | 清理应用日志 / Nginx 日志 / MySQL 慢查询 / Docker 资源 / 临时文件 | 手动或按需 cron |
+| `scripts/deploy.sh` | `scripts/` | 一键部署：拉代码、构建、启动、健康检查 | 手动 |
+| `scripts/install.sh` | `scripts/` | 一键初始化安装（Ubuntu/CentOS） | 手动（首次） |
+| `scripts/setup-ssl.sh` | `scripts/` | 申请 / 续期 Let's Encrypt 证书 | 手动（首次 / 证书异常） |
+| `scripts/generate-schema.sh` | `scripts/` | 从 TypeORM Entity 生成权威建表 `schema.sql` | 手动（实体变更后） |
+| `scripts/query-realname.sh` | `scripts/` | 查询实名认证数据（支持解密、去重排查） | 手动（运维排查） |
+
+> 只有 `scripts/backup.sh`、`scripts/monitor.sh` 进了 crontab；其余均为手动运维脚本。
