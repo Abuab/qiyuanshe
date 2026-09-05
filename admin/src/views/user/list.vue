@@ -828,7 +828,7 @@
           <el-col :span="8">
             <el-form-item label="日">
               <el-select v-model="createForm.birthDay" placeholder="日" clearable style="width:100%">
-                <el-option v-for="d in 31" :key="d" :label="d + '日'" :value="d" />
+                <el-option v-for="d in birthDayOptions" :key="d" :label="d + '日'" :value="d" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -917,14 +917,14 @@
         <el-row :gutter="16">
           <el-col :span="8">
             <el-form-item label="属相">
-              <el-select v-model="createForm.zodiac" placeholder="请选择" clearable style="width:100%">
+              <el-select v-model="createForm.zodiac" placeholder="根据出生年份自动计算" disabled style="width:100%">
                 <el-option v-for="o in createDicts.zodiac" :key="o" :label="o" :value="o" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="星座">
-              <el-select v-model="createForm.constellation" placeholder="请选择" clearable style="width:100%">
+              <el-select v-model="createForm.constellation" placeholder="根据出生月日自动计算" disabled style="width:100%">
                 <el-option v-for="o in createDicts.constellation" :key="o" :label="o" :value="o" />
               </el-select>
             </el-form-item>
@@ -1253,7 +1253,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, nextTick } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Download, Plus, User as UserIcon, ArrowDown, Select, QuestionFilled } from '@element-plus/icons-vue'
@@ -1285,6 +1285,23 @@ const birthYearOptions = (() => {
   for (let y = currentYear - 18; y >= 1940; y--) years.push(y)
   return years
 })()
+
+// 生肖计算：以鼠年为基准（(year - 4) % 12）
+function calcZodiac(year: number): string {
+  const zodiac = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+  return zodiac[(year - 4) % 12]
+}
+
+// 星座计算：按公历日期边界（起始日为闭区间）
+function calcConstellation(month: number, day: number): string {
+  const starts: [number, string][] = [
+    [20, '水瓶座'], [19, '双鱼座'], [21, '白羊座'], [20, '金牛座'],
+    [21, '双子座'], [22, '巨蟹座'], [23, '狮子座'], [23, '处女座'],
+    [23, '天秤座'], [24, '天蝎座'], [23, '射手座'], [22, '摩羯座'],
+  ]
+  const idx = month - 1
+  return day >= starts[idx][0] ? starts[idx][1] : starts[(idx + 11) % 12][1]
+}
 
 const createDicts: Record<string, string[]> = {
   education: ['初中', '高中', '中专', '大专', '本科', '硕士', '博士'],
@@ -1815,9 +1832,39 @@ const createForm = reactive({
   delegateToPlatform: false as boolean,
 })
 
+// 出生日期变化 → 自动计算属相 / 星座
+watch(() => createForm.birthYear, (year) => {
+  if (year) createForm.zodiac = calcZodiac(year)
+})
+watch(() => [createForm.birthMonth, createForm.birthDay], ([month, day]) => {
+  if (month && day) createForm.constellation = calcConstellation(month, day)
+})
+
+// 月份/年份变化导致已选「日」超出当月天数时，清空日并清空星座
+watch(() => [createForm.birthYear, createForm.birthMonth], ([year, month]) => {
+  if (month && createForm.birthDay) {
+    const days = new Date(year || 2000, month, 0).getDate()
+    if (createForm.birthDay > days) {
+      createForm.birthDay = undefined
+      createForm.constellation = undefined
+    }
+  }
+})
+
+// 根据出生年月动态计算当月天数（日下拉选项）
+const birthDayOptions = computed(() => {
+  const month = createForm.birthMonth
+  if (!month) return Array.from({ length: 31 }, (_, i) => i + 1)
+  const days = new Date(createForm.birthYear || 2000, month, 0).getDate()
+  return Array.from({ length: days }, (_, i) => i + 1)
+})
+
 const createRules = {
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入手机号', trigger: 'blur' }],
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' },
+  ],
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
 }
 
@@ -2080,23 +2127,62 @@ async function handleCreate() {
   hometownProvinceId.value = undefined
   hometownCityId.value = undefined
   hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
   hometownCities.value = []
   hometownDistricts.value = []
+  hometownStreets.value = []
   await loadHometownProvinces()
   residenceProvinceId.value = undefined
   residenceCityId.value = undefined
   residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
   residenceCities.value = []
   residenceDistricts.value = []
+  residenceStreets.value = []
   await loadResidenceProvinces()
   dialogVersion.value++
   createDialogVisible.value = true
 }
 
 async function handleCreateSubmit() {
-  if (!createForm.nickname || !createForm.phone) {
-    ElMessage.warning('请填写昵称和手机号')
+  if (!createForm.nickname) {
+    ElMessage.warning('请填写昵称')
     return
+  }
+  if (!createForm.phone) {
+    ElMessage.warning('请填写手机号')
+    return
+  }
+  if (!/^1[3-9]\d{9}$/.test(createForm.phone)) {
+    ElMessage.warning('手机号格式不正确')
+    return
+  }
+
+  if (!editingUserId.value) {
+    // 新建用户：出生日期必填
+    if (!createForm.birthYear || !createForm.birthMonth || !createForm.birthDay) {
+      ElMessage.warning('请选择完整的出生日期')
+      return
+    }
+    // 新建用户：家乡/居住地必须完整选择到街道
+    if (!hometownStreetId.value) {
+      ElMessage.warning('请完整选择家乡（省/市/区/街道）')
+      return
+    }
+    if (!residenceStreetId.value) {
+      ElMessage.warning('请完整选择居住地（省/市/区/街道）')
+      return
+    }
+  } else {
+    // 编辑用户：家乡/居住地若已填任一级则必须完整到街道
+    if ((hometownProvinceId.value || hometownCityId.value || hometownDistrictId.value) && !hometownStreetId.value) {
+      ElMessage.warning('请完整选择家乡（省/市/区/街道）')
+      return
+    }
+    if ((residenceProvinceId.value || residenceCityId.value || residenceDistrictId.value) && !residenceStreetId.value) {
+      ElMessage.warning('请完整选择居住地（省/市/区/街道）')
+      return
+    }
   }
 
   const payload = {
@@ -2332,13 +2418,17 @@ async function handleEditUser(row: User) {
   hometownProvinceId.value = undefined
   hometownCityId.value = undefined
   hometownDistrictId.value = undefined
+  hometownStreetId.value = undefined
   hometownCities.value = []
   hometownDistricts.value = []
+  hometownStreets.value = []
   residenceProvinceId.value = undefined
   residenceCityId.value = undefined
   residenceDistrictId.value = undefined
+  residenceStreetId.value = undefined
   residenceCities.value = []
   residenceDistricts.value = []
+  residenceStreets.value = []
 
   // 并行加载用户详情和城市数据，两者互不阻塞
   const [userDetail, _] = await Promise.allSettled([
