@@ -26,11 +26,21 @@ CERTBOT_WWW="$PROJECT_DIR/docker/nginx/certbot/www"
 # 从项目 .env 读取域名，不存在则提示用户设置
 if [ -f "$PROJECT_DIR/.env" ]; then
     DOMAIN=$(grep -E '^DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2-)
+    H5_DOMAIN=$(grep -E '^H5_DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2-)
 fi
 if [ -z "$DOMAIN" ]; then
     log_error "请在项目根目录 .env 中设置 DOMAIN=yourdomain.com"
     exit 1
 fi
+
+# 构建 certbot 域名参数：主域名始终排第一（certbot live 目录名取第一个 -d 域名）
+DOMAINS_ARGS=(-d "$DOMAIN")
+if [ -n "$H5_DOMAIN" ]; then
+    DOMAINS_ARGS+=(-d "$H5_DOMAIN")
+    log_info "检测到 H5_DOMAIN=$H5_DOMAIN，将与主域名 $DOMAIN 签入同一张 SAN 证书"
+fi
+# certbot 证书目录名（取第一个 -d 域名，即主域名）
+CERT_DIR_NAME="$DOMAIN"
 
 # 从项目 .env 读取邮箱，不存在则使用占位符（Let's Encrypt 要求有效邮箱）
 SSL_EMAIL=$(grep -E '^SSL_EMAIL=' "$PROJECT_DIR/.env" 2>/dev/null | cut -d'=' -f2-)
@@ -110,13 +120,13 @@ apply_cert_standalone() {
         --agree-tos \
         --no-eff-email \
         --email "$SSL_EMAIL" \
-        -d "$DOMAIN"
+        "${DOMAINS_ARGS[@]}"
 
     log_success "证书申请成功"
 
     # 复制证书到项目目录
-    sudo cp /etc/letsencrypt/live/$DOMAIN/fullchain.pem "$SSL_DIR/fullchain.pem"
-    sudo cp /etc/letsencrypt/live/$DOMAIN/privkey.pem "$SSL_DIR/privkey.pem"
+    sudo cp /etc/letsencrypt/live/$CERT_DIR_NAME/fullchain.pem "$SSL_DIR/fullchain.pem"
+    sudo cp /etc/letsencrypt/live/$CERT_DIR_NAME/privkey.pem "$SSL_DIR/privkey.pem"
     sudo chmod 644 "$SSL_DIR/fullchain.pem"
     sudo chmod 600 "$SSL_DIR/privkey.pem"
 
@@ -143,10 +153,10 @@ setup_renewal() {
 # Let's Encrypt 续期后自动复制证书并重载 nginx
 
 SSL_DIR="$SSL_DIR"
-DOMAIN="$DOMAIN"
+CERT_DIR_NAME="$CERT_DIR_NAME"
 
-cp /etc/letsencrypt/live/\$DOMAIN/fullchain.pem "\$SSL_DIR/fullchain.pem"
-cp /etc/letsencrypt/live/\$DOMAIN/privkey.pem "\$SSL_DIR/privkey.pem"
+cp /etc/letsencrypt/live/\$CERT_DIR_NAME/fullchain.pem "\$SSL_DIR/fullchain.pem"
+cp /etc/letsencrypt/live/\$CERT_DIR_NAME/privkey.pem "\$SSL_DIR/privkey.pem"
 chmod 644 "\$SSL_DIR/fullchain.pem"
 chmod 600 "\$SSL_DIR/privkey.pem"
 

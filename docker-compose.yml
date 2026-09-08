@@ -224,6 +224,8 @@ services:
       - ./docker/nginx/certbot/www:/var/www/certbot
       # 用户上传文件目录（Nginx 直接服务静态文件，减少后端压力）
       - ./data/uploads:/var/www/uploads:ro
+      # H5 站点静态文件（uni-app 构建产物，只读挂载）
+      - ./h5:/var/www/h5:ro
       # Nginx 日志持久化到宿主机（与 app 日志统一在 data/logs/ 下）
       - ./data/logs/nginx:/var/log/nginx
     ports:

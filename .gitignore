@@ -6,6 +6,7 @@ pnpm-lock.yaml
 # Build outputs
 dist/
 unpackage/
+h5/
 
 # IDE
 .vscode/
