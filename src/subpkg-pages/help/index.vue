@@ -19,7 +19,12 @@
       </view>
       <view class="contact">
         <text class="contact-title">没找到答案？联系客服</text>
+        <!-- #ifdef MP-WEIXIN -->
         <button class="contact-btn" open-type="contact">联系客服</button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <button class="contact-btn" @tap="handleContactCustomer">联系客服</button>
+        <!-- #endif -->
       </view>
 
       <view class="deactivate-section">
@@ -30,6 +35,29 @@
       </view>
       <view class="bottom-safe"></view>
     </scroll-view>
+
+    <!-- ========== H5 客服二维码弹窗 ========== -->
+    <!-- #ifndef MP-WEIXIN -->
+    <view v-if="showServicePopup" class="service-popup">
+      <view class="service-overlay" @tap="closeServicePopup"></view>
+      <view class="service-body">
+        <view class="service-card">
+          <view class="service-qrcode-wrap">
+            <image class="service-qrcode" src="/static/images/service-qrcode.png" mode="aspectFit" />
+          </view>
+          <view class="service-title">添加客服微信获取帮助</view>
+          <view class="service-desc">
+            <text>遇到问题可添加客服微信</text>
+            <text>请长按或截图识别二维码，客服将为您解答</text>
+          </view>
+          <view class="service-time">工作时间：9:00-21:00</view>
+        </view>
+        <view class="service-close-btn" @tap="closeServicePopup">
+          <text class="service-close-x">✕</text>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -59,6 +87,11 @@ onMounted(() => {
 
 function toggleFaq(idx: number) { faqs.value[idx].open = !faqs.value[idx].open }
 function handleBack() { safeNavigateBack() }
+
+// ===== H5 客服二维码弹窗 =====
+const showServicePopup = ref(false)
+function handleContactCustomer() { showServicePopup.value = true }
+function closeServicePopup() { showServicePopup.value = false }
 
 async function showDeactivateConfirm() {
   const res: any = await new Promise((resolve) => {
@@ -128,4 +161,110 @@ async function showDeactivateConfirm() {
 }
 
 .bottom-safe { height: 60rpx; }
+
+// ===== H5 客服二维码弹窗 =====
+.service-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.service-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.service-card {
+  position: relative;
+  width: 620rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(180deg, #FFE8EC 0%, #FFD5D5 100%);
+  padding: 60rpx 40rpx 40rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.service-qrcode-wrap {
+  width: 360rpx;
+  height: 360rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  margin: 0 auto;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.service-qrcode {
+  width: 320rpx;
+  height: 320rpx;
+}
+
+.service-title {
+  text-align: center;
+  margin-top: 32rpx;
+  color: #FF6B6B;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.service-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 20rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #B0748A;
+    line-height: 1.5;
+    text-align: center;
+  }
+}
+
+.service-time {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.service-close-btn {
+  margin-top: 40rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-close-x {
+  color: #FFFFFF;
+  font-size: 32rpx;
+  line-height: 1;
+}
 </style>

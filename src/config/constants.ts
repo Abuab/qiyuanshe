@@ -17,7 +17,16 @@ export const STORAGE_KEY = {
   PRIVACY_AGREED: 'privacy_agreed',
   PRIVACY_AGREED_AT: 'privacy_agreed_at',
   AGREEMENT_CONTENT: 'agreement_content',
+  // 未登录访客浏览用户详情的计数（H5 拉新转化漏斗）
+  GUEST_VIEW_COUNT: '_qys_guest_view_count',
 } as const
+
+// ================================================================
+// 未登录浏览限制
+// ================================================================
+
+/** 未登录访客免费浏览用户详情的次数上限（超过后弹出登录引导） */
+export const GUEST_FREE_VIEW_LIMIT = 3
 
 // ================================================================
 // 第三方小程序 AppId

@@ -101,6 +101,8 @@ const isVipValid = computed(() => {
     secureStorage.setToken(newToken)
     secureStorage.setUserInfo(newUserInfo)
     uni.setStorageSync(STORAGE_KEY.PHONE_CREDENTIAL, isProfileComplete.value ? '1' : '0')
+    // 登录后清除未登录访客的浏览计数（H5 拉新转化：登录用户不受浏览次数限制）
+    try { uni.removeStorageSync(STORAGE_KEY.GUEST_VIEW_COUNT) } catch (_) { /* ignore */ }
   }
 
   /** 清空内存与本地存储的登录态（不触发页面跳转，供 401 处理等场景复用） */

@@ -1,9 +1,9 @@
 import { IsString, IsNotEmpty, IsOptional, Matches } from 'class-validator'
 
 export class SmsLoginDto {
-  /** wx.login 获取的 code，用于换取 openid */
+  /** wx.login 获取的 code，用于换取 openid（H5 端无微信环境，允许为空走纯手机号登录） */
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   code: string
 
   @IsString()

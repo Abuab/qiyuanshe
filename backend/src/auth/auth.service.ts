@@ -419,6 +419,11 @@ export class AuthService {
 
   /** 手机验证码登录 */
   async smsLogin(code: string, phone: string, smsCode: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+    // H5 端：无微信 code，走纯手机号登录（不依赖 openid），小程序端不受影响
+    if (!code) {
+      return this.smsLoginByPhone(phone, smsCode, ipAddress, userAgent)
+    }
+
     // 1. code2Session 换取 openid
     const session = await this.code2Session(code)
     if (!session.openid) {
@@ -491,6 +496,99 @@ export class AuthService {
     }
     // status=4（已锁定）允许登录，由前端弹窗引导确认脱单意向
 
+    if (!user.protocolAgreedAt) {
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
+    }
+
+    user.lastLoginAt = new Date()
+    user.lastActiveAt = new Date()
+    await this.userRepository.save(user)
+
+    const tokens = this.generateToken(user)
+    const userInfo = this.sanitizeUser(user)
+
+    return { user: userInfo, tokens }
+  }
+
+  /**
+   * H5 端纯手机号 + 短信验证码登录（不依赖微信 openid）。
+   * 浏览器环境无 wx.login/getPhoneNumber，以手机号作为账号唯一标识，openid 置空。
+   */
+  private async smsLoginByPhone(
+    phone: string,
+    smsCode: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+    // 1. 校验短信验证码（校验通过后立即失效）
+    await this.verifySmsCode(phone, smsCode)
+
+    // 2. 按手机号查找未注销用户（H5 账号以手机号标识，openid 可为空）
+    let user = await this.userRepository.findOne({
+      where: { phone, isDeleted: 0 },
+    })
+
+    if (!user) {
+      // 新用户注册（openid 为空）
+      const userId = await this.userService.generateUserId()
+      user = this.userRepository.create({
+        openid: null,
+        unionId: null,
+        nickname: `昵称${userId}`,
+        userId,
+        phone,
+        status: await this.getNewUserStatus(),
+      })
+      user = await this.userRepository.save(user)
+
+      // 新用户自动记录协议同意
+      await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
+      this.agreementLogStorage.saveLog({
+        userId: user.id,
+        agreementType: 'USER_AGREEMENT',
+        version: '1.0',
+        action: 'agree',
+        ipAddress: ipAddress || '',
+        userAgent: userAgent || '',
+      }).catch(err => this.logger.error('[auth] saveLog failed:', err?.message || err))
+      user.protocolAgreedAt = new Date()
+      user.protocolVersion = '1.0'
+    } else {
+      if (!user.phone) {
+        user.phone = phone
+      }
+      // 用户主动撤回过协议同意 → 重置个人资料，视为重新注册（仅保留 VIP 权益）
+      if (!user.protocolAgreedAt) {
+        const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
+        const preservedStatus = [3, 4].includes(user.status) ? user.status : null
+        this.resetReactivatedUser(user)
+        user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
+        user.phone = phone
+        Object.assign(user, savedVip)
+        await this.userService.cleanupDeletedUserData(user.id)
+        this.clearRateLimitKeys(user.id)
+      }
+    }
+
+    if (user.status === 3) {
+      throw new UnauthorizedException('账号已被禁用')
+    }
+    if (user.status === 0) {
+      throw new UnauthorizedException('账号审核中，请耐心等待')
+    }
+    // status=4（已锁定）允许登录，由前端弹窗引导确认脱单意向
+
+    // 老用户协议同意补录
     if (!user.protocolAgreedAt) {
       await this.upsertAgreement(user.id, 'USER_AGREEMENT', '1.0', 'agree', ipAddress || null)
       this.agreementLogStorage.saveLog({

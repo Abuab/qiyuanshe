@@ -228,13 +228,44 @@
         </text>
         <text class="price-total" v-else>请选择套餐</text>
       </view>
+      <!-- #ifdef MP-WEIXIN -->
       <view class="pay-btn" :class="{ disabled: !selectedPackage }" @tap="handlePay">
         <text>{{ vipActionButtonText }}</text>
       </view>
+      <!-- #endif -->
+      <!-- #ifndef MP-WEIXIN -->
+      <view class="pay-btn" @tap="handleContactCustomer">
+        <text>联系客服开通</text>
+      </view>
+      <!-- #endif -->
     </view>
     <view v-if="activeTab === 'vip' && vipActionHint" class="bottom-hint" :style="{ bottom: `calc(120rpx + 58px + ${safeAreaOffset}px)` }">
       <text>{{ vipActionHint }}</text>
     </view>
+
+    <!-- H5 客服人工开通弹窗 -->
+    <!-- #ifndef MP-WEIXIN -->
+    <view v-if="showServicePopup" class="service-popup">
+      <view class="service-overlay" @tap="closeServicePopup"></view>
+      <view class="service-body">
+        <view class="service-card">
+          <view class="service-qrcode-wrap">
+            <image class="service-qrcode" src="/static/images/service-qrcode.png" mode="aspectFit" />
+          </view>
+          <view class="service-title">添加客服微信开通会员</view>
+          <view class="service-price" v-if="selectedPackage">{{ selectedPackage.name }} · ¥{{ formatPrice(selectedPackage.price) }}</view>
+          <view class="service-desc">
+            <text>开通会员即可享资料置顶、优先推荐、{{ redLineTerm }}等专属服务</text>
+            <text>请长按或截图识别二维码，添加客服微信人工开通</text>
+          </view>
+          <view class="service-time">工作时间：9:00-21:00</view>
+        </view>
+        <view class="service-close-btn" @tap="closeServicePopup">
+          <text class="service-close-x">✕</text>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
 
     <tab-bar />
   </view>
@@ -471,6 +502,19 @@ async function handlePay() {
     paying.value = false
   }
 }
+
+// ===== H5 客服人工开通 =====
+// #ifndef MP-WEIXIN
+const showServicePopup = ref(false)
+
+function handleContactCustomer() {
+  showServicePopup.value = true
+}
+
+function closeServicePopup() {
+  showServicePopup.value = false
+}
+// #endif
 
 // ===== 定制会员配置数据（硬编码） =====
 const customConfig = reactive({
@@ -1344,5 +1388,119 @@ onShow(() => {
 
 /* 关于我们图标图片 */
 .pf-icon-img { width: 56rpx; height: 56rpx; }
+
+// ===== H5 客服人工开通弹窗 =====
+.service-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.service-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.service-card {
+  position: relative;
+  width: 620rpx;
+  border-radius: 32rpx;
+  background: linear-gradient(180deg, #FFE8EC 0%, #FFD5D5 100%);
+  padding: 60rpx 40rpx 40rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.service-qrcode-wrap {
+  width: 360rpx;
+  height: 360rpx;
+  background: #FFFFFF;
+  border-radius: 8rpx;
+  margin: 0 auto;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.service-qrcode {
+  width: 320rpx;
+  height: 320rpx;
+}
+
+.service-title {
+  text-align: center;
+  margin-top: 32rpx;
+  color: #FF6B6B;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.service-price {
+  text-align: center;
+  margin-top: 12rpx;
+  color: #333;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.service-desc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 20rpx;
+
+  text {
+    font-size: 24rpx;
+    color: #B0748A;
+    line-height: 1.5;
+    text-align: center;
+  }
+}
+
+.service-time {
+  margin-top: 20rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.service-close-btn {
+  margin-top: 40rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.service-close-x {
+  color: #FFFFFF;
+  font-size: 32rpx;
+  line-height: 1;
+}
 
 </style>

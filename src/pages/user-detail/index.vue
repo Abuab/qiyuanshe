@@ -681,10 +681,18 @@
         <view class="share-popup-sheet" :class="{ 'sheet-up': sharePopupAnim }" @tap.stop>
           <view class="share-popup-handle" />
           <view class="share-popup-options">
+            <!-- #ifdef MP-WEIXIN -->
             <button class="share-option" open-type="share" @click="closeSharePopup">
               <AppIcon class="share-option-icon" name="icon-wechat-logo-thin" size="56" color="#333333" />
               <text class="share-option-label">分享给好友</text>
             </button>
+            <!-- #endif -->
+            <!-- #ifndef MP-WEIXIN -->
+            <view class="share-option" @tap="copyShareLink">
+              <AppIcon class="share-option-icon" name="icon-wechat-logo-thin" size="56" color="#333333" />
+              <text class="share-option-label">分享给好友</text>
+            </view>
+            <!-- #endif -->
             <view class="share-option" @tap="generatePoster">
               <AppIcon class="share-option-icon" name="icon-download-simple-thin" size="56" color="#333333" />
               <text class="share-option-label">生成海报</text>
@@ -699,6 +707,24 @@
     </view>
 
     <BackTop :show="showBackTop" @click="scrollToTop" />
+
+    <!-- ========== H5 未登录浏览限制引导弹窗 ========== -->
+    <!-- #ifndef MP-WEIXIN -->
+    <view v-if="showLoginGate" class="guest-gate-overlay">
+      <view class="guest-gate-card" @tap.stop>
+        <text class="guest-gate-title">登录查看更多嘉宾</text>
+        <text class="guest-gate-desc">已看完 {{ GUEST_FREE_VIEW_LIMIT }} 位嘉宾，登录后可查看全部优质会员</text>
+        <view class="guest-gate-buttons">
+          <view class="guest-gate-btn guest-gate-btn-primary" @tap="goToLogin">
+            <text>一键登录</text>
+          </view>
+          <view class="guest-gate-btn guest-gate-btn-secondary" @tap="handleLoginGateBack">
+            <text>再逛逛</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
   </view>
 </template>
 
@@ -729,6 +755,7 @@ import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
 import { useLicenseStore } from '@/store/license'
 import { LICENSE_FEATURES } from '@/config/license-features'
+import { STORAGE_KEY, GUEST_FREE_VIEW_LIMIT } from '@/config/constants'
 import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
@@ -982,6 +1009,7 @@ onMounted(async () => {
 })
 
 onShow(() => {
+  handleGuestBrowseGate()
   if (userId.value && isLoggedIn.value && profileData.value) {
     refreshFollowStatus()
     refreshBlockStatus()
@@ -1123,6 +1151,52 @@ const goToLogin = () => {
     url: `/pages/login/index?${params}`,
     complete: () => { isNavigatingToLogin = false },
   })
+}
+
+// ===== H5 未登录浏览限制（拉新转化漏斗） =====
+let guestViewCounted = false
+const showLoginGate = ref(false)
+
+const handleGuestBrowseGate = () => {
+  // #ifndef MP-WEIXIN
+  // 已登录用户永远不受限制，并清除遗留计数
+  if (isLoggedIn.value) {
+    try { uni.removeStorageSync(STORAGE_KEY.GUEST_VIEW_COUNT) } catch (_) { /* ignore */ }
+    showLoginGate.value = false
+    return
+  }
+  // 未登录访客：每个详情页实例只计 1 次（刷新页面重新挂载会再次计数）
+  if (guestViewCounted) return
+  guestViewCounted = true
+  const count = Number(uni.getStorageSync(STORAGE_KEY.GUEST_VIEW_COUNT)) || 0
+  const next = count + 1
+  uni.setStorageSync(STORAGE_KEY.GUEST_VIEW_COUNT, next)
+  if (next > GUEST_FREE_VIEW_LIMIT) {
+    showLoginGate.value = true
+  }
+  // #endif
+}
+
+const handleLoginGateBack = () => {
+  showLoginGate.value = false
+  safeNavigateBack()
+}
+
+// ===== H5 分享按钮兜底：复制当前页面链接 =====
+const copyShareLink = () => {
+  // #ifndef MP-WEIXIN
+  const url = window.location.href
+  uni.setClipboardData({
+    data: url,
+    success: () => {
+      uni.showToast({ title: '链接已复制，快去分享吧', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请重试', icon: 'none' })
+    },
+  })
+  closeSharePopup()
+  // #endif
 }
 
 const goToAnswer = (item: any) => {
@@ -2598,6 +2672,49 @@ $text-hint: #999999;
   color: #1A1A1A;
   line-height: 1.8; // 宽松行高，多行不拥挤
   white-space: pre-line; // 保留换行，每条信息独立成行
+}
+
+// ===== H5 未登录浏览限制引导弹窗 =====
+.guest-gate-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.guest-gate-card {
+  width: 580rpx; background: #fff; border-radius: 24rpx; padding: 48rpx 36rpx 40rpx;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.guest-gate-title {
+  font-size: 34rpx; font-weight: bold; color: $text; text-align: center; margin-bottom: 16rpx;
+}
+
+.guest-gate-desc {
+  font-size: 28rpx; color: $text-secondary; text-align: center; line-height: 1.6; margin-bottom: 40rpx;
+}
+
+.guest-gate-buttons {
+  display: flex; gap: 24rpx; width: 100%;
+}
+
+.guest-gate-btn {
+  flex: 1; height: 80rpx; display: flex; align-items: center; justify-content: center;
+  border-radius: 40rpx;
+
+  text { font-size: 30rpx; font-weight: 500; }
+}
+
+.guest-gate-btn-primary {
+  background: linear-gradient(135deg, #FF5A7A, #FF7096);
+
+  text { color: #fff; }
+}
+
+.guest-gate-btn-secondary {
+  background: #F5F5F5;
+
+  text { color: $text-secondary; }
 }
 </style>
 

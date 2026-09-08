@@ -39,7 +39,8 @@
     </view>
 
     <!-- ===== 登录区域 ===== -->
-    <view v-else class="login-area">
+    <!-- #ifdef MP-WEIXIN -->
+    <view v-if="!showProtocol" class="login-area">
       <text class="login-tip-line1">需要授权手机号，以便于您下次直接登录</text>
       <text class="login-tip-line2">请放心，我们将严格保护您的隐私</text>
 
@@ -54,7 +55,39 @@
 
       <text class="skip-auth" @tap="handleSkipAuth">暂不授权</text>
     </view>
+    <!-- #endif -->
 
+    <!-- #ifndef MP-WEIXIN -->
+    <view v-if="!showProtocol" class="login-area login-area-h5">
+      <text class="login-title-h5">手机号登录</text>
+      <text class="login-desc-h5">未注册的手机号验证后将自动创建账号</text>
+      <view class="sms-form">
+        <input
+          v-model="smsPhone"
+          class="sms-input"
+          type="number"
+          maxlength="11"
+          placeholder="请输入手机号"
+        />
+        <view class="sms-code-row">
+          <input
+            v-model="smsCode"
+            class="sms-input sms-code-input"
+            type="number"
+            maxlength="6"
+            placeholder="请输入验证码"
+          />
+          <view class="sms-send-btn" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
+            <text>{{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}</text>
+          </view>
+        </view>
+      </view>
+      <button class="get-phone-btn" @tap="submitSmsLogin">登录</button>
+      <text class="skip-auth" @tap="handleSkipAuth">暂不登录，先逛逛</text>
+    </view>
+    <!-- #endif -->
+
+    <!-- #ifdef MP-WEIXIN -->
     <!-- 手机号快捷登录弹窗 -->
     <view v-if="showPhonePopup" class="phone-popup" @tap="handlePhonePopupClose">
       <view class="phone-mask" />
@@ -99,6 +132,7 @@
         <text class="phone-cancel" @tap="handleSmsPopupClose">取消</text>
       </view>
     </view>
+    <!-- #endif -->
 
     <!-- 加载遮罩 -->
     <view v-if="loading" class="loading-mask">
@@ -223,6 +257,7 @@ const openPrivacy = () => {
   uni.navigateTo({ url: '/pages/agreement/index?type=privacy' })
 }
 
+// #ifdef MP-WEIXIN
 const handlePhoneLogin = async () => {
   if (!secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
@@ -261,6 +296,7 @@ const handleSmsPopupClose = () => {
 const handlePhonePopupClose = () => {
   showPhonePopup.value = false
 }
+// #endif
 
 /** 采集设备信息，作为 UserAgent 记录（小程序请求不携带浏览器 UA） */
 const getDeviceInfo = (): string => {
@@ -300,11 +336,16 @@ const sendSmsCode = async () => {
     }, 1000)
   } catch (error: any) {
     const msg = error?.message || ''
-    // 短信服务未配置 → 自动降级到手机号快捷登录
+    // 短信服务未配置 → 自动降级到手机号快捷登录（仅小程序；H5 无微信环境，改为友好提示）
     if (msg.includes('短信服务暂未开通') || msg.includes('未配置')) {
+      // #ifdef MP-WEIXIN
       handleSmsPopupClose()
       showToast('短信登录暂不可用，请使用手机号快捷登录', 'none')
       handlePhoneLogin()
+      // #endif
+      // #ifndef MP-WEIXIN
+      showToast('短信服务暂未开通，请稍后再试', 'none')
+      // #endif
       return
     }
     logger.error('发送短信验证码失败:', error?.message || error)
@@ -327,13 +368,18 @@ const submitSmsLogin = async () => {
 
   loading.value = true
   try {
+    // 微信登录 code：小程序端通过 uni.login 获取；H5 端无微信环境，code 置空走纯手机号登录
+    let wxLoginCode = ''
+    // #ifdef MP-WEIXIN
     const loginRes = await new Promise<WechatLoginResult>((resolve, reject) => {
       uni.login({ provider: 'weixin', success: resolve, fail: reject })
     })
     if (!loginRes.code) throw new Error('微信登录失败')
+    wxLoginCode = loginRes.code
+    // #endif
 
     const result = await post<LoginResult>('/auth/sms-login', {
-      code: loginRes.code,
+      code: wxLoginCode,
       phone,
       smsCode: code,
       deviceInfo: getDeviceInfo(),
@@ -357,6 +403,7 @@ const submitSmsLogin = async () => {
   }
 }
 
+// #ifdef MP-WEIXIN
 /** 获取手机号回调 */
 const onGetPhoneNumber = async (e: any) => {
   if (e.detail.errMsg !== 'getPhoneNumber:ok') {
@@ -414,6 +461,7 @@ const onGetPhoneNumber = async (e: any) => {
     phoneLoginCode.value = ''
   }
 }
+// #endif
 
 const handleLoginSuccess = () => {
   // 新用户：跳转到"我的"页面，由"我的"页面 onShow 触发完善资料弹窗（带 nextStepUrl）
@@ -512,6 +560,17 @@ const handleLoginSuccess = () => {
   width: 85%; max-width: 640rpx;
   display: flex; flex-direction: column; align-items: center;
   padding-top: 20rpx;
+}
+// H5 端：短信登录主界面（非弹窗）
+.login-area-h5 {
+  max-width: 600rpx;
+  padding-top: 40rpx;
+}
+.login-title-h5 {
+  font-size: 40rpx; font-weight: 700; color: #1A1A1A; margin-bottom: 12rpx;
+}
+.login-desc-h5 {
+  font-size: 26rpx; color: #999; margin-bottom: 48rpx; text-align: center;
 }
 .login-tip-line1 {
   font-size: 28rpx; color: #666; text-align: center; margin-bottom: 12rpx;

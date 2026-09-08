@@ -188,10 +188,18 @@
     <!-- 底部固定操作栏 -->
     <view v-if="activity" class="bottom-bar" :style="{ paddingBottom: safeAreaBottom + 'px' }">
       <view class="bottom-left">
+        <!-- #ifdef MP-WEIXIN -->
         <button class="action-btn share-btn" open-type="share">
           <text class="action-icon action-icon-share">↗</text>
           <text class="action-text">分享</text>
         </button>
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
+        <view class="action-btn share-btn" @tap="copyShareLink">
+          <text class="action-icon action-icon-share">↗</text>
+          <text class="action-text">分享</text>
+        </view>
+        <!-- #endif -->
         <view class="action-btn" @tap="showMatchmakerPopup">
           <image class="action-icon-img" :src="icons.tabbar.message.default" mode="aspectFit" />
           <text class="action-text">咨询</text>
@@ -620,6 +628,22 @@ const onShareAppMessage = () => {
     path: `/subpkg-pages/activity-detail/index?id=${activity.value.id}`,
     imageUrl: activity.value.coverImage ? getFullImageUrl(activity.value.coverImage) : '/static/heart.png',
   }
+}
+
+// ===== H5 分享按钮兜底：复制当前页面链接 =====
+const copyShareLink = () => {
+  // #ifndef MP-WEIXIN
+  const url = window.location.href
+  uni.setClipboardData({
+    data: url,
+    success: () => {
+      uni.showToast({ title: '链接已复制，快去分享吧', icon: 'none' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败，请重试', icon: 'none' })
+    },
+  })
+  // #endif
 }
 </script>
 
