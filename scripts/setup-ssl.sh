@@ -110,17 +110,28 @@ apply_cert_standalone() {
     cd "$PROJECT_DIR"
     docker compose stop nginx 2>/dev/null || true
 
+    # 无论后续成功与否，退出时都恢复 nginx，避免「80 端口关闭后起不来」
+    restore_nginx() {
+        log_info "恢复 nginx 容器..."
+        docker compose up -d nginx 2>/dev/null || true
+    }
+    trap restore_nginx EXIT
+
     # 创建 SSL 目录
     sudo mkdir -p "$SSL_DIR"
 
     # 申请证书
-    sudo certbot certonly \
+    if ! sudo certbot certonly \
         --standalone \
         --preferred-challenges http \
         --agree-tos \
         --no-eff-email \
         --email "$SSL_EMAIL" \
-        "${DOMAINS_ARGS[@]}"
+        "${DOMAINS_ARGS[@]}"; then
+        log_error "证书申请失败，nginx 容器已自动恢复"
+        log_error "常见原因：1) 域名 DNS 未解析到本机 2) 80 端口仍被占用 3) 域名未备案被拦截"
+        exit 1
+    fi
 
     log_success "证书申请成功"
 
@@ -135,6 +146,9 @@ apply_cert_standalone() {
     # 重启 nginx
     log_info "启动 nginx 容器..."
     docker compose up -d nginx
+
+    # 已手动恢复 nginx，清除 trap 避免退出时重复执行
+    trap - EXIT
 
     log_success "Nginx 已重启，SSL 已生效"
 }
