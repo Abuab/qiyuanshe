@@ -75,7 +75,7 @@ const CACHE_TTL = {
 }
 
 // 缓存版本号：修改推荐逻辑后递增以强制刷新所有旧缓存
-const CACHE_VERSION = 3
+const CACHE_VERSION = 4
 
 @Injectable()
 export class RecommendService {
@@ -454,6 +454,9 @@ export class RecommendService {
     qb.andWhere('user.pinnedExpireAt > NOW()')
     qb.andWhere('user.status = :status', { status: 1 })
     qb.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+    // 资料未完善用户不进入推荐：至少需已上传头像且已选择性别
+    qb.andWhere("user.avatar != ''")
+    qb.andWhere('user.gender > 0')
 
     // 性别过滤
     if (Number.isFinite(targetGender) && targetGender >= 1 && targetGender <= 2) {
@@ -520,6 +523,9 @@ export class RecommendService {
     const qb = this.baseSelectQuery()
     qb.where('user.status = :status', { status: 1 })
     qb.andWhere('user.isDeleted = :isDeleted', { isDeleted: 0 })
+    // 资料未完善用户不进入推荐：至少需已上传头像且已选择性别
+    qb.andWhere("user.avatar != ''")
+    qb.andWhere('user.gender > 0')
 
     if (currentUserId) {
       qb.andWhere('user.id != :selfId', { selfId: currentUserId })
