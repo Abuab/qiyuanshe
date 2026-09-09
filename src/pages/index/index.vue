@@ -246,6 +246,7 @@ import { ref, onMounted, computed } from 'vue'
 import { onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { get } from '@/utils/request'
 import { showToast, getFullImageUrl } from '@/utils/common'
+import { safeShowShareMenu } from '@/utils/navigate'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import type { UserCardData } from '@/components/user-card/user-card.vue'
 import UserListSection from '@/components/user-list-section/user-list-section.vue'
@@ -648,7 +649,7 @@ onMounted(() => {
   if (userStore.isLoggedIn) fetchMyPhotoCount()
 
   // 开启分享菜单
-  uni.showShareMenu({
+  safeShowShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
     fail: () => {},

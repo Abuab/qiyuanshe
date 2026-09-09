@@ -165,6 +165,12 @@ const saveQrcode = async () => {
     return
   }
 
+  // #ifdef H5
+  // H5 无系统相册保存能力，降级为长按保存
+  uni.showToast({ title: '请长按二维码保存', icon: 'none' })
+  return
+  // #endif
+
   uni.showLoading({ title: '保存中...' })
 
   try {

@@ -306,7 +306,7 @@ import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import BlockRenderer from '@/components/activity-blocks/BlockRenderer.vue'
 import request from '@/utils/request'
 import { checkLogin } from '@/utils/auth'
-import { safeNavigateBack } from '@/utils/navigate'
+import { safeNavigateBack, getRouteQuery, safeShowShareMenu } from '@/utils/navigate'
 import { getFullImageUrl, getImageUrl, formatDate } from '@/utils/common'
 import { useMatchmakerList } from '@/composables/useMatchmakerList'
 import { icons } from '@/config/icons'
@@ -603,7 +603,7 @@ onMounted(() => {
   safeAreaBottom.value = raw > 0 ? raw : (sysInfo.platform === 'android' ? 28 : 0)
 
   // 激活右上角原生分享按钮
-  uni.showShareMenu({
+  safeShowShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage', 'shareTimeline'],
     fail: () => {
@@ -612,9 +612,7 @@ onMounted(() => {
     },
   })
 
-  const pages = getCurrentPages()
-  const currentPage = pages[pages.length - 1] as any
-  const id = currentPage.options?.id || currentPage.$page?.options?.id
+  const id = getRouteQuery().id
   if (id) {
     fetchActivityDetail(Number(id))
     fetchMatchmakerList()

@@ -771,7 +771,7 @@ import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
 import OfficialAccountPopup from '@/components/OfficialAccountPopup/OfficialAccountPopup.vue'
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
-import { safeNavigateBack } from '@/utils/navigate'
+import { safeNavigateBack, getRouteQuery, safeShowShareMenu } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
@@ -995,9 +995,8 @@ onMounted(async () => {
   await fetchVoiceEnabled()
   systemStore.loadAiFeatureConfig(true) // force=true 确保 AI 开关关闭后详情页同步隐藏 AI 印象
   loadFloatConfig() // 首页浮动按钮 enabled 开关联动详情页测一测引导与人格类型标签
-  uni.showShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
-  const pages = getCurrentPages()
-  const opts = (pages[pages.length - 1] as any)?.options || {}
+  safeShowShareMenu({ withShareTicket: true, menus: ['shareAppMessage', 'shareTimeline'], fail: () => {} })
+  const opts = getRouteQuery()
   if (opts.id) {
     userId.value = parseInt(opts.id)
     fetchProfileDetail()

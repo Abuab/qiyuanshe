@@ -106,7 +106,7 @@ import { useLicenseStore } from '@/store/license'
 import { LICENSE_FEATURES } from '@/config/license-features'
 import BackTop from '@/components/back-top/back-top.vue'
 import { useBackTop } from '@/composables/useBackTop'
-import { safeNavigateBack } from '@/utils/navigate'
+import { safeNavigateBack, safeShowShareMenu } from '@/utils/navigate'
 import { logger } from '@/utils/logger'
 
 interface Answer {
@@ -146,7 +146,7 @@ const { showBackTop, onScroll, scrollToTop, scrollToVal } = useBackTop()
 onMounted(() => {
   const sysInfo = uni.getSystemInfoSync()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
-  uni.showShareMenu({
+  safeShowShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
     fail: () => {},

@@ -10,6 +10,7 @@ import { useLicenseStore } from '@/store/license'
 import { logger } from '@/utils/logger'
 import { get } from '@/utils/request'
 import { EID_APPID } from '@/config/constants'
+import { safeShowShareMenu } from '@/utils/navigate'
 import MatchModal from '@/components/MatchModal/MatchModal.vue'
 
 // 冷启动时 onLaunch 后立刻触发 onShow，首次 show 跳过重复加载
@@ -32,7 +33,7 @@ onLaunch(() => {
   useLicenseStore().loadLicense()
 
   // 全局开启分享菜单（兜底），失败静默
-  uni.showShareMenu({
+  safeShowShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
     fail: () => {
@@ -145,7 +146,7 @@ onShow((options: any) => {
   }
 
   // 每次切回应用时重试开启分享菜单
-  uni.showShareMenu({
+  safeShowShareMenu({
     withShareTicket: true,
     menus: ['shareAppMessage'],
     fail: () => {
