@@ -17,8 +17,8 @@ export class MatchAnalysisReport {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number
 
-  /** 关联用户 */
-  @Index({ unique: true })
+  /** 关联用户（每用户仅一份报告） */
+  @Index('IDX_match_analysis_reports_userId', { unique: true })
   @Column({ type: 'bigint' })
   userId: number
 
