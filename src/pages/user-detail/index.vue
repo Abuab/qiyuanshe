@@ -16,7 +16,7 @@
         </view>
       </view>
 
-      <scroll-view class="page-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :enhanced="true" :show-scrollbar="false">
+      <scroll-view class="page-scroll" scroll-y :scroll-top="scrollToVal" @scroll="onScroll" :enhanced="true" :show-scrollbar="false" :style="{ height: pageScrollHeight }">
         <!-- ========== 1. 顶部大背景图（50vh，顶部大圆角） ========== -->
         <view class="hero-section" :style="{ paddingTop: frostTotalHeight + 'px', height: `calc(50vh + ${frostTotalHeight}px)` }">
           <image
@@ -876,16 +876,30 @@ const hopeText = computed(() => {
 })
 
 const isLoggedIn = computed(() => userStore.isLoggedIn)
-const statusBarHeight = computed(() => {
+
+// 滚动区域高度：H5 用 window.innerHeight 覆盖，避免 100vh 在微信 H5 中受顶部导航栏影响
+const pageScrollHeight = ref('100vh')
+
+// 统一读取一次系统信息：H5 中多次调用 getSystemInfoSync 返回值可能不一致
+const systemInfo = (() => {
   try {
-    return uni.getSystemInfoSync().statusBarHeight || 44
-  } catch { return 44 }
+    return uni.getSystemInfoSync()
+  } catch {
+    return null
+  }
+})()
+
+// H5 中 fixed 定位的 top: 0 已位于微信导航栏下方，无需额外状态栏 padding；
+// 且 H5 下 getSystemInfoSync().statusBarHeight 不可靠，固定 24 兜底。小程序使用系统状态栏高度。
+const statusBarHeight = computed(() => {
+  if (typeof window !== 'undefined') return 24
+  return systemInfo?.statusBarHeight || 44
 })
+
 // frost 卡片总高度（px）：statusBarHeight + frost-inner 的 88rpx 转为 px + 2px 防遮挡缓冲
 const frostTotalHeight = computed(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  const statusBarH = sysInfo.statusBarHeight || 44
-  const windowWidth = sysInfo.windowWidth || sysInfo.screenWidth || 390
+  const statusBarH = statusBarHeight.value
+  const windowWidth = systemInfo?.windowWidth || systemInfo?.screenWidth || 390
   const rpxRatio = windowWidth / 750
   const frostInnerPx = 88 * rpxRatio // 88rpx → px
   return statusBarH + frostInnerPx + 2
@@ -992,6 +1006,12 @@ async function fetchVoiceIntro() {
 }
 
 onMounted(async () => {
+  // H5 用 window.innerHeight 覆盖滚动区高度，避免 100vh 在微信 H5 中受顶部导航栏影响
+  // #ifdef H5
+  if (typeof window !== 'undefined') {
+    pageScrollHeight.value = window.innerHeight + 'px'
+  }
+  // #endif
   await fetchVoiceEnabled()
   systemStore.loadAiFeatureConfig(true) // force=true 确保 AI 开关关闭后详情页同步隐藏 AI 印象
   loadFloatConfig() // 首页浮动按钮 enabled 开关联动详情页测一测引导与人格类型标签
@@ -1828,14 +1848,14 @@ $text-hint: #999999;
 }
 
 // ===== 滚动区域 =====
-.page-scroll {
-  height: 100vh;
-}
+// 高度由模板内联绑定 pageScrollHeight 动态控制（H5 用 window.innerHeight，小程序保持 100vh）
 
-// ===== 1. 顶部大背景图（50vh，顶部大圆角） =====
+// ===== 1. 顶部大背景图（高度由模板内联 calc 动态控制，顶部大圆角） =====
 .hero-section {
-  position: relative; width: 100%; height: 50vh; overflow: hidden;
+  position: relative; width: 100%; overflow: hidden;
   border-radius: 33rpx 33rpx 0 0; box-sizing: border-box;
+  // 图片未加载时的兜底背景，避免安卓 H5 顶部暴露页面底色
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .hero-bg {
