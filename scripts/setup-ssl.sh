@@ -26,7 +26,7 @@ CERTBOT_WWW="$PROJECT_DIR/docker/nginx/certbot/www"
 # 从项目 .env 读取域名，不存在则提示用户设置
 if [ -f "$PROJECT_DIR/.env" ]; then
     DOMAIN=$(grep -E '^DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2-)
-    H5_DOMAIN=$(grep -E '^H5_DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2-)
+    H5_DOMAIN=$(grep -E '^H5_DOMAIN=' "$PROJECT_DIR/.env" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
 fi
 if [ -z "$DOMAIN" ]; then
     log_error "请在项目根目录 .env 中设置 DOMAIN=yourdomain.com"
@@ -36,7 +36,10 @@ fi
 # 构建 certbot 域名参数：主域名始终排第一（certbot live 目录名取第一个 -d 域名）
 DOMAINS_ARGS=(-d "$DOMAIN")
 if [ -n "$H5_DOMAIN" ]; then
-    DOMAINS_ARGS+=(-d "$H5_DOMAIN")
+    # 支持多个 H5 域名（空格分隔），逐个追加 -d
+    for h5 in $H5_DOMAIN; do
+        DOMAINS_ARGS+=(-d "$h5")
+    done
     log_info "检测到 H5_DOMAIN=$H5_DOMAIN，将与主域名 $DOMAIN 签入同一张 SAN 证书"
 fi
 # certbot 证书目录名（取第一个 -d 域名，即主域名）
@@ -126,6 +129,7 @@ apply_cert_standalone() {
         --preferred-challenges http \
         --agree-tos \
         --no-eff-email \
+        --allow-subset-of-names \
         --email "$SSL_EMAIL" \
         "${DOMAINS_ARGS[@]}"; then
         log_error "证书申请失败，nginx 容器已自动恢复"
@@ -184,7 +188,7 @@ HOOK
     sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh
 
     # 添加定时任务（每天凌晨 2 点检查并续期）
-    CRON_JOB="0 2 * * * certbot renew --quiet --webroot -w $CERTBOT_WWW"
+    CRON_JOB="0 2 * * * certbot renew --quiet --webroot -w $CERTBOT_WWW --allow-subset-of-names"
     (sudo crontab -l 2>/dev/null | grep -v "certbot renew"; echo "$CRON_JOB") | sudo crontab -
 
     log_success "自动续期已配置完成"
@@ -201,6 +205,7 @@ renew_now() {
         --quiet \
         --webroot \
         -w "$CERTBOT_WWW" \
+        --allow-subset-of-names \
         --deploy-hook "/etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh"
     log_success "续期检查完成"
 }
