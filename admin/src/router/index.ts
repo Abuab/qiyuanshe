@@ -216,6 +216,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '用量限额', requiresAuth: true },
       },
       {
+        path: '/match-report/config',
+        name: 'MatchReportConfig',
+        component: () => import('../views/match-report/config.vue'),
+        meta: { title: '匹配报告配置', requiresAuth: true },
+      },
+      {
         path: '/system/license',
         name: 'SystemLicense',
         component: () => import('../views/system/license.vue'),

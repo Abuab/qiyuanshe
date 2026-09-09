@@ -125,6 +125,22 @@
         "navigationBarBackgroundColor": "#ffffff",
         "navigationBarTextStyle": "black"
       }
+    },
+    {
+      "path": "pages/match-report/index",
+      "style": {
+        "navigationBarTitleText": "我的匹配报告",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
+    },
+    {
+      "path": "pages/match-report/share",
+      "style": {
+        "navigationBarTitleText": "分享我的报告",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": false
+      }
     }
   ],
   "subPackages": [

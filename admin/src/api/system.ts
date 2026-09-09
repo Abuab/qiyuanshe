@@ -12,6 +12,7 @@ export interface SystemConfigs {
   loveQuotes?: Record<string, any>
   photoAudit?: Record<string, any>
   health?: Record<string, any>
+  matchReport?: Record<string, any>
 }
 
 export const system = {

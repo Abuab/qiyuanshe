@@ -136,6 +136,7 @@ const MENU_PARENT_MAP: Record<string, string> = {
   '/system/dict': '系统配置',
   '/system/notification-channel': '系统配置',
   '/system/notification-log': '系统配置',
+  '/match-report/config': '匹配报告',
 }
 
 const parentTitle = computed(() => {

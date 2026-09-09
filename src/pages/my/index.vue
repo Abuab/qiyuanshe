@@ -158,19 +158,16 @@
 
       <!-- ========== 工具区：7个图标网格卡片（4列对齐） ========== -->
       <view class="tools-card">
-        <!-- 4列网格：第一行4个，第二行前3个对齐 -->
+        <!-- 4列网格：两行各4个 -->
         <view class="tool-grid">
           <view
             v-for="item in toolGrid7"
             :key="item.key"
             class="tool-item"
-            :class="{ 'tool-placeholder': item.placeholder }"
-            @tap="item.placeholder ? undefined : handleToolClick(item.key)"
+            @tap="handleToolClick(item.key)"
           >
-            <template v-if="!item.placeholder">
-              <AppIcon :name="item.iconName" size="56" color="#333333" />
-              <text class="tool-label">{{ item.label }}</text>
-            </template>
+            <AppIcon :name="item.iconName" size="56" color="#333333" />
+            <text class="tool-label">{{ item.label }}</text>
           </view>
         </view>
       </view>
@@ -759,7 +756,7 @@ const handleToolClick = (key: string) => {
   if (fn) fn()
 }
 
-// 7个工具图标 + 1个占位（4列布局，第二行第4列为空）
+// 8个工具图标（4列布局，两行正好填满，无占位）
 // 后台可通过 pageIcons[item.key] 配置图标URL
 const toolGrid7 = computed(() => {
   const all = [
@@ -770,7 +767,7 @@ const toolGrid7 = computed(() => {
     { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '' },
     { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '' },
     { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '' },
-    { key: 'dummy',       label: '',        iconName: '', emoji: '',      placeholder: true },
+    { key: 'matchReport', label: '匹配报告', iconName: 'icon-heartbeat-thin', emoji: '' },
   ]
   // 「我的喜欢」入口受后台开关控制
   return all.filter(item => item.key !== 'myLikes' || systemStore.showMyLikesEntry)
@@ -1248,11 +1245,6 @@ const toolGrid7 = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-
-  &.tool-placeholder {
-    visibility: hidden;
-  }
-
 }
 
 .tool-label {

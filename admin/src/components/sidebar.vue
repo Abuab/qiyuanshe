@@ -207,6 +207,14 @@
         <el-icon><AvatarIcon /></el-icon>
         <template #title>子账号管理</template>
       </el-menu-item>
+
+      <el-menu-item
+        v-if="canAccess('/match-report')"
+        index="/match-report/config"
+      >
+        <el-icon><DataAnalysis /></el-icon>
+        <template #title>匹配报告配置</template>
+      </el-menu-item>
     </el-menu>
 
     <div class="sidebar-footer">

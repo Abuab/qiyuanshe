@@ -41,6 +41,7 @@ import { DatabaseIndexService } from './common/database-index.service'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 import { CommonModule } from './common/common.module'
 import { LicenseModule } from './license/license.module'
+import { MatchReportModule } from './match-report/match-report.module'
 
 @Module({
   imports: [
@@ -93,6 +94,7 @@ import { LicenseModule } from './license/license.module'
     WinstonLoggerModule,
     CommonModule,
     LicenseModule,
+    MatchReportModule,
   ],
   controllers: [HealthController],
   providers: [DatabaseIndexService],
