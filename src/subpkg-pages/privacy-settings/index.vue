@@ -57,23 +57,23 @@
       </view>
 
       <!-- 注销账号下方灰色小字提示 -->
-      <view class="deactivate-hint" @tap="showDeactivateDialog">
+      <view class="deactivate-hint" @tap="showLogoutDialog">
         <text class="hint-text">撤回同意协议</text>
       </view>
 
       <view class="bottom-safe"></view>
     </scroll-view>
 
-    <!-- 注销确认弹窗 -->
-    <view v-if="showDialog" class="dialog-overlay" @tap="closeDeactivateDialog">
+    <!-- 退出登录确认弹窗 -->
+    <view v-if="showDialog" class="dialog-overlay" @tap="closeLogoutDialog">
       <view class="dialog-box" @tap.stop>
         <text class="dialog-title">提示</text>
-        <text class="dialog-content">若点击确认撤回《隐私政策》的同意，将会无法正常使用小程序。</text>
+        <text class="dialog-content">确定要退出登录吗？退出后将进入游客模式。</text>
         <view class="dialog-buttons">
-          <view class="dialog-btn cancel-btn" @tap="closeDeactivateDialog">
+          <view class="dialog-btn cancel-btn" @tap="closeLogoutDialog">
             <text>取消</text>
           </view>
-          <view class="dialog-btn confirm-btn" @tap="confirmDeactivate">
+          <view class="dialog-btn confirm-btn" @tap="confirmLogout">
             <text>确定</text>
           </view>
         </view>
@@ -86,11 +86,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSystemStore } from '@/store/system'
 import { useUserStore } from '@/store/user'
-import { secureStorage } from '@/utils/crypto'
-import { post } from '@/utils/request'
-import { STORAGE_KEY } from '@/config/constants'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
-import { logger } from '@/utils/logger'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 
@@ -126,39 +122,18 @@ const goToPrivacySwitches = () => {
   uni.navigateTo({ url: '/subpkg-pages/privacy-switches/index' })
 }
 
-const showDeactivateDialog = () => {
+const showLogoutDialog = () => {
   showDialog.value = true
 }
 
-const closeDeactivateDialog = () => {
+const closeLogoutDialog = () => {
   showDialog.value = false
 }
 
-const confirmDeactivate = async () => {
+// 撤回同意协议：仅退出登录回到游客态，不撤销协议同意、不注销账户
+const confirmLogout = () => {
   showDialog.value = false
-  try {
-    await post('/users/agreement', {
-      agreementType: 'USER_AGREEMENT',
-      version: '1.0',
-      action: 'revoke',
-    })
-    // 立即清除 store 内存 + 持久化数据（避免时序窗口内请求不带 token 被误判未登录）
-    userStore.clearLoginState()
-    secureStorage.revokeAllAgreements()
-    try {
-      uni.removeStorageSync(STORAGE_KEY.PHONE_CREDENTIAL)
-    } catch (_) { /* ignore */ }
-    try {
-      uni.removeStorageSync('unreadMessageCount')
-    } catch (_) { /* ignore */ }
-    uni.showToast({ title: '已撤回同意', icon: 'success' })
-    setTimeout(() => {
-      uni.reLaunch({ url: '/pages/index/index' })
-    }, 1200)
-  } catch (err: any) {
-    logger.error('[agreement] 协议撤回上报失败:', err?.message || err)
-    uni.showToast({ title: '操作失败，请稍后重试', icon: 'none' })
-  }
+  userStore.logout()
 }
 
 const handleDeactivate = () => {
