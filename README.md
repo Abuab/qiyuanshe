@@ -420,8 +420,15 @@ ADMIN_DEFAULT_PASSWORD=<你的强密码>
 
 # 域名
 DOMAIN=yourdomain.com
-CORS_ORIGINS=https://yourdomain.com
+
+# H5 站点域名（可多个，空格分隔；与 DOMAIN 签入同一张 SAN 证书，备案中的域名会自动忽略）
+H5_DOMAIN="www.yourdomain.com m.yourdomain.com"
+
+# CORS 白名单（生产必填：H5 所有访问域名都必须加入，含 www 与各子域名，逗号分隔）
+CORS_ORIGINS=https://yourdomain.com,https://www.yourdomain.com,https://m.yourdomain.com
 ```
+
+> **CORS 白名单说明**：`CORS_ORIGINS` 是后端 CORS 校验白名单，生产环境必填。即使前端通过 nginx 同源反代 `/api`（页面与接口同域），浏览器请求仍会携带 `Origin` 头，后端仍会做 CORS 校验。H5 站点的所有访问域名（带 www 与不带 www、以及各子域名）都必须加入，否则前端会报「网络连接失败」、后端日志出现 `Not allowed by CORS`。
 
 ### 第三步：配置 Nginx（Docker 容器内）
 
@@ -471,6 +478,11 @@ docker compose logs -f api
 2. 调用 certbot standalone 模式申请 Let's Encrypt 证书
 3. 将证书复制到 `docker/nginx/ssl/`
 4. 重启 nginx 容器，SSL 生效
+
+> **H5 多域名 SAN 证书**：脚本读取 `.env` 中的 `DOMAIN`（主域名）与 `H5_DOMAIN`（H5 域名，可多个空格分隔），
+> 将全部域名签入同一张 SAN 证书（证书路径不变，仍为 `/etc/letsencrypt/live/<DOMAIN>/`）。
+> 申请时加了 `--allow-subset-of-names`：若某个域名验证失败（如备案中），会自动忽略该域名、为其余域名签发，不会导致整体失败。
+> 备案通过后重新执行 `./scripts/setup-ssl.sh apply` 即可把该域名补进证书。
 
 ### 第六步：配置证书自动续期
 
@@ -1267,6 +1279,10 @@ bash scripts/setup-ssl.sh install
 | `setup-renewal` | 创建续期钩子脚本（续期后自动复制证书 + reload nginx）+ 添加 crontab 定时任务 |
 | `renew` | 手动执行续期（webroot 模式，无需停机） |
 | `install` | 仅安装 certbot（自动识别 dnf/yum/apt） |
+
+**多域名 SAN 证书**：脚本从 `.env` 读取 `DOMAIN`（主域名）+ `H5_DOMAIN`（H5 域名，多个空格分隔），
+将全部域名签入同一张证书；`apply` / `renew` / 定时任务均带 `--allow-subset-of-names`，
+某个域名验证失败（如备案中）会自动忽略、为其余域名签发。备案通过后重跑 `apply` 即可补进证书。
 
 **证书位置**：
 - Let's Encrypt 归档：`/etc/letsencrypt/live/yourdomain.com/`
