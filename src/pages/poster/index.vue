@@ -153,8 +153,8 @@ try {
 // 导航栏总高度（px）：statusBar + 88rpx → px
 const navTotalHeight = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
-  const screenWidth = sysInfo.screenWidth || 390
-  const rpxRatio = screenWidth / 750
+  const windowWidth = sysInfo.windowWidth || sysInfo.screenWidth || 390
+  const rpxRatio = windowWidth / 750
   return statusBarHeight.value + 88 * rpxRatio
 })
 

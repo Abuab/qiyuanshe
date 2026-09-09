@@ -204,7 +204,7 @@ const statusBarHeight = (() => {
 })()
 const navBarHeight = computed(() => {
   const sys = uni.getSystemInfoSync()
-  const rpxRatio = (sys.screenWidth || 390) / 750
+  const rpxRatio = (sys.windowWidth || sys.screenWidth || 390) / 750
   return (statusBarHeight || 44) + 88 * rpxRatio
 })
 

@@ -62,8 +62,8 @@ const shareText = ref('')
 
 const navTotalHeight = computed(() => {
   const info = uni.getWindowInfo()
-  const screenWidth = info.screenWidth || 375
-  return statusBarHeight.value + 44 * (screenWidth / 375)
+  const windowWidth = info.windowWidth || info.screenWidth || 375
+  return statusBarHeight.value + 44 * (windowWidth / 375)
 })
 
 onLoad((opts: any) => {

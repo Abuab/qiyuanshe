@@ -318,8 +318,9 @@ const statusBarHeight = ref(20)
 // 导航栏总高度（px）：statusBar + 88rpx → px
 const navTotalHeight = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
-  const screenWidth = sysInfo.screenWidth || 390
-  const rpxRatio = screenWidth / 750
+  // H5 端 screenWidth 为物理像素（如 1290），windowWidth 才是 CSS 逻辑像素（与小程序语义一致）
+  const windowWidth = sysInfo.windowWidth || sysInfo.screenWidth || 390
+  const rpxRatio = windowWidth / 750
   return statusBarHeight.value + 88 * rpxRatio
 })
 const refreshingVisible = ref(false)  // 下拉刷新状态
@@ -382,7 +383,12 @@ let carouselTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   const sysInfo = uni.getWindowInfo()
+  // #ifdef H5
+  statusBarHeight.value = 0 // H5 浏览器无状态栏，导航栏顶部不需要预留状态栏高度
+  // #endif
+  // #ifndef H5
   statusBarHeight.value = sysInfo.statusBarHeight || 20
+  // #endif
   loadStats()
   // 启动会员卡片轮播（3秒切换一次）
   if (vipCardTexts.value.length > 1) {

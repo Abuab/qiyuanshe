@@ -875,8 +875,8 @@ const statusBarHeight = computed(() => {
 const frostTotalHeight = computed(() => {
   const sysInfo = uni.getSystemInfoSync()
   const statusBarH = sysInfo.statusBarHeight || 44
-  const screenWidth = sysInfo.screenWidth || 390
-  const rpxRatio = screenWidth / 750
+  const windowWidth = sysInfo.windowWidth || sysInfo.screenWidth || 390
+  const rpxRatio = windowWidth / 750
   const frostInnerPx = 88 * rpxRatio // 88rpx → px
   return statusBarH + frostInnerPx + 2
 })
