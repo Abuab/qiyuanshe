@@ -29,8 +29,13 @@
 
         <!-- 引导文字 -->
         <view class="oa-guide-text">
-          <text>长按识别关注公众号</text>
-          <text>脱单快人一步！</text>
+          <template v-if="guideText">
+            <text>{{ guideText }}</text>
+          </template>
+          <template v-else>
+            <text>长按识别关注公众号</text>
+            <text>脱单快人一步！</text>
+          </template>
         </view>
 
         <!-- 分隔线 -->
@@ -81,6 +86,7 @@ import { getFullImageUrl } from '@/utils/common'
 interface Props {
   show: boolean
   qrcodeUrl?: string
+  guideText?: string
 }
 
 interface Emits {
@@ -90,6 +96,7 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   qrcodeUrl: '',
+  guideText: '',
 })
 const emit = defineEmits<Emits>()
 

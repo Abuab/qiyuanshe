@@ -386,7 +386,7 @@
         <view v-if="systemStore.showWantMeetButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.CONTACT_APPLY)" class="bb-btn contact-btn" @tap="handleContact">
           <text>想认识Ta</text>
         </view>
-        <view v-if="systemStore.showMatchmakerButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER)" class="bb-btn matchmaker-btn" @tap="showMatchmakerPopup">
+        <view v-if="systemStore.showMatchmakerButton && licenseStore.isFeatureEnabled(LICENSE_FEATURES.MATCHMAKER)" class="bb-btn matchmaker-btn" @tap="handleMatchmakerEntry">
           <text>红娘牵线</text>
         </view>
       </view>
@@ -675,6 +675,12 @@
         @close="showMatchmakerList = false"
         @contact="onSelectMatchmaker"
       />
+      <OfficialAccountPopup
+        :show="showOaPopup"
+        :qrcode-url="oaQrcodeUrl"
+        guide-text="扫码关注公众号，红娘为您服务"
+        @update:show="showOaPopup = $event"
+      />
 
       <!-- ========== 分享底部弹窗 ========== -->
       <view v-if="showSharePopup" class="share-popup-overlay" @tap="closeSharePopup">
@@ -712,15 +718,18 @@
     <!-- #ifndef MP-WEIXIN -->
     <view v-if="showLoginGate" class="guest-gate-overlay">
       <view class="guest-gate-card" @tap.stop>
-        <text class="guest-gate-title">登录查看更多嘉宾</text>
-        <text class="guest-gate-desc">已看完 {{ GUEST_FREE_VIEW_LIMIT }} 位嘉宾，登录后可查看全部优质会员</text>
+        <text class="guest-gate-title">想看更多嘉宾？</text>
+        <text class="guest-gate-desc">已为您推荐 {{ GUEST_FREE_VIEW_LIMIT }} 位优质嘉宾，红娘可帮您一对一牵线</text>
         <view class="guest-gate-buttons">
-          <view class="guest-gate-btn guest-gate-btn-primary" @tap="goToLogin">
-            <text>一键登录</text>
+          <view class="guest-gate-btn guest-gate-btn-primary" @tap="handleGuestGateConsult">
+            <text>咨询红娘</text>
           </view>
-          <view class="guest-gate-btn guest-gate-btn-secondary" @tap="handleLoginGateBack">
-            <text>再逛逛</text>
+          <view class="guest-gate-btn guest-gate-btn-secondary" @tap="goToLogin">
+            <text>去登录</text>
           </view>
+        </view>
+        <view class="guest-gate-back-link" @tap="handleLoginGateBack">
+          <text>再逛逛</text>
         </view>
       </view>
     </view>
@@ -760,6 +769,7 @@ import { icons } from '@/config/icons'
 import { logger } from '@/utils/logger'
 import matchmakerPopup from '@/components/matchmaker-popup/matchmaker-popup.vue'
 import matchmakerListPopup from '@/components/matchmaker-list-popup/matchmaker-list-popup.vue'
+import OfficialAccountPopup from '@/components/OfficialAccountPopup/OfficialAccountPopup.vue'
 import aiMatchPopup from '@/components/ai-match-popup/ai-match-popup.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import BackTop from '@/components/back-top/back-top.vue'
@@ -1180,6 +1190,28 @@ const handleGuestBrowseGate = () => {
 const handleLoginGateBack = () => {
   showLoginGate.value = false
   safeNavigateBack()
+}
+
+// ===== 红娘咨询入口（H5 游客转化 + 底部红娘牵线复用） =====
+const showOaPopup = ref(false)
+const oaQrcodeUrl = computed(() => getFullImageUrl(systemStore.officialAccountQrcode) || '/static/images/service-qrcode.png')
+
+// 展示红娘弹窗；无红娘数据时回退公众号二维码，公众号二维码为空再回退占位图
+const openMatchmakerConsult = async () => {
+  if (!matchmakerList.value.length) {
+    await fetchMatchmakerList()
+  }
+  if (matchmakerList.value.length) {
+    selectedMatchmaker.value = matchmakerList.value[0]
+    showMatchmaker.value = true
+    return
+  }
+  showOaPopup.value = true
+}
+
+const handleGuestGateConsult = () => {
+  showLoginGate.value = false
+  openMatchmakerConsult()
 }
 
 // ===== H5 分享按钮兜底：复制当前页面链接 =====
@@ -1701,6 +1733,16 @@ const showMatchmakerPopup = () => {
   }
   selectedMatchmaker.value = matchmakerList.value[0]
   showMatchmaker.value = true
+}
+
+// 底部「红娘牵线」入口：H5 复用统一咨询逻辑（免登录 + 公众号回退），小程序保持原登录校验行为
+const handleMatchmakerEntry = () => {
+  // #ifndef MP-WEIXIN
+  openMatchmakerConsult()
+  // #endif
+  // #ifdef MP-WEIXIN
+  showMatchmakerPopup()
+  // #endif
 }
 
 const openMatchmakerList = () => { showMatchmaker.value = false; showMatchmakerList.value = true }
@@ -2715,6 +2757,13 @@ $text-hint: #999999;
   background: #F5F5F5;
 
   text { color: $text-secondary; }
+}
+
+.guest-gate-back-link {
+  margin-top: 24rpx;
+  padding: 8rpx 16rpx;
+
+  text { font-size: 26rpx; color: $text-hint; }
 }
 </style>
 
