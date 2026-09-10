@@ -99,6 +99,18 @@ load_env() {
         log_error "========================================================="
         exit 1
     fi
+
+    # 检查登录风控签名密钥（缺失或仍为占位符会导致生产环境 API 启动失败/不安全）
+    if ! grep -q '^RISK_HMAC_SECRET=' .env 2>/dev/null || grep -q '^RISK_HMAC_SECRET=your-risk-hmac-secret-change-this$' .env 2>/dev/null; then
+        log_error "========================================================="
+        log_error "  RISK_HMAC_SECRET 未配置或仍为占位符！"
+        log_error "  登录风控（图形验证码 token）将无法正常签发，生产环境 API 会启动失败。"
+        log_error "  请执行以下命令生成密钥并写入 .env："
+        log_error "    KEY=\$(openssl rand -hex 32)"
+        log_error "    echo \"RISK_HMAC_SECRET=\$KEY\" >> .env"
+        log_error "========================================================="
+        exit 1
+    fi
 }
 
 # 备份数据库

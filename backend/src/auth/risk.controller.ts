@@ -51,7 +51,11 @@ export class RiskController {
   @Get('captcha')
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 30, ttl: 60000 } })
-  async captcha() {
+  async captcha(@Query('mode') mode?: string) {
+    if (mode === 'math') {
+      const { captchaId, question } = await this.captchaService.createMath()
+      return Result.success({ captchaId, question })
+    }
     const { captchaId, imageBase64 } = await this.captchaService.create()
     return Result.success({ captchaId, imageBase64 })
   }

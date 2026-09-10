@@ -457,6 +457,7 @@ JWT_MFA_SECRET=<64位十六进制字符串>
 IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
 AI_ENCRYPT_KEY=<64位十六进制字符串>
 ADMIN_RESET_KEY=<64位十六进制字符串>
+RISK_HMAC_SECRET=<64位十六进制字符串>
 
 # 建议设置：默认管理员初始密码（未设置则启动时随机生成）
 ADMIN_DEFAULT_PASSWORD=<你的强密码>
@@ -781,6 +782,7 @@ WECHAT_NOTIFY_URL=https://yourdomain.com/api/payment/notify
 IDENTITY_ENCRYPTION_KEY=<64位十六进制字符串>
 AI_ENCRYPT_KEY=<64位十六进制字符串>
 ADMIN_RESET_KEY=<64位十六进制字符串>
+RISK_HMAC_SECRET=<64位十六进制字符串>
 
 # 默认管理员初始密码（未设置则首次启动随机生成）
 ADMIN_DEFAULT_PASSWORD=<你的强密码>

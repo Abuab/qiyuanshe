@@ -38,6 +38,18 @@ export class CaptchaService {
     return { captchaId, imageBase64 }
   }
 
+  /** 生成算术验证码（小程序端 SVG 兼容性兜底），返回算式与验证码 id */
+  async createMath(): Promise<{ captchaId: string; question: string }> {
+    const a = Math.floor(Math.random() * 9) + 1 // 1~9
+    const b = Math.floor(Math.random() * 9) + 1 // 1~9
+    const answer = String(a + b)
+
+    const captchaId = randomBytes(16).toString('hex')
+    await this.redis.set(`captcha:code:${captchaId}`, answer, CaptchaService.TTL_SECONDS)
+
+    return { captchaId, question: `${a} + ${b} = ?` }
+  }
+
   /** 校验图形验证码，成功即作废；连续错误 3 次强制刷新 */
   async verify(captchaId: string, code: string): Promise<boolean> {
     const codeKey = `captcha:code:${captchaId}`

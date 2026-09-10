@@ -73,14 +73,14 @@
           </text>
         </view>
 
-        <!-- 图形验证码（风控触发时显示） -->
+        <!-- 图形验证码（风控触发时显示；小程序端为算术验证码兜底） -->
         <view v-if="needCaptcha" class="captcha-box">
           <input
             v-model="captchaInput"
             class="captcha-input"
             type="text"
             maxlength="5"
-            placeholder="请输入图形验证码"
+            :placeholder="captchaQuestion ? '请输入计算结果' : '请输入图形验证码'"
           />
           <image
             v-if="captchaImage"
@@ -89,6 +89,10 @@
             mode="widthFix"
             @tap="loadCaptcha"
           />
+          <view v-if="captchaQuestion" class="captcha-math" @tap="loadCaptcha">
+            <text class="captcha-math-text">{{ captchaQuestion }}</text>
+            <text class="captcha-math-refresh">点击刷新</text>
+          </view>
         </view>
 
         <!-- 确定按钮 -->
@@ -154,6 +158,7 @@ const needCaptcha = ref(false)
 const captchaId = ref('')
 const captchaImage = ref('')
 const captchaInput = ref('')
+const captchaQuestion = ref('')
 
 onMounted(() => {
   checkLogin()
@@ -296,13 +301,24 @@ const getDeviceFingerprint = (): string => {
   }
 }
 
-/** 加载图形验证码图片 */
+/** 加载图形验证码（H5：SVG 图片；小程序端 SVG 兼容性不确定，兜底用算术验证码） */
 const loadCaptcha = async () => {
   try {
-    const res = await get<{ captchaId: string; imageBase64: string }>('/auth/captcha')
-    captchaId.value = res.captchaId
-    captchaImage.value = `data:image/svg+xml;base64,${res.imageBase64}`
     captchaInput.value = ''
+    // #ifdef MP-WEIXIN
+    const mathRes = await get<{ captchaId: string; question: string }>('/auth/captcha', {
+      mode: 'math',
+    })
+    captchaId.value = mathRes.captchaId
+    captchaQuestion.value = mathRes.question || ''
+    captchaImage.value = ''
+    // #endif
+    // #ifndef MP-WEIXIN
+    const imgRes = await get<{ captchaId: string; imageBase64: string }>('/auth/captcha')
+    captchaId.value = imgRes.captchaId
+    captchaImage.value = `data:image/svg+xml;base64,${imgRes.imageBase64}`
+    captchaQuestion.value = ''
+    // #endif
   } catch (e: any) {
     logger.error('加载图形验证码失败:', e?.message || e)
   }
@@ -690,6 +706,19 @@ const handleLoginSuccess = () => {
   height: 80rpx;
   border-radius: 12rpx;
   flex-shrink: 0;
+}
+.captcha-math {
+  width: 200rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #FFE0E6, #FFD9E0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  &-text { font-size: 30rpx; color: #FF4D6D; font-weight: 700; }
+  &-refresh { font-size: 20rpx; color: #FF8CA0; margin-top: 2rpx; }
 }
 
 // ===== 确定按钮 =====
