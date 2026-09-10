@@ -740,7 +740,7 @@ const goToMatchReport = () => {
 
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 // 需要登录的 key 列表
-const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myLikes', 'privacy', 'feedback'])
+const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myLikes', 'privacy', 'feedback', 'matchReport'])
 const handleToolClick = (key: string) => {
   // 未登录时，提示登录
   if (!isLoggedIn.value && requireLoginKeys.has(key)) {

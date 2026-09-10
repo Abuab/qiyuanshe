@@ -97,11 +97,6 @@
       <view class="loading-spinner" />
       <text class="loading-text">登录中...</text>
     </view>
-
-    <!-- 完善资料弹窗（新用户首次登录后，无法关闭） -->
-    <profile-complete-popup
-      :show="showProfilePopup"
-    />
   </view>
 </template>
 
@@ -114,7 +109,6 @@ import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
-import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 interface LoginResult {
@@ -127,7 +121,6 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
 const showProtocol = ref(false)
-const showProfilePopup = ref(false)
 const loading = ref(false)
 // 协议弹窗被同意时置为 true，登录成功（已鉴权）后再补记同意，避免未登录上报 401
 const pendingAgreementReport = ref(false)

@@ -83,20 +83,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useSystemStore } from '@/store/system'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 import { useStatusBarHeight } from '@/subpkg-pages/composables/useStatusBarHeight'
 
-const systemStore = useSystemStore()
 const userStore = useUserStore()
 const statusBarHeight = useStatusBarHeight()
 const navTopPx = ref(0)
 const showDialog = ref(false)
-
-const pageIcons = computed(() => systemStore.icons?.page || {})
 
 onMounted(() => {
   navTopPx.value = statusBarHeight.value + 44
