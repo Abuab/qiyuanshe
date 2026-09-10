@@ -70,7 +70,7 @@ cat license_public.pem   # 复制新公钥内容
 在**授权方本机**执行（签发脚本与私钥都不在服务器上）：
 
 ```bash
-cd /Users/kevin/Documents/trae_projects/qiyuanshe-match   # 仓库根目录
+cd /Users/你的用户名/xxx/qys   # 仓库根目录
 
 # 方式一：Node.js 版本
 node generate-license.js ~/license-keys/license_private.pem
@@ -115,8 +115,8 @@ LICENSE_ENCRYPT_KEY=
 ### 4.2 拉取并重建
 
 ```bash
-ssh sh-th
-cd /usr/local/src/qiyuanshe/
+ssh root@你的服务器IP
+cd /opt/qys/
 git pull
 docker compose down
 docker compose up -d --build
@@ -192,8 +192,8 @@ sleep 3 && docker compose ps
 若部署后出现异常：
 
 ```bash
-ssh sh-th
-cd /usr/local/src/qiyuanshe/
+ssh root@你的服务器IP
+cd /opt/qys/
 git log --oneline -3          # 找到上一个正常提交
 git checkout <上一步提交hash>
 docker compose up -d --build

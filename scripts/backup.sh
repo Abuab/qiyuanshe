@@ -13,7 +13,7 @@
 #   bash scripts/backup.sh
 #
 # crontab 计划任务（每天 03:00）：
-#   0 3 * * * cd /usr/local/src/qiyuanshe && bash scripts/backup.sh >> logs/backup.log 2>&1
+#   0 3 * * * cd /opt/qys && bash scripts/backup.sh >> logs/backup.log 2>&1
 # =============================================
 
 set -e
