@@ -734,6 +734,10 @@ const goToFeedback = () => {
   showFeedback.value = true
 }
 
+const goToMatchReport = () => {
+  uni.navigateTo({ url: '/pages/match-report/index' })
+}
+
 // 中央分发器 - 避免 mini-program 中函数引用丢失
 // 需要登录的 key 列表
 const requireLoginKeys = new Set(['myPhotos', 'loveQuotes', 'myLikes', 'privacy', 'feedback'])
@@ -751,6 +755,7 @@ const handleToolClick = (key: string) => {
     feedback: goToFeedback,
     userAgreement: goToUserAgreement,
     antiFraud: goToAntiFraud,
+    matchReport: goToMatchReport,
   }
   const fn = map[key]
   if (fn) fn()
@@ -767,7 +772,7 @@ const toolGrid7 = computed(() => {
     { key: 'feedback',    label: '问题反馈', iconName: 'icon-question', emoji: '' },
     { key: 'userAgreement', label: '用户协议', iconName: 'icon-scroll', emoji: '' },
     { key: 'antiFraud',   label: '防骗提醒', iconName: 'icon-warning-circle', emoji: '' },
-    { key: 'matchReport', label: '匹配报告', iconName: 'icon-heartbeat-thin', emoji: '' },
+    { key: 'matchReport', label: '匹配报告', iconName: 'icon-note-pencil', emoji: '' },
   ]
   // 「我的喜欢」入口受后台开关控制
   return all.filter(item => item.key !== 'myLikes' || systemStore.showMyLikesEntry)
