@@ -43,74 +43,86 @@
         <!-- 手机插画 -->
         <image src="/static/login-phone.png" mode="widthFix" class="phone-img" />
 
-        <!-- 标题 -->
-        <text class="login-title">手机号码登录</text>
-
-        <!-- 手机号输入框 -->
-        <view class="input-box phone-box">
-          <AppIcon name="icon-device-mobile-light" size="40" color="#FF8FA8" />
-          <input
-            v-model="smsPhone"
-            class="input-field"
-            type="number"
-            maxlength="11"
-            placeholder="请输入手机号"
-          />
-        </view>
-
-        <!-- 验证码输入框 -->
-        <view class="input-box code-box">
-          <AppIcon name="icon-shield-check-thin" size="40" color="#FF8FA8" />
-          <input
-            v-model="smsCode"
-            class="input-field code-field"
-            type="number"
-            maxlength="6"
-            placeholder="请输入验证码"
-          />
-          <text class="sms-code-text" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
-            {{ smsCountdown > 0 ? `${smsCountdown}秒后重发` : '获取验证码' }}
-          </text>
-        </view>
-
-        <!-- 图形验证码（风控触发时显示；小程序端为算术验证码兜底） -->
-        <view v-if="needCaptcha" class="captcha-box">
-          <input
-            v-model="captchaInput"
-            class="captcha-input"
-            type="text"
-            maxlength="5"
-            :placeholder="captchaQuestion ? '请输入计算结果' : '请输入图形验证码'"
-          />
-          <image
-            v-if="captchaImage"
-            :src="captchaImage"
-            class="captcha-img"
-            mode="widthFix"
-            @tap="loadCaptcha"
-          />
-          <view v-if="captchaQuestion" class="captcha-math" @tap="loadCaptcha">
-            <text class="captcha-math-text">{{ captchaQuestion }}</text>
-            <text class="captcha-math-refresh">点击刷新</text>
-          </view>
-        </view>
-
-        <!-- 确定按钮 -->
-        <view class="login-btn" @tap="submitSmsLogin">
-          <text>确定</text>
-        </view>
-
-        <!-- 小程序：微信手机号快捷登录 -->
+        <!-- ===== 小程序：微信快捷登录入口（默认） ===== -->
         <!-- #ifdef MP-WEIXIN -->
-        <button
-          class="wechat-quick"
-          open-type="getPhoneNumber"
-          @getphonenumber="onGetPhoneNumber"
-          @tap="handlePhoneLogin"
-        >
-          微信手机号快捷登录
-        </button>
+        <view v-if="loginMode === 'wechat'" class="wechat-entry">
+          <text class="login-title">手机号登录</text>
+          <button
+            class="wechat-quick-btn"
+            open-type="getPhoneNumber"
+            @getphonenumber="onGetPhoneNumber"
+            @tap="handlePhoneLogin"
+          >
+            微信手机号快捷登录
+          </button>
+          <text class="sms-entry-link" @tap="switchToSms">使用手机验证码登录</text>
+        </view>
         <!-- #endif -->
+
+        <!-- ===== 手机验证码登录表单（H5 默认 / 小程序选择后显示） ===== -->
+        <view v-if="loginMode === 'sms'" class="sms-form-box">
+          <!-- 标题 -->
+          <text class="login-title">手机号码登录</text>
+
+          <!-- 手机号输入框 -->
+          <view class="input-box phone-box">
+            <AppIcon name="icon-device-mobile-light" size="40" color="#FF8FA8" />
+            <input
+              v-model="smsPhone"
+              class="input-field"
+              type="number"
+              maxlength="11"
+              placeholder="请输入手机号"
+            />
+          </view>
+
+          <!-- 验证码输入框 -->
+          <view class="input-box code-box">
+            <AppIcon name="icon-shield-check-thin" size="40" color="#FF8FA8" />
+            <input
+              v-model="smsCode"
+              class="input-field code-field"
+              type="number"
+              maxlength="6"
+              placeholder="请输入验证码"
+            />
+            <text class="sms-code-text" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
+              {{ smsCountdown > 0 ? `${smsCountdown}秒后重发` : '获取验证码' }}
+            </text>
+          </view>
+
+          <!-- 图形验证码（风控触发时显示；小程序端为算术验证码兜底） -->
+          <view v-if="needCaptcha" class="captcha-box">
+            <input
+              v-model="captchaInput"
+              class="captcha-input"
+              type="text"
+              maxlength="5"
+              :placeholder="captchaQuestion ? '请输入计算结果' : '请输入图形验证码'"
+            />
+            <image
+              v-if="captchaImage"
+              :src="captchaImage"
+              class="captcha-img"
+              mode="widthFix"
+              @tap="loadCaptcha"
+            />
+            <view v-if="captchaQuestion" class="captcha-math" @tap="loadCaptcha">
+              <text class="captcha-math-text">{{ captchaQuestion }}</text>
+              <text class="captcha-math-refresh">点击刷新</text>
+            </view>
+          </view>
+
+          <!-- 确定按钮 -->
+          <view class="login-btn" @tap="submitSmsLogin">
+            <text>确定</text>
+          </view>
+
+          <!-- 小程序：返回微信快捷登录 -->
+          <!-- #ifdef MP-WEIXIN -->
+          <text class="sms-entry-link" @tap="switchToWechat">使用微信快捷登录</text>
+          <!-- #endif -->
+        </view>
       </view>
     </view>
 
@@ -159,6 +171,11 @@ const captchaId = ref('')
 const captchaImage = ref('')
 const captchaInput = ref('')
 const captchaQuestion = ref('')
+// 登录方式：小程序默认微信快捷登录，H5 默认手机验证码登录
+const loginMode = ref<'wechat' | 'sms'>('sms')
+// #ifdef MP-WEIXIN
+loginMode.value = 'wechat'
+// #endif
 
 onMounted(() => {
   checkLogin()
@@ -223,6 +240,21 @@ const openPrivacy = () => {
 }
 
 // #ifdef MP-WEIXIN
+/** 切换到手机验证码登录，并重置图形验证码状态 */
+const switchToSms = () => {
+  loginMode.value = 'sms'
+  needCaptcha.value = false
+  captchaId.value = ''
+  captchaImage.value = ''
+  captchaQuestion.value = ''
+  captchaInput.value = ''
+}
+
+/** 返回微信快捷登录 */
+const switchToWechat = () => {
+  loginMode.value = 'wechat'
+}
+
 const handlePhoneLogin = async () => {
   if (!secureStorage.isProtocolAgreed()) {
     showProtocol.value = true
@@ -732,19 +764,44 @@ const handleLoginSuccess = () => {
   &:active { opacity: 0.85; }
 }
 
-// ===== 小程序：微信手机号快捷登录 =====
-.wechat-quick {
-  margin-top: 32rpx;
+// ===== 手机验证码登录表单容器 =====
+.sms-form-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// ===== 小程序：微信快捷登录入口 =====
+.wechat-entry {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wechat-quick-btn {
+  width: 100%;
+  height: 96rpx;
+  background: #07C160;
+  border-radius: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   padding: 0;
-  background: transparent;
   border: none;
-  border-radius: 0;
-  line-height: 1.5;
+  line-height: 96rpx;
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 600;
+  &::after { border: none; }
+  &:active { opacity: 0.85; }
+}
+.sms-entry-link {
+  margin-top: 32rpx;
   font-size: 26rpx;
   color: #FF6B8A;
-  font-weight: normal;
-  &::after { border: none; }
-  &:active { background: transparent; opacity: 0.8; }
+  text-align: center;
 }
 
 // ===== 加载遮罩 =====
