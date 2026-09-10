@@ -4,6 +4,9 @@ import { PassportModule } from '@nestjs/passport'
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import { RiskController } from './risk.controller'
+import { RiskService } from './risk.service'
+import { CaptchaService } from './captcha.service'
 import { JwtStrategy } from './strategies/jwt.strategy'
 import { User } from '../entities/User'
 import { UserAgreement } from '../entities/UserAgreement'
@@ -25,8 +28,8 @@ import { UserModule } from '../user/user.module'
     AgreementLogStorageModule,
     UserModule,
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  controllers: [AuthController, RiskController],
+  providers: [AuthService, JwtStrategy, RiskService, CaptchaService],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

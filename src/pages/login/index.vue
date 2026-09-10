@@ -73,6 +73,24 @@
           </text>
         </view>
 
+        <!-- 图形验证码（风控触发时显示） -->
+        <view v-if="needCaptcha" class="captcha-box">
+          <input
+            v-model="captchaInput"
+            class="captcha-input"
+            type="text"
+            maxlength="5"
+            placeholder="请输入图形验证码"
+          />
+          <image
+            v-if="captchaImage"
+            :src="captchaImage"
+            class="captcha-img"
+            mode="widthFix"
+            @tap="loadCaptcha"
+          />
+        </view>
+
         <!-- 确定按钮 -->
         <view class="login-btn" @tap="submitSmsLogin">
           <text>确定</text>
@@ -104,7 +122,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
-import { post } from '@/utils/request'
+import { post, get } from '@/utils/request'
 import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
@@ -131,6 +149,11 @@ const smsPhone = ref('')
 const smsCode = ref('')
 const smsCountdown = ref(0)
 let smsTimer: ReturnType<typeof setInterval> | null = null
+// 图形验证码（风控触发时显示）
+const needCaptcha = ref(false)
+const captchaId = ref('')
+const captchaImage = ref('')
+const captchaInput = ref('')
 
 onMounted(() => {
   checkLogin()
@@ -228,6 +251,63 @@ const getDeviceInfo = (): string => {
   }
 }
 
+/** 非加密字符串哈希（cyrb53），用于生成稳定设备指纹 */
+const hashString = (str: string): string => {
+  let h1 = 0xdeadbeef
+  let h2 = 0x41c6ce57
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i)
+    h1 = Math.imul(h1 ^ ch, 2654435761)
+    h2 = Math.imul(h2 ^ ch, 1597334677)
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909)
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909)
+  return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')
+}
+
+/** 生成一次性随机串（nonce） */
+const genNonce = (): string => {
+  const chars = 'abcdef0123456789'
+  let out = ''
+  for (let i = 0; i < 16; i++) out += chars[Math.floor(Math.random() * chars.length)]
+  return out
+}
+
+/** 设备指纹：仅采集非敏感信息（UA/品牌/机型/系统/屏幕/时区）并哈希，不含 IMEI/精确位置 */
+const getDeviceFingerprint = (): string => {
+  try {
+    let raw = ''
+    // #ifdef MP-WEIXIN
+    const s = uni.getSystemInfoSync()
+    raw = [s.brand, s.model, s.system, s.screenWidth, s.screenHeight, s.pixelRatio]
+      .filter(Boolean)
+      .join('|')
+    // #endif
+    // #ifndef MP-WEIXIN
+    const nav = typeof navigator !== 'undefined' ? (navigator as any) : null
+    let tz = ''
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '' } catch (_) { /* ignore */ }
+    const sw = typeof screen !== 'undefined' ? `${screen.width}x${screen.height}` : ''
+    raw = [nav?.userAgent || '', sw, tz].join('|')
+    // #endif
+    return raw ? hashString(raw) : ''
+  } catch {
+    return ''
+  }
+}
+
+/** 加载图形验证码图片 */
+const loadCaptcha = async () => {
+  try {
+    const res = await get<{ captchaId: string; imageBase64: string }>('/auth/captcha')
+    captchaId.value = res.captchaId
+    captchaImage.value = `data:image/svg+xml;base64,${res.imageBase64}`
+    captchaInput.value = ''
+  } catch (e: any) {
+    logger.error('加载图形验证码失败:', e?.message || e)
+  }
+}
+
 /** 发送短信验证码 */
 const sendSmsCode = async () => {
   const phone = smsPhone.value.trim()
@@ -238,7 +318,50 @@ const sendSmsCode = async () => {
   if (smsCountdown.value > 0) return
 
   try {
-    await post('/auth/sms-code', { phone })
+    const deviceFingerprint = getDeviceFingerprint()
+
+    // 1. 风控预判：命中规则需先完成图形验证码
+    const risk = await get<{ needCaptcha: boolean }>('/auth/risk/check', {
+      phone,
+      deviceFingerprint,
+    })
+
+    let captchaToken = ''
+    if (risk?.needCaptcha) {
+      needCaptcha.value = true
+      if (!captchaId.value) await loadCaptcha()
+      if (!captchaInput.value.trim()) {
+        showToast('请输入图形验证码', 'none')
+        return
+      }
+      // 2. 校验图形验证码，换取一次性 token
+      const verifyRes = await post<{ captchaToken: string }>('/auth/captcha/verify', {
+        captchaId: captchaId.value,
+        code: captchaInput.value.trim(),
+        phone,
+      })
+      captchaToken = verifyRes?.captchaToken || ''
+      if (!captchaToken) {
+        await loadCaptcha()
+        showToast('图形验证码校验失败，请重试', 'none')
+        return
+      }
+      captchaInput.value = ''
+    }
+
+    // 3. 发送短信验证码（携带防重放参数）
+    await post('/auth/sms-code', {
+      phone,
+      deviceFingerprint,
+      captchaToken: captchaToken || undefined,
+      timestamp: Date.now(),
+      nonce: genNonce(),
+    })
+
+    // 发送成功：收起图形验证码，开始倒计时
+    needCaptcha.value = false
+    captchaId.value = ''
+    captchaImage.value = ''
     showToast('验证码已发送', 'none')
     smsCountdown.value = 60
     smsTimer = setInterval(() => {
@@ -295,6 +418,7 @@ const submitSmsLogin = async () => {
       phone,
       smsCode: code,
       deviceInfo: getDeviceInfo(),
+      deviceFingerprint: getDeviceFingerprint(),
     })
 
     if (result?.user && result?.tokens) {
@@ -541,6 +665,31 @@ const handleLoginSuccess = () => {
   &.disabled {
     color: #999;
   }
+}
+
+// ===== 图形验证码（风控） =====
+.captcha-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+.captcha-input {
+  flex: 1;
+  height: 80rpx;
+  background: #F5F5F5;
+  border-radius: 16rpx;
+  padding: 0 28rpx;
+  font-size: 28rpx;
+  color: #333;
+  box-sizing: border-box;
+}
+.captcha-img {
+  width: 200rpx;
+  height: 80rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
 }
 
 // ===== 确定按钮 =====

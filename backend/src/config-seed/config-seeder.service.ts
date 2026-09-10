@@ -7,6 +7,7 @@ import { MessageTemplate } from '../entities/MessageTemplate'
 import { OperationTag } from '../entities/OperationTag'
 import { QuickQuestion } from '../entities/QuickQuestion'
 import { QuickQuestionCategory } from '../entities/QuickQuestionCategory'
+import { Agreement, AgreementType } from '../entities/Agreement'
 
 /**
  * 运营配置默认数据 Seeder
@@ -21,13 +22,14 @@ import { QuickQuestionCategory } from '../entities/QuickQuestionCategory'
  * - message_templates 系统消息模板
  * - operation_tags 运营标签
  * - quick_question_categories / quick_questions 快捷问题
+ * - agreements 隐私政策补充「设备指纹风控」条款（仅对存量部署生效）
  */
 @Injectable()
 export class ConfigSeederService implements OnApplicationBootstrap {
   private readonly logger = new Logger(ConfigSeederService.name)
 
   private static readonly MATCHMAKERS = [
-    { name: '妮妮', avatar: 'https://date.arvine.cn/uploads/upload-1781615721165-991458889.jpeg', title: '资深红娘', wechat: 'liayi123', phone: '13800138001', qrCode: '/uploads/upload-1780644804240-550018623.png', description: '从事婚恋行业15年，成功撮合超过500对新人。', sortOrder: 1 },
+    { name: '妮妮', avatar: '/uploads/upload-1781615721165-991458889.jpeg', title: '资深红娘', wechat: 'liayi123', phone: '13800138001', qrCode: '/uploads/upload-1780644804240-550018623.png', description: '从事婚恋行业15年，成功撮合超过500对新人。', sortOrder: 1 },
     { name: '王姐', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=wangjie', title: '金牌红娘', wechat: 'wangjie456', phone: '13800138002', qrCode: '/uploads/upload-1780644816360-270474464.png', description: '专注年轻白领群体，同城匹配成功率高达80%。', sortOrder: 2 },
     { name: '张老师', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=zhang', title: '首席红娘', wechat: 'zhanglaoshi789', phone: '13800138003', qrCode: '/uploads/upload-1780644824293-529015578.png', description: '20年资深红娘，擅长为大龄单身人士牵线搭桥。', sortOrder: 3 },
   ]
@@ -100,6 +102,14 @@ export class ConfigSeederService implements OnApplicationBootstrap {
     { content: '被拒绝了怎么调整心态？', categoryIndex: 2 },
   ]
 
+  /**
+   * 隐私政策补充条款：披露设备指纹风控信息（与 init.sql 中种子文案保持一致）。
+   * 仅当存量 active PRIVACY_POLICY 不含该标记时追加，幂等。
+   */
+  private static readonly PRIVACY_FINGERPRINT_MARKER = '防范短信验证码接口被恶意刷取'
+  private static readonly PRIVACY_FINGERPRINT_CLAUSE =
+    '<p>为保障账号与平台安全、防范短信验证码接口被恶意刷取，我们在您获取短信验证码或进行登录风控校验时，会收集您的基础设备信息（如设备品牌、机型、操作系统版本、屏幕尺寸、时区等），并据此生成不可逆的设备指纹哈希，用于识别异常登录行为、进行风险控制与安全防护。上述设备指纹不包含您的精确位置、通讯录、IMEI、MAC 地址等敏感信息。当系统检测到异常或高风险操作时，我们可能要求您额外完成图形验证码验证，以保护您的账号安全。</p>'
+
   constructor(
     @InjectRepository(Matchmaker)
     private readonly matchmakerRepo: Repository<Matchmaker>,
@@ -113,6 +123,8 @@ export class ConfigSeederService implements OnApplicationBootstrap {
     private readonly qqCategoryRepo: Repository<QuickQuestionCategory>,
     @InjectRepository(QuickQuestion)
     private readonly qqRepo: Repository<QuickQuestion>,
+    @InjectRepository(Agreement)
+    private readonly agreementRepo: Repository<Agreement>,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -121,6 +133,7 @@ export class ConfigSeederService implements OnApplicationBootstrap {
     await this.seedMessageTemplates()
     await this.seedOperationTags()
     await this.seedQuickQuestions()
+    await this.seedPrivacyFingerprintClause()
   }
 
   private async seedMatchmakers(): Promise<void> {
@@ -243,6 +256,29 @@ export class ConfigSeederService implements OnApplicationBootstrap {
       }
     } catch (e: any) {
       this.logger.warn(`快捷问题数据初始化失败: ${e?.message}`)
+    }
+  }
+
+  /**
+   * 为存量部署的隐私政策补充「设备指纹风控」条款。
+   * - 全新部署由 init.sql 直接播种，本方法检测到已含标记时跳过；
+   * - 存量部署（协议表已有 active PRIVACY_POLICY）则追加条款，保证合规披露。
+   */
+  private async seedPrivacyFingerprintClause(): Promise<void> {
+    try {
+      const active = await this.agreementRepo.findOne({
+        where: { type: AgreementType.PRIVACY_POLICY, isActive: 1 },
+        order: { updatedAt: 'DESC' },
+      })
+      if (!active) return
+      if (active.content?.includes(ConfigSeederService.PRIVACY_FINGERPRINT_MARKER)) {
+        return
+      }
+      active.content = `${active.content}\n${ConfigSeederService.PRIVACY_FINGERPRINT_CLAUSE}`
+      await this.agreementRepo.save(active)
+      this.logger.debug('已为隐私政策补充设备指纹风控条款')
+    } catch (e: any) {
+      this.logger.warn(`隐私政策条款补充失败: ${e?.message}`)
     }
   }
 }

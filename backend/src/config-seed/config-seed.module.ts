@@ -6,6 +6,7 @@ import { MessageTemplate } from '../entities/MessageTemplate'
 import { OperationTag } from '../entities/OperationTag'
 import { QuickQuestion } from '../entities/QuickQuestion'
 import { QuickQuestionCategory } from '../entities/QuickQuestionCategory'
+import { Agreement } from '../entities/Agreement'
 import { ConfigSeederService } from './config-seeder.service'
 
 @Module({
@@ -17,6 +18,7 @@ import { ConfigSeederService } from './config-seeder.service'
       OperationTag,
       QuickQuestion,
       QuickQuestionCategory,
+      Agreement,
     ]),
   ],
   providers: [ConfigSeederService],

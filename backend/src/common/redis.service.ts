@@ -54,6 +54,35 @@ export class RedisService implements OnModuleDestroy {
     return this.getClient().incr(key)
   }
 
+  /**
+   * 原子自增并在 key 首次创建时设置过期时间。
+   * 用于风控限频计数：并发下 TTL 只设置一次，避免每次请求都刷新过期时间导致窗口无限延长。
+   */
+  async incrWithTtl(key: string, ttlSeconds: number): Promise<number> {
+    const script = `
+      local c = redis.call('INCR', KEYS[1])
+      if c == 1 then
+        redis.call('EXPIRE', KEYS[1], ARGV[1])
+      end
+      return c
+    `
+    const result = await this.getClient().eval(script, 1, key, ttlSeconds)
+    return Number(result)
+  }
+
+  /**
+   * 仅当 key 不存在时写入（SET NX）。用于一次性 nonce 去重。
+   * 返回 true 表示首次写入成功；false 表示 key 已存在（重复请求）。
+   */
+  async setNx(key: string, value: string, ttlSeconds?: number): Promise<boolean> {
+    const client = this.getClient()
+    const result =
+      ttlSeconds !== undefined && ttlSeconds > 0
+        ? await client.set(key, value, 'EX', ttlSeconds, 'NX')
+        : await client.set(key, value, 'NX')
+    return result === 'OK'
+  }
+
   async expire(key: string, seconds: number): Promise<void> {
     await this.getClient().expire(key, seconds)
   }

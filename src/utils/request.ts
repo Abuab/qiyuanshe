@@ -153,7 +153,7 @@ function handleLicenseBizCode(
 }
 
 /** 无需登录即可访问的认证端点：这些端点的 401 不应触发全局限流跳转 */
-const AUTH_WHITELIST = ['/auth/phone-login', '/auth/wechat-login', '/auth/refresh', '/auth/sms-code', '/auth/sms-login']
+const AUTH_WHITELIST = ['/auth/phone-login', '/auth/wechat-login', '/auth/refresh', '/auth/sms-code', '/auth/sms-login', '/auth/risk/check', '/auth/captcha', '/auth/captcha/verify']
 
 /** 统一处理 401 */
 function handleUnauthorized(tokenWasPresent: boolean): void {

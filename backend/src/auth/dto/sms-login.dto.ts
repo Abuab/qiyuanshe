@@ -19,4 +19,9 @@ export class SmsLoginDto {
   @IsString()
   @IsOptional()
   deviceInfo?: string
+
+  /** 设备指纹哈希（用于短信验证码失败次数风控） */
+  @IsString()
+  @IsOptional()
+  deviceFingerprint?: string
 }

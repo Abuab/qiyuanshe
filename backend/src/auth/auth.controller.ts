@@ -60,8 +60,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  async sendSmsCode(@Body() dto: SendSmsCodeDto) {
-    await this.authService.sendSmsCode(dto.phone)
+  async sendSmsCode(@Body() dto: SendSmsCodeDto, @Request() req: any) {
+    const ip = req.headers['x-forwarded-for'] || req.ip || ''
+    const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
+    const userAgent = (req.headers['user-agent'] || '') as string
+    await this.authService.sendSmsCode(dto, ipAddress, userAgent)
     return Result.success(null, '验证码已发送')
   }
 
@@ -73,7 +76,14 @@ export class AuthController {
     const ip = req.headers['x-forwarded-for'] || req.ip || ''
     const ipAddress = typeof ip === 'string' ? ip.split(',')[0].trim() : ''
     const userAgent = (dto.deviceInfo || req.headers['user-agent'] || '') as string
-    const result = await this.authService.smsLogin(dto.code, dto.phone, dto.smsCode, ipAddress, userAgent)
+    const result = await this.authService.smsLogin(
+      dto.code,
+      dto.phone,
+      dto.smsCode,
+      ipAddress,
+      userAgent,
+      dto.deviceFingerprint,
+    )
     return Result.success(result)
   }
 

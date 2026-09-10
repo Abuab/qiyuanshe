@@ -15,6 +15,8 @@ import { UserService } from '../user/user.service'
 import { RedisService } from '../common/redis.service'
 import { CryptoService } from '../common/crypto.service'
 import { SmsService } from '../common/sms.service'
+import { RiskService } from './risk.service'
+import { SendSmsCodeDto } from './dto/send-sms-code.dto'
 import { resolveAvatarUrl, resolveStaticUrl } from '../common/image-url'
 
 interface WechatSession {
@@ -57,6 +59,7 @@ export class AuthService {
     private readonly redis: RedisService,
     private readonly cryptoService: CryptoService,
     private readonly smsService: SmsService,
+    private readonly riskService: RiskService,
   ) {}
   private readonly logger = new Logger(AuthService.name)
 
@@ -379,8 +382,9 @@ export class AuthService {
     return { user: userInfo, tokens }
   }
 
-  /** 发送短信验证码 */
-  async sendSmsCode(phone: string): Promise<void> {
+  /** 发送短信验证码（含多维度限频、风控图形验证、防重放） */
+  async sendSmsCode(dto: SendSmsCodeDto, ipAddress: string, userAgent: string): Promise<void> {
+    const phone = dto.phone
     // 1. 校验手机号格式
     if (!/^1[3-9]\d{9}$/.test(phone)) {
       throw new BadRequestException('手机号格式不正确')
@@ -391,37 +395,46 @@ export class AuthService {
       throw new ServiceUnavailableException('短信服务暂未开通，请使用手机号快捷登录')
     }
 
-    // 2. 发送频率限制：60 秒内只能发送一次
-    const cooldownKey = `sms:cooldown:${phone}`
-    const cooldown = await this.redis.get(cooldownKey)
-    if (cooldown) {
-      throw new BadRequestException('发送过于频繁，请稍后再试')
+    // 2. 防重放：时间戳 ±5min + nonce 一次性
+    await this.riskService.verifyAntiReplay(dto.timestamp, dto.nonce)
+
+    const deviceFingerprint = dto.deviceFingerprint || ''
+
+    // 3. 多维度限频（超限统一抛「操作过于频繁」，不泄露具体规则）
+    await this.riskService.enforceRateLimit(phone, ipAddress, deviceFingerprint)
+
+    // 4. 风控判定：命中规则必须携带有效图形验证码 token
+    const needCaptcha = await this.riskService.checkRisk(phone, ipAddress, deviceFingerprint)
+    if (needCaptcha) {
+      if (!dto.captchaToken) {
+        throw new BadRequestException('请先完成图形验证')
+      }
+      const valid = await this.riskService.verifyCaptchaToken(dto.captchaToken, phone, ipAddress, userAgent)
+      if (!valid) {
+        throw new BadRequestException('图形验证已失效，请重新验证')
+      }
     }
 
-    // 3. 每日发送次数限制（24 小时滚动窗口，最多 10 次）
-    const dailyKey = `sms:daily:${phone}`
-    const dailyCount = parseInt(await this.redis.get(dailyKey) || '0', 10)
-    if (dailyCount >= 10) {
-      throw new BadRequestException('今日发送次数已达上限')
-    }
+    // 5. 记录 IP → 手机号 关联（供「同一 IP 1 小时 ≥5 手机号」风控判定）
+    await this.riskService.recordIpPhone(ipAddress, phone)
 
-    // 4. 生成 6 位验证码并存储（5 分钟有效）
+    // 6. 生成 6 位验证码并存储（5 分钟有效，附带错误次数计数）
     const code = String(Math.floor(100000 + Math.random() * 900000))
     await this.redis.set(`sms:code:${phone}`, code, 300)
+    await this.redis.set(`sms:code:fail:${phone}`, '0', 300)
 
-    // 5. 调用腾讯云短信发送
+    // 7. 调用腾讯云短信发送
     await this.smsService.sendVerificationCode(phone, code)
 
-    // 6. 记录限流
-    await this.redis.set(cooldownKey, '1', 60)
-    await this.redis.set(dailyKey, String(dailyCount + 1), 86400)
+    // 8. 夜间新设备完成一次发送后标记为已知，避免夜间每次重复触发图形验证
+    await this.riskService.markDeviceSeen(deviceFingerprint)
   }
 
   /** 手机验证码登录 */
-  async smsLogin(code: string, phone: string, smsCode: string, ipAddress?: string, userAgent?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
+  async smsLogin(code: string, phone: string, smsCode: string, ipAddress?: string, userAgent?: string, deviceFingerprint?: string): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     // H5 端：无微信 code，走纯手机号登录（不依赖 openid），小程序端不受影响
     if (!code) {
-      return this.smsLoginByPhone(phone, smsCode, ipAddress, userAgent)
+      return this.smsLoginByPhone(phone, smsCode, ipAddress, userAgent, deviceFingerprint)
     }
 
     // 1. code2Session 换取 openid
@@ -431,7 +444,7 @@ export class AuthService {
     }
 
     // 2. 校验短信验证码（校验通过后立即失效）
-    await this.verifySmsCode(phone, smsCode)
+    await this.verifySmsCode(phone, smsCode, deviceFingerprint, ipAddress)
 
     // 3. 检查该手机号是否已被其他账号绑定（排除已删除账号）
     const phoneUser = await this.userRepository.findOne({
@@ -529,9 +542,10 @@ export class AuthService {
     smsCode: string,
     ipAddress?: string,
     userAgent?: string,
+    deviceFingerprint?: string,
   ): Promise<{ user: Partial<User>; tokens: TokenPair }> {
     // 1. 校验短信验证码（校验通过后立即失效）
-    await this.verifySmsCode(phone, smsCode)
+    await this.verifySmsCode(phone, smsCode, deviceFingerprint, ipAddress)
 
     // 2. 按手机号查找未注销用户（H5 账号以手机号标识，openid 可为空）
     let user = await this.userRepository.findOne({
@@ -613,13 +627,27 @@ export class AuthService {
     return { user: userInfo, tokens }
   }
 
-  private async verifySmsCode(phone: string, smsCode: string): Promise<void> {
+  private async verifySmsCode(
+    phone: string,
+    smsCode: string,
+    deviceFingerprint?: string,
+    ipAddress?: string,
+  ): Promise<void> {
     const key = `sms:code:${phone}`
+    const failKey = `sms:code:fail:${phone}`
     const stored = await this.redis.get(key)
     if (!stored || stored !== smsCode) {
+      // 校验失败：记录失败次数（供风控判定），错误 3 次作废验证码
+      await this.riskService.recordVerifyFail(phone, deviceFingerprint || '', ipAddress || '')
+      const fails = await this.redis.incrWithTtl(failKey, 300)
+      if (fails >= 3) {
+        await this.redis.del(key)
+        await this.redis.del(failKey)
+      }
       throw new UnauthorizedException('验证码错误或已过期')
     }
     await this.redis.del(key)
+    await this.redis.del(failKey)
   }
 
   async refreshToken(refreshToken: string): Promise<TokenPair> {

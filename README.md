@@ -116,7 +116,7 @@
 ## 项目结构
 
 ```
-qiyuanshe/
+qys/
 ├── admin/                    # 管理后台前端
 │   ├── src/
 │   │   ├── api/             # API 接口定义
@@ -313,8 +313,8 @@ qiyuanshe/
 #### 1. 克隆项目
 
 ```bash
-git clone https://github.com/Abuab/qiyuanshe.git
-cd qiyuanshe
+git clone <你的仓库地址>
+cd qys
 ```
 
 #### 2. 配置环境变量
@@ -366,9 +366,51 @@ vim .env
 | 数据库/Redis 密码 | `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD`、`REDIS_PASSWORD` |
 | JWT 密钥 | `JWT_SECRET`、`ADMIN_JWT_SECRET`、`JWT_MFA_SECRET` |
 | 加密/重置密钥 | `IDENTITY_ENCRYPTION_KEY`、`AI_ENCRYPT_KEY`、`ADMIN_RESET_KEY`、`LICENSE_ENCRYPT_KEY`（可选，有回退） |
+| 登录风控 | `RISK_HMAC_SECRET`（图形验证码 token 签名密钥，生产必填，缺失将启动失败） |
 | 微信小程序 | `WECHAT_APPID`、`WECHAT_SECRET` |
 | 微信支付 V3 | `WECHAT_MCH_ID`、`WECHAT_API_V3_KEY`、`WECHAT_PRIVATE_KEY`、`WECHAT_MCH_SERIAL_NO` |
 | 域名/证书 | `DOMAIN`、`CORS_ORIGINS`、`SSL_EMAIL` |
+
+## 登录风控（穷人版）
+
+为防止短信验证码接口被恶意刷取，登录/获取验证码链路内置了 Redis 原子限频 + 自建图形验证码 + 防重放签名。所有限频与重复请求统一返回「操作过于频繁，请稍后再试」，不泄露具体规则。
+
+### 图形验证码触发规则
+
+默认情况下用户输入手机号后**直接发送短信验证码**；命中以下任一规则时，前端会先弹出图形验证码，校验通过后才放行发短信：
+
+- 新设备 + 新 IP + 虚拟运营商号段（170/171/165/162）
+- 同一 IP 1 小时内出现 ≥ 5 个不同手机号
+- 同一手机号或设备指纹 24 小时内验证失败 ≥ 3 次
+- 凌晨 0–6 点的批量请求
+
+### 限频阈值（Redis 原子计数）
+
+| 维度 | 窗口 / 次数 |
+|------|-------------|
+| 手机号 | 60s / 1 次、1h / 3 次、24h / 5 次 |
+| IP | 10min / 10 次、24h / 50 次 |
+| 设备指纹 | 24h / 20 次 |
+| 短信验证码 | 5 分钟有效、连续输错 3 次作废 |
+
+### 图形验证码（自建，无第三方依赖）
+
+- 5 位随机字符，剔除易混淆字符（0/O、1/l/I、2/Z、5/S、8/B），随机字体/大小/颜色/旋转/偏移 + 渐变纹理背景 + 干扰线/噪点。
+- 答案仅存 Redis（`captcha:{id}`，TTL 120s），校验成功即删除；同一验证码连续失败 3 次自动作废。
+- 校验通过后签发一次性 `captchaToken`（HMAC 签名，绑定手机号 + IP + UA，5 分钟有效），`sms-code` 接口在触发风控时强制校验该 token，且不可跨场景复用。
+
+### 防重放
+
+请求携带 `timestamp` + `nonce`，后端校验时间窗口（±5 分钟）并对 nonce 做一次性 `SET NX` 落库，重复即拒绝。签名密钥 `RISK_HMAC_SECRET` 只存环境变量，不入库、不进 git。
+
+### 设备指纹与隐私
+
+仅采集浏览器 UA、设备品牌/机型、系统版本、屏幕尺寸、时区等**非敏感字段**并做不可逆哈希，不采集 IMEI、MAC 地址、精确位置。相关披露已写入《隐私政策》（管理后台「系统配置 → 协议管理」与种子数据均已同步）。
+
+### 依赖与环境变量
+
+- 强依赖 Redis：Redis 不可用时登录风控相关接口会失败，不允许静默降级。
+- `RISK_HMAC_SECRET`：生产环境缺失会导致后端**启动失败**，生成方式 `openssl rand -hex 32`。
 
 ## 生产部署（完整步骤）
 
@@ -377,7 +419,7 @@ vim .env
 ### 第一步：克隆项目
 
 ```bash
-git clone https://github.com/Abuab/qiyuanshe.git /opt/qys
+git clone <你的仓库地址> /opt/qys
 cd /opt/qys
 ```
 
@@ -688,7 +730,7 @@ redis-cli -a your_redis_password ping   # 返回 PONG
 ```bash
 # 克隆到 /opt 目录
 cd /opt
-sudo git clone https://github.com/Abuab/qiyuanshe.git qys
+sudo git clone <你的仓库地址> qys
 sudo chown -R $USER:$USER /opt/qys
 cd /opt/qys
 ```
@@ -1022,6 +1064,96 @@ npm run build:mp-weixin
 ```
 
 构建产物在 `dist/build/mp-weixin`，用微信开发者工具导入即可。
+
+### 编译与部署 H5 站点（微信 H5 端）
+
+> 项目除了微信小程序，还能编译成 H5 网页（在手机浏览器或微信内打开）。H5 站点域名是 `m.yourdomain.com`（备用 `www.yourdomain.com`），用户扫码或点链接即可访问，不用安装小程序。
+
+#### 先了解几个关键路径
+
+| 项目 | 说明 |
+|------|------|
+| 构建命令 | `npm run build:h5` |
+| 构建产物 | `dist/build/h5/`（内含 `index.html`、`assets/`、`static/`） |
+| 服务器部署目录 | `/opt/qys/h5/` |
+| Nginx 容器挂载 | `./h5` → 容器内 `/var/www/h5`（只读） |
+| H5 访问域名 | `https://m.yourdomain.com` |
+
+> 说明：下面命令里的 `/opt/qys` 是实际生产部署目录，如果你的服务器目录不同，请替换成你自己的路径。Nginx 容器已把 `h5/` 目录挂载进去，所以把新产物放进 `h5/` 后**立即生效，不需要重启容器**。
+
+#### 方式一：本地编译后上传（推荐，最省事）
+
+适合：你在自己电脑（Mac/Windows）上有代码，编译完传到服务器。
+
+```bash
+# 1. 本地进入项目根目录（有 package.json 的那一层）
+cd /Users/你的用户名/xxx/qys
+
+# 2. 首次需要安装依赖（以后不用重复装）
+npm install
+
+# 3. 编译 H5
+npm run build:h5
+
+# 4. 打包产物（COPYFILE_DISABLE=1 是防止 macOS 生成 ._ 垃圾文件）
+COPYFILE_DISABLE=1 tar czf /tmp/qys_h5.tar.gz -C dist/build/h5 .
+
+# 5. 上传到服务器 /tmp
+scp /tmp/qys_h5.tar.gz root@你的服务器IP:/tmp/
+
+# 6. 登录服务器解包到 h5 目录
+ssh root@你的服务器IP
+cd /opt/qys
+mkdir -p h5
+rm -rf h5/assets h5/static h5/index.html
+tar xzf /tmp/qys_h5.tar.gz -C h5
+```
+
+#### 方式二：直接在服务器上编译（拉代码 + 编译）
+
+适合：代码就在服务器上，或你想在服务器上拉最新代码再编译。
+
+```bash
+# 1. 登录服务器
+ssh root@你的服务器IP
+
+# 2. 进入项目目录
+cd /opt/qys
+
+# 3. 拉取最新代码
+#    首次部署时如果目录还没有代码，改成：
+#    cd /opt && git clone <你的仓库地址> qys && cd qys
+git pull
+
+# 4. 安装依赖（首次或依赖有变化时执行）
+npm install
+
+# 5. 编译 H5
+npm run build:h5
+
+# 6. 把新产物复制到 h5 目录（先清掉旧的，避免残留旧文件）
+mkdir -p h5
+rm -rf h5/assets h5/static h5/index.html
+cp -r dist/build/h5/* h5/
+```
+
+#### 验证是否部署成功
+
+```bash
+# 在服务器上，确认 nginx 容器能看到新文件
+docker exec qys_nginx ls /var/www/h5/
+
+# 浏览器访问，能打开页面即成功
+# https://m.yourdomain.com
+```
+
+#### 常见问题
+
+- **H5 打开提示「网络连接失败」/ 接口报 CORS 错误**：检查 `.env` 里的 `CORS_ORIGINS` 是否包含了 H5 域名 `https://m.yourdomain.com`（以及 `https://www.yourdomain.com`），改完需重启 API 容器生效。
+- **域名打不开**：确认 H5 域名已完成 ICP 备案，且 SSL 证书里已包含该域名（`scripts/setup-ssl.sh` 会从 `.env` 的 `H5_DOMAIN` 读取并签入同一张证书）。
+- **改了代码但页面没变**：浏览器有缓存，强刷（清缓存）或换无痕窗口再访问。
+
+> 提示：如果你已经配置了 SSH 别名，上面命令里的 `root@你的服务器IP` 可以直接写成你的别名。
 
 ### 第十一步：验证部署
 
@@ -1432,15 +1564,15 @@ bash scripts/monitor.sh
 0 2 * * * certbot renew --quiet --webroot -w /opt/qys/docker/nginx/certbot/www
 ```
 
-> **当前生产环境实际配置**（服务器 `/usr/local/src/qiyuanshe`，已生效）：
+> **当前生产环境实际配置**（服务器 `/opt/qys`，已生效）：
 >
 > ```cron
 > # 数据库每日备份（凌晨 3 点）
-> 0 3 * * * cd /usr/local/src/qiyuanshe && bash scripts/backup.sh >> logs/backup.log 2>&1
+> 0 3 * * * cd /opt/qys && bash scripts/backup.sh >> logs/backup.log 2>&1
 > # 系统监控告警（每 10 分钟，脚本内部写 logs/monitor.log 并发送 Webhook 告警）
-> */10 * * * * cd /usr/local/src/qiyuanshe && bash scripts/monitor.sh > /dev/null 2>&1
+> */10 * * * * cd /opt/qys && bash scripts/monitor.sh > /dev/null 2>&1
 > # SSL 证书自动续期（每天凌晨 2 点）
-> 0 2 * * * certbot renew --quiet --webroot -w /usr/local/src/qiyuanshe/docker/nginx/certbot/www
+> 0 2 * * * certbot renew --quiet --webroot -w /opt/qys/docker/nginx/certbot/www
 > ```
 
 ## OSS 对象存储 & CDN 加速接入
