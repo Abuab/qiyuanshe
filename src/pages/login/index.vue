@@ -1,17 +1,7 @@
 <template>
   <view class="login-page">
-    <!-- 粉色渐变背景 -->
-    <view class="bg-pink" />
-
-    <!-- 情侣插画 + 底部阴影 -->
-    <view v-if="illustrationImg" class="illustration-area">
-      <image
-        :src="illustrationImg"
-        mode="widthFix"
-        class="illustration-img"
-      />
-      <view class="illustration-shadow" />
-    </view>
+    <!-- 半透明遮罩 -->
+    <view class="login-mask" />
 
     <!-- ===== 用户协议弹窗 ===== -->
     <view v-if="showProtocol" class="protocol-fullscreen">
@@ -38,101 +28,69 @@
       </view>
     </view>
 
-    <!-- ===== 登录区域 ===== -->
-    <!-- #ifdef MP-WEIXIN -->
-    <view v-if="!showProtocol" class="login-area">
-      <text class="login-tip-line1">需要授权手机号，以便于您下次直接登录</text>
-      <text class="login-tip-line2">请放心，我们将严格保护您的隐私</text>
+    <!-- ===== 登录卡片（遮罩 + 居中白卡） ===== -->
+    <view v-if="!showProtocol" class="login-content">
+      <!-- 情侣插画：悬浮卡片顶部，上半露出卡片外 -->
+      <image src="/static/login-couple.png" mode="widthFix" class="couple-img" />
 
-      <view class="login-buttons">
-        <view class="btn-phone-quick" @tap="handlePhoneLogin">
-          <text>手机号快捷登录</text>
+      <!-- 白色圆角卡片 -->
+      <view class="login-card">
+        <!-- 右上角关闭按钮 -->
+        <view class="close-btn" @tap="handleSkipAuth">
+          <text>✕</text>
         </view>
-        <view class="btn-phone-code" @tap="handlePhoneCodeLogin">
-          <text>手机验证码登录</text>
-        </view>
-      </view>
 
-      <text class="skip-auth" @tap="handleSkipAuth">暂不授权</text>
-    </view>
-    <!-- #endif -->
+        <!-- 手机插画 -->
+        <image src="/static/login-phone.png" mode="widthFix" class="phone-img" />
 
-    <!-- #ifndef MP-WEIXIN -->
-    <view v-if="!showProtocol" class="login-area login-area-h5">
-      <text class="login-title-h5">手机号登录</text>
-      <text class="login-desc-h5">未注册的手机号验证后将自动创建账号</text>
-      <view class="sms-form">
-        <input
-          v-model="smsPhone"
-          class="sms-input"
-          type="number"
-          maxlength="11"
-          placeholder="请输入手机号"
-        />
-        <view class="sms-code-row">
-          <input
-            v-model="smsCode"
-            class="sms-input sms-code-input"
-            type="number"
-            maxlength="6"
-            placeholder="请输入验证码"
-          />
-          <view class="sms-send-btn" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
-            <text>{{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}</text>
-          </view>
-        </view>
-      </view>
-      <button class="get-phone-btn" @tap="submitSmsLogin">登录</button>
-      <text class="skip-auth" @tap="handleSkipAuth">暂不登录，先逛逛</text>
-    </view>
-    <!-- #endif -->
+        <!-- 标题 -->
+        <text class="login-title">手机号码登录</text>
 
-    <!-- #ifdef MP-WEIXIN -->
-    <!-- 手机号快捷登录弹窗 -->
-    <view v-if="showPhonePopup" class="phone-popup" @tap="handlePhonePopupClose">
-      <view class="phone-mask" />
-      <view class="phone-card" @tap.stop>
-        <text class="phone-title">手机号登录</text>
-        <text class="phone-desc">请先获取手机号授权</text>
-        <button class="get-phone-btn" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber">
-          获取手机号
-        </button>
-        <text class="phone-cancel" @tap="handlePhonePopupClose">取消</text>
-      </view>
-    </view>
-
-    <!-- 手机验证码登录弹窗 -->
-    <view v-if="showSmsPopup" class="phone-popup" @tap="handleSmsPopupClose">
-      <view class="phone-mask" />
-      <view class="phone-card" @tap.stop>
-        <text class="phone-title">手机验证码登录</text>
-        <text class="phone-desc">输入手机号获取验证码</text>
-        <view class="sms-form">
+        <!-- 手机号输入框 -->
+        <view class="input-box phone-box">
+          <AppIcon name="icon-device-mobile-light" size="40" color="#FF8FA8" />
           <input
             v-model="smsPhone"
-            class="sms-input"
+            class="input-field"
             type="number"
             maxlength="11"
             placeholder="请输入手机号"
           />
-          <view class="sms-code-row">
-            <input
-              v-model="smsCode"
-              class="sms-input sms-code-input"
-              type="number"
-              maxlength="6"
-              placeholder="请输入验证码"
-            />
-            <view class="sms-send-btn" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
-              <text>{{ smsCountdown > 0 ? `${smsCountdown}s` : '获取验证码' }}</text>
-            </view>
-          </view>
         </view>
-        <button class="get-phone-btn" @tap="submitSmsLogin">登录</button>
-        <text class="phone-cancel" @tap="handleSmsPopupClose">取消</text>
+
+        <!-- 验证码输入框 -->
+        <view class="input-box code-box">
+          <AppIcon name="icon-shield-check-thin" size="40" color="#FF8FA8" />
+          <input
+            v-model="smsCode"
+            class="input-field code-field"
+            type="number"
+            maxlength="6"
+            placeholder="请输入验证码"
+          />
+          <text class="sms-code-text" :class="{ disabled: smsCountdown > 0 }" @tap="sendSmsCode">
+            {{ smsCountdown > 0 ? `${smsCountdown}秒后重发` : '获取验证码' }}
+          </text>
+        </view>
+
+        <!-- 确定按钮 -->
+        <view class="login-btn" @tap="submitSmsLogin">
+          <text>确定</text>
+        </view>
+
+        <!-- 小程序：微信手机号快捷登录 -->
+        <!-- #ifdef MP-WEIXIN -->
+        <button
+          class="wechat-quick"
+          open-type="getPhoneNumber"
+          @getphonenumber="onGetPhoneNumber"
+          @tap="handlePhoneLogin"
+        >
+          微信手机号快捷登录
+        </button>
+        <!-- #endif -->
       </view>
     </view>
-    <!-- #endif -->
 
     <!-- 加载遮罩 -->
     <view v-if="loading" class="loading-mask">
@@ -151,12 +109,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
-import { post, get } from '@/utils/request'
-import { showToast, getFullImageUrl } from '@/utils/common'
+import { post } from '@/utils/request'
+import { showToast } from '@/utils/common'
 import { logger } from '@/utils/logger'
 import { secureStorage } from '@/utils/crypto'
 import { STORAGE_KEY } from '@/config/constants'
 import ProfileCompletePopup from '@/components/profile-complete-popup/profile-complete-popup.vue'
+import AppIcon from '@/components/AppIcon/AppIcon.vue'
 import { safeNavigateBack } from '@/utils/navigate'
 interface LoginResult {
   user: any
@@ -168,35 +127,21 @@ const userStore = useUserStore()
 const systemStore = useSystemStore()
 const appName = computed(() => systemStore.appName || '栖缘社')
 const showProtocol = ref(false)
-const showPhonePopup = ref(false)
 const showProfilePopup = ref(false)
 const loading = ref(false)
-const illustrationImg = ref('')
 // 协议弹窗被同意时置为 true，登录成功（已鉴权）后再补记同意，避免未登录上报 401
 const pendingAgreementReport = ref(false)
 // 预存 wx.login code，在 getPhoneNumber 之前获取，确保 session key 一致
 const phoneLoginCode = ref('')
 // 手机验证码登录
-const showSmsPopup = ref(false)
 const smsPhone = ref('')
 const smsCode = ref('')
 const smsCountdown = ref(0)
 let smsTimer: ReturnType<typeof setInterval> | null = null
 
-onMounted(async () => {
-  await loadLoginConfig()
+onMounted(() => {
   checkLogin()
 })
-
-/** 加载登录页配置（插画） */
-const loadLoginConfig = async () => {
-  try {
-    const res: any = await get('/system/config')
-    if (res?.loginPageIllustration) {
-      illustrationImg.value = getFullImageUrl(res.loginPageIllustration)
-    }
-  } catch {}
-}
 
 const checkLogin = () => {
   // 以 storage 中的 token 为准判断登录态：401 处理会先同步清空 storage，而内存 store 的
@@ -246,8 +191,7 @@ const handleDisagree = () => {
 
 const handleSkipAuth = () => {
   showProtocol.value = false
-  showPhonePopup.value = false
-  uni.switchTab({ url: '/pages/index/index' })
+  safeNavigateBack()
 }
 
 const openAgreement = () => {
@@ -271,30 +215,7 @@ const handlePhoneLogin = async () => {
     phoneLoginCode.value = loginRes.code
   } catch {
     showToast('登录失败，请重试', 'none')
-    return
   }
-  showPhonePopup.value = true
-}
-
-const handlePhoneCodeLogin = () => {
-  if (!secureStorage.isProtocolAgreed()) {
-    showProtocol.value = true
-    return
-  }
-  showSmsPopup.value = true
-}
-
-const handleSmsPopupClose = () => {
-  showSmsPopup.value = false
-  if (smsTimer) {
-    clearInterval(smsTimer)
-    smsTimer = null
-  }
-  smsCountdown.value = 0
-}
-
-const handlePhonePopupClose = () => {
-  showPhonePopup.value = false
 }
 // #endif
 
@@ -336,12 +257,10 @@ const sendSmsCode = async () => {
     }, 1000)
   } catch (error: any) {
     const msg = error?.message || ''
-    // 短信服务未配置 → 自动降级到手机号快捷登录（仅小程序；H5 无微信环境，改为友好提示）
+    // 短信服务未配置 → 自动降级提示（小程序引导使用手机号快捷登录；H5 无微信环境，友好提示）
     if (msg.includes('短信服务暂未开通') || msg.includes('未配置')) {
       // #ifdef MP-WEIXIN
-      handleSmsPopupClose()
       showToast('短信登录暂不可用，请使用手机号快捷登录', 'none')
-      handlePhoneLogin()
       // #endif
       // #ifndef MP-WEIXIN
       showToast('短信服务暂未开通，请稍后再试', 'none')
@@ -410,7 +329,6 @@ const onGetPhoneNumber = async (e: any) => {
     showToast('获取手机号失败', 'none')
     return
   }
-  showPhonePopup.value = false
   loading.value = true
 
   const tryLogin = async (code: string): Promise<LoginResult | null> => {
@@ -477,37 +395,18 @@ const handleLoginSuccess = () => {
 .login-page {
   min-height: 100vh;
   position: relative;
-  display: flex; flex-direction: column;
+  display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* 刘海屏 / 灵动岛安全区适配 */
-  --safe-area-top: constant(safe-area-inset-top);
-  --safe-area-top: env(safe-area-inset-top);
-  --safe-area-bottom: constant(safe-area-inset-bottom);
-  --safe-area-bottom: env(safe-area-inset-bottom);
-  padding-top: var(--safe-area-top);
-  padding-bottom: var(--safe-area-bottom);
   box-sizing: border-box;
 }
 
-// ===== 粉色渐变背景 =====
-.bg-pink {
+// ===== 半透明遮罩 =====
+.login-mask {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, #FFF0F5 0%, #FFF8FA 60%, #FFF8FA 100%);
-  z-index: -1;
-}
-
-// ===== 情侣插画 =====
-.illustration-area {
-  width: 100%; display: flex; flex-direction: column; align-items: center;
-  padding-top: 60rpx; margin-bottom: 30rpx;
-}
-.illustration-img { width: 480rpx; display: block; }
-.illustration-shadow {
-  width: 340rpx; height: 20rpx;
-  background: radial-gradient(ellipse, rgba(255,107,138,0.15), transparent);
-  border-radius: 50%; margin-top: -10rpx;
+  background: rgba(0,0,0,0.5);
+  z-index: 0;
 }
 
 // ===== 协议弹窗 =====
@@ -555,119 +454,126 @@ const handleLoginSuccess = () => {
   font-size: 28rpx; color: #999; text-decoration: underline;
 }
 
-// ===== 登录区域 =====
-.login-area {
-  width: 85%; max-width: 640rpx;
+// ===== 登录卡片 =====
+.login-content {
+  position: relative;
+  z-index: 1;
+  width: 85%;
+  max-width: 620rpx;
   display: flex; flex-direction: column; align-items: center;
-  padding-top: 20rpx;
 }
-// H5 端：短信登录主界面（非弹窗）
-.login-area-h5 {
-  max-width: 600rpx;
-  padding-top: 40rpx;
+
+// 情侣插画：悬浮卡片顶部，上半露出卡片外，层级高于卡片
+.couple-img {
+  width: 420rpx;
+  display: block;
+  margin-bottom: -180rpx;
+  position: relative;
+  z-index: 2;
 }
-.login-title-h5 {
-  font-size: 40rpx; font-weight: 700; color: #1A1A1A; margin-bottom: 12rpx;
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 56rpx 40rpx 48rpx;
+  box-sizing: border-box;
+  box-shadow: 0 16rpx 40rpx rgba(0,0,0,0.12);
+  display: flex; flex-direction: column; align-items: center;
 }
-.login-desc-h5 {
-  font-size: 26rpx; color: #999; margin-bottom: 48rpx; text-align: center;
+
+// 右上角关闭按钮
+.close-btn {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  z-index: 3;
+  width: 40rpx; height: 40rpx;
+  display: flex; align-items: center; justify-content: center;
+  text {
+    font-size: 40rpx; color: #999; line-height: 1;
+  }
 }
-.login-tip-line1 {
-  font-size: 28rpx; color: #666; text-align: center; margin-bottom: 12rpx;
+
+// 手机插画
+.phone-img {
+  width: 220rpx;
+  display: block;
 }
-.login-tip-line2 {
-  font-size: 24rpx; color: #999; text-align: center; margin-bottom: 56rpx;
+
+// 标题
+.login-title {
+  font-size: 32rpx;
+  color: #666;
+  font-weight: 400;
+  text-align: center;
+  margin: 32rpx 0 40rpx;
 }
-.login-buttons {
-  width: 100%; display: flex; flex-direction: column; gap: 24rpx;
-  margin-bottom: 48rpx;
+
+// ===== 输入框 =====
+.input-box {
+  position: relative;
+  width: 100%;
+  height: 88rpx;
+  background: #F5F5F5;
+  border-radius: 16rpx;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+  display: flex; align-items: center;
+  gap: 16rpx;
 }
-.btn-phone-quick {
-  width: 100%; height: 96rpx;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
+.phone-box { margin-bottom: 24rpx; }
+.code-box { margin-bottom: 40rpx; }
+
+.input-field {
+  flex: 1;
+  height: 100%;
+  font-size: 30rpx;
+  color: #333;
+}
+.code-field {
+  padding-right: 160rpx;
+}
+
+// 验证码倒计时（输入框内部右侧）
+.sms-code-text {
+  position: absolute;
+  right: 28rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26rpx;
+  color: #FF6B8A;
+  &.disabled {
+    color: #999;
+  }
+}
+
+// ===== 确定按钮 =====
+.login-btn {
+  width: 100%;
+  height: 96rpx;
+  background: linear-gradient(135deg, #FF5A7A, #FF7096);
   border-radius: 48rpx;
   display: flex; align-items: center; justify-content: center;
   text { font-size: 32rpx; color: #fff; font-weight: 600; }
   &:active { opacity: 0.85; }
 }
-.btn-phone-code {
-  width: 100%; height: 96rpx;
-  background: #fff; border: 2rpx solid #FF6B8A;
-  border-radius: 48rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 30rpx; color: #FF6B8A; font-weight: 500; }
-  &:active { background: #FFF0F5; }
-}
 
-// ===== 暂不授权 =====
-.skip-auth {
-  font-size: 26rpx; color: #999; text-decoration: underline;
-  text-align: center;
-}
-
-// ===== 手机号弹窗 =====
-.phone-popup {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1100;
-  display: flex; align-items: center; justify-content: center;
-}
-.phone-mask {
-  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-}
-.phone-card {
-  position: relative; width: 600rpx;
-  background: #fff; border-radius: 24rpx;
-  padding: 48rpx 40rpx;
-  display: flex; flex-direction: column; align-items: center;
-}
-.phone-title {
-  font-size: 34rpx; font-weight: 700; color: #1A1A1A; margin-bottom: 12rpx;
-}
-.phone-desc {
-  font-size: 26rpx; color: #999; margin-bottom: 40rpx;
-}
-.get-phone-btn {
-  width: 100%; height: 88rpx;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 44rpx; border: none;
-  color: #fff; font-size: 32rpx; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
+// ===== 小程序：微信手机号快捷登录 =====
+.wechat-quick {
+  margin-top: 32rpx;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  line-height: 1.5;
+  font-size: 26rpx;
+  color: #FF6B8A;
+  font-weight: normal;
   &::after { border: none; }
-  &:active { opacity: 0.85; }
-}
-.phone-cancel {
-  font-size: 28rpx; color: #999; margin-top: 28rpx; text-decoration: underline;
-}
-
-// ===== 手机验证码登录表单 =====
-.sms-form {
-  width: 100%; display: flex; flex-direction: column; gap: 20rpx;
-  margin-bottom: 40rpx;
-}
-.sms-input {
-  width: 100%; height: 84rpx;
-  background: #F7F7F7; border-radius: 16rpx;
-  padding: 0 24rpx; box-sizing: border-box;
-  font-size: 30rpx; color: #333;
-}
-.sms-code-row {
-  width: 100%; display: flex; align-items: center; gap: 16rpx;
-}
-.sms-code-input {
-  flex: 1;
-}
-.sms-send-btn {
-  flex-shrink: 0; height: 84rpx; min-width: 176rpx;
-  padding: 0 20rpx; box-sizing: border-box;
-  background: linear-gradient(135deg, #FF6B8A, #FF8FA8);
-  border-radius: 16rpx;
-  display: flex; align-items: center; justify-content: center;
-  text { font-size: 26rpx; color: #fff; font-weight: 500; }
-  &:active { opacity: 0.85; }
-  &.disabled {
-    background: #E5E5E5;
-    text { color: #999; }
-  }
+  &:active { background: transparent; opacity: 0.8; }
 }
 
 // ===== 加载遮罩 =====
