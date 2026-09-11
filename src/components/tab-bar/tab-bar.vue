@@ -11,9 +11,8 @@
           <image
             class="tab-icon"
             :src="getTabbarIcon(tab.name, currentPath === tab.pagePath)"
-            :key="iconKey(tab.name)"
+            :key="tab.name"
             mode="aspectFit"
-            @error="onIconError(tab.name)"
           ></image>
           <view v-if="tab.name === 'message' && userStore.isLoggedIn && unreadCount > 0" class="badge">
             {{ unreadCount > 99 ? '99+' : unreadCount }}
@@ -59,16 +58,6 @@ const { unreadCount } = storeToRefs(messageStore)
 
 const currentPath = ref('/pages/index/index')
 const safeAreaBottom = ref(0)
-const iconErrorMap = ref<Record<string, boolean>>({})
-
-const iconKey = (name: string) => {
-  const active = currentPath.value === tabs.find((t) => t.name === name)?.pagePath
-  return `${name}-${active ? 'active' : 'default'}-${iconErrorMap.value[name] ? 'error' : 'ok'}`
-}
-
-const onIconError = (name: string) => {
-  iconErrorMap.value[name] = true
-}
 
 const updateCurrentTab = () => {
   const pages = getCurrentPages()
@@ -97,9 +86,22 @@ const loadUnreadCount = () => {
   messageStore.setUnreadCount(Number(uni.getStorageSync('unreadMessageCount')) || 0)
 }
 
+// H5 端预加载所有 tab 图标（选中/未选中），切换时直接命中缓存，避免产生 canceled 请求
+const preloadIcons = () => {
+  if (typeof Image === 'undefined') return
+  tabs.forEach((tab) => {
+    const { default: defaultIcon, active: activeIcon } = icons.tabbar[tab.name]
+    ;[defaultIcon, activeIcon].forEach((url) => {
+      const img = new Image()
+      img.src = url
+    })
+  })
+}
+
 onMounted(() => {
   updateCurrentTab()
   loadUnreadCount()
+  preloadIcons()
 
   // 使用系统 API 获取安全区域信息
   const sysInfo: any = uni.getSystemInfoSync()
