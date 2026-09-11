@@ -582,6 +582,7 @@ const goToAiMatchmaker = () => {
   safeNavigateTo('/subpkg-pages/ai-matchmaker/index')
 }
 const goToAiQuiz = () => {
+  if (!isLoggedIn.value) { goToLogin(); return }
   safeNavigateTo('/subpkg-pages/ai-quiz/ai-quiz')
 }
 
