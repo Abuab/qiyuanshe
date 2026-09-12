@@ -10,6 +10,7 @@ import { SystemService } from '../system/system.service'
 import {
   Radar,
   buildProfileTags,
+  flattenPersonalityTags,
   scoreHealth,
   buildRadar,
   buildSuggestions,
@@ -229,7 +230,7 @@ export class MatchReportService {
     return candidates.map((c) => ({
       nickname: this.maskNickname(c.nickname),
       avatar: c.avatar || '',
-      tags: [...(c.personalityTags || []), ...(c.tags || [])].filter(Boolean).slice(0, 3),
+      tags: [...flattenPersonalityTags(c.personalityTags), ...(c.tags || [])].filter(Boolean).slice(0, 3),
     }))
   }
 

@@ -49,6 +49,22 @@ function hasText(v: string | null | undefined): boolean {
 }
 
 /**
+ * 展平 personalityTags：兼容 {character,hobby,loveRule} 对象与 string[] 数组两种结构
+ */
+export function flattenPersonalityTags(pt: unknown): string[] {
+  if (Array.isArray(pt)) return pt
+  if (pt && typeof pt === 'object') {
+    const obj = pt as Record<string, unknown>
+    return [
+      ...(Array.isArray(obj.character) ? (obj.character as string[]) : []),
+      ...(Array.isArray(obj.hobby) ? (obj.hobby as string[]) : []),
+      ...(Array.isArray(obj.loveRule) ? (obj.loveRule as string[]) : []),
+    ]
+  }
+  return []
+}
+
+/**
  * 个人画像标签（5~8 个）
  * 从职业/学历/星座/生肖/性格标签/兴趣标签/年龄区间等字段映射，去重后最多取 8 个。
  */
@@ -79,7 +95,7 @@ export function buildProfileTags(user: {
   push(user.constellation)
   push(user.zodiac)
 
-  const personality = (user.personalityTags || []).filter(Boolean).slice(0, 3)
+  const personality = flattenPersonalityTags(user.personalityTags).filter(Boolean).slice(0, 3)
   personality.forEach(push)
 
   const baseTags = (user.tags || []).filter(Boolean).slice(0, 2)
