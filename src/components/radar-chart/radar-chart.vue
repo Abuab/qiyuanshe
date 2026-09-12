@@ -34,7 +34,7 @@ function draw() {
   const size = props.size
   const cx = size / 2
   const cy = size / 2
-  const radius = size / 2 - 40
+  const radius = size / 2 - 50
   const n = Math.max(props.labels.length, 3)
   const step = (Math.PI * 2) / n
   const start = -Math.PI / 2
@@ -91,8 +91,8 @@ function draw() {
     const a = start + step * i
     const cosA = Math.cos(a)
     const sinA = Math.sin(a)
-    const lx = cx + (radius + 18) * cosA
-    const ly = cy + (radius + 18) * sinA
+    const lx = cx + (radius + 12) * cosA
+    const ly = cy + (radius + 12) * sinA
     if (cosA > 0.3) ctx.setTextAlign('left')
     else if (cosA < -0.3) ctx.setTextAlign('right')
     else ctx.setTextAlign('center')
