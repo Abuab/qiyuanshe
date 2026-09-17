@@ -217,8 +217,8 @@ services:
         max-size: "10m"
         max-file: "3"
     volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # SSL 证书（由 certbot 申请后挂载）
+      - ./docker/nginx/etc:/etc/nginx:ro
+      # SSL 证书（由 certbot 申请后挂载，嵌套覆盖 /etc/nginx/ssl）
       - ./docker/nginx/ssl:/etc/nginx/ssl:ro
       # certbot 验证目录（用于证书申请和续期）
       - ./docker/nginx/certbot/www:/var/www/certbot
