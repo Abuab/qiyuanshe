@@ -218,8 +218,8 @@ services:
         max-file: "3"
     volumes:
       - ./docker/nginx/etc:/etc/nginx:ro
-      # SSL 证书（由 certbot 申请后挂载，嵌套覆盖 /etc/nginx/ssl）
-      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      # SSL 证书（由 certbot 申请后挂载，独立路径避免与 /etc/nginx 只读目录嵌套挂载冲突）
+      - ./docker/nginx/ssl:/etc/ssl/qys:ro
       # certbot 验证目录（用于证书申请和续期）
       - ./docker/nginx/certbot/www:/var/www/certbot
       # 用户上传文件目录（Nginx 直接服务静态文件，减少后端压力）
