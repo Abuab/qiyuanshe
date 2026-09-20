@@ -234,7 +234,7 @@
       </view>
       <!-- #endif -->
       <!-- #ifndef MP-WEIXIN -->
-      <view class="pay-btn" @tap="handleContactCustomer">
+      <view class="pay-btn pay-btn-h5" @tap="handleContactCustomer">
         <text>联系客服开通</text>
       </view>
       <!-- #endif -->
@@ -1136,6 +1136,8 @@ onShow(() => {
 }
 
 .pay-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: 10px 16px;
   background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
   border-radius: 999px;
@@ -1145,11 +1147,21 @@ onShow(() => {
     font-size: 14px;
     font-weight: 700;
     color: #fff;
+    white-space: nowrap;
   }
 
   &.disabled {
     background: #666;
     box-shadow: none;
+  }
+}
+
+// H5 端按钮文案较长（联系客服开通），收窄字号避免撑开胶囊
+.pay-btn-h5 {
+  padding: 10px 14px;
+
+  text {
+    font-size: 12px;
   }
 }
 
