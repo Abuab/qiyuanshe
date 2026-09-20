@@ -52,6 +52,7 @@ interface MatchReport {
   quotaNo: number
   shareText: string
   qrCode: string
+  miniQrCode: string
   healthScore: number
   healthLevel: string
   tags: string[]
@@ -196,28 +197,46 @@ function drawPoster(report: MatchReport, ctx: any) {
     sy += 26
   }
 
-  // 底部二维码
-  if (report.qrCode) {
-    const qrSize = 150
-    const qrX = cx - qrSize / 2
-    const qrY = cardY + cardH + 30
-    ctx.setFillStyle('#ffffff')
-    roundRect(ctx, qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12)
-    ctx.fill()
-    try {
-      ctx.drawImage(report.qrCode, qrX, qrY, qrSize, qrSize)
-    } catch (e: any) {
-      logger.warn(`[MatchReport] 绘制二维码失败: ${e?.message}`)
+  // 底部二维码（H5 + 小程序并排；仅一个时居中）
+  const hasH5 = !!report.qrCode
+  const hasMini = !!report.miniQrCode
+  if (hasH5 || hasMini) {
+    const qrSize = 118
+    const qrY = cardY + cardH + 24
+    const gap = 36
+    const both = hasH5 && hasMini
+
+    const drawQrBox = (src: string, x: number) => {
+      ctx.setFillStyle('#ffffff')
+      roundRect(ctx, x - 6, qrY - 6, qrSize + 12, qrSize + 12, 10)
+      ctx.fill()
+      try {
+        ctx.drawImage(src, x, qrY, qrSize, qrSize)
+      } catch (e: any) {
+        logger.warn(`[MatchReport] 绘制二维码失败: ${e?.message}`)
+      }
     }
+
     ctx.setFillStyle('#ffffff')
-    ctx.setFontSize(15)
-    ctx.fillText('长按识别 · 查看我的报告', cx, qrY + qrSize + 36)
+    ctx.setFontSize(12)
+    if (both) {
+      const totalW = qrSize * 2 + gap
+      const startX = cx - totalW / 2
+      drawQrBox(report.qrCode, startX)
+      drawQrBox(report.miniQrCode, startX + qrSize + gap)
+      ctx.fillText('长按识别 · H5报告', startX + qrSize / 2, qrY + qrSize + 20)
+      ctx.fillText('微信扫码 · 小程序', startX + qrSize + gap + qrSize / 2, qrY + qrSize + 20)
+    } else {
+      const src = hasH5 ? report.qrCode : report.miniQrCode
+      drawQrBox(src, cx - qrSize / 2)
+      ctx.fillText(hasH5 ? '长按识别 · H5报告' : '微信扫码 · 小程序', cx, qrY + qrSize + 20)
+    }
   }
 
   // 底部说明
   ctx.setFillStyle('rgba(255,255,255,0.75)')
   ctx.setFontSize(12)
-  ctx.fillText('遇见更契合的TA', cx, canvasH - 34)
+  ctx.fillText('遇见更契合的TA', cx, canvasH - 24)
 }
 
 function roundRect(ctx: any, x: number, y: number, w: number, h: number, r: number) {

@@ -5,6 +5,7 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { SystemModule } from '../system/system.module'
+import { WechatQrService } from '../personality-test/wechat-qr.service'
 import { MatchReportController } from './match-report.controller'
 import { MatchReportService } from './match-report.service'
 
@@ -14,7 +15,7 @@ import { MatchReportService } from './match-report.service'
     SystemModule,
   ],
   controllers: [MatchReportController],
-  providers: [MatchReportService],
+  providers: [MatchReportService, WechatQrService],
   exports: [MatchReportService],
 })
 export class MatchReportModule {}

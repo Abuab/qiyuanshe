@@ -672,7 +672,8 @@ const handleSubmit = async () => {
 
 .birthday-picker-view {
   width: 100%;
-  height: 400rpx;
+  // 高度必须是单列 item(100rpx) 的奇数倍，才能让选中项正好对齐到中间指示器（偶数倍会偏移半个 item）
+  height: 500rpx;
 }
 
 .pick-col-item {

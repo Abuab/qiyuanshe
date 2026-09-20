@@ -7,6 +7,7 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { UserTagSelection } from '../entities/UserTagSelection'
 import { SystemService } from '../system/system.service'
+import { WechatQrService } from '../personality-test/wechat-qr.service'
 import {
   Radar,
   buildProfileTags,
@@ -56,6 +57,7 @@ export class MatchReportService {
     @InjectRepository(UserTagSelection)
     private readonly tagSelectionRepo: Repository<UserTagSelection>,
     private readonly systemService: SystemService,
+    private readonly wechatQrService: WechatQrService,
   ) {}
 
   /** 读取报告相关配置（含默认值） */
@@ -98,6 +100,21 @@ export class MatchReportService {
     }
   }
 
+  /** 生成小程序报告页小程序码（data URL）；未配置微信凭据或生成失败时返回空串 */
+  private async generateMiniQrCode(reportId: number): Promise<string> {
+    try {
+      const buffer = await this.wechatQrService.getMiniProgramCode(
+        `r=${reportId}`,
+        'pages/match-report/index',
+      )
+      if (!buffer) return ''
+      return `data:image/png;base64,${buffer.toString('base64')}`
+    } catch (e: any) {
+      this.logger.warn(`[MatchReport] 生成小程序码失败: ${e?.message}`)
+      return ''
+    }
+  }
+
   /** 查询当前用户的报告入口状态（用于按钮显隐/置灰） */
   async getStatus(userId: number) {
     const config = await this.getConfig()
@@ -118,7 +135,7 @@ export class MatchReportService {
 
     const config = await this.getConfig()
     const snapshot = this.parseSnapshot(existing.reportJson)
-    return this.toResponse(existing, snapshot, await this.generateQrCode(config), config.shareText)
+    return this.toResponse(existing, snapshot, await this.generateQrCode(config), config.shareText, await this.generateMiniQrCode(existing.id))
   }
 
   /** 生成（或返回已存在的）匹配分析报告 */
@@ -132,7 +149,7 @@ export class MatchReportService {
     const existing = await this.reportRepo.findOne({ where: { userId } })
     if (existing) {
       const snapshot = this.parseSnapshot(existing.reportJson)
-      return this.toResponse(existing, snapshot, await this.generateQrCode(config), config.shareText)
+      return this.toResponse(existing, snapshot, await this.generateQrCode(config), config.shareText, await this.generateMiniQrCode(existing.id))
     }
 
     const user = await this.userRepo.findOne({ where: { id: userId } })
@@ -160,7 +177,7 @@ export class MatchReportService {
       return manager.save(MatchAnalysisReport, entity)
     })
 
-    return this.toResponse(saved, snapshot, await this.generateQrCode(config), config.shareText)
+    return this.toResponse(saved, snapshot, await this.generateQrCode(config), config.shareText, await this.generateMiniQrCode(saved.id))
   }
 
   /** 组装报告快照（纯计算 + 匹配池/Top3 查询） */
@@ -298,13 +315,14 @@ export class MatchReportService {
     }
   }
 
-  private toResponse(report: MatchAnalysisReport, snapshot: ReportSnapshot, qrCode: string, shareText: string) {
+  private toResponse(report: MatchAnalysisReport, snapshot: ReportSnapshot, qrCode: string, shareText: string, miniQrCode: string) {
     return {
       id: report.id,
       quotaNo: report.quotaNo,
       createdAt: report.createdAt,
       shareText,
       qrCode,
+      miniQrCode,
       ...snapshot,
     }
   }

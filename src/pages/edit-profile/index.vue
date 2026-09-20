@@ -902,11 +902,6 @@ onMounted(async () => {
     return
   }
 
-  // 监听裁剪完成事件（备用通道）
-  uni.$on('IMAGE_CROPPED', (data: any) => {
-    if (data?.path) handleCroppedAvatar(data.path)
-  })
-
   const sysInfo = uni.getWindowInfo()
   statusBarHeight.value = sysInfo.statusBarHeight || 20
   navBarHeightPx.value = Math.round(88 * (sysInfo.windowWidth || 375) / 750)
@@ -1775,7 +1770,6 @@ const handleBack = () => {
 }
 
 onUnmounted(() => {
-  uni.$off('IMAGE_CROPPED')
   stopVoicePlay()
   if (voiceTimer) { clearTimeout(voiceTimer); voiceTimer = null }
   if (voiceCountdown) { clearInterval(voiceCountdown); voiceCountdown = null }
