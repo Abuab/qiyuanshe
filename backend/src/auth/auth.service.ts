@@ -561,6 +561,7 @@ export class AuthService {
         nickname: `昵称${userId}`,
         userId,
         phone,
+        tags: ['真实注册'],
         status: await this.getNewUserStatus(),
       })
       user = await this.userRepository.save(user)
@@ -586,6 +587,7 @@ export class AuthService {
         const savedVip = { isVip: user.isVip, vipLevel: user.vipLevel, vipExpireTime: user.vipExpireTime, vipPackageName: user.vipPackageName }
         const preservedStatus = [3, 4].includes(user.status) ? user.status : null
         this.resetReactivatedUser(user)
+        user.tags = ['真实注册']
         user.status = preservedStatus !== null ? preservedStatus : await this.getNewUserStatus()
         user.phone = phone
         Object.assign(user, savedVip)

@@ -3043,25 +3043,23 @@ function normalizeUser(user: any): any {
   }
 }
 
-/** 组合展示用户标签：后台添加的用户自动打标签 */
+/** 组合展示用户标签：来源标签（后台添加/真实注册）优先取库内，无则按 openid 兜底推断 */
 function getUserTags(row: any): string[] {
   const tags: string[] = []
   const dbTags = ensureJsonArray(row.tags)
   if (dbTags.length) tags.push(...dbTags)
-  // 无 openid 说明是后台手动添加的用户
-  if (!row.openid && !tags.includes('后台添加')) {
-    tags.push('后台添加')
-  }
-  // 有 openid 说明是真实注册用户
-  if (row.openid && !tags.includes('真实注册')) {
-    tags.push('真实注册')
+  const hasSourceTag = tags.includes('后台添加') || tags.includes('真实注册')
+  if (!hasSourceTag) {
+    // 库内无来源标签时按 openid 兜底推断（兼容存量数据）
+    if (row.openid) tags.push('真实注册')
+    else tags.push('后台添加')
   }
   return tags
 }
 
 // ===== 标签管理操作函数 =====
 
-// 前端虚拟标签：仅用于展示，不应存入数据库
+// 系统来源标签：由后端写入或前端按 openid 兜底推断，打标签弹窗中不可手动增删
 const VIRTUAL_TAGS = ['后台添加', '真实注册']
 
 /** 打开打标签弹窗（单用户/批量共用） */
