@@ -23,6 +23,7 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
     '/activity',
     '/personality',
     '/profile',
+    '/crm',
   ],
 
   [ADMIN_ROLE.OPERATOR]: [
@@ -40,6 +41,7 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
     '/chat',
     '/guide',
     '/profile',
+    '/crm',
   ],
 
   [ADMIN_ROLE.READONLY]: [
@@ -50,6 +52,7 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
     '/question',
     '/activity',
     '/profile',
+    '/crm/customers',
   ],
 }
 

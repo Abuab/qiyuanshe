@@ -1439,6 +1439,8 @@ CREATE TABLE `users` (
   `isDeleted` tinyint NOT NULL DEFAULT '0',
   `tags` text COLLATE utf8mb4_unicode_ci,
   `adminRemark` text COLLATE utf8mb4_unicode_ci,
+  `crmStage` tinyint NOT NULL DEFAULT '0',
+  `crmOwnerId` int DEFAULT NULL,
   `deleteReason` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `tokenVersion` int NOT NULL DEFAULT '0',
   `refreshTokenVersion` int NOT NULL DEFAULT '0',
@@ -1546,6 +1548,23 @@ CREATE TABLE `vip_packages` (
   KEY `IDX_301e2a6b02935eba1d0f071913` (`status`),
   KEY `IDX_d356bcfdfe418ecb84a338fb8e` (`status`,`sortOrder`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+DROP TABLE IF EXISTS `crm_follow_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `crm_follow_records` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `userId` bigint NOT NULL,
+  `adminUserId` int NOT NULL,
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nextFollowAt` datetime DEFAULT NULL,
+  `createdAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  `updatedAt` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  PRIMARY KEY (`id`),
+  KEY `IDX_crm_fr_userId` (`userId`),
+  KEY `IDX_crm_fr_adminUserId` (`adminUserId`),
+  KEY `IDX_crm_fr_nextFollowAt` (`nextFollowAt`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

@@ -28,6 +28,7 @@
 - **内容审核**: 腾讯云 AI 审核 + 本地敏感词过滤（51K+ 词库）+ 人工复核（照片/回答/聊天消息/用户资料）
 - **审核通知**: 企业微信/飞书/钉钉 Webhook 实时推送违规内容通知
 - **红娘管理**: 红娘资料编辑、排序、状态管理
+- **CRM 客户管理**: 客户阶段/销售漏斗、线索分配、红娘工作台、跟进记录与时间线
 - **问答管理**: 问题发布、回答管理、热门问题配置
 - **订单管理**: 会员订单查询、退款处理、营收统计
 - **系统配置**: 小程序配置、分享配置、支付配置、审核配置、敏感词远程拉取
@@ -1311,6 +1312,12 @@ cd /opt/qys && npm run build:mp-weixin
 | `/api/admin/questions` | GET | 问题列表 |
 | `/api/admin/payment/orders` | GET | 订单列表 |
 | `/api/admin/payment/stats` | GET | 营收统计 |
+| `/api/admin/crm/customers` | GET | CRM 客户列表 |
+| `/api/admin/crm/funnel` | GET | CRM 销售漏斗统计 |
+| `/api/admin/crm/admins` | GET | 可分配负责人列表 |
+| `/api/admin/crm/assign` | PUT | 线索分配（批量） |
+| `/api/admin/crm/follow-records` | GET/POST | 查询/新增客户跟进记录 |
+| `/api/admin/crm/workspace` | GET | 红娘工作台（我的客户/待跟进） |
 | `/api/admin/captcha` | GET | 获取验证码 |
 | `/api/admin/login` | POST | 管理员登录 |
 
@@ -1342,6 +1349,7 @@ cd /opt/qys && npm run build:mp-weixin
 | `chat_messages` | 聊天消息表 |
 | `audit_logs` | 审核日志表 |
 | `follows` | 用户关注表 |
+| `crm_follow_records` | CRM 客户跟进记录表 |
 
 ## 运维脚本
 

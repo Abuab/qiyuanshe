@@ -94,6 +94,9 @@ import { AdminOperationTagController } from './operation-tag.controller'
 import { AdminOperationTagService } from './operation-tag.service'
 import { AdminLicenseController } from './admin-license.controller'
 import { LicenseModule } from '../license/license.module'
+import { CrmFollowRecord } from '../entities/CrmFollowRecord'
+import { AdminCrmController } from './crm.controller'
+import { AdminCrmService } from './crm.service'
 
 @Module({
   imports: [
@@ -136,6 +139,7 @@ import { LicenseModule } from '../license/license.module'
       OperationTag,
       Activity,
       ActivitySignup,
+      CrmFollowRecord,
     ]),
     JwtModule.register({
       secret: jwtConfig.secret,
@@ -172,6 +176,7 @@ import { LicenseModule } from '../license/license.module'
     AdminMessageTemplateController,
     AdminOperationTagController,
     AdminLicenseController,
+    AdminCrmController,
   ],
   providers: [
     AdminUserService,
@@ -198,6 +203,7 @@ import { LicenseModule } from '../license/license.module'
     UserScoreService,
     AdminMessageTemplateService,
     AdminOperationTagService,
+    AdminCrmService,
   ],
   exports: [
     AdminUserService,

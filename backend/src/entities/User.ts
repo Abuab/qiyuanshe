@@ -170,6 +170,14 @@ export class User {
   @Column({ type: 'text', nullable: true })
   adminRemark: string
 
+  /** CRM 客户阶段（见 CrmStage 枚举） */
+  @Column({ type: 'tinyint', default: 0 })
+  crmStage: number
+
+  /** CRM 负责人（后台账号）ID，关联 admin_users.id，空表示未分配 */
+  @Column({ type: 'int', nullable: true })
+  crmOwnerId: number
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   deleteReason: string
 

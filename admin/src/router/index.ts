@@ -360,6 +360,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('../views/guide/copy-detail.vue'),
         meta: { title: '文案详情', requiresAuth: true },
       },
+      {
+        path: '/crm/customers',
+        name: 'CrmCustomers',
+        component: () => import('../views/crm/customers.vue'),
+        meta: { title: 'CRM 客户管理', requiresAuth: true },
+      },
+      {
+        path: '/crm/workspace',
+        name: 'CrmWorkspace',
+        component: () => import('../views/crm/workspace.vue'),
+        meta: { title: '红娘工作台', requiresAuth: true },
+      },
       // 404 兜底路由，必须放在 children 末尾
       {
         path: '/:pathMatch(.*)*',

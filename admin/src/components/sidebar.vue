@@ -88,6 +88,15 @@
         <el-menu-item index="/matchmaker-comments">红娘评语</el-menu-item>
       </el-sub-menu>
 
+      <el-sub-menu v-if="canAccess('/crm/customers') || canAccess('/crm/workspace')" index="/crm">
+        <template #title>
+          <el-icon><TrendCharts /></el-icon>
+          <span>CRM 管理</span>
+        </template>
+        <el-menu-item v-if="canAccess('/crm/customers')" index="/crm/customers">客户管理</el-menu-item>
+        <el-menu-item v-if="canAccess('/crm/workspace')" index="/crm/workspace">红娘工作台</el-menu-item>
+      </el-sub-menu>
+
       <el-menu-item v-if="canAccess('/chat')" index="/chat/monitor">
         <el-icon><ChatDotRound /></el-icon>
         <template #title>聊天监控</template>
@@ -271,6 +280,7 @@ import {
   Cpu,
   Stamp,
   Document,
+  TrendCharts,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
