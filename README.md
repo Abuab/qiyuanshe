@@ -33,55 +33,6 @@
 - **订单管理**: 会员订单查询、退款处理、营收统计
 - **系统配置**: 小程序配置、分享配置、支付配置、审核配置、敏感词远程拉取
 
-## License 授权状态控制
-
-平台采用「**License Key + 离线验签**」机制控制功能可用性：授权方用 RSA 私钥签发 License Key，客户部署后在管理后台「系统授权」页激活，后端用硬编码公钥本地验签，无需在线许可证服务器。授权过期或未授权时，小程序写功能与管理后台被限制。
-
-纯离线模式无远程吊销与激活计数，授权范围由 License Key 内的过期时间与客户标识控制。数据库中的 License Key 以 AES-256-GCM 加密存储（`LICENSE_ENCRYPT_KEY`，未配置时回退用内置公钥派生密钥）。
-
-> 完整签发、部署、激活与运维流程见 [LICENSE.md](LICENSE.md)。
-
-### 四种状态
-
-| 状态 | 写操作（喜欢/红娘/AI/问答/VIP/人格测试提交等） | 读操作（浏览/详情/实名认证） | 前端表现 |
-|------|------|------|------|
-| `valid` | ✅ 可用 | ✅ 可用 | 无提示 |
-| `grace_period` | ✅ 可用 | ✅ 可用 | 首页顶部「即将到期」横幅 |
-| `expired` | ❌ 禁用 | ✅ 可用 | 写入口隐藏，强制调用返回 403「系统授权已过期」 |
-| `unauthorized` | ❌ 禁用 | ✅ 可用 | 写入口隐藏，强制调用返回 403「系统未授权」 |
-
-### 实现要点
-
-- **单一事实源**：功能可用性由 `features` 白名单决定，`status` 仅用于横幅/文案；过期/未授权时系统强制收敛为只读白名单（`user_browse`、`realname_auth`）。
-- **fail-closed**：无授权记录或验签失败时按 `unauthorized` 处理，防破解优先。
-- **后端**：`backend/src/license/` 提供 `LicenseService`（RSA-SHA256 验签 + `SystemLicense` 存储，licenseKey 以 AES-256-GCM 加密）、全局 `LicenseGuard`（`@RequireLicense()` 拦截标注的写接口，返回 HTTP 403 + `bizCode`）、`AdminLicenseGuard`（拦截管理后台 `/admin/*`）。核心业务 Service 写方法（发动态、AI 匹配/聊天、下单/开通 VIP、发消息、红娘操作、改资料等）也在方法内做 `licenseService.isActive()` 分散校验，防止仅注释 Guard 即绕过授权。
-- **管理后台**：`admin/src/views/system/license.vue` 提供激活/更新 License Key 与授权状态查看（`GET/POST /api/admin/license`）。
-- **前端**：`src/store/license.ts` 的 `isFeatureEnabled()` 控制各功能入口显隐；`src/utils/request.ts` 拦截授权异常并弹窗提示；`src/components/GracePeriodBanner/` 展示宽限期横幅。
-- **公开状态接口**：`GET /api/system/license`。
-
-> 授权码签发脚本见 `generate-license.js`（本地工具，私钥绝不可提交）；完整签发、部署与运维流程见 [LICENSE.md](LICENSE.md)。
-
-## 授权说明
-
-本软件为商业授权源码，使用需获得授权方签发的有效 License Key。
-
-### 授权范围
-
-- 授权仅限于被授权方自身业务运营使用
-- 不得进行再销售、转授权、 sublicensing
-- 不得将源码、数据库、配置文件以任何形式提供给第三方
-- 不得对授权验证机制进行反向工程、反编译、删除或绕过
-
-### 授权方式
-
-1. 联系授权方购买授权
-2. 授权方使用 `node generate-license.js` 签发 License Key
-3. 在管理后台「系统授权」页面粘贴 License Key 激活
-
-### 违约责任
-
-违反上述授权范围的，授权方有权终止授权并追究法律责任。
-
 ## 技术栈
 
 ### 后端
@@ -145,7 +96,6 @@ qys/
 │   │   ├── common/           # 公共模块
 │   │   ├── config/           # 配置文件
 │   │   ├── entities/         # 数据库实体
-│   │   ├── license/          # 授权状态控制（Guard/Service/Decorator）
 │   │   ├── payment/          # 支付模块
 │   │   ├── poster/           # 海报生成
 │   │   ├── question/         # 问答模块
@@ -216,8 +166,6 @@ qys/
 │   ├── query-realname.sh     # 实名信息查询（解密）
 │   └── decrypt-identity.js   # 实名信息解密工具
 │
-├── generate-license.js       # License Key 签发脚本（本地工具，私钥不提交）
-├── LICENSE.md                # License 授权系统签发、部署与运维说明
 ├── .env.example              # 环境变量示例（唯一配置源）
 ├── docker-compose.yml        # 服务编排
 └── README.md
@@ -366,7 +314,7 @@ vim .env
 |------|------|
 | 数据库/Redis 密码 | `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD`、`REDIS_PASSWORD` |
 | JWT 密钥 | `JWT_SECRET`、`ADMIN_JWT_SECRET`、`JWT_MFA_SECRET` |
-| 加密/重置密钥 | `IDENTITY_ENCRYPTION_KEY`、`AI_ENCRYPT_KEY`、`ADMIN_RESET_KEY`、`LICENSE_ENCRYPT_KEY`（可选，有回退） |
+| 加密/重置密钥 | `IDENTITY_ENCRYPTION_KEY`、`AI_ENCRYPT_KEY`、`ADMIN_RESET_KEY` |
 | 登录风控 | `RISK_HMAC_SECRET`（图形验证码 token 签名密钥，生产必填，缺失将启动失败） |
 | 微信小程序 | `WECHAT_APPID`、`WECHAT_SECRET` |
 | 微信支付 V3 | `WECHAT_MCH_ID`、`WECHAT_API_V3_KEY`、`WECHAT_PRIVATE_KEY`、`WECHAT_MCH_SERIAL_NO` |
@@ -2039,10 +1987,6 @@ docker compose up -d --build
 
 ## 相关文档
 
-### 项目内部文档
-
-- [License 授权系统签发、部署与运维说明](LICENSE.md)
-
 ### 外部文档
 
 - [NestJS 文档](https://docs.nestjs.com/)
@@ -2118,12 +2062,6 @@ docker exec -it qys_mysql mysql -u root -p your_password -e "USE qys_match; UPDA
 ```bash
 docker exec -it qys_mysql mysql -u root -p -e "USE qys_match; SELECT id, username, isMfaEnabled FROM admin_users;"
 ```
-
----
-
-## License
-
-本项目为商业授权产品，使用需获得授权方签发的有效 License Key。未经授权不得使用、复制、修改、分发，违反授权协议将追究法律责任。授权范围、授权方式与违约责任详见上文「授权说明」章节。
 
 ---
 

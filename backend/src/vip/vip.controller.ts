@@ -10,7 +10,6 @@ import { VipService } from './vip.service'
 import { JwtAuthGuard } from '../auth/guards'
 import { SystemService } from '../system/system.service'
 import { Result } from '../common/result'
-import { RequireLicense } from '../license/license.decorator'
 
 @Controller('vip')
 export class VipController {
@@ -34,7 +33,6 @@ export class VipController {
 
   /** 使用置顶卡 */
   @Post('top-card/use')
-  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async useTopCard(@Request() req: any) {
     if (!(await this.systemService.isVipEnabled())) {
@@ -61,7 +59,6 @@ export class VipController {
 
   /** 使用红线索解锁目标用户联系方式 */
   @Post('red-line/use')
-  @RequireLicense()
   @UseGuards(JwtAuthGuard)
   async useRedLine(
     @Request() req: any,

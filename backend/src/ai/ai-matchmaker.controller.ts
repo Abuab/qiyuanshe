@@ -3,7 +3,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AiMatchmakerService } from './ai-matchmaker.service'
 import { QuickQuestionService } from '../quick-question/quick-question.service'
 import { Result } from '../common/result'
-import { RequireLicense } from '../license/license.decorator'
 
 /**
  * 小程序端：AI 红娘机器人接口
@@ -22,7 +21,6 @@ export class AiMatchmakerController {
    * Body: { message: string }
    */
   @Post('chat')
-  @RequireLicense()
   async chat(@Req() req: any, @Body('message') message: string) {
     const data = await this.matchmakerService.chat(req.user.id, message)
     return Result.success(data)

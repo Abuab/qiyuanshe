@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common'
 import { SystemService } from './system.service'
 import { VipService } from '../vip/vip.service'
-import { LicenseService } from '../license/license.service'
 import { Result } from '../common/result'
 
 /**
@@ -17,7 +16,6 @@ export class PublicSystemController {
   constructor(
     private readonly systemService: SystemService,
     private readonly vipService: VipService,
-    private readonly licenseService: LicenseService,
   ) {}
 
   @Get('config')
@@ -201,13 +199,5 @@ export class PublicSystemController {
   async getDicts() {
     const dicts = await this.systemService.getDicts()
     return Result.success(dicts)
-  }
-
-  /** 获取授权状态（公开接口，登录前即可判断，禁用缓存保证即时生效） */
-  @Get('license')
-  @Header('Cache-Control', 'no-store, no-cache, max-age=0')
-  @Header('Pragma', 'no-cache')
-  async getLicense() {
-    return Result.success(await this.licenseService.getLicenseInfo())
   }
 }

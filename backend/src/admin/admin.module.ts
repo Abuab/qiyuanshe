@@ -92,8 +92,6 @@ import { AdminMessageTemplateController } from './message-template.controller'
 import { AdminMessageTemplateService } from './message-template.service'
 import { AdminOperationTagController } from './operation-tag.controller'
 import { AdminOperationTagService } from './operation-tag.service'
-import { AdminLicenseController } from './admin-license.controller'
-import { LicenseModule } from '../license/license.module'
 import { CrmFollowRecord } from '../entities/CrmFollowRecord'
 import { AdminCrmController } from './crm.controller'
 import { AdminCrmService } from './crm.service'
@@ -150,7 +148,6 @@ import { AdminCrmService } from './crm.service'
     AiModule,
     forwardRef(() => UserModule),
     forwardRef(() => ChatModule),
-    LicenseModule,
   ],
   controllers: [
     AdminUserController,
@@ -175,7 +172,6 @@ import { AdminCrmService } from './crm.service'
     AdminAuditLogController,
     AdminMessageTemplateController,
     AdminOperationTagController,
-    AdminLicenseController,
     AdminCrmController,
   ],
   providers: [

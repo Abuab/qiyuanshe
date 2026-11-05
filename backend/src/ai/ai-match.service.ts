@@ -1,8 +1,7 @@
-import { ForbiddenException, Injectable, Logger, BadRequestException } from '@nestjs/common'
+import { Injectable, Logger, BadRequestException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, MoreThanOrEqual } from 'typeorm'
 import { RedisService } from '../common/redis.service'
-import { LicenseService } from '../license/license.service'
 import { AiConfigService } from './ai-config.service'
 import { AiApiService } from './ai-api.service'
 import { AiFeatureKey } from './types'
@@ -52,7 +51,6 @@ export class AiMatchService {
     private readonly aiConfigService: AiConfigService,
     private readonly aiApiService: AiApiService,
     private readonly quotaService: AiQuotaService,
-    private readonly licenseService: LicenseService,
   ) {}
 
   // ==================== 公开 API ====================
@@ -154,9 +152,6 @@ export class AiMatchService {
    * 执行缘分匹配分析（核心方法）
    */
   async analyze(userId: number, targetUserId: number): Promise<MatchReportResponse> {
-    if (!(await this.licenseService.isActive())) {
-      throw new ForbiddenException('系统未授权，该功能暂不可用')
-    }
 
     // 1. 校验 AI 开关
     const featureEnabled = await this.aiConfigService.isFeatureEnabled(AiFeatureKey.MATCH)

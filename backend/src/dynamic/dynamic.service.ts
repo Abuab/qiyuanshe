@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository, DataSource } from 'typeorm'
 import { Dynamic } from '../entities/Dynamic'
@@ -8,7 +8,6 @@ import { User } from '../entities/User'
 import { UserPhoto } from '../entities/UserPhoto'
 import { Follow } from '../entities/Follow'
 import { SystemService } from '../system/system.service'
-import { LicenseService } from '../license/license.service'
 import { DynamicType } from '../shared/enums'
 import { resolveAvatarUrl } from '../common/image-url'
 
@@ -29,7 +28,6 @@ export class DynamicService {
     private readonly matchmakerRepository: Repository<Matchmaker>,
     private readonly systemService: SystemService,
     private readonly dataSource: DataSource,
-    private readonly licenseService: LicenseService,
   ) {}
 
   /** 获取动态列表（支持按类型和性别过滤） */
@@ -429,9 +427,6 @@ export class DynamicService {
     questionId?: number
     questionTitle?: string
   }): Promise<Dynamic | null> {
-    if (!(await this.licenseService.isActive())) {
-      throw new ForbiddenException('系统未授权，该功能暂不可用')
-    }
 
     const insertResult = await this.dynamicRepository.insert({
       userId: params.userId,

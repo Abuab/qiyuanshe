@@ -40,12 +40,11 @@ import { CosModule } from './cos/cos.module'
 import { DatabaseIndexService } from './common/database-index.service'
 import { WinstonLoggerModule } from './common/logger/winston-logger.module'
 import { CommonModule } from './common/common.module'
-import { LicenseModule } from './license/license.module'
 import { MatchReportModule } from './match-report/match-report.module'
 
 @Module({
   imports: [
-    // 定时任务调度器（全局，仅注册一次；供 vip/ai/license 各模块的 @Cron 使用）
+    // 定时任务调度器（全局，仅注册一次；供 vip/ai 各模块的 @Cron 使用）
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
       ttl: 60000,   // 时间窗口 60 秒
@@ -93,7 +92,6 @@ import { MatchReportModule } from './match-report/match-report.module'
     CosModule,
     WinstonLoggerModule,
     CommonModule,
-    LicenseModule,
     MatchReportModule,
   ],
   controllers: [HealthController],
