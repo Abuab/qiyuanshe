@@ -131,6 +131,7 @@ const MENU_PARENT_MAP: Record<string, string> = {
   '/system/store-cert': '系统配置',
   '/system/config': '系统配置',
   '/system/official-account': '系统配置',
+  '/system/service-qrcode': '系统配置',
   '/agreement': '系统配置',
   '/agreement-log-storage': '系统配置',
   '/system/dict': '系统配置',

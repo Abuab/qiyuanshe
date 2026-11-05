@@ -200,6 +200,7 @@
         </template>
         <el-menu-item index="/system/config">基础配置</el-menu-item>
         <el-menu-item index="/system/official-account">公众号设置</el-menu-item>
+        <el-menu-item index="/system/service-qrcode">会员客服二维码</el-menu-item>
         <el-menu-item index="/agreement">协议管理</el-menu-item>
         <el-menu-item index="/agreement-log-storage">同意记录存储配置</el-menu-item>
         <el-menu-item index="/system/dict">选项配置</el-menu-item>

@@ -114,6 +114,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '公众号设置', requiresAuth: true },
       },
       {
+        path: '/system/service-qrcode',
+        name: 'ServiceQrcode',
+        component: () => import('../views/system/service-qrcode.vue'),
+        meta: { title: '会员客服二维码', requiresAuth: true },
+      },
+      {
         path: '/system/store-cert',
         name: 'StoreCertConfig',
         component: () => import('../views/system/store-cert.vue'),

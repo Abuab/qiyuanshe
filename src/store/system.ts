@@ -47,6 +47,7 @@ interface SystemConfig {
   matchmakerSafetyBoundaryLabel: string
   showOfficialAccountPrompt: boolean
   officialAccountQrcode: string
+  vipServiceQrcode: string
   chatEnabled: boolean
   vipEnabled: boolean
   defaultAvatar: string
@@ -100,6 +101,7 @@ export const useSystemStore = defineStore('system', () => {
   const matchmakerSafetyBoundaryLabel = ref<string>('安全提醒')
   const showOfficialAccountPrompt = ref<boolean>(true)
   const officialAccountQrcode = ref<string>('')
+  const vipServiceQrcode = ref<string>('')
   const chatEnabled = ref<boolean>(true)
   const vipEnabled = ref<boolean>(true)
   const defaultAvatar = ref<string>('')
@@ -155,6 +157,7 @@ export const useSystemStore = defineStore('system', () => {
           matchmakerSafetyBoundaryLabel.value = res.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
           showOfficialAccountPrompt.value = res.showOfficialAccountPrompt !== undefined ? res.showOfficialAccountPrompt : showOfficialAccountPrompt.value
           officialAccountQrcode.value = res.officialAccountQrcode ?? officialAccountQrcode.value
+          vipServiceQrcode.value = res.vipServiceQrcode ?? vipServiceQrcode.value
           chatEnabled.value = res.chatEnabled !== undefined ? res.chatEnabled : chatEnabled.value
           vipEnabled.value = res.vipEnabled !== undefined ? res.vipEnabled : vipEnabled.value
           defaultAvatar.value = res.defaultAvatar ?? defaultAvatar.value
@@ -221,6 +224,7 @@ export const useSystemStore = defineStore('system', () => {
           matchmakerSafetyBoundaryLabel.value = config.matchmakerSafetyBoundaryLabel ?? matchmakerSafetyBoundaryLabel.value
           showOfficialAccountPrompt.value = config.showOfficialAccountPrompt !== undefined ? config.showOfficialAccountPrompt : showOfficialAccountPrompt.value
           officialAccountQrcode.value = config.officialAccountQrcode ?? officialAccountQrcode.value
+          vipServiceQrcode.value = config.vipServiceQrcode ?? vipServiceQrcode.value
           chatEnabled.value = config.chatEnabled !== undefined ? config.chatEnabled : chatEnabled.value
           vipEnabled.value = config.vipEnabled !== undefined ? config.vipEnabled : vipEnabled.value
           defaultAvatar.value = config.defaultAvatar ?? defaultAvatar.value
@@ -305,6 +309,7 @@ export const useSystemStore = defineStore('system', () => {
       matchmakerSafetyBoundaryLabel: matchmakerSafetyBoundaryLabel.value,
       showOfficialAccountPrompt: showOfficialAccountPrompt.value,
       officialAccountQrcode: officialAccountQrcode.value,
+      vipServiceQrcode: vipServiceQrcode.value,
       icons: icons.value,
       chatEnabled: chatEnabled.value,
       vipEnabled: vipEnabled.value,
@@ -346,6 +351,7 @@ export const useSystemStore = defineStore('system', () => {
     matchmakerSafetyBoundaryLabel,
     showOfficialAccountPrompt,
     officialAccountQrcode,
+    vipServiceQrcode,
     chatEnabled,
     vipEnabled,
     defaultAvatar,

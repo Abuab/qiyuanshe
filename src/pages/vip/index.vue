@@ -250,7 +250,7 @@
       <view class="service-body">
         <view class="service-card">
           <view class="service-qrcode-wrap">
-            <image class="service-qrcode" src="/static/images/service-qrcode.png" mode="aspectFit" />
+            <image class="service-qrcode" :src="serviceQrcode" mode="aspectFit" />
           </view>
           <view class="service-title">添加客服微信开通会员</view>
           <view class="service-price" v-if="selectedPackage">{{ selectedPackage.name }} · ¥{{ formatPrice(selectedPackage.price) }}</view>
@@ -506,6 +506,9 @@ async function handlePay() {
 // ===== H5 客服人工开通 =====
 // #ifndef MP-WEIXIN
 const showServicePopup = ref(false)
+
+// 客服二维码：优先读取后台配置，未配置时回退本地静态图
+const serviceQrcode = computed(() => systemStore.vipServiceQrcode || '/static/images/service-qrcode.png')
 
 function handleContactCustomer() {
   showServicePopup.value = true
