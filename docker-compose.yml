@@ -225,8 +225,9 @@ services:
       # Nginx 日志持久化到宿主机（与 app 日志统一在 data/logs/ 下）
       - ./data/logs/nginx:/var/log/nginx
     ports:
-      - "80:80"
-      - "443:443"
+      # 2026-09-19：宿主机 Nginx 已成为服务器唯一入口并终止 TLS（原为 80:80 / 443:443）。
+      # 本容器降级为内部二级反代：宿主 Nginx 以 HTTPS 回源到 127.0.0.1:8080。
+      - "127.0.0.1:8080:443"
     networks:
       - qys_network
     depends_on:

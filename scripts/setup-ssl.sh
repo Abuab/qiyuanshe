@@ -21,7 +21,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 SSL_DIR="$PROJECT_DIR/docker/nginx/ssl"
-CERTBOT_WWW="$PROJECT_DIR/docker/nginx/certbot/www"
+CERTBOT_WWW="/var/www/certbot"
 
 # 从项目 .env 读取域名，不存在则提示用户设置
 if [ -f "$PROJECT_DIR/.env" ]; then
@@ -103,43 +103,33 @@ install_certbot() {
 }
 
 # =============================================
-# 2. 首次申请证书（standalone 模式，需先停 nginx）
+# 2. 首次申请证书（webroot 模式）
+#    前提：宿主 Nginx 已监听 80/443，并将 /.well-known/acme-challenge/ 指向 $CERTBOT_WWW
 # =============================================
-apply_cert_standalone() {
-    log_info "首次申请证书（standalone 模式）..."
+apply_cert_webroot() {
+    log_info "首次申请证书（webroot 模式，webroot=$CERTBOT_WWW）..."
 
-    # 停止占用 80 端口的服务（Docker nginx 容器）
-    log_info "临时停止 nginx 容器以释放 80 端口..."
-    cd "$PROJECT_DIR"
-    docker compose stop nginx 2>/dev/null || true
-
-    # 无论后续成功与否，退出时都恢复 nginx，避免「80 端口关闭后起不来」
-    restore_nginx() {
-        log_info "恢复 nginx 容器..."
-        docker compose up -d nginx 2>/dev/null || true
-    }
-    trap restore_nginx EXIT
-
-    # 创建 SSL 目录
+    # 创建 SSL 目录与 ACME 验证目录
     sudo mkdir -p "$SSL_DIR"
+    sudo mkdir -p "$CERTBOT_WWW"
 
-    # 申请证书
+    # 申请证书（不再停 nginx：80 端口由宿主 Nginx 负责，容器仅 443 内部回源）
     if ! sudo certbot certonly \
-        --standalone \
-        --preferred-challenges http \
+        --webroot \
+        -w "$CERTBOT_WWW" \
         --agree-tos \
         --no-eff-email \
         --allow-subset-of-names \
         --email "$SSL_EMAIL" \
         "${DOMAINS_ARGS[@]}"; then
-        log_error "证书申请失败，nginx 容器已自动恢复"
-        log_error "常见原因：1) 域名 DNS 未解析到本机 2) 80 端口仍被占用 3) 域名未备案被拦截"
+        log_error "证书申请失败"
+        log_error "常见原因：1) 域名 DNS 未解析到本机 2) 宿主 Nginx 未配置 ACME 目录 $CERTBOT_WWW 3) 域名未备案被拦截"
         exit 1
     fi
 
     log_success "证书申请成功"
 
-    # 复制证书到项目目录
+    # 复制证书到项目目录（容器 qys_nginx 使用）
     sudo cp /etc/letsencrypt/live/$CERT_DIR_NAME/fullchain.pem "$SSL_DIR/fullchain.pem"
     sudo cp /etc/letsencrypt/live/$CERT_DIR_NAME/privkey.pem "$SSL_DIR/privkey.pem"
     sudo chmod 644 "$SSL_DIR/fullchain.pem"
@@ -147,14 +137,16 @@ apply_cert_standalone() {
 
     log_success "证书已复制到 $SSL_DIR"
 
-    # 重启 nginx
-    log_info "启动 nginx 容器..."
-    docker compose up -d nginx
+    # 重载容器 nginx（若已启动）与宿主 nginx
+    cd "$PROJECT_DIR"
+    if [ -n "$(docker compose ps -q nginx 2>/dev/null)" ]; then
+        docker compose exec -T nginx nginx -s reload || true
+    fi
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        sudo systemctl reload nginx || true
+    fi
 
-    # 已手动恢复 nginx，清除 trap 避免退出时重复执行
-    trap - EXIT
-
-    log_success "Nginx 已重启，SSL 已生效"
+    log_success "Nginx 已重载，SSL 已生效"
 }
 
 # =============================================
@@ -168,7 +160,7 @@ setup_renewal() {
 
     sudo tee /etc/letsencrypt/renewal-hooks/deploy/copy-qys-certs.sh > /dev/null << HOOK
 #!/bin/bash
-# Let's Encrypt 续期后自动复制证书并重载 nginx
+# Let's Encrypt 续期后自动复制证书并重载 nginx（容器 + 宿主）
 
 SSL_DIR="$SSL_DIR"
 CERT_DIR_NAME="$CERT_DIR_NAME"
@@ -178,9 +170,16 @@ cp /etc/letsencrypt/live/\$CERT_DIR_NAME/privkey.pem "\$SSL_DIR/privkey.pem"
 chmod 644 "\$SSL_DIR/fullchain.pem"
 chmod 600 "\$SSL_DIR/privkey.pem"
 
-# 重载 nginx 使新证书生效
+# 重载容器 nginx（qiyuanshe 内部二级反代）
 cd "$PROJECT_DIR"
-docker compose exec -T nginx nginx -s reload
+if [ -n "\$(docker compose ps -q nginx 2>/dev/null)" ]; then
+  docker compose exec -T nginx nginx -s reload
+fi
+
+# 重载宿主 nginx（服务器唯一入口，TLS 终止）
+if systemctl is-active --quiet nginx 2>/dev/null; then
+  systemctl reload nginx
+fi
 
 echo "\$(date '+%Y-%m-%d %H:%M:%S') SSL certificate renewed and nginx reloaded" >> /var/log/qys-ssl-renewal.log
 HOOK
@@ -219,7 +218,7 @@ case "${1:-}" in
         ;;
     apply)
         install_certbot
-        apply_cert_standalone
+        apply_cert_webroot
         ;;
     setup-renewal)
         setup_renewal
@@ -236,7 +235,7 @@ case "${1:-}" in
         echo ""
         echo "命令:"
         echo "  install        仅安装 certbot"
-        echo "  apply          首次申请证书（standalone 模式）"
+        echo "  apply          首次申请证书（webroot 模式）"
         echo "  setup-renewal  配置自动续期（定时任务 + webroot）"
         echo "  renew          手动执行一次续期检查"
         echo ""
