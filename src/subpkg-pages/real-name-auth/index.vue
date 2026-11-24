@@ -225,7 +225,7 @@ const handleSubmit = async () => {
     showToast('身份证号格式不正确')
     return
   }
-  if (submitting.value) return
+  if (submitting.value || pendingVerify.value) return
   submitting.value = true
 
   // 去重检查

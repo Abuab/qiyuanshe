@@ -48,6 +48,18 @@ export class EidAuthService {
     if (!isEidConfigured()) {
       throw new Error('E证通尚未配置，请联系管理员')
     }
+    // 幂等：认证中且已有 token 时直接复用，避免重复生成新 token 覆盖旧 token，
+    // 否则前端用旧 token 发起核身、后端用新 token 查结果会误报 ErrCode=17「本次流程未完成」。
+    const existing = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'eidCertStatus', 'eidBizSeqNo'],
+    })
+    const existingToken = existing?.eidBizSeqNo
+    if (existing?.eidCertStatus === EID_STATUS.DOING && existingToken) {
+      this.logger.log(`用户 ${userId} 复用E证通订单，token长度=${existingToken.length}`)
+      return { eidToken: existingToken }
+    }
+
     const cfg = getEidConfig()
     const resp = await callFaceIdApi<{ EidToken: string; RequestId: string }>(
       'GetEidToken',
