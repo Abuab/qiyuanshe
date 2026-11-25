@@ -129,7 +129,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onLoad } from '@dcloudio/uni-app'
 import { getFullImageUrl, showToast } from '@/utils/common'
 import { get, post, put } from '@/utils/request'
 import { safeNavigateBack } from '@/utils/navigate'
@@ -152,6 +152,17 @@ const submitting = ref(false)
 const pendingVerify = ref(false)
 const querying = ref(false)
 const isCertified = computed(() => certStatus.value === 2)
+
+// H5 核身回跳参数（独立浏览器链路）：由 h5-auth-callback.html 透传过来
+const h5Callback = ref<{ orderNo: string; code: string }>({ orderNo: '', code: '' })
+onLoad((options: any) => {
+  if (options && String(options.h5cb) === '1') {
+    h5Callback.value = {
+      orderNo: String(options.orderNo || ''),
+      code: options.code === undefined ? '' : String(options.code),
+    }
+  }
+})
 
 // ========== 二次认证预检：输入完姓名和身份证后提前检测是否需要付费 ==========
 const needsReauth = ref(false)
@@ -214,6 +225,12 @@ onShow(() => {
     pendingVerify.value = false
     setTimeout(() => refreshCertResult(), 600)
   }
+  // #ifdef H5
+  // 从腾讯云核身页回跳后查询权威结果
+  if (h5Callback.value.orderNo || h5Callback.value.code !== '') {
+    setTimeout(() => refreshCertResult(), 400)
+  }
+  // #endif
 })
 
 const handleBack = () => {
@@ -266,6 +283,16 @@ const handleOCR = () => {
       const filePath = res.tempFilePaths && res.tempFilePaths[0]
       if (!filePath) return
       uni.showLoading({ title: '识别中...', mask: true })
+      // #ifdef H5
+      // H5 没有 compressImage / getFileSystemManager，改用 canvas 压缩 + FileReader
+      prepareH5Image(filePath)
+        .then((base64) => doOcr(base64))
+        .catch(() => {
+          uni.hideLoading()
+          showToast('读取图片失败，请手动填写')
+        })
+      return
+      // #endif
       // 先压缩图片，避免 base64 上传超过后端请求体限制
       uni.compressImage({
         src: filePath,
@@ -282,27 +309,66 @@ const handleOCR = () => {
   })
 }
 
+async function doOcr(imageBase64: string) {
+  try {
+    const resp: any = await post('/eid-auth/ocr', { imageBase64 })
+    const d = resp?.data || resp
+    if (d && d.name) realName.value = d.name
+    if (d && d.idCard) idCard.value = d.idCard
+    if (d && (d.name || d.idCard)) {
+      showToast('识别成功')
+    } else {
+      showToast('未识别到身份证信息，请手动填写')
+    }
+  } catch (e: any) {
+    showToast(e?.message || '识别失败，请手动填写')
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// #ifdef H5
+/** H5：把选中的图片压缩到 1280px 宽以内并转成 base64（不含 data: 前缀） */
+async function prepareH5Image(filePath: string): Promise<string> {
+  const win: any = globalThis as any
+  const blob: any = await (await win.fetch(filePath)).blob()
+  const dataUrl: string = await new Promise((resolve, reject) => {
+    const reader = new win.FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('读取图片失败'))
+    reader.readAsDataURL(blob)
+  })
+  const img: any = await new Promise((resolve, reject) => {
+    const image = new win.Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('解析图片失败'))
+    image.src = dataUrl
+  })
+  const maxWidth = 1280
+  const width = Number(img.width) || maxWidth
+  const height = Number(img.height) || maxWidth
+  const scale = Math.min(1, maxWidth / width)
+  // 小图且体积可控时直接用原图
+  if (scale >= 1 && Number(blob.size || 0) <= 2 * 1024 * 1024) {
+    return dataUrl.split(',')[1] || ''
+  }
+  const canvas = win.document.createElement('canvas')
+  canvas.width = Math.round(width * scale)
+  canvas.height = Math.round(height * scale)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return dataUrl.split(',')[1] || ''
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  return String(canvas.toDataURL('image/jpeg', 0.8)).split(',')[1] || ''
+}
+// #endif
+
 function readImageAndOcr(filePath: string) {
   const fs = uni.getFileSystemManager()
   fs.readFile({
     filePath,
     encoding: 'base64',
-    success: async (r: any) => {
-      try {
-        const resp: any = await post('/eid-auth/ocr', { imageBase64: r.data })
-        const d = resp?.data || resp
-        if (d && d.name) realName.value = d.name
-        if (d && d.idCard) idCard.value = d.idCard
-        if (d && (d.name || d.idCard)) {
-          showToast('识别成功')
-        } else {
-          showToast('未识别到身份证信息，请手动填写')
-        }
-      } catch (e: any) {
-        showToast(e?.message || '识别失败，请手动填写')
-      } finally {
-        uni.hideLoading()
-      }
+    success: (r: any) => {
+      doOcr(r.data)
     },
     fail: () => {
       uni.hideLoading()
@@ -312,15 +378,27 @@ function readImageAndOcr(filePath: string) {
 }
 
 // ========== 查询 E证通认证结果 ==========
+function requestCertResult(): Promise<any> {
+  // #ifdef H5
+  return post('/eid-auth/h5/result', {
+    orderNo: h5Callback.value.orderNo,
+    code: h5Callback.value.code === '' ? undefined : h5Callback.value.code,
+  })
+  // #endif
+  // #ifndef H5
+  return post('/eid-auth/result', {
+    realName: realName.value.trim(),
+    idCard: idCard.value.trim(),
+  })
+  // #endif
+}
+
 async function refreshCertResult() {
   if (querying.value) return
   querying.value = true
   const prev = certStatus.value
   try {
-    const res: any = await post('/eid-auth/result', {
-      realName: realName.value.trim(),
-      idCard: idCard.value.trim(),
-    })
+    const res: any = await requestCertResult()
     const d = res?.data || res
     const status = d && typeof d.status === 'number' ? d.status : 0
     certStatus.value = status
@@ -432,6 +510,38 @@ async function handleSubmit() {
     })
     return
   }
+
+  // #ifdef H5
+  // H5（独立浏览器）：走腾讯云人脸核身移动 H5 链路，跳转腾讯云托管核身页面
+  uni.showLoading({ title: '发起认证...', mask: true })
+  try {
+    const h5Res: any = await post('/eid-auth/h5/create', {
+      realName: realName.value.trim(),
+      idCard: idCard.value.trim(),
+    })
+    const h5Data = h5Res?.data || h5Res
+    uni.hideLoading()
+    if (h5Data?.alreadyDone) {
+      certStatus.value = 2
+      userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+      showToast('认证成功')
+      setTimeout(() => safeNavigateBack(), 1000)
+      return
+    }
+    if (!h5Data?.url) {
+      showToast('发起认证失败，请稍后重试')
+      return
+    }
+    // 核身地址一次性有效，直接整页跳转（不要放进 a 标签预加载）
+    window.location.href = h5Data.url
+  } catch (e: any) {
+    uni.hideLoading()
+    showToast(e?.message || '发起认证失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
+  return
+  // #endif
 
   uni.showLoading({ title: '发起认证...', mask: true })
   try {
