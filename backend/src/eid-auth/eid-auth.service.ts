@@ -371,10 +371,20 @@ export class EidAuthService {
     let record: { code: string; msg: string }
     try {
       record = await queryH5FaceRecord(orderNo)
+      // 66660011：结果尚未写入（刚回跳时偶发），按官方建议轮询几次
+      for (let i = 0; i < 2 && record.code === '66660011'; i++) {
+        await new Promise((r) => setTimeout(r, 1500))
+        record = await queryH5FaceRecord(orderNo)
+      }
     } catch (e: any) {
       // 查询异常（查询过早/网络问题）不改状态，由前端重试
       this.logger.warn(`用户 ${userId} 查询 H5 核身结果异常：${e?.message || e}`)
       return { status: user.eidCertStatus || EID_STATUS.NONE, certTime: user.eidCertTime }
+    }
+    // 仍查不到结果：说明用户未走完核身，保持"认证中"由用户重新发起，不直接判失败
+    if (record.code === '66660011') {
+      this.logger.warn(`用户 ${userId} H5 核身结果暂未生成，保持认证中 orderNo=${orderNo}`)
+      return { status: user.eidCertStatus || EID_STATUS.DOING, certTime: user.eidCertTime }
     }
     if (record.code !== '0') {
       await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
