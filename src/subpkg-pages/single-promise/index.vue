@@ -76,9 +76,9 @@
             class="sign-canvas"
             canvas-id="signCanvas"
             id="signCanvas"
-            @touchstart.stop="onTouchStart"
-            @touchmove.stop="onTouchMove"
-            @touchend.stop="onTouchEnd"
+            @touchstart.stop.prevent="onTouchStart"
+            @touchmove.stop.prevent="onTouchMove"
+            @touchend.stop.prevent="onTouchEnd"
           />
           <image
             v-show="isSigned && !isResigning"
@@ -539,6 +539,8 @@ $pink-bg-end: #FF8FA3;
   position: relative; margin-top: 24rpx;
   background: #F5F5F5; border-radius: 24rpx;
   height: 400rpx; overflow: hidden;
+  /* 签字时禁止浏览器把触摸手势当成页面滚动 */
+  touch-action: none;
 
   &.disabled { opacity: 0.85; }
 }
