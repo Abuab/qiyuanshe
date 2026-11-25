@@ -14,6 +14,8 @@ import {
   ReVerifyDto,
   QueryEidResultDto,
   OcrIdCardDto,
+  H5CreateOrderDto,
+  H5QueryResultDto,
 } from './dto'
 
 @Controller('eid-auth')
@@ -86,6 +88,38 @@ export class EidAuthController {
     const userId = req.user.id || req.user.sub
     try {
       const data = await this.service.queryResult(userId, { realName, idCard })
+      return Result.success(data)
+    } catch (e: any) {
+      return Result.error(e?.message || '查询认证结果失败')
+    }
+  }
+
+  /** H5（移动端浏览器）发起核身：返回腾讯云托管核身页面的跳转地址 */
+  @Post('h5/create')
+  @UseGuards(JwtAuthGuard)
+  async h5CreateOrder(@Request() req: any, @Body() body: H5CreateOrderDto) {
+    const userId = req.user.id || req.user.sub
+    if (!body?.realName || !body?.idCard) {
+      return Result.error('请填写真实姓名和身份证号')
+    }
+    try {
+      const data = await this.service.createH5Order(userId, body.realName, body.idCard)
+      return Result.success(data)
+    } catch (e: any) {
+      return Result.error(e?.message || '发起人脸核身失败')
+    }
+  }
+
+  /** H5（移动端浏览器）核身结果：以腾讯云权威结果为准 */
+  @Post('h5/result')
+  @UseGuards(JwtAuthGuard)
+  async h5Result(@Request() req: any, @Body() body: H5QueryResultDto) {
+    const userId = req.user.id || req.user.sub
+    try {
+      const data = await this.service.queryH5Result(userId, {
+        orderNo: body?.orderNo,
+        code: body?.code,
+      })
       return Result.success(data)
     } catch (e: any) {
       return Result.error(e?.message || '查询认证结果失败')

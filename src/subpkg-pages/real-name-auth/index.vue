@@ -120,7 +120,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onLoad } from '@dcloudio/uni-app'
 import { post, get, put } from '@/utils/request'
 import { useUserStore } from '@/store/user'
 import { useSystemStore } from '@/store/system'
@@ -165,6 +165,53 @@ const pendingVerify = ref(false)
 // ========== 认证状态：0未认证 1认证中 2已认证 3认证失败 ==========
 const certStatus = ref(0)
 const querying = ref(false)
+
+// ========== H5（独立浏览器）腾讯云人脸核身 ==========
+// 跳转腾讯云核身页面前，把表单信息暂存本地，回跳后用于查询结果
+const H5_NAME_KEY = 'h5_auth_realname'
+const H5_IDCARD_KEY = 'h5_auth_idcard'
+
+const handleH5Callback = async (code: string, orderNo: string) => {
+  if (querying.value) return
+  querying.value = true
+  uni.showLoading({ title: '查询认证结果...', mask: true })
+  try {
+    const res: any = await post('/eid-auth/h5/result', { code, orderNo })
+    const d = res?.data || res
+    const status = d && typeof d.status === 'number' ? d.status : 0
+    certStatus.value = status
+    uni.hideLoading()
+    if (status === 2) {
+      userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+      showToast('认证成功', 'success')
+      setTimeout(() => finishFlow(), 800)
+    } else if (status === 3) {
+      uni.showModal({ title: '提示', content: '认证未通过，请重新认证', showCancel: false })
+    } else {
+      uni.showModal({ title: '提示', content: '认证结果查询中，请稍后重试', showCancel: false })
+    }
+  } catch (e: any) {
+    uni.hideLoading()
+    uni.showModal({
+      title: '提示',
+      content: e?.message || '查询认证结果失败，请稍后重试',
+      showCancel: false,
+    })
+  } finally {
+    querying.value = false
+  }
+}
+
+onLoad((query: any) => {
+  // #ifdef H5
+  // 腾讯云核身完成后回跳：/static/h5-auth-callback.html → 本页 ?h5cb=1&code=..&orderNo=..
+  if (query && query.h5cb) {
+    realName.value = (uni.getStorageSync(H5_NAME_KEY) as string) || ''
+    idCard.value = (uni.getStorageSync(H5_IDCARD_KEY) as string) || ''
+    handleH5Callback(String(query.code ?? ''), String(query.orderNo ?? ''))
+  }
+  // #endif
+})
 
 // ========== E证通结果轮询 ==========
 const refreshCertResult = async () => {
@@ -293,6 +340,40 @@ const handleSubmit = async () => {
     })
     return
   }
+
+  // #ifdef H5
+  // H5（独立浏览器）：走腾讯云人脸核身移动 H5 链路，跳转腾讯云托管核身页面
+  submitting.value = true
+  uni.showLoading({ title: '发起认证...', mask: true })
+  try {
+    const h5Res: any = await post('/eid-auth/h5/create', {
+      realName: realName.value.trim(),
+      idCard: idCard.value.trim(),
+    })
+    const h5Data = h5Res?.data || h5Res
+    uni.hideLoading()
+    if (h5Data?.alreadyDone) {
+      userStore.updateProfile({ isRealName: true, eidCertStatus: 2 } as any)
+      showToast('认证成功', 'success')
+      setTimeout(() => finishFlow(), 800)
+      return
+    }
+    if (!h5Data?.url) {
+      showToast('发起认证失败，请稍后重试')
+      return
+    }
+    uni.setStorageSync(H5_NAME_KEY, realName.value.trim())
+    uni.setStorageSync(H5_IDCARD_KEY, idCard.value.trim())
+    // 注意：核身 URL 一次性有效，不能放在 <a> 标签中预加载
+    window.location.href = h5Data.url
+  } catch (e: any) {
+    uni.hideLoading()
+    showToast(e?.message || '发起认证失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
+  return
+  // #endif
 
   uni.showLoading({ title: '发起认证...', mask: true })
   try {

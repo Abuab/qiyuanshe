@@ -14,6 +14,12 @@ import {
   getEidConfig,
   isEidConfigured,
 } from './eid-tencent.util'
+import {
+  buildH5LaunchUrl,
+  createH5FaceId,
+  isFaceIdH5Configured,
+  queryH5FaceRecord,
+} from './faceid-h5.util'
 
 // 认证状态：0未认证 1认证中 2已认证 3认证失败
 export const EID_STATUS = {
@@ -55,7 +61,11 @@ export class EidAuthService {
       select: ['id', 'eidCertStatus', 'eidBizSeqNo'],
     })
     const existingToken = existing?.eidBizSeqNo
-    if (existing?.eidCertStatus === EID_STATUS.DOING && existingToken) {
+    if (
+      existing?.eidCertStatus === EID_STATUS.DOING &&
+      existingToken &&
+      !String(existingToken).startsWith(EidAuthService.H5_ORDER_PREFIX)
+    ) {
       this.logger.log(`用户 ${userId} 复用E证通订单，token长度=${existingToken.length}`)
       return { eidToken: existingToken }
     }
@@ -110,7 +120,11 @@ export class EidAuthService {
       }
       return { status: user.eidCertStatus, certTime: user.eidCertTime }
     }
-    if (!user.eidBizSeqNo || !isEidConfigured()) {
+    if (
+      !user.eidBizSeqNo ||
+      String(user.eidBizSeqNo).startsWith(EidAuthService.H5_ORDER_PREFIX) ||
+      !isEidConfigured()
+    ) {
       return { status: user.eidCertStatus || EID_STATUS.NONE, certTime: user.eidCertTime }
     }
 
@@ -249,6 +263,199 @@ export class EidAuthService {
       this.logger.warn(`用户 ${userId} 查询E证通结果异常：${e?.message || e}`)
       return { status: user.eidCertStatus || EID_STATUS.NONE, certTime: user.eidCertTime }
     }
+  }
+
+  // ==================== H5（移动端浏览器）人脸核身 ====================
+
+  /** H5 订单号在 eidBizSeqNo 中的前缀，用于与 E证通 EidToken 区分 */
+  private static readonly H5_ORDER_PREFIX = 'h5_'
+
+  /** 腾讯云 H5 核身的 userId：全局唯一、无特殊字符、不超过 32 位 */
+  private static faceIdUserId(userId: number): string {
+    return `qys${userId}`
+  }
+
+  /** 生成订单号：字母 + 数字，长度不超过 32 位 */
+  private static genOrderNo(): string {
+    const rand = Math.floor(Math.random() * 1e8).toString().padStart(8, '0')
+    return `h5${Date.now()}${rand}`
+  }
+
+  /**
+   * H5 端发起认证：后台上送身份信息，返回腾讯云托管 H5 核身页面的跳转地址。
+   * 姓名/身份证号加密暂存于 user_auths(status=0)，核身通过后才转为正式认证记录。
+   */
+  async createH5Order(
+    userId: number,
+    realName: string,
+    idCard: string,
+  ): Promise<{ url?: string; alreadyDone?: boolean }> {
+    if (!isFaceIdH5Configured()) {
+      throw new Error('H5 实名认证尚未配置，请联系管理员')
+    }
+    const name = (realName || '').trim().replace(/\s+/g, '')
+    const id = (idCard || '').trim()
+    if (!name || !id) {
+      throw new Error('请填写真实姓名和身份证号')
+    }
+
+    const user = await this.userRepo.findOne({ where: { id: userId } })
+    if (!user) {
+      throw new Error('用户不存在')
+    }
+    if (user.eidCertStatus === EID_STATUS.DONE && user.isRealName === 1) {
+      return { alreadyDone: true }
+    }
+
+    const orderNo = EidAuthService.genOrderNo()
+    const faceIdUserId = EidAuthService.faceIdUserId(userId)
+
+    await this.userRepo.update(userId, {
+      eidCertStatus: EID_STATUS.DOING,
+      eidBizSeqNo: `${EidAuthService.H5_ORDER_PREFIX}${orderNo}`,
+    })
+    await this.savePendingIdentity(userId, name, id)
+
+    try {
+      const { faceId, optimalDomain } = await createH5FaceId({
+        orderNo,
+        userId: faceIdUserId,
+        name,
+        idNo: id,
+      })
+      const url = await buildH5LaunchUrl({
+        orderNo,
+        userId: faceIdUserId,
+        faceId,
+        optimalDomain,
+      })
+      this.logger.log(`用户 ${userId} 创建 H5 核身订单 orderNo=${orderNo}`)
+      return { url }
+    } catch (e: any) {
+      await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
+      throw new Error(e?.message || '发起 H5 人脸核身失败')
+    }
+  }
+
+  /**
+   * H5 核身结果查询：优先以腾讯云 queryfacerecord 权威结果为准，
+   * 通过后复用统一的身份写入 + 身份证查重逻辑。
+   */
+  async queryH5Result(
+    userId: number,
+    input: { orderNo?: string; code?: string } = {},
+  ): Promise<{ status: number; certTime: Date | null }> {
+    const user = await this.userRepo.findOne({ where: { id: userId } })
+    if (!user) {
+      throw new Error('用户不存在')
+    }
+    if (user.eidCertStatus === EID_STATUS.DONE && user.isRealName === 1) {
+      return { status: EID_STATUS.DONE, certTime: user.eidCertTime }
+    }
+
+    const stored = String(user.eidBizSeqNo || '').startsWith(EidAuthService.H5_ORDER_PREFIX)
+      ? String(user.eidBizSeqNo).slice(EidAuthService.H5_ORDER_PREFIX.length)
+      : ''
+    const orderNo = (input.orderNo || '').trim() || stored
+    if (!orderNo) {
+      return { status: user.eidCertStatus || EID_STATUS.NONE, certTime: user.eidCertTime }
+    }
+
+    // 回跳已带失败码：直接判定失败，无需再请求腾讯云
+    if (input.code !== undefined && input.code !== null && String(input.code) !== '0') {
+      await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
+      this.logger.warn(`用户 ${userId} H5 核身未通过，回调 code=${input.code}`)
+      return { status: EID_STATUS.FAILED, certTime: null }
+    }
+
+    let record: { code: string; msg: string }
+    try {
+      record = await queryH5FaceRecord(orderNo)
+    } catch (e: any) {
+      // 查询异常（查询过早/网络问题）不改状态，由前端重试
+      this.logger.warn(`用户 ${userId} 查询 H5 核身结果异常：${e?.message || e}`)
+      return { status: user.eidCertStatus || EID_STATUS.NONE, certTime: user.eidCertTime }
+    }
+    if (record.code !== '0') {
+      await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
+      this.logger.warn(`用户 ${userId} H5 核身失败，code=${record.code} msg=${record.msg}`)
+      return { status: EID_STATUS.FAILED, certTime: null }
+    }
+
+    // 权威结果通过：取出发起订单时暂存的身份信息
+    const pending = await this.userAuthRepo.findOne({
+      where: { userId, authType: 'realname', status: 0 },
+    })
+    const realName = this.cryptoService
+      .tryDecryptIdentity(pending?.authData?.realName || '')
+      .trim()
+      .replace(/\s+/g, '')
+    const idCard = this.cryptoService.tryDecryptIdentity(pending?.authData?.idCard || '').trim()
+    if (!realName || !idCard) {
+      this.logger.warn(`用户 ${userId} H5 核身通过但缺少暂存身份信息，无法落库`)
+      await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
+      return { status: EID_STATUS.FAILED, certTime: null }
+    }
+
+    // 身份证号去重（与小程序链路保持一致）
+    const dup = await this.checkIdCardDuplicate(userId, idCard, realName)
+    if (!dup.canProceed) {
+      await this.userRepo.update(userId, { eidCertStatus: EID_STATUS.FAILED })
+      this.logger.warn(`用户 ${userId} H5 核身通过但身份证校验未通过：${dup.reason}`)
+      return { status: EID_STATUS.FAILED, certTime: null }
+    }
+
+    const now = new Date()
+    await this.entityManager.transaction(async (manager) => {
+      await this.syncIdentityRecords(
+        {
+          userId,
+          realName,
+          idCard,
+          eidBizSeqNo: user.eidBizSeqNo,
+          verifiedAt: now,
+        },
+        manager,
+      )
+      await manager.update(User, userId, {
+        eidCertStatus: EID_STATUS.DONE,
+        eidCertTime: now,
+        isRealName: 1,
+      })
+    })
+
+    this.logger.log(`用户 ${userId} H5 人脸核身认证成功`)
+    return { status: EID_STATUS.DONE, certTime: now }
+  }
+
+  /** 暂存待核身的身份信息（加密，status=0）；已有正式认证记录时不覆盖 */
+  private async savePendingIdentity(
+    userId: number,
+    realName: string,
+    idCard: string,
+  ): Promise<void> {
+    const encryptedName = this.cryptoService.encrypt(realName)
+    const encryptedIdCard = this.cryptoService.encrypt(idCard)
+    const existing = await this.userAuthRepo.findOne({
+      where: { userId, authType: 'realname' },
+    })
+    if (existing && existing.status === 1) {
+      return
+    }
+    if (existing) {
+      existing.authData = { realName: encryptedName, idCard: encryptedIdCard }
+      existing.status = 0
+      await this.userAuthRepo.save(existing)
+      return
+    }
+    await this.userAuthRepo.save(
+      this.userAuthRepo.create({
+        userId,
+        authType: 'realname',
+        status: 0,
+        authData: { realName: encryptedName, idCard: encryptedIdCard },
+      }),
+    )
   }
 
   /**

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>实名认证</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #f5f5f5;
+        font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+      }
+      .tip {
+        position: absolute;
+        top: 45%;
+        width: 100%;
+        text-align: center;
+        color: #999;
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tip">正在返回认证结果…</div>
+    <script>
+      // 腾讯云核身完成后会回跳到本页面，并带 code / orderNo / h5faceId / liveRate 等参数。
+      // 本页面只做参数透传：把参数拼到 H5 应用的 hash 路由上，由实名认证页调用后端查询权威结果。
+      ;(function () {
+        var params = new URLSearchParams(window.location.search || '')
+        var keys = ['code', 'orderNo', 'h5faceId', 'liveRate']
+        var query = ['h5cb=1']
+        for (var i = 0; i < keys.length; i++) {
+          var value = params.get(keys[i])
+          if (value !== null && value !== '') {
+            query.push(keys[i] + '=' + encodeURIComponent(value))
+          }
+        }
+        window.location.replace('/#/subpkg-pages/real-name-auth/index?' + query.join('&'))
+      })()
+    </script>
+  </body>
+</html>
